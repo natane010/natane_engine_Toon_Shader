@@ -1,14 +1,14 @@
-# lilToon 移行ガイド
+# 移行ガイド
 
-lilToonから Natane Toon Shader への移行方法を説明します。
+lilToon / YMToon から Natane Toon Shader への移行方法を説明します。
 
 ## 自動移行ツール
 
-Natane Toon Shader には、lilToonから自動的に移行するためのツールが含まれています。
+Natane Toon Shader には、lilToonとYMToonから自動的に移行するためのツールが含まれています。
 
 ### ツールの種類
 
-#### 1. lilToon Migration Tool（推奨）
+#### 1. lilToon Migration Tool
 lilToon専用の移行ツールです。プロパティを適切にマッピングして変換します。
 
 **場所**: `Tools > Natane > lilToon Migration Tool`
@@ -19,7 +19,18 @@ lilToon専用の移行ツールです。プロパティを適切にマッピン�
 - バックアップ作成オプション
 - 一括変換対応
 
-#### 2. Batch Material Converter
+#### 2. YMToon Migration Tool（VRChat向け）
+YMToon / MToon専用の移行ツールです。Opaque/Cutout/Transparent バリアントを自動検出します。
+
+**場所**: `Tools > Natane > YMToon Migration Tool`
+
+**特徴**:
+- YMToon/MToonのプロパティを自動検出
+- バリアント自動判定（Opaque/Cutout/Transparent）
+- MatCap（SphereAdd）対応
+- VRChat最適化設定の移行
+
+#### 3. Batch Material Converter
 汎用的なマテリアル変換ツールです。任意のシェーダー間で変換できます。
 
 **場所**: `Tools > Natane > Batch Material Converter`
@@ -297,6 +308,127 @@ A: 標準的なlilToonからの移行をサポートしています。大きく�
 1. このガイドのトラブルシューティングを確認
 2. GitHub Issues で報告
 3. サンプルマテリアルを添付すると解決が早くなります
+
+## YMToon からの移行
+
+### YMToon Migration Tool の使い方
+
+#### ステップ1: ツールを開く
+
+1. Unityメニューから `Tools > Natane > YMToon Migration Tool` を選択
+2. ツールウィンドウが開きます
+
+#### ステップ2: オプションを設定
+
+**Create Backup（推奨）**
+- チェック: 元のマテリアルのバックアップを作成（`_YMToon_backup.mat`）
+
+**Replace Original（危険）**
+- チェック: 元のマテリアルを直接変更
+- チェックしない: 新しいマテリアルを作成（`_NataneToon.mat`）
+
+**Auto Detect Variant**
+- チェック: Opaque/Cutout/Transparentを自動判定
+- 推奨: チェックしたまま
+
+#### ステップ3: 変換
+
+1. `Scan for YMToon Materials` をクリック
+2. 検出されたマテリアルとバリアントを確認
+3. `Convert All Materials` で一括変換
+
+### YMToon プロパティマッピング
+
+| YMToon | Natane Toon Shader | 変換ロジック |
+|--------|-------------------|------------|
+| `_MainTex` | `_MainTex` | そのまま |
+| `_Color` | `_Color` | そのまま |
+| `_ShadeColor` | `_ShadowColor` | そのまま |
+| `_ShadeShift` | `_ShadowOffset` | × 0.5 でスケール調整 |
+| `_ShadeToony` | `_ShadowSharpness` | 逆数変換 |
+| `_BumpMap` | `_BumpMap` | そのまま |
+| `_RimColor` | `_RimColor` | そのまま |
+| `_RimFresnelPower` | `_RimPower` | クランプ: 0.1-10 |
+| `_RimLift` | `_RimIntensity` | × 2.0 |
+| `_OutlineWidth` | `_OutlineWidth` | × 0.1 でスケール調整 |
+| `_OutlineColor` | `_OutlineColor` | そのまま |
+| `_EmissionMap` | `_EmissionMap` | そのまま |
+| `_EmissionColor` | `_EmissionColor` | そのまま |
+| `_SphereAdd` | `_MatCapTex` | MatCap（Add mode） |
+| `_Cutoff` | `_Cutoff` | Cutoutバリアントのみ |
+
+### YMToon バリアント対応
+
+Natane Toon Shader は YMToon の3つのバリアントすべてに対応しています：
+
+#### Opaque（不透明）
+- シェーダー: `Natane/Toon Shader`
+- 用途: 通常のオブジェクト
+
+#### Cutout（透過切り抜き）
+- シェーダー: `Natane/Toon Shader (Cutout)`
+- 用途: 髪の毛、葉っぱなど
+- Alpha Cutoff で透過を制御
+
+#### Transparent（半透明）
+- シェーダー: `Natane/Toon Shader (Transparent)`
+- 用途: ガラス、水、半透明オブジェクト
+- Blend Mode を調整可能
+
+### YMToon 特有の機能
+
+#### MatCap（SphereAdd）
+YMToon の `_SphereAdd` は自動的に Natane の `_MatCapTex` (Add mode) に変換されます。
+
+#### アウトライン
+YMToon と同じ法線押し出し方式を使用していますが、スケールが異なります：
+- YMToon: 0-10程度
+- Natane: 0-0.1
+- 自動変換: × 0.1
+
+### VRChat での使用
+
+YMToon から移行したマテリアルは VRChat でも使用できます：
+
+#### パフォーマンス最適化
+1. 不要な機能を無効化
+2. Shadow Steps を 2 に設定
+3. 法線マップは必要な場合のみ使用
+
+#### アバター向け設定
+```
+肌:
+- Shadow Steps: 2
+- Shadow Sharpness: 0.05
+- Rim Light: 有効
+
+髪:
+- Shadow Steps: 2
+- Specular: 有効（小さめ）
+- MatCap: オプション
+
+服:
+- Shadow Steps: 2
+- Shadow Sharpness: 0.1
+```
+
+### トラブルシューティング（YMToon）
+
+#### アウトラインが太すぎる
+**原因**: スケール変換の違い
+**解決**: Outline Width を 1/10 に調整（0.01-0.02 程度）
+
+#### 影の見た目が違う
+**原因**: ShadeToony の解釈の違い
+**解決**: Shadow Sharpness を 0.05-0.15 で調整
+
+#### MatCap が表示されない
+**原因**: SphereAdd の検出失敗
+**解決**: 手動で MatCap Texture を設定し、Enable MatCap をチェック
+
+#### Cutout の透過が正しくない
+**原因**: Alpha Cutoff の値が適切でない
+**解決**: Alpha Cutoff を 0.3-0.7 で調整
 
 ## 追加リソース
 

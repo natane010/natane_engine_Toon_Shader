@@ -1,7 +1,7 @@
 # Natane Toon Shader
 
 汎用的なセルルック/NPR調に対応したUnity Built-in Render Pipeline用のトゥーンシェーダーです。
-lilToon、NovaShader、NiloToon、PoiyomiToonなどの人気トゥーンシェーダーを参考に設計されています。
+lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥーンシェーダーを参考に設計されています。
 
 ## ✨ 新機能
 
@@ -10,11 +10,15 @@ lilToon、NovaShader、NiloToon、PoiyomiToonなどの人気トゥーンシェ�
 - より良いパフォーマンスと互換性
 - GPU Instancing 対応
 
-### lilToon 自動移行ツール
-- lilToonマテリアルを自動的にNatane Toon Shaderに変換
-- プロパティの自動マッピング
-- バックアップ作成機能
-- 一括変換対応
+### 複数の自動移行ツール
+- **lilToon Migration Tool**: lilToonからの自動変換
+- **YMToon Migration Tool**: YMToon/MToonからの自動変換（VRChat向け）
+- **Batch Material Converter**: 汎用マテリアル変換ツール
+
+### マルチバリアント対応
+- **Opaque**: 標準的な不透明シェーダー
+- **Cutout**: 透過切り抜き（髪の毛、葉っぱなど）
+- **Transparent**: 半透明（ガラス、水など）
 
 詳細は [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) を参照してください。
 
@@ -46,14 +50,20 @@ lilToon、NovaShader、NiloToon、PoiyomiToonなどの人気トゥーンシェ�
 2. `Assets` フォルダをUnityプロジェクトにコピー
 3. マテリアルを作成し、Shader を `Natane/Toon Shader` に設定
 
-## lilToonからの移行
+## 他のシェーダーからの移行
 
-既にlilToonを使用している場合、自動移行ツールを使用できます：
+既にlilToonやYMToonを使用している場合、自動移行ツールを使用できます：
 
+### lilToonから
 1. `Tools > Natane > lilToon Migration Tool` を開く
 2. `Scan for lilToon Materials` をクリック
-3. 変換したいマテリアルを選択
-4. `Convert` または `Convert All Materials` をクリック
+3. `Convert All Materials` をクリック
+
+### YMToonから（VRChat向け）
+1. `Tools > Natane > YMToon Migration Tool` を開く
+2. `Scan for YMToon Materials` をクリック
+3. バリアント（Opaque/Cutout/Transparent）を確認
+4. `Convert All Materials` をクリック
 
 詳細は [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) を参照してください。
 
@@ -119,17 +129,20 @@ Shadow Color: 青みがかったグレー（例: RGB 0.5, 0.5, 0.6）
 ```
 Assets/
 ├── Shaders/
-│   ├── NataneToonShader.shader      # メインシェーダー
+│   ├── NataneToonShader.shader            # メインシェーダー（Opaque）
+│   ├── NataneToonShader_Cutout.shader     # Cutoutバリアント
+│   ├── NataneToonShader_Transparent.shader # Transparentバリアント
 │   └── Include/
-│       └── NataneToonCore.hlsl      # コア機能実装（HLSL）
+│       └── NataneToonCore.hlsl             # コア機能実装（HLSL）
 ├── Editor/
-│   ├── NataneToonShaderGUI.cs       # カスタムインスペクタGUI
-│   ├── LilToonMigrationTool.cs      # lilToon移行ツール
-│   └── BatchMaterialConverter.cs    # 汎用マテリアル変換ツール
+│   ├── NataneToonShaderGUI.cs              # カスタムインスペクタGUI
+│   ├── LilToonMigrationTool.cs             # lilToon移行ツール
+│   ├── YMToonMigrationTool.cs              # YMToon移行ツール
+│   └── BatchMaterialConverter.cs           # 汎用マテリアル変換ツール
 ├── Materials/
-│   └── Examples/                     # サンプルマテリアル用
+│   └── Examples/                            # サンプルマテリアル用
 └── Textures/
-    └── Ramps/                        # ランプテクスチャ用
+    └── Ramps/                               # ランプテクスチャ用
 ```
 
 ## 技術仕様
@@ -161,6 +174,7 @@ Assets/
 - **NovaShader** - シンプルで高速なトゥーンシェーダー
 - **NiloToon** - モバイル最適化されたトゥーンシェーダー
 - **PoiyomiToon** - 非常に多機能なトゥーンシェーダー
+- **YMToon** - VRChat向けに最適化された軽量トゥーンシェーダー
 
 ## Tips
 
@@ -205,8 +219,16 @@ MIT License
 
 ## 更新履歴
 
+### v1.1.0 (2025-10-29)
+- HLSL形式への変換
+- YMToon / MToon 移行ツール追加
+- Cutout / Transparent バリアント追加
+- GPU Instancing 対応
+- VRChat 最適化
+
 ### v1.0.0 (2025-10-29)
 - 初回リリース
 - セルシェーディング、リムライト、MatCap、アウトライン、スペキュラ機能実装
+- lilToon 移行ツール実装
 - カスタムShaderGUI実装
 - Built-in Render Pipeline対応
