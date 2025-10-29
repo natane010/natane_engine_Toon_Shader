@@ -61,6 +61,22 @@ Shader "Natane/Toon Shader (Cutout)"
         [Toggle(_EMISSION)] _Emission ("Enable Emission", Float) = 0
         [HDR] _EmissionColor ("Emission Color", Color) = (0,0,0,1)
         _EmissionMap ("Emission Map", 2D) = "white" {}
+        [Toggle(_EMISSION_SCROLL)] _EmissionScroll ("Emission Scroll", Float) = 0
+        _EmissionScrollSpeed ("Emission Scroll Speed", Float) = 1
+        [Toggle(_EMISSION_PULSE)] _EmissionPulse ("Emission Pulse", Float) = 0
+        _EmissionPulseSpeed ("Emission Pulse Speed", Float) = 1
+        _EmissionPulseAmplitude ("Emission Pulse Amplitude", Range(0, 1)) = 0.5
+
+        [Header(Virtual Expression)]
+        [Toggle(_DISSOLVE)] _Dissolve ("Enable Dissolve", Float) = 0
+        _DissolveAmount ("Dissolve Amount", Range(0, 1)) = 0
+        _DissolveTex ("Dissolve Texture (Noise)", 2D) = "white" {}
+        _DissolveEdgeWidth ("Dissolve Edge Width", Range(0, 0.5)) = 0.1
+        [HDR] _DissolveEdgeColor ("Dissolve Edge Color", Color) = (1, 0.5, 0, 1)
+        _DissolveEdgeIntensity ("Dissolve Edge Intensity", Range(0, 10)) = 2
+        [Space(10)]
+        [Toggle(_HUE_SHIFT)] _HueShiftEnable ("Enable Hue Shift", Float) = 0
+        _HueShift ("Hue Shift", Range(0, 1)) = 0
 
         [Header(Normal Map)]
         [Toggle(_NORMALMAP)] _UseNormalMap ("Use Normal Map", Float) = 0
@@ -166,7 +182,11 @@ Shader "Natane/Toon Shader (Cutout)"
             #pragma shader_feature _THICKNESS_MAP
             #pragma shader_feature _MATCAP
             #pragma shader_feature _EMISSION
+            #pragma shader_feature _EMISSION_SCROLL
+            #pragma shader_feature _EMISSION_PULSE
             #pragma shader_feature _NORMALMAP
+            #pragma shader_feature _DISSOLVE
+            #pragma shader_feature _HUE_SHIFT
             #define CUTOUT_VARIANT
 
             sampler2D _MainTex;
@@ -206,6 +226,8 @@ Shader "Natane/Toon Shader (Cutout)"
             #pragma shader_feature _SSS
             #pragma shader_feature _THICKNESS_MAP
             #pragma shader_feature _NORMALMAP
+            #pragma shader_feature _DISSOLVE
+            #pragma shader_feature _HUE_SHIFT
             #define CUTOUT_VARIANT
 
             sampler2D _MainTex;

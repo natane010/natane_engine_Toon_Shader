@@ -54,6 +54,21 @@ CBUFFER_START(UnityPerMaterial)
     float _SSSDistortion;
     sampler2D _ThicknessMap;
     float _ThicknessScale;
+
+    // Virtual Expression - Dissolve
+    float _DissolveAmount;
+    sampler2D _DissolveTex;
+    float _DissolveEdgeWidth;
+    half4 _DissolveEdgeColor;
+    float _DissolveEdgeIntensity;
+
+    // Virtual Expression - Hue Shift
+    float _HueShift;
+
+    // Virtual Expression - Emission Animation
+    float _EmissionScrollSpeed;
+    float _EmissionPulseSpeed;
+    float _EmissionPulseAmplitude;
 CBUFFER_END
 
 // Vertex Input Structure

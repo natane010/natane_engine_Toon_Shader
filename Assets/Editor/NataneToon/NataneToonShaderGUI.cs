@@ -18,6 +18,7 @@ public class NataneToonShaderGUI : ShaderGUI
     private static bool showMatCap = true;
     private static bool showOutline = true;
     private static bool showEmission = true;
+    private static bool showVirtualExpression = true;
     private static bool showNormalMap = true;
     private static bool showRendering = true;
 
@@ -39,6 +40,7 @@ public class NataneToonShaderGUI : ShaderGUI
         DrawMatCapSection();
         DrawOutlineSection();
         DrawEmissionSection();
+        DrawVirtualExpressionSection();
         DrawNormalMapSection();
         DrawRenderingSection();
     }
@@ -250,6 +252,57 @@ public class NataneToonShaderGUI : ShaderGUI
             {
                 DrawProperty("_EmissionColor", "Emission Color");
                 DrawProperty("_EmissionMap", "Emission Map");
+
+                EditorGUILayout.Space();
+                bool enableScroll = DrawToggle("_EMISSION_SCROLL", "_EmissionScroll", "Emission Scroll");
+                if (enableScroll)
+                {
+                    DrawProperty("_EmissionScrollSpeed", "Scroll Speed");
+                }
+
+                bool enablePulse = DrawToggle("_EMISSION_PULSE", "_EmissionPulse", "Emission Pulse");
+                if (enablePulse)
+                {
+                    DrawProperty("_EmissionPulseSpeed", "Pulse Speed");
+                    DrawProperty("_EmissionPulseAmplitude", "Pulse Amplitude");
+                }
+            }
+
+            EditorGUI.indentLevel--;
+            EditorGUILayout.Space();
+        }
+    }
+
+    private void DrawVirtualExpressionSection()
+    {
+        showVirtualExpression = EditorGUILayout.Foldout(showVirtualExpression, "Virtual Expression", true, EditorStyles.foldoutHeader);
+        if (showVirtualExpression)
+        {
+            EditorGUI.indentLevel++;
+
+            // Dissolve Effect
+            bool enableDissolve = DrawToggle("_DISSOLVE", "_Dissolve", "Enable Dissolve");
+            if (enableDissolve)
+            {
+                DrawProperty("_DissolveAmount", "Dissolve Amount");
+                EditorGUILayout.HelpBox("0 = fully visible, 1 = fully dissolved", MessageType.Info);
+
+                DrawProperty("_DissolveTex", "Dissolve Texture (Noise)");
+                DrawProperty("_DissolveEdgeWidth", "Edge Width");
+                DrawProperty("_DissolveEdgeColor", "Edge Color");
+                DrawProperty("_DissolveEdgeIntensity", "Edge Intensity");
+
+                EditorGUILayout.HelpBox("Dissolve creates a dissolve/disintegration effect perfect for VRChat avatar appearance animations. Animate the Dissolve Amount parameter to make objects appear or disappear.", MessageType.Info);
+            }
+
+            EditorGUILayout.Space();
+
+            // Hue Shift
+            bool enableHueShift = DrawToggle("_HUE_SHIFT", "_HueShiftEnable", "Enable Hue Shift");
+            if (enableHueShift)
+            {
+                DrawProperty("_HueShift", "Hue Shift");
+                EditorGUILayout.HelpBox("Changes the hue of the entire material. 0 = no change, 0.5 = opposite colors, 1 = full rotation. Great for color-changing effects in VRChat.", MessageType.Info);
             }
 
             EditorGUI.indentLevel--;

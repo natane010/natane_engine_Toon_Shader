@@ -146,8 +146,47 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Emission (ForwardBase only) =====
     #if defined(_EMISSION) && defined(UNITY_PASS_FORWARDBASE)
-        half3 emission = tex2D(_EmissionMap, i.uv).rgb * _EmissionColor.rgb;
+        float2 emissionUV = i.uv;
+
+        // Apply scrolling animation
+        #ifdef _EMISSION_SCROLL
+            emissionUV += float2(_Time.y * _EmissionScrollSpeed, 0.0);
+        #endif
+
+        half3 emission = tex2D(_EmissionMap, emissionUV).rgb * _EmissionColor.rgb;
+
+        // Apply pulse animation
+        #ifdef _EMISSION_PULSE
+            float pulse = sin(_Time.y * _EmissionPulseSpeed) * 0.5 + 0.5;
+            pulse = lerp(1.0 - _EmissionPulseAmplitude, 1.0, pulse);
+            emission *= pulse;
+        #endif
+
         col.rgb += emission;
+    #endif
+
+    // ===== Virtual Expression - Hue Shift =====
+    #ifdef _HUE_SHIFT
+        if (_HueShift > 0.001)
+        {
+            col.rgb = ApplyHueShift(col.rgb, _HueShift);
+        }
+    #endif
+
+    // ===== Virtual Expression - Dissolve =====
+    #ifdef _DISSOLVE
+        float2 dissolveResult = CalculateDissolve(i.uv, _DissolveAmount, _DissolveEdgeWidth);
+        float dissolveAlpha = dissolveResult.x;
+        float edgeGlow = dissolveResult.y;
+
+        // Apply edge glow
+        if (edgeGlow > 0.0)
+        {
+            col.rgb += _DissolveEdgeColor.rgb * edgeGlow * _DissolveEdgeIntensity;
+        }
+
+        // Clip pixels based on dissolve amount
+        clip(dissolveAlpha);
     #endif
 
     // ===== Fog =====
