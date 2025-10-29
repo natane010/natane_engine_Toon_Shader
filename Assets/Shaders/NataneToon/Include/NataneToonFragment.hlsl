@@ -95,6 +95,12 @@ half4 frag(v2f i) : SV_Target
         float spec = SpecularHighlight(worldNormal, viewDir, lightDir, _SpecularSize, _SpecularSoftness);
         float3 specContrib = spec * _SpecularColor.rgb * _LightColor0.rgb * atten;
 
+        // Apply mask texture
+        #ifdef _SPECULAR_MASK
+            float specMask = tex2D(_SpecularMask, i.uv).r;
+            specContrib *= specMask;
+        #endif
+
         // Apply additional light intensity scaling in ForwardAdd pass
         #ifndef UNITY_PASS_FORWARDBASE
             specContrib *= _AdditionalLightIntensity;
@@ -116,6 +122,12 @@ half4 frag(v2f i) : SV_Target
 
         float3 sss = SubsurfaceScattering(worldNormal, lightDir, viewDir, thickness, atten);
 
+        // Apply mask texture
+        #ifdef _SSS_MASK
+            float sssMask = tex2D(_SSSMask, i.uv).r;
+            sss *= sssMask;
+        #endif
+
         // Apply additional light intensity scaling in ForwardAdd pass
         #ifndef UNITY_PASS_FORWARDBASE
             sss *= _AdditionalLightIntensity;
@@ -127,6 +139,13 @@ half4 frag(v2f i) : SV_Target
     // ===== Rim Light (ForwardBase only) =====
     #if defined(_RIM_LIGHT) && defined(UNITY_PASS_FORWARDBASE)
         float3 rim = RimLighting(worldNormal, viewDir, _RimPower, _RimIntensity);
+
+        // Apply mask texture
+        #ifdef _RIM_MASK
+            float rimMask = tex2D(_RimMask, i.uv).r;
+            rim *= rimMask;
+        #endif
+
         col.rgb += rim;
     #endif
 
@@ -134,6 +153,12 @@ half4 frag(v2f i) : SV_Target
     #if defined(_MATCAP) && defined(UNITY_PASS_FORWARDBASE)
         float2 matcapUV = CalculateMatCapUV(worldNormal, viewDir);
         half3 matcap = tex2D(_MatCapTex, matcapUV).rgb * _MatCapIntensity;
+
+        // Apply mask texture
+        #ifdef _MATCAP_MASK
+            float matcapMask = tex2D(_MatCapMask, i.uv).r;
+            matcap *= matcapMask;
+        #endif
 
         // Blend modes: 0=Add, 1=Multiply, 2=Replace
         if (_MatCapBlendMode < 0.5) // Add
@@ -162,6 +187,12 @@ half4 frag(v2f i) : SV_Target
             emission *= pulse;
         #endif
 
+        // Apply mask texture
+        #ifdef _EMISSION_MASK
+            float emissionMask = tex2D(_EmissionMask, i.uv).r;
+            emission *= emissionMask;
+        #endif
+
         col.rgb += emission;
     #endif
 
@@ -175,9 +206,19 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Virtual Expression - Dissolve =====
     #ifdef _DISSOLVE
+        float dissolveMaskValue = 1.0;
+
+        // Apply mask texture
+        #ifdef _DISSOLVE_MASK
+            dissolveMaskValue = tex2D(_DissolveMask, i.uv).r;
+        #endif
+
         float2 dissolveResult = CalculateDissolve(i.uv, _DissolveAmount, _DissolveEdgeWidth);
         float dissolveAlpha = dissolveResult.x;
         float edgeGlow = dissolveResult.y;
+
+        // Apply mask to edge glow and dissolve effect
+        edgeGlow *= dissolveMaskValue;
 
         // Apply edge glow
         if (edgeGlow > 0.0)
@@ -185,8 +226,8 @@ half4 frag(v2f i) : SV_Target
             col.rgb += _DissolveEdgeColor.rgb * edgeGlow * _DissolveEdgeIntensity;
         }
 
-        // Clip pixels based on dissolve amount
-        clip(dissolveAlpha);
+        // Clip pixels based on dissolve amount and mask
+        clip(dissolveAlpha + (1.0 - dissolveMaskValue));
     #endif
 
     // ===== Fog =====
