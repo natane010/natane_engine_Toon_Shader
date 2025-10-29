@@ -1,11 +1,10 @@
-Shader "Natane/Toon Shader (Cutout)"
+Shader "Natane/Toon Shader (Transparent)"
 {
     Properties
     {
         [Header(Main Texture)]
         _MainTex ("Main Texture", 2D) = "white" {}
         _Color ("Color", Color) = (1,1,1,1)
-        _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
 
         [Header(Shading)]
         [Toggle(_USE_RAMP)] _UseRamp ("Use Ramp Texture", Float) = 0
@@ -68,15 +67,17 @@ Shader "Natane/Toon Shader (Cutout)"
 
         [Header(Rendering)]
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull Mode", Float) = 2
-        [Enum(Off,0,On,1)] _ZWrite ("Z Write", Float) = 1
+        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Src Blend", Float) = 5
+        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Float) = 10
+        [Enum(Off,0,On,1)] _ZWrite ("Z Write", Float) = 0
     }
 
     SubShader
     {
         Tags
         {
-            "RenderType"="TransparentCutout"
-            "Queue"="AlphaTest"
+            "RenderType"="Transparent"
+            "Queue"="Transparent"
             "IgnoreProjector"="True"
         }
 
@@ -87,6 +88,7 @@ Shader "Natane/Toon Shader (Cutout)"
             Tags { "LightMode" = "ForwardBase" }
             Cull Front
             ZWrite [_ZWrite]
+            Blend [_SrcBlend] [_DstBlend]
 
             CGPROGRAM
             #pragma vertex vert
@@ -151,6 +153,7 @@ Shader "Natane/Toon Shader (Cutout)"
             Tags { "LightMode" = "ForwardBase" }
             Cull [_Cull]
             ZWrite [_ZWrite]
+            Blend [_SrcBlend] [_DstBlend]
 
             CGPROGRAM
             #pragma vertex vert
@@ -166,21 +169,9 @@ Shader "Natane/Toon Shader (Cutout)"
             #pragma shader_feature _MATCAP
             #pragma shader_feature _EMISSION
             #pragma shader_feature _NORMALMAP
-            #define CUTOUT_VARIANT
+            #define TRANSPARENT_VARIANT
 
-            sampler2D _MainTex;
-            float _Cutoff;
-
-            #include "Include/NataneToonCore.hlsl"
-
-            half4 frag_cutout(v2f i) : SV_Target
-            {
-                half4 col = frag(i);
-                clip(col.a - _Cutoff);
-                return col;
-            }
-
-            #define frag frag_cutout
+            #include "../Include/NataneToonCore.hlsl"
 
             ENDCG
         }
@@ -205,73 +196,14 @@ Shader "Natane/Toon Shader (Cutout)"
             #pragma shader_feature _SSS
             #pragma shader_feature _THICKNESS_MAP
             #pragma shader_feature _NORMALMAP
-            #define CUTOUT_VARIANT
+            #define TRANSPARENT_VARIANT
 
-            sampler2D _MainTex;
-            float _Cutoff;
+            #include "../Include/NataneToonCore.hlsl"
 
-            #include "Include/NataneToonCore.hlsl"
-
-            half4 frag_cutout(v2f i) : SV_Target
-            {
-                half4 col = frag(i);
-                clip(col.a - _Cutoff);
-                return col;
-            }
-
-            #define frag frag_cutout
-
-            ENDCG
-        }
-
-        // Shadow Caster Pass
-        Pass
-        {
-            Name "SHADOW_CASTER"
-            Tags { "LightMode" = "ShadowCaster" }
-
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma multi_compile_shadowcaster
-
-            #include "UnityCG.cginc"
-
-            sampler2D _MainTex;
-            float4 _MainTex_ST;
-            float _Cutoff;
-
-            struct appdata
-            {
-                float4 vertex : POSITION;
-                float3 normal : NORMAL;
-                float2 uv : TEXCOORD0;
-            };
-
-            struct v2f
-            {
-                V2F_SHADOW_CASTER;
-                float2 uv : TEXCOORD1;
-            };
-
-            v2f vert(appdata v)
-            {
-                v2f o;
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-                TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
-                return o;
-            }
-
-            float4 frag(v2f i) : SV_Target
-            {
-                fixed4 texcol = tex2D(_MainTex, i.uv);
-                clip(texcol.a - _Cutoff);
-                SHADOW_CASTER_FRAGMENT(i)
-            }
             ENDCG
         }
     }
 
     CustomEditor "NataneToonShaderGUI"
-    FallBack "Transparent/Cutout/Diffuse"
+    FallBack "Transparent/Diffuse"
 }

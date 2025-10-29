@@ -53,6 +53,48 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 2. `Assets` フォルダをUnityプロジェクトにコピー
 3. マテリアルを作成し、Shader を `Natane/Toon Shader` に設定
 
+## プロジェクト構造
+
+プロジェクトは機能ごとにモジュール化された構造になっており、拡張性と可読性を重視しています：
+
+```
+Assets/
+├── Shaders/
+│   └── NataneToon/
+│       ├── NataneToonShader.shader              # メインシェーダー（Opaque）
+│       ├── Variants/
+│       │   ├── NataneToonShader_Cutout.shader   # 透過切り抜きバリアント
+│       │   └── NataneToonShader_Transparent.shader  # 半透明バリアント
+│       └── Include/
+│           ├── NataneToonCore.hlsl              # コア統合ファイル
+│           ├── NataneToonInput.hlsl             # プロパティと構造体定義
+│           ├── NataneToonLighting.hlsl          # ライティング計算関数
+│           ├── NataneToonUtils.hlsl             # ユーティリティ関数
+│           ├── NataneToonVertex.hlsl            # 頂点シェーダー
+│           └── NataneToonFragment.hlsl          # フラグメントシェーダー
+├── Editor/
+│   └── NataneToon/
+│       ├── NataneToonShaderGUI.cs               # カスタムインスペクター
+│       └── MigrationTools/
+│           ├── LilToonMigrationTool.cs          # lilToon変換ツール
+│           ├── YMToonMigrationTool.cs           # YMToon変換ツール
+│           └── BatchMaterialConverter.cs        # 汎用変換ツール
+├── Materials/
+│   └── Examples/                                 # サンプルマテリアル
+└── Textures/
+    └── Ramps/                                    # ランプテクスチャ
+```
+
+### モジュール構成の利点
+
+- **NataneToonInput.hlsl**: プロパティと構造体を一元管理。新しいパラメータの追加が容易
+- **NataneToonLighting.hlsl**: ライティング関数を分離。新しいシェーディング手法の追加が簡単
+- **NataneToonUtils.hlsl**: 汎用的なユーティリティ関数。他のシェーダーでも再利用可能
+- **NataneToonVertex.hlsl**: 頂点処理を独立化。頂点変形などのカスタマイズが容易
+- **NataneToonFragment.hlsl**: フラグメント処理を独立化。エフェクトの追加・変更が明確
+
+この構造により、特定の機能の修正や拡張時に関連ファイルのみを編集すれば良く、コードの保守性が大幅に向上しています。
+
 ## 他のシェーダーからの移行
 
 既にlilToonやYMToonを使用している場合、自動移行ツールを使用できます：
