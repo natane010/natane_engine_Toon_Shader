@@ -21,6 +21,7 @@ Shader "Natane/Toon Shader"
         _LightMaxInfluence ("Light Max Influence", Range(1, 5)) = 2
         _BacklightIntensity ("Backlight Intensity", Range(0, 2)) = 0
         _BacklightColor ("Backlight Color", Color) = (1, 1, 1, 1)
+        _AdditionalLightIntensity ("Additional Light Intensity", Range(0, 1)) = 0.5
 
         [Header(Specular)]
         [Toggle(_SPECULAR)] _Specular ("Enable Specular", Float) = 0

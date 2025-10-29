@@ -22,6 +22,7 @@ CBUFFER_START(UnityPerMaterial)
     float _LightMaxInfluence;
     float _BacklightIntensity;
     half4 _BacklightColor;
+    float _AdditionalLightIntensity;
 
     // Specular
     half4 _SpecularColor;

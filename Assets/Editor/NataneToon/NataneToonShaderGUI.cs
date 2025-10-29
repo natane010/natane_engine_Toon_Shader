@@ -109,6 +109,10 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUILayout.HelpBox("Backlight adds illumination when light is behind the object, creating a rim-like effect.", MessageType.Info);
             }
 
+            EditorGUILayout.Space();
+            DrawProperty("_AdditionalLightIntensity", "Additional Light Intensity");
+            EditorGUILayout.HelpBox("Controls the intensity of additional lights (ForwardAdd pass). Lower values prevent over-brightening when using multiple lights. 0 = no additional lights, 1 = full intensity.", MessageType.Info);
+
             EditorGUI.indentLevel--;
             EditorGUILayout.Space();
         }

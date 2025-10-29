@@ -81,6 +81,10 @@ half4 frag(v2f i) : SV_Target
 
         // Add backlight effect
         lighting += backlight * _BacklightColor.rgb * _LightColor0.rgb;
+    #else
+        // ===== Additional Light Intensity Control (ForwardAdd pass) =====
+        // Scale down additional lights to prevent over-brightening with multiple lights
+        lighting *= _AdditionalLightIntensity;
     #endif
 
     // Apply calculated lighting to base color
@@ -89,7 +93,14 @@ half4 frag(v2f i) : SV_Target
     // ===== Specular Highlight =====
     #ifdef _SPECULAR
         float spec = SpecularHighlight(worldNormal, viewDir, lightDir, _SpecularSize, _SpecularSoftness);
-        col.rgb += spec * _SpecularColor.rgb * _LightColor0.rgb * atten;
+        float3 specContrib = spec * _SpecularColor.rgb * _LightColor0.rgb * atten;
+
+        // Apply additional light intensity scaling in ForwardAdd pass
+        #ifndef UNITY_PASS_FORWARDBASE
+            specContrib *= _AdditionalLightIntensity;
+        #endif
+
+        col.rgb += specContrib;
     #endif
 
     // ===== Subsurface Scattering =====
@@ -104,6 +115,12 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         float3 sss = SubsurfaceScattering(worldNormal, lightDir, viewDir, thickness, atten);
+
+        // Apply additional light intensity scaling in ForwardAdd pass
+        #ifndef UNITY_PASS_FORWARDBASE
+            sss *= _AdditionalLightIntensity;
+        #endif
+
         col.rgb += sss;
     #endif
 
