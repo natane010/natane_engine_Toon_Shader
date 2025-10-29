@@ -1,40 +1,46 @@
 #ifndef NATANE_TOON_CORE_INCLUDED
 #define NATANE_TOON_CORE_INCLUDED
 
+#include "UnityCG.cginc"
+#include "Lighting.cginc"
+#include "AutoLight.cginc"
+
 // Properties
-sampler2D _MainTex;
-float4 _MainTex_ST;
-fixed4 _Color;
+CBUFFER_START(UnityPerMaterial)
+    sampler2D _MainTex;
+    float4 _MainTex_ST;
+    half4 _Color;
 
-// Shading
-sampler2D _RampTex;
-fixed4 _ShadowColor;
-float _ShadowSteps;
-float _ShadowSharpness;
-float _ShadowOffset;
+    // Shading
+    sampler2D _RampTex;
+    half4 _ShadowColor;
+    float _ShadowSteps;
+    float _ShadowSharpness;
+    float _ShadowOffset;
 
-// Specular
-fixed4 _SpecularColor;
-float _SpecularSize;
-float _SpecularSoftness;
+    // Specular
+    half4 _SpecularColor;
+    float _SpecularSize;
+    float _SpecularSoftness;
 
-// Rim Light
-fixed4 _RimColor;
-float _RimPower;
-float _RimIntensity;
+    // Rim Light
+    half4 _RimColor;
+    float _RimPower;
+    float _RimIntensity;
 
-// MatCap
-sampler2D _MatCapTex;
-float _MatCapIntensity;
-float _MatCapBlendMode;
+    // MatCap
+    sampler2D _MatCapTex;
+    float _MatCapIntensity;
+    float _MatCapBlendMode;
 
-// Emission
-fixed4 _EmissionColor;
-sampler2D _EmissionMap;
+    // Emission
+    half4 _EmissionColor;
+    sampler2D _EmissionMap;
 
-// Normal Map
-sampler2D _BumpMap;
-float _BumpScale;
+    // Normal Map
+    sampler2D _BumpMap;
+    float _BumpScale;
+CBUFFER_END
 
 struct appdata
 {
@@ -42,6 +48,7 @@ struct appdata
     float3 normal : NORMAL;
     float4 tangent : TANGENT;
     float2 uv : TEXCOORD0;
+    UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
 struct v2f
@@ -54,6 +61,7 @@ struct v2f
     float3 worldBinormal : TEXCOORD4;
     UNITY_FOG_COORDS(5)
     SHADOW_COORDS(6)
+    UNITY_VERTEX_OUTPUT_STEREO
 };
 
 // Calculate MatCap UV
@@ -91,7 +99,7 @@ float3 RampShading(float ndotl)
 float SpecularHighlight(float3 normal, float3 viewDir, float3 lightDir, float size, float softness)
 {
     float3 halfVector = normalize(lightDir + viewDir);
-    float ndoth = max(0, dot(normal, halfVector));
+    float ndoth = max(0.0, dot(normal, halfVector));
 
     // Create sharp specular
     float spec = smoothstep(1.0 - size - softness, 1.0 - size + softness, ndoth);
@@ -110,6 +118,9 @@ float3 RimLighting(float3 normal, float3 viewDir, float power, float intensity)
 v2f vert(appdata v)
 {
     v2f o;
+    UNITY_SETUP_INSTANCE_ID(v);
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
     o.pos = UnityObjectToClipPos(v.vertex);
     o.uv = TRANSFORM_TEX(v.uv, _MainTex);
     o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
@@ -117,7 +128,7 @@ v2f vert(appdata v)
     // Transform normal and tangent to world space
     o.worldNormal = UnityObjectToWorldNormal(v.normal);
     o.worldTangent = UnityObjectToWorldDir(v.tangent.xyz);
-    o.worldBinormal = cross(o.worldNormal, o.worldTangent) * v.tangent.w;
+    o.worldBinormal = cross(o.worldNormal, o.worldTangent) * v.tangent.w * unity_WorldTransformParams.w;
 
     UNITY_TRANSFER_FOG(o, o.pos);
     TRANSFER_SHADOW(o);
@@ -126,14 +137,14 @@ v2f vert(appdata v)
 }
 
 // Fragment Shader
-fixed4 frag(v2f i) : SV_Target
+half4 frag(v2f i) : SV_Target
 {
     // Sample textures
-    fixed4 mainTex = tex2D(_MainTex, i.uv);
-    fixed4 col = mainTex * _Color;
+    half4 mainTex = tex2D(_MainTex, i.uv);
+    half4 col = mainTex * _Color;
 
     // Normal mapping
-    float3 worldNormal = i.worldNormal;
+    float3 worldNormal = normalize(i.worldNormal);
     #ifdef _NORMALMAP
         float3 normalMap = UnpackScaleNormal(tex2D(_BumpMap, i.uv), _BumpScale);
         float3x3 tangentToWorld = float3x3(i.worldTangent, i.worldBinormal, i.worldNormal);
@@ -158,7 +169,7 @@ fixed4 frag(v2f i) : SV_Target
     #endif
 
     float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
-    float ndotl = max(0, dot(worldNormal, lightDir));
+    float ndotl = max(0.0, dot(worldNormal, lightDir));
 
     // Toon Shading or Ramp
     float3 lighting;
@@ -166,7 +177,7 @@ fixed4 frag(v2f i) : SV_Target
         lighting = RampShading(ndotl * atten);
     #else
         float toon = ToonShading(ndotl * atten, _ShadowSteps, _ShadowSharpness);
-        lighting = lerp(_ShadowColor.rgb, float3(1, 1, 1), toon);
+        lighting = lerp(_ShadowColor.rgb, half3(1.0, 1.0, 1.0), toon);
     #endif
 
     // Apply light color
@@ -195,7 +206,7 @@ fixed4 frag(v2f i) : SV_Target
     // MatCap (only in base pass)
     #if defined(_MATCAP) && defined(UNITY_PASS_FORWARDBASE)
         float2 matcapUV = CalculateMatCapUV(worldNormal, viewDir);
-        fixed3 matcap = tex2D(_MatCapTex, matcapUV).rgb * _MatCapIntensity;
+        half3 matcap = tex2D(_MatCapTex, matcapUV).rgb * _MatCapIntensity;
 
         // Blend modes
         if (_MatCapBlendMode < 0.5) // Add
@@ -208,7 +219,7 @@ fixed4 frag(v2f i) : SV_Target
 
     // Emission (only in base pass)
     #if defined(_EMISSION) && defined(UNITY_PASS_FORWARDBASE)
-        fixed3 emission = tex2D(_EmissionMap, i.uv).rgb * _EmissionColor.rgb;
+        half3 emission = tex2D(_EmissionMap, i.uv).rgb * _EmissionColor.rgb;
         col.rgb += emission;
     #endif
 

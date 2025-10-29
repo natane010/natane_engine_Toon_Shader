@@ -3,6 +3,21 @@
 汎用的なセルルック/NPR調に対応したUnity Built-in Render Pipeline用のトゥーンシェーダーです。
 lilToon、NovaShader、NiloToon、PoiyomiToonなどの人気トゥーンシェーダーを参考に設計されています。
 
+## ✨ 新機能
+
+### HLSL対応
+- モダンな `.hlsl` 形式でシェーダーコードを記述
+- より良いパフォーマンスと互換性
+- GPU Instancing 対応
+
+### lilToon 自動移行ツール
+- lilToonマテリアルを自動的にNatane Toon Shaderに変換
+- プロパティの自動マッピング
+- バックアップ作成機能
+- 一括変換対応
+
+詳細は [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) を参照してください。
+
 ## 特徴
 
 ### コア機能
@@ -30,6 +45,17 @@ lilToon、NovaShader、NiloToon、PoiyomiToonなどの人気トゥーンシェ�
 1. このリポジトリをクローンまたはダウンロード
 2. `Assets` フォルダをUnityプロジェクトにコピー
 3. マテリアルを作成し、Shader を `Natane/Toon Shader` に設定
+
+## lilToonからの移行
+
+既にlilToonを使用している場合、自動移行ツールを使用できます：
+
+1. `Tools > Natane > lilToon Migration Tool` を開く
+2. `Scan for lilToon Materials` をクリック
+3. 変換したいマテリアルを選択
+4. `Convert` または `Convert All Materials` をクリック
+
+詳細は [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) を参照してください。
 
 ## 使い方
 
@@ -95,9 +121,11 @@ Assets/
 ├── Shaders/
 │   ├── NataneToonShader.shader      # メインシェーダー
 │   └── Include/
-│       └── NataneToonCore.cginc     # コア機能実装
+│       └── NataneToonCore.hlsl      # コア機能実装（HLSL）
 ├── Editor/
-│   └── NataneToonShaderGUI.cs       # カスタムインスペクタGUI
+│   ├── NataneToonShaderGUI.cs       # カスタムインスペクタGUI
+│   ├── LilToonMigrationTool.cs      # lilToon移行ツール
+│   └── BatchMaterialConverter.cs    # 汎用マテリアル変換ツール
 ├── Materials/
 │   └── Examples/                     # サンプルマテリアル用
 └── Textures/

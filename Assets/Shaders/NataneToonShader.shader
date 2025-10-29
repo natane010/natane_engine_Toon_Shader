@@ -138,6 +138,7 @@ Shader "Natane/Toon Shader"
             #pragma fragment frag
             #pragma multi_compile_fwdbase
             #pragma multi_compile_fog
+            #pragma multi_compile_instancing
             #pragma shader_feature _USE_RAMP
             #pragma shader_feature _SPECULAR
             #pragma shader_feature _RIM_LIGHT
@@ -145,10 +146,7 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature _EMISSION
             #pragma shader_feature _NORMALMAP
 
-            #include "UnityCG.cginc"
-            #include "Lighting.cginc"
-            #include "AutoLight.cginc"
-            #include "Include/NataneToonCore.cginc"
+            #include "Include/NataneToonCore.hlsl"
 
             ENDCG
         }
@@ -167,14 +165,12 @@ Shader "Natane/Toon Shader"
             #pragma fragment frag
             #pragma multi_compile_fwdadd_fullshadows
             #pragma multi_compile_fog
+            #pragma multi_compile_instancing
             #pragma shader_feature _USE_RAMP
             #pragma shader_feature _SPECULAR
             #pragma shader_feature _NORMALMAP
 
-            #include "UnityCG.cginc"
-            #include "Lighting.cginc"
-            #include "AutoLight.cginc"
-            #include "Include/NataneToonCore.cginc"
+            #include "Include/NataneToonCore.hlsl"
 
             ENDCG
         }
