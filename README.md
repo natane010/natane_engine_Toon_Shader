@@ -45,6 +45,17 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 - **Hue Shift（色相変更）** - リアルタイムでの色変更、服装変更ギミックに最適
 - **Emission Animation** - 発光のスクロール・脈動アニメーション
 
+### マスクテクスチャ対応
+- **エフェクト別マスクテクスチャ** - 各エフェクトをピクセル単位で制御
+  - Specular Mask - スペキュラハイライトの制御
+  - Rim Mask - リムライトの制御
+  - SSS Mask - サブサーフェススキャッタリングの制御
+  - MatCap Mask - MatCapエフェクトの制御
+  - Emission Mask - 発光の制御
+  - Dissolve Mask - 溶解効果の制御
+- 白色（1.0）= 完全適用、黒色（0.0）= 適用なし
+- グレースケールで部分的な制御が可能
+
 ### テクスチャ
 - **メインテクスチャ** - アルベドマップ
 - **法線マップ** - ノーマルマップ対応（強度調整可能）
@@ -52,8 +63,19 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 - **ランプテクスチャ** - カスタムライティンググラデーション
 - **Thicknessマップ** - SSS用の厚みマップ（白=薄い、黒=厚い）
 - **Dissolveテクスチャ** - 溶解効果用のノイズテクスチャ
+- **マスクテクスチャ** - 各エフェクト用のマスク（グレースケール、赤チャンネル使用）
 
 ## インストール
+
+### VCCを使用する場合（推奨）
+
+1. VRChat Creator Companionを開く
+2. "Settings" → "User Packages" に移動
+3. "Add Repository" をクリック
+4. このリポジトリのURLを入力: `https://github.com/natane010/natane_engine_Toon_Shader.git`
+5. プロジェクトの "Manage Packages" から "Natane Toon Shader" を追加
+
+### 手動インストール
 
 1. このリポジトリをクローンまたはダウンロード
 2. `Assets` フォルダをUnityプロジェクトにコピー
@@ -253,6 +275,29 @@ Shadow Color: 青みがかったグレー（例: RGB 0.5, 0.5, 0.6）
    - 推奨値: 0.3-0.5 （ライトの数によらず一定の明るさを保つ）
    - 用途: 複数のライトを使用する環境で、明るくなりすぎるのを防ぐ
 
+#### マスクテクスチャの使用方法
+
+各エフェクトには対応するマスクテクスチャを設定できます：
+
+**1. マスクテクスチャの準備**
+- グレースケール画像を用意（赤チャンネルのみ使用）
+- 白色（RGB 255,255,255）= エフェクト100%適用
+- 黒色（RGB 0,0,0）= エフェクト適用なし
+- グレー（中間値）= 部分的な適用
+
+**2. マスクの適用**
+1. エフェクトを有効化（例: `Enable Specular`）
+2. `Use [Effect] Mask` にチェック
+3. マスクテクスチャを設定
+
+**使用例**:
+- **Specular Mask**: 目や唇だけにハイライトを適用
+- **Rim Mask**: 髪や服にのみリムライトを適用
+- **SSS Mask**: 肌や耳にのみSSSを適用
+- **MatCap Mask**: 髪の特定部分にのみMatCapを適用
+- **Emission Mask**: 発光パターンの制御
+- **Dissolve Mask**: 溶解効果の領域制御
+
 #### バーチャル表現（VRChat向け）
 
 **1. Dissolve（溶解効果）**
@@ -390,6 +435,19 @@ MIT License
 プルリクエストやイシューの報告を歓迎します！
 
 ## 更新履歴
+
+### v1.7.0 (2025-10-29)
+- **マスクテクスチャ対応** 追加
+  - 各エフェクトにマスクテクスチャを設定可能
+  - Specular Mask, Rim Mask, SSS Mask, MatCap Mask, Emission Mask, Dissolve Mask
+  - ピクセル単位でのエフェクト制御が可能
+  - グレースケールで部分的な適用も可能
+- **VCC (VRChat Creator Companion) 対応**
+  - package.json 追加
+  - VCCから直接インストール可能
+  - バージョン管理の改善
+- 全シェーダーバリアント（Opaque/Cutout/Transparent）でマスク機能対応
+- ShaderGUI更新（今後のアップデートで完全対応予定）
 
 ### v1.6.0 (2025-10-29)
 - **Shader Variant 最適化システム** 追加

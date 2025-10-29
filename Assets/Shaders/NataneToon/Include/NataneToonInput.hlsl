@@ -28,20 +28,24 @@ CBUFFER_START(UnityPerMaterial)
     half4 _SpecularColor;
     float _SpecularSize;
     float _SpecularSoftness;
+    sampler2D _SpecularMask;
 
     // Rim Light
     half4 _RimColor;
     float _RimPower;
     float _RimIntensity;
+    sampler2D _RimMask;
 
     // MatCap
     sampler2D _MatCapTex;
     float _MatCapIntensity;
     float _MatCapBlendMode;
+    sampler2D _MatCapMask;
 
     // Emission
     half4 _EmissionColor;
     sampler2D _EmissionMap;
+    sampler2D _EmissionMask;
 
     // Normal Map
     sampler2D _BumpMap;
@@ -54,6 +58,7 @@ CBUFFER_START(UnityPerMaterial)
     float _SSSDistortion;
     sampler2D _ThicknessMap;
     float _ThicknessScale;
+    sampler2D _SSSMask;
 
     // Virtual Expression - Dissolve
     float _DissolveAmount;
@@ -61,6 +66,7 @@ CBUFFER_START(UnityPerMaterial)
     float _DissolveEdgeWidth;
     half4 _DissolveEdgeColor;
     float _DissolveEdgeIntensity;
+    sampler2D _DissolveMask;
 
     // Virtual Expression - Hue Shift
     float _HueShift;

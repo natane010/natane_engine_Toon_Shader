@@ -28,12 +28,16 @@ Shader "Natane/Toon Shader"
         _SpecularColor ("Specular Color", Color) = (1,1,1,1)
         _SpecularSize ("Specular Size", Range(0, 1)) = 0.1
         _SpecularSoftness ("Specular Softness", Range(0.001, 1)) = 0.05
+        [Toggle(_SPECULAR_MASK)] _UseSpecularMask ("Use Specular Mask", Float) = 0
+        _SpecularMask ("Specular Mask", 2D) = "white" {}
 
         [Header(Rim Light)]
         [Toggle(_RIM_LIGHT)] _RimLight ("Enable Rim Light", Float) = 0
         _RimColor ("Rim Color", Color) = (1,1,1,1)
         _RimPower ("Rim Power", Range(0.1, 10)) = 3
         _RimIntensity ("Rim Intensity", Range(0, 5)) = 1
+        [Toggle(_RIM_MASK)] _UseRimMask ("Use Rim Mask", Float) = 0
+        _RimMask ("Rim Mask", 2D) = "white" {}
 
         [Header(Subsurface Scattering)]
         [Toggle(_SSS)] _SSS ("Enable SSS", Float) = 0
@@ -44,12 +48,16 @@ Shader "Natane/Toon Shader"
         [Toggle(_THICKNESS_MAP)] _UseThicknessMap ("Use Thickness Map", Float) = 0
         _ThicknessMap ("Thickness Map", 2D) = "white" {}
         _ThicknessScale ("Thickness Scale", Range(0, 1)) = 0.5
+        [Toggle(_SSS_MASK)] _UseSSS_Mask ("Use SSS Mask", Float) = 0
+        _SSSMask ("SSS Mask", 2D) = "white" {}
 
         [Header(MatCap)]
         [Toggle(_MATCAP)] _MatCap ("Enable MatCap", Float) = 0
         _MatCapTex ("MatCap Texture", 2D) = "black" {}
         _MatCapIntensity ("MatCap Intensity", Range(0, 2)) = 1
         [Enum(Add,0,Multiply,1,Replace,2)] _MatCapBlendMode ("MatCap Blend Mode", Float) = 0
+        [Toggle(_MATCAP_MASK)] _UseMatCapMask ("Use MatCap Mask", Float) = 0
+        _MatCapMask ("MatCap Mask", 2D) = "white" {}
 
         [Header(Outline)]
         [Toggle(_OUTLINE)] _Outline ("Enable Outline", Float) = 0
@@ -65,6 +73,8 @@ Shader "Natane/Toon Shader"
         [Toggle(_EMISSION_PULSE)] _EmissionPulse ("Emission Pulse", Float) = 0
         _EmissionPulseSpeed ("Emission Pulse Speed", Float) = 1
         _EmissionPulseAmplitude ("Emission Pulse Amplitude", Range(0, 1)) = 0.5
+        [Toggle(_EMISSION_MASK)] _UseEmissionMask ("Use Emission Mask", Float) = 0
+        _EmissionMask ("Emission Mask", 2D) = "white" {}
 
         [Header(Virtual Expression)]
         [Toggle(_DISSOLVE)] _Dissolve ("Enable Dissolve", Float) = 0
@@ -73,6 +83,8 @@ Shader "Natane/Toon Shader"
         _DissolveEdgeWidth ("Dissolve Edge Width", Range(0, 0.5)) = 0.1
         [HDR] _DissolveEdgeColor ("Dissolve Edge Color", Color) = (1, 0.5, 0, 1)
         _DissolveEdgeIntensity ("Dissolve Edge Intensity", Range(0, 10)) = 2
+        [Toggle(_DISSOLVE_MASK)] _UseDissolveMask ("Use Dissolve Mask", Float) = 0
+        _DissolveMask ("Dissolve Mask", 2D) = "white" {}
         [Space(10)]
         [Toggle(_HUE_SHIFT)] _HueShiftEnable ("Enable Hue Shift", Float) = 0
         _HueShift ("Hue Shift", Range(0, 1)) = 0
@@ -176,15 +188,21 @@ Shader "Natane/Toon Shader"
             #pragma multi_compile_instancing
             #pragma shader_feature _USE_RAMP
             #pragma shader_feature _SPECULAR
+            #pragma shader_feature _SPECULAR_MASK
             #pragma shader_feature _RIM_LIGHT
+            #pragma shader_feature _RIM_MASK
             #pragma shader_feature _SSS
+            #pragma shader_feature _SSS_MASK
             #pragma shader_feature _THICKNESS_MAP
             #pragma shader_feature _MATCAP
+            #pragma shader_feature _MATCAP_MASK
             #pragma shader_feature _EMISSION
+            #pragma shader_feature _EMISSION_MASK
             #pragma shader_feature _EMISSION_SCROLL
             #pragma shader_feature _EMISSION_PULSE
             #pragma shader_feature _NORMALMAP
             #pragma shader_feature _DISSOLVE
+            #pragma shader_feature _DISSOLVE_MASK
             #pragma shader_feature _HUE_SHIFT
 
             #include "Include/NataneToonCore.hlsl"
@@ -209,10 +227,13 @@ Shader "Natane/Toon Shader"
             #pragma multi_compile_instancing
             #pragma shader_feature _USE_RAMP
             #pragma shader_feature _SPECULAR
+            #pragma shader_feature _SPECULAR_MASK
             #pragma shader_feature _SSS
+            #pragma shader_feature _SSS_MASK
             #pragma shader_feature _THICKNESS_MAP
             #pragma shader_feature _NORMALMAP
             #pragma shader_feature _DISSOLVE
+            #pragma shader_feature _DISSOLVE_MASK
             #pragma shader_feature _HUE_SHIFT
 
             #include "Include/NataneToonCore.hlsl"
