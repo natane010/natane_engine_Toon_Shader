@@ -14,6 +14,14 @@ Shader "Natane/Toon Shader"
         _ShadowSharpness ("Shadow Sharpness", Range(0.001, 1)) = 0.1
         _ShadowOffset ("Shadow Offset", Range(-1, 1)) = 0
 
+        [Header(Advanced Lighting)]
+        _ShadowReceive ("Shadow Receive", Range(0, 1)) = 1
+        _ShadowMaxDarkness ("Shadow Max Darkness", Range(0, 1)) = 0
+        _LightMinInfluence ("Light Min Influence", Range(0, 1)) = 0
+        _LightMaxInfluence ("Light Max Influence", Range(1, 5)) = 2
+        _BacklightIntensity ("Backlight Intensity", Range(0, 2)) = 0
+        _BacklightColor ("Backlight Color", Color) = (1, 1, 1, 1)
+
         [Header(Specular)]
         [Toggle(_SPECULAR)] _Specular ("Enable Specular", Float) = 0
         _SpecularColor ("Specular Color", Color) = (1,1,1,1)

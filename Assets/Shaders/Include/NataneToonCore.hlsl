@@ -18,6 +18,14 @@ CBUFFER_START(UnityPerMaterial)
     float _ShadowSharpness;
     float _ShadowOffset;
 
+    // Advanced Lighting Controls
+    float _ShadowReceive;
+    float _ShadowMaxDarkness;
+    float _LightMinInfluence;
+    float _LightMaxInfluence;
+    float _BacklightIntensity;
+    half4 _BacklightColor;
+
     // Specular
     half4 _SpecularColor;
     float _SpecularSize;
@@ -194,8 +202,18 @@ half4 frag(v2f i) : SV_Target
         atten *= 1.0 / (1.0 + distSqr * 0.1);
     #endif
 
+    // Apply shadow receive strength
+    atten = lerp(1.0, atten, _ShadowReceive);
+
     float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
     float ndotl = max(0.0, dot(worldNormal, lightDir));
+
+    // Backlight calculation (light from behind)
+    float backlight = 0.0;
+    #ifdef UNITY_PASS_FORWARDBASE
+        float backlightDot = max(0.0, dot(worldNormal, -lightDir));
+        backlight = pow(backlightDot, 4.0) * _BacklightIntensity;
+    #endif
 
     // Toon Shading or Ramp
     float3 lighting;
@@ -206,12 +224,24 @@ half4 frag(v2f i) : SV_Target
         lighting = lerp(_ShadowColor.rgb, half3(1.0, 1.0, 1.0), toon);
     #endif
 
+    // Apply shadow max darkness limit
+    lighting = max(lighting, _ShadowMaxDarkness);
+
     // Apply light color
     lighting *= _LightColor0.rgb;
 
+    // Clamp light influence
+    float lightLuminance = dot(lighting, float3(0.299, 0.587, 0.114));
+    lightLuminance = clamp(lightLuminance, _LightMinInfluence, _LightMaxInfluence);
+    lighting = normalize(lighting + 0.001) * lightLuminance;
+
     // Add ambient lighting (only in base pass)
     #ifdef UNITY_PASS_FORWARDBASE
-        lighting += ShadeSH9(float4(worldNormal, 1.0));
+        float3 ambient = ShadeSH9(float4(worldNormal, 1.0));
+        lighting += ambient;
+
+        // Add backlight
+        lighting += backlight * _BacklightColor.rgb * _LightColor0.rgb;
     #endif
 
     // Apply lighting to color

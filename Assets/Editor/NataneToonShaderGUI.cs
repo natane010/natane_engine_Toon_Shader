@@ -11,6 +11,7 @@ public class NataneToonShaderGUI : ShaderGUI
     // Foldout states
     private static bool showMainTexture = true;
     private static bool showShading = true;
+    private static bool showAdvancedLighting = true;
     private static bool showSpecular = true;
     private static bool showRimLight = true;
     private static bool showSSS = true;
@@ -31,6 +32,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
         DrawMainTextureSection();
         DrawShadingSection();
+        DrawAdvancedLightingSection();
         DrawSpecularSection();
         DrawRimLightSection();
         DrawSSSSection();
@@ -76,6 +78,36 @@ public class NataneToonShaderGUI : ShaderGUI
             }
 
             DrawProperty("_ShadowOffset", "Shadow Offset");
+
+            EditorGUI.indentLevel--;
+            EditorGUILayout.Space();
+        }
+    }
+
+    private void DrawAdvancedLightingSection()
+    {
+        showAdvancedLighting = EditorGUILayout.Foldout(showAdvancedLighting, "Advanced Lighting", true, EditorStyles.foldoutHeader);
+        if (showAdvancedLighting)
+        {
+            EditorGUI.indentLevel++;
+
+            DrawProperty("_ShadowReceive", "Shadow Receive");
+            EditorGUILayout.HelpBox("Controls how much shadows from other objects affect this material. 1 = full shadows, 0 = no shadows.", MessageType.Info);
+
+            DrawProperty("_ShadowMaxDarkness", "Shadow Max Darkness");
+            EditorGUILayout.HelpBox("Minimum brightness in shadows. 0 = fully dark, 1 = no darkening. Prevents shadows from being too black.", MessageType.Info);
+
+            DrawProperty("_LightMinInfluence", "Light Min Influence");
+            DrawProperty("_LightMaxInfluence", "Light Max Influence");
+            EditorGUILayout.HelpBox("Min/Max control the brightness range. Min prevents too dark, Max prevents overexposure.", MessageType.Info);
+
+            EditorGUILayout.Space();
+            DrawProperty("_BacklightIntensity", "Backlight Intensity");
+            if (targetMaterial.GetFloat("_BacklightIntensity") > 0)
+            {
+                DrawProperty("_BacklightColor", "Backlight Color");
+                EditorGUILayout.HelpBox("Backlight adds illumination when light is behind the object, creating a rim-like effect.", MessageType.Info);
+            }
 
             EditorGUI.indentLevel--;
             EditorGUILayout.Space();
