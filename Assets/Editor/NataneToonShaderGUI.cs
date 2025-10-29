@@ -13,6 +13,7 @@ public class NataneToonShaderGUI : ShaderGUI
     private static bool showShading = true;
     private static bool showSpecular = true;
     private static bool showRimLight = true;
+    private static bool showSSS = true;
     private static bool showMatCap = true;
     private static bool showOutline = true;
     private static bool showEmission = true;
@@ -32,6 +33,7 @@ public class NataneToonShaderGUI : ShaderGUI
         DrawShadingSection();
         DrawSpecularSection();
         DrawRimLightSection();
+        DrawSSSSection();
         DrawMatCapSection();
         DrawOutlineSection();
         DrawEmissionSection();
@@ -115,6 +117,40 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_RimColor", "Rim Color");
                 DrawProperty("_RimPower", "Rim Power");
                 DrawProperty("_RimIntensity", "Rim Intensity");
+            }
+
+            EditorGUI.indentLevel--;
+            EditorGUILayout.Space();
+        }
+    }
+
+    private void DrawSSSSection()
+    {
+        showSSS = EditorGUILayout.Foldout(showSSS, "Subsurface Scattering (SSS)", true, EditorStyles.foldoutHeader);
+        if (showSSS)
+        {
+            EditorGUI.indentLevel++;
+
+            bool enableSSS = DrawToggle("_SSS", "_SSS", "Enable SSS");
+
+            if (enableSSS)
+            {
+                DrawProperty("_SSSColor", "SSS Color");
+                DrawProperty("_SSSIntensity", "SSS Intensity");
+                DrawProperty("_SSSPower", "SSS Power");
+                DrawProperty("_SSSDistortion", "SSS Distortion");
+
+                EditorGUILayout.Space();
+                bool useThicknessMap = DrawToggle("_THICKNESS_MAP", "_UseThicknessMap", "Use Thickness Map");
+
+                if (useThicknessMap)
+                {
+                    DrawProperty("_ThicknessMap", "Thickness Map");
+                    EditorGUILayout.HelpBox("White = thin (more SSS), Black = thick (less SSS)", MessageType.Info);
+                }
+
+                DrawProperty("_ThicknessScale", "Thickness Scale");
+                EditorGUILayout.HelpBox("SSS simulates light passing through the object. Great for skin, leaves, and thin materials.", MessageType.Info);
             }
 
             EditorGUI.indentLevel--;

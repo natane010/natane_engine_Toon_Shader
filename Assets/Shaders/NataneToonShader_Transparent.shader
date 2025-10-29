@@ -26,6 +26,16 @@ Shader "Natane/Toon Shader (Transparent)"
         _RimPower ("Rim Power", Range(0.1, 10)) = 3
         _RimIntensity ("Rim Intensity", Range(0, 5)) = 1
 
+        [Header(Subsurface Scattering)]
+        [Toggle(_SSS)] _SSS ("Enable SSS", Float) = 0
+        _SSSColor ("SSS Color", Color) = (1, 0.5, 0.5, 1)
+        _SSSIntensity ("SSS Intensity", Range(0, 2)) = 1
+        _SSSPower ("SSS Power", Range(0.1, 10)) = 3
+        _SSSDistortion ("SSS Distortion", Range(0, 1)) = 0.5
+        [Toggle(_THICKNESS_MAP)] _UseThicknessMap ("Use Thickness Map", Float) = 0
+        _ThicknessMap ("Thickness Map", 2D) = "white" {}
+        _ThicknessScale ("Thickness Scale", Range(0, 1)) = 0.5
+
         [Header(MatCap)]
         [Toggle(_MATCAP)] _MatCap ("Enable MatCap", Float) = 0
         _MatCapTex ("MatCap Texture", 2D) = "black" {}
@@ -146,6 +156,8 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature _USE_RAMP
             #pragma shader_feature _SPECULAR
             #pragma shader_feature _RIM_LIGHT
+            #pragma shader_feature _SSS
+            #pragma shader_feature _THICKNESS_MAP
             #pragma shader_feature _MATCAP
             #pragma shader_feature _EMISSION
             #pragma shader_feature _NORMALMAP
@@ -173,6 +185,8 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma multi_compile_instancing
             #pragma shader_feature _USE_RAMP
             #pragma shader_feature _SPECULAR
+            #pragma shader_feature _SSS
+            #pragma shader_feature _THICKNESS_MAP
             #pragma shader_feature _NORMALMAP
             #define TRANSPARENT_VARIANT
 

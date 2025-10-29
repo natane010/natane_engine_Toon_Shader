@@ -33,6 +33,7 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ### エフェクト
 - **リムライト** - エッジ発光効果（色、強度、範囲調整可能）
+- **サブサーフェススキャッタリング（SSS）** - 肌や葉など薄い物体の透過表現（Thickness Map対応）
 - **MatCap** - スフィアマップによる疑似反射・質感表現（Add/Multiply/Replaceブレンド）
 - **スペキュラハイライト** - アニメ調のシャープなハイライト
 - **発光（Emission）** - HDRカラー対応の自己発光
@@ -43,6 +44,7 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 - **法線マップ** - ノーマルマップ対応（強度調整可能）
 - **発光マップ** - エミッションテクスチャ
 - **ランプテクスチャ** - カスタムライティンググラデーション
+- **Thicknessマップ** - SSS用の厚みマップ（白=薄い、黒=厚い）
 
 ## インストール
 
@@ -123,6 +125,17 @@ Shadow Color: 青みがかったグレー（例: RGB 0.5, 0.5, 0.6）
 1. `Enable Specular` にチェック
 2. Specular Size: ハイライトのサイズ
 3. Specular Softness: ハイライトのぼかし具合
+
+#### サブサーフェススキャッタリング（SSS）
+1. `Enable SSS` にチェック
+2. SSS Color: 透過光の色（肌の場合は赤みがかった色）
+3. SSS Intensity: 透過の強さ（0.5-1.5が一般的）
+4. SSS Power: 透過の範囲（3-5が一般的）
+5. SSS Distortion: 透過の歪み（0.3-0.7が一般的）
+6. Use Thickness Map: オプション（白=薄い、黒=厚い）
+7. Thickness Scale: 厚みの倍率
+
+**用途**: 肌、耳、指、葉っぱ、紙など薄い素材
 
 ## フォルダ構造
 
@@ -218,6 +231,14 @@ MIT License
 プルリクエストやイシューの報告を歓迎します！
 
 ## 更新履歴
+
+### v1.2.0 (2025-10-29)
+- **Subsurface Scattering (SSS)** 機能追加
+  - 肌、耳、指などの透過表現
+  - Thickness Map 対応
+  - 強度、色、歪みを調整可能
+- SSS 用の ShaderGUI 追加
+- 全バリアント（Opaque/Cutout/Transparent）でSSS対応
 
 ### v1.1.0 (2025-10-29)
 - HLSL形式への変換

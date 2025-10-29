@@ -40,6 +40,14 @@ CBUFFER_START(UnityPerMaterial)
     // Normal Map
     sampler2D _BumpMap;
     float _BumpScale;
+
+    // Subsurface Scattering
+    half4 _SSSColor;
+    float _SSSIntensity;
+    float _SSSPower;
+    float _SSSDistortion;
+    sampler2D _ThicknessMap;
+    float _ThicknessScale;
 CBUFFER_END
 
 struct appdata
@@ -112,6 +120,24 @@ float3 RimLighting(float3 normal, float3 viewDir, float power, float intensity)
     float rim = 1.0 - saturate(dot(normal, viewDir));
     rim = pow(rim, power) * intensity;
     return rim * _RimColor.rgb;
+}
+
+// Subsurface Scattering (Translucency)
+float3 SubsurfaceScattering(float3 normal, float3 lightDir, float3 viewDir, float thickness, float atten)
+{
+    // Distort the normal for more realistic scattering
+    float3 distortedNormal = normal + normalize(viewDir) * _SSSDistortion;
+
+    // Calculate back-lit effect (light passing through the object)
+    float backLight = max(0.0, dot(-normalize(distortedNormal), lightDir));
+
+    // Apply power and thickness
+    backLight = pow(backLight, _SSSPower) * (1.0 - thickness);
+
+    // Apply intensity and attenuation
+    backLight *= _SSSIntensity * atten;
+
+    return backLight * _SSSColor.rgb * _LightColor0.rgb;
 }
 
 // Vertex Shader
@@ -195,6 +221,19 @@ half4 frag(v2f i) : SV_Target
     #ifdef _SPECULAR
         float spec = SpecularHighlight(worldNormal, viewDir, lightDir, _SpecularSize, _SpecularSoftness);
         col.rgb += spec * _SpecularColor.rgb * _LightColor0.rgb * atten;
+    #endif
+
+    // Subsurface Scattering
+    #ifdef _SSS
+        float thickness = 1.0;
+        #ifdef _THICKNESS_MAP
+            thickness = tex2D(_ThicknessMap, i.uv).r * _ThicknessScale;
+        #else
+            thickness = _ThicknessScale;
+        #endif
+
+        float3 sss = SubsurfaceScattering(worldNormal, lightDir, viewDir, thickness, atten);
+        col.rgb += sss;
     #endif
 
     // Rim Light (only in base pass)
