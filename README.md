@@ -144,7 +144,7 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 タグを指定することで特定のバージョンをインストールできます:
 ```
-https://github.com/natane010/natane_engine_Toon_Shader.git#v1.11.0
+https://github.com/natane010/natane_engine_Toon_Shader.git#v1.11.1
 ```
 
 ### 手動インストール
@@ -643,6 +643,14 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
 詳細は [PARTICLE_SYSTEM_GUIDE.md](PARTICLE_SYSTEM_GUIDE.md) を参照してください。
 
 ## 更新履歴
+
+### v1.11.1 (2025-10-30)
+- **配布方法の変更**
+  - VCC（VRChat Creator Companion）配布を中止
+  - Unity Package Manager（Git URL）のみでの配布に統一
+  - index.json を削除
+  - README インストール方法を Unity Package Manager に変更
+  - より柔軟な配布方法（Public/Privateリポジトリ対応）
 
 ### v1.11.0 (2025-10-30)
 - **🛠️ デザイナー支援ツールセット** 追加（Phase 1-3完全実装）
