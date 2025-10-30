@@ -1,21 +1,38 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.0)
+[![Version](https://img.shields.io/badge/version-1.00.1-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.00.1)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![VRC Light Volumes](https://img.shields.io/badge/VRC_Light_Volumes-対応-brightgreen)](https://github.com/REDSIM/VRCLightVolumes)
 
 汎用的なセルルック/NPR調に対応したUnity Built-in Render Pipeline用のトゥーンシェーダーです。
 lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥーンシェーダーを参考に設計されています。
 
+**完全日本語UI対応** - すべてのインスペクターとエディタウィンドウが日本語で利用可能
+
 ## 📌 ブランチ情報
 
-- **v1.00.0** - 安定版（推奨：日本語UIフル対応）
+- **v1.00.0** - 安定版（日本語UI完全対応 + VRC Light Volumes対応）
 
-特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.0`）。
+特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.00.1`）。
 
 ## ✨ 新機能
 
-### 🛠️ デザイナー支援ツール v1.11.0（NEW!）
+### 🌟 VRC Light Volumes 対応 v1.00.1（NEW!）
+次世代ボクセルベースのライティングシステムに完全対応しました：
+
+- **ボクセルベースライティング**: VRChatワールドで部分的な照明が可能に
+- **自動フォールバック**: 非対応環境では自動的にUnityライトプローブを使用
+- **カラースペキュラー**: Light Volumeからリアルなスペキュラーを生成
+- **強度調整**: Light Volumeライティングの強度を自由に調整
+- **完全日本語UI**: インスペクターとカスタムエディタが完全日本語化
+
+#### VRC Light Volumes とは？
+RED_SIMが開発したVRChat向けの次世代ライティングシステムで、従来のライトプローブよりも正確な部分照明を実現します。自動販売機の光が上半身だけを照らすなど、よりリアルな光の表現が可能になります。
+
+**対応ワールドを探す**: ハッシュタグ `#VRCLightVolumesReady` で検索
+
+### 🛠️ デザイナー支援ツール v1.11.0
 非エンジニアのデザイナーでも安心して使える強力なツールセットを追加しました：
 
 #### 1. マテリアルバリデーター
