@@ -104,12 +104,13 @@ Assets/
 │   └── NataneToon/
 │       ├── NataneToonShaderGUI.cs               # カスタムインスペクター
 │       ├── ShaderVariantCollector.cs            # Variant収集ツール
+│       ├── ShaderPrewarmingEditor.cs            # Shader事前ウォーミング（エディター専用）
 │       └── MigrationTools/
 │           ├── LilToonMigrationTool.cs          # lilToon変換ツール
 │           ├── YMToonMigrationTool.cs           # YMToon変換ツール
 │           └── BatchMaterialConverter.cs        # 汎用変換ツール
 ├── Scripts/
-│   └── ShaderPrewarming.cs                       # Shader事前ウォーミング
+│   └── ParticleSystem/                            # パーティクルシステム関連
 ├── ShaderVariants/
 │   └── NataneToonShaderVariants.shadervariants   # Variant Collection
 ├── Materials/
@@ -164,10 +165,21 @@ Natane Toon Shaderは多機能なため、多数のshader variantsが生成さ�
 
 ### Prewarmingの設定
 
-1. 空のGameObjectを作成
-2. `ShaderPrewarming` スクリプトをアタッチ
-3. 作成したShaderVariantCollectionをアサイン
-4. `Prewarm On Awake` にチェック
+エディター専用の自動プリウォームシステムを使用します（**VRChat対応 - ランタイムスクリプト不要**）：
+
+1. **自動設定（推奨）**:
+   - ビルド時に自動的にシェーダーをプリウォーム
+   - `Tools > Natane > Shader Prewarming > Settings` で設定変更可能
+   - デフォルトで有効
+
+2. **手動実行**:
+   - `Tools > Natane > Shader Prewarming > Prewarm All Shaders` を実行
+   - または `Tools > Natane > Shader Prewarming > Prewarm Shader Variant Collection` を実行
+
+3. **動作仕様**:
+   - エディター内でのみ動作（ランタイムでは実行されない）
+   - VRChat SDKのビルド前に自動実行
+   - シーン内のすべてのNatane Toonマテリアルを自動検出
 
 ### 効果
 
@@ -449,6 +461,21 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
 
 ## 更新履歴
 
+### v1.9.1 (2025-10-30)
+- **Shader Prewarming システムの改善**
+  - ランタイムスクリプトからエディター専用実装に変更
+  - **VRChat完全対応**（ランタイムコード不要）
+  - ビルド前に自動的にシェーダーをプリウォーム
+  - `Tools > Natane > Shader Prewarming` メニュー追加
+  - 設定ウィンドウで動作をカスタマイズ可能
+  - 自動マテリアル検出機能
+- ドキュメント更新
+  - README.md: エディター専用プリウォームの説明
+  - SHADER_VARIANTS.md: VRChat対応の詳細説明
+- **破壊的変更**: `Assets/Scripts/ShaderPrewarming.cs`（ランタイム版）を削除
+  - VRChatユーザーは影響なし（元々使用不可だった）
+  - 非VRChatユーザーでランタイムプリウォームが必要な場合は手動実装が必要
+
 ### v1.9.0 (2025-10-30)
 - **パーティクルシステム エディタ拡張** 追加
   - ParticleEffectPreset（ScriptableObject）システム
@@ -497,8 +524,9 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
     - 基本/高度/バーチャル表現のvariant自動収集
     - ビルドサイズ推定機能
     - カスタマイズ可能な収集オプション
-  - ShaderPrewarming スクリプト
-    - ランタイムでのshader事前ウォーミング
+  - ShaderPrewarming エディター拡張
+    - エディター/ビルド時のshader事前ウォーミング
+    - VRChat対応（ランタイムスクリプト不要）
     - 初回ロード時のスタッター防止
   - ShaderVariantCollection サンプル
   - 詳細なドキュメント（SHADER_VARIANTS.md）

@@ -1,9 +1,9 @@
 {
   "name": "com.natane.toonshader",
   "displayName": "Natane Toon Shader",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "unity": "2019.4",
-  "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline supporting characters, props, backgrounds, and effects. Features cubemap reflection, environmental rim, parallax mapping, refraction, advanced lighting, SSS, virtual expressions, mask textures, particle system editor, and VRChat optimization.",
+  "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline supporting characters, props, backgrounds, and effects. Features cubemap reflection, environmental rim, parallax mapping, refraction, advanced lighting, SSS, virtual expressions, mask textures, particle system editor, editor-only shader prewarming (VRChat-safe), and VRChat optimization.",
   "keywords": [
     "shader",
     "toon",
@@ -29,5 +29,5 @@
   "vpmDependencies": {},
   "legacyFolders": {},
   "legacyFiles": {},
-  "url": "https://github.com/natane010/natane_engine_Toon_Shader/releases/download/v1.9.0/com.natane.toonshader-1.9.0.zip"
+  "url": "https://github.com/natane010/natane_engine_Toon_Shader/releases/download/v1.9.1/com.natane.toonshader-1.9.1.zip"
 }

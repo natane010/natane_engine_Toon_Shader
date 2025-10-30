@@ -68,35 +68,45 @@ ShaderVariantCollectionを使用することで：
 
 ### 3. Prewarmingの設定
 
-#### 方法A: スクリプトで自動Prewarming
+#### エディター専用自動Prewarming（推奨 - VRChat対応）
 
-1. 空のGameObjectを作成
-2. `ShaderPrewarming` スクリプトをアタッチ
-3. `Shader Variants` フィールドに作成したCollectionをアサイン
-4. `Prewarm On Awake` にチェック
+Natane Toon Shaderは**エディター専用の自動プリウォームシステム**を提供しています。
+ランタイムスクリプトが不要なため、VRChatでも安全に使用できます。
+
+**自動設定（推奨）**:
+1. `Tools > Natane > Shader Prewarming > Settings` を開く
+2. 以下の設定を確認：
+   - `Prewarm on Build`: ビルド前に自動実行（デフォルト: 有効）
+   - `Auto-Find Materials`: プロジェクト内のマテリアルを自動検出（デフォルト: 有効）
+
+**手動実行**:
+- `Tools > Natane > Shader Prewarming > Prewarm All Shaders`: すべてをプリウォーム
+- `Tools > Natane > Shader Prewarming > Prewarm Shader Variant Collection`: Collectionのみプリウォーム
+
+**動作仕様**:
+- エディター内でのみ実行（ランタイムコードなし）
+- VRChat SDKのビルド前に自動実行
+- ShaderVariantCollectionと全Natane Toonマテリアルを検出
+- ビルド時間は増加しますが、実行時のスタッターを防止
+
+#### 旧方式: ランタイムPrewarming（非推奨 - VRChatでは使用不可）
+
+VRChat以外のプロジェクトでランタイムプリウォームが必要な場合：
 
 ```csharp
-public class ShaderPrewarming : MonoBehaviour
+// ゲーム起動時にプリウォーム
+void Start()
 {
-    public ShaderVariantCollection shaderVariants;
-    public bool prewarmOnAwake = true;
-
-    void Awake()
+    ShaderVariantCollection collection = Resources.Load<ShaderVariantCollection>("NataneToonShaderVariants");
+    if (collection != null)
     {
-        if (prewarmOnAwake && shaderVariants != null)
-        {
-            shaderVariants.WarmUp();
-        }
+        collection.WarmUp();
     }
 }
 ```
 
-#### 方法B: 手動でPrewarming
-
-```csharp
-ShaderVariantCollection collection = Resources.Load<ShaderVariantCollection>("NataneToonShaderVariants");
-collection.WarmUp();
-```
+**注意**: VRChatではランタイムスクリプトが実行されないため、上記の方法は使用できません。
+エディター専用の自動プリウォームシステムを使用してください。
 
 ### 4. ビルド設定
 
@@ -255,11 +265,14 @@ A: 以下を確認：
 
 ### Q: 実行時にスタッターが発生する
 
-A: Prewarmingが正しく動作しているか確認：
-- ShaderPrewarmingスクリプトがアタッチされているか
-- CollectionがAssignされているか
-- Awake/Startで実行されているか
-- ログでWarmUp完了を確認
+A: Prewarmingが正しく実行されているか確認：
+- `Tools > Natane > Shader Prewarming > Settings` で `Prewarm on Build` が有効か
+- ビルド前に手動で `Prewarm All Shaders` を実行
+- コンソールログで "Shader prewarming completed" を確認
+- Graphics Settings の `Preloaded Shaders` に ShaderVariantCollection が追加されているか
+
+**VRChatの場合**: エディター専用のプリウォームシステムを使用してください。
+ランタイムスクリプトは実行されません。
 
 ### Q: 収集されたvariant数が予想と異なる
 
