@@ -129,11 +129,24 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ### VCCを使用する場合（推奨）
 
+**方法1: リポジトリURLで追加（推奨）**
+
 1. VRChat Creator Companionを開く
-2. "Settings" → "User Packages" に移動
-3. "Add Repository" をクリック
-4. このリポジトリのURLを入力: `https://github.com/natane010/natane_engine_Toon_Shader.git`
-5. プロジェクトの "Manage Packages" から "Natane Toon Shader" を追加
+2. **Settings** タブを開く
+3. **Packages** セクションの **Add Repository** をクリック
+4. 以下のURLを入力して **Add** をクリック:
+   ```
+   https://github.com/natane010/natane_engine_Toon_Shader
+   ```
+5. プロジェクトを開く
+6. **Manage Project** → **Manage Packages** から "Natane Toon Shader" を追加
+
+**方法2: index.jsonの直接URL（代替）**
+
+リポジトリURLで問題がある場合は、以下の直接URLを使用:
+```
+https://raw.githubusercontent.com/natane010/natane_engine_Toon_Shader/main/index.json
+```
 
 ### 手動インストール
 
