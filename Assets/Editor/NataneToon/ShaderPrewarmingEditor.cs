@@ -191,14 +191,17 @@ namespace NataneToon.Editor
     {
         private const string PREWARM_ENABLED_KEY = "NataneToon_PrewarmOnBuild";
         private const string AUTO_FIND_ENABLED_KEY = "NataneToon_AutoFindVariants";
+        private const string RUNTIME_SCRIPT_PATH = "Assets/Scripts/RuntimeShaderPrewarming.cs";
 
         private bool prewarmOnBuild;
         private bool autoFindMaterials;
+        private bool runtimeScriptExists;
+        private Vector2 scrollPosition;
 
         public static void ShowWindow()
         {
             var window = GetWindow<ShaderPrewarmingSettingsWindow>("Shader Prewarming Settings");
-            window.minSize = new Vector2(400, 200);
+            window.minSize = new Vector2(450, 400);
             window.Show();
         }
 
@@ -206,10 +209,18 @@ namespace NataneToon.Editor
         {
             prewarmOnBuild = EditorPrefs.GetBool(PREWARM_ENABLED_KEY, true);
             autoFindMaterials = EditorPrefs.GetBool(AUTO_FIND_ENABLED_KEY, true);
+            CheckRuntimeScriptExists();
+        }
+
+        private void CheckRuntimeScriptExists()
+        {
+            runtimeScriptExists = System.IO.File.Exists(RUNTIME_SCRIPT_PATH);
         }
 
         private void OnGUI()
         {
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+
             EditorGUILayout.Space(10);
             EditorGUILayout.LabelField("Natane Toon Shader Prewarming Settings", EditorStyles.boldLabel);
             EditorGUILayout.Space(10);
@@ -220,6 +231,10 @@ namespace NataneToon.Editor
                 MessageType.Info);
 
             EditorGUILayout.Space(10);
+
+            // === Editor-Only Prewarming Section ===
+            EditorGUILayout.LabelField("Editor-Only Prewarming (VRChat Safe)", EditorStyles.boldLabel);
+            EditorGUILayout.Space(5);
 
             // Prewarm on build setting
             EditorGUI.BeginChangeCheck();
@@ -278,6 +293,231 @@ namespace NataneToon.Editor
             EditorGUILayout.HelpBox(
                 "Note: This system is VRChat-safe as it only runs in the Unity Editor, not at runtime.",
                 MessageType.None);
+
+            EditorGUILayout.Space(20);
+            DrawSeparator();
+            EditorGUILayout.Space(20);
+
+            // === Runtime Prewarming Section ===
+            EditorGUILayout.LabelField("Runtime Prewarming (Non-VRChat Only)", EditorStyles.boldLabel);
+            EditorGUILayout.Space(5);
+
+            EditorGUILayout.HelpBox(
+                "WARNING: Runtime prewarming scripts DO NOT work in VRChat!\n" +
+                "Only enable this for non-VRChat projects where you need runtime shader prewarming.",
+                MessageType.Warning);
+
+            EditorGUILayout.Space(10);
+
+            // Runtime script status
+            CheckRuntimeScriptExists();
+
+            if (runtimeScriptExists)
+            {
+                EditorGUILayout.HelpBox(
+                    "✓ Runtime prewarming script is ENABLED\n" +
+                    "Location: " + RUNTIME_SCRIPT_PATH,
+                    MessageType.Info);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox(
+                    "✗ Runtime prewarming script is DISABLED",
+                    MessageType.None);
+            }
+
+            EditorGUILayout.Space(10);
+
+            // Generate/Delete buttons
+            using (new EditorGUI.DisabledScope(runtimeScriptExists))
+            {
+                if (GUILayout.Button("Generate Runtime Prewarming Script", GUILayout.Height(30)))
+                {
+                    GenerateRuntimeScript();
+                }
+            }
+
+            EditorGUILayout.Space(5);
+
+            using (new EditorGUI.DisabledScope(!runtimeScriptExists))
+            {
+                if (GUILayout.Button("Delete Runtime Prewarming Script", GUILayout.Height(30)))
+                {
+                    if (EditorUtility.DisplayDialog(
+                        "Delete Runtime Script",
+                        "Are you sure you want to delete the runtime prewarming script?\n\n" +
+                        "This will remove: " + RUNTIME_SCRIPT_PATH,
+                        "Delete",
+                        "Cancel"))
+                    {
+                        DeleteRuntimeScript();
+                    }
+                }
+            }
+
+            EditorGUILayout.Space(10);
+
+            if (runtimeScriptExists)
+            {
+                EditorGUILayout.HelpBox(
+                    "Usage: Add the RuntimeShaderPrewarming component to a GameObject in your scene and assign the ShaderVariantCollection.",
+                    MessageType.Info);
+            }
+
+            EditorGUILayout.EndScrollView();
+        }
+
+        private void DrawSeparator()
+        {
+            EditorGUILayout.Space(5);
+            Rect rect = EditorGUILayout.GetControlRect(false, 1);
+            EditorGUI.DrawRect(rect, new Color(0.5f, 0.5f, 0.5f, 1));
+            EditorGUILayout.Space(5);
+        }
+
+        private void GenerateRuntimeScript()
+        {
+            string scriptContent = @"using UnityEngine;
+
+/// <summary>
+/// Runtime Shader Prewarming Script for Natane Toon Shader
+/// Warms up shader variants at runtime to prevent compilation stutters
+///
+/// WARNING: This script does NOT work in VRChat!
+/// For VRChat projects, use the editor-only prewarming system instead.
+/// </summary>
+public class RuntimeShaderPrewarming : MonoBehaviour
+{
+    [Header(""Shader Variant Collection"")]
+    [Tooltip(""Reference to the ShaderVariantCollection asset"")]
+    public ShaderVariantCollection shaderVariants;
+
+    [Header(""Prewarming Options"")]
+    [Tooltip(""Warm shaders on Awake (immediate)"")]
+    public bool prewarmOnAwake = true;
+
+    [Tooltip(""Warm shaders on Start (delayed)"")]
+    public bool prewarmOnStart = false;
+
+    [Tooltip(""Show debug logs"")]
+    public bool showDebugLogs = false;
+
+    private void Awake()
+    {
+        if (prewarmOnAwake && shaderVariants != null)
+        {
+            PrewarmShaders();
+        }
+    }
+
+    private void Start()
+    {
+        if (prewarmOnStart && !prewarmOnAwake && shaderVariants != null)
+        {
+            PrewarmShaders();
+        }
+    }
+
+    /// <summary>
+    /// Manually prewarm shader variants
+    /// Call this method when you want to prewarm shaders at a specific time
+    /// </summary>
+    public void PrewarmShaders()
+    {
+        if (shaderVariants == null)
+        {
+            Debug.LogWarning(""[RuntimeShaderPrewarming] No ShaderVariantCollection assigned!"");
+            return;
+        }
+
+        if (showDebugLogs)
+        {
+            Debug.Log($""[RuntimeShaderPrewarming] Starting shader prewarming...\n"" +
+                     $""Shader Count: {shaderVariants.shaderCount}\n"" +
+                     $""Variant Count: {shaderVariants.variantCount}"");
+        }
+
+        float startTime = Time.realtimeSinceStartup;
+
+        // Warm up all shader variants in the collection
+        shaderVariants.WarmUp();
+
+        float elapsedTime = Time.realtimeSinceStartup - startTime;
+
+        if (showDebugLogs)
+        {
+            Debug.Log($""[RuntimeShaderPrewarming] Shader prewarming completed in {elapsedTime:F3} seconds"");
+        }
+    }
+}
+";
+
+            try
+            {
+                // Ensure directory exists
+                string directory = System.IO.Path.GetDirectoryName(RUNTIME_SCRIPT_PATH);
+                if (!System.IO.Directory.Exists(directory))
+                {
+                    System.IO.Directory.CreateDirectory(directory);
+                }
+
+                // Write script file
+                System.IO.File.WriteAllText(RUNTIME_SCRIPT_PATH, scriptContent);
+
+                // Refresh AssetDatabase
+                AssetDatabase.Refresh();
+
+                Debug.Log($"[Natane Toon] Runtime prewarming script generated at: {RUNTIME_SCRIPT_PATH}");
+                EditorUtility.DisplayDialog(
+                    "Script Generated",
+                    "Runtime prewarming script has been generated successfully!\n\n" +
+                    "Location: " + RUNTIME_SCRIPT_PATH + "\n\n" +
+                    "Usage: Add this component to a GameObject in your scene and assign the ShaderVariantCollection.",
+                    "OK");
+
+                CheckRuntimeScriptExists();
+
+                // Ping the asset in the Project window
+                EditorApplication.delayCall += () =>
+                {
+                    var asset = AssetDatabase.LoadAssetAtPath<MonoScript>(RUNTIME_SCRIPT_PATH);
+                    if (asset != null)
+                    {
+                        EditorGUIUtility.PingObject(asset);
+                    }
+                };
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[Natane Toon] Failed to generate runtime script: {ex.Message}");
+                EditorUtility.DisplayDialog("Error", "Failed to generate runtime script:\n" + ex.Message, "OK");
+            }
+        }
+
+        private void DeleteRuntimeScript()
+        {
+            try
+            {
+                if (System.IO.File.Exists(RUNTIME_SCRIPT_PATH))
+                {
+                    // Delete the script file
+                    AssetDatabase.DeleteAsset(RUNTIME_SCRIPT_PATH);
+                    AssetDatabase.Refresh();
+
+                    Debug.Log($"[Natane Toon] Runtime prewarming script deleted: {RUNTIME_SCRIPT_PATH}");
+                    EditorUtility.DisplayDialog(
+                        "Script Deleted",
+                        "Runtime prewarming script has been deleted successfully.",
+                        "OK");
+
+                    CheckRuntimeScriptExists();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[Natane Toon] Failed to delete runtime script: {ex.Message}");
+                EditorUtility.DisplayDialog("Error", "Failed to delete runtime script:\n" + ex.Message, "OK");
+            }
         }
     }
 }

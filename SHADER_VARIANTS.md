@@ -89,24 +89,29 @@ Natane Toon Shaderは**エディター専用の自動プリウォームシステ
 - ShaderVariantCollectionと全Natane Toonマテリアルを検出
 - ビルド時間は増加しますが、実行時のスタッターを防止
 
-#### 旧方式: ランタイムPrewarming（非推奨 - VRChatでは使用不可）
+#### ランタイムPrewarming（非VRChatのみ）
 
-VRChat以外のプロジェクトでランタイムプリウォームが必要な場合：
+VRChat以外のプロジェクトでランタイムプリウォームが必要な場合、エディターから簡単に生成できます：
 
-```csharp
-// ゲーム起動時にプリウォーム
-void Start()
-{
-    ShaderVariantCollection collection = Resources.Load<ShaderVariantCollection>("NataneToonShaderVariants");
-    if (collection != null)
-    {
-        collection.WarmUp();
-    }
-}
-```
+**スクリプト生成方法**:
+1. `Tools > Natane > Shader Prewarming > Settings` を開く
+2. "Runtime Prewarming (Non-VRChat Only)" セクションに移動
+3. "Generate Runtime Prewarming Script" をクリック
+4. `Assets/Scripts/RuntimeShaderPrewarming.cs` が自動生成される
 
-**注意**: VRChatではランタイムスクリプトが実行されないため、上記の方法は使用できません。
-エディター専用の自動プリウォームシステムを使用してください。
+**使用方法**:
+1. シーンに空のGameObjectを作成
+2. `RuntimeShaderPrewarming` コンポーネントをアタッチ
+3. `Shader Variants` フィールドにShaderVariantCollectionをアサイン
+4. `Prewarm On Awake` にチェック（デフォルトで有効）
+
+**削除方法**:
+- 設定ウィンドウから "Delete Runtime Prewarming Script" をクリック
+
+⚠️ **重要な注意事項**:
+- VRChatではランタイムスクリプトが実行されないため、この方法は使用できません
+- VRChatプロジェクトでは、エディター専用の自動プリウォームシステムを使用してください
+- 設定ウィンドウにはVRChatユーザー向けの警告が表示されます
 
 ### 4. ビルド設定
 

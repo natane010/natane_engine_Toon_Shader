@@ -181,6 +181,13 @@ Natane Toon Shaderは多機能なため、多数のshader variantsが生成さ�
    - VRChat SDKのビルド前に自動実行
    - シーン内のすべてのNatane Toonマテリアルを自動検出
 
+4. **ランタイムプリウォーム（非VRChatのみ）**:
+   - VRChat以外のプロジェクトでランタイムプリウォームが必要な場合
+   - `Tools > Natane > Shader Prewarming > Settings` を開く
+   - "Runtime Prewarming (Non-VRChat Only)" セクションで "Generate Runtime Prewarming Script" をクリック
+   - 生成された `RuntimeShaderPrewarming.cs` をGameObjectにアタッチ
+   - ⚠️ **警告**: VRChatでは動作しません
+
 ### 効果
 
 - ✅ ビルドサイズを50-80%削減
@@ -469,12 +476,16 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
   - `Tools > Natane > Shader Prewarming` メニュー追加
   - 設定ウィンドウで動作をカスタマイズ可能
   - 自動マテリアル検出機能
+  - **ランタイムスクリプト生成機能** 追加（非VRChatユーザー向け）
+    - 設定ウィンドウからワンクリックで生成/削除可能
+    - `RuntimeShaderPrewarming.cs` を自動生成
+    - VRChatユーザーには警告を表示
 - ドキュメント更新
   - README.md: エディター専用プリウォームの説明
   - SHADER_VARIANTS.md: VRChat対応の詳細説明
 - **破壊的変更**: `Assets/Scripts/ShaderPrewarming.cs`（ランタイム版）を削除
   - VRChatユーザーは影響なし（元々使用不可だった）
-  - 非VRChatユーザーでランタイムプリウォームが必要な場合は手動実装が必要
+  - 非VRChatユーザー: 設定ウィンドウから簡単に再生成可能
 
 ### v1.9.0 (2025-10-30)
 - **パーティクルシステム エディタ拡張** 追加
