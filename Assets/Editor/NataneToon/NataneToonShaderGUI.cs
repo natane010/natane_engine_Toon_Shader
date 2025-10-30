@@ -1,7 +1,12 @@
 using UnityEngine;
 using UnityEditor;
 using System;
+using NataneToon.Editor;
 
+/// <summary>
+/// Custom shader GUI for Natane Toon Shader
+/// Provides user-friendly interface with presets and sharing capabilities
+/// </summary>
 public class NataneToonShaderGUI : ShaderGUI
 {
     private MaterialProperty[] properties;
@@ -9,6 +14,8 @@ public class NataneToonShaderGUI : ShaderGUI
     private Material targetMaterial;
 
     // Foldout states
+    private static bool showPresets = true;
+    private static bool showPerformance = true;
     private static bool showMainTexture = true;
     private static bool showShading = true;
     private static bool showAdvancedLighting = true;
@@ -28,8 +35,15 @@ public class NataneToonShaderGUI : ShaderGUI
         this.properties = properties;
         this.targetMaterial = materialEditor.target as Material;
 
+        // Header
         EditorGUILayout.LabelField("Natane Toon Shader", EditorStyles.boldLabel);
         EditorGUILayout.Space();
+
+        // Material Actions (Presets & Sharing)
+        DrawPresetsSection();
+
+        // Performance Indicator
+        DrawPerformanceSection();
 
         DrawMainTextureSection();
         DrawShadingSection();
@@ -368,5 +382,34 @@ public class NataneToonShaderGUI : ShaderGUI
         }
 
         return enabled;
+    }
+
+    /// <summary>
+    /// Draw presets and sharing section
+    /// </summary>
+    private void DrawPresetsSection()
+    {
+        showPresets = NataneToonShaderGUIUtility.DrawFoldoutHeader("Material Presets & Sharing", showPresets);
+        if (showPresets)
+        {
+            NataneToonShaderGUIUtility.DrawMaterialActionsToolbar(targetMaterial, materialEditor);
+        }
+    }
+
+    /// <summary>
+    /// Draw performance indicator section
+    /// </summary>
+    private void DrawPerformanceSection()
+    {
+        showPerformance = NataneToonShaderGUIUtility.DrawFoldoutHeader("Performance", showPerformance);
+        if (showPerformance)
+        {
+            NataneToonShaderGUIUtility.DrawPerformanceIndicator(targetMaterial);
+
+            EditorGUILayout.HelpBox(
+                "Tip: Disable unused features to improve performance.\n" +
+                "Features with checkboxes can be toggled on/off.",
+                MessageType.Info);
+        }
     }
 }
