@@ -32,33 +32,61 @@ public class NataneToonShaderGUI : ShaderGUI
 
     public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties)
     {
-        this.materialEditor = materialEditor;
-        this.properties = properties;
-        this.targetMaterial = materialEditor.target as Material;
+        try
+        {
+            this.materialEditor = materialEditor;
+            this.properties = properties;
+            this.targetMaterial = materialEditor.target as Material;
 
-        // Header
-        EditorGUILayout.LabelField("Natane Toon Shader", EditorStyles.boldLabel);
-        EditorGUILayout.Space();
+            // Validate that we have valid references
+            if (this.materialEditor == null || this.properties == null || this.targetMaterial == null)
+            {
+                EditorGUILayout.HelpBox("マテリアルエディタの初期化に失敗しました。", MessageType.Error);
+                return;
+            }
 
-        // Material Actions (Presets & Sharing)
-        DrawPresetsSection();
+            // Header
+            EditorGUILayout.LabelField("Natane Toon Shader", EditorStyles.boldLabel);
+            EditorGUILayout.Space();
 
-        // Performance Indicator
-        DrawPerformanceSection();
+            // Material Actions (Presets & Sharing)
+            SafeDrawSection(DrawPresetsSection, "プリセット");
 
-        DrawMainTextureSection();
-        DrawShadingSection();
-        DrawAdvancedLightingSection();
-        DrawLightVolumeSection();
-        DrawSpecularSection();
-        DrawRimLightSection();
-        DrawSSSSection();
-        DrawMatCapSection();
-        DrawOutlineSection();
-        DrawEmissionSection();
-        DrawVirtualExpressionSection();
-        DrawNormalMapSection();
-        DrawRenderingSection();
+            // Performance Indicator
+            SafeDrawSection(DrawPerformanceSection, "パフォーマンス");
+
+            SafeDrawSection(DrawMainTextureSection, "メインテクスチャ");
+            SafeDrawSection(DrawShadingSection, "シェーディング");
+            SafeDrawSection(DrawAdvancedLightingSection, "高度なライティング");
+            SafeDrawSection(DrawLightVolumeSection, "Light Volume");
+            SafeDrawSection(DrawSpecularSection, "スペキュラ");
+            SafeDrawSection(DrawRimLightSection, "リムライト");
+            SafeDrawSection(DrawSSSSection, "SSS");
+            SafeDrawSection(DrawMatCapSection, "MatCap");
+            SafeDrawSection(DrawOutlineSection, "アウトライン");
+            SafeDrawSection(DrawEmissionSection, "エミッション");
+            SafeDrawSection(DrawVirtualExpressionSection, "バーチャル表現");
+            SafeDrawSection(DrawNormalMapSection, "ノーマルマップ");
+            SafeDrawSection(DrawRenderingSection, "レンダリング");
+        }
+        catch (System.Exception e)
+        {
+            EditorGUILayout.HelpBox($"インスペクターの描画中にエラーが発生しました: {e.Message}", MessageType.Error);
+            UnityEngine.Debug.LogException(e);
+        }
+    }
+
+    private void SafeDrawSection(System.Action drawAction, string sectionName)
+    {
+        try
+        {
+            drawAction?.Invoke();
+        }
+        catch (System.Exception e)
+        {
+            EditorGUILayout.HelpBox($"{sectionName}セクションの描画中にエラーが発生しました: {e.Message}", MessageType.Warning);
+            UnityEngine.Debug.LogWarning($"[NataneToonShaderGUI] Error drawing {sectionName} section: {e.Message}");
+        }
     }
 
     private void DrawMainTextureSection()

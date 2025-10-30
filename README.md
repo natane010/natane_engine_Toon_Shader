@@ -1,6 +1,6 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.0.4-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.4)
+[![Version](https://img.shields.io/badge/version-1.0.5-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.5)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![VRC Light Volumes](https://img.shields.io/badge/VRC_Light_Volumes-対応-brightgreen)](https://github.com/REDSIM/VRCLightVolumes)
@@ -12,12 +12,13 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ## 📌 ブランチ情報
 
-- **v1.0.4** - 最新安定版（ShaderGUIのバグ修正）
+- **v1.0.5** - 最新安定版（包括的なエラーハンドリング追加）
+- **v1.0.4** - ShaderGUIのバグ修正
 - **v1.0.3** - v1.0.2のバグ修正
 - **v1.0.1** - VRC Light Volumes対応 + 完全日本語UI
 - **v1.0.0** - 初回安定版（日本語UI完全対応）
 
-特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.4`）。
+特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.5`）。
 
 ## ✨ 新機能
 
@@ -692,6 +693,48 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
 詳細は [PARTICLE_SYSTEM_GUIDE.md](PARTICLE_SYSTEM_GUIDE.md) を参照してください。
 
 ## 更新履歴
+
+### v1.0.5 (2025-10-31)
+**包括的なエラーハンドリング追加**
+
+#### 修正内容
+- **🛡️ ShaderGUI全体に包括的なエラーハンドリングを実装**
+  - `OnGUI`メソッド全体をtry-catchで保護
+  - 各セクションの描画を個別に保護する`SafeDrawSection`メソッドを追加
+  - マテリアルエディタの初期化バリデーション追加
+  - エラー発生時も他のセクションは正常に表示される
+
+#### v1.0.4の問題
+v1.0.4でプロパティのnullチェックを追加しましたが、UnityのUIElementsシステムレベルで発生するエラーには対応できていませんでした。
+
+#### 新しいアプローチ
+各セクションを独立してエラーハンドリング：
+```csharp
+private void SafeDrawSection(System.Action drawAction, string sectionName)
+{
+    try
+    {
+        drawAction?.Invoke();
+    }
+    catch (System.Exception e)
+    {
+        EditorGUILayout.HelpBox($"{sectionName}セクションの描画中にエラーが発生しました: {e.Message}", MessageType.Warning);
+        UnityEngine.Debug.LogWarning($"[NataneToonShaderGUI] Error drawing {sectionName} section: {e.Message}");
+    }
+}
+```
+
+#### 技術的な改善
+1. **初期化バリデーション**: materialEditor、properties、targetMaterialのnullチェック
+2. **セクション単位の保護**: 1つのセクションでエラーが発生しても他は表示される
+3. **ユーザーフレンドリーなエラーメッセージ**: どのセクションでエラーが発生したか明確に表示
+4. **詳細なログ出力**: コンソールに詳細なエラー情報を出力
+
+#### 期待される効果
+- ✅ ArgumentOutOfRangeExceptionによるクラッシュを防止
+- ✅ エラーが発生してもインスペクターは使用可能
+- ✅ エラー箇所を特定しやすくなる
+- ✅ より安定したエディタ体験
 
 ### v1.0.4 (2025-10-31)
 **ShaderGUIのインスペクターエラー修正**
