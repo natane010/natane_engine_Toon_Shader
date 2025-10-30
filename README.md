@@ -12,7 +12,8 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ## 📌 ブランチ情報
 
-- **v1.00.0** - 安定版（日本語UI完全対応 + VRC Light Volumes対応）
+- **v1.00.1** - 最新安定版（日本語UI完全対応 + VRC Light Volumes対応）
+- **v1.00.0** - 初回安定版（日本語UI完全対応）
 
 特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.00.1`）。
 
@@ -690,268 +691,88 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
 
 ## 更新履歴
 
-### v1.11.2 (2025-10-30)
-- **パッケージ構造の修正（重要）**
-  - Unity Package Manager標準構造に変更
-  - `Assets/` フォルダを削除してルートに直接配置
-  - `Assets/Scripts/` → `Runtime/` にリネーム
-  - `Assets/Editor/` → `Editor/` に移動
-  - `Assets/Shaders/` → `Shaders/` に移動
-  - metaファイルエラーを修正
-  - Unity 2019.4以降で正しく動作するように修正
+### v1.00.1 (2025-10-31)
+**VRC Light Volumes対応 + 完全日本語UI**
 
-### v1.11.1 (2025-10-30)
-- **配布方法の変更**
-  - VCC（VRChat Creator Companion）配布を中止
-  - Unity Package Manager（Git URL）のみでの配布に統一
-  - index.json を削除
-  - README インストール方法を Unity Package Manager に変更
-  - より柔軟な配布方法（Public/Privateリポジトリ対応）
+#### 新機能
+- **🌟 VRC Light Volumes完全対応**
+  - ボクセルベースの次世代ライティングシステム実装
+  - 自動フォールバック機能（非対応環境ではUnityライトプローブを使用）
+  - Light Volumeスペキュラー生成（R/G/B方向別カラースペキュラー）
+  - 強度調整可能（0-1）
+  - VRChatワールドで部分的な照明が可能に
 
-### v1.11.0 (2025-10-30)
-- **🛠️ デザイナー支援ツールセット** 追加（Phase 1-3完全実装）
-  - **Material Validator（マテリアルバリデーター）**
-    - VRChat最適化チェック（テクスチャサイズ<2048、メモリ<40MB）
-    - パフォーマンス評価システム（A/B/C/D評価）
-    - 未使用機能検出（有効だが使用していない機能を警告）
-    - テクスチャ圧縮検証
-    - 自動修正機能（適用可能な問題をワンクリック修正）
-    - 色分けされた結果表示（エラー/警告/情報）
-    - 一括マテリアル選択と検証
-    - `Tools > Natane > Material Validator`
-  - **Interactive Help System（インタラクティブヘルプシステム）**
-    - 5つのメインタブ（クイックスタート、用語集、チュートリアル、トラブルシューティング、Tips）
-    - 24の技術用語解説（Cel Shading、SSS、Fresnel、POMなど）
-    - 6つの詳細チュートリアル（スキルレベル別）
-    - 6つの一般的な問題と解決方法
-    - 25以上のTips（5カテゴリ：パフォーマンス、ワークフロー、品質、VRChat、学習）
-    - 他のウィンドウから呼び出し可能なヘルプボタン
-    - `Tools > Natane > Interactive Help`
-  - **Batch Material Processor（バッチマテリアル処理）**
-    - 5つの操作モード：
-      - パラメータ調整（Set/Add/Multiply モード）
-      - 色調整（絶対値/HSV相対調整）
-      - テクスチャ置換（一括置き換え）
-      - 機能切替（シェーダー機能のOn/Off）
-      - バリアント変換（Opaque/Cutout/Transparent間の変換）
-    - 10以上のfloatパラメータの一括調整
-    - HSV色調整（色相シフト、彩度、明度）
-    - Undo対応（すべての操作）
-    - マテリアル選択：選択追加、全Natane Toon追加、名前検索
-    - `Tools > Natane > Batch Material Processor`
-  - **Material Preview Window（マテリアルプレビューウィンドウ）**
-    - リアルタイム3Dプレビュー（PreviewRenderUtility使用）
-    - 5種類のプレビュー形状（球、立方体、円柱、平面、トーラス）
-    - インタラクティブ回転（ドラッグ操作）
-    - ズーム制御（スクロールホイール、2-15単位）
-    - 調整可能なライティング（環境光色、ライト色、強度0-2）
-    - 選択中のマテリアルを自動選択
-    - ビューリセット機能
-    - `Tools > Natane > Material Preview`
-  - **Color Palette Management（カラーパレット管理）**
-    - ScriptableObjectベースのカラーパレット保存
-    - 名前付き色エントリ（説明付き）
-    - プロジェクト全体の色同期
-    - パレット色を選択マテリアルに適用
-    - 色エントリの作成/編集/削除
-    - 複数パレット対応
-    - チーム全体での色統一を実現
-    - `Tools > Natane > Color Palette Manager`
-  - **Texture Optimizer（テクスチャオプティマイザー）**
-    - 自動テクスチャ最適化
-    - 設定可能なオプション：
-      - 最大テクスチャサイズ（512/1024/2048/4096）
-      - 圧縮品質（Compressed/High Quality/Uncompressed）
-      - Mipmap生成切替
-    - プロジェクト全体のテクスチャスキャン
-    - メモリ計算と削減量レポート
-    - 一括最適化と結果表示
-    - 最適化前後のメモリ使用量比較
-    - 最適化が必要なテクスチャの自動検出
-    - `Tools > Natane > Texture Optimizer`
-- **デザイナーへのメリット**
-  - 技術的知識なしで高品質なマテリアルを作成可能
-  - 自動検証でVRChat向け最適化を保証
-  - バッチ処理で作業時間を大幅短縮
-  - 学習リソースの充実で自己解決が容易
-  - メモリ使用量の透明性とパフォーマンス最適化
-  - プロジェクト全体での一貫した色使い
+- **🎌 完全日本語UI対応**
+  - すべてのインスペクターセクションを日本語化（14セクション）
+  - すべてのカスタムエディタウィンドウを日本語化（9ツール）
+  - プロパティラベル、ヘルプテキストを完全日本語化
+  - 技術用語の説明も日本語で提供
 
-### v1.10.0 (2025-10-30)
-- **🎨 マテリアルプリセット & 共有システム** 追加（デザイナー向け大型機能）
-  - **MaterialPreset ScriptableObject システム**
-    - すべてのマテリアルパラメータを保存・共有可能
-    - カテゴリ別整理（キャラクター/小道具/環境/エフェクト）
-    - サムネイル対応
-    - メタデータ（作者、バージョン、日付、説明）
-  - **Material Preset Browser ウィンドウ**
-    - サムネイル付きビジュアルブラウザ
-    - カテゴリフィルタと検索機能
-    - ワンクリックでプリセット適用
-    - プリセット作成/編集/削除
-    - ファイルインポート/エクスポート
-    - クリップボード共有対応
-  - **26種類のデフォルトプリセット**
-    - キャラクター: 肌x2、髪x2、服x2、目
-    - 小道具: 金属x2、プラスチックx2、木材、布
-    - 環境: 草、葉、石、コンクリート
-    - エフェクト: ガラスx2、水、発光、ネオン、ホログラム
-    - `Tools > Natane > Generate Default Presets` で自動生成
-  - **パラメータ共有システム**
-    - JSON形式でエクスポート/インポート（.ntmaterial）
-    - ファイル共有とクリップボード共有
-    - メタデータ付き（作成者、日付、メモ）
-    - チーム間での設定共有が簡単に
-  - **ShaderGUI の大幅改善**
-    - Material Presets & Sharing セクション追加
-    - Performance インジケーター（A/B/C/D評価）
-    - プリセットブラウザへのクイックアクセス
-    - エクスポート/インポートボタン
-    - コピー/ペーストボタン
-  - **ShaderGUIUtility クラス**
-    - 再利用可能なUI コンポーネント
-    - ヘルパー関数群
-    - パフォーマンス計測機能
-- **コードリファクタリング**
-  - NataneToonShaderGUI.cs の改善
-  - コメントとドキュメント追加
-  - 命名規則の統一
-  - モジュール化と保守性向上
-- **ドキュメント大幅拡充**
-  - マテリアルプリセット使い方ガイド追加
-  - デザイナー向けチュートリアル
-  - パラメータ共有方法の詳細説明
-  - ヒントとコツセクション
-- 非エンジニアのデザイナーがシェーダーを簡単に扱えるように
+#### 技術仕様
+- 球面調和関数(SH)による正確な環境ライティング
+- フォールバックシステムの自動実装
+- シェーダーキーワード: `_USE_LIGHT_VOLUME`, `_LIGHT_VOLUME_SPECULAR`
 
-### v1.9.1 (2025-10-30)
-- **Shader Prewarming システムの改善**
-  - ランタイムスクリプトからエディター専用実装に変更
-  - **VRChat完全対応**（ランタイムコード不要）
-  - ビルド前に自動的にシェーダーをプリウォーム
-  - `Tools > Natane > Shader Prewarming` メニュー追加
-  - 設定ウィンドウで動作をカスタマイズ可能
-  - 自動マテリアル検出機能
-  - **ランタイムスクリプト生成機能** 追加（非VRChatユーザー向け）
-    - 設定ウィンドウからワンクリックで生成/削除可能
-    - `RuntimeShaderPrewarming.cs` を自動生成
-    - VRChatユーザーには警告を表示
-- ドキュメント更新
-  - README.md: エディター専用プリウォームの説明
-  - SHADER_VARIANTS.md: VRChat対応の詳細説明
-- **破壊的変更**: `Assets/Scripts/ShaderPrewarming.cs`（ランタイム版）を削除
-  - VRChatユーザーは影響なし（元々使用不可だった）
-  - 非VRChatユーザー: 設定ウィンドウから簡単に再生成可能
+### v1.0.0 (2025-10-30)
+**初回安定版リリース（日本語UIフル対応）**
 
-### v1.9.0 (2025-10-30)
-- **パーティクルシステム エディタ拡張** 追加
-  - ParticleEffectPreset（ScriptableObject）システム
-  - ビジュアルエディタウィンドウ
-  - 7種類のプリセットテンプレート（爆発、炎、煙、魔法、電撃、水、回復）
+#### 主要機能
+- **🎨 セルシェーディング/NPR機能**
+  - ステップ数・シャープネス調整可能なトゥーンシェーディング
+  - カスタムランプテクスチャ対応
+  - Subsurface Scattering (SSS)
+  - リムライト、MatCap、スペキュラー
+  - アウトライン（反転ハル方式）
+  - エミッション（スクロール・パルスアニメーション対応）
+
+- **🌈 バーチャル表現（VRChat向け）**
+  - Dissolve（溶解効果）- 出現/消失演出
+  - Hue Shift（色相変更）- リアルタイム色変更
+  - 境界線発光エフェクト（HDR対応）
+
+- **🏞️ 背景・環境対応**
+  - Cubemap Reflection（環境マッピング）
+  - Environmental Rim（環境リム）
+  - Parallax Mapping（視差マッピング、POM実装）
+  - Refraction（屈折効果）
+
+- **🎭 マスクテクスチャシステム**
+  - 全エフェクトにマスク対応（Specular/Rim/SSS/MatCap/Emission/Dissolve）
+  - ピクセル単位でのエフェクト制御
+
+- **🛠️ デザイナー支援ツール**
+  - **Material Validator**: VRChat最適化チェック、A/B/C/D評価
+  - **Interactive Help System**: 24用語集、6チュートリアル、トラブルシューティング
+  - **Batch Material Processor**: 5つの操作モード、一括編集機能
+  - **Material Preview Window**: リアルタイム3Dプレビュー
+  - **Color Palette Manager**: プロジェクト全体の色統一
+  - **Texture Optimizer**: 自動テクスチャ最適化
+
+- **📦 マテリアルプリセットシステム**
+  - 26種類のデフォルトプリセット
+  - ビジュアルプリセットブラウザ
+  - JSON形式でのインポート/エクスポート
+  - クリップボード共有対応
+
+- **⚡ パフォーマンス最適化**
+  - Shader Variant最適化システム
+  - Shader Prewarming（エディター専用、VRChat対応）
+  - GPU Instancing対応
+  - 未使用機能の自動除外
+
+- **🔄 移行ツール**
+  - lilToon自動移行ツール
+  - YMToon/MToon移行ツール
+  - バッチマテリアル変換ツール
+
+- **🎮 パーティクルシステム**
+  - ParticleEffectPresetシステム
+  - 7種類のプリセットテンプレート
   - リアルタイムプレビュー機能
-  - ParticleEffectSpawner（スポナースクリプト）
-  - ParticleAutoDestroy（自動削除）
-  - 詳細な使用ガイド（PARTICLE_SYSTEM_GUIDE.md）
-- パーティクルエフェクトの作成が劇的に簡単に
 
-### v1.8.0 (2025-10-30)
-- **背景・環境対応機能** 追加（キャラクター以外にも対応）
-  - **Cubemap Reflection（環境マッピング）**: 金属・ガラス・水面の環境反射
-    - Smoothness（滑らかさ）、Metallic（金属度）、Fresnel効果
-    - Reflection Mask対応
-  - **Environmental Rim（環境リム）**: 周囲環境の低角度反射
-    - 環境Cubemapからのリムライト効果
-    - Environmental Rim Mask対応
-  - **Parallax Mapping（視差マッピング）**: 高品質な凹凸表現
-    - Parallax Occlusion Mapping (POM)実装
-    - サンプル数調整可能（Min/Max Samples）
-  - **Refraction（屈折効果）**: ガラス・水などの透明素材
-    - 屈折率（IOR）設定可能
-    - Refraction Mask対応
-- 全機能にOn/Off切り替え可能（軽量化対応）
-- 全シェーダーバリアント（Opaque/Cutout/Transparent）で新機能対応
-- パフォーマンス最適化（未使用機能はコンパイルされない）
-
-### v1.7.0 (2025-10-29)
-- **マスクテクスチャ対応** 追加
-  - 各エフェクトにマスクテクスチャを設定可能
-  - Specular Mask, Rim Mask, SSS Mask, MatCap Mask, Emission Mask, Dissolve Mask
-  - ピクセル単位でのエフェクト制御が可能
-  - グレースケールで部分的な適用も可能
-- **Unity Package Manager 対応**
-  - package.json 追加
-  - Git URLから直接インストール可能
-  - バージョン管理の改善
-- 全シェーダーバリアント（Opaque/Cutout/Transparent）でマスク機能対応
-- ShaderGUI更新（今後のアップデートで完全対応予定）
-
-### v1.6.0 (2025-10-29)
-- **Shader Variant 最適化システム** 追加
-  - ShaderVariantCollector エディタツール
-    - 基本/高度/バーチャル表現のvariant自動収集
-    - ビルドサイズ推定機能
-    - カスタマイズ可能な収集オプション
-  - ShaderPrewarming エディター拡張
-    - エディター/ビルド時のshader事前ウォーミング
-    - VRChat対応（ランタイムスクリプト不要）
-    - 初回ロード時のスタッター防止
-  - ShaderVariantCollection サンプル
-  - 詳細なドキュメント（SHADER_VARIANTS.md）
-- ビルドサイズを50-80%削減可能
-- ロード時間を大幅に短縮
-
-### v1.5.0 (2025-10-29)
-- **バーチャル表現機能** 追加（VRChat向け）
-  - Dissolve（溶解効果）: アバターの出現/消失演出
-    - ノイズテクスチャベースの溶解
-    - 境界線の発光エフェクト（HDRカラー対応）
-    - Dissolve Amountパラメータでアニメーション制御可能
-  - Hue Shift（色相変更）: リアルタイムでの色変更
-    - RGB ↔ HSV 変換による色相シフト
-    - 服装色変更ギミックに最適
-  - Emission Animation（発光アニメーション）強化
-    - Emission Scroll: 発光テクスチャのスクロール
-    - Emission Pulse: 発光の脈動エフェクト
-- 全機能が全シェーダーバリアント（Opaque/Cutout/Transparent）で利用可能
-- ShaderGUIに詳細な説明とヘルプボックスを追加
-
-### v1.4.0 (2025-10-29)
-- **プロジェクト構造の再編成**
-  - モジュール化されたHLSLファイル構成（Input/Lighting/Utils/Vertex/Fragment）
-  - ディレクトリの整理（NataneToon/配下に統一）
-  - 可読性と拡張性の大幅向上
-- **追加ライト制御** 機能追加
-  - Additional Light Intensity: 複数ライト時の明るさ制御
-  - ForwardAdd パスでの明るくなりすぎを防止
-  - ライトの数によらず一定の明るさを維持可能
-
-### v1.3.0 (2025-10-29)
-- **高度なライティング制御** 機能追加
-  - Shadow Receive: 影の受け取り強度制御
-  - Shadow Max Darkness: 影の濃さ上限設定
-  - Light Min/Max Influence: 光の影響範囲制限
-  - Backlight: バックライト（逆光）効果
-- アーティスティックな制御を強化
-- 全バリアント対応
-
-### v1.2.0 (2025-10-29)
-- **Subsurface Scattering (SSS)** 機能追加
-  - 肌、耳、指などの透過表現
-  - Thickness Map 対応
-  - 強度、色、歪みを調整可能
-- SSS 用の ShaderGUI 追加
-- 全バリアント（Opaque/Cutout/Transparent）でSSS対応
-
-### v1.1.0 (2025-10-29)
-- HLSL形式への変換
-- YMToon / MToon 移行ツール追加
-- Cutout / Transparent バリアント追加
-- GPU Instancing 対応
-- VRChat 最適化
-
-### v1.0.0 (2025-10-29)
-- 初回リリース
-- セルシェーディング、リムライト、MatCap、アウトライン、スペキュラ機能実装
-- lilToon 移行ツール実装
-- カスタムShaderGUI実装
-- Built-in Render Pipeline対応
+#### 技術仕様
+- Unity 2019.4以上対応
+- Built-in Render Pipeline
+- 3つのシェーダーバリアント（Opaque/Cutout/Transparent）
+- HLSL形式のモジュール化されたコード構成
+- MIT License
