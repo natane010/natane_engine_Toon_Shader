@@ -24,6 +24,9 @@ CBUFFER_START(UnityPerMaterial)
     half4 _BacklightColor;
     float _AdditionalLightIntensity;
 
+    // VRC Light Volumes
+    float _LightVolumeIntensity;
+
     // Specular
     half4 _SpecularColor;
     float _SpecularSize;

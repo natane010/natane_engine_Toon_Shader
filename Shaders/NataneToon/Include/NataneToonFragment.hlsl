@@ -83,7 +83,27 @@ half4 frag(v2f i) : SV_Target
     // ===== Ambient and Backlight (ForwardBase only) =====
     #ifdef UNITY_PASS_FORWARDBASE
         // Add ambient lighting from environment
-        float3 ambient = ShadeSH9(float4(worldNormal, 1.0));
+        float3 ambient;
+
+        // VRC Light Volumes integration
+        #ifdef _USE_LIGHT_VOLUME
+            // Sample Light Volume SH coefficients
+            float3 L0, L1r, L1g, L1b;
+            LightVolumeSH(i.worldPos, L0, L1r, L1g, L1b);
+
+            // Evaluate lighting from Light Volume
+            ambient = LightVolumeEvaluate(worldNormal, L0, L1r, L1g, L1b) * _LightVolumeIntensity;
+
+            // Add Light Volume specular if enabled
+            #ifdef _LIGHT_VOLUME_SPECULAR
+                float3 lvSpecular = LightVolumeSpecular(col.rgb, _Smoothness, _Metallic, worldNormal, viewDir, L0, L1r, L1g, L1b);
+                col.rgb += lvSpecular * _LightVolumeIntensity;
+            #endif
+        #else
+            // Fallback to Unity's built-in light probes
+            ambient = ShadeSH9(float4(worldNormal, 1.0));
+        #endif
+
         lighting += ambient;
 
         // Add backlight effect

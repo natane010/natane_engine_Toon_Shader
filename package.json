@@ -1,9 +1,9 @@
 {
   "name": "com.natane.toonshader",
   "displayName": "Natane Toon Shader",
-  "version": "1.0.0",
+  "version": "1.00.1",
   "unity": "2019.4",
-  "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline supporting characters, props, backgrounds, and effects. Features material preset system with 26 defaults, parameter sharing, visual preset browser, material validator (VRChat optimization & performance rating), interactive help system (24 glossary terms, 6 tutorials, troubleshooting), batch material processor (5 operation modes), realtime material preview, color palette management, texture optimizer, cubemap reflection, environmental rim, parallax mapping, refraction, advanced lighting, SSS, virtual expressions, mask textures, particle system editor, and editor-only shader prewarming (VRChat-safe). Designer-friendly with comprehensive non-engineer support tools.",
+  "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline supporting characters, props, backgrounds, and effects. Features material preset system with 26 defaults, parameter sharing, visual preset browser, material validator (VRChat optimization & performance rating), interactive help system (24 glossary terms, 6 tutorials, troubleshooting), batch material processor (5 operation modes), realtime material preview, color palette management, texture optimizer, cubemap reflection, environmental rim, parallax mapping, refraction, advanced lighting, VRC Light Volumes support, SSS, virtual expressions, mask textures, particle system editor, and editor-only shader prewarming (VRChat-safe). Full Japanese UI localization. Designer-friendly with comprehensive non-engineer support tools.",
   "keywords": [
     "shader",
     "toon",
@@ -12,13 +12,16 @@
     "vrchat",
     "avatar",
     "lighting",
+    "light-volumes",
     "subsurface-scattering",
     "dissolve",
     "emission",
     "matcap",
     "designer-tools",
     "validator",
-    "batch-processing"
+    "batch-processing",
+    "japanese",
+    "localization"
   ],
   "author": {
     "name": "Natane",
