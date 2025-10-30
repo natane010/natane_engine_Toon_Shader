@@ -81,7 +81,7 @@ namespace NataneToon.Editor
 
             if (hdr)
             {
-                editor.ColorProperty(prop, content);
+                editor.ColorProperty(prop, content.text);
             }
             else
             {
@@ -355,21 +355,20 @@ namespace NataneToon.Editor
         /// </summary>
         public static MaterialProperty FindProperty(string propertyName, MaterialProperty[] properties, bool optional = false)
         {
-            if (optional)
+            foreach (MaterialProperty prop in properties)
             {
-                try
+                if (prop.name == propertyName)
                 {
-                    return ShaderGUI.FindProperty(propertyName, properties);
-                }
-                catch
-                {
-                    return null;
+                    return prop;
                 }
             }
-            else
+
+            if (!optional)
             {
-                return ShaderGUI.FindProperty(propertyName, properties);
+                throw new System.ArgumentException($"Could not find MaterialProperty: '{propertyName}'");
             }
+
+            return null;
         }
 
         /// <summary>
@@ -448,3 +447,4 @@ namespace NataneToon.Editor
         }
     }
 }
+

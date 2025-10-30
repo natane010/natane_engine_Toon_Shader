@@ -137,7 +137,7 @@ namespace NataneToon.Editor
                     if (shaderName.Contains("Natane") && shaderName.Contains("Toon"))
                     {
                         // Prewarm by forcing shader compilation
-                        material.shader.WarmupAllShaders();
+                        Shader.WarmupAllShaders();
                         count++;
                     }
                 }

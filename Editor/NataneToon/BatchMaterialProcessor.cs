@@ -33,7 +33,7 @@ namespace NataneToon.Editor
         private Color targetColor = Color.white;
         private bool adjustHue = false;
         private bool adjustSaturation = false;
-        private bool adjustValue = false;
+        private bool adjustBrightness = false;
         private float hueShift = 0f;
         private float saturationMultiplier = 1f;
         private float valueMultiplier = 1f;
@@ -257,8 +257,8 @@ namespace NataneToon.Editor
                 saturationMultiplier = EditorGUILayout.Slider("Saturation Multiply", saturationMultiplier, 0f, 2f);
             }
 
-            adjustValue = EditorGUILayout.Toggle("Adjust Brightness", adjustValue);
-            if (adjustValue)
+            adjustBrightness = EditorGUILayout.Toggle("Adjust Brightness", adjustBrightness);
+            if (adjustBrightness)
             {
                 valueMultiplier = EditorGUILayout.Slider("Brightness Multiply", valueMultiplier, 0f, 2f);
             }
@@ -594,7 +594,7 @@ namespace NataneToon.Editor
                 s = Mathf.Clamp01(s * saturationMultiplier);
             }
 
-            if (adjustValue)
+            if (adjustBrightness)
             {
                 v = Mathf.Clamp01(v * valueMultiplier);
             }
