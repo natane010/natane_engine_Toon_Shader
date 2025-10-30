@@ -12,7 +12,7 @@ namespace NataneToon.Editor
     {
         private Vector2 scrollPosition;
         private int selectedTab = 0;
-        private string[] tabs = new[] { "Quick Start", "Glossary", "Tutorials", "Troubleshooting", "Tips" };
+        private string[] tabs = new[] { "クイックスタート", "用語集", "チュートリアル", "トラブルシューティング", "ヒント" };
         private string searchQuery = "";
         private Dictionary<string, string> glossary;
         private Dictionary<string, Tutorial> tutorials;
@@ -25,10 +25,10 @@ namespace NataneToon.Editor
             public string category;
         }
 
-        [MenuItem("Tools/Natane/Interactive Help", false, 70)]
+        [MenuItem("Tools/Natane/インタラクティブヘルプ", false, 70)]
         public static void ShowWindow()
         {
-            var window = GetWindow<InteractiveHelpSystem>("Natane Toon Help");
+            var window = GetWindow<InteractiveHelpSystem>("Natane Toon ヘルプ");
             window.minSize = new Vector2(650, 500);
             window.Show();
         }
@@ -51,8 +51,8 @@ namespace NataneToon.Editor
         private void DrawHeader()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("Natane Toon Shader - Interactive Help", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("Learn how to use all features effectively", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField("Natane Toon Shader - インタラクティブヘルプ", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("すべての機能を効果的に使用する方法を学ぶ", EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
         }
 
@@ -79,46 +79,46 @@ namespace NataneToon.Editor
 
         private void DrawQuickStart()
         {
-            DrawSection("🚀 Quick Start Guide", () =>
+            DrawSection("🚀 クイックスタートガイド", () =>
             {
-                DrawSubSection("Getting Started (5 minutes)", () =>
+                DrawSubSection("はじめに (5分)", () =>
                 {
-                    DrawStep("1", "Create a material and select 'Natane/Toon Shader' or one of its variants");
-                    DrawStep("2", "Use Material Preset Browser (Tools > Natane > Material Preset Browser)");
-                    DrawStep("3", "Select a preset that matches your needs (e.g., Character_Skin_Soft)");
-                    DrawStep("4", "Apply the preset to your material");
-                    DrawStep("5", "Adjust parameters as needed in the Inspector");
+                    DrawStep("1", "マテリアルを作成し、'Natane/Toon Shader'またはそのバリアントを選択");
+                    DrawStep("2", "マテリアルプリセットブラウザを使用（Tools > Natane > マテリアルプリセットブラウザ）");
+                    DrawStep("3", "ニーズに合ったプリセットを選択（例：Character_Skin_Soft）");
+                    DrawStep("4", "プリセットをマテリアルに適用");
+                    DrawStep("5", "必要に応じてInspectorでパラメータを調整");
                 });
 
                 EditorGUILayout.Space(10);
 
-                DrawSubSection("First Time Setup", () =>
+                DrawSubSection("初回セットアップ", () =>
                 {
-                    DrawBullet("Generate default presets: Tools > Natane > Generate Default Presets");
-                    DrawBullet("Open Material Preset Browser: Tools > Natane > Material Preset Browser");
-                    DrawBullet("Validate materials: Tools > Natane > Material Validator");
+                    DrawBullet("デフォルトプリセットを生成：Tools > Natane > デフォルトプリセット生成");
+                    DrawBullet("マテリアルプリセットブラウザを開く：Tools > Natane > マテリアルプリセットブラウザ");
+                    DrawBullet("マテリアルを検証：Tools > Natane > マテリアルバリデーター");
                 });
 
                 EditorGUILayout.Space(10);
 
-                DrawSubSection("Common Workflows", () =>
+                DrawSubSection("一般的なワークフロー", () =>
                 {
-                    DrawWorkflow("Character Creation", new[]
+                    DrawWorkflow("キャラクター作成", new[]
                     {
-                        "Use Character_Skin_Soft preset for skin",
-                        "Use Character_Hair_Standard preset for hair",
-                        "Use Character_Clothing_Fabric for clothes",
-                        "Use Character_Eyes_Standard for eyes",
-                        "Fine-tune colors and lighting to match your style"
+                        "肌にはCharacter_Skin_Softプリセットを使用",
+                        "髪にはCharacter_Hair_Standardプリセットを使用",
+                        "衣服にはCharacter_Clothing_Fabricを使用",
+                        "目にはCharacter_Eyes_Standardを使用",
+                        "色とライティングを自分のスタイルに合わせて微調整"
                     });
 
                     EditorGUILayout.Space(5);
 
-                    DrawWorkflow("Environment Creation", new[]
+                    DrawWorkflow("環境作成", new[]
                     {
-                        "Use Environment_Nature_Grass for grass",
-                        "Use Environment_Architecture_Stone for buildings",
-                        "Adjust toon steps for stylization level"
+                        "草にはEnvironment_Nature_Grassを使用",
+                        "建物にはEnvironment_Architecture_Stoneを使用",
+                        "トゥーンステップを調整してスタイライゼーションレベルを設定"
                     });
                 });
             });
@@ -126,13 +126,13 @@ namespace NataneToon.Editor
 
         private void DrawGlossary()
         {
-            DrawSection("📖 Technical Glossary", () =>
+            DrawSection("📖 技術用語集", () =>
             {
                 // Search bar
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField("Search:", GUILayout.Width(60));
+                EditorGUILayout.LabelField("検索:", GUILayout.Width(60));
                 searchQuery = EditorGUILayout.TextField(searchQuery, EditorStyles.toolbarSearchField);
-                if (GUILayout.Button("Clear", GUILayout.Width(50)))
+                if (GUILayout.Button("クリア", GUILayout.Width(50)))
                 {
                     searchQuery = "";
                 }
@@ -154,16 +154,23 @@ namespace NataneToon.Editor
 
         private void DrawTutorials()
         {
-            DrawSection("📚 Step-by-Step Tutorials", () =>
+            DrawSection("📚 ステップバイステップチュートリアル", () =>
             {
-                var categories = new[] { "Beginner", "Intermediate", "Advanced", "VRChat" };
+                var categories = new[] { "初級", "中級", "上級", "VRChat" };
+                var categoryMap = new Dictionary<string, string>
+                {
+                    { "初級", "Beginner" },
+                    { "中級", "Intermediate" },
+                    { "上級", "Advanced" },
+                    { "VRChat", "VRChat" }
+                };
 
                 foreach (var category in categories)
                 {
                     var categoryTutorials = new List<Tutorial>();
                     foreach (var tut in tutorials.Values)
                     {
-                        if (tut.category == category)
+                        if (tut.category == categoryMap[category])
                         {
                             categoryTutorials.Add(tut);
                         }
@@ -171,7 +178,7 @@ namespace NataneToon.Editor
 
                     if (categoryTutorials.Count > 0)
                     {
-                        DrawSubSection($"{category} Tutorials", () =>
+                        DrawSubSection($"{category} チュートリアル", () =>
                         {
                             foreach (var tutorial in categoryTutorials)
                             {
@@ -186,125 +193,125 @@ namespace NataneToon.Editor
 
         private void DrawTroubleshooting()
         {
-            DrawSection("🔧 Troubleshooting Guide", () =>
+            DrawSection("🔧 トラブルシューティングガイド", () =>
             {
                 DrawProblemSolution(
-                    "Material appears too dark or too bright",
+                    "マテリアルが暗すぎるまたは明るすぎる",
                     new[]
                     {
-                        "Check your scene lighting - ensure you have a Directional Light",
-                        "Adjust Shadow Receive parameter (0-1)",
-                        "Adjust Light Influence parameter (0-1)",
-                        "Check Shadow Color - make it lighter or darker",
-                        "Verify Ambient Color in Lighting settings"
+                        "シーンライティングを確認 - Directional Lightがあることを確認",
+                        "Shadow Receiveパラメータを調整 (0-1)",
+                        "Light Influenceパラメータを調整 (0-1)",
+                        "Shadow Colorを確認 - 明るくまたは暗くする",
+                        "Lighting設定でAmbient Colorを確認"
                     });
 
                 DrawProblemSolution(
-                    "Outline is not visible",
+                    "アウトラインが表示されない",
                     new[]
                     {
-                        "Enable the Outline feature checkbox",
-                        "Increase Outline Width (try 0.1-0.2)",
-                        "Change Outline Color to contrast with material",
-                        "Check model's normals are correct",
-                        "Ensure you're using Opaque or Cutout variant"
+                        "Outline機能のチェックボックスを有効化",
+                        "Outline Widthを増やす (0.1-0.2を試す)",
+                        "Outline Colorをマテリアルとコントラストがつく色に変更",
+                        "モデルの法線が正しいか確認",
+                        "OpaqueまたはCutoutバリアントを使用していることを確認"
                     });
 
                 DrawProblemSolution(
-                    "Transparent materials render incorrectly",
+                    "透明マテリアルが正しくレンダリングされない",
                     new[]
                     {
-                        "Use the Transparent variant shader",
-                        "Adjust Render Queue (try 3000 for transparency)",
-                        "Check Z Write is set correctly",
-                        "Enable/disable Cull Mode as needed",
-                        "Sort transparent objects back-to-front"
+                        "Transparentバリアントシェーダーを使用",
+                        "Render Queueを調整 (透明度には3000を試す)",
+                        "Z Writeが正しく設定されているか確認",
+                        "必要に応じてCull Modeを有効/無効化",
+                        "透明オブジェクトを後ろから前へソート"
                     });
 
                 DrawProblemSolution(
-                    "Textures look blurry or pixelated",
+                    "テクスチャがぼやけているまたはピクセル化されている",
                     new[]
                     {
-                        "Check texture import settings",
-                        "Increase Max Size in texture importer",
-                        "Disable Generate Mip Maps if needed",
-                        "Check Filter Mode (Point/Bilinear/Trilinear)",
-                        "Verify texture is high enough resolution"
+                        "テクスチャのインポート設定を確認",
+                        "テクスチャインポーターでMax Sizeを増やす",
+                        "必要に応じてGenerate Mip Mapsを無効化",
+                        "Filter Modeを確認 (Point/Bilinear/Trilinear)",
+                        "テクスチャの解像度が十分か確認"
                     });
 
                 DrawProblemSolution(
-                    "Performance is too slow",
+                    "パフォーマンスが遅すぎる",
                     new[]
                     {
-                        "Use Material Validator to check issues",
-                        "Disable unused features (keywords)",
-                        "Reduce texture sizes",
-                        "Use texture compression",
-                        "Check Performance rating in material inspector",
-                        "Limit use of expensive features (SSS, Reflection, Parallax)"
+                        "Material Validatorを使用して問題を確認",
+                        "未使用の機能（キーワード）を無効化",
+                        "テクスチャサイズを削減",
+                        "テクスチャ圧縮を使用",
+                        "マテリアルインスペクターでPerformance評価を確認",
+                        "高コストな機能（SSS、Reflection、Parallax）の使用を制限"
                     });
 
                 DrawProblemSolution(
-                    "VRChat upload fails or avatar is too heavy",
+                    "VRChatアップロードに失敗またはアバターが重すぎる",
                     new[]
                     {
-                        "Run Material Validator with VRChat checks",
-                        "Reduce texture sizes to 2048x2048 or lower",
-                        "Use texture compression (DXT/BC)",
-                        "Disable unnecessary shader features",
-                        "Combine materials where possible",
-                        "Use texture atlases to reduce material count"
+                        "VRChatチェックを有効にしてMaterial Validatorを実行",
+                        "テクスチャサイズを2048x2048以下に削減",
+                        "テクスチャ圧縮（DXT/BC）を使用",
+                        "不要なシェーダー機能を無効化",
+                        "可能な場所でマテリアルを結合",
+                        "テクスチャアトラスを使用してマテリアル数を削減"
                     });
             });
         }
 
         private void DrawTips()
         {
-            DrawSection("💡 Tips & Best Practices", () =>
+            DrawSection("💡 ヒントとベストプラクティス", () =>
             {
-                DrawTipCategory("Performance", new[]
+                DrawTipCategory("パフォーマンス", new[]
                 {
-                    "Disable features you don't use - each enabled feature has a performance cost",
-                    "Use Material Validator regularly to catch issues early",
-                    "Aim for Performance Rating B or better for VR",
-                    "Texture size has huge impact - use smallest size that looks good",
-                    "Use texture compression (DXT/ASTC) for better memory usage"
+                    "使用しない機能は無効化 - 各機能にはパフォーマンスコストがあります",
+                    "Material Validatorを定期的に使用して問題を早期発見",
+                    "VRではパフォーマンス評価B以上を目指す",
+                    "テクスチャサイズは大きな影響 - 見た目が良い最小サイズを使用",
+                    "テクスチャ圧縮（DXT/ASTC）を使用してメモリ使用量を改善"
                 });
 
-                DrawTipCategory("Workflow", new[]
+                DrawTipCategory("ワークフロー", new[]
                 {
-                    "Start with presets, then customize - saves time and ensures good defaults",
-                    "Save your customized materials as new presets for reuse",
-                    "Use clipboard copy/paste to quickly transfer settings",
-                    "Export materials to files for team sharing",
-                    "Keep a library of your favorite settings"
+                    "プリセットから始めてカスタマイズ - 時間を節約し良好なデフォルトを確保",
+                    "カスタマイズしたマテリアルを新しいプリセットとして保存して再利用",
+                    "クリップボードのコピー/ペーストを使用して設定を素早く転送",
+                    "マテリアルをファイルにエクスポートしてチーム共有",
+                    "お気に入りの設定のライブラリを保持"
                 });
 
-                DrawTipCategory("Visual Quality", new[]
+                DrawTipCategory("ビジュアル品質", new[]
                 {
-                    "Toon Steps controls cel-shading - 2-3 steps for anime look",
-                    "Toon Sharpness controls shadow edges - higher = sharper",
-                    "Use Rim Light to make characters pop from background",
-                    "SSS (Subsurface Scattering) makes skin and leaves more realistic",
-                    "MatCap can add fake reflections cheaply"
+                    "Toon Stepsはセルシェーディングを制御 - アニメ風には2-3ステップ",
+                    "Toon Sharpnessは影のエッジを制御 - 高いほどシャープ",
+                    "Rim Lightを使用してキャラクターを背景から際立たせる",
+                    "SSS（Subsurface Scattering）は肌や葉をよりリアルに",
+                    "MatCapは低コストで偽の反射を追加可能"
                 });
 
-                DrawTipCategory("VRChat Specific", new[]
+                DrawTipCategory("VRChat固有", new[]
                 {
-                    "Test in VRChat before finalizing - lighting differs from Unity",
-                    "Use Editor Prewarming - no runtime scripts needed",
-                    "Keep total texture memory under 40MB per material",
-                    "Use Performance Rank Good (PC) as minimum target",
-                    "Test on Quest if targeting mobile VR"
+                    "確定前にVRChatでテスト - ライティングがUnityと異なります",
+                    "Editorプレウォーミングを使用 - ランタイムスクリプト不要",
+                    "マテリアルあたりの総テクスチャメモリを40MB未満に保持",
+                    "最小目標としてPerformance Rank Good（PC）を使用",
+                    "モバイルVRを対象とする場合はQuestでテスト"
                 });
 
-                DrawTipCategory("Learning", new[]
+                DrawTipCategory("学習", new[]
                 {
-                    "Examine default presets to learn parameter combinations",
-                    "Use Performance indicator to understand feature costs",
-                    "Compare materials with Material Validator",
-                    "Read glossary to understand technical terms",
-                    "Experiment! Make copies before testing changes"
+                    "デフォルトプリセットを調べてパラメータの組み合わせを学習",
+                    "Performanceインジケーターを使用して機能コストを理解",
+                    "Material Validatorでマテリアルを比較",
+                    "用語集を読んで技術用語を理解",
+                    "実験！変更をテストする前にコピーを作成"
                 });
             });
         }
