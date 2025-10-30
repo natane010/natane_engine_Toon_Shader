@@ -34,7 +34,9 @@
           },
           "license": "MIT",
           "vpmDependencies": {},
-          "url": "https://github.com/natane010/natane_engine_Toon_Shader/releases/download/v1.11.0/com.natane.toonshader-1.11.0.zip"
+          "url": "https://github.com/natane010/natane_engine_Toon_Shader/releases/download/v1.11.0/com.natane.toonshader-1.11.0.zip",
+          "repo": "https://raw.githubusercontent.com/natane010/natane_engine_Toon_Shader/main/index.json",
+          "zipSHA256": "4e042c3afe3de2a4b6f662e7d1fc4dbe2cb01bb2bbb12db020b4dfd1abc8e6b4"
         }
       }
     }
