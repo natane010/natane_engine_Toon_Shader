@@ -127,32 +127,33 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ## インストール
 
-### VCCを使用する場合（推奨）
+### Unity Package Manager（推奨）
 
-**方法1: リポジトリURLで追加（推奨）**
+**Git URLからインストール:**
 
-1. VRChat Creator Companionを開く
-2. **Settings** タブを開く
-3. **Packages** セクションの **Add Repository** をクリック
-4. 以下のURLを入力して **Add** をクリック:
+1. Unityプロジェクトを開く
+2. メニューから **Window** → **Package Manager** を選択
+3. 左上の **+** ボタンをクリック
+4. **Add package from git URL...** を選択
+5. 以下のURLを入力して **Add** をクリック:
    ```
-   https://github.com/natane010/natane_engine_Toon_Shader
+   https://github.com/natane010/natane_engine_Toon_Shader.git
    ```
-5. プロジェクトを開く
-6. **Manage Project** → **Manage Packages** から "Natane Toon Shader" を追加
 
-**方法2: index.jsonの直接URL（代替）**
+**特定のバージョンをインストール:**
 
-リポジトリURLで問題がある場合は、以下の直接URLを使用:
+タグを指定することで特定のバージョンをインストールできます:
 ```
-https://raw.githubusercontent.com/natane010/natane_engine_Toon_Shader/main/index.json
+https://github.com/natane010/natane_engine_Toon_Shader.git#v1.11.0
 ```
 
 ### 手動インストール
 
-1. このリポジトリをクローンまたはダウンロード
-2. `Assets` フォルダをUnityプロジェクトにコピー
-3. マテリアルを作成し、Shader を `Natane/Toon Shader` に設定
+1. [Releases](https://github.com/natane010/natane_engine_Toon_Shader/releases)から最新版をダウンロード
+2. ダウンロードしたzipファイルを解凍
+3. 解凍したフォルダをUnityプロジェクトの `Packages` ディレクトリに配置
+   - または、`Assets` フォルダにコピーすることも可能
+4. マテリアルを作成し、Shader を `Natane/Toon Shader` に設定
 
 ## プロジェクト構造
 
@@ -813,9 +814,9 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
   - Specular Mask, Rim Mask, SSS Mask, MatCap Mask, Emission Mask, Dissolve Mask
   - ピクセル単位でのエフェクト制御が可能
   - グレースケールで部分的な適用も可能
-- **VCC (VRChat Creator Companion) 対応**
+- **Unity Package Manager 対応**
   - package.json 追加
-  - VCCから直接インストール可能
+  - Git URLから直接インストール可能
   - バージョン管理の改善
 - 全シェーダーバリアント（Opaque/Cutout/Transparent）でマスク機能対応
 - ShaderGUI更新（今後のアップデートで完全対応予定）
