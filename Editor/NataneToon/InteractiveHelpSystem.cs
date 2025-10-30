@@ -114,7 +114,7 @@ namespace NataneToon.Editor
 
                     EditorGUILayout.Space(5);
 
-                    DrawWorkflow("Environment Creation", () =>
+                    DrawWorkflow("Environment Creation", new[]
                     {
                         "Use Environment_Nature_Grass for grass",
                         "Use Environment_Architecture_Stone for buildings",
