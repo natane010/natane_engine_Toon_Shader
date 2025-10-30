@@ -1,6 +1,6 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.11.3-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.11.3)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.0)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -9,10 +9,9 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ## 📌 ブランチ情報
 
-- **main** - 安定版（推奨：v1.11.3）
-- **release/v1.11.2** - 旧安定版
+- **v1.00.0** - 安定版（推奨：日本語UIフル対応）
 
-特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.11.3`）。
+特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.0`）。
 
 ## ✨ 新機能
 
