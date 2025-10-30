@@ -1,7 +1,7 @@
 {
   "name": "Natane's VCC Repository",
   "author": "Natane",
-  "url": "https://github.com/natane010/natane_engine_Toon_Shader",
+  "url": "https://raw.githubusercontent.com/natane010/natane_engine_Toon_Shader/main/index.json",
   "id": "com.natane.repository",
   "packages": {
     "com.natane.toonshader": {
