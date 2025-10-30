@@ -1,6 +1,6 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.0.3-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.3)
+[![Version](https://img.shields.io/badge/version-1.0.4-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.4)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![VRC Light Volumes](https://img.shields.io/badge/VRC_Light_Volumes-対応-brightgreen)](https://github.com/REDSIM/VRCLightVolumes)
@@ -12,11 +12,12 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ## 📌 ブランチ情報
 
-- **v1.0.3** - 最新安定版（v1.0.2のバグ修正）
+- **v1.0.4** - 最新安定版（ShaderGUIのバグ修正）
+- **v1.0.3** - v1.0.2のバグ修正
 - **v1.0.1** - VRC Light Volumes対応 + 完全日本語UI
 - **v1.0.0** - 初回安定版（日本語UI完全対応）
 
-特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.3`）。
+特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.4`）。
 
 ## ✨ 新機能
 
@@ -691,6 +692,38 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
 詳細は [PARTICLE_SYSTEM_GUIDE.md](PARTICLE_SYSTEM_GUIDE.md) を参照してください。
 
 ## 更新履歴
+
+### v1.0.4 (2025-10-31)
+**ShaderGUIのインスペクターエラー修正**
+
+#### 修正内容
+- **🐛 ArgumentOutOfRangeExceptionエラーを修正**
+  - ShaderGUIのプロパティ参照に安全なチェックを追加
+  - 存在しないプロパティへのアクセスを防止
+  - `FindProperty`に`false`パラメータを追加してnullチェック可能に
+
+#### 問題の詳細
+以下のエラーが断続的に発生していました：
+```
+ArgumentOutOfRangeException: Index was out of range.
+Must be non-negative and less than the size of the collection.
+Parameter name: index
+```
+
+このエラーは、特に以下の状況で発生していました：
+- v1.0.2からv1.0.3へアップデート後
+- 削除されたテッセレーションプロパティを含む古いマテリアル
+- マテリアルインスペクターの再描画時
+
+#### 技術的な変更
+- `DrawProperty()`メソッド: プロパティ存在チェックを追加
+- `DrawToggle()`メソッド: nullチェックを追加、nullの場合はfalseを返す
+- `FindProperty()`呼び出し: 第3引数に`false`を追加
+
+#### 影響
+- ✅ 古いマテリアルでもエラーが発生しなくなります
+- ✅ 存在しないプロパティは自動的にスキップされます
+- ✅ インスペクターが安定して動作します
 
 ### v1.0.3 (2025-10-31)
 **重大なバグ修正版**

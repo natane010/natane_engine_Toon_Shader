@@ -399,13 +399,20 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawProperty(string propertyName, string label)
     {
-        MaterialProperty property = FindProperty(propertyName, properties);
-        materialEditor.ShaderProperty(property, label);
+        MaterialProperty property = FindProperty(propertyName, properties, false);
+        if (property != null)
+        {
+            materialEditor.ShaderProperty(property, label);
+        }
     }
 
     private bool DrawToggle(string keyword, string propertyName, string label)
     {
-        MaterialProperty property = FindProperty(propertyName, properties);
+        MaterialProperty property = FindProperty(propertyName, properties, false);
+        if (property == null)
+        {
+            return false;
+        }
 
         EditorGUI.BeginChangeCheck();
         bool enabled = EditorGUILayout.Toggle(label, property.floatValue > 0.5f);
