@@ -1,6 +1,6 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.00.1-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.00.1)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.1)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![VRC Light Volumes](https://img.shields.io/badge/VRC_Light_Volumes-対応-brightgreen)](https://github.com/REDSIM/VRCLightVolumes)
@@ -12,14 +12,14 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ## 📌 ブランチ情報
 
-- **v1.00.1** - 最新安定版（日本語UI完全対応 + VRC Light Volumes対応）
-- **v1.00.0** - 初回安定版（日本語UI完全対応）
+- **v1.0.1** - 最新安定版（日本語UI完全対応 + VRC Light Volumes対応）
+- **v1.0.0** - 初回安定版（日本語UI完全対応）
 
-特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.00.1`）。
+特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.1`）。
 
 ## ✨ 新機能
 
-### 🌟 VRC Light Volumes 対応 v1.00.1（NEW!）
+### 🌟 VRC Light Volumes 対応 v1.0.1（NEW!）
 次世代ボクセルベースのライティングシステムに完全対応しました：
 
 - **ボクセルベースライティング**: VRChatワールドで部分的な照明が可能に
@@ -691,7 +691,7 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
 
 ## 更新履歴
 
-### v1.00.1 (2025-10-31)
+### v1.0.1 (2025-10-31)
 **VRC Light Volumes対応 + 完全日本語UI**
 
 #### 新機能
