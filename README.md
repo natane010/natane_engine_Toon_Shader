@@ -436,6 +436,24 @@ MIT License
 
 ## 更新履歴
 
+### v1.8.0 (2025-10-30)
+- **背景・環境対応機能** 追加（キャラクター以外にも対応）
+  - **Cubemap Reflection（環境マッピング）**: 金属・ガラス・水面の環境反射
+    - Smoothness（滑らかさ）、Metallic（金属度）、Fresnel効果
+    - Reflection Mask対応
+  - **Environmental Rim（環境リム）**: 周囲環境の低角度反射
+    - 環境Cubemapからのリムライト効果
+    - Environmental Rim Mask対応
+  - **Parallax Mapping（視差マッピング）**: 高品質な凹凸表現
+    - Parallax Occlusion Mapping (POM)実装
+    - サンプル数調整可能（Min/Max Samples）
+  - **Refraction（屈折効果）**: ガラス・水などの透明素材
+    - 屈折率（IOR）設定可能
+    - Refraction Mask対応
+- 全機能にOn/Off切り替え可能（軽量化対応）
+- 全シェーダーバリアント（Opaque/Cutout/Transparent）で新機能対応
+- パフォーマンス最適化（未使用機能はコンパイルされない）
+
 ### v1.7.0 (2025-10-29)
 - **マスクテクスチャ対応** 追加
   - 各エフェクトにマスクテクスチャを設定可能

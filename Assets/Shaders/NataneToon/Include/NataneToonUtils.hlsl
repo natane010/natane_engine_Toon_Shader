@@ -59,4 +59,69 @@ float2 CalculateDissolve(float2 uv, float dissolveAmount, float edgeWidth)
     return float2(dissolveAlpha, edgeGlow);
 }
 
+// Parallax Occlusion Mapping
+// Creates the illusion of depth by offsetting texture coordinates based on height map
+// Returns adjusted UV coordinates
+float2 ParallaxMapping(float2 uv, float3 viewDirTangent)
+{
+    // Calculate number of layers based on view angle
+    // More layers when viewing at steep angles for better quality
+    float numLayers = lerp(_ParallaxMaxSamples, _ParallaxMinSamples, abs(dot(float3(0, 0, 1), viewDirTangent)));
+
+    // Calculate the size of each layer
+    float layerDepth = 1.0 / numLayers;
+
+    // Depth of current layer
+    float currentLayerDepth = 0.0;
+
+    // Calculate UV offset per layer
+    float2 deltaUV = viewDirTangent.xy * _ParallaxScale / (viewDirTangent.z * numLayers);
+
+    // Initial values
+    float2 currentUV = uv;
+    float currentDepthMapValue = tex2D(_ParallaxMap, currentUV).r;
+
+    // Parallax Occlusion Mapping loop
+    [loop]
+    for (int i = 0; i < (int)numLayers && currentLayerDepth < currentDepthMapValue; i++)
+    {
+        // Shift UV along direction of view
+        currentUV -= deltaUV;
+
+        // Get depth value at current UV
+        currentDepthMapValue = tex2D(_ParallaxMap, currentUV).r;
+
+        // Get depth of next layer
+        currentLayerDepth += layerDepth;
+    }
+
+    // Interpolation for smoother result (steep parallax mapping)
+    float2 prevUV = currentUV + deltaUV;
+    float afterDepth = currentDepthMapValue - currentLayerDepth;
+    float beforeDepth = tex2D(_ParallaxMap, prevUV).r - currentLayerDepth + layerDepth;
+
+    // Interpolation weight
+    float weight = afterDepth / (afterDepth - beforeDepth);
+
+    // Final UV coordinates
+    float2 finalUV = lerp(currentUV, prevUV, weight);
+
+    return finalUV;
+}
+
+// Calculate tangent space view direction for parallax mapping
+// Requires world position, world tangent, world binormal, and world normal
+float3 CalculateTangentViewDir(float3 worldPos, float3 worldTangent, float3 worldBinormal, float3 worldNormal)
+{
+    float3 viewDir = normalize(_WorldSpaceCameraPos - worldPos);
+
+    // Create TBN matrix (tangent, binormal, normal)
+    float3x3 TBN = float3x3(worldTangent, worldBinormal, worldNormal);
+
+    // Transform view direction to tangent space
+    float3 tangentViewDir = mul(TBN, viewDir);
+
+    return tangentViewDir;
+}
+
 #endif // NATANE_TOON_UTILS_INCLUDED

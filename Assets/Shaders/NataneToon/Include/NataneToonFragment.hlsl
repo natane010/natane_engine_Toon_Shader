@@ -5,14 +5,21 @@
 // Main pixel/fragment rendering function
 half4 frag(v2f i) : SV_Target
 {
+    // ===== Parallax Mapping (UV Adjustment) =====
+    float2 uv = i.uv;
+    #ifdef _PARALLAX
+        float3 tangentViewDir = CalculateTangentViewDir(i.worldPos, i.worldTangent, i.worldBinormal, i.worldNormal);
+        uv = ParallaxMapping(i.uv, tangentViewDir);
+    #endif
+
     // ===== Texture Sampling =====
-    half4 mainTex = tex2D(_MainTex, i.uv);
+    half4 mainTex = tex2D(_MainTex, uv);
     half4 col = mainTex * _Color;
 
     // ===== Normal Mapping =====
     float3 worldNormal = normalize(i.worldNormal);
     #ifdef _NORMALMAP
-        float3 normalMap = UnpackScaleNormal(tex2D(_BumpMap, i.uv), _BumpScale);
+        float3 normalMap = UnpackScaleNormal(tex2D(_BumpMap, uv), _BumpScale);
         float3x3 tangentToWorld = float3x3(i.worldTangent, i.worldBinormal, i.worldNormal);
         worldNormal = normalize(mul(normalMap, tangentToWorld));
     #endif
@@ -97,7 +104,7 @@ half4 frag(v2f i) : SV_Target
 
         // Apply mask texture
         #ifdef _SPECULAR_MASK
-            float specMask = tex2D(_SpecularMask, i.uv).r;
+            float specMask = tex2D(_SpecularMask, uv).r;
             specContrib *= specMask;
         #endif
 
@@ -114,7 +121,7 @@ half4 frag(v2f i) : SV_Target
         float thickness = 1.0;
         #ifdef _THICKNESS_MAP
             // Use thickness map to control SSS per-pixel
-            thickness = tex2D(_ThicknessMap, i.uv).r * _ThicknessScale;
+            thickness = tex2D(_ThicknessMap, uv).r * _ThicknessScale;
         #else
             // Use uniform thickness
             thickness = _ThicknessScale;
@@ -124,7 +131,7 @@ half4 frag(v2f i) : SV_Target
 
         // Apply mask texture
         #ifdef _SSS_MASK
-            float sssMask = tex2D(_SSSMask, i.uv).r;
+            float sssMask = tex2D(_SSSMask, uv).r;
             sss *= sssMask;
         #endif
 
@@ -142,11 +149,24 @@ half4 frag(v2f i) : SV_Target
 
         // Apply mask texture
         #ifdef _RIM_MASK
-            float rimMask = tex2D(_RimMask, i.uv).r;
+            float rimMask = tex2D(_RimMask, uv).r;
             rim *= rimMask;
         #endif
 
         col.rgb += rim;
+    #endif
+
+    // ===== Environmental Rim (ForwardBase only) =====
+    #if defined(_ENV_RIM) && defined(UNITY_PASS_FORWARDBASE)
+        float3 envRim = EnvironmentalRim(worldNormal, viewDir);
+
+        // Apply mask texture
+        #ifdef _ENV_RIM_MASK
+            float envRimMask = tex2D(_EnvRimMask, uv).r;
+            envRim *= envRimMask;
+        #endif
+
+        col.rgb += envRim;
     #endif
 
     // ===== MatCap (ForwardBase only) =====
@@ -156,7 +176,7 @@ half4 frag(v2f i) : SV_Target
 
         // Apply mask texture
         #ifdef _MATCAP_MASK
-            float matcapMask = tex2D(_MatCapMask, i.uv).r;
+            float matcapMask = tex2D(_MatCapMask, uv).r;
             matcap *= matcapMask;
         #endif
 
@@ -169,9 +189,22 @@ half4 frag(v2f i) : SV_Target
             col.rgb = lerp(col.rgb, matcap, _MatCapIntensity);
     #endif
 
+    // ===== Cubemap Reflection (ForwardBase only) =====
+    #if defined(_REFLECTION) && defined(UNITY_PASS_FORWARDBASE)
+        float3 reflection = CubemapReflection(worldNormal, viewDir, _Smoothness, _Metallic);
+
+        // Apply mask texture
+        #ifdef _REFLECTION_MASK
+            float reflectionMask = tex2D(_ReflectionMask, uv).r;
+            reflection *= reflectionMask;
+        #endif
+
+        col.rgb += reflection;
+    #endif
+
     // ===== Emission (ForwardBase only) =====
     #if defined(_EMISSION) && defined(UNITY_PASS_FORWARDBASE)
-        float2 emissionUV = i.uv;
+        float2 emissionUV = uv;
 
         // Apply scrolling animation
         #ifdef _EMISSION_SCROLL
@@ -189,7 +222,7 @@ half4 frag(v2f i) : SV_Target
 
         // Apply mask texture
         #ifdef _EMISSION_MASK
-            float emissionMask = tex2D(_EmissionMask, i.uv).r;
+            float emissionMask = tex2D(_EmissionMask, uv).r;
             emission *= emissionMask;
         #endif
 
@@ -210,10 +243,10 @@ half4 frag(v2f i) : SV_Target
 
         // Apply mask texture
         #ifdef _DISSOLVE_MASK
-            dissolveMaskValue = tex2D(_DissolveMask, i.uv).r;
+            dissolveMaskValue = tex2D(_DissolveMask, uv).r;
         #endif
 
-        float2 dissolveResult = CalculateDissolve(i.uv, _DissolveAmount, _DissolveEdgeWidth);
+        float2 dissolveResult = CalculateDissolve(uv, _DissolveAmount, _DissolveEdgeWidth);
         float dissolveAlpha = dissolveResult.x;
         float edgeGlow = dissolveResult.y;
 

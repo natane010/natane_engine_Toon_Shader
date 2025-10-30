@@ -75,7 +75,37 @@ CBUFFER_START(UnityPerMaterial)
     float _EmissionScrollSpeed;
     float _EmissionPulseSpeed;
     float _EmissionPulseAmplitude;
+
+    // Cubemap Reflection (Environment Mapping)
+    half4 _ReflectionColor;
+    float _ReflectionIntensity;
+    float _Smoothness;
+    float _Metallic;
+    float _FresnelPower;
+    sampler2D _ReflectionMask;
+
+    // Environmental Rim
+    half4 _EnvRimColor;
+    float _EnvRimPower;
+    float _EnvRimIntensity;
+    sampler2D _EnvRimMask;
+
+    // Parallax Mapping
+    float _ParallaxScale;
+    float _ParallaxMinSamples;
+    float _ParallaxMaxSamples;
+    sampler2D _ParallaxMap;
+
+    // Refraction
+    float _RefractionIndex;
+    float _RefractionIntensity;
+    float _RefractionBlur;
+    sampler2D _RefractionMask;
 CBUFFER_END
+
+// Cubemap samplers (outside CBUFFER)
+samplerCUBE _ReflectionCube;
+samplerCUBE _EnvRimCube;
 
 // Vertex Input Structure
 struct appdata
