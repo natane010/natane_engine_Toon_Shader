@@ -144,7 +144,7 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 タグを指定することで特定のバージョンをインストールできます:
 ```
-https://github.com/natane010/natane_engine_Toon_Shader.git#v1.11.1
+https://github.com/natane010/natane_engine_Toon_Shader.git#v1.11.2
 ```
 
 ### 手動インストール
@@ -155,42 +155,54 @@ https://github.com/natane010/natane_engine_Toon_Shader.git#v1.11.1
    - または、`Assets` フォルダにコピーすることも可能
 4. マテリアルを作成し、Shader を `Natane/Toon Shader` に設定
 
-## プロジェクト構造
+## パッケージ構造
 
-プロジェクトは機能ごとにモジュール化された構造になっており、拡張性と可読性を重視しています：
+Unity Package Manager互換の標準構造を採用しています：
 
 ```
-Assets/
-├── Shaders/
+Packages/com.natane.toonshader/
+├── package.json                                   # パッケージマニフェスト
+├── Editor/                                        # エディタースクリプト
+│   ├── NataneToon/
+│   │   ├── NataneToonShaderGUI.cs                # カスタムインスペクター
+│   │   ├── MaterialValidator.cs                   # マテリアル検証ツール
+│   │   ├── BatchMaterialProcessor.cs              # バッチ処理ツール
+│   │   ├── InteractiveHelpSystem.cs               # ヘルプシステム
+│   │   ├── MaterialPresetBrowser.cs               # プリセットブラウザ
+│   │   ├── ColorPaletteManager.cs                 # カラーパレット管理
+│   │   ├── TextureOptimizer.cs                    # テクスチャ最適化
+│   │   ├── ShaderVariantCollector.cs              # Variant収集ツール
+│   │   ├── ShaderPrewarmingEditor.cs              # Shader事前ウォーミング
+│   │   └── MigrationTools/
+│   │       ├── LilToonMigrationTool.cs            # lilToon変換ツール
+│   │       ├── YMToonMigrationTool.cs             # YMToon変換ツール
+│   │       └── BatchMaterialConverter.cs          # 汎用変換ツール
+│   └── ParticleSystem/
+│       └── ParticleEffectEditorWindow.cs          # パーティクルエディタ
+├── Runtime/                                       # ランタイムスクリプト
+│   ├── MaterialSystem/
+│   │   ├── NataneToonMaterialPreset.cs           # マテリアルプリセット
+│   │   ├── MaterialParameterShareSystem.cs        # パラメータ共有
+│   │   └── ColorPalette.cs                        # カラーパレット
+│   └── ParticleSystem/
+│       ├── ParticleEffectPreset.cs                # パーティクルプリセット
+│       ├── ParticleEffectSpawner.cs               # パーティクルスポナー
+│       └── ParticleAutoDestroy.cs                 # 自動破棄
+├── Shaders/                                       # シェーダー
 │   └── NataneToon/
-│       ├── NataneToonShader.shader              # メインシェーダー（Opaque）
+│       ├── NataneToonShader.shader                # メインシェーダー（Opaque）
 │       ├── Variants/
-│       │   ├── NataneToonShader_Cutout.shader   # 透過切り抜きバリアント
-│       │   └── NataneToonShader_Transparent.shader  # 半透明バリアント
+│       │   ├── NataneToonShader_Cutout.shader    # 透過切り抜き
+│       │   └── NataneToonShader_Transparent.shader # 半透明
 │       └── Include/
-│           ├── NataneToonCore.hlsl              # コア統合ファイル
-│           ├── NataneToonInput.hlsl             # プロパティと構造体定義
-│           ├── NataneToonLighting.hlsl          # ライティング計算関数
-│           ├── NataneToonUtils.hlsl             # ユーティリティ関数
-│           ├── NataneToonVertex.hlsl            # 頂点シェーダー
-│           └── NataneToonFragment.hlsl          # フラグメントシェーダー
-├── Editor/
-│   └── NataneToon/
-│       ├── NataneToonShaderGUI.cs               # カスタムインスペクター
-│       ├── ShaderVariantCollector.cs            # Variant収集ツール
-│       ├── ShaderPrewarmingEditor.cs            # Shader事前ウォーミング（エディター専用）
-│       └── MigrationTools/
-│           ├── LilToonMigrationTool.cs          # lilToon変換ツール
-│           ├── YMToonMigrationTool.cs           # YMToon変換ツール
-│           └── BatchMaterialConverter.cs        # 汎用変換ツール
-├── Scripts/
-│   └── ParticleSystem/                            # パーティクルシステム関連
-├── ShaderVariants/
-│   └── NataneToonShaderVariants.shadervariants   # Variant Collection
-├── Materials/
-│   └── Examples/                                 # サンプルマテリアル
-└── Textures/
-    └── Ramps/                                    # ランプテクスチャ
+│           ├── NataneToonCore.hlsl                # コア統合
+│           ├── NataneToonInput.hlsl               # プロパティ定義
+│           ├── NataneToonLighting.hlsl            # ライティング
+│           ├── NataneToonUtils.hlsl               # ユーティリティ
+│           ├── NataneToonVertex.hlsl              # 頂点シェーダー
+│           └── NataneToonFragment.hlsl            # フラグメント
+└── ShaderVariants/
+    └── NataneToonShaderVariants.shadervariants   # Variant Collection
 ```
 
 ### モジュール構成の利点
@@ -643,6 +655,16 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
 詳細は [PARTICLE_SYSTEM_GUIDE.md](PARTICLE_SYSTEM_GUIDE.md) を参照してください。
 
 ## 更新履歴
+
+### v1.11.2 (2025-10-30)
+- **パッケージ構造の修正（重要）**
+  - Unity Package Manager標準構造に変更
+  - `Assets/` フォルダを削除してルートに直接配置
+  - `Assets/Scripts/` → `Runtime/` にリネーム
+  - `Assets/Editor/` → `Editor/` に移動
+  - `Assets/Shaders/` → `Shaders/` に移動
+  - metaファイルエラーを修正
+  - Unity 2019.4以降で正しく動作するように修正
 
 ### v1.11.1 (2025-10-30)
 - **配布方法の変更**
