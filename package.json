@@ -1,9 +1,9 @@
 {
   "name": "com.natane.toonshader",
   "displayName": "Natane Toon Shader",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "unity": "2019.4",
-  "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline supporting characters, props, backgrounds, and effects. Features material preset system with 26 defaults, parameter sharing, visual preset browser, performance indicator, cubemap reflection, environmental rim, parallax mapping, refraction, advanced lighting, SSS, virtual expressions, mask textures, particle system editor, editor-only shader prewarming (VRChat-safe), and VRChat optimization. Designer-friendly with non-engineer support.",
+  "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline supporting characters, props, backgrounds, and effects. Features material preset system with 26 defaults, parameter sharing, visual preset browser, material validator (VRChat optimization & performance rating), interactive help system (24 glossary terms, 6 tutorials, troubleshooting), batch material processor (5 operation modes), realtime material preview, color palette management, texture optimizer, cubemap reflection, environmental rim, parallax mapping, refraction, advanced lighting, SSS, virtual expressions, mask textures, particle system editor, and editor-only shader prewarming (VRChat-safe). Designer-friendly with comprehensive non-engineer support tools.",
   "keywords": [
     "shader",
     "toon",
@@ -15,7 +15,10 @@
     "subsurface-scattering",
     "dissolve",
     "emission",
-    "matcap"
+    "matcap",
+    "designer-tools",
+    "validator",
+    "batch-processing"
   ],
   "author": {
     "name": "Natane",
@@ -29,5 +32,5 @@
   "vpmDependencies": {},
   "legacyFolders": {},
   "legacyFiles": {},
-  "url": "https://github.com/natane010/natane_engine_Toon_Shader/releases/download/v1.10.0/com.natane.toonshader-1.10.0.zip"
+  "url": "https://github.com/natane010/natane_engine_Toon_Shader/releases/download/v1.11.0/com.natane.toonshader-1.11.0.zip"
 }
