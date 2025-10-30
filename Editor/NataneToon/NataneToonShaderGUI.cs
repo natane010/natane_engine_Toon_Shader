@@ -28,6 +28,7 @@ public class NataneToonShaderGUI : ShaderGUI
     private static bool showEmission = true;
     private static bool showVirtualExpression = true;
     private static bool showNormalMap = true;
+    private static bool showTessellation = true;
     private static bool showRendering = true;
 
     public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties)
@@ -58,6 +59,7 @@ public class NataneToonShaderGUI : ShaderGUI
         DrawEmissionSection();
         DrawVirtualExpressionSection();
         DrawNormalMapSection();
+        DrawTessellationSection();
         DrawRenderingSection();
     }
 
@@ -377,6 +379,48 @@ public class NataneToonShaderGUI : ShaderGUI
             {
                 DrawProperty("_BumpMap", "ノーマルマップ");
                 DrawProperty("_BumpScale", "ノーマルのスケール");
+            }
+
+            EditorGUI.indentLevel--;
+            EditorGUILayout.Space();
+        }
+    }
+
+    private void DrawTessellationSection()
+    {
+        showTessellation = EditorGUILayout.Foldout(showTessellation, "テッセレーション", true, EditorStyles.foldoutHeader);
+        if (showTessellation)
+        {
+            EditorGUI.indentLevel++;
+
+            bool enableTessellation = DrawToggle("_TESSELLATION", "_Tessellation", "テッセレーションを有効化");
+
+            if (enableTessellation)
+            {
+                EditorGUILayout.HelpBox("テッセレーションはメッシュを動的に細分化してディテールを追加します。高度な機能のため、パフォーマンスへの影響に注意してください。", MessageType.Info);
+
+                EditorGUILayout.Space();
+                DrawProperty("_TessellationFactor", "テッセレーション係数");
+                EditorGUILayout.HelpBox("メッシュを何分割するかを制御します。値が大きいほど細かく分割されますが、パフォーマンスが低下します。", MessageType.Info);
+
+                EditorGUILayout.Space();
+                DrawProperty("_TessellationMinDistance", "最小距離");
+                DrawProperty("_TessellationMaxDistance", "最大距離");
+                EditorGUILayout.HelpBox("カメラからの距離に応じてテッセレーションを調整します。近くのオブジェクトは細かく、遠くは粗く分割されます。", MessageType.Info);
+
+                EditorGUILayout.Space();
+                DrawProperty("_DisplacementMap", "ディスプレイスメントマップ（高さ）");
+                DrawProperty("_DisplacementStrength", "ディスプレイスメントの強さ");
+                EditorGUILayout.HelpBox("ディスプレイスメントマップを使用して表面の凹凸を作成します。白は高く、黒は低くなります。", MessageType.Info);
+
+                EditorGUILayout.Space();
+                EditorGUILayout.HelpBox(
+                    "注意事項：\n" +
+                    "• テッセレーションはShader Model 4.6以上が必要です\n" +
+                    "• VRChatではアバターに使用できない可能性があります\n" +
+                    "• パフォーマンスへの影響が大きいため、慎重に使用してください\n" +
+                    "• モバイルプラットフォームでは動作しません",
+                    MessageType.Warning);
             }
 
             EditorGUI.indentLevel--;

@@ -1,6 +1,6 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.0.1-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.1)
+[![Version](https://img.shields.io/badge/version-1.0.2-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.2)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![VRC Light Volumes](https://img.shields.io/badge/VRC_Light_Volumes-対応-brightgreen)](https://github.com/REDSIM/VRCLightVolumes)
@@ -12,14 +12,29 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ## 📌 ブランチ情報
 
-- **v1.0.1** - 最新安定版（日本語UI完全対応 + VRC Light Volumes対応）
+- **v1.0.2** - 最新安定版（テッセレーション対応）
+- **v1.0.1** - VRC Light Volumes対応 + 完全日本語UI
 - **v1.0.0** - 初回安定版（日本語UI完全対応）
 
-特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.1`）。
+特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.2`）。
 
 ## ✨ 新機能
 
-### 🌟 VRC Light Volumes 対応 v1.0.1（NEW!）
+### 🔺 テッセレーション対応 v1.0.2（NEW!）
+メッシュを動的に細分化してディテールを追加する高度な機能を実装しました：
+
+- **動的メッシュ細分化**: Hull & Domain Shaderによるリアルタイム分割
+- **距離ベースLOD**: カメラからの距離に応じて最適化
+- **ディスプレイスメントマッピング**: 高さマップで立体的な表面を生成
+- **パフォーマンス制御**: テッセレーション係数と距離範囲を調整可能
+- **完全日本語UI**: インスペクターが完全日本語化
+
+#### テッセレーションとは？
+メッシュのポリゴン数を動的に増やして表面のディテールを向上させる技術です。岩の凹凸、タイルの目地、布の織り目など、細かいディテールをモデルに追加せずに表現できます。
+
+**⚠️ 注意**: Shader Model 4.6以上が必要で、VRChatアバターでは使用できない可能性があります。高品質な背景やPC専用プロジェクトに適しています。
+
+### 🌟 VRC Light Volumes 対応 v1.0.1
 次世代ボクセルベースのライティングシステムに完全対応しました：
 
 - **ボクセルベースライティング**: VRChatワールドで部分的な照明が可能に
@@ -690,6 +705,46 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
 詳細は [PARTICLE_SYSTEM_GUIDE.md](PARTICLE_SYSTEM_GUIDE.md) を参照してください。
 
 ## 更新履歴
+
+### v1.0.2 (2025-10-31)
+**テッセレーション & ディスプレイスメントマッピング対応**
+
+#### 新機能
+- **🔺 テッセレーション（Tessellation）完全対応**
+  - Hull & Domain Shaderによるメッシュ動的細分化
+  - 距離ベースLOD（Level of Detail）
+    - カメラに近いオブジェクトは細かく分割
+    - 遠くのオブジェクトは粗く分割してパフォーマンス最適化
+  - ディスプレイスメントマッピング統合
+    - 高さマップによる表面の凹凸表現
+    - リアルな立体感の追加
+  - テッセレーション係数調整（1-64）
+  - 距離範囲カスタマイズ（最小/最大距離）
+  - Shader Model 4.6以上が必要
+
+- **🎌 完全日本語UI対応**
+  - テッセレーションUIの完全日本語化
+  - 詳細な説明とヘルプメッセージ
+  - VRChat使用時の注意事項表示
+  - パフォーマンスへの影響に関する警告
+
+#### 技術仕様
+- Hull Shader: バリセントリック座標による三角形分割
+- Domain Shader: 頂点補間とディスプレイスメント適用
+- 距離ベースLODアルゴリズム
+- Shader Model 4.6以上が必要（DX11+）
+
+#### 使用上の注意
+- ⚠️ VRChatアバターでは使用できない可能性があります
+- ⚠️ パフォーマンスへの影響が大きいため、慎重に使用してください
+- ⚠️ モバイルプラットフォームでは動作しません
+- ⚠️ テッセレーションは高度な機能です。基本的な使い方に慣れてから使用することを推奨します
+
+#### 推奨用途
+- 高品質な背景モデル
+- 静的な小道具オブジェクト
+- プレゼンテーション用の高品質レンダリング
+- PC専用プロジェクト
 
 ### v1.0.1 (2025-10-31)
 **VRC Light Volumes対応 + 完全日本語UI**

@@ -134,6 +134,14 @@ Shader "Natane/Toon Shader"
         [Toggle(_REFRACTION_MASK)] _UseRefractionMask ("Use Refraction Mask", Float) = 0
         _RefractionMask ("Refraction Mask", 2D) = "white" {}
 
+        [Header(Tessellation)]
+        [Toggle(_TESSELLATION)] _Tessellation ("Enable Tessellation", Float) = 0
+        _TessellationFactor ("Tessellation Factor", Range(1, 64)) = 4
+        _TessellationMinDistance ("Min Distance", Range(1, 100)) = 10
+        _TessellationMaxDistance ("Max Distance", Range(1, 100)) = 50
+        _DisplacementStrength ("Displacement Strength", Range(0, 1)) = 0.1
+        _DisplacementMap ("Displacement Map (Height)", 2D) = "gray" {}
+
         [Header(Rendering)]
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull Mode", Float) = 2
         [Enum(Off,0,On,1)] _ZWrite ("Z Write", Float) = 1
@@ -221,7 +229,17 @@ Shader "Natane/Toon Shader"
             ZWrite [_ZWrite]
 
             CGPROGRAM
-            #pragma vertex vert
+            #pragma target 4.6
+            #pragma shader_feature _TESSELLATION
+
+            #ifdef _TESSELLATION
+                #pragma vertex tessvert
+                #pragma hull hull
+                #pragma domain domain
+            #else
+                #pragma vertex vert
+            #endif
+
             #pragma fragment frag
             #pragma multi_compile_fwdbase
             #pragma multi_compile_fog
@@ -255,6 +273,21 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature _REFRACTION_MASK
 
             #include "Include/NataneToonCore.hlsl"
+
+            #ifdef _TESSELLATION
+                #include "Include/NataneToonTessellation.hlsl"
+
+                // Tessellation vertex shader (pass-through)
+                TessellationControlPoint tessvert(appdata v)
+                {
+                    TessellationControlPoint o;
+                    o.vertex = v.vertex;
+                    o.normal = v.normal;
+                    o.tangent = v.tangent;
+                    o.uv = v.uv;
+                    return o;
+                }
+            #endif
 
             ENDCG
         }

@@ -104,6 +104,13 @@ CBUFFER_START(UnityPerMaterial)
     float _RefractionIntensity;
     float _RefractionBlur;
     sampler2D _RefractionMask;
+
+    // Tessellation
+    float _TessellationFactor;
+    float _TessellationMinDistance;
+    float _TessellationMaxDistance;
+    float _DisplacementStrength;
+    sampler2D _DisplacementMap;
 CBUFFER_END
 
 // Cubemap samplers (outside CBUFFER)
