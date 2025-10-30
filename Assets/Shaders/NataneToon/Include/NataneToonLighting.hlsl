@@ -70,4 +70,68 @@ float3 SubsurfaceScattering(float3 normal, float3 lightDir, float3 viewDir, floa
     return backLight * _SSSColor.rgb * _LightColor0.rgb;
 }
 
+// Cubemap Reflection (Environment Mapping)
+// Samples a cubemap based on reflection vector for realistic environment reflections
+float3 CubemapReflection(float3 worldNormal, float3 viewDir, float smoothness, float metallic)
+{
+    // Calculate reflection vector
+    float3 reflectDir = reflect(-viewDir, worldNormal);
+
+    // Calculate mip level based on smoothness (roughness = 1 - smoothness)
+    float roughness = 1.0 - smoothness;
+    float mipLevel = roughness * 7.0; // Assume 8 mip levels (0-7)
+
+    // Sample cubemap with calculated mip level for roughness effect
+    float4 reflectionSample = texCUBElod(_ReflectionCube, float4(reflectDir, mipLevel));
+
+    // Apply reflection color tint
+    float3 reflection = reflectionSample.rgb * _ReflectionColor.rgb;
+
+    // Fresnel effect - objects reflect more at grazing angles
+    float fresnel = pow(1.0 - saturate(dot(worldNormal, viewDir)), _FresnelPower);
+
+    // Metallic surfaces reflect more, non-metallic reflect at grazing angles
+    float reflectionStrength = lerp(fresnel, 1.0, metallic);
+
+    return reflection * reflectionStrength * _ReflectionIntensity;
+}
+
+// Environmental Rim (Low-angle environment reflections)
+// Simulates reflections at grazing angles from environment cubemap
+float3 EnvironmentalRim(float3 worldNormal, float3 viewDir)
+{
+    // Calculate reflection vector
+    float3 reflectDir = reflect(-viewDir, worldNormal);
+
+    // Sample environment cubemap
+    float3 envColor = texCUBE(_EnvRimCube, reflectDir).rgb;
+
+    // Calculate rim factor (stronger at edges)
+    float rim = 1.0 - saturate(dot(worldNormal, viewDir));
+    rim = pow(rim, _EnvRimPower);
+
+    // Apply color tint and intensity
+    return envColor * _EnvRimColor.rgb * rim * _EnvRimIntensity;
+}
+
+// Refraction Calculation
+// Calculates refracted view direction for transparent materials
+float3 CalculateRefraction(float3 worldNormal, float3 viewDir, float refractionIndex)
+{
+    // Calculate refraction using Snell's law
+    // IOR ratio: from air (1.0) to material (refractionIndex)
+    float iorRatio = 1.0 / refractionIndex;
+
+    // Refract the view direction through the surface
+    float3 refractDir = refract(-viewDir, worldNormal, iorRatio);
+
+    // If total internal reflection occurs, use reflection instead
+    if (length(refractDir) < 0.01)
+    {
+        refractDir = reflect(-viewDir, worldNormal);
+    }
+
+    return refractDir;
+}
+
 #endif // NATANE_TOON_LIGHTING_INCLUDED

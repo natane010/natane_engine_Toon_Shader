@@ -94,6 +94,41 @@ Shader "Natane/Toon Shader"
         _BumpMap ("Normal Map", 2D) = "bump" {}
         _BumpScale ("Normal Scale", Range(0, 2)) = 1
 
+        [Header(Cubemap Reflection)]
+        [Toggle(_REFLECTION)] _Reflection ("Enable Reflection", Float) = 0
+        _ReflectionCube ("Reflection Cubemap", CUBE) = "black" {}
+        _ReflectionColor ("Reflection Color", Color) = (1, 1, 1, 1)
+        _ReflectionIntensity ("Reflection Intensity", Range(0, 2)) = 1
+        _Smoothness ("Smoothness (Glossiness)", Range(0, 1)) = 0.5
+        _Metallic ("Metallic", Range(0, 1)) = 0
+        _FresnelPower ("Fresnel Power", Range(0, 10)) = 5
+        [Toggle(_REFLECTION_MASK)] _UseReflectionMask ("Use Reflection Mask", Float) = 0
+        _ReflectionMask ("Reflection Mask", 2D) = "white" {}
+
+        [Header(Environmental Rim)]
+        [Toggle(_ENV_RIM)] _EnvRim ("Enable Environmental Rim", Float) = 0
+        _EnvRimCube ("Environment Cubemap", CUBE) = "black" {}
+        _EnvRimColor ("Env Rim Color", Color) = (1, 1, 1, 1)
+        _EnvRimPower ("Env Rim Power", Range(0.1, 10)) = 3
+        _EnvRimIntensity ("Env Rim Intensity", Range(0, 5)) = 1
+        [Toggle(_ENV_RIM_MASK)] _UseEnvRimMask ("Use Env Rim Mask", Float) = 0
+        _EnvRimMask ("Env Rim Mask", 2D) = "white" {}
+
+        [Header(Parallax Mapping)]
+        [Toggle(_PARALLAX)] _Parallax ("Enable Parallax", Float) = 0
+        _ParallaxMap ("Height Map", 2D) = "grey" {}
+        _ParallaxScale ("Parallax Scale", Range(0, 0.1)) = 0.02
+        _ParallaxMinSamples ("Min Samples", Range(4, 16)) = 4
+        _ParallaxMaxSamples ("Max Samples", Range(16, 64)) = 32
+
+        [Header(Refraction)]
+        [Toggle(_REFRACTION)] _Refraction ("Enable Refraction", Float) = 0
+        _RefractionIndex ("Refraction Index (IOR)", Range(1, 3)) = 1.5
+        _RefractionIntensity ("Refraction Intensity", Range(0, 1)) = 1
+        _RefractionBlur ("Refraction Blur", Range(0, 1)) = 0
+        [Toggle(_REFRACTION_MASK)] _UseRefractionMask ("Use Refraction Mask", Float) = 0
+        _RefractionMask ("Refraction Mask", 2D) = "white" {}
+
         [Header(Rendering)]
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull Mode", Float) = 2
         [Enum(Off,0,On,1)] _ZWrite ("Z Write", Float) = 1
@@ -204,6 +239,13 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature _DISSOLVE
             #pragma shader_feature _DISSOLVE_MASK
             #pragma shader_feature _HUE_SHIFT
+            #pragma shader_feature _REFLECTION
+            #pragma shader_feature _REFLECTION_MASK
+            #pragma shader_feature _ENV_RIM
+            #pragma shader_feature _ENV_RIM_MASK
+            #pragma shader_feature _PARALLAX
+            #pragma shader_feature _REFRACTION
+            #pragma shader_feature _REFRACTION_MASK
 
             #include "Include/NataneToonCore.hlsl"
 
@@ -235,6 +277,9 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature _DISSOLVE
             #pragma shader_feature _DISSOLVE_MASK
             #pragma shader_feature _HUE_SHIFT
+            #pragma shader_feature _PARALLAX
+            #pragma shader_feature _REFRACTION
+            #pragma shader_feature _REFRACTION_MASK
 
             #include "Include/NataneToonCore.hlsl"
 
