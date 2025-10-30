@@ -30,20 +30,20 @@ namespace NataneParticleSystemEditor
         // Template presets
         private static string[] templateNames = new string[]
         {
-            "Explosion",
-            "Fire",
-            "Smoke",
-            "Magic Sparkles",
-            "Electric",
-            "Water Splash",
-            "Heal Effect",
-            "Custom"
+            "爆発",
+            "炎",
+            "煙",
+            "魔法の輝き",
+            "電気",
+            "水しぶき",
+            "ヒール効果",
+            "カスタム"
         };
 
-        [MenuItem("Tools/Natane/Particle Effect Editor")]
+        [MenuItem("Tools/Natane/パーティクルエフェクトエディタ")]
         public static void ShowWindow()
         {
-            var window = GetWindow<ParticleEffectEditorWindow>("Particle Effect Editor");
+            var window = GetWindow<ParticleEffectEditorWindow>("パーティクルエフェクトエディタ");
             window.minSize = new Vector2(400, 600);
             window.Show();
         }
@@ -111,7 +111,7 @@ namespace NataneParticleSystemEditor
             }
             else
             {
-                EditorGUILayout.HelpBox("Create or select a preset to start editing", MessageType.Info);
+                EditorGUILayout.HelpBox("編集を開始するにはプリセットを作成または選択してください", MessageType.Info);
             }
 
             EditorGUILayout.EndScrollView();
@@ -121,12 +121,12 @@ namespace NataneParticleSystemEditor
         {
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
 
-            if (GUILayout.Button("New Preset", EditorStyles.toolbarButton, GUILayout.Width(100)))
+            if (GUILayout.Button("新規プリセット", EditorStyles.toolbarButton, GUILayout.Width(100)))
             {
                 CreateNewPreset();
             }
 
-            if (GUILayout.Button("Load Template", EditorStyles.toolbarButton, GUILayout.Width(100)))
+            if (GUILayout.Button("テンプレート読み込み", EditorStyles.toolbarButton, GUILayout.Width(100)))
             {
                 ShowTemplateMenu();
             }
@@ -135,12 +135,12 @@ namespace NataneParticleSystemEditor
 
             if (currentPreset != null)
             {
-                if (GUILayout.Button("Save", EditorStyles.toolbarButton, GUILayout.Width(60)))
+                if (GUILayout.Button("保存", EditorStyles.toolbarButton, GUILayout.Width(60)))
                 {
                     SavePreset();
                 }
 
-                if (GUILayout.Button("Apply to Scene", EditorStyles.toolbarButton, GUILayout.Width(110)))
+                if (GUILayout.Button("シーンに適用", EditorStyles.toolbarButton, GUILayout.Width(110)))
                 {
                     ApplyToSelectedObject();
                 }
@@ -152,11 +152,11 @@ namespace NataneParticleSystemEditor
         private void DrawPresetSelection()
         {
             EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.LabelField("Current Preset", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("現在のプリセット", EditorStyles.boldLabel);
 
             EditorGUI.BeginChangeCheck();
             currentPreset = (ParticleEffectPreset)EditorGUILayout.ObjectField(
-                "Preset", currentPreset, typeof(ParticleEffectPreset), false);
+                "プリセット", currentPreset, typeof(ParticleEffectPreset), false);
 
             if (EditorGUI.EndChangeCheck() && currentPreset != null)
             {
@@ -169,19 +169,19 @@ namespace NataneParticleSystemEditor
         private void DrawPresetInfo()
         {
             EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.LabelField("Preset Information", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("プリセット情報", EditorStyles.boldLabel);
 
-            currentPreset.presetName = EditorGUILayout.TextField("Name", currentPreset.presetName);
+            currentPreset.presetName = EditorGUILayout.TextField("名前", currentPreset.presetName);
             currentPreset.description = EditorGUILayout.TextArea(currentPreset.description, GUILayout.Height(60));
-            currentPreset.category = (EffectCategory)EditorGUILayout.EnumPopup("Category", currentPreset.category);
-            currentPreset.previewIcon = (Sprite)EditorGUILayout.ObjectField("Icon", currentPreset.previewIcon, typeof(Sprite), false);
+            currentPreset.category = (EffectCategory)EditorGUILayout.EnumPopup("カテゴリー", currentPreset.category);
+            currentPreset.previewIcon = (Sprite)EditorGUILayout.ObjectField("アイコン", currentPreset.previewIcon, typeof(Sprite), false);
 
             EditorGUILayout.EndVertical();
         }
 
         private void DrawMainSettings()
         {
-            showMainSettings = EditorGUILayout.Foldout(showMainSettings, "Main Settings", true, EditorStyles.foldoutHeader);
+            showMainSettings = EditorGUILayout.Foldout(showMainSettings, "メイン設定", true, EditorStyles.foldoutHeader);
 
             if (showMainSettings)
             {
@@ -189,14 +189,14 @@ namespace NataneParticleSystemEditor
 
                 EditorGUI.BeginChangeCheck();
 
-                currentPreset.duration = EditorGUILayout.FloatField("Duration", currentPreset.duration);
-                currentPreset.looping = EditorGUILayout.Toggle("Looping", currentPreset.looping);
-                currentPreset.startLifetime = EditorGUILayout.Slider("Start Lifetime", currentPreset.startLifetime, 0.1f, 10f);
-                currentPreset.startSpeed = EditorGUILayout.Slider("Start Speed", currentPreset.startSpeed, 0f, 20f);
-                currentPreset.startSize = EditorGUILayout.Slider("Start Size", currentPreset.startSize, 0.1f, 5f);
-                currentPreset.startColor = EditorGUILayout.ColorField("Start Color", currentPreset.startColor);
-                currentPreset.gravityModifier = EditorGUILayout.Slider("Gravity", currentPreset.gravityModifier, -2f, 2f);
-                currentPreset.maxParticles = EditorGUILayout.IntSlider("Max Particles", currentPreset.maxParticles, 10, 10000);
+                currentPreset.duration = EditorGUILayout.FloatField("期間", currentPreset.duration);
+                currentPreset.looping = EditorGUILayout.Toggle("ループ", currentPreset.looping);
+                currentPreset.startLifetime = EditorGUILayout.Slider("開始ライフタイム", currentPreset.startLifetime, 0.1f, 10f);
+                currentPreset.startSpeed = EditorGUILayout.Slider("開始速度", currentPreset.startSpeed, 0f, 20f);
+                currentPreset.startSize = EditorGUILayout.Slider("開始サイズ", currentPreset.startSize, 0.1f, 5f);
+                currentPreset.startColor = EditorGUILayout.ColorField("開始色", currentPreset.startColor);
+                currentPreset.gravityModifier = EditorGUILayout.Slider("重力", currentPreset.gravityModifier, -2f, 2f);
+                currentPreset.maxParticles = EditorGUILayout.IntSlider("最大パーティクル数", currentPreset.maxParticles, 10, 10000);
 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -210,7 +210,7 @@ namespace NataneParticleSystemEditor
 
         private void DrawEmissionSettings()
         {
-            showEmissionSettings = EditorGUILayout.Foldout(showEmissionSettings, "Emission", true, EditorStyles.foldoutHeader);
+            showEmissionSettings = EditorGUILayout.Foldout(showEmissionSettings, "エミッション", true, EditorStyles.foldoutHeader);
 
             if (showEmissionSettings)
             {
@@ -218,16 +218,16 @@ namespace NataneParticleSystemEditor
 
                 EditorGUI.BeginChangeCheck();
 
-                currentPreset.emissionRate = EditorGUILayout.Slider("Rate Over Time", currentPreset.emissionRate, 0f, 100f);
+                currentPreset.emissionRate = EditorGUILayout.Slider("時間経過による放出率", currentPreset.emissionRate, 0f, 100f);
 
                 EditorGUILayout.Space(5);
-                currentPreset.useBurst = EditorGUILayout.Toggle("Use Burst", currentPreset.useBurst);
+                currentPreset.useBurst = EditorGUILayout.Toggle("バーストを使用", currentPreset.useBurst);
 
                 if (currentPreset.useBurst)
                 {
                     EditorGUI.indentLevel++;
-                    currentPreset.burstCount = EditorGUILayout.IntSlider("Burst Count", currentPreset.burstCount, 1, 1000);
-                    currentPreset.burstTime = EditorGUILayout.Slider("Burst Time", currentPreset.burstTime, 0f, 5f);
+                    currentPreset.burstCount = EditorGUILayout.IntSlider("バースト数", currentPreset.burstCount, 1, 1000);
+                    currentPreset.burstTime = EditorGUILayout.Slider("バースト時間", currentPreset.burstTime, 0f, 5f);
                     EditorGUI.indentLevel--;
                 }
 
@@ -243,7 +243,7 @@ namespace NataneParticleSystemEditor
 
         private void DrawShapeSettings()
         {
-            showShapeSettings = EditorGUILayout.Foldout(showShapeSettings, "Shape", true, EditorStyles.foldoutHeader);
+            showShapeSettings = EditorGUILayout.Foldout(showShapeSettings, "形状", true, EditorStyles.foldoutHeader);
 
             if (showShapeSettings)
             {
@@ -251,9 +251,9 @@ namespace NataneParticleSystemEditor
 
                 EditorGUI.BeginChangeCheck();
 
-                currentPreset.shapeType = (ParticleSystemShapeType)EditorGUILayout.EnumPopup("Shape Type", currentPreset.shapeType);
-                currentPreset.shapeAngle = EditorGUILayout.Slider("Angle", currentPreset.shapeAngle, 0f, 90f);
-                currentPreset.shapeRadius = EditorGUILayout.Slider("Radius", currentPreset.shapeRadius, 0.1f, 10f);
+                currentPreset.shapeType = (ParticleSystemShapeType)EditorGUILayout.EnumPopup("形状タイプ", currentPreset.shapeType);
+                currentPreset.shapeAngle = EditorGUILayout.Slider("角度", currentPreset.shapeAngle, 0f, 90f);
+                currentPreset.shapeRadius = EditorGUILayout.Slider("半径", currentPreset.shapeRadius, 0.1f, 10f);
 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -267,7 +267,7 @@ namespace NataneParticleSystemEditor
 
         private void DrawColorSettings()
         {
-            showColorSettings = EditorGUILayout.Foldout(showColorSettings, "Color Over Lifetime", true, EditorStyles.foldoutHeader);
+            showColorSettings = EditorGUILayout.Foldout(showColorSettings, "ライフタイム中の色", true, EditorStyles.foldoutHeader);
 
             if (showColorSettings)
             {
@@ -275,7 +275,7 @@ namespace NataneParticleSystemEditor
 
                 EditorGUI.BeginChangeCheck();
 
-                currentPreset.useColorOverLifetime = EditorGUILayout.Toggle("Enable", currentPreset.useColorOverLifetime);
+                currentPreset.useColorOverLifetime = EditorGUILayout.Toggle("有効", currentPreset.useColorOverLifetime);
 
                 if (currentPreset.useColorOverLifetime)
                 {
@@ -283,7 +283,7 @@ namespace NataneParticleSystemEditor
                     {
                         currentPreset.colorGradient = new Gradient();
                     }
-                    currentPreset.colorGradient = EditorGUILayout.GradientField("Color Gradient", currentPreset.colorGradient);
+                    currentPreset.colorGradient = EditorGUILayout.GradientField("カラーグラデーション", currentPreset.colorGradient);
                 }
 
                 if (EditorGUI.EndChangeCheck())
@@ -298,7 +298,7 @@ namespace NataneParticleSystemEditor
 
         private void DrawSizeSettings()
         {
-            showSizeSettings = EditorGUILayout.Foldout(showSizeSettings, "Size Over Lifetime", true, EditorStyles.foldoutHeader);
+            showSizeSettings = EditorGUILayout.Foldout(showSizeSettings, "ライフタイム中のサイズ", true, EditorStyles.foldoutHeader);
 
             if (showSizeSettings)
             {
@@ -306,11 +306,11 @@ namespace NataneParticleSystemEditor
 
                 EditorGUI.BeginChangeCheck();
 
-                currentPreset.useSizeOverLifetime = EditorGUILayout.Toggle("Enable", currentPreset.useSizeOverLifetime);
+                currentPreset.useSizeOverLifetime = EditorGUILayout.Toggle("有効", currentPreset.useSizeOverLifetime);
 
                 if (currentPreset.useSizeOverLifetime)
                 {
-                    currentPreset.sizeOverLifetime = EditorGUILayout.CurveField("Size Curve", currentPreset.sizeOverLifetime);
+                    currentPreset.sizeOverLifetime = EditorGUILayout.CurveField("サイズカーブ", currentPreset.sizeOverLifetime);
                 }
 
                 if (EditorGUI.EndChangeCheck())
@@ -325,7 +325,7 @@ namespace NataneParticleSystemEditor
 
         private void DrawVelocitySettings()
         {
-            showVelocitySettings = EditorGUILayout.Foldout(showVelocitySettings, "Velocity Over Lifetime", true, EditorStyles.foldoutHeader);
+            showVelocitySettings = EditorGUILayout.Foldout(showVelocitySettings, "ライフタイム中の速度", true, EditorStyles.foldoutHeader);
 
             if (showVelocitySettings)
             {
@@ -333,11 +333,11 @@ namespace NataneParticleSystemEditor
 
                 EditorGUI.BeginChangeCheck();
 
-                currentPreset.useVelocityOverLifetime = EditorGUILayout.Toggle("Enable", currentPreset.useVelocityOverLifetime);
+                currentPreset.useVelocityOverLifetime = EditorGUILayout.Toggle("有効", currentPreset.useVelocityOverLifetime);
 
                 if (currentPreset.useVelocityOverLifetime)
                 {
-                    currentPreset.velocityOverLifetime = EditorGUILayout.Vector3Field("Velocity", currentPreset.velocityOverLifetime);
+                    currentPreset.velocityOverLifetime = EditorGUILayout.Vector3Field("速度", currentPreset.velocityOverLifetime);
                 }
 
                 if (EditorGUI.EndChangeCheck())
@@ -352,7 +352,7 @@ namespace NataneParticleSystemEditor
 
         private void DrawRotationSettings()
         {
-            showRotationSettings = EditorGUILayout.Foldout(showRotationSettings, "Rotation", true, EditorStyles.foldoutHeader);
+            showRotationSettings = EditorGUILayout.Foldout(showRotationSettings, "回転", true, EditorStyles.foldoutHeader);
 
             if (showRotationSettings)
             {
@@ -360,11 +360,11 @@ namespace NataneParticleSystemEditor
 
                 EditorGUI.BeginChangeCheck();
 
-                currentPreset.useRotation = EditorGUILayout.Toggle("Enable", currentPreset.useRotation);
+                currentPreset.useRotation = EditorGUILayout.Toggle("有効", currentPreset.useRotation);
 
                 if (currentPreset.useRotation)
                 {
-                    currentPreset.rotationSpeed = EditorGUILayout.Slider("Rotation Speed", currentPreset.rotationSpeed, -360f, 360f);
+                    currentPreset.rotationSpeed = EditorGUILayout.Slider("回転速度", currentPreset.rotationSpeed, -360f, 360f);
                 }
 
                 if (EditorGUI.EndChangeCheck())
@@ -379,7 +379,7 @@ namespace NataneParticleSystemEditor
 
         private void DrawRenderSettings()
         {
-            showRenderSettings = EditorGUILayout.Foldout(showRenderSettings, "Renderer", true, EditorStyles.foldoutHeader);
+            showRenderSettings = EditorGUILayout.Foldout(showRenderSettings, "レンダラー", true, EditorStyles.foldoutHeader);
 
             if (showRenderSettings)
             {
@@ -387,8 +387,8 @@ namespace NataneParticleSystemEditor
 
                 EditorGUI.BeginChangeCheck();
 
-                currentPreset.renderMode = (ParticleSystemRenderMode)EditorGUILayout.EnumPopup("Render Mode", currentPreset.renderMode);
-                currentPreset.particleMaterial = (Material)EditorGUILayout.ObjectField("Material", currentPreset.particleMaterial, typeof(Material), false);
+                currentPreset.renderMode = (ParticleSystemRenderMode)EditorGUILayout.EnumPopup("レンダーモード", currentPreset.renderMode);
+                currentPreset.particleMaterial = (Material)EditorGUILayout.ObjectField("マテリアル", currentPreset.particleMaterial, typeof(Material), false);
 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -402,7 +402,7 @@ namespace NataneParticleSystemEditor
 
         private void DrawTrailSettings()
         {
-            showTrailSettings = EditorGUILayout.Foldout(showTrailSettings, "Trails", true, EditorStyles.foldoutHeader);
+            showTrailSettings = EditorGUILayout.Foldout(showTrailSettings, "トレイル", true, EditorStyles.foldoutHeader);
 
             if (showTrailSettings)
             {
@@ -410,13 +410,13 @@ namespace NataneParticleSystemEditor
 
                 EditorGUI.BeginChangeCheck();
 
-                currentPreset.useTrails = EditorGUILayout.Toggle("Enable", currentPreset.useTrails);
+                currentPreset.useTrails = EditorGUILayout.Toggle("有効", currentPreset.useTrails);
 
                 if (currentPreset.useTrails)
                 {
-                    currentPreset.trailLifetime = EditorGUILayout.Slider("Lifetime", currentPreset.trailLifetime, 0.1f, 5f);
-                    currentPreset.trailMinVertexDistance = EditorGUILayout.Slider("Min Vertex Distance", currentPreset.trailMinVertexDistance, 0.01f, 1f);
-                    currentPreset.trailMaterial = (Material)EditorGUILayout.ObjectField("Trail Material", currentPreset.trailMaterial, typeof(Material), false);
+                    currentPreset.trailLifetime = EditorGUILayout.Slider("ライフタイム", currentPreset.trailLifetime, 0.1f, 5f);
+                    currentPreset.trailMinVertexDistance = EditorGUILayout.Slider("最小頂点距離", currentPreset.trailMinVertexDistance, 0.01f, 1f);
+                    currentPreset.trailMaterial = (Material)EditorGUILayout.ObjectField("トレイルマテリアル", currentPreset.trailMaterial, typeof(Material), false);
                 }
 
                 if (EditorGUI.EndChangeCheck())
@@ -432,33 +432,33 @@ namespace NataneParticleSystemEditor
         private void DrawPreviewControls()
         {
             EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.LabelField("Preview Controls", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("プレビューコントロール", EditorStyles.boldLabel);
 
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("Play", GUILayout.Height(30)))
+            if (GUILayout.Button("再生", GUILayout.Height(30)))
             {
                 PlayPreview();
             }
 
-            if (GUILayout.Button("Stop", GUILayout.Height(30)))
+            if (GUILayout.Button("停止", GUILayout.Height(30)))
             {
                 StopPreview();
             }
 
-            if (GUILayout.Button("Restart", GUILayout.Height(30)))
+            if (GUILayout.Button("再開", GUILayout.Height(30)))
             {
                 RestartPreview();
             }
 
             EditorGUILayout.EndHorizontal();
 
-            autoPlay = EditorGUILayout.Toggle("Auto Play on Change", autoPlay);
+            autoPlay = EditorGUILayout.Toggle("変更時に自動再生", autoPlay);
 
             if (previewParticleSystem != null)
             {
-                EditorGUILayout.LabelField($"Particles: {previewParticleSystem.particleCount}");
-                EditorGUILayout.LabelField($"Is Playing: {previewParticleSystem.isPlaying}");
+                EditorGUILayout.LabelField($"パーティクル数: {previewParticleSystem.particleCount}");
+                EditorGUILayout.LabelField($"再生中: {previewParticleSystem.isPlaying}");
             }
 
             EditorGUILayout.EndVertical();
@@ -518,10 +518,10 @@ namespace NataneParticleSystemEditor
         private void CreateNewPreset()
         {
             string path = EditorUtility.SaveFilePanelInProject(
-                "Create Particle Effect Preset",
-                "New Particle Preset",
+                "パーティクルエフェクトプリセットを作成",
+                "新規パーティクルプリセット",
                 "asset",
-                "Create a new particle effect preset");
+                "新しいパーティクルエフェクトプリセットを作成");
 
             if (!string.IsNullOrEmpty(path))
             {
@@ -542,7 +542,7 @@ namespace NataneParticleSystemEditor
             {
                 EditorUtility.SetDirty(currentPreset);
                 AssetDatabase.SaveAssets();
-                Debug.Log($"Preset '{currentPreset.presetName}' saved successfully!");
+                Debug.Log($"プリセット '{currentPreset.presetName}' が正常に保存されました!");
             }
         }
 
@@ -557,14 +557,14 @@ namespace NataneParticleSystemEditor
                 }
 
                 currentPreset.ApplyToParticleSystem(ps);
-                Debug.Log($"Applied preset to {Selection.activeGameObject.name}");
+                Debug.Log($"プリセットが {Selection.activeGameObject.name} に適用されました");
             }
             else
             {
                 // Create new GameObject with particle system
                 GameObject go = currentPreset.CreateParticleEffect(Vector3.zero, Quaternion.identity);
                 Selection.activeGameObject = go;
-                Debug.Log($"Created new particle effect: {go.name}");
+                Debug.Log($"新しいパーティクルエフェクトが作成されました: {go.name}");
             }
         }
 
@@ -584,7 +584,7 @@ namespace NataneParticleSystemEditor
         {
             if (currentPreset == null)
             {
-                EditorUtility.DisplayDialog("No Preset", "Please create or select a preset first", "OK");
+                EditorUtility.DisplayDialog("プリセットなし", "最初にプリセットを作成または選択してください", "OK");
                 return;
             }
 
@@ -592,7 +592,7 @@ namespace NataneParticleSystemEditor
             ApplyPresetToPreview();
             EditorUtility.SetDirty(currentPreset);
 
-            Debug.Log($"Applied template: {templateName}");
+            Debug.Log($"テンプレートが適用されました: {templateName}");
         }
 
         public static void ApplyTemplate(ParticleEffectPreset preset, string templateName)
@@ -601,7 +601,7 @@ namespace NataneParticleSystemEditor
 
             switch (templateName)
             {
-                case "Explosion":
+                case "爆発":
                     // Explosion template
                     preset.category = EffectCategory.Explosion;
                     preset.duration = 2f;
@@ -624,7 +624,7 @@ namespace NataneParticleSystemEditor
                     preset.sizeOverLifetime = AnimationCurve.EaseInOut(0, 1, 1, 0);
                     break;
 
-                case "Fire":
+                case "炎":
                     // Fire template
                     preset.category = EffectCategory.Fire;
                     preset.duration = 5f;
@@ -646,7 +646,7 @@ namespace NataneParticleSystemEditor
                     preset.sizeOverLifetime = AnimationCurve.Linear(0, 0.5f, 1, 1.5f);
                     break;
 
-                case "Smoke":
+                case "煙":
                     // Smoke template
                     preset.category = EffectCategory.Smoke;
                     preset.duration = 5f;
@@ -670,7 +670,7 @@ namespace NataneParticleSystemEditor
                     preset.rotationSpeed = 45f;
                     break;
 
-                case "Magic Sparkles":
+                case "魔法の輝き":
                     // Magic sparkles template
                     preset.category = EffectCategory.Magic;
                     preset.duration = 2f;
@@ -693,7 +693,7 @@ namespace NataneParticleSystemEditor
                     preset.rotationSpeed = 180f;
                     break;
 
-                case "Electric":
+                case "電気":
                     // Electric template
                     preset.category = EffectCategory.Electric;
                     preset.duration = 1f;
@@ -714,7 +714,7 @@ namespace NataneParticleSystemEditor
                     preset.sizeOverLifetime = AnimationCurve.Linear(0, 1, 1, 0);
                     break;
 
-                case "Water Splash":
+                case "水しぶき":
                     // Water splash template
                     preset.category = EffectCategory.Water;
                     preset.duration = 1f;
@@ -738,7 +738,7 @@ namespace NataneParticleSystemEditor
                     preset.sizeOverLifetime = AnimationCurve.Linear(0, 0.5f, 1, 0.1f);
                     break;
 
-                case "Heal Effect":
+                case "ヒール効果":
                     // Heal effect template
                     preset.category = EffectCategory.Magic;
                     preset.duration = 2f;

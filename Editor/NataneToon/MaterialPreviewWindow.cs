@@ -27,7 +27,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/Material Preview", false, 90)]
         public static void ShowWindow()
         {
-            var window = GetWindow<MaterialPreviewWindow>("Material Preview");
+            var window = GetWindow<MaterialPreviewWindow>("マテリアルプレビュー");
             window.minSize = new Vector2(400, 500);
             window.Show();
         }
@@ -63,29 +63,29 @@ namespace NataneToon.Editor
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
-            previewMaterial = (Material)EditorGUILayout.ObjectField("Material", previewMaterial, typeof(Material), false);
+            previewMaterial = (Material)EditorGUILayout.ObjectField("マテリアル", previewMaterial, typeof(Material), false);
 
-            currentShape = (PreviewShape)EditorGUILayout.EnumPopup("Preview Shape", currentShape);
+            currentShape = (PreviewShape)EditorGUILayout.EnumPopup("プレビュー形状", currentShape);
             if (GUI.changed) CreatePreviewObject();
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("Lighting", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("ライティング", EditorStyles.boldLabel);
 
-            ambientColor = EditorGUILayout.ColorField("Ambient Color", ambientColor);
-            lightColor = EditorGUILayout.ColorField("Light Color", lightColor);
-            lightIntensity = EditorGUILayout.Slider("Light Intensity", lightIntensity, 0f, 2f);
+            ambientColor = EditorGUILayout.ColorField("アンビエントカラー", ambientColor);
+            lightColor = EditorGUILayout.ColorField("ライトカラー", lightColor);
+            lightIntensity = EditorGUILayout.Slider("ライト強度", lightIntensity, 0f, 2f);
 
             EditorGUILayout.Space(5);
 
-            if (GUILayout.Button("Reset View")) ResetView();
-            if (GUILayout.Button("Auto-Select Material") && Selection.activeObject is Material)
+            if (GUILayout.Button("ビューをリセット")) ResetView();
+            if (GUILayout.Button("マテリアルを自動選択") && Selection.activeObject is Material)
             {
                 previewMaterial = Selection.activeObject as Material;
             }
 
             EditorGUILayout.EndVertical();
 
-            EditorGUILayout.HelpBox("Drag to rotate • Scroll to zoom", MessageType.Info);
+            EditorGUILayout.HelpBox("ドラッグで回転 • スクロールでズーム", MessageType.Info);
         }
 
         private void DrawPreview()

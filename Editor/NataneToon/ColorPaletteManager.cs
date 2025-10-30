@@ -19,25 +19,25 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/Color Palette Manager", false, 100)]
         public static void ShowWindow()
         {
-            var window = GetWindow<ColorPaletteManager>("Color Palette");
+            var window = GetWindow<ColorPaletteManager>("カラーパレット");
             window.minSize = new Vector2(500, 400);
             window.Show();
         }
 
         private void OnGUI()
         {
-            EditorGUILayout.LabelField("Color Palette Manager", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox("Manage project colors and sync across materials", MessageType.Info);
+            EditorGUILayout.LabelField("カラーパレットマネージャー", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("プロジェクトの色を管理し、マテリアル全体に同期します", MessageType.Info);
 
             EditorGUILayout.Space(10);
 
             // Palette selection
             currentPalette = (ColorPalette)EditorGUILayout.ObjectField(
-                "Current Palette", currentPalette, typeof(ColorPalette), false);
+                "現在のパレット", currentPalette, typeof(ColorPalette), false);
 
             if (currentPalette == null)
             {
-                if (GUILayout.Button("Create New Palette", GUILayout.Height(25)))
+                if (GUILayout.Button("新しいパレットを作成", GUILayout.Height(25)))
                 {
                     CreateNewPalette();
                 }
@@ -66,8 +66,8 @@ namespace NataneToon.Editor
 
             // Actions
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Add Color")) AddColor();
-            if (GUILayout.Button("Apply to Selected Materials")) ApplyToSelected();
+            if (GUILayout.Button("色を追加")) AddColor();
+            if (GUILayout.Button("選択されたマテリアルに適用")) ApplyToSelected();
             EditorGUILayout.EndHorizontal();
         }
 
@@ -93,14 +93,14 @@ namespace NataneToon.Editor
 
         private void AddColor()
         {
-            Undo.RecordObject(currentPalette, "Add Color");
-            currentPalette.colors.Add(new ColorPalette.ColorEntry { name = $"Color {currentPalette.colors.Count + 1}" });
+            Undo.RecordObject(currentPalette, "色を追加");
+            currentPalette.colors.Add(new ColorPalette.ColorEntry { name = $"色 {currentPalette.colors.Count + 1}" });
             EditorUtility.SetDirty(currentPalette);
         }
 
         private void RemoveColor(int index)
         {
-            Undo.RecordObject(currentPalette, "Remove Color");
+            Undo.RecordObject(currentPalette, "色を削除");
             currentPalette.colors.RemoveAt(index);
             EditorUtility.SetDirty(currentPalette);
         }
@@ -113,7 +113,7 @@ namespace NataneToon.Editor
                 {
                     if (currentPalette.colors.Count > 0)
                     {
-                        Undo.RecordObject(mat, "Apply Palette");
+                        Undo.RecordObject(mat, "パレットを適用");
                         mat.SetColor("_Color", currentPalette.colors[0].color);
                         EditorUtility.SetDirty(mat);
                     }
@@ -124,7 +124,7 @@ namespace NataneToon.Editor
         private void CreateNewPalette()
         {
             string path = EditorUtility.SaveFilePanelInProject(
-                "Create Color Palette", "NewPalette", "asset", "Create palette");
+                "カラーパレットを作成", "NewPalette", "asset", "パレットを作成");
             if (!string.IsNullOrEmpty(path))
             {
                 var palette = CreateInstance<ColorPalette>();

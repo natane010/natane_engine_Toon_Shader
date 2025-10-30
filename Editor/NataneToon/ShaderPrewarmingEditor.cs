@@ -43,13 +43,13 @@ namespace NataneToon.Editor
             // PrewarmShaders(false);
         }
 
-        [MenuItem("Tools/Natane/Shader Prewarming/Prewarm All Shaders", false, 100)]
+        [MenuItem("Tools/Natane/Shader Prewarming/すべてのシェーダーをプリウォーム", false, 100)]
         private static void PrewarmShadersMenu()
         {
             PrewarmShaders(true);
         }
 
-        [MenuItem("Tools/Natane/Shader Prewarming/Prewarm Shader Variant Collection", false, 101)]
+        [MenuItem("Tools/Natane/Shader Prewarming/シェーダーバリアントコレクションをプリウォーム", false, 101)]
         private static void PrewarmShaderVariantCollectionMenu()
         {
             ShaderVariantCollection collection = FindShaderVariantCollection();
@@ -59,7 +59,7 @@ namespace NataneToon.Editor
             }
         }
 
-        [MenuItem("Tools/Natane/Shader Prewarming/Settings", false, 120)]
+        [MenuItem("Tools/Natane/Shader Prewarming/設定", false, 120)]
         private static void ShowSettings()
         {
             ShaderPrewarmingSettingsWindow.ShowWindow();
@@ -90,15 +90,15 @@ namespace NataneToon.Editor
 
             float elapsedTime = Time.realtimeSinceStartup - startTime;
 
-            string message = $"[Natane Toon] Shader prewarming completed!\n" +
-                           $"Time: {elapsedTime:F3} seconds\n" +
-                           $"Variants/Materials warmed: {totalWarmed}";
+            string message = $"[Natane Toon] シェーダープリウォーム完了!\n" +
+                           $"時間: {elapsedTime:F3} 秒\n" +
+                           $"プリウォーム済みバリアント/マテリアル: {totalWarmed}";
 
             Debug.Log(message);
 
             if (showDialog)
             {
-                EditorUtility.DisplayDialog("Shader Prewarming Complete", message, "OK");
+                EditorUtility.DisplayDialog("シェーダープリウォーム完了", message, "OK");
             }
         }
 
@@ -200,7 +200,7 @@ namespace NataneToon.Editor
 
         public static void ShowWindow()
         {
-            var window = GetWindow<ShaderPrewarmingSettingsWindow>("Shader Prewarming Settings");
+            var window = GetWindow<ShaderPrewarmingSettingsWindow>("シェーダープリウォーム設定");
             window.minSize = new Vector2(450, 400);
             window.Show();
         }
@@ -222,26 +222,26 @@ namespace NataneToon.Editor
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
 
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField("Natane Toon Shader Prewarming Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Natane Toon シェーダープリウォーム設定", EditorStyles.boldLabel);
             EditorGUILayout.Space(10);
 
             EditorGUILayout.HelpBox(
-                "Shader prewarming compiles shader variants in advance to prevent stuttering during gameplay.\n" +
-                "This is especially important for VRChat worlds and avatars.",
+                "シェーダープリウォームはシェーダーバリアントを事前にコンパイルしてゲームプレイ中のスタッタリングを防ぎます。\n" +
+                "これは特にVRChatワールドとアバターに重要です。",
                 MessageType.Info);
 
             EditorGUILayout.Space(10);
 
             // === Editor-Only Prewarming Section ===
-            EditorGUILayout.LabelField("Editor-Only Prewarming (VRChat Safe)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("エディターのみのプリウォーム (VRChat 対応)", EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
 
             // Prewarm on build setting
             EditorGUI.BeginChangeCheck();
             prewarmOnBuild = EditorGUILayout.Toggle(
                 new GUIContent(
-                    "Prewarm on Build",
-                    "Automatically prewarm shaders before building"),
+                    "ビルド時にプリウォーム",
+                    "ビルド前に自動的にシェーダーをプリウォームします"),
                 prewarmOnBuild);
 
             if (EditorGUI.EndChangeCheck())
@@ -255,8 +255,8 @@ namespace NataneToon.Editor
             EditorGUI.BeginChangeCheck();
             autoFindMaterials = EditorGUILayout.Toggle(
                 new GUIContent(
-                    "Auto-Find Materials",
-                    "Automatically find and prewarm all Natane Toon materials in the project"),
+                    "マテリアルを自動検索",
+                    "プロジェクト内のすべてのNatane Toonマテリアルを自動検索してプリウォームします"),
                 autoFindMaterials);
 
             if (EditorGUI.EndChangeCheck())
@@ -267,11 +267,11 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(20);
 
             // Manual prewarm button
-            if (GUILayout.Button("Prewarm Shaders Now", GUILayout.Height(30)))
+            if (GUILayout.Button("今すぐシェーダーをプリウォーム", GUILayout.Height(30)))
             {
                 EditorApplication.delayCall += () =>
                 {
-                    EditorUtility.DisplayProgressBar("Shader Prewarming", "Prewarming shaders...", 0.5f);
+                    EditorUtility.DisplayProgressBar("シェーダープリウォーム", "シェーダーをプリウォーム中...", 0.5f);
 
                     try
                     {
@@ -291,7 +291,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(10);
 
             EditorGUILayout.HelpBox(
-                "Note: This system is VRChat-safe as it only runs in the Unity Editor, not at runtime.",
+                "注意: このシステムはUnityエディターでのみ実行されるため、VRChat対応です。ランタイムでは実行されません。",
                 MessageType.None);
 
             EditorGUILayout.Space(20);
@@ -299,12 +299,12 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(20);
 
             // === Runtime Prewarming Section ===
-            EditorGUILayout.LabelField("Runtime Prewarming (Non-VRChat Only)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("ランタイムプリウォーム (VRChat以外のみ)", EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
 
             EditorGUILayout.HelpBox(
-                "WARNING: Runtime prewarming scripts DO NOT work in VRChat!\n" +
-                "Only enable this for non-VRChat projects where you need runtime shader prewarming.",
+                "警告: ランタイムプリウォームスクリプトはVRChatで動作しません!\n" +
+                "ランタイムシェーダープリウォームが必要なVRChat以外のプロジェクトでのみ有効にしてください。",
                 MessageType.Warning);
 
             EditorGUILayout.Space(10);
@@ -315,14 +315,14 @@ namespace NataneToon.Editor
             if (runtimeScriptExists)
             {
                 EditorGUILayout.HelpBox(
-                    "✓ Runtime prewarming script is ENABLED\n" +
-                    "Location: " + RUNTIME_SCRIPT_PATH,
+                    "✓ ランタイムプリウォームスクリプトが有効です\n" +
+                    "場所: " + RUNTIME_SCRIPT_PATH,
                     MessageType.Info);
             }
             else
             {
                 EditorGUILayout.HelpBox(
-                    "✗ Runtime prewarming script is DISABLED",
+                    "✗ ランタイムプリウォームスクリプトが無効です",
                     MessageType.None);
             }
 
@@ -331,7 +331,7 @@ namespace NataneToon.Editor
             // Generate/Delete buttons
             using (new EditorGUI.DisabledScope(runtimeScriptExists))
             {
-                if (GUILayout.Button("Generate Runtime Prewarming Script", GUILayout.Height(30)))
+                if (GUILayout.Button("ランタイムプリウォームスクリプトを生成", GUILayout.Height(30)))
                 {
                     GenerateRuntimeScript();
                 }
@@ -341,14 +341,14 @@ namespace NataneToon.Editor
 
             using (new EditorGUI.DisabledScope(!runtimeScriptExists))
             {
-                if (GUILayout.Button("Delete Runtime Prewarming Script", GUILayout.Height(30)))
+                if (GUILayout.Button("ランタイムプリウォームスクリプトを削除", GUILayout.Height(30)))
                 {
                     if (EditorUtility.DisplayDialog(
-                        "Delete Runtime Script",
-                        "Are you sure you want to delete the runtime prewarming script?\n\n" +
-                        "This will remove: " + RUNTIME_SCRIPT_PATH,
-                        "Delete",
-                        "Cancel"))
+                        "ランタイムスクリプトを削除",
+                        "ランタイムプリウォームスクリプトを削除してもよろしいですか?\n\n" +
+                        "削除対象: " + RUNTIME_SCRIPT_PATH,
+                        "削除",
+                        "キャンセル"))
                     {
                         DeleteRuntimeScript();
                     }
@@ -360,7 +360,7 @@ namespace NataneToon.Editor
             if (runtimeScriptExists)
             {
                 EditorGUILayout.HelpBox(
-                    "Usage: Add the RuntimeShaderPrewarming component to a GameObject in your scene and assign the ShaderVariantCollection.",
+                    "使い方: RuntimeShaderPrewarmingコンポーネントをシーン内のGameObjectに追加し、ShaderVariantCollectionを割り当ててください。",
                     MessageType.Info);
             }
 
@@ -467,12 +467,12 @@ public class RuntimeShaderPrewarming : MonoBehaviour
                 // Refresh AssetDatabase
                 AssetDatabase.Refresh();
 
-                Debug.Log($"[Natane Toon] Runtime prewarming script generated at: {RUNTIME_SCRIPT_PATH}");
+                Debug.Log($"[Natane Toon] ランタイムプリウォームスクリプトが生成されました: {RUNTIME_SCRIPT_PATH}");
                 EditorUtility.DisplayDialog(
-                    "Script Generated",
-                    "Runtime prewarming script has been generated successfully!\n\n" +
-                    "Location: " + RUNTIME_SCRIPT_PATH + "\n\n" +
-                    "Usage: Add this component to a GameObject in your scene and assign the ShaderVariantCollection.",
+                    "スクリプト生成完了",
+                    "ランタイムプリウォームスクリプトが正常に生成されました!\n\n" +
+                    "場所: " + RUNTIME_SCRIPT_PATH + "\n\n" +
+                    "使い方: このコンポーネントをシーン内のGameObjectに追加し、ShaderVariantCollectionを割り当ててください。",
                     "OK");
 
                 CheckRuntimeScriptExists();
@@ -489,8 +489,8 @@ public class RuntimeShaderPrewarming : MonoBehaviour
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[Natane Toon] Failed to generate runtime script: {ex.Message}");
-                EditorUtility.DisplayDialog("Error", "Failed to generate runtime script:\n" + ex.Message, "OK");
+                Debug.LogError($"[Natane Toon] ランタイムスクリプトの生成に失敗しました: {ex.Message}");
+                EditorUtility.DisplayDialog("エラー", "ランタイムスクリプトの生成に失敗しました:\n" + ex.Message, "OK");
             }
         }
 
@@ -504,10 +504,10 @@ public class RuntimeShaderPrewarming : MonoBehaviour
                     AssetDatabase.DeleteAsset(RUNTIME_SCRIPT_PATH);
                     AssetDatabase.Refresh();
 
-                    Debug.Log($"[Natane Toon] Runtime prewarming script deleted: {RUNTIME_SCRIPT_PATH}");
+                    Debug.Log($"[Natane Toon] ランタイムプリウォームスクリプトが削除されました: {RUNTIME_SCRIPT_PATH}");
                     EditorUtility.DisplayDialog(
-                        "Script Deleted",
-                        "Runtime prewarming script has been deleted successfully.",
+                        "スクリプト削除完了",
+                        "ランタイムプリウォームスクリプトが正常に削除されました。",
                         "OK");
 
                     CheckRuntimeScriptExists();
@@ -515,8 +515,8 @@ public class RuntimeShaderPrewarming : MonoBehaviour
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[Natane Toon] Failed to delete runtime script: {ex.Message}");
-                EditorUtility.DisplayDialog("Error", "Failed to delete runtime script:\n" + ex.Message, "OK");
+                Debug.LogError($"[Natane Toon] ランタイムスクリプトの削除に失敗しました: {ex.Message}");
+                EditorUtility.DisplayDialog("エラー", "ランタイムスクリプトの削除に失敗しました:\n" + ex.Message, "OK");
             }
         }
     }
