@@ -26,6 +26,11 @@ Shader "Natane/Toon Shader (Cutout)"
         _BacklightColor ("Backlight Color", Color) = (1, 1, 1, 1)
         _AdditionalLightIntensity ("Additional Light Intensity", Range(0, 1)) = 0.5
 
+        [Header(VRC Light Volumes)]
+        [Toggle(_USE_LIGHT_VOLUME)] _UseLightVolume ("Use Light Volume", Float) = 1
+        _LightVolumeIntensity ("Light Volume Intensity", Range(0, 1)) = 1
+        [Toggle(_LIGHT_VOLUME_SPECULAR)] _LightVolumeSpecular ("Light Volume Specular", Float) = 0
+
         [Header(Specular)]
         [Toggle(_SPECULAR)] _Specular ("Enable Specular", Float) = 0
         _SpecularColor ("Specular Color", Color) = (1,1,1,1)
@@ -225,6 +230,8 @@ Shader "Natane/Toon Shader (Cutout)"
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
             #pragma shader_feature _USE_RAMP
+            #pragma shader_feature _USE_LIGHT_VOLUME
+            #pragma shader_feature _LIGHT_VOLUME_SPECULAR
             #pragma shader_feature _SPECULAR
             #pragma shader_feature _SPECULAR_MASK
             #pragma shader_feature _RIM_LIGHT
@@ -251,7 +258,6 @@ Shader "Natane/Toon Shader (Cutout)"
             #pragma shader_feature _REFRACTION_MASK
             #define CUTOUT_VARIANT
 
-            sampler2D _MainTex;
             float _Cutoff;
 
             #include "../Include/NataneToonCore.hlsl"
@@ -298,7 +304,6 @@ Shader "Natane/Toon Shader (Cutout)"
             #pragma shader_feature _REFRACTION_MASK
             #define CUTOUT_VARIANT
 
-            sampler2D _MainTex;
             float _Cutoff;
 
             #include "../Include/NataneToonCore.hlsl"
