@@ -13,22 +13,22 @@ public class NataneToonShaderGUI : ShaderGUI
     private MaterialEditor materialEditor;
     private Material targetMaterial;
 
-    // Foldout states
-    private static bool showPresets = true;
-    private static bool showPerformance = true;
-    private static bool showMainTexture = true;
-    private static bool showShading = true;
-    private static bool showAdvancedLighting = true;
-    private static bool showLightVolume = true;
-    private static bool showSpecular = true;
-    private static bool showRimLight = true;
-    private static bool showSSS = true;
-    private static bool showMatCap = true;
-    private static bool showOutline = true;
-    private static bool showEmission = true;
-    private static bool showVirtualExpression = true;
-    private static bool showNormalMap = true;
-    private static bool showRendering = true;
+    // Foldout states - now per-material using EditorPrefs
+    private bool showPresets;
+    private bool showPerformance;
+    private bool showMainTexture;
+    private bool showShading;
+    private bool showAdvancedLighting;
+    private bool showLightVolume;
+    private bool showSpecular;
+    private bool showRimLight;
+    private bool showSSS;
+    private bool showMatCap;
+    private bool showOutline;
+    private bool showEmission;
+    private bool showVirtualExpression;
+    private bool showNormalMap;
+    private bool showRendering;
 
     public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties)
     {
@@ -44,6 +44,9 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUILayout.HelpBox("マテリアルエディタの初期化に失敗しました。", MessageType.Error);
                 return;
             }
+
+            // Load foldout states from EditorPrefs for this specific material
+            LoadFoldoutStates();
 
             // Header
             EditorGUILayout.LabelField("Natane Toon Shader", EditorStyles.boldLabel);
@@ -91,7 +94,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawMainTextureSection()
     {
+        EditorGUI.BeginChangeCheck();
         showMainTexture = EditorGUILayout.Foldout(showMainTexture, "メインテクスチャ", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showMainTexture)
         {
             EditorGUI.indentLevel++;
@@ -104,7 +110,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawShadingSection()
     {
+        EditorGUI.BeginChangeCheck();
         showShading = EditorGUILayout.Foldout(showShading, "シェーディング", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showShading)
         {
             EditorGUI.indentLevel++;
@@ -132,7 +141,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawAdvancedLightingSection()
     {
+        EditorGUI.BeginChangeCheck();
         showAdvancedLighting = EditorGUILayout.Foldout(showAdvancedLighting, "高度なライティング", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showAdvancedLighting)
         {
             EditorGUI.indentLevel++;
@@ -166,7 +178,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawLightVolumeSection()
     {
+        EditorGUI.BeginChangeCheck();
         showLightVolume = EditorGUILayout.Foldout(showLightVolume, "VRC Light Volumes", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showLightVolume)
         {
             EditorGUI.indentLevel++;
@@ -204,7 +219,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawSpecularSection()
     {
+        EditorGUI.BeginChangeCheck();
         showSpecular = EditorGUILayout.Foldout(showSpecular, "スペキュラー", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showSpecular)
         {
             EditorGUI.indentLevel++;
@@ -225,7 +243,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawRimLightSection()
     {
+        EditorGUI.BeginChangeCheck();
         showRimLight = EditorGUILayout.Foldout(showRimLight, "リムライト", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showRimLight)
         {
             EditorGUI.indentLevel++;
@@ -246,7 +267,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawSSSSection()
     {
+        EditorGUI.BeginChangeCheck();
         showSSS = EditorGUILayout.Foldout(showSSS, "サブサーフェススキャッタリング (SSS)", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showSSS)
         {
             EditorGUI.indentLevel++;
@@ -280,7 +304,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawMatCapSection()
     {
+        EditorGUI.BeginChangeCheck();
         showMatCap = EditorGUILayout.Foldout(showMatCap, "MatCap", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showMatCap)
         {
             EditorGUI.indentLevel++;
@@ -302,7 +329,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawOutlineSection()
     {
+        EditorGUI.BeginChangeCheck();
         showOutline = EditorGUILayout.Foldout(showOutline, "アウトライン", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showOutline)
         {
             EditorGUI.indentLevel++;
@@ -323,7 +353,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawEmissionSection()
     {
+        EditorGUI.BeginChangeCheck();
         showEmission = EditorGUILayout.Foldout(showEmission, "エミッション（発光）", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showEmission)
         {
             EditorGUI.indentLevel++;
@@ -357,7 +390,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawVirtualExpressionSection()
     {
+        EditorGUI.BeginChangeCheck();
         showVirtualExpression = EditorGUILayout.Foldout(showVirtualExpression, "バーチャル表現", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showVirtualExpression)
         {
             EditorGUI.indentLevel++;
@@ -394,7 +430,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawNormalMapSection()
     {
+        EditorGUI.BeginChangeCheck();
         showNormalMap = EditorGUILayout.Foldout(showNormalMap, "ノーマルマップ", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showNormalMap)
         {
             EditorGUI.indentLevel++;
@@ -414,7 +453,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawRenderingSection()
     {
+        EditorGUI.BeginChangeCheck();
         showRendering = EditorGUILayout.Foldout(showRendering, "レンダリング", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showRendering)
         {
             EditorGUI.indentLevel++;
@@ -464,7 +506,10 @@ public class NataneToonShaderGUI : ShaderGUI
     /// </summary>
     private void DrawPresetsSection()
     {
+        EditorGUI.BeginChangeCheck();
         showPresets = NataneToonShaderGUIUtility.DrawFoldoutHeader("マテリアルプリセット＆共有", showPresets);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showPresets)
         {
             NataneToonShaderGUIUtility.DrawMaterialActionsToolbar(targetMaterial, materialEditor);
@@ -476,7 +521,10 @@ public class NataneToonShaderGUI : ShaderGUI
     /// </summary>
     private void DrawPerformanceSection()
     {
+        EditorGUI.BeginChangeCheck();
         showPerformance = NataneToonShaderGUIUtility.DrawFoldoutHeader("パフォーマンス", showPerformance);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
         if (showPerformance)
         {
             NataneToonShaderGUIUtility.DrawPerformanceIndicator(targetMaterial);
@@ -486,5 +534,49 @@ public class NataneToonShaderGUI : ShaderGUI
                 "チェックボックスのある機能はオン/オフの切り替えが可能です。",
                 MessageType.Info);
         }
+    }
+
+    /// <summary>
+    /// Load foldout states from EditorPrefs for this specific material
+    /// </summary>
+    private void LoadFoldoutStates()
+    {
+        showPresets = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowPresets"), true);
+        showPerformance = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowPerformance"), true);
+        showMainTexture = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowBasic"), true);
+        showShading = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowShading"), true);
+        showAdvancedLighting = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowAdvancedLighting"), false);
+        showLightVolume = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowLightVolume"), false);
+        showSpecular = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowSpecular"), false);
+        showRimLight = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowRimLight"), false);
+        showSSS = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowSSS"), false);
+        showMatCap = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowMatCap"), false);
+        showOutline = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowOutline"), false);
+        showEmission = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowEmission"), false);
+        showVirtualExpression = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowVirtualExpression"), false);
+        showNormalMap = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowNormalMap"), false);
+        showRendering = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowAdvanced"), false);
+    }
+
+    /// <summary>
+    /// Save foldout states to EditorPrefs for this specific material
+    /// </summary>
+    private void SaveFoldoutStates()
+    {
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowPresets"), showPresets);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowPerformance"), showPerformance);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowBasic"), showMainTexture);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowShading"), showShading);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowAdvancedLighting"), showAdvancedLighting);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowLightVolume"), showLightVolume);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowSpecular"), showSpecular);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowRimLight"), showRimLight);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowSSS"), showSSS);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowMatCap"), showMatCap);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowOutline"), showOutline);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowEmission"), showEmission);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowVirtualExpression"), showVirtualExpression);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowNormalMap"), showNormalMap);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowAdvanced"), showRendering);
     }
 }

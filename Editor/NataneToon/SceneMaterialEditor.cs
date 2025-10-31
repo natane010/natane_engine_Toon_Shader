@@ -436,9 +436,8 @@ namespace NataneToon.Editor
             if (preset != null && currentMaterial != null)
             {
                 Undo.RecordObject(currentMaterial, "Apply Preset");
-                preset.ApplyToMaterial(currentMaterial);
-                EditorUtility.SetDirty(currentMaterial);
-                Debug.Log($"プリセット '{preset.presetName}' を適用しました Applied preset '{preset.presetName}'");
+                NataneToonMaterialPresetEditor.ApplyPresetWithUIUpdate(preset, currentMaterial);
+                Debug.Log($"プリセット '{preset.presetName}' を適用しました（UI更新済み）Applied preset '{preset.presetName}' (UI updated)");
             }
         }
 

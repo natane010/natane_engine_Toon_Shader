@@ -1,6 +1,6 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.0.9-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.9)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.1.0)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![VRC Light Volumes](https://img.shields.io/badge/VRC_Light_Volumes-対応-brightgreen)](https://github.com/REDSIM/VRCLightVolumes)
@@ -12,7 +12,8 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ## 📌 ブランチ情報
 
-- **v1.0.9** - 最新安定版（キャラクタープリセット23種追加、合計59種）
+- **v1.1.0** - 最新安定版（プリセット適用時のインスペクターUI自動更新）
+- **v1.0.9** - キャラクタープリセット23種追加（合計59種）
 - **v1.0.8** - プリセット自動生成機能追加
 - **v1.0.7** - シーンマテリアル編集ウィンドウ追加、バグ修正
 - **v1.0.6** - Toon/NPRスタイルプリセット10種追加
@@ -22,7 +23,7 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 - **v1.0.1** - VRC Light Volumes対応 + 完全日本語UI
 - **v1.0.0** - 初回安定版（日本語UI完全対応）
 
-特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.9`）。
+特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.1.0`）。
 
 ## ✨ 新機能
 
@@ -705,6 +706,32 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
 詳細は [PARTICLE_SYSTEM_GUIDE.md](PARTICLE_SYSTEM_GUIDE.md) を参照してください。
 
 ## 更新履歴
+
+### v1.1.0 (2025-10-31)
+**プリセット適用時のインスペクターUI自動更新機能追加**
+
+#### 新機能
+- **🎨 インテリジェントUI更新システム**
+  - プリセット適用時に、インスペクターのフォールドアウトセクションが自動的に展開/折りたたみされます
+  - 有効化された機能のセクションは自動的に展開され、すぐに設定を確認・調整できます
+  - 無効な機能のセクションは自動的に折りたたまれ、UIがスッキリします
+  - マテリアルごとに折りたたみ状態が記憶されます
+
+#### 改善内容
+- **より直感的なワークフロー**: プリセット適用後、有効な機能が一目で分かる
+- **効率的な編集**: 不要なセクションをスクロールする必要がなくなる
+- **パーソナライズされたUI**: 手動で変更した折りたたみ状態はマテリアルごとに保存される
+- **シームレスな統合**: Material Preset BrowserとScene Material Editorの両方で動作
+
+#### 技術的な変更
+- NataneToonMaterialPresetEditor.cs（新規）: UI状態管理システムの追加
+- NataneToonShaderGUI.cs: 静的フォールドアウトからマテリアル固有の状態へ移行
+- SceneMaterialEditor.cs: 新しいプリセット適用メソッドの使用
+- MaterialPresetBrowser.cs: UI更新付きプリセット適用の実装
+- EditorPrefsを使用したマテリアルごとのUI状態の永続化
+
+#### メッセージの多言語対応
+- プリセット適用完了ダイアログに日英バイリンガルメッセージを追加
 
 ### v1.0.9 (2025-10-31)
 **キャラクター関係のプリセット23種追加（合計59種に拡大）**

@@ -13,7 +13,7 @@ namespace NataneToon.Editor
     public class DefaultPresetGenerator : EditorWindow
     {
         private const string PRESET_FOLDER = "Assets/MaterialPresets";
-        private const string PREFS_KEY = "NataneToon_PresetsGenerated_v1.0.9";
+        private const string PREFS_KEY = "NataneToon_PresetsGenerated_v1.1.0";
 
         // Auto-generate presets on editor load if not already done
         static DefaultPresetGenerator()

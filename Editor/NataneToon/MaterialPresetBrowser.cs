@@ -299,12 +299,14 @@ namespace NataneToon.Editor
             if (selectedMaterial == null || preset == null) return;
 
             Undo.RecordObject(selectedMaterial, "Apply Material Preset");
-            preset.ApplyToMaterial(selectedMaterial);
-            EditorUtility.SetDirty(selectedMaterial);
+            NataneToonMaterialPresetEditor.ApplyPresetWithUIUpdate(preset, selectedMaterial);
 
             EditorUtility.DisplayDialog(
-                "Preset Applied",
-                $"Successfully applied preset '{preset.presetName}' to material '{selectedMaterial.name}'",
+                "Preset Applied / プリセット適用完了",
+                $"Successfully applied preset '{preset.presetName}' to material '{selectedMaterial.name}'\n" +
+                $"Inspector UI has been updated to show active features.\n\n" +
+                $"プリセット '{preset.presetName}' をマテリアル '{selectedMaterial.name}' に適用しました。\n" +
+                $"インスペクターUIは有効な機能を表示するように更新されました。",
                 "OK");
         }
 
