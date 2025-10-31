@@ -28,6 +28,10 @@ public class NataneToonShaderGUI : ShaderGUI
     private bool showEmission;
     private bool showVirtualExpression;
     private bool showNormalMap;
+    private bool showReflection;
+    private bool showEnvironmentalRim;
+    private bool showParallax;
+    private bool showRefraction;
     private bool showRendering;
 
     public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties)
@@ -70,6 +74,10 @@ public class NataneToonShaderGUI : ShaderGUI
             SafeDrawSection(DrawEmissionSection, "エミッション");
             SafeDrawSection(DrawVirtualExpressionSection, "バーチャル表現");
             SafeDrawSection(DrawNormalMapSection, "ノーマルマップ");
+            SafeDrawSection(DrawReflectionSection, "リフレクション");
+            SafeDrawSection(DrawEnvironmentalRimSection, "環境リム");
+            SafeDrawSection(DrawParallaxSection, "視差マッピング");
+            SafeDrawSection(DrawRefractionSection, "屈折");
             SafeDrawSection(DrawRenderingSection, "レンダリング");
         }
         catch (System.Exception e)
@@ -513,6 +521,139 @@ public class NataneToonShaderGUI : ShaderGUI
         }
     }
 
+    private void DrawReflectionSection()
+    {
+        EditorGUI.BeginChangeCheck();
+        showReflection = EditorGUILayout.Foldout(showReflection, "リフレクション（キューブマップ反射）", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
+        if (showReflection)
+        {
+            EditorGUI.indentLevel++;
+
+            bool enableReflection = DrawToggle("_REFLECTION", "_Reflection", "リフレクションを有効化");
+
+            if (enableReflection)
+            {
+                DrawProperty("_ReflectionCube", "リフレクションキューブマップ");
+                DrawProperty("_ReflectionColor", "リフレクションの色");
+                DrawProperty("_ReflectionIntensity", "リフレクションの強さ");
+                DrawProperty("_Smoothness", "滑らかさ（光沢）");
+                DrawProperty("_Metallic", "メタリック");
+                DrawProperty("_FresnelPower", "フレネルパワー");
+
+                EditorGUILayout.Space();
+                bool useReflectionMask = DrawToggle("_REFLECTION_MASK", "_UseReflectionMask", "リフレクションマスクを使用");
+                if (useReflectionMask)
+                {
+                    DrawProperty("_ReflectionMask", "リフレクションマスク");
+                    EditorGUILayout.HelpBox("白 = リフレクションあり、黒 = リフレクションなし", MessageType.Info);
+                }
+
+                EditorGUILayout.HelpBox("キューブマップを使用して環境反射をシミュレートします。金属やガラスなどの反射素材に最適です。", MessageType.Info);
+            }
+
+            EditorGUI.indentLevel--;
+            EditorGUILayout.Space();
+        }
+    }
+
+    private void DrawEnvironmentalRimSection()
+    {
+        EditorGUI.BeginChangeCheck();
+        showEnvironmentalRim = EditorGUILayout.Foldout(showEnvironmentalRim, "環境リム", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
+        if (showEnvironmentalRim)
+        {
+            EditorGUI.indentLevel++;
+
+            bool enableEnvRim = DrawToggle("_ENV_RIM", "_EnvRim", "環境リムを有効化");
+
+            if (enableEnvRim)
+            {
+                DrawProperty("_EnvRimCube", "環境キューブマップ");
+                DrawProperty("_EnvRimColor", "環境リムの色");
+                DrawProperty("_EnvRimPower", "環境リムのパワー");
+                DrawProperty("_EnvRimIntensity", "環境リムの強さ");
+
+                EditorGUILayout.Space();
+                bool useEnvRimMask = DrawToggle("_ENV_RIM_MASK", "_UseEnvRimMask", "環境リムマスクを使用");
+                if (useEnvRimMask)
+                {
+                    DrawProperty("_EnvRimMask", "環境リムマスク");
+                    EditorGUILayout.HelpBox("白 = 環境リムあり、黒 = 環境リムなし", MessageType.Info);
+                }
+
+                EditorGUILayout.HelpBox("キューブマップを使用して環境に基づいたリムライト効果を作成します。", MessageType.Info);
+            }
+
+            EditorGUI.indentLevel--;
+            EditorGUILayout.Space();
+        }
+    }
+
+    private void DrawParallaxSection()
+    {
+        EditorGUI.BeginChangeCheck();
+        showParallax = EditorGUILayout.Foldout(showParallax, "視差マッピング", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
+        if (showParallax)
+        {
+            EditorGUI.indentLevel++;
+
+            bool enableParallax = DrawToggle("_PARALLAX", "_Parallax", "視差マッピングを有効化");
+
+            if (enableParallax)
+            {
+                DrawProperty("_ParallaxMap", "高さマップ");
+                DrawProperty("_ParallaxScale", "視差のスケール");
+                DrawProperty("_ParallaxMinSamples", "最小サンプル数");
+                DrawProperty("_ParallaxMaxSamples", "最大サンプル数");
+
+                EditorGUILayout.HelpBox("視差マッピングは高さマップを使用してサーフェスに深度の錯覚を作成します。石や壁などの素材に最適です。", MessageType.Info);
+            }
+
+            EditorGUI.indentLevel--;
+            EditorGUILayout.Space();
+        }
+    }
+
+    private void DrawRefractionSection()
+    {
+        EditorGUI.BeginChangeCheck();
+        showRefraction = EditorGUILayout.Foldout(showRefraction, "屈折", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
+        if (showRefraction)
+        {
+            EditorGUI.indentLevel++;
+
+            bool enableRefraction = DrawToggle("_REFRACTION", "_Refraction", "屈折を有効化");
+
+            if (enableRefraction)
+            {
+                DrawProperty("_RefractionIndex", "屈折率（IOR）");
+                DrawProperty("_RefractionIntensity", "屈折の強さ");
+                DrawProperty("_RefractionBlur", "屈折のぼかし");
+
+                EditorGUILayout.Space();
+                bool useRefractionMask = DrawToggle("_REFRACTION_MASK", "_UseRefractionMask", "屈折マスクを使用");
+                if (useRefractionMask)
+                {
+                    DrawProperty("_RefractionMask", "屈折マスク");
+                    EditorGUILayout.HelpBox("白 = 屈折あり、黒 = 屈折なし", MessageType.Info);
+                }
+
+                EditorGUILayout.HelpBox("屈折はガラスや水などの透明素材で光の曲がりをシミュレートします。透明マテリアルに最適です。", MessageType.Info);
+            }
+
+            EditorGUI.indentLevel--;
+            EditorGUILayout.Space();
+        }
+    }
+
     private void DrawRenderingSection()
     {
         EditorGUI.BeginChangeCheck();
@@ -617,6 +758,10 @@ public class NataneToonShaderGUI : ShaderGUI
         showEmission = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowEmission"), false);
         showVirtualExpression = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowVirtualExpression"), false);
         showNormalMap = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowNormalMap"), false);
+        showReflection = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowReflection"), false);
+        showEnvironmentalRim = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowEnvironmentalRim"), false);
+        showParallax = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowParallax"), false);
+        showRefraction = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowRefraction"), false);
         showRendering = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowAdvanced"), false);
     }
 
@@ -639,6 +784,10 @@ public class NataneToonShaderGUI : ShaderGUI
         EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowEmission"), showEmission);
         EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowVirtualExpression"), showVirtualExpression);
         EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowNormalMap"), showNormalMap);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowReflection"), showReflection);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowEnvironmentalRim"), showEnvironmentalRim);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowParallax"), showParallax);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowRefraction"), showRefraction);
         EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowAdvanced"), showRendering);
     }
 }
