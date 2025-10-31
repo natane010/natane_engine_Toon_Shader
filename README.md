@@ -1,6 +1,6 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.0.8-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.8)
+[![Version](https://img.shields.io/badge/version-1.0.9-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.9)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![VRC Light Volumes](https://img.shields.io/badge/VRC_Light_Volumes-対応-brightgreen)](https://github.com/REDSIM/VRCLightVolumes)
@@ -12,7 +12,8 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ## 📌 ブランチ情報
 
-- **v1.0.8** - 最新安定版（プリセット自動生成機能追加）
+- **v1.0.9** - 最新安定版（キャラクタープリセット23種追加、合計59種）
+- **v1.0.8** - プリセット自動生成機能追加
 - **v1.0.7** - シーンマテリアル編集ウィンドウ追加、バグ修正
 - **v1.0.6** - Toon/NPRスタイルプリセット10種追加
 - **v1.0.5** - 包括的なエラーハンドリング追加
@@ -21,7 +22,7 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 - **v1.0.1** - VRC Light Volumes対応 + 完全日本語UI
 - **v1.0.0** - 初回安定版（日本語UI完全対応）
 
-特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.8`）。
+特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.9`）。
 
 ## ✨ 新機能
 
@@ -704,6 +705,70 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
 詳細は [PARTICLE_SYSTEM_GUIDE.md](PARTICLE_SYSTEM_GUIDE.md) を参照してください。
 
 ## 更新履歴
+
+### v1.0.9 (2025-10-31)
+**キャラクター関係のプリセット23種追加（合計59種に拡大）**
+
+#### 新機能
+- **🎭 キャラクタープリセットを大幅に拡充**
+  - **肌プリセット（6種追加）**: 色白肌、日焼け肌、褐色肌、陶器肌、青い肌（ファンタジー）、緑の肌（ファンタジー）
+  - **髪プリセット（4種追加）**: メタリックヘア、濡れた髪、マットヘア、ファンタジーヘア
+  - **衣服プリセット（7種追加）**: シルク、デニム、ベルベット、学生服、メタリック生地、透け素材、レース
+  - **目プリセット（4種追加）**: 光沢のある目、宝石のような目、光る目、機械の目
+
+#### プリセット総数
+- **従来**: 36種
+- **v1.0.9**: 59種（23種追加）
+- **キャラクター関係**: 30種（従来7種→30種に拡大）
+
+#### 詳細なプリセット一覧
+
+**Character - Skin（8種）:**
+- Soft: 柔らかいアニメ調の肌（SSS付き）
+- Realistic: リアルな肌（SSS強化）
+- **[NEW] Pale**: 色白肌（明るい色調）
+- **[NEW] Tan**: 日焼け肌（温かい色調）
+- **[NEW] Dark**: 褐色肌（深い色調）
+- **[NEW] Porcelain**: 陶器肌（人形のような質感）
+- **[NEW] Fantasy Blue**: 青い肌（ファンタジーキャラクター用）
+- **[NEW] Fantasy Green**: 緑の肌（ファンタジーキャラクター用）
+
+**Character - Hair（6種）:**
+- Standard: 標準的なアニメヘア（スペキュラ付き）
+- Glossy: 光沢のある髪（強いスペキュラ）
+- **[NEW] Metallic**: メタリックヘア（金属的な光沢）
+- **[NEW] Wet**: 濡れた髪（強い反射）
+- **[NEW] Matte**: マットヘア（光沢なし）
+- **[NEW] Fantasy**: ファンタジーヘア（特殊な色と光）
+
+**Character - Clothing（9種）:**
+- Fabric: 標準的な布（一般的な衣服）
+- Leather: 革（スペキュラ付き）
+- **[NEW] Silk**: シルク（滑らかで光沢）
+- **[NEW] Denim**: デニム（ジーンズ素材）
+- **[NEW] Velvet**: ベルベット（柔らかい光沢）
+- **[NEW] School Uniform**: 学生服（制服用）
+- **[NEW] Metallic Fabric**: メタリック生地（光る布）
+- **[NEW] Transparent**: 透け素材（半透明の布）
+- **[NEW] Lace**: レース（繊細な布）
+
+**Character - Eyes（7種）:**
+- Standard: 標準的な目（ハイライト付き）
+- **[NEW] Glossy**: 光沢のある目（強い反射）
+- **[NEW] Gem**: 宝石のような目（キラキラ）
+- **[NEW] Glow**: 光る目（エミッション付き）
+- **[NEW] Mechanical**: 機械の目（サイボーグ用）
+
+#### 改善内容
+- キャラクタープリセットが7種から30種へ大幅に増加（4倍以上）
+- 様々な肌色、髪質、衣服素材、目の表現に対応
+- ファンタジーキャラクター用のプリセット追加
+- より多様なキャラクター表現が可能に
+
+#### 技術的な変更
+- PrefsKeyをv1.0.9に更新（自動プリセット生成対応）
+- DefaultPresetGenerator.csに23個の新しいプリセット作成メソッドを追加
+- 各プリセットはSSS、スペキュラー、リムライト、エミッションなどの最適なパラメーター設定済み
 
 ### v1.0.8 (2025-10-31)
 **プリセット自動生成機能追加**

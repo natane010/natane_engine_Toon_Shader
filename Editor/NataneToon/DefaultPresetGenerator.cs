@@ -13,7 +13,7 @@ namespace NataneToon.Editor
     public class DefaultPresetGenerator : EditorWindow
     {
         private const string PRESET_FOLDER = "Assets/MaterialPresets";
-        private const string PREFS_KEY = "NataneToon_PresetsGenerated_v1.0.7";
+        private const string PREFS_KEY = "NataneToon_PresetsGenerated_v1.0.9";
 
         // Auto-generate presets on editor load if not already done
         static DefaultPresetGenerator()
@@ -80,14 +80,41 @@ namespace NataneToon.Editor
 
             int createdCount = 0;
 
-            // Character presets
-            createdCount += CreatePreset("Character_Skin_Soft", PresetCategory.Character_Skin, CreateSkinSoftPreset(), "Soft anime-style skin with SSS");
-            createdCount += CreatePreset("Character_Skin_Realistic", PresetCategory.Character_Skin, CreateSkinRealisticPreset(), "More realistic skin with enhanced SSS");
-            createdCount += CreatePreset("Character_Hair_Standard", PresetCategory.Character_Hair, CreateHairStandardPreset(), "Standard anime hair with specular highlights");
-            createdCount += CreatePreset("Character_Hair_Glossy", PresetCategory.Character_Hair, CreateHairGlossyPreset(), "Glossy hair with strong specular");
-            createdCount += CreatePreset("Character_Clothing_Fabric", PresetCategory.Character_Clothing, CreateClothingFabricPreset(), "Standard fabric material");
-            createdCount += CreatePreset("Character_Clothing_Leather", PresetCategory.Character_Clothing, CreateClothingLeatherPreset(), "Leather material with specular");
-            createdCount += CreatePreset("Character_Eyes_Standard", PresetCategory.Character_Eyes, CreateEyesStandardPreset(), "Standard anime eyes with highlight");
+            // Character presets - Skin
+            createdCount += CreatePreset("Character_Skin_Soft", PresetCategory.Character_Skin, CreateSkinSoftPreset(), "柔らかいアニメ調の肌 - SSS付き / Soft anime-style skin with SSS");
+            createdCount += CreatePreset("Character_Skin_Realistic", PresetCategory.Character_Skin, CreateSkinRealisticPreset(), "リアルな肌 - SSS強化 / More realistic skin with enhanced SSS");
+            createdCount += CreatePreset("Character_Skin_Pale", PresetCategory.Character_Skin, CreateSkinPalePreset(), "色白肌 - 明るい色調 / Pale skin with bright tone");
+            createdCount += CreatePreset("Character_Skin_Tan", PresetCategory.Character_Skin, CreateSkinTanPreset(), "日焼け肌 - 温かい色調 / Tan skin with warm tone");
+            createdCount += CreatePreset("Character_Skin_Dark", PresetCategory.Character_Skin, CreateSkinDarkPreset(), "褐色肌 - 深い色調 / Dark skin with deep tone");
+            createdCount += CreatePreset("Character_Skin_Porcelain", PresetCategory.Character_Skin, CreateSkinPorcelainPreset(), "陶器肌 - 人形のような質感 / Porcelain skin with doll-like texture");
+            createdCount += CreatePreset("Character_Skin_Fantasy_Blue", PresetCategory.Character_Skin, CreateSkinFantasyBluePreset(), "青い肌 - ファンタジーキャラクター用 / Blue fantasy skin");
+            createdCount += CreatePreset("Character_Skin_Fantasy_Green", PresetCategory.Character_Skin, CreateSkinFantasyGreenPreset(), "緑の肌 - ファンタジーキャラクター用 / Green fantasy skin");
+
+            // Character presets - Hair
+            createdCount += CreatePreset("Character_Hair_Standard", PresetCategory.Character_Hair, CreateHairStandardPreset(), "標準的なアニメヘア - スペキュラ付き / Standard anime hair with specular");
+            createdCount += CreatePreset("Character_Hair_Glossy", PresetCategory.Character_Hair, CreateHairGlossyPreset(), "光沢のある髪 - 強いスペキュラ / Glossy hair with strong specular");
+            createdCount += CreatePreset("Character_Hair_Metallic", PresetCategory.Character_Hair, CreateHairMetallicPreset(), "メタリックヘア - 金属的な光沢 / Metallic hair with metal-like sheen");
+            createdCount += CreatePreset("Character_Hair_Wet", PresetCategory.Character_Hair, CreateHairWetPreset(), "濡れた髪 - 強い反射 / Wet hair with strong reflection");
+            createdCount += CreatePreset("Character_Hair_Matte", PresetCategory.Character_Hair, CreateHairMattePreset(), "マットヘア - 光沢なし / Matte hair without gloss");
+            createdCount += CreatePreset("Character_Hair_Fantasy", PresetCategory.Character_Hair, CreateHairFantasyPreset(), "ファンタジーヘア - 特殊な色と光 / Fantasy hair with special colors");
+
+            // Character presets - Clothing
+            createdCount += CreatePreset("Character_Clothing_Fabric", PresetCategory.Character_Clothing, CreateClothingFabricPreset(), "標準的な布 - 一般的な衣服 / Standard fabric material");
+            createdCount += CreatePreset("Character_Clothing_Leather", PresetCategory.Character_Clothing, CreateClothingLeatherPreset(), "革 - スペキュラ付き / Leather with specular");
+            createdCount += CreatePreset("Character_Clothing_Silk", PresetCategory.Character_Clothing, CreateClothingSilkPreset(), "シルク - 滑らかで光沢 / Silk with smooth gloss");
+            createdCount += CreatePreset("Character_Clothing_Denim", PresetCategory.Character_Clothing, CreateClothingDenimPreset(), "デニム - ジーンズ素材 / Denim fabric");
+            createdCount += CreatePreset("Character_Clothing_Velvet", PresetCategory.Character_Clothing, CreateClothingVelvetPreset(), "ベルベット - 柔らかい光沢 / Velvet with soft sheen");
+            createdCount += CreatePreset("Character_Clothing_School_Uniform", PresetCategory.Character_Clothing, CreateClothingSchoolUniformPreset(), "学生服 - 制服用 / School uniform material");
+            createdCount += CreatePreset("Character_Clothing_Metallic_Fabric", PresetCategory.Character_Clothing, CreateClothingMetallicFabricPreset(), "メタリック生地 - 光る布 / Metallic fabric");
+            createdCount += CreatePreset("Character_Clothing_Transparent", PresetCategory.Character_Clothing, CreateClothingTransparentPreset(), "透け素材 - 半透明の布 / Transparent fabric");
+            createdCount += CreatePreset("Character_Clothing_Lace", PresetCategory.Character_Clothing, CreateClothingLacePreset(), "レース - 繊細な布 / Lace fabric");
+
+            // Character presets - Eyes
+            createdCount += CreatePreset("Character_Eyes_Standard", PresetCategory.Character_Eyes, CreateEyesStandardPreset(), "標準的な目 - ハイライト付き / Standard anime eyes with highlight");
+            createdCount += CreatePreset("Character_Eyes_Glossy", PresetCategory.Character_Eyes, CreateEyesGlossyPreset(), "光沢のある目 - 強い反射 / Glossy eyes with strong reflection");
+            createdCount += CreatePreset("Character_Eyes_Gem", PresetCategory.Character_Eyes, CreateEyesGemPreset(), "宝石のような目 - キラキラ / Gem-like eyes with sparkle");
+            createdCount += CreatePreset("Character_Eyes_Glow", PresetCategory.Character_Eyes, CreateEyesGlowPreset(), "光る目 - エミッション付き / Glowing eyes with emission");
+            createdCount += CreatePreset("Character_Eyes_Mechanical", PresetCategory.Character_Eyes, CreateEyesMechanicalPreset(), "機械の目 - サイボーグ用 / Mechanical eyes for cyborg");
 
             // Props presets
             createdCount += CreatePreset("Props_Metal_Shiny", PresetCategory.Props_Metal, CreateMetalShinyPreset(), "Shiny metal with reflection");
@@ -745,6 +772,409 @@ namespace NataneToon.Editor
                 rimColor = new Color(0.9f, 0.9f, 1f, 1f),
                 rimIntensity = 0.2f,
                 rimPower = 6f
+            };
+        }
+
+        // Additional Character Presets - Skin
+        private static MaterialParameterData CreateSkinPalePreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(1f, 0.95f, 0.9f, 1f),
+                shadowColor = new Color(0.85f, 0.75f, 0.7f, 1f),
+                toonSteps = 3,
+                toonSharpness = 0.4f,
+                useSSS = true,
+                sssColor = new Color(1f, 0.8f, 0.7f, 1f),
+                sssIntensity = 0.4f,
+                sssPower = 2f,
+                useRimLight = true,
+                rimColor = new Color(1f, 0.9f, 0.85f, 1f),
+                rimIntensity = 0.2f,
+                rimPower = 4f
+            };
+        }
+
+        private static MaterialParameterData CreateSkinTanPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.85f, 0.65f, 0.5f, 1f),
+                shadowColor = new Color(0.6f, 0.45f, 0.35f, 1f),
+                toonSteps = 3,
+                toonSharpness = 0.5f,
+                useSSS = true,
+                sssColor = new Color(0.9f, 0.6f, 0.4f, 1f),
+                sssIntensity = 0.6f,
+                sssPower = 2.5f,
+                useRimLight = true,
+                rimColor = new Color(0.95f, 0.75f, 0.6f, 1f),
+                rimIntensity = 0.3f,
+                rimPower = 3f
+            };
+        }
+
+        private static MaterialParameterData CreateSkinDarkPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.45f, 0.35f, 0.3f, 1f),
+                shadowColor = new Color(0.25f, 0.2f, 0.18f, 1f),
+                toonSteps = 3,
+                toonSharpness = 0.6f,
+                useSSS = true,
+                sssColor = new Color(0.6f, 0.4f, 0.35f, 1f),
+                sssIntensity = 0.5f,
+                sssPower = 2f,
+                useRimLight = true,
+                rimColor = new Color(0.7f, 0.5f, 0.4f, 1f),
+                rimIntensity = 0.4f,
+                rimPower = 3f
+            };
+        }
+
+        private static MaterialParameterData CreateSkinPorcelainPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.98f, 0.96f, 0.94f, 1f),
+                shadowColor = new Color(0.85f, 0.8f, 0.78f, 1f),
+                toonSteps = 2,
+                toonSharpness = 0.8f,
+                useSSS = true,
+                sssColor = new Color(1f, 0.9f, 0.85f, 1f),
+                sssIntensity = 0.3f,
+                sssPower = 3f,
+                smoothness = 0.7f,
+                useSpecular = true,
+                specularIntensity = 0.4f,
+                specularSize = 0.05f,
+                specularSharpness = 0.85f
+            };
+        }
+
+        private static MaterialParameterData CreateSkinFantasyBluePreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.6f, 0.75f, 0.95f, 1f),
+                shadowColor = new Color(0.35f, 0.45f, 0.65f, 1f),
+                toonSteps = 3,
+                toonSharpness = 0.5f,
+                useSSS = true,
+                sssColor = new Color(0.7f, 0.85f, 1f, 1f),
+                sssIntensity = 0.6f,
+                sssPower = 2f,
+                useRimLight = true,
+                rimColor = new Color(0.8f, 0.9f, 1f, 1f),
+                rimIntensity = 0.5f,
+                rimPower = 3f
+            };
+        }
+
+        private static MaterialParameterData CreateSkinFantasyGreenPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.6f, 0.85f, 0.7f, 1f),
+                shadowColor = new Color(0.35f, 0.55f, 0.45f, 1f),
+                toonSteps = 3,
+                toonSharpness = 0.5f,
+                useSSS = true,
+                sssColor = new Color(0.7f, 0.95f, 0.8f, 1f),
+                sssIntensity = 0.6f,
+                sssPower = 2f,
+                useRimLight = true,
+                rimColor = new Color(0.8f, 1f, 0.85f, 1f),
+                rimIntensity = 0.5f,
+                rimPower = 3f
+            };
+        }
+
+        // Additional Character Presets - Hair
+        private static MaterialParameterData CreateHairMetallicPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.8f, 0.75f, 0.7f, 1f),
+                shadowColor = new Color(0.4f, 0.35f, 0.3f, 1f),
+                toonSteps = 2,
+                toonSharpness = 0.7f,
+                useSpecular = true,
+                specularColor = new Color(1f, 0.95f, 0.9f, 1f),
+                specularIntensity = 1.2f,
+                specularSize = 0.03f,
+                specularSharpness = 0.95f,
+                metallic = 0.6f,
+                smoothness = 0.8f,
+                useReflection = true,
+                reflectionIntensity = 0.4f
+            };
+        }
+
+        private static MaterialParameterData CreateHairWetPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.3f, 0.25f, 0.2f, 1f),
+                shadowColor = new Color(0.15f, 0.12f, 0.1f, 1f),
+                toonSteps = 3,
+                toonSharpness = 0.6f,
+                useSpecular = true,
+                specularIntensity = 1.5f,
+                specularSize = 0.02f,
+                specularSharpness = 0.98f,
+                smoothness = 0.9f,
+                useReflection = true,
+                reflectionIntensity = 0.6f,
+                useRimLight = true,
+                rimColor = new Color(0.8f, 0.8f, 0.9f, 1f),
+                rimIntensity = 0.4f,
+                rimPower = 2f
+            };
+        }
+
+        private static MaterialParameterData CreateHairMattePreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.6f, 0.55f, 0.5f, 1f),
+                shadowColor = new Color(0.3f, 0.25f, 0.2f, 1f),
+                toonSteps = 2,
+                toonSharpness = 0.5f,
+                smoothness = 0.1f
+            };
+        }
+
+        private static MaterialParameterData CreateHairFantasyPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.9f, 0.5f, 0.8f, 1f),
+                shadowColor = new Color(0.5f, 0.25f, 0.45f, 1f),
+                toonSteps = 3,
+                toonSharpness = 0.6f,
+                useSpecular = true,
+                specularColor = new Color(1f, 0.8f, 1f, 1f),
+                specularIntensity = 0.8f,
+                specularSize = 0.04f,
+                specularSharpness = 0.9f,
+                useEmission = true,
+                emissionColor = new Color(1f, 0.7f, 0.9f, 1f),
+                emissionIntensity = 0.3f,
+                useRimLight = true,
+                rimColor = new Color(1f, 0.8f, 1f, 1f),
+                rimIntensity = 0.6f,
+                rimPower = 2.5f
+            };
+        }
+
+        // Additional Character Presets - Clothing
+        private static MaterialParameterData CreateClothingSilkPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.95f, 0.9f, 0.92f, 1f),
+                shadowColor = new Color(0.6f, 0.55f, 0.58f, 1f),
+                toonSteps = 3,
+                toonSharpness = 0.4f,
+                smoothness = 0.85f,
+                useSpecular = true,
+                specularIntensity = 0.7f,
+                specularSize = 0.08f,
+                specularSharpness = 0.8f,
+                useRimLight = true,
+                rimColor = new Color(1f, 0.95f, 0.98f, 1f),
+                rimIntensity = 0.3f,
+                rimPower = 4f
+            };
+        }
+
+        private static MaterialParameterData CreateClothingDenimPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.3f, 0.4f, 0.55f, 1f),
+                shadowColor = new Color(0.15f, 0.2f, 0.3f, 1f),
+                toonSteps = 2,
+                toonSharpness = 0.6f,
+                smoothness = 0.2f
+            };
+        }
+
+        private static MaterialParameterData CreateClothingVelvetPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.5f, 0.2f, 0.3f, 1f),
+                shadowColor = new Color(0.25f, 0.1f, 0.15f, 1f),
+                toonSteps = 3,
+                toonSharpness = 0.3f,
+                smoothness = 0.6f,
+                useSpecular = true,
+                specularIntensity = 0.4f,
+                specularSize = 0.15f,
+                specularSharpness = 0.6f,
+                useRimLight = true,
+                rimColor = new Color(0.8f, 0.5f, 0.6f, 1f),
+                rimIntensity = 0.5f,
+                rimPower = 3f
+            };
+        }
+
+        private static MaterialParameterData CreateClothingSchoolUniformPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.2f, 0.25f, 0.35f, 1f),
+                shadowColor = new Color(0.1f, 0.12f, 0.18f, 1f),
+                toonSteps = 2,
+                toonSharpness = 0.7f,
+                smoothness = 0.3f
+            };
+        }
+
+        private static MaterialParameterData CreateClothingMetallicFabricPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.8f, 0.8f, 0.85f, 1f),
+                shadowColor = new Color(0.4f, 0.4f, 0.45f, 1f),
+                toonSteps = 2,
+                toonSharpness = 0.7f,
+                metallic = 0.7f,
+                smoothness = 0.8f,
+                useSpecular = true,
+                specularIntensity = 1.2f,
+                specularSize = 0.05f,
+                specularSharpness = 0.92f,
+                useReflection = true,
+                reflectionIntensity = 0.5f
+            };
+        }
+
+        private static MaterialParameterData CreateClothingTransparentPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.95f, 0.95f, 0.98f, 0.3f),
+                alpha = 0.3f,
+                shadowColor = new Color(0.7f, 0.7f, 0.75f, 1f),
+                toonSteps = 2,
+                toonSharpness = 0.4f,
+                smoothness = 0.7f,
+                useRefraction = true,
+                refractionIndex = 1.3f,
+                refractionIntensity = 0.4f
+            };
+        }
+
+        private static MaterialParameterData CreateClothingLacePreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.98f, 0.95f, 0.95f, 0.8f),
+                alpha = 0.8f,
+                shadowColor = new Color(0.75f, 0.7f, 0.7f, 1f),
+                toonSteps = 2,
+                toonSharpness = 0.5f,
+                smoothness = 0.5f,
+                useRimLight = true,
+                rimColor = new Color(1f, 0.98f, 0.98f, 1f),
+                rimIntensity = 0.4f,
+                rimPower = 3f
+            };
+        }
+
+        // Additional Character Presets - Eyes
+        private static MaterialParameterData CreateEyesGlossyPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.4f, 0.6f, 0.8f, 1f),
+                shadowColor = new Color(0.2f, 0.3f, 0.4f, 1f),
+                toonSteps = 2,
+                toonSharpness = 0.8f,
+                smoothness = 0.95f,
+                useSpecular = true,
+                specularColor = Color.white,
+                specularIntensity = 1.5f,
+                specularSize = 0.01f,
+                specularSharpness = 0.99f,
+                useReflection = true,
+                reflectionIntensity = 0.3f,
+                useRimLight = true,
+                rimColor = new Color(0.8f, 0.9f, 1f, 1f),
+                rimIntensity = 0.5f,
+                rimPower = 2f
+            };
+        }
+
+        private static MaterialParameterData CreateEyesGemPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.6f, 0.3f, 0.8f, 1f),
+                shadowColor = new Color(0.3f, 0.15f, 0.4f, 1f),
+                toonSteps = 3,
+                toonSharpness = 0.9f,
+                metallic = 0.5f,
+                smoothness = 0.98f,
+                useSpecular = true,
+                specularColor = Color.white,
+                specularIntensity = 2f,
+                specularSize = 0.005f,
+                specularSharpness = 0.995f,
+                useReflection = true,
+                reflectionIntensity = 0.6f,
+                useRimLight = true,
+                rimColor = new Color(1f, 0.8f, 1f, 1f),
+                rimIntensity = 0.7f,
+                rimPower = 2f
+            };
+        }
+
+        private static MaterialParameterData CreateEyesGlowPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.3f, 0.8f, 1f, 1f),
+                shadowColor = new Color(0.15f, 0.4f, 0.5f, 1f),
+                toonSteps = 2,
+                toonSharpness = 0.7f,
+                useEmission = true,
+                emissionColor = new Color(0.5f, 1f, 1f, 1f),
+                emissionIntensity = 1.5f,
+                useSpecular = true,
+                specularIntensity = 1f,
+                specularSize = 0.02f,
+                specularSharpness = 0.95f,
+                useRimLight = true,
+                rimColor = new Color(0.6f, 1f, 1f, 1f),
+                rimIntensity = 0.8f,
+                rimPower = 2f
+            };
+        }
+
+        private static MaterialParameterData CreateEyesMechanicalPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.8f, 0.2f, 0.2f, 1f),
+                shadowColor = new Color(0.4f, 0.1f, 0.1f, 1f),
+                toonSteps = 2,
+                toonSharpness = 0.9f,
+                metallic = 0.8f,
+                smoothness = 0.9f,
+                useEmission = true,
+                emissionColor = new Color(1f, 0.2f, 0.2f, 1f),
+                emissionIntensity = 1f,
+                useSpecular = true,
+                specularIntensity = 1.5f,
+                specularSize = 0.01f,
+                specularSharpness = 0.98f,
+                useReflection = true,
+                reflectionIntensity = 0.7f
             };
         }
     }
