@@ -16,6 +16,8 @@ Shader "Natane/Toon Shader (Cutout)"
         _ShadowOffset ("Shadow Offset", Range(-1, 1)) = 0
 
         [Header(Advanced Lighting)]
+        _LightIntensity ("Light Intensity (Global)", Range(0, 2)) = 1
+        _IndirectLightIntensity ("Indirect Light Intensity", Range(0, 2)) = 1
         _ShadowReceive ("Shadow Receive", Range(0, 1)) = 1
         _ShadowMaxDarkness ("Shadow Max Darkness", Range(0, 1)) = 0
         _LightMinInfluence ("Light Min Influence", Range(0, 1)) = 0
