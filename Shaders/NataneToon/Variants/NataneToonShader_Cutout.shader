@@ -69,6 +69,7 @@ Shader "Natane/Toon Shader (Cutout)"
 
         [Header(Outline)]
         [Toggle(_OUTLINE)] _Outline ("Enable Outline", Float) = 0
+        [Enum(Inverted Hull,0,Back Face,1)] _OutlineMode ("Outline Mode", Float) = 0
         _OutlineWidth ("Outline Width", Range(0, 0.1)) = 0.01
         _OutlineColor ("Outline Color", Color) = (0,0,0,1)
 
@@ -182,17 +183,28 @@ Shader "Natane/Toon Shader (Cutout)"
             float _OutlineWidth;
             float4 _OutlineColor;
             float _Outline;
+            float _OutlineMode;
 
             v2f vert(appdata v)
             {
                 v2f o;
 
                 #ifdef _OUTLINE
-                    float3 norm = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, v.normal));
-                    float2 offset = TransformViewToProjection(norm.xy);
+                    if (_OutlineMode < 0.5)
+                    {
+                        // Mode 0: Inverted Hull - Extrusion along normals in view space
+                        float3 norm = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, v.normal));
+                        float2 offset = TransformViewToProjection(norm.xy);
 
-                    o.pos = UnityObjectToClipPos(v.vertex);
-                    o.pos.xy += offset * o.pos.z * _OutlineWidth;
+                        o.pos = UnityObjectToClipPos(v.vertex);
+                        o.pos.xy += offset * o.pos.z * _OutlineWidth;
+                    }
+                    else
+                    {
+                        // Mode 1: Back Face - Scale up vertices along normals in object space
+                        float3 scaledPos = v.vertex.xyz + normalize(v.normal) * _OutlineWidth * 10.0;
+                        o.pos = UnityObjectToClipPos(float4(scaledPos, 1.0));
+                    }
                 #else
                     o.pos = float4(0, 0, 0, 0);
                 #endif

@@ -395,9 +395,29 @@ public class NataneToonShaderGUI : ShaderGUI
 
             if (enableOutline)
             {
+                DrawProperty("_OutlineMode", "描画方法");
                 DrawProperty("_OutlineWidth", "アウトラインの幅");
                 DrawProperty("_OutlineColor", "アウトラインの色");
-                EditorGUILayout.HelpBox("アウトラインは反転ハル方式を使用します。ローポリモデルでは正しく動作しない場合があります。", MessageType.Info);
+
+                float outlineMode = targetMaterial.GetFloat("_OutlineMode");
+                if (outlineMode < 0.5f)
+                {
+                    EditorGUILayout.HelpBox(
+                        "【反転ハル方式】\n" +
+                        "法線方向に頂点を押し出してアウトラインを描画します。\n" +
+                        "• 利点: 一般的に安定した結果\n" +
+                        "• 欠点: ローポリモデルやハードエッジで乱れる場合があります",
+                        MessageType.Info);
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox(
+                        "【背面法】\n" +
+                        "メッシュを拡大して背面を描画します。\n" +
+                        "• 利点: スムーズなアウトライン、ハイポリモデルに適しています\n" +
+                        "• 欠点: 内部構造が見える場合があります",
+                        MessageType.Info);
+                }
             }
 
             EditorGUI.indentLevel--;
