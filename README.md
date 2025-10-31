@@ -1,6 +1,6 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.1.0)
+[![Version](https://img.shields.io/badge/version-1.1.1-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.1.1)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![VRC Light Volumes](https://img.shields.io/badge/VRC_Light_Volumes-対応-brightgreen)](https://github.com/REDSIM/VRCLightVolumes)
@@ -12,7 +12,8 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ## 📌 ブランチ情報
 
-- **v1.1.0** - 最新安定版（プリセット適用時のインスペクターUI自動更新）
+- **v1.1.1** - 最新安定版（インスペクタープロパティ反映の修正）
+- **v1.1.0** - プリセット適用時のインスペクターUI自動更新
 - **v1.0.9** - キャラクタープリセット23種追加（合計59種）
 - **v1.0.8** - プリセット自動生成機能追加
 - **v1.0.7** - シーンマテリアル編集ウィンドウ追加、バグ修正
@@ -23,7 +24,7 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 - **v1.0.1** - VRC Light Volumes対応 + 完全日本語UI
 - **v1.0.0** - 初回安定版（日本語UI完全対応）
 
-特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.1.0`）。
+特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.1.1`）。
 
 ## ✨ 新機能
 
@@ -706,6 +707,29 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
 詳細は [PARTICLE_SYSTEM_GUIDE.md](PARTICLE_SYSTEM_GUIDE.md) を参照してください。
 
 ## 更新履歴
+
+### v1.1.1 (2025-10-31)
+**インスペクタープロパティ反映の修正**
+
+#### 修正内容
+- **🔧 完全なインスペクターリフレッシュ機能**
+  - プリセット適用時にチェックボックス、スライダー、カラー、テクスチャなどのプロパティ値がインスペクターに正しく反映されるようになりました
+  - AssetDatabase.SaveAssets()とRefresh()を呼び出してアセットを確実に保存・更新
+  - マテリアルの選択解除/再選択でインスペクターキャッシュを完全にリフレッシュ
+  - MaterialEditor参照がある場合のより効率的な更新オーバーロードを追加
+
+#### 技術的な変更
+- `NataneToonMaterialPresetEditor.cs`:
+  - ForceInspectorRefresh(Material)メソッドを追加
+  - ForceInspectorRefresh(Material, MaterialEditor)メソッドを追加
+  - ApplyPresetWithUIUpdate()のMaterialEditorオーバーロードを追加
+  - EditorApplication.delayCallを使用した確実なリフレッシュ実装
+
+#### 改善された反映項目
+- ✅ チェックボックスの状態（機能のON/OFF）
+- ✅ スライダーの数値（強さ、サイズ、パワーなど）
+- ✅ カラーピッカーの色
+- ✅ テクスチャの参照
 
 ### v1.1.0 (2025-10-31)
 **プリセット適用時のインスペクターUI自動更新機能追加**
