@@ -23,10 +23,75 @@ namespace NataneToon.Editor
             // Update inspector UI foldout states based on preset
             UpdateInspectorUIState(material, preset.parameters);
 
-            // Force inspector to refresh
+            // Force inspector to refresh completely
+            ForceInspectorRefresh(material);
+        }
+
+        /// <summary>
+        /// Apply preset to material with MaterialEditor reference for better refresh
+        /// </summary>
+        public static void ApplyPresetWithUIUpdate(NataneToonMaterialPreset preset, Material material, MaterialEditor materialEditor)
+        {
+            if (preset == null || material == null) return;
+
+            // Apply preset to material
+            preset.ApplyToMaterial(material);
+
+            // Update inspector UI foldout states based on preset
+            UpdateInspectorUIState(material, preset.parameters);
+
+            // Force inspector to refresh with MaterialEditor
+            ForceInspectorRefresh(material, materialEditor);
+        }
+
+        /// <summary>
+        /// Force a complete refresh of the inspector
+        /// </summary>
+        private static void ForceInspectorRefresh(Material material)
+        {
+            // Mark material as dirty
             EditorUtility.SetDirty(material);
 
-            // Repaint all inspectors
+            // Save assets to ensure changes are persisted
+            AssetDatabase.SaveAssets();
+
+            // Refresh the asset database
+            AssetDatabase.Refresh();
+
+            // Force reselection to refresh inspector cache
+            var currentSelection = Selection.activeObject;
+            Selection.activeObject = null;
+            EditorApplication.delayCall += () =>
+            {
+                Selection.activeObject = currentSelection;
+                UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
+            };
+        }
+
+        /// <summary>
+        /// Force a complete refresh of the inspector with MaterialEditor reference
+        /// </summary>
+        private static void ForceInspectorRefresh(Material material, MaterialEditor materialEditor)
+        {
+            // Mark material as dirty
+            EditorUtility.SetDirty(material);
+
+            // Notify MaterialEditor about property changes
+            if (materialEditor != null)
+            {
+                // Update serialized object
+                var serializedObject = new SerializedObject(material);
+                serializedObject.UpdateIfRequiredOrScript();
+
+                // Force MaterialEditor to refresh
+                materialEditor.Repaint();
+                materialEditor.PropertiesChanged();
+            }
+
+            // Save assets to ensure changes are persisted
+            AssetDatabase.SaveAssets();
+
+            // Repaint all views
             UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
         }
 
