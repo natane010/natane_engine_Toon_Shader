@@ -16,6 +16,8 @@ CBUFFER_START(UnityPerMaterial)
     float _ShadowOffset;
 
     // Advanced Lighting Controls
+    float _LightIntensity;
+    float _IndirectLightIntensity;
     float _ShadowReceive;
     float _ShadowMaxDarkness;
     float _LightMinInfluence;

@@ -71,8 +71,8 @@ half4 frag(v2f i) : SV_Target
     // Apply shadow max darkness limit (prevents shadows from being too black)
     lighting = max(lighting, _ShadowMaxDarkness);
 
-    // Apply light color
-    lighting *= _LightColor0.rgb;
+    // Apply light color and global light intensity
+    lighting *= _LightColor0.rgb * _LightIntensity;
 
     // ===== Light Influence Clamping =====
     // Clamp brightness to prevent too dark or too bright results
@@ -104,6 +104,8 @@ half4 frag(v2f i) : SV_Target
             ambient = ShadeSH9(float4(worldNormal, 1.0));
         #endif
 
+        // Apply indirect light intensity control
+        ambient *= _IndirectLightIntensity;
         lighting += ambient;
 
         // Add backlight effect

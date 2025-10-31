@@ -149,12 +149,24 @@ public class NataneToonShaderGUI : ShaderGUI
         {
             EditorGUI.indentLevel++;
 
+            // Global Light Controls
+            EditorGUILayout.LabelField("グローバルライト制御", EditorStyles.boldLabel);
+            DrawProperty("_LightIntensity", "ライト強度（グローバル）");
+            EditorGUILayout.HelpBox("全体的なライティングの強さを制御します。0 = ライトなし、1 = 標準、2 = 明るい", MessageType.Info);
+
+            DrawProperty("_IndirectLightIntensity", "間接光の強度");
+            EditorGUILayout.HelpBox("環境光やライトプローブからの間接照明の強さを制御します。", MessageType.Info);
+
+            EditorGUILayout.Space(10);
+            EditorGUILayout.LabelField("シャドウ設定", EditorStyles.boldLabel);
             DrawProperty("_ShadowReceive", "影の受け取り");
             EditorGUILayout.HelpBox("他のオブジェクトからの影がこのマテリアルに与える影響を制御します。1 = 完全な影、0 = 影なし。", MessageType.Info);
 
             DrawProperty("_ShadowMaxDarkness", "影の最大暗さ");
             EditorGUILayout.HelpBox("影の最小明るさです。0 = 完全に暗い、1 = 暗くならない。影が真っ黒になりすぎるのを防ぎます。", MessageType.Info);
 
+            EditorGUILayout.Space(10);
+            EditorGUILayout.LabelField("ライト影響範囲", EditorStyles.boldLabel);
             DrawProperty("_LightMinInfluence", "ライトの最小影響");
             DrawProperty("_LightMaxInfluence", "ライトの最大影響");
             EditorGUILayout.HelpBox("最小/最大で明るさの範囲を制御します。最小値は暗くなりすぎを防ぎ、最大値は露出オーバーを防ぎます。", MessageType.Info);
@@ -234,6 +246,14 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_SpecularColor", "スペキュラーの色");
                 DrawProperty("_SpecularSize", "スペキュラーのサイズ");
                 DrawProperty("_SpecularSoftness", "スペキュラーの柔らかさ");
+
+                EditorGUILayout.Space();
+                bool useSpecularMask = DrawToggle("_SPECULAR_MASK", "_UseSpecularMask", "スペキュラーマスクを使用");
+                if (useSpecularMask)
+                {
+                    DrawProperty("_SpecularMask", "スペキュラーマスク");
+                    EditorGUILayout.HelpBox("白 = スペキュラーあり、黒 = スペキュラーなし", MessageType.Info);
+                }
             }
 
             EditorGUI.indentLevel--;
@@ -258,6 +278,14 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_RimColor", "リムライトの色");
                 DrawProperty("_RimPower", "リムライトのパワー");
                 DrawProperty("_RimIntensity", "リムライトの強さ");
+
+                EditorGUILayout.Space();
+                bool useRimMask = DrawToggle("_RIM_MASK", "_UseRimMask", "リムマスクを使用");
+                if (useRimMask)
+                {
+                    DrawProperty("_RimMask", "リムマスク");
+                    EditorGUILayout.HelpBox("白 = リムライトあり、黒 = リムライトなし", MessageType.Info);
+                }
             }
 
             EditorGUI.indentLevel--;
@@ -294,6 +322,15 @@ public class NataneToonShaderGUI : ShaderGUI
                 }
 
                 DrawProperty("_ThicknessScale", "厚さのスケール");
+
+                EditorGUILayout.Space();
+                bool useSSSMask = DrawToggle("_SSS_MASK", "_UseSSS_Mask", "SSSマスクを使用");
+                if (useSSSMask)
+                {
+                    DrawProperty("_SSSMask", "SSSマスク");
+                    EditorGUILayout.HelpBox("白 = SSSあり、黒 = SSSなし", MessageType.Info);
+                }
+
                 EditorGUILayout.HelpBox("SSSはオブジェクトを通過する光をシミュレートします。肌、葉、薄い素材に最適です。", MessageType.Info);
             }
 
@@ -319,6 +356,15 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_MatCapTex", "MatCapテクスチャ");
                 DrawProperty("_MatCapIntensity", "MatCapの強さ");
                 DrawProperty("_MatCapBlendMode", "MatCapのブレンドモード");
+
+                EditorGUILayout.Space();
+                bool useMatCapMask = DrawToggle("_MATCAP_MASK", "_UseMatCapMask", "MatCapマスクを使用");
+                if (useMatCapMask)
+                {
+                    DrawProperty("_MatCapMask", "MatCapマスク");
+                    EditorGUILayout.HelpBox("白 = MatCapあり、黒 = MatCapなし", MessageType.Info);
+                }
+
                 EditorGUILayout.HelpBox("MatCapテクスチャは球面反射マップである必要があります。", MessageType.Info);
             }
 
@@ -381,6 +427,14 @@ public class NataneToonShaderGUI : ShaderGUI
                     DrawProperty("_EmissionPulseSpeed", "パルス速度");
                     DrawProperty("_EmissionPulseAmplitude", "パルスの振幅");
                 }
+
+                EditorGUILayout.Space();
+                bool useEmissionMask = DrawToggle("_EMISSION_MASK", "_UseEmissionMask", "エミッションマスクを使用");
+                if (useEmissionMask)
+                {
+                    DrawProperty("_EmissionMask", "エミッションマスク");
+                    EditorGUILayout.HelpBox("白 = エミッションあり、黒 = エミッションなし", MessageType.Info);
+                }
             }
 
             EditorGUI.indentLevel--;
@@ -409,6 +463,14 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_DissolveEdgeWidth", "エッジの幅");
                 DrawProperty("_DissolveEdgeColor", "エッジの色");
                 DrawProperty("_DissolveEdgeIntensity", "エッジの強さ");
+
+                EditorGUILayout.Space();
+                bool useDissolveMask = DrawToggle("_DISSOLVE_MASK", "_UseDissolveMask", "ディゾルブマスクを使用");
+                if (useDissolveMask)
+                {
+                    DrawProperty("_DissolveMask", "ディゾルブマスク");
+                    EditorGUILayout.HelpBox("白 = ディゾルブあり、黒 = ディゾルブなし", MessageType.Info);
+                }
 
                 EditorGUILayout.HelpBox("ディゾルブはVRChatアバターの出現アニメーションに最適な消滅・分解エフェクトを作成します。ディゾルブ量パラメータをアニメーションさせることで、オブジェクトを出現または消滅させることができます。", MessageType.Info);
             }
