@@ -9,9 +9,26 @@ namespace NataneToon.Editor
     /// Tool to generate default material presets for designers
     /// Creates a comprehensive library of common material types
     /// </summary>
+    [InitializeOnLoad]
     public class DefaultPresetGenerator : EditorWindow
     {
         private const string PRESET_FOLDER = "Assets/MaterialPresets";
+        private const string PREFS_KEY = "NataneToon_PresetsGenerated_v1.0.7";
+
+        // Auto-generate presets on editor load if not already done
+        static DefaultPresetGenerator()
+        {
+            EditorApplication.delayCall += () =>
+            {
+                if (!EditorPrefs.GetBool(PREFS_KEY, false))
+                {
+                    Debug.Log("[Natane Toon] デフォルトプリセットを自動生成中... Auto-generating default presets...");
+                    GenerateAllPresets();
+                    EditorPrefs.SetBool(PREFS_KEY, true);
+                    Debug.Log("[Natane Toon] デフォルトプリセットの生成が完了しました Default presets generated successfully");
+                }
+            };
+        }
 
         [MenuItem("Tools/Natane/Generate Default Presets", false, 200)]
         public static void ShowWindow()
@@ -28,6 +45,26 @@ namespace NataneToon.Editor
             if (proceed)
             {
                 GenerateAllPresets();
+                EditorPrefs.SetBool(PREFS_KEY, true);
+            }
+        }
+
+        [MenuItem("Tools/Natane/Regenerate All Presets", false, 201)]
+        public static void RegeneratePresets()
+        {
+            bool proceed = EditorUtility.DisplayDialog(
+                "Regenerate All Presets",
+                "これにより既存のプリセットが再生成されます。\n" +
+                "This will regenerate all presets.\n\n" +
+                "続行しますか？\nContinue?",
+                "はい Yes",
+                "いいえ No");
+
+            if (proceed)
+            {
+                EditorPrefs.SetBool(PREFS_KEY, false);
+                GenerateAllPresets();
+                EditorPrefs.SetBool(PREFS_KEY, true);
             }
         }
 

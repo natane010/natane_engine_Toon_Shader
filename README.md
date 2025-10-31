@@ -1,6 +1,6 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.0.7-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.7)
+[![Version](https://img.shields.io/badge/version-1.0.8-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.8)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![VRC Light Volumes](https://img.shields.io/badge/VRC_Light_Volumes-対応-brightgreen)](https://github.com/REDSIM/VRCLightVolumes)
@@ -12,7 +12,8 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ## 📌 ブランチ情報
 
-- **v1.0.7** - 最新安定版（シーンマテリアル編集ウィンドウ追加、バグ修正）
+- **v1.0.8** - 最新安定版（プリセット自動生成機能追加）
+- **v1.0.7** - シーンマテリアル編集ウィンドウ追加、バグ修正
 - **v1.0.6** - Toon/NPRスタイルプリセット10種追加
 - **v1.0.5** - 包括的なエラーハンドリング追加
 - **v1.0.4** - ShaderGUIのバグ修正
@@ -20,7 +21,7 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 - **v1.0.1** - VRC Light Volumes対応 + 完全日本語UI
 - **v1.0.0** - 初回安定版（日本語UI完全対応）
 
-特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.7`）。
+特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.8`）。
 
 ## ✨ 新機能
 
@@ -703,6 +704,26 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
 詳細は [PARTICLE_SYSTEM_GUIDE.md](PARTICLE_SYSTEM_GUIDE.md) を参照してください。
 
 ## 更新履歴
+
+### v1.0.8 (2025-10-31)
+**プリセット自動生成機能追加**
+
+#### 新機能
+- **🔄 プリセット自動生成機能を追加**
+  - エディタ起動時に自動的にデフォルトプリセット（36種）を生成
+  - 初回起動時のみ自動生成、2回目以降はスキップ
+  - `Tools > Natane > Regenerate All Presets` メニューで手動再生成可能
+  - v1.0.6で追加した10種のToon/NPRプリセットも含めて自動生成
+
+#### 改善内容
+- ユーザーが手動でプリセット生成メニューを実行する必要がなくなった
+- 初回インストール時からすぐに36種のプリセットを使用可能
+- プリセットが見つからない問題を解消
+
+#### 技術的な変更
+- `[InitializeOnLoad]`属性を使用したエディタ起動時の自動実行
+- EditorPrefsでプリセット生成状態を管理
+- バージョンごとに異なるPrefsKeyを使用（v1.0.8用に更新）
 
 ### v1.0.7 (2025-10-31)
 **シーンマテリアル編集ウィンドウ追加 & バグ修正**
