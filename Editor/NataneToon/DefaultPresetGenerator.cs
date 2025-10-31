@@ -675,8 +675,7 @@ namespace NataneToon.Editor
                 toonSharpness = 0.4f,
                 useOutline = true,
                 outlineWidth = 0.005f,
-                outlineColor = new Color(0f, 0f, 0f, 1f),
-                saturation = 0.1f
+                outlineColor = new Color(0f, 0f, 0f, 1f)
             };
         }
 
@@ -708,8 +707,7 @@ namespace NataneToon.Editor
                 useRimLight = true,
                 rimColor = new Color(0.9f, 0.9f, 1f, 1f),
                 rimIntensity = 0.2f,
-                rimPower = 6f,
-                saturation = 0.85f
+                rimPower = 6f
             };
         }
     }

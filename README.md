@@ -1,6 +1,6 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.0.6-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.6)
+[![Version](https://img.shields.io/badge/version-1.0.7-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.7)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![VRC Light Volumes](https://img.shields.io/badge/VRC_Light_Volumes-対応-brightgreen)](https://github.com/REDSIM/VRCLightVolumes)
@@ -12,14 +12,15 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ## 📌 ブランチ情報
 
-- **v1.0.6** - 最新安定版（Toon/NPRスタイルプリセット10種追加）
+- **v1.0.7** - 最新安定版（シーンマテリアル編集ウィンドウ追加、バグ修正）
+- **v1.0.6** - Toon/NPRスタイルプリセット10種追加
 - **v1.0.5** - 包括的なエラーハンドリング追加
 - **v1.0.4** - ShaderGUIのバグ修正
 - **v1.0.3** - v1.0.2のバグ修正
 - **v1.0.1** - VRC Light Volumes対応 + 完全日本語UI
 - **v1.0.0** - 初回安定版（日本語UI完全対応）
 
-特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.6`）。
+特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.7`）。
 
 ## ✨ 新機能
 
@@ -81,6 +82,14 @@ RED_SIMが開発したVRChat向けの次世代ライティングシステムで�
 - **メモリ削減表示**: 最適化前後のメモリ使用量を可視化
 - **一括処理**: 複数テクスチャを一度に最適化
 - メニュー: `Tools > Natane > Texture Optimizer`
+
+#### 7. シーンマテリアル編集ウィンドウ
+- **リアルタイム編集**: シーン上のマテリアルをその場で編集
+- **複数マテリアル対応**: オブジェクトの全マテリアルを切り替えて編集
+- **プリセット適用**: ワンクリックでプリセットを適用
+- **Undo対応**: すべての変更を取り消し可能
+- **フィルタリング**: Natane Toon Shaderのみを表示可能
+- メニュー: `Tools > Natane > Scene Material Editor`
 
 **デザイナーへのメリット:**
 - 技術的な知識がなくても高品質なマテリアルを作成可能
@@ -694,6 +703,30 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
 詳細は [PARTICLE_SYSTEM_GUIDE.md](PARTICLE_SYSTEM_GUIDE.md) を参照してください。
 
 ## 更新履歴
+
+### v1.0.7 (2025-10-31)
+**シーンマテリアル編集ウィンドウ追加 & バグ修正**
+
+#### 新機能
+- **🎨 シーンマテリアル編集ウィンドウを追加**
+  - シーン上のオブジェクトを選択してマテリアルをリアルタイム編集
+  - 基本設定、シェーディング、スペキュラー、リムライト、アウトライン、エミッションなど全パラメーター対応
+  - 複数マテリアル切り替え機能
+  - プリセット適用機能
+  - 初期値リセット機能
+  - Undo/Redo完全対応
+  - Natane Toon Shaderフィルタリング
+  - 検索機能
+  - メニュー: `Tools > Natane > Scene Material Editor`
+
+#### バグ修正
+- **🐛 MaterialParameterDataのsaturationエラーを修正**
+  - Ink WashプリセットとWatercolorプリセットで未定義の`saturation`プロパティを使用していた問題を修正
+  - 該当プリセットから`saturation`プロパティを削除
+
+#### 改善内容
+- シーンビューでマテリアルを直接編集できるようになり、ワークフローが大幅に向上
+- リアルタイムプレビューで変更結果を即座に確認可能
 
 ### v1.0.6 (2025-10-31)
 **Toon/NPRスタイルプリセット10種追加**
