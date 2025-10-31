@@ -1,6 +1,6 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.0.5-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.5)
+[![Version](https://img.shields.io/badge/version-1.0.6-blue)](https://github.com/natane010/natane_engine_Toon_Shader/releases/tag/v1.0.6)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![VRC Light Volumes](https://img.shields.io/badge/VRC_Light_Volumes-対応-brightgreen)](https://github.com/REDSIM/VRCLightVolumes)
@@ -12,13 +12,14 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ## 📌 ブランチ情報
 
-- **v1.0.5** - 最新安定版（包括的なエラーハンドリング追加）
+- **v1.0.6** - 最新安定版（Toon/NPRスタイルプリセット10種追加）
+- **v1.0.5** - 包括的なエラーハンドリング追加
 - **v1.0.4** - ShaderGUIのバグ修正
 - **v1.0.3** - v1.0.2のバグ修正
 - **v1.0.1** - VRC Light Volumes対応 + 完全日本語UI
 - **v1.0.0** - 初回安定版（日本語UI完全対応）
 
-特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.5`）。
+特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.0.6`）。
 
 ## ✨ 新機能
 
@@ -693,6 +694,37 @@ Unityのパーティクルシステムを使って簡単にエフェクトを作
 詳細は [PARTICLE_SYSTEM_GUIDE.md](PARTICLE_SYSTEM_GUIDE.md) を参照してください。
 
 ## 更新履歴
+
+### v1.0.6 (2025-10-31)
+**Toon/NPRスタイルプリセット10種追加**
+
+#### 新機能
+- **🎨 Toonスタイルプリセット5種を追加**
+  - Classic Cell Shading（伝統的なセルシェーディング）: 2段階の影、シャープな境界
+  - Soft Toon（柔らかいトゥーン）: 3段階の影、柔らかい境界、リムライト
+  - Hard Edge Toon（ハードエッジトゥーン）: 強いコントラスト、太いアウトライン、シャープなスペキュラー
+  - Retro 80s（80年代アニメ風）: 強いリムライト、低彩度影、紫がかった色調
+  - Retro 90s（90年代アニメ風）: グラデーション影、スペキュラー、青みがかった色調
+
+- **🖌️ NPRスタイルプリセット5種を追加**
+  - Comic Book（アメコミ風）: 太いアウトライン、高コントラスト、強いスペキュラー
+  - Pastel（パステル調）: 明るい色、柔らかい影、優しい色調
+  - Ink Wash（墨絵風）: モノクロ、強いコントラスト、低彩度
+  - Flat Color（フラットカラー）: 影なし、単色、ベクターアート風
+  - Watercolor（水彩画風）: 柔らかい影、低コントラスト、4段階トゥーン
+
+#### 改善内容
+- マテリアルプリセット総数が26種から36種に増加
+- PresetCategoryにStyle_ToonとStyle_NPRカテゴリを追加
+- より多様なアートスタイルの表現が可能に
+
+#### 技術的な詳細
+すべてのプリセットは以下の要素を慎重に調整：
+- トゥーン段階数（1-4段階）
+- 境界のシャープネス（0.0-1.0）
+- アウトライン幅と色
+- リムライトとスペキュラー
+- 彩度とコントラスト
 
 ### v1.0.5 (2025-10-31)
 **包括的なエラーハンドリング追加**

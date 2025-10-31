@@ -74,6 +74,18 @@ namespace NataneToon.Editor
             createdCount += CreatePreset("Effects_Emission_Neon", PresetCategory.Effects_Emission, CreateEmissionNeonPreset(), "Neon light effect");
             createdCount += CreatePreset("Effects_Hologram", PresetCategory.Effects_Special, CreateHologramPreset(), "Hologram effect with rim and emission");
 
+            // Toon/NPR Style presets
+            createdCount += CreatePreset("Style_Toon_Classic_Cell", PresetCategory.Style_Toon, CreateClassicCellShadingPreset(), "伝統的なセルシェーディング - 2段階の影、シャープな境界");
+            createdCount += CreatePreset("Style_Toon_Soft", PresetCategory.Style_Toon, CreateSoftToonPreset(), "柔らかいトゥーン - 3段階の影、柔らかい境界");
+            createdCount += CreatePreset("Style_Toon_Hard_Edge", PresetCategory.Style_Toon, CreateHardEdgeToonPreset(), "ハードエッジトゥーン - 強いコントラスト、太いアウトライン");
+            createdCount += CreatePreset("Style_Toon_Retro_80s", PresetCategory.Style_Toon, CreateRetro80sPreset(), "80年代アニメ風 - 強いリムライト、低彩度影");
+            createdCount += CreatePreset("Style_Toon_Retro_90s", PresetCategory.Style_Toon, CreateRetro90sPreset(), "90年代アニメ風 - グラデーション影、スペキュラ");
+            createdCount += CreatePreset("Style_NPR_Comic_Book", PresetCategory.Style_NPR, CreateComicBookPreset(), "アメコミ風 - 太いアウトライン、高コントラスト");
+            createdCount += CreatePreset("Style_NPR_Pastel", PresetCategory.Style_NPR, CreatePastelToonPreset(), "パステル調 - 明るい色、柔らかい影");
+            createdCount += CreatePreset("Style_NPR_Ink_Wash", PresetCategory.Style_NPR, CreateInkWashPreset(), "墨絵風 - モノクロ、強いコントラスト");
+            createdCount += CreatePreset("Style_NPR_Flat_Color", PresetCategory.Style_NPR, CreateFlatColorPreset(), "フラットカラー - 影なし、単色");
+            createdCount += CreatePreset("Style_NPR_Watercolor", PresetCategory.Style_NPR, CreateWatercolorPreset(), "水彩画風 - 柔らかい影、低コントラスト");
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
@@ -515,6 +527,189 @@ namespace NataneToon.Editor
                 rimPower = 2f,
                 useEnvRim = true,
                 envRimIntensity = 0.5f
+            };
+        }
+
+        // Toon Style Presets
+        private static MaterialParameterData CreateClassicCellShadingPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.95f, 0.95f, 0.95f, 1f),
+                shadowColor = new Color(0.4f, 0.4f, 0.5f, 1f),
+                toonSteps = 2,
+                toonSharpness = 0.95f,
+                useOutline = true,
+                outlineWidth = 0.003f,
+                outlineColor = new Color(0.1f, 0.1f, 0.1f, 1f)
+            };
+        }
+
+        private static MaterialParameterData CreateSoftToonPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.95f, 0.95f, 0.95f, 1f),
+                shadowColor = new Color(0.5f, 0.5f, 0.6f, 1f),
+                toonSteps = 3,
+                toonSharpness = 0.3f,
+                useOutline = true,
+                outlineWidth = 0.002f,
+                outlineColor = new Color(0.2f, 0.2f, 0.2f, 1f),
+                useRimLight = true,
+                rimColor = new Color(0.9f, 0.9f, 1f, 1f),
+                rimIntensity = 0.3f,
+                rimPower = 3f
+            };
+        }
+
+        private static MaterialParameterData CreateHardEdgeToonPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(1f, 1f, 1f, 1f),
+                shadowColor = new Color(0.2f, 0.2f, 0.3f, 1f),
+                toonSteps = 2,
+                toonSharpness = 1f,
+                useOutline = true,
+                outlineWidth = 0.006f,
+                outlineColor = new Color(0f, 0f, 0f, 1f),
+                useSpecular = true,
+                specularIntensity = 0.8f,
+                specularSize = 0.02f,
+                specularSharpness = 0.95f
+            };
+        }
+
+        private static MaterialParameterData CreateRetro80sPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.9f, 0.85f, 0.9f, 1f),
+                shadowColor = new Color(0.35f, 0.3f, 0.4f, 1f),
+                toonSteps = 2,
+                toonSharpness = 0.8f,
+                useOutline = true,
+                outlineWidth = 0.004f,
+                outlineColor = new Color(0.15f, 0.1f, 0.2f, 1f),
+                useRimLight = true,
+                rimColor = new Color(1f, 0.8f, 1f, 1f),
+                rimIntensity = 0.8f,
+                rimPower = 2f,
+                useSpecular = true,
+                specularIntensity = 0.6f,
+                specularSize = 0.05f
+            };
+        }
+
+        private static MaterialParameterData CreateRetro90sPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.95f, 0.95f, 1f, 1f),
+                shadowColor = new Color(0.45f, 0.45f, 0.55f, 1f),
+                toonSteps = 3,
+                toonSharpness = 0.5f,
+                useOutline = true,
+                outlineWidth = 0.003f,
+                outlineColor = new Color(0.1f, 0.1f, 0.15f, 1f),
+                useSpecular = true,
+                specularIntensity = 0.7f,
+                specularSize = 0.03f,
+                specularSharpness = 0.85f,
+                useRimLight = true,
+                rimColor = new Color(0.9f, 0.9f, 1f, 1f),
+                rimIntensity = 0.4f,
+                rimPower = 4f
+            };
+        }
+
+        // NPR Style Presets
+        private static MaterialParameterData CreateComicBookPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(1f, 0.95f, 0.9f, 1f),
+                shadowColor = new Color(0.25f, 0.2f, 0.25f, 1f),
+                toonSteps = 2,
+                toonSharpness = 1f,
+                useOutline = true,
+                outlineWidth = 0.008f,
+                outlineColor = new Color(0f, 0f, 0f, 1f),
+                useSpecular = true,
+                specularIntensity = 0.9f,
+                specularSize = 0.01f,
+                specularSharpness = 0.98f,
+                useRimLight = true,
+                rimColor = new Color(1f, 1f, 1f, 1f),
+                rimIntensity = 0.6f,
+                rimPower = 2.5f
+            };
+        }
+
+        private static MaterialParameterData CreatePastelToonPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(1f, 0.95f, 0.95f, 1f),
+                shadowColor = new Color(0.85f, 0.75f, 0.8f, 1f),
+                toonSteps = 3,
+                toonSharpness = 0.2f,
+                useOutline = true,
+                outlineWidth = 0.002f,
+                outlineColor = new Color(0.4f, 0.3f, 0.35f, 1f),
+                useRimLight = true,
+                rimColor = new Color(1f, 0.9f, 0.95f, 1f),
+                rimIntensity = 0.5f,
+                rimPower = 5f
+            };
+        }
+
+        private static MaterialParameterData CreateInkWashPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.9f, 0.9f, 0.9f, 1f),
+                shadowColor = new Color(0.15f, 0.15f, 0.15f, 1f),
+                toonSteps = 3,
+                toonSharpness = 0.4f,
+                useOutline = true,
+                outlineWidth = 0.005f,
+                outlineColor = new Color(0f, 0f, 0f, 1f),
+                saturation = 0.1f
+            };
+        }
+
+        private static MaterialParameterData CreateFlatColorPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.95f, 0.95f, 0.95f, 1f),
+                shadowColor = new Color(0.95f, 0.95f, 0.95f, 1f),
+                toonSteps = 1,
+                toonSharpness = 0f,
+                useOutline = true,
+                outlineWidth = 0.004f,
+                outlineColor = new Color(0f, 0f, 0f, 1f)
+            };
+        }
+
+        private static MaterialParameterData CreateWatercolorPreset()
+        {
+            return new MaterialParameterData
+            {
+                mainColor = new Color(0.95f, 0.95f, 1f, 1f),
+                shadowColor = new Color(0.6f, 0.6f, 0.7f, 1f),
+                toonSteps = 4,
+                toonSharpness = 0.1f,
+                useOutline = true,
+                outlineWidth = 0.002f,
+                outlineColor = new Color(0.3f, 0.3f, 0.4f, 1f),
+                useRimLight = true,
+                rimColor = new Color(0.9f, 0.9f, 1f, 1f),
+                rimIntensity = 0.2f,
+                rimPower = 6f,
+                saturation = 0.85f
             };
         }
     }

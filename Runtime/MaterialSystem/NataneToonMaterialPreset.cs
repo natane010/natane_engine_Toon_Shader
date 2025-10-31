@@ -22,6 +22,8 @@ namespace NataneToon.MaterialSystem
         Effects_Transparent,
         Effects_Emission,
         Effects_Special,
+        Style_Toon,
+        Style_NPR,
         Custom
     }
 
