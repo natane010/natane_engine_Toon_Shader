@@ -52,9 +52,13 @@ public class NataneToonShaderGUI : ShaderGUI
             // Load foldout states from EditorPrefs for this specific material
             LoadFoldoutStates();
 
-            // Header
-            EditorGUILayout.LabelField("Natane Toon Shader", EditorStyles.boldLabel);
-            EditorGUILayout.Space();
+            // ===== Header with Logo Style =====
+            DrawHeaderSection();
+
+            // ===== Quick Access Toolbar =====
+            DrawQuickAccessToolbar();
+
+            EditorGUILayout.Space(5);
 
             // Material Actions (Presets & Sharing)
             SafeDrawSection(DrawPresetsSection, "プリセット");
@@ -62,22 +66,52 @@ public class NataneToonShaderGUI : ShaderGUI
             // Performance Indicator
             SafeDrawSection(DrawPerformanceSection, "パフォーマンス");
 
+            // ===== CATEGORY: 基本設定 =====
+            DrawCategoryHeader("基本設定", "メインテクスチャとシェーディングの基本設定");
             SafeDrawSection(DrawMainTextureSection, "メインテクスチャ");
             SafeDrawSection(DrawShadingSection, "シェーディング");
+            EditorGUILayout.Space(10);
+
+            // ===== CATEGORY: ライティング =====
+            DrawCategoryHeader("ライティング", "光の当たり方と影の設定");
             SafeDrawSection(DrawAdvancedLightingSection, "高度なライティング");
             SafeDrawSection(DrawLightVolumeSection, "Light Volume");
-            SafeDrawSection(DrawSpecularSection, "スペキュラ");
+            EditorGUILayout.Space(10);
+
+            // ===== CATEGORY: 表面エフェクト =====
+            DrawCategoryHeader("表面エフェクト", "材質感を表現するエフェクト");
+            SafeDrawSection(DrawSpecularSection, "スペキュラー");
             SafeDrawSection(DrawRimLightSection, "リムライト");
             SafeDrawSection(DrawSSSSection, "SSS");
             SafeDrawSection(DrawMatCapSection, "MatCap");
+            EditorGUILayout.Space(10);
+
+            // ===== CATEGORY: アウトライン =====
+            DrawCategoryHeader("アウトライン", "輪郭線の設定");
             SafeDrawSection(DrawOutlineSection, "アウトライン");
+            EditorGUILayout.Space(10);
+
+            // ===== CATEGORY: エミッションと表現 =====
+            DrawCategoryHeader("エミッションと表現", "発光効果とアニメーション");
             SafeDrawSection(DrawEmissionSection, "エミッション");
             SafeDrawSection(DrawVirtualExpressionSection, "バーチャル表現");
+            EditorGUILayout.Space(10);
+
+            // ===== CATEGORY: テクスチャマッピング =====
+            DrawCategoryHeader("テクスチャマッピング", "詳細なテクスチャ設定");
             SafeDrawSection(DrawNormalMapSection, "ノーマルマップ");
+            SafeDrawSection(DrawParallaxSection, "視差マッピング");
+            EditorGUILayout.Space(10);
+
+            // ===== CATEGORY: 環境効果 =====
+            DrawCategoryHeader("環境効果", "環境からの反射と屈折");
             SafeDrawSection(DrawReflectionSection, "リフレクション");
             SafeDrawSection(DrawEnvironmentalRimSection, "環境リム");
-            SafeDrawSection(DrawParallaxSection, "視差マッピング");
             SafeDrawSection(DrawRefractionSection, "屈折");
+            EditorGUILayout.Space(10);
+
+            // ===== CATEGORY: レンダリング設定 =====
+            DrawCategoryHeader("レンダリング設定", "描画モードの設定");
             SafeDrawSection(DrawRenderingSection, "レンダリング");
         }
         catch (System.Exception e)
@@ -126,21 +160,48 @@ public class NataneToonShaderGUI : ShaderGUI
         {
             EditorGUI.indentLevel++;
 
+            EditorGUILayout.HelpBox(
+                "🎨 NiloToonスタイルのセルシェーディング\n" +
+                "クリーンで明瞭な陰影境界を実現し、高品質なアニメ調レンダリングを提供します。",
+                MessageType.None);
+
+            EditorGUILayout.Space(5);
+
             bool useRamp = DrawToggle("_USE_RAMP", "_UseRamp", "ランプテクスチャを使用");
 
             if (useRamp)
             {
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField("ランプテクスチャ設定", EditorStyles.boldLabel);
                 DrawProperty("_RampTex", "ランプテクスチャ");
-                EditorGUILayout.HelpBox("ランプテクスチャは暗い色（左）から明るい色（右）へのグラデーションにしてください。", MessageType.Info);
+                EditorGUILayout.HelpBox(
+                    "ランプテクスチャは暗い色（左）から明るい色（右）へのグラデーションにしてください。\n" +
+                    "カスタムグラデーションで独自の影の色合いを作成できます。",
+                    MessageType.Info);
             }
             else
             {
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField("セルシェーディング設定", EditorStyles.boldLabel);
                 DrawProperty("_ShadowColor", "影の色");
                 DrawProperty("_ShadowSteps", "影のステップ数");
+                EditorGUILayout.HelpBox(
+                    "推奨値: 2-3（アニメ調）、より多いステップでグラデーション効果",
+                    MessageType.Info);
+
                 DrawProperty("_ShadowSharpness", "影のシャープネス");
+                EditorGUILayout.HelpBox(
+                    "低い値: シャープな境界（アニメ調）\n" +
+                    "高い値: 柔らかい境界（イラスト調）\n" +
+                    "NiloToonスタイル推奨: 0.05-0.15",
+                    MessageType.Info);
             }
 
+            EditorGUILayout.Space(5);
             DrawProperty("_ShadowOffset", "影のオフセット");
+            EditorGUILayout.HelpBox(
+                "影の境界を調整します。正の値で影を明るく、負の値で影を暗くします。",
+                MessageType.Info);
 
             EditorGUI.indentLevel--;
             EditorGUILayout.Space();
@@ -383,8 +444,12 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawOutlineSection()
     {
+        // Check if outline is enabled for header indicator
+        bool outlineEnabled = targetMaterial.IsKeywordEnabled("_OUTLINE");
+        string headerLabel = outlineEnabled ? "アウトライン [ON]" : "アウトライン";
+
         EditorGUI.BeginChangeCheck();
-        showOutline = EditorGUILayout.Foldout(showOutline, "アウトライン", true, EditorStyles.foldoutHeader);
+        showOutline = EditorGUILayout.Foldout(showOutline, headerLabel, true, EditorStyles.foldoutHeader);
         if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
 
         if (showOutline)
@@ -395,9 +460,14 @@ public class NataneToonShaderGUI : ShaderGUI
 
             if (enableOutline)
             {
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField("アウトライン設定", EditorStyles.boldLabel);
+
                 DrawProperty("_OutlineMode", "描画方法");
                 DrawProperty("_OutlineWidth", "アウトラインの幅");
                 DrawProperty("_OutlineColor", "アウトラインの色");
+
+                EditorGUILayout.Space(5);
 
                 float outlineMode = targetMaterial.GetFloat("_OutlineMode");
                 if (outlineMode < 0.5f)
@@ -405,8 +475,9 @@ public class NataneToonShaderGUI : ShaderGUI
                     EditorGUILayout.HelpBox(
                         "【反転ハル方式】\n" +
                         "法線方向に頂点を押し出してアウトラインを描画します。\n" +
-                        "• 利点: 一般的に安定した結果\n" +
-                        "• 欠点: ローポリモデルやハードエッジで乱れる場合があります",
+                        "• 利点: 一般的に安定した結果、距離補正により遠近で一貫した太さ\n" +
+                        "• 欠点: ローポリモデルやハードエッジで乱れる場合があります\n" +
+                        "• NiloToon互換: カメラ距離による自動調整機能を搭載",
                         MessageType.Info);
                 }
                 else
@@ -415,7 +486,8 @@ public class NataneToonShaderGUI : ShaderGUI
                         "【背面法】\n" +
                         "メッシュを拡大して背面を描画します。\n" +
                         "• 利点: スムーズなアウトライン、ハイポリモデルに適しています\n" +
-                        "• 欠点: 内部構造が見える場合があります",
+                        "• 欠点: 内部構造が見える場合があります\n" +
+                        "• NiloToon互換: 距離補正により遠くでも視認性を維持",
                         MessageType.Info);
                 }
             }
@@ -708,7 +780,24 @@ public class NataneToonShaderGUI : ShaderGUI
         }
 
         EditorGUI.BeginChangeCheck();
-        bool enabled = EditorGUILayout.Toggle(label, property.floatValue > 0.5f);
+        bool enabled = property.floatValue > 0.5f;
+
+        // Create a horizontal layout for toggle with visual indicator
+        EditorGUILayout.BeginHorizontal();
+
+        // Draw toggle
+        enabled = EditorGUILayout.Toggle(label, enabled);
+
+        // Visual indicator
+        string statusIcon = enabled ? "✓" : "✗";
+        Color statusColor = enabled ? new Color(0.3f, 0.8f, 0.3f) : new Color(0.6f, 0.6f, 0.6f);
+
+        var oldColor = GUI.color;
+        GUI.color = statusColor;
+        GUILayout.Label(statusIcon, GUILayout.Width(20));
+        GUI.color = oldColor;
+
+        EditorGUILayout.EndHorizontal();
 
         if (EditorGUI.EndChangeCheck())
         {
@@ -809,5 +898,121 @@ public class NataneToonShaderGUI : ShaderGUI
         EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowParallax"), showParallax);
         EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowRefraction"), showRefraction);
         EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowAdvanced"), showRendering);
+    }
+
+    // ===== UI HELPER METHODS =====
+
+    /// <summary>
+    /// Draw stylized header with logo
+    /// </summary>
+    private void DrawHeaderSection()
+    {
+        // Create a box style for the header
+        var headerStyle = new GUIStyle(EditorStyles.helpBox);
+        headerStyle.padding = new RectOffset(10, 10, 10, 10);
+
+        EditorGUILayout.BeginVertical(headerStyle);
+
+        // Title
+        var titleStyle = new GUIStyle(EditorStyles.boldLabel);
+        titleStyle.fontSize = 16;
+        titleStyle.alignment = TextAnchor.MiddleCenter;
+        EditorGUILayout.LabelField("Natane Toon Shader", titleStyle);
+
+        // Subtitle
+        var subtitleStyle = new GUIStyle(EditorStyles.miniLabel);
+        subtitleStyle.alignment = TextAnchor.MiddleCenter;
+        EditorGUILayout.LabelField("NiloToonスタイル - 高品質アニメ調レンダリング", subtitleStyle);
+
+        EditorGUILayout.EndVertical();
+        EditorGUILayout.Space(5);
+    }
+
+    /// <summary>
+    /// Draw quick access toolbar with expand/collapse buttons
+    /// </summary>
+    private void DrawQuickAccessToolbar()
+    {
+        EditorGUILayout.BeginHorizontal();
+
+        GUILayout.FlexibleSpace();
+
+        if (GUILayout.Button("すべて展開", GUILayout.Width(100)))
+        {
+            ExpandAllSections(true);
+        }
+
+        if (GUILayout.Button("すべて折りたたむ", GUILayout.Width(120)))
+        {
+            ExpandAllSections(false);
+        }
+
+        GUILayout.FlexibleSpace();
+
+        EditorGUILayout.EndHorizontal();
+    }
+
+    /// <summary>
+    /// Draw category header with description
+    /// </summary>
+    private void DrawCategoryHeader(string title, string description)
+    {
+        EditorGUILayout.Space(5);
+
+        // Background box
+        var boxStyle = new GUIStyle(GUI.skin.box);
+        boxStyle.padding = new RectOffset(10, 10, 5, 5);
+
+        EditorGUILayout.BeginVertical(boxStyle);
+
+        // Title with icon
+        var titleStyle = new GUIStyle(EditorStyles.boldLabel);
+        titleStyle.fontSize = 13;
+        EditorGUILayout.LabelField("▣ " + title, titleStyle);
+
+        // Description
+        if (!string.IsNullOrEmpty(description))
+        {
+            var descStyle = new GUIStyle(EditorStyles.miniLabel);
+            descStyle.wordWrap = true;
+            EditorGUILayout.LabelField(description, descStyle);
+        }
+
+        EditorGUILayout.EndVertical();
+        EditorGUILayout.Space(3);
+    }
+
+    /// <summary>
+    /// Expand or collapse all sections
+    /// </summary>
+    private void ExpandAllSections(bool expand)
+    {
+        showPresets = expand;
+        showPerformance = expand;
+        showMainTexture = expand;
+        showShading = expand;
+        showAdvancedLighting = expand;
+        showLightVolume = expand;
+        showSpecular = expand;
+        showRimLight = expand;
+        showSSS = expand;
+        showMatCap = expand;
+        showOutline = expand;
+        showEmission = expand;
+        showVirtualExpression = expand;
+        showNormalMap = expand;
+        showReflection = expand;
+        showEnvironmentalRim = expand;
+        showParallax = expand;
+        showRefraction = expand;
+        showRendering = expand;
+
+        SaveFoldoutStates();
+
+        // Force repaint
+        if (materialEditor != null)
+        {
+            materialEditor.Repaint();
+        }
     }
 }
