@@ -38,19 +38,29 @@
 // Lighting Calculation Functions
 
 // Toon Shading with adjustable steps and sharpness
-// Creates cel-shaded stepped lighting effect
+// Creates cel-shaded stepped lighting effect (NiloToon-style)
 float ToonShading(float ndotl, float steps, float sharpness)
 {
     // Apply shadow offset to adjust shadow threshold
     ndotl = ndotl + _ShadowOffset;
 
-    // Calculate stepped lighting (quantize to steps)
-    float toon = floor(ndotl * steps) / steps;
+    // For anime-style clean shadows, use a sharper threshold approach
+    // This creates more distinct light/shadow boundaries
+    float stepValue = 1.0 / steps;
 
-    // Smooth the edges based on sharpness parameter
-    // Higher sharpness = sharper shadow boundaries
-    float edge = frac(ndotl * steps);
-    toon += smoothstep(0.5 - sharpness * 0.5, 0.5 + sharpness * 0.5, edge) / steps;
+    // Calculate which step we're on
+    float currentStep = floor(ndotl * steps);
+
+    // Calculate position within the current step
+    float stepPosition = frac(ndotl * steps);
+
+    // Apply anti-aliasing to prevent harsh pixelation while maintaining sharpness
+    // Use smaller smoothstep range for cleaner anime look
+    float smoothRange = sharpness * 0.5;
+    float smoothedStep = smoothstep(0.5 - smoothRange, 0.5 + smoothRange, stepPosition);
+
+    // Combine for final toon value with better precision
+    float toon = (currentStep + smoothedStep) * stepValue;
 
     return saturate(toon);
 }

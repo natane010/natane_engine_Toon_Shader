@@ -192,19 +192,30 @@ Shader "Natane/Toon Shader (Transparent)"
                 v2f o;
 
                 #ifdef _OUTLINE
+                    // Calculate distance compensation for consistent outline width (NiloToon-style)
+                    float3 worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+                    float distanceToCamera = distance(worldPos, _WorldSpaceCameraPos);
+                    float distanceFactor = distanceToCamera * 0.1; // Scale factor for distance compensation
+
                     if (_OutlineMode < 0.5)
                     {
                         // Mode 0: Inverted Hull - Extrusion along normals in view space
+                        // Improved for better consistency at different angles
                         float3 norm = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, v.normal));
                         float2 offset = TransformViewToProjection(norm.xy);
 
                         o.pos = UnityObjectToClipPos(v.vertex);
-                        o.pos.xy += offset * o.pos.z * _OutlineWidth;
+
+                        // Apply distance compensation for consistent outline width
+                        float outlineWidth = _OutlineWidth * (1.0 + distanceFactor);
+                        o.pos.xy += offset * o.pos.z * outlineWidth;
                     }
                     else
                     {
                         // Mode 1: Back Face - Scale up vertices along normals in object space
-                        float3 scaledPos = v.vertex.xyz + normalize(v.normal) * _OutlineWidth * 10.0;
+                        // Improved with distance compensation
+                        float outlineWidth = _OutlineWidth * 10.0 * (1.0 + distanceFactor * 0.5);
+                        float3 scaledPos = v.vertex.xyz + normalize(v.normal) * outlineWidth;
                         o.pos = UnityObjectToClipPos(float4(scaledPos, 1.0));
                     }
                 #else

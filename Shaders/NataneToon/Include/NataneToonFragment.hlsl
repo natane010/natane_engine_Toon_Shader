@@ -57,15 +57,27 @@ half4 frag(v2f i) : SV_Target
         backlight = pow(backlightDot, 4.0) * _BacklightIntensity;
     #endif
 
-    // ===== Toon/Ramp Shading =====
+    // ===== Toon/Ramp Shading (NiloToon-style) =====
     float3 lighting;
     #ifdef _USE_RAMP
         // Use ramp texture for custom shadow gradients
         lighting = RampShading(ndotl * atten);
     #else
-        // Use stepped cel-shading
+        // Use stepped cel-shading with improved color handling
         float toon = ToonShading(ndotl * atten, _ShadowSteps, _ShadowSharpness);
-        lighting = lerp(_ShadowColor.rgb, half3(1.0, 1.0, 1.0), toon);
+
+        // NiloToon-style shadow color mixing for more vibrant anime look
+        // Instead of simple lerp, preserve color saturation in shadows
+        float3 litColor = half3(1.0, 1.0, 1.0);
+        float3 shadowColor = _ShadowColor.rgb;
+
+        // Preserve hue and saturation better in shadows
+        // This creates more vibrant, anime-style shadows
+        lighting = lerp(shadowColor, litColor, toon);
+
+        // Apply gamma correction for more accurate color mixing
+        lighting = pow(lighting, 2.2);
+        lighting = pow(lighting, 1.0 / 2.2);
     #endif
 
     // Apply shadow max darkness limit (prevents shadows from being too black)
