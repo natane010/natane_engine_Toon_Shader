@@ -530,16 +530,31 @@ namespace NataneToon.Editor
 
             if (!proceed) return;
 
-            // Ensure directory exists
+            // Ensure directory exists with robust creation logic
             string presetPath = "Assets/NataneToon/Runtime/Presets/VTuber";
-            if (!AssetDatabase.IsValidFolder(presetPath))
+
+            // Create directory using System.IO for more reliable handling
+            string fullPath = System.IO.Path.GetFullPath(presetPath);
+            if (!System.IO.Directory.Exists(fullPath))
             {
-                string parentPath = "Assets/NataneToon/Runtime/Presets";
-                if (!AssetDatabase.IsValidFolder(parentPath))
+                try
                 {
-                    AssetDatabase.CreateFolder("Assets/NataneToon/Runtime", "Presets");
+                    System.IO.Directory.CreateDirectory(fullPath);
+                    Debug.Log($"[MaterialPresetBrowser] Created directory: {fullPath}");
+
+                    // Refresh AssetDatabase to recognize new directory
+                    AssetDatabase.Refresh();
                 }
-                AssetDatabase.CreateFolder(parentPath, "VTuber");
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"[MaterialPresetBrowser] Failed to create directory: {e.Message}");
+                    EditorUtility.DisplayDialog(
+                        "Error / エラー",
+                        $"ディレクトリの作成に失敗しました:\n{e.Message}\n\n" +
+                        $"手動で以下のディレクトリを作成してください:\n{presetPath}",
+                        "OK");
+                    return;
+                }
             }
 
             int presetsCreated = 0;
@@ -579,6 +594,14 @@ namespace NataneToon.Editor
         {
             try
             {
+                // Verify directory exists
+                string fullBasePath = System.IO.Path.GetFullPath(basePath);
+                if (!System.IO.Directory.Exists(fullBasePath))
+                {
+                    Debug.LogError($"[GenerateCharacterSkinPreset] Directory does not exist: {fullBasePath}");
+                    return false;
+                }
+
                 var preset = CreateInstance<NataneToonMaterialPreset>();
                 preset.presetName = "VTuber - キャラクター肌";
                 preset.description = "VTuberキャラクターの肌に最適化されたプリセット。\n" +
@@ -622,12 +645,14 @@ namespace NataneToon.Editor
                 p.renderQueue = 2000;
                 p.cullMode = 2;
 
-                AssetDatabase.CreateAsset(preset, $"{basePath}/VTuber_CharacterSkin.asset");
+                string assetPath = $"{basePath}/VTuber_CharacterSkin.asset";
+                AssetDatabase.CreateAsset(preset, assetPath);
+                Debug.Log($"[GenerateCharacterSkinPreset] Created preset at: {assetPath}");
                 return true;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to generate Character Skin preset: {e.Message}");
+                Debug.LogError($"[GenerateCharacterSkinPreset] Failed to generate: {e.Message}\nStack: {e.StackTrace}");
                 return false;
             }
         }
@@ -636,6 +661,14 @@ namespace NataneToon.Editor
         {
             try
             {
+                // Verify directory exists
+                string fullBasePath = System.IO.Path.GetFullPath(basePath);
+                if (!System.IO.Directory.Exists(fullBasePath))
+                {
+                    Debug.LogError($"[GenerateCharacterHairPreset] Directory does not exist: {fullBasePath}");
+                    return false;
+                }
+
                 var preset = CreateInstance<NataneToonMaterialPreset>();
                 preset.presetName = "VTuber - キャラクター髪";
                 preset.description = "VTuberキャラクターの髪に最適化されたプリセット。\n" +
@@ -675,12 +708,14 @@ namespace NataneToon.Editor
                 p.renderQueue = 2000;
                 p.cullMode = 0;
 
-                AssetDatabase.CreateAsset(preset, $"{basePath}/VTuber_CharacterHair.asset");
+                string assetPath = $"{basePath}/VTuber_CharacterHair.asset";
+                AssetDatabase.CreateAsset(preset, assetPath);
+                Debug.Log($"[GenerateCharacterHairPreset] Created preset at: {assetPath}");
                 return true;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to generate Character Hair preset: {e.Message}");
+                Debug.LogError($"[GenerateCharacterHairPreset] Failed to generate: {e.Message}\nStack: {e.StackTrace}");
                 return false;
             }
         }
@@ -689,6 +724,14 @@ namespace NataneToon.Editor
         {
             try
             {
+                // Verify directory exists
+                string fullBasePath = System.IO.Path.GetFullPath(basePath);
+                if (!System.IO.Directory.Exists(fullBasePath))
+                {
+                    Debug.LogError($"[GenerateCharacterClothingPreset] Directory does not exist: {fullBasePath}");
+                    return false;
+                }
+
                 var preset = CreateInstance<NataneToonMaterialPreset>();
                 preset.presetName = "VTuber - キャラクター服";
                 preset.description = "VTuberキャラクターの服に最適化されたプリセット。\n" +
@@ -721,12 +764,14 @@ namespace NataneToon.Editor
                 p.renderQueue = 2000;
                 p.cullMode = 2;
 
-                AssetDatabase.CreateAsset(preset, $"{basePath}/VTuber_CharacterClothing.asset");
+                string assetPath = $"{basePath}/VTuber_CharacterClothing.asset";
+                AssetDatabase.CreateAsset(preset, assetPath);
+                Debug.Log($"[GenerateCharacterClothingPreset] Created preset at: {assetPath}");
                 return true;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to generate Character Clothing preset: {e.Message}");
+                Debug.LogError($"[GenerateCharacterClothingPreset] Failed to generate: {e.Message}\nStack: {e.StackTrace}");
                 return false;
             }
         }
@@ -735,6 +780,14 @@ namespace NataneToon.Editor
         {
             try
             {
+                // Verify directory exists
+                string fullBasePath = System.IO.Path.GetFullPath(basePath);
+                if (!System.IO.Directory.Exists(fullBasePath))
+                {
+                    Debug.LogError($"[GenerateCharacterEyesPreset] Directory does not exist: {fullBasePath}");
+                    return false;
+                }
+
                 var preset = CreateInstance<NataneToonMaterialPreset>();
                 preset.presetName = "VTuber - キャラクター目";
                 preset.description = "VTuberキャラクターの目に最適化されたプリセット。\n" +
@@ -774,12 +827,14 @@ namespace NataneToon.Editor
                 p.renderQueue = 2000;
                 p.cullMode = 2;
 
-                AssetDatabase.CreateAsset(preset, $"{basePath}/VTuber_CharacterEyes.asset");
+                string assetPath = $"{basePath}/VTuber_CharacterEyes.asset";
+                AssetDatabase.CreateAsset(preset, assetPath);
+                Debug.Log($"[GenerateCharacterEyesPreset] Created preset at: {assetPath}");
                 return true;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to generate Character Eyes preset: {e.Message}");
+                Debug.LogError($"[GenerateCharacterEyesPreset] Failed to generate: {e.Message}\nStack: {e.StackTrace}");
                 return false;
             }
         }
@@ -788,6 +843,14 @@ namespace NataneToon.Editor
         {
             try
             {
+                // Verify directory exists
+                string fullBasePath = System.IO.Path.GetFullPath(basePath);
+                if (!System.IO.Directory.Exists(fullBasePath))
+                {
+                    Debug.LogError($"[GenerateLivePerformancePreset] Directory does not exist: {fullBasePath}");
+                    return false;
+                }
+
                 var preset = CreateInstance<NataneToonMaterialPreset>();
                 preset.presetName = "VTuber - ライブパフォーマンス";
                 preset.description = "VTuberライブ配信・パフォーマンスに最適化されたプリセット。\n" +
@@ -824,12 +887,14 @@ namespace NataneToon.Editor
                 p.renderQueue = 2000;
                 p.cullMode = 2;
 
-                AssetDatabase.CreateAsset(preset, $"{basePath}/VTuber_LivePerformance.asset");
+                string assetPath = $"{basePath}/VTuber_LivePerformance.asset";
+                AssetDatabase.CreateAsset(preset, assetPath);
+                Debug.Log($"[GenerateLivePerformancePreset] Created preset at: {assetPath}");
                 return true;
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"Failed to generate Live Performance preset: {e.Message}");
+                Debug.LogError($"[GenerateLivePerformancePreset] Failed to generate: {e.Message}\nStack: {e.StackTrace}");
                 return false;
             }
         }
