@@ -73,6 +73,19 @@ namespace NataneToon.Editor
 
             GUILayout.Space(10);
 
+            // VTuber Presets Generation Button
+            var buttonStyle = new GUIStyle(EditorStyles.toolbarButton);
+            buttonStyle.normal.textColor = new Color(0.3f, 0.8f, 0.3f); // Green color
+            buttonStyle.fontStyle = FontStyle.Bold;
+
+            if (GUILayout.Button(new GUIContent("Generate VTuber Presets", "Generate 5 VTuber-optimized material presets"),
+                buttonStyle, GUILayout.Width(160)))
+            {
+                GenerateVTuberPresets();
+            }
+
+            GUILayout.Space(10);
+
             if (GUILayout.Button("Import from File", EditorStyles.toolbarButton, GUILayout.Width(110)))
             {
                 ImportMaterialFromFile();
@@ -482,14 +495,343 @@ namespace NataneToon.Editor
                 "• Browse and apply material presets visually\n" +
                 "• Filter by category and search by name\n" +
                 "• Create presets from existing materials\n" +
-                "• Share parameters via file or clipboard\n\n" +
+                "• Share parameters via file or clipboard\n" +
+                "• Generate VTuber-optimized presets\n\n" +
                 "Usage:\n" +
                 "1. Select a target material\n" +
                 "2. Browse presets and click 'Apply'\n" +
                 "3. Create your own presets from materials\n" +
-                "4. Share with others using Export/Import\n\n" +
+                "4. Share with others using Export/Import\n" +
+                "5. Click 'Generate VTuber Presets' for optimized character presets\n\n" +
                 "Tip: Use clipboard copy/paste for quick sharing!",
                 "OK");
+        }
+
+        /// <summary>
+        /// Generate VTuber-optimized material presets
+        /// Creates 5 professional presets for VTuber character rendering
+        /// </summary>
+        private void GenerateVTuberPresets()
+        {
+            // Show confirmation dialog
+            bool proceed = EditorUtility.DisplayDialog(
+                "Generate VTuber Presets",
+                "VTuber向けの高品質マテリアルプリセットを生成します。\n\n" +
+                "以下の5種類のプリセットが作成されます：\n" +
+                "1. キャラクター肌 - 柔らかいセルシェーディング、SSS\n" +
+                "2. キャラクター髪 - ツヤのあるアニメ調ヘア\n" +
+                "3. キャラクター服 - クリーンなアニメ調\n" +
+                "4. キャラクター目 - キラキラした瞳\n" +
+                "5. ライブパフォーマンス - 軽量・高パフォーマンス\n\n" +
+                "保存先: Assets/NataneToon/Runtime/Presets/VTuber/\n\n" +
+                "生成しますか？",
+                "生成する",
+                "キャンセル");
+
+            if (!proceed) return;
+
+            // Ensure directory exists
+            string presetPath = "Assets/NataneToon/Runtime/Presets/VTuber";
+            if (!AssetDatabase.IsValidFolder(presetPath))
+            {
+                string parentPath = "Assets/NataneToon/Runtime/Presets";
+                if (!AssetDatabase.IsValidFolder(parentPath))
+                {
+                    AssetDatabase.CreateFolder("Assets/NataneToon/Runtime", "Presets");
+                }
+                AssetDatabase.CreateFolder(parentPath, "VTuber");
+            }
+
+            int presetsCreated = 0;
+
+            // Generate presets
+            presetsCreated += GenerateCharacterSkinPreset(presetPath) ? 1 : 0;
+            presetsCreated += GenerateCharacterHairPreset(presetPath) ? 1 : 0;
+            presetsCreated += GenerateCharacterClothingPreset(presetPath) ? 1 : 0;
+            presetsCreated += GenerateCharacterEyesPreset(presetPath) ? 1 : 0;
+            presetsCreated += GenerateLivePerformancePreset(presetPath) ? 1 : 0;
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            // Refresh preset list to show new presets
+            RefreshPresetList();
+
+            // Auto-filter to show VTuber presets
+            selectedCategory = PresetCategory.Character_Skin;
+            FilterPresets();
+
+            // Show completion dialog
+            EditorUtility.DisplayDialog(
+                "Complete / 完了",
+                $"VTuber向けプリセットの生成が完了しました！\n\n" +
+                $"生成されたプリセット: {presetsCreated}個\n" +
+                $"保存場所: {presetPath}\n\n" +
+                $"プリセットはこのブラウザに表示されています。\n" +
+                $"マテリアルを選択して「Apply」ボタンで適用できます。",
+                "OK");
+
+            Debug.Log($"[MaterialPresetBrowser] VTuber向けプリセットを{presetsCreated}個生成しました");
+        }
+
+        // VTuber Preset Generation Methods
+        private bool GenerateCharacterSkinPreset(string basePath)
+        {
+            try
+            {
+                var preset = CreateInstance<NataneToonMaterialPreset>();
+                preset.presetName = "VTuber - キャラクター肌";
+                preset.description = "VTuberキャラクターの肌に最適化されたプリセット。\n" +
+                                   "・柔らかいセルシェーディング\n" +
+                                   "・SSSで透明感と血色感\n" +
+                                   "・リムライトで立体感\n" +
+                                   "・NiloToon互換の高品質レンダリング";
+                preset.category = PresetCategory.Character_Skin;
+                preset.author = "Natane Toon Shader";
+                preset.version = "1.0";
+                preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
+
+                var p = preset.parameters;
+                p.mainColor = new Color(1.0f, 0.95f, 0.9f, 1f);
+                p.alpha = 1f;
+                p.shadowColor = new Color(0.85f, 0.7f, 0.65f, 1f);
+                p.toonSteps = 2;
+                p.toonSharpness = 0.08f;
+                p.shadowReceive = 0.8f;
+                p.shadowIntensityMax = 0.3f;
+                p.lightInfluence = 1.2f;
+                p.backlight = 0.2f;
+                p.useSSS = true;
+                p.sssColor = new Color(1f, 0.6f, 0.5f, 1f);
+                p.sssIntensity = 0.4f;
+                p.sssDistortion = 0.3f;
+                p.sssPower = 2.5f;
+                p.sssScale = 0.8f;
+                p.useRimLight = true;
+                p.rimColor = new Color(1f, 0.95f, 0.9f, 1f);
+                p.rimIntensity = 0.6f;
+                p.rimPower = 4f;
+                p.useSpecular = true;
+                p.specularColor = new Color(1f, 1f, 1f, 1f);
+                p.specularIntensity = 0.3f;
+                p.specularSize = 0.2f;
+                p.specularSharpness = 0.4f;
+                p.useOutline = true;
+                p.outlineColor = new Color(0.3f, 0.2f, 0.15f, 1f);
+                p.outlineWidth = 0.003f;
+                p.renderQueue = 2000;
+                p.cullMode = 2;
+
+                AssetDatabase.CreateAsset(preset, $"{basePath}/VTuber_CharacterSkin.asset");
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Failed to generate Character Skin preset: {e.Message}");
+                return false;
+            }
+        }
+
+        private bool GenerateCharacterHairPreset(string basePath)
+        {
+            try
+            {
+                var preset = CreateInstance<NataneToonMaterialPreset>();
+                preset.presetName = "VTuber - キャラクター髪";
+                preset.description = "VTuberキャラクターの髪に最適化されたプリセット。\n" +
+                                   "・シャープなハイライト\n" +
+                                   "・MatCapで光沢感\n" +
+                                   "・アニメ調のツヤ表現";
+                preset.category = PresetCategory.Character_Hair;
+                preset.author = "Natane Toon Shader";
+                preset.version = "1.0";
+                preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
+
+                var p = preset.parameters;
+                p.mainColor = new Color(0.3f, 0.2f, 0.15f, 1f);
+                p.alpha = 1f;
+                p.shadowColor = new Color(0.15f, 0.1f, 0.08f, 1f);
+                p.toonSteps = 2;
+                p.toonSharpness = 0.05f;
+                p.shadowReceive = 0.9f;
+                p.shadowIntensityMax = 0.2f;
+                p.lightInfluence = 1.3f;
+                p.backlight = 0.3f;
+                p.useSpecular = true;
+                p.specularColor = new Color(1f, 1f, 1f, 1f);
+                p.specularIntensity = 1.2f;
+                p.specularSize = 0.15f;
+                p.specularSharpness = 0.9f;
+                p.useMatCap = true;
+                p.matCapIntensity = 0.4f;
+                p.matCapBlendMode = 0;
+                p.useRimLight = true;
+                p.rimColor = new Color(0.8f, 0.7f, 0.6f, 1f);
+                p.rimIntensity = 0.8f;
+                p.rimPower = 3f;
+                p.useOutline = true;
+                p.outlineColor = new Color(0.1f, 0.05f, 0.05f, 1f);
+                p.outlineWidth = 0.004f;
+                p.renderQueue = 2000;
+                p.cullMode = 0;
+
+                AssetDatabase.CreateAsset(preset, $"{basePath}/VTuber_CharacterHair.asset");
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Failed to generate Character Hair preset: {e.Message}");
+                return false;
+            }
+        }
+
+        private bool GenerateCharacterClothingPreset(string basePath)
+        {
+            try
+            {
+                var preset = CreateInstance<NataneToonMaterialPreset>();
+                preset.presetName = "VTuber - キャラクター服";
+                preset.description = "VTuberキャラクターの服に最適化されたプリセット。\n" +
+                                   "・クリーンなセルシェーディング\n" +
+                                   "・明瞭なアウトライン\n" +
+                                   "・シンプルで美しい表現";
+                preset.category = PresetCategory.Character_Clothing;
+                preset.author = "Natane Toon Shader";
+                preset.version = "1.0";
+                preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
+
+                var p = preset.parameters;
+                p.mainColor = new Color(0.9f, 0.9f, 0.95f, 1f);
+                p.alpha = 1f;
+                p.shadowColor = new Color(0.7f, 0.7f, 0.75f, 1f);
+                p.toonSteps = 2;
+                p.toonSharpness = 0.1f;
+                p.shadowReceive = 1f;
+                p.shadowIntensityMax = 0.25f;
+                p.lightInfluence = 1f;
+                p.backlight = 0.1f;
+                p.useSpecular = false;
+                p.useRimLight = true;
+                p.rimColor = new Color(1f, 1f, 1f, 1f);
+                p.rimIntensity = 0.4f;
+                p.rimPower = 5f;
+                p.useOutline = true;
+                p.outlineColor = new Color(0f, 0f, 0f, 1f);
+                p.outlineWidth = 0.005f;
+                p.renderQueue = 2000;
+                p.cullMode = 2;
+
+                AssetDatabase.CreateAsset(preset, $"{basePath}/VTuber_CharacterClothing.asset");
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Failed to generate Character Clothing preset: {e.Message}");
+                return false;
+            }
+        }
+
+        private bool GenerateCharacterEyesPreset(string basePath)
+        {
+            try
+            {
+                var preset = CreateInstance<NataneToonMaterialPreset>();
+                preset.presetName = "VTuber - キャラクター目";
+                preset.description = "VTuberキャラクターの目に最適化されたプリセット。\n" +
+                                   "・明るくキラキラした表現\n" +
+                                   "・エミッションで輝き\n" +
+                                   "・スペキュラーでハイライト";
+                preset.category = PresetCategory.Character_Eyes;
+                preset.author = "Natane Toon Shader";
+                preset.version = "1.0";
+                preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
+
+                var p = preset.parameters;
+                p.mainColor = new Color(0.3f, 0.6f, 0.9f, 1f);
+                p.alpha = 1f;
+                p.shadowColor = new Color(0.4f, 0.5f, 0.7f, 1f);
+                p.toonSteps = 3;
+                p.toonSharpness = 0.15f;
+                p.shadowReceive = 0.5f;
+                p.shadowIntensityMax = 0.4f;
+                p.lightInfluence = 1.5f;
+                p.backlight = 0.4f;
+                p.useSpecular = true;
+                p.specularColor = new Color(1f, 1f, 1f, 1f);
+                p.specularIntensity = 1.5f;
+                p.specularSize = 0.3f;
+                p.specularSharpness = 0.95f;
+                p.useEmission = true;
+                p.emissionColor = new Color(0.5f, 0.7f, 1f, 1f);
+                p.emissionIntensity = 0.3f;
+                p.useRimLight = true;
+                p.rimColor = new Color(1f, 1f, 1f, 1f);
+                p.rimIntensity = 1f;
+                p.rimPower = 3f;
+                p.useOutline = true;
+                p.outlineColor = new Color(0.1f, 0.1f, 0.2f, 1f);
+                p.outlineWidth = 0.002f;
+                p.renderQueue = 2000;
+                p.cullMode = 2;
+
+                AssetDatabase.CreateAsset(preset, $"{basePath}/VTuber_CharacterEyes.asset");
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Failed to generate Character Eyes preset: {e.Message}");
+                return false;
+            }
+        }
+
+        private bool GenerateLivePerformancePreset(string basePath)
+        {
+            try
+            {
+                var preset = CreateInstance<NataneToonMaterialPreset>();
+                preset.presetName = "VTuber - ライブパフォーマンス";
+                preset.description = "VTuberライブ配信・パフォーマンスに最適化されたプリセット。\n" +
+                                   "・高パフォーマンス設定\n" +
+                                   "・必要最小限の機能\n" +
+                                   "・クリーンで安定したレンダリング";
+                preset.category = PresetCategory.Style_Toon;
+                preset.author = "Natane Toon Shader";
+                preset.version = "1.0";
+                preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
+
+                var p = preset.parameters;
+                p.mainColor = Color.white;
+                p.alpha = 1f;
+                p.shadowColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+                p.toonSteps = 2;
+                p.toonSharpness = 0.1f;
+                p.shadowReceive = 1f;
+                p.shadowIntensityMax = 0.2f;
+                p.lightInfluence = 1f;
+                p.backlight = 0f;
+                p.useSpecular = false;
+                p.useRimLight = false;
+                p.useSSS = false;
+                p.useMatCap = false;
+                p.useEmission = false;
+                p.useReflection = false;
+                p.useEnvRim = false;
+                p.useParallax = false;
+                p.useRefraction = false;
+                p.useOutline = true;
+                p.outlineColor = Color.black;
+                p.outlineWidth = 0.004f;
+                p.renderQueue = 2000;
+                p.cullMode = 2;
+
+                AssetDatabase.CreateAsset(preset, $"{basePath}/VTuber_LivePerformance.asset");
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Failed to generate Live Performance preset: {e.Message}");
+                return false;
+            }
         }
     }
 }
