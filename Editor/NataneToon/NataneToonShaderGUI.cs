@@ -922,7 +922,7 @@ public class NataneToonShaderGUI : ShaderGUI
         // Subtitle
         var subtitleStyle = new GUIStyle(EditorStyles.miniLabel);
         subtitleStyle.alignment = TextAnchor.MiddleCenter;
-        EditorGUILayout.LabelField("NiloToon-Style High-Quality Anime Rendering", subtitleStyle);
+        EditorGUILayout.LabelField("NiloToonスタイル - 高品質アニメ調レンダリング", subtitleStyle);
 
         EditorGUILayout.EndVertical();
         EditorGUILayout.Space(5);
