@@ -18,6 +18,7 @@ CBUFFER_START(UnityPerMaterial)
     // Advanced Lighting Controls
     float _LightIntensity;
     float _IndirectLightIntensity;
+    float _LightColorInfluence;
     float _ShadowReceive;
     float _ShadowMaxDarkness;
     float _LightMinInfluence;
@@ -46,6 +47,11 @@ CBUFFER_START(UnityPerMaterial)
     float _MatCapIntensity;
     float _MatCapBlendMode;
     sampler2D _MatCapMask;
+
+    // Outline
+    half4 _OutlineColor;
+    float _OutlineWidth;
+    sampler2D _OutlineMask;
 
     // Emission
     half4 _EmissionColor;
