@@ -17,6 +17,7 @@ Shader "Natane/Toon Shader (Transparent)"
         [Header(Advanced Lighting)]
         _LightIntensity ("Light Intensity (Global)", Range(0, 2)) = 1
         _IndirectLightIntensity ("Indirect Light Intensity", Range(0, 2)) = 1
+        _LightColorInfluence ("Light Color Influence", Range(0, 1)) = 1
         _ShadowReceive ("Shadow Receive", Range(0, 1)) = 1
         _ShadowMaxDarkness ("Shadow Max Darkness", Range(0, 1)) = 0
         _LightMinInfluence ("Light Min Influence", Range(0, 1)) = 0
@@ -71,6 +72,8 @@ Shader "Natane/Toon Shader (Transparent)"
         [Enum(Inverted Hull,0,Back Face,1)] _OutlineMode ("Outline Mode", Float) = 0
         _OutlineWidth ("Outline Width", Range(0, 0.1)) = 0.01
         _OutlineColor ("Outline Color", Color) = (0,0,0,1)
+        [Toggle(_OUTLINE_MASK)] _UseOutlineMask ("Use Outline Mask", Float) = 0
+        _OutlineMask ("Outline Mask", 2D) = "white" {}
 
         [Header(Emission)]
         [Toggle(_EMISSION)] _Emission ("Enable Emission", Float) = 0
@@ -166,6 +169,7 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma vertex vert
             #pragma fragment frag
             #pragma shader_feature _OUTLINE
+            #pragma shader_feature _OUTLINE_MASK
             #pragma multi_compile_fog
 
             #include "UnityCG.cginc"
@@ -174,22 +178,26 @@ Shader "Natane/Toon Shader (Transparent)"
             {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
+                float2 uv : TEXCOORD0;
             };
 
             struct v2f
             {
                 float4 pos : SV_POSITION;
-                UNITY_FOG_COORDS(0)
+                float2 uv : TEXCOORD0;
+                UNITY_FOG_COORDS(1)
             };
 
             float _OutlineWidth;
             float4 _OutlineColor;
             float _Outline;
             float _OutlineMode;
+            sampler2D _OutlineMask;
 
             v2f vert(appdata v)
             {
                 v2f o;
+                o.uv = v.uv;
 
                 #ifdef _OUTLINE
                     // Calculate distance compensation for consistent outline width (NiloToon-style)
@@ -230,6 +238,15 @@ Shader "Natane/Toon Shader (Transparent)"
             {
                 #ifdef _OUTLINE
                     fixed4 col = _OutlineColor;
+
+                    // Apply outline mask
+                    #ifdef _OUTLINE_MASK
+                        float outlineMask = tex2D(_OutlineMask, i.uv).r;
+                        col.a *= outlineMask;
+                        // Discard pixels where outline is fully masked out
+                        clip(col.a - 0.01);
+                    #endif
+
                     UNITY_APPLY_FOG(i.fogCoord, col);
                     return col;
                 #else

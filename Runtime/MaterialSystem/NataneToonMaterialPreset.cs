@@ -44,6 +44,7 @@ namespace NataneToon.MaterialSystem
         public float shadowReceive = 1f;
         public float shadowIntensityMax = 0.8f;
         public float lightInfluence = 1f;
+        public float lightColorInfluence = 1f;
         public float backlight = 0f;
 
         // Specular
@@ -80,6 +81,7 @@ namespace NataneToon.MaterialSystem
         public bool useOutline = false;
         public Color outlineColor = Color.black;
         public float outlineWidth = 0.1f;
+        public bool useOutlineMask = false;
 
         // Emission
         public bool useEmission = false;
@@ -187,6 +189,7 @@ namespace NataneToon.MaterialSystem
             if (material.HasProperty("_ShadowReceive")) material.SetFloat("_ShadowReceive", p.shadowReceive);
             if (material.HasProperty("_ShadowIntensityMax")) material.SetFloat("_ShadowIntensityMax", p.shadowIntensityMax);
             if (material.HasProperty("_LightInfluence")) material.SetFloat("_LightInfluence", p.lightInfluence);
+            if (material.HasProperty("_LightColorInfluence")) material.SetFloat("_LightColorInfluence", p.lightColorInfluence);
             if (material.HasProperty("_Backlight")) material.SetFloat("_Backlight", p.backlight);
 
             // Specular
@@ -223,6 +226,7 @@ namespace NataneToon.MaterialSystem
             SetKeyword(material, "_OUTLINE", p.useOutline);
             if (material.HasProperty("_OutlineColor")) material.SetColor("_OutlineColor", p.outlineColor);
             if (material.HasProperty("_OutlineWidth")) material.SetFloat("_OutlineWidth", p.outlineWidth);
+            SetKeyword(material, "_OUTLINE_MASK", p.useOutlineMask);
 
             // Emission
             SetKeyword(material, "_EMISSION", p.useEmission);

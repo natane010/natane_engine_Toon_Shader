@@ -226,6 +226,9 @@ public class NataneToonShaderGUI : ShaderGUI
             DrawProperty("_IndirectLightIntensity", "間接光の強度");
             EditorGUILayout.HelpBox("環境光やライトプローブからの間接照明の強さを制御します。", MessageType.Info);
 
+            DrawProperty("_LightColorInfluence", "ライトカラー影響度");
+            EditorGUILayout.HelpBox("ライトの色がマテリアルに与える影響を制御します。\n• 0 = ライトの色を無視（白色光として処理）\n• 1 = ライトの色を完全に反映\n• 0.5 = 中間（推奨）", MessageType.Info);
+
             EditorGUILayout.Space(10);
             EditorGUILayout.LabelField("シャドウ設定", EditorStyles.boldLabel);
             DrawProperty("_ShadowReceive", "影の受け取り");
@@ -466,6 +469,21 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_OutlineMode", "描画方法");
                 DrawProperty("_OutlineWidth", "アウトラインの幅");
                 DrawProperty("_OutlineColor", "アウトラインの色");
+
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField("アウトラインマスク", EditorStyles.boldLabel);
+
+                bool useOutlineMask = DrawToggle("_OUTLINE_MASK", "_UseOutlineMask", "アウトラインマスクを使用");
+                if (useOutlineMask)
+                {
+                    DrawTextureProperty("_OutlineMask", "アウトラインマスク (R)");
+                    EditorGUILayout.HelpBox(
+                        "アウトラインマスクのR(赤)チャンネルを使用してアウトラインの表示を制御します。\n" +
+                        "• 白 (1.0): アウトラインを完全に表示\n" +
+                        "• 黒 (0.0): アウトラインを非表示\n" +
+                        "• グレー: 部分的に表示",
+                        MessageType.Info);
+                }
 
                 EditorGUILayout.Space(5);
 

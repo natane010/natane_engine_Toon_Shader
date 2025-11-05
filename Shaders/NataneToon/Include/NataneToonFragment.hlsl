@@ -83,8 +83,9 @@ half4 frag(v2f i) : SV_Target
     // Apply shadow max darkness limit (prevents shadows from being too black)
     lighting = max(lighting, _ShadowMaxDarkness);
 
-    // Apply light color and global light intensity
-    lighting *= _LightColor0.rgb * _LightIntensity;
+    // Apply light color and global light intensity with controllable light color influence
+    float3 lightColorInfluenced = lerp(float3(1, 1, 1), _LightColor0.rgb, _LightColorInfluence);
+    lighting *= lightColorInfluenced * _LightIntensity;
 
     // ===== Light Influence Clamping =====
     // Clamp brightness to prevent too dark or too bright results

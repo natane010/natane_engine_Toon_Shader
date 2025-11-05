@@ -615,23 +615,28 @@ namespace NataneToon.Editor
                 preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
 
                 var p = preset.parameters;
-                p.mainColor = new Color(1.0f, 0.95f, 0.9f, 1f);
+                // mainColorを白にしてテクスチャの色を完全に反映
+                p.mainColor = new Color(1.0f, 1.0f, 1.0f, 1f);
                 p.alpha = 1f;
-                p.shadowColor = new Color(0.85f, 0.7f, 0.65f, 1f);
+                // 温かみのあるピーチ系の影色
+                p.shadowColor = new Color(0.95f, 0.75f, 0.68f, 1f);
                 p.toonSteps = 2;
                 p.toonSharpness = 0.08f;
                 p.shadowReceive = 0.8f;
                 p.shadowIntensityMax = 0.3f;
                 p.lightInfluence = 1.2f;
+                p.lightColorInfluence = 1.0f;
                 p.backlight = 0.2f;
                 p.useSSS = true;
-                p.sssColor = new Color(1f, 0.6f, 0.5f, 1f);
-                p.sssIntensity = 0.4f;
+                // より温かみのあるSSS色（ピンクがかったオレンジ）
+                p.sssColor = new Color(1f, 0.65f, 0.55f, 1f);
+                p.sssIntensity = 0.45f;
                 p.sssDistortion = 0.3f;
                 p.sssPower = 2.5f;
                 p.sssScale = 0.8f;
                 p.useRimLight = true;
-                p.rimColor = new Color(1f, 0.95f, 0.9f, 1f);
+                // 温かみのあるリムライト色
+                p.rimColor = new Color(1f, 0.9f, 0.85f, 1f);
                 p.rimIntensity = 0.6f;
                 p.rimPower = 4f;
                 p.useSpecular = true;
@@ -681,14 +686,17 @@ namespace NataneToon.Editor
                 preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
 
                 var p = preset.parameters;
-                p.mainColor = new Color(0.3f, 0.2f, 0.15f, 1f);
+                // mainColorを白にしてテクスチャの色を完全に反映
+                p.mainColor = new Color(1.0f, 1.0f, 1.0f, 1f);
                 p.alpha = 1f;
-                p.shadowColor = new Color(0.15f, 0.1f, 0.08f, 1f);
+                // 温かみのあるブラウン系の影色
+                p.shadowColor = new Color(0.45f, 0.35f, 0.28f, 1f);
                 p.toonSteps = 2;
                 p.toonSharpness = 0.05f;
                 p.shadowReceive = 0.9f;
                 p.shadowIntensityMax = 0.2f;
                 p.lightInfluence = 1.3f;
+                p.lightColorInfluence = 1.0f;
                 p.backlight = 0.3f;
                 p.useSpecular = true;
                 p.specularColor = new Color(1f, 1f, 1f, 1f);
@@ -744,14 +752,17 @@ namespace NataneToon.Editor
                 preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
 
                 var p = preset.parameters;
-                p.mainColor = new Color(0.9f, 0.9f, 0.95f, 1f);
+                // mainColorを白にしてテクスチャの色を完全に反映
+                p.mainColor = new Color(1.0f, 1.0f, 1.0f, 1f);
                 p.alpha = 1f;
-                p.shadowColor = new Color(0.7f, 0.7f, 0.75f, 1f);
+                // やや温かみのあるグレー系の影色
+                p.shadowColor = new Color(0.75f, 0.73f, 0.72f, 1f);
                 p.toonSteps = 2;
                 p.toonSharpness = 0.1f;
                 p.shadowReceive = 1f;
                 p.shadowIntensityMax = 0.25f;
                 p.lightInfluence = 1f;
+                p.lightColorInfluence = 1.0f;
                 p.backlight = 0.1f;
                 p.useSpecular = false;
                 p.useRimLight = true;
@@ -800,14 +811,17 @@ namespace NataneToon.Editor
                 preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
 
                 var p = preset.parameters;
-                p.mainColor = new Color(0.3f, 0.6f, 0.9f, 1f);
+                // mainColorを白にしてテクスチャの色を完全に反映
+                p.mainColor = new Color(1.0f, 1.0f, 1.0f, 1f);
                 p.alpha = 1f;
-                p.shadowColor = new Color(0.4f, 0.5f, 0.7f, 1f);
+                // やや温かみのある青系の影色
+                p.shadowColor = new Color(0.65f, 0.7f, 0.85f, 1f);
                 p.toonSteps = 3;
                 p.toonSharpness = 0.15f;
                 p.shadowReceive = 0.5f;
                 p.shadowIntensityMax = 0.4f;
                 p.lightInfluence = 1.5f;
+                p.lightColorInfluence = 1.0f;
                 p.backlight = 0.4f;
                 p.useSpecular = true;
                 p.specularColor = new Color(1f, 1f, 1f, 1f);
@@ -863,14 +877,17 @@ namespace NataneToon.Editor
                 preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
 
                 var p = preset.parameters;
+                // mainColorは白のままでテクスチャの色を完全に反映
                 p.mainColor = Color.white;
                 p.alpha = 1f;
-                p.shadowColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+                // やや温かみのあるグレー系の影色
+                p.shadowColor = new Color(0.75f, 0.72f, 0.7f, 1f);
                 p.toonSteps = 2;
                 p.toonSharpness = 0.1f;
                 p.shadowReceive = 1f;
                 p.shadowIntensityMax = 0.2f;
                 p.lightInfluence = 1f;
+                p.lightColorInfluence = 1.0f;
                 p.backlight = 0f;
                 p.useSpecular = false;
                 p.useRimLight = false;
