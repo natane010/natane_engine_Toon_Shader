@@ -43,6 +43,14 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>Target material being edited</summary>
     private Material targetMaterial;
 
+    // ===== RENDERING MODE =====
+    public enum RenderingMode
+    {
+        Opaque = 0,
+        Cutout = 1,
+        Transparent = 2
+    }
+
     // ===== UI STATE =====
     // Tab index for category navigation
     private int selectedTab = 0;
@@ -1388,10 +1396,153 @@ public class NataneToonShaderGUI : ShaderGUI
         if (showRendering)
         {
             EditorGUI.indentLevel++;
+
+            // Rendering Mode Selection
+            EditorGUILayout.LabelField("レンダリングモード", EditorStyles.boldLabel);
+            RenderingMode currentMode = GetCurrentRenderingMode();
+
+            EditorGUI.BeginChangeCheck();
+            RenderingMode newMode = (RenderingMode)EditorGUILayout.EnumPopup("描画タイプ", currentMode);
+            if (EditorGUI.EndChangeCheck())
+            {
+                SetRenderingMode(newMode);
+            }
+
+            DrawHelpToggle("RenderingMode",
+                "🎨 レンダリングモード:\n\n" +
+                "• Opaque（不透明）: 標準的な不透明オブジェクト\n" +
+                "  - 肌、服、硬い物体など\n" +
+                "  - 最も高速で推奨\n\n" +
+                "• Cutout（切り抜き）: アルファ閾値による透過\n" +
+                "  - 髪の毛、葉っぱ、フェンスなど\n" +
+                "  - アルファ値が0.5以上で表示、未満で非表示\n" +
+                "  - 半透明ではなく、完全に透明か不透明かの2択\n\n" +
+                "• Transparent（半透明）: 滑らかな透過\n" +
+                "  - ガラス、水、煙、エフェクトなど\n" +
+                "  - アルファ値に応じて段階的に透過\n" +
+                "  - 最も負荷が高い\n\n" +
+                "💡 注意:\n" +
+                "モードを変更すると、内部的に適切なシェーダーバリアントに\n" +
+                "切り替わりますが、すべてのプロパティは保持されます。",
+                MessageType.Info);
+
+            EditorGUILayout.Space(10);
+
+            // Advanced Rendering Settings
+            EditorGUILayout.LabelField("詳細設定", EditorStyles.boldLabel);
             DrawProperty("_Cull", "カリングモード");
             DrawProperty("_ZWrite", "Z書き込み");
+
+            // Show blend mode properties for Transparent mode
+            if (currentMode == RenderingMode.Transparent)
+            {
+                DrawProperty("_SrcBlend", "ソースブレンド");
+                DrawProperty("_DstBlend", "宛先ブレンド");
+                DrawHelpToggle("BlendMode",
+                    "🎨 ブレンドモード:\n" +
+                    "半透明の合成方法を制御します。\n\n" +
+                    "標準設定:\n" +
+                    "• ソースブレンド: SrcAlpha (5)\n" +
+                    "• 宛先ブレンド: OneMinusSrcAlpha (10)\n\n" +
+                    "通常は変更する必要はありません。",
+                    MessageType.Info);
+            }
+
             EditorGUI.indentLevel--;
             EditorGUILayout.Space();
+        }
+    }
+
+    /// <summary>
+    /// Get current rendering mode based on shader name
+    /// </summary>
+    private RenderingMode GetCurrentRenderingMode()
+    {
+        if (targetMaterial == null || targetMaterial.shader == null)
+            return RenderingMode.Opaque;
+
+        string shaderName = targetMaterial.shader.name;
+
+        if (shaderName.Contains("Transparent"))
+            return RenderingMode.Transparent;
+        else if (shaderName.Contains("Cutout"))
+            return RenderingMode.Cutout;
+        else
+            return RenderingMode.Opaque;
+    }
+
+    /// <summary>
+    /// Set rendering mode by switching to appropriate shader variant
+    /// </summary>
+    private void SetRenderingMode(RenderingMode mode)
+    {
+        if (targetMaterial == null)
+            return;
+
+        // Get base shader name
+        string baseShaderName = "Natane/Toon Shader";
+        string newShaderName = baseShaderName;
+
+        // Determine shader variant based on mode
+        switch (mode)
+        {
+            case RenderingMode.Opaque:
+                newShaderName = baseShaderName;
+                break;
+            case RenderingMode.Cutout:
+                newShaderName = baseShaderName + " (Cutout)";
+                break;
+            case RenderingMode.Transparent:
+                newShaderName = baseShaderName + " (Transparent)";
+                break;
+        }
+
+        // Find the shader
+        Shader newShader = Shader.Find(newShaderName);
+        if (newShader == null)
+        {
+            Debug.LogError($"[NataneToonShaderGUI] Shader not found: {newShaderName}");
+            return;
+        }
+
+        // Check if already using this shader
+        if (targetMaterial.shader == newShader)
+            return;
+
+        // Record undo
+        Undo.RecordObject(targetMaterial, "Change Rendering Mode");
+
+        // Switch shader (properties with same names are preserved)
+        targetMaterial.shader = newShader;
+
+        // Set default properties based on mode
+        switch (mode)
+        {
+            case RenderingMode.Opaque:
+                targetMaterial.SetFloat("_ZWrite", 1);
+                targetMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Geometry;
+                break;
+
+            case RenderingMode.Cutout:
+                targetMaterial.SetFloat("_ZWrite", 1);
+                targetMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.AlphaTest;
+                break;
+
+            case RenderingMode.Transparent:
+                targetMaterial.SetFloat("_ZWrite", 0);
+                targetMaterial.SetFloat("_SrcBlend", 5); // SrcAlpha
+                targetMaterial.SetFloat("_DstBlend", 10); // OneMinusSrcAlpha
+                targetMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+                break;
+        }
+
+        // Mark as dirty
+        EditorUtility.SetDirty(targetMaterial);
+
+        // Repaint inspector
+        if (materialEditor != null)
+        {
+            materialEditor.Repaint();
         }
     }
 
