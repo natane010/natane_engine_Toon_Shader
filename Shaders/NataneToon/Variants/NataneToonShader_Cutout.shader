@@ -70,7 +70,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _ShadowSteps ("Shadow Steps", Range(1, 10)) = 2
         _ShadowSharpness ("Shadow Sharpness", Range(0.001, 1)) = 0.1
         _ShadowOffset ("Shadow Offset", Range(-1, 1)) = 0
-        _LitSoftness ("Lit Area Softness", Range(0, 1)) = 0
+        _LitSoftness ("Lit Area Softness (Global Smoothstep)", Range(0, 1)) = 0
         [Toggle(_SHADOW_RECEIVE_MASK)] _UseShadowReceiveMask ("Use Shadow Receive Mask", Float) = 0
         _ShadowReceiveMask ("Shadow Receive Mask", 2D) = "white" {}
         [Space(10)]
@@ -86,9 +86,9 @@ Shader "Natane/Toon Shader (Cutout)"
         [Toggle(_USE_AO)] _UseAO ("Use Ambient Occlusion", Float) = 0
         _AOMap ("AO Map", 2D) = "white" {}
         _AOIntensity ("AO Intensity", Range(0, 1)) = 1
-        [Toggle(_USE_DITHERING)] _UseDithering ("Use Dithering", Float) = 0
-        _DitheringScale ("Dithering Scale", Range(1, 100)) = 10
-        _DitheringStrength ("Dithering Strength", Range(0, 1)) = 0.5
+        [Toggle(_USE_DITHERING)] _UseDithering ("Use Dithering (Shadow Edge Only)", Float) = 0
+        _DitheringScale ("Dithering Scale (Pattern Size)", Range(1, 100)) = 10
+        _DitheringStrength ("Dithering Strength (Boundary Softness)", Range(0, 1)) = 0.5
 
         [Header(Advanced Lighting)]
         _LightIntensity ("Light Intensity (Global)", Range(0, 2)) = 1
@@ -237,12 +237,12 @@ Shader "Natane/Toon Shader (Cutout)"
         [Toggle(_ENV_RIM_MASK)] _UseEnvRimMask ("Use Env Rim Mask", Float) = 0
         _EnvRimMask ("Env Rim Mask", 2D) = "white" {}
 
-        [Header(Parallax Mapping)]
-        [Toggle(_PARALLAX)] _Parallax ("Enable Parallax", Float) = 0
+        [Header(Parallax Mapping (WARNING: Performance Heavy in VR!))]
+        [Toggle(_PARALLAX)] _Parallax ("Enable Parallax (Max 64 Samples!)", Float) = 0
         _ParallaxMap ("Height Map", 2D) = "grey" {}
-        _ParallaxScale ("Parallax Scale", Range(0, 0.1)) = 0.02
-        _ParallaxMinSamples ("Min Samples", Range(4, 16)) = 4
-        _ParallaxMaxSamples ("Max Samples", Range(16, 64)) = 32
+        _ParallaxScale ("Parallax Scale (Distortion Strength)", Range(0, 0.1)) = 0.02
+        _ParallaxMinSamples ("Min Samples (Flat View)", Range(4, 16)) = 4
+        _ParallaxMaxSamples ("Max Samples (Steep View)", Range(16, 64)) = 32
 
         [Header(Refraction)]
         [Toggle(_REFRACTION)] _Refraction ("Enable Refraction", Float) = 0
