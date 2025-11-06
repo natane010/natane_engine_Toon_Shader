@@ -503,4 +503,182 @@ half3 SampleGrabTextureWithBlur(float2 uv, float blurAmount)
     return color;
 }
 
+// ===== AudioLink Functions =====
+
+// Sample AudioLink audio reactive data
+// band: 0=Bass, 1=Low Mid, 2=High Mid, 3=Treble
+// Returns 0-1 value representing audio intensity
+float SampleAudioLink(int band)
+{
+    #ifdef _AUDIOLINK
+        // AudioLink standard texture coordinates
+        // Band data is stored in the first row (y = 0.0 to 0.0625)
+        float2 audioUV = float2(0.0, 0.0);
+
+        // Map band to x coordinate (0-3 mapped to texture space)
+        audioUV.x = (float(band) + 0.5) / 4.0; // Center of each band quadrant
+
+        // Sample AudioLink texture
+        float audioValue = tex2D(_AudioTexture, audioUV).r;
+        return saturate(audioValue);
+    #else
+        return 0.0;
+    #endif
+}
+
+// Sample AudioLink Chronotensity (time-based intensity)
+float SampleAudioLinkChronotensity()
+{
+    #ifdef _AUDIOLINK_CHRONOTENSITY
+        // Chronotensity is stored at a specific UV coordinate
+        float2 chronoUV = float2(0.5, 0.125); // Standard chronotensity location
+        return saturate(tex2D(_AudioTexture, chronoUV).r);
+    #else
+        return 0.0;
+    #endif
+}
+
+// ===== Distance Fade Functions =====
+
+// Calculate distance fade alpha
+// Returns 0-1 fade value based on distance
+float CalculateDistanceFade(float3 worldPos, float fadeStart, float fadeEnd)
+{
+    float distance = length(_WorldSpaceCameraPos - worldPos);
+    float fade = saturate((distance - fadeStart) / max(fadeEnd - fadeStart, 0.001));
+    return 1.0 - fade; // Invert so 1 = visible, 0 = faded
+}
+
+// ===== Vertex Animation Functions =====
+
+// Calculate vertex offset for animation
+// type: 0=Wave, 1=Breath, 2=Wind, 3=Pulse
+float3 CalculateVertexAnimation(float3 worldPos, float3 worldNormal, float2 uv, float animType, float speed, float strength, float frequency)
+{
+    float time = _Time.y * speed;
+    float3 offset = float3(0, 0, 0);
+
+    if (animType < 0.5) // Wave
+    {
+        float wave = sin(worldPos.x * frequency + time) * cos(worldPos.z * frequency + time * 0.5);
+        offset = worldNormal * wave * strength;
+    }
+    else if (animType < 1.5) // Breath
+    {
+        float breath = sin(time * frequency) * 0.5 + 0.5;
+        offset = worldNormal * breath * strength;
+    }
+    else if (animType < 2.5) // Wind
+    {
+        float wind = sin(worldPos.x * frequency + time) * (1.0 + sin(time * 0.5));
+        wind += sin(worldPos.y * frequency * 1.3 + time * 1.1) * 0.5;
+        offset = float3(wind * strength, 0, wind * strength * 0.5);
+    }
+    else // Pulse
+    {
+        float pulse = pow(abs(sin(time * frequency)), 2.0);
+        offset = worldNormal * pulse * strength;
+    }
+
+    return offset;
+}
+
+// ===== Hologram Functions =====
+
+// Calculate hologram scanline effect
+float CalculateHologramScanline(float2 uv, float speed, float intensity)
+{
+    float scanline = frac(uv.y * 50.0 + _Time.y * speed);
+    return lerp(1.0, scanline, intensity);
+}
+
+// Calculate hologram flicker
+float CalculateHologramFlicker(float speed, float amount)
+{
+    float flicker = sin(_Time.y * speed * 10.0) * 0.5 + 0.5;
+    return lerp(1.0, flicker, amount);
+}
+
+// ===== Glitch Functions =====
+
+// Calculate glitch distortion
+float2 CalculateGlitchUV(float2 uv, float intensity, float speed, float blockSize)
+{
+    float time = floor(_Time.y * speed * 10.0) / 10.0; // Stepped time for glitch blocks
+    float block = floor(uv.y / blockSize);
+    float random = frac(sin(block * 12.9898 + time) * 43758.5453);
+
+    float2 offset = float2(0, 0);
+    if (random > 1.0 - intensity)
+    {
+        offset.x = (random - 0.5) * intensity * 0.1;
+    }
+
+    return uv + offset;
+}
+
+// Calculate RGB split for glitch effect
+float3 CalculateGlitchRGBSplit(sampler2D tex, float2 uv, float intensity)
+{
+    float offset = intensity * 0.01;
+    float r = tex2D(tex, uv + float2(offset, 0)).r;
+    float g = tex2D(tex, uv).g;
+    float b = tex2D(tex, uv - float2(offset, 0)).b;
+    return float3(r, g, b);
+}
+
+// ===== Decal Functions =====
+
+// Calculate decal UV with position, rotation, and scale
+float2 CalculateDecalUV(float2 baseUV, float2 position, float rotation, float scale)
+{
+    // Center UV
+    float2 uv = baseUV - position;
+
+    // Apply rotation
+    float rad = rotation * 3.14159265 / 180.0;
+    float s = sin(rad);
+    float c = cos(rad);
+    float2 rotatedUV = float2(
+        uv.x * c - uv.y * s,
+        uv.x * s + uv.y * c
+    );
+
+    // Apply scale
+    rotatedUV /= scale;
+
+    // Re-center
+    rotatedUV += float2(0.5, 0.5);
+
+    // Check if UV is within bounds
+    if (rotatedUV.x < 0.0 || rotatedUV.x > 1.0 || rotatedUV.y < 0.0 || rotatedUV.y > 1.0)
+        return float2(-1, -1); // Invalid UV (out of bounds)
+
+    return rotatedUV;
+}
+
+// ===== Dithering Alpha Functions =====
+
+// Bayer matrix 4x4 for ordered dithering
+float BayerMatrix4x4(float2 screenPos)
+{
+    float4x4 matrix = float4x4(
+        0.0,  8.0,  2.0, 10.0,
+        12.0, 4.0, 14.0,  6.0,
+        3.0, 11.0,  1.0,  9.0,
+        15.0, 7.0, 13.0,  5.0
+    ) / 16.0;
+
+    int2 pos = int2(fmod(screenPos.x, 4), fmod(screenPos.y, 4));
+    return matrix[pos.x][pos.y];
+}
+
+// Apply dithering to alpha channel
+float ApplyDitheringAlpha(float alpha, float2 screenPos, float scale)
+{
+    float2 ditherPos = screenPos * scale;
+    float threshold = BayerMatrix4x4(ditherPos);
+    return alpha - threshold;
+}
+
 #endif // NATANE_TOON_UTILS_INCLUDED

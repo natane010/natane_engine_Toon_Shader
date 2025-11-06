@@ -12,7 +12,21 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 
 ## 📌 ブランチ情報
 
-- **v1.1.4** - 🚀 **最新安定版** - パフォーマンス大幅最適化（機能維持）
+- **v1.2.0** - 🌟 **最新版** - VRChat向け大規模機能追加
+  - **AudioLink対応**: VRChatクラブイベント向け音楽同期（Emission/Rim/Hue/Dissolve/Outline）
+  - **Multiple MatCaps**: 2nd/3rd MatCapで表現力大幅向上
+  - **Distance Fade**: カメラ距離に応じたフェード（パフォーマンス最適化）
+  - **Vertex Animation**: Wind/Breath/Wave/Pulse（なびき髪・呼吸）
+  - **Hologram/Glitch**: SF・サイバー系エフェクト（スキャンライン・RGB分離）
+  - **Decal System**: ステッカー・デカール配置システム
+  - **Backface Texture**: 服の裏地表現
+  - **Video/Render Texture**: スクリーン表示対応
+  - **LTCGI対応**: リアルタイムGI統合
+  - **Shadow Color Texture**: 影の色をテクスチャで制御
+  - **Rim Direction Control**: リムライトの方向制御
+  - **Multi-Color Outlines**: 虹色・グラデーションアウトライン
+  - **Dithering Alpha**: 半透明ディザリング
+- **v1.1.4** - パフォーマンス大幅最適化（機能維持）
   - Phase 1-3最適化: Luminanceキャッシュ、Refraction Blur最適化（45%削減）、half精度活用
   - テクスチャサンプル45%削減、GPU命令20-30%削減
   - 条件分岐最適化、HSV変換スキップ、Vertex正規化最適化
@@ -34,6 +48,96 @@ lilToon、NovaShader、NiloToon、PoiyomiToon、YMToonなどの人気トゥー�
 特定のバージョンをインストールする場合は、タグを使用してください（例：`#v1.1.4`）。
 
 ## ✨ 新機能
+
+### 🌟 VRChat向け大規模機能拡張 v1.2.0
+
+**Tier S - 最優先機能:**
+
+#### 🎵 AudioLink対応（VRChatクラブイベント必須）
+VRChatのクラブやイベントで音楽に同期するアバター表現が可能に！
+
+- **4バンド対応**: Bass / Low Mid / High Mid / Treble
+- **Chronotensity対応**: 時間ベースの強度調整
+- **適用可能エフェクト**:
+  - Emission（発光の明滅・色変化）
+  - Rim Light（リムライトの強度変化）
+  - Hue Shift（色相変化）
+  - Dissolve（溶解アニメーション）
+  - Outline（アウトライン色変化）
+
+**Tier A - 高優先度機能:**
+
+#### 🎨 Multiple MatCaps（2nd/3rd MatCap）
+MatCapを最大3つ重ねて複雑な質感表現を実現：
+- 異なるブレンドモードで重ね合わせ
+- 個別のマスク制御
+- 髪の複雑な光沢表現に最適
+
+#### 📏 Distance Fade（VRChat最適化）
+カメラからの距離に応じたフェード：
+- Alpha Fade: 透明度で自然に消失
+- Simplify Mode: 遠くで簡素化してパフォーマンス向上
+- VRChatワールドでの描画負荷軽減
+
+#### 🌊 Vertex Offset Animation
+頂点アニメーションで動的な表現：
+- **Wave**: 波打つ動き
+- **Breath**: 呼吸による膨張・収縮
+- **Wind**: 風になびく髪・服
+- **Pulse**: 脈動エフェクト
+- マスクで適用範囲を制御可能
+
+**Tier B - 表現力向上:**
+
+#### 🔮 Hologram/Glitch Effect
+SF・サイバー系の演出に最適：
+- **Hologram**: スキャンライン、フリッカー効果
+- **Glitch**: RGB分離、ブロックノイズ、UV歪み
+
+#### 🎨 Decal System
+ステッカーやデカールを自由に配置：
+- 位置・回転・スケール調整
+- 4種類のブレンドモード（Add/Multiply/Overlay/Replace）
+
+#### 👕 Backface Texture
+裏面用の別テクスチャ：
+- 服の裏地表現
+- リバーシブル衣装
+
+#### 📺 Video/Render Texture Support
+ビデオやレンダーテクスチャの表示：
+- アバターにスクリーン表示
+- VRChatビデオプレイヤー連携
+
+#### 💡 LTCGI対応
+_pi_さん開発のリアルタイムGIシステムに対応：
+- エリアライト・ネオンサイン対応
+- VRC Light Volumesに並ぶ次世代ライティング
+
+**Tier C - 細かい改善:**
+
+#### 🎨 Shadow Color Texture
+影の色をテクスチャで制御：
+- 髪の影にグラデーション
+- 肌の影に赤みを追加
+
+#### 🎯 Rim Direction Control
+リムライトの方向を制御：
+- 特定方向からのみリム
+- より意図的な演出
+
+#### 🌈 Multi-Color Outlines
+アウトラインを複数色に：
+- 虹色アウトライン
+- グラデーションアウトライン
+- アニメーション対応
+
+#### 🔳 Dithering Alpha
+半透明のディザリング表現：
+- VRChatシャドウキャスト問題回避
+- 半透明より軽量
+
+---
 
 ### 🚀 パフォーマンス大幅最適化 v1.1.4
 
