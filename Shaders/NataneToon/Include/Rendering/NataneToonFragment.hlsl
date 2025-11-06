@@ -263,7 +263,7 @@ half4 frag(v2f i) : SV_Target
             if (_LightVolumeBlendMode < 0.5) // Add (Default - lilToon style)
             {
                 // Use Unity's light probes as base ambient
-                ambient = ShadeSH9(float4(worldNormal, 1.0)) * _IndirectLightIntensity;
+                ambient = ShadeSH9(float4(worldNormal, 1.0)) * _IndirectLightIntensity * _GIIntensity;
 
                 // Add Light Volume contribution (lilToon style - only add the difference)
                 // Direct light: add only what's brighter than current lighting
@@ -284,7 +284,7 @@ half4 frag(v2f i) : SV_Target
             else if (_LightVolumeBlendMode < 1.5) // Multiply
             {
                 // Use Unity's light probes as base ambient
-                ambient = ShadeSH9(float4(worldNormal, 1.0)) * _IndirectLightIntensity;
+                ambient = ShadeSH9(float4(worldNormal, 1.0)) * _IndirectLightIntensity * _GIIntensity;
 
                 // Use as modulation factor
                 lighting *= lerp(float3(1, 1, 1), directLightLV, _LightVolumeIntensity);
@@ -309,8 +309,8 @@ half4 frag(v2f i) : SV_Target
         #else
             // Fallback to Unity's built-in light probes
             ambient = ShadeSH9(float4(worldNormal, 1.0));
-            // Apply indirect light intensity control
-            ambient *= _IndirectLightIntensity;
+            // Apply indirect light intensity control and GI intensity
+            ambient *= _IndirectLightIntensity * _GIIntensity;
         #endif
 
         // Add ambient lighting

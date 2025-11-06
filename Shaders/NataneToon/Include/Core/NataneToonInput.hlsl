@@ -102,6 +102,7 @@ CBUFFER_START(UnityPerMaterial)
     float _SoftLightingIntensity;
     float _LightIntensity;
     float _IndirectLightIntensity;
+    float _GIIntensity; // Environment Reflection (GI/Light Probes) intensity control
     float _LightColorInfluence;
     float _ShadowReceive;
     float _ShadowMaxDarkness;
