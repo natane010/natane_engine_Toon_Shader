@@ -7,7 +7,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _Color ("Color", Color) = (1,1,1,1)
         [Space(10)]
         [Toggle(_MAIN_TEX_ANIMATION)] _MainTexAnimation ("Main Tex Animation", Float) = 0
-        _MainTexScrollSpeed ("Scroll Speed (XY)", Vector) = (0,0,0,0)
+        _MainTexScrollSpeed ("Scroll Speed XY", Vector) = (0,0,0,0)
         _MainTexRotateSpeed ("Rotate Speed", Float) = 0
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
 
@@ -17,12 +17,12 @@ Shader "Natane/Toon Shader (Cutout)"
         _Brightness ("Overall Brightness", Range(0.5, 1.5)) = 1
 
         [Header(Surface Finish)]
-        _Glossiness ("Glossiness (Overall Gloss)", Range(0, 1)) = 1
-        _MatteEffect ("Matte Effect (Reduce Gloss)", Range(0, 1)) = 0
+        _Glossiness ("Glossiness Overall Gloss", Range(0, 1)) = 1
+        _MatteEffect ("Matte Effect Reduce Gloss", Range(0, 1)) = 0
 
         [Header(Makeup Textures)]
         [Toggle(_2ND_TEXTURE)] _Use2ndTexture ("Enable 2nd Texture", Float) = 0
-        _2ndTex ("2nd Texture (Makeup)", 2D) = "white" {}
+        _2ndTex ("Texture Makeup", 2D) = "white" {}
         _2ndTexHueShift ("Hue Shift", Range(-0.5, 0.5)) = 0
         _2ndTexSaturation ("Saturation", Range(0, 2)) = 1
         _2ndTexValue ("Brightness", Range(0, 2)) = 1
@@ -32,7 +32,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _2ndTexMask ("2nd Tex Mask", 2D) = "white" {}
         [Space(10)]
         [Toggle(_3RD_TEXTURE)] _Use3rdTexture ("Enable 3rd Texture", Float) = 0
-        _3rdTex ("3rd Texture (Makeup)", 2D) = "white" {}
+        _3rdTex ("Texture Makeup", 2D) = "white" {}
         _3rdTexHueShift ("Hue Shift", Range(-0.5, 0.5)) = 0
         _3rdTexSaturation ("Saturation", Range(0, 2)) = 1
         _3rdTexValue ("Brightness", Range(0, 2)) = 1
@@ -42,7 +42,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _3rdTexMask ("3rd Tex Mask", 2D) = "white" {}
         [Space(10)]
         [Toggle(_4TH_TEXTURE)] _Use4thTexture ("Enable 4th Texture", Float) = 0
-        _4thTex ("4th Texture (Makeup)", 2D) = "white" {}
+        _4thTex ("Texture Makeup", 2D) = "white" {}
         _4thTexHueShift ("Hue Shift", Range(-0.5, 0.5)) = 0
         _4thTexSaturation ("Saturation", Range(0, 2)) = 1
         _4thTexValue ("Brightness", Range(0, 2)) = 1
@@ -52,7 +52,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _4thTexMask ("4th Tex Mask", 2D) = "white" {}
         [Space(10)]
         [Toggle(_5TH_TEXTURE)] _Use5thTexture ("Enable 5th Texture", Float) = 0
-        _5thTex ("5th Texture (Makeup)", 2D) = "white" {}
+        _5thTex ("Texture Makeup", 2D) = "white" {}
         _5thTexHueShift ("Hue Shift", Range(-0.5, 0.5)) = 0
         _5thTexSaturation ("Saturation", Range(0, 2)) = 1
         _5thTexValue ("Brightness", Range(0, 2)) = 1
@@ -70,7 +70,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _ShadowSteps ("Shadow Steps", Range(1, 10)) = 2
         _ShadowSharpness ("Shadow Sharpness", Range(0.001, 1)) = 0.1
         _ShadowOffset ("Shadow Offset", Range(-1, 1)) = 0
-        _LitSoftness ("Lit Area Softness (Global Smoothstep)", Range(0, 1)) = 0
+        _LitSoftness ("Lit Area Softness Global Smoothstep", Range(0, 1)) = 0
         [Toggle(_SHADOW_RECEIVE_MASK)] _UseShadowReceiveMask ("Use Shadow Receive Mask", Float) = 0
         _ShadowReceiveMask ("Shadow Receive Mask", 2D) = "white" {}
         [Space(10)]
@@ -86,12 +86,12 @@ Shader "Natane/Toon Shader (Cutout)"
         [Toggle(_USE_AO)] _UseAO ("Use Ambient Occlusion", Float) = 0
         _AOMap ("AO Map", 2D) = "white" {}
         _AOIntensity ("AO Intensity", Range(0, 1)) = 1
-        [Toggle(_USE_DITHERING)] _UseDithering ("Use Dithering (Shadow Edge Only)", Float) = 0
-        _DitheringScale ("Dithering Scale (Pattern Size)", Range(1, 100)) = 10
-        _DitheringStrength ("Dithering Strength (Boundary Softness)", Range(0, 1)) = 0.5
+        [Toggle(_USE_DITHERING)] _UseDithering ("Use Dithering Shadow Edge Only", Float) = 0
+        _DitheringScale ("Dithering Scale Pattern Size", Range(1, 100)) = 10
+        _DitheringStrength ("Dithering Strength Boundary Softness", Range(0, 1)) = 0.5
 
         [Header(Advanced Lighting)]
-        _LightIntensity ("Light Intensity (Global)", Range(0, 2)) = 1
+        _LightIntensity ("Light Intensity Global", Range(0, 2)) = 1
         _IndirectLightIntensity ("Indirect Light Intensity", Range(0, 2)) = 1
         _LightColorInfluence ("Light Color Influence", Range(0, 1)) = 1
         _ShadowReceive ("Shadow Receive", Range(0, 1)) = 1
@@ -211,7 +211,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _ReflectionCube ("Reflection Cubemap", CUBE) = "black" {}
         _ReflectionColor ("Reflection Color", Color) = (1, 1, 1, 1)
         _ReflectionIntensity ("Reflection Intensity", Range(0, 2)) = 1
-        _Smoothness ("Smoothness (Glossiness)", Range(0, 1)) = 0.5
+        _Smoothness ("Smoothness Glossiness", Range(0, 1)) = 0.5
         _Metallic ("Metallic", Range(0, 1)) = 0
         _FresnelPower ("Fresnel Power", Range(0, 10)) = 5
         _FresnelSoftness ("Fresnel Softness", Range(0, 1)) = 0
@@ -237,16 +237,16 @@ Shader "Natane/Toon Shader (Cutout)"
         [Toggle(_ENV_RIM_MASK)] _UseEnvRimMask ("Use Env Rim Mask", Float) = 0
         _EnvRimMask ("Env Rim Mask", 2D) = "white" {}
 
-        [Header(Parallax Mapping - WARNING Performance Heavy in VR)]
-        [Toggle(_PARALLAX)] _Parallax ("Enable Parallax - Max 64 Samples", Float) = 0
+        [Header(Parallax Mapping WARNING Performance Heavy in VR)]
+        [Toggle(_PARALLAX)] _Parallax ("Enable Parallax Max 64 Samples", Float) = 0
         _ParallaxMap ("Height Map", 2D) = "grey" {}
-        _ParallaxScale ("Parallax Scale (Distortion Strength)", Range(0, 0.1)) = 0.02
-        _ParallaxMinSamples ("Min Samples (Flat View)", Range(4, 16)) = 4
-        _ParallaxMaxSamples ("Max Samples (Steep View)", Range(16, 64)) = 32
+        _ParallaxScale ("Parallax Scale Distortion Strength", Range(0, 0.1)) = 0.02
+        _ParallaxMinSamples ("Min Samples Flat View", Range(4, 16)) = 4
+        _ParallaxMaxSamples ("Max Samples Steep View", Range(16, 64)) = 32
 
         [Header(Refraction)]
         [Toggle(_REFRACTION)] _Refraction ("Enable Refraction", Float) = 0
-        _RefractionIndex ("Refraction Index (IOR)", Range(1, 3)) = 1.5
+        _RefractionIndex ("Refraction Index IOR", Range(1, 3)) = 1.5
         _RefractionIntensity ("Refraction Intensity", Range(0, 1)) = 1
         _RefractionBlur ("Refraction Blur", Range(0, 1)) = 0
         [Toggle(_REFRACTION_MASK)] _UseRefractionMask ("Use Refraction Mask", Float) = 0
