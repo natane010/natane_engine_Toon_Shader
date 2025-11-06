@@ -245,6 +245,14 @@ Shader "Natane/Toon Shader"
             "Queue"="Geometry"
         }
 
+        // GrabPass for Refraction
+        // Captures the screen content behind the object
+        // Note: Refraction on opaque objects has limited use
+        GrabPass
+        {
+            "_GrabTexture"
+        }
+
         // Outline Pass
         Pass
         {

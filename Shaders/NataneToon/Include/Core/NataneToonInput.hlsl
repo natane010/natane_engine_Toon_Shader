@@ -205,6 +205,10 @@ CBUFFER_END
 samplerCUBE _ReflectionCube;
 samplerCUBE _EnvRimCube;
 
+// GrabPass texture for Refraction
+sampler2D _GrabTexture;
+float4 _GrabTexture_TexelSize;
+
 // Vertex Input Structure
 struct appdata
 {
@@ -226,6 +230,7 @@ struct v2f
     float3 worldBinormal : TEXCOORD4;
     UNITY_FOG_COORDS(5)
     SHADOW_COORDS(6)
+    float4 screenPos : TEXCOORD7; // For GrabPass (Refraction)
     UNITY_VERTEX_OUTPUT_STEREO
 };
 

@@ -232,6 +232,13 @@ Shader "Natane/Toon Shader (Transparent)"
             "IgnoreProjector"="True"
         }
 
+        // GrabPass for Refraction
+        // Captures the screen content behind the object
+        GrabPass
+        {
+            "_GrabTexture"
+        }
+
         // Outline Pass
         Pass
         {
