@@ -23,64 +23,54 @@ half4 frag(v2f i) : SV_Target
     half4 mainTex = tex2D(_MainTex, mainUV);
     half4 col = mainTex * _Color;
 
-    // ===== 2nd Texture (Makeup) Blending =====
+    // ===== Makeup/Detail Textures Blending =====
+    // Consolidated texture blending using shared function
     #ifdef _2ND_TEXTURE
-        half4 tex2nd = tex2D(_2ndTex, uv);
-        float tex2ndMask = tex2nd.a; // Use alpha channel from texture
-
-        #ifdef _2ND_TEX_MASK
-            tex2ndMask *= tex2D(_2ndTexMask, uv).r; // Multiply with mask if enabled
-        #endif
-
-        // Apply HSV adjustments to texture (default values: hueShift=0, saturation=1, value=1 preserve original colors)
-        float3 tex2ndAdjusted = ApplyHSVAdjustment(tex2nd.rgb, _2ndTexHueShift, _2ndTexSaturation, _2ndTexValue);
-
-        col.rgb = ApplyBlendMode(col.rgb, tex2ndAdjusted, float3(1, 1, 1), _2ndTexIntensity * tex2ndMask, _2ndTexBlendMode);
+        col.rgb = ApplyMakeupTexture(col.rgb, _2ndTex, _2ndTexMask, uv,
+            _2ndTexHueShift, _2ndTexSaturation, _2ndTexValue,
+            _2ndTexIntensity, _2ndTexBlendMode,
+            #ifdef _2ND_TEX_MASK
+                true
+            #else
+                false
+            #endif
+        );
     #endif
 
-    // ===== 3rd Texture (Makeup) Blending =====
     #ifdef _3RD_TEXTURE
-        half4 tex3rd = tex2D(_3rdTex, uv);
-        float tex3rdMask = tex3rd.a; // Use alpha channel from texture
-
-        #ifdef _3RD_TEX_MASK
-            tex3rdMask *= tex2D(_3rdTexMask, uv).r; // Multiply with mask if enabled
-        #endif
-
-        // Apply HSV adjustments to texture (default values: hueShift=0, saturation=1, value=1 preserve original colors)
-        float3 tex3rdAdjusted = ApplyHSVAdjustment(tex3rd.rgb, _3rdTexHueShift, _3rdTexSaturation, _3rdTexValue);
-
-        col.rgb = ApplyBlendMode(col.rgb, tex3rdAdjusted, float3(1, 1, 1), _3rdTexIntensity * tex3rdMask, _3rdTexBlendMode);
+        col.rgb = ApplyMakeupTexture(col.rgb, _3rdTex, _3rdTexMask, uv,
+            _3rdTexHueShift, _3rdTexSaturation, _3rdTexValue,
+            _3rdTexIntensity, _3rdTexBlendMode,
+            #ifdef _3RD_TEX_MASK
+                true
+            #else
+                false
+            #endif
+        );
     #endif
 
-    // ===== 4th Texture (Makeup) Blending =====
     #ifdef _4TH_TEXTURE
-        half4 tex4th = tex2D(_4thTex, uv);
-        float tex4thMask = tex4th.a; // Use alpha channel from texture
-
-        #ifdef _4TH_TEX_MASK
-            tex4thMask *= tex2D(_4thTexMask, uv).r; // Multiply with mask if enabled
-        #endif
-
-        // Apply HSV adjustments to texture (default values: hueShift=0, saturation=1, value=1 preserve original colors)
-        float3 tex4thAdjusted = ApplyHSVAdjustment(tex4th.rgb, _4thTexHueShift, _4thTexSaturation, _4thTexValue);
-
-        col.rgb = ApplyBlendMode(col.rgb, tex4thAdjusted, float3(1, 1, 1), _4thTexIntensity * tex4thMask, _4thTexBlendMode);
+        col.rgb = ApplyMakeupTexture(col.rgb, _4thTex, _4thTexMask, uv,
+            _4thTexHueShift, _4thTexSaturation, _4thTexValue,
+            _4thTexIntensity, _4thTexBlendMode,
+            #ifdef _4TH_TEX_MASK
+                true
+            #else
+                false
+            #endif
+        );
     #endif
 
-    // ===== 5th Texture (Makeup) Blending =====
     #ifdef _5TH_TEXTURE
-        half4 tex5th = tex2D(_5thTex, uv);
-        float tex5thMask = tex5th.a; // Use alpha channel from texture
-
-        #ifdef _5TH_TEX_MASK
-            tex5thMask *= tex2D(_5thTexMask, uv).r; // Multiply with mask if enabled
-        #endif
-
-        // Apply HSV adjustments to texture (default values: hueShift=0, saturation=1, value=1 preserve original colors)
-        float3 tex5thAdjusted = ApplyHSVAdjustment(tex5th.rgb, _5thTexHueShift, _5thTexSaturation, _5thTexValue);
-
-        col.rgb = ApplyBlendMode(col.rgb, tex5thAdjusted, float3(1, 1, 1), _5thTexIntensity * tex5thMask, _5thTexBlendMode);
+        col.rgb = ApplyMakeupTexture(col.rgb, _5thTex, _5thTexMask, uv,
+            _5thTexHueShift, _5thTexSaturation, _5thTexValue,
+            _5thTexIntensity, _5thTexBlendMode,
+            #ifdef _5TH_TEX_MASK
+                true
+            #else
+                false
+            #endif
+        );
     #endif
 
     // ===== Normal Mapping =====
@@ -168,18 +158,13 @@ half4 frag(v2f i) : SV_Target
         // Use ramp texture for custom shadow gradients
         lighting = RampShading(lightTerm);
     #else
-        // Choose between Toon and Gradient shading modes
-        half shadingValue;
-        if (_ShadingMode < 0.5)
-        {
-            // Toon Mode: Stepped cel-shading
-            shadingValue = ToonShading(lightTerm, _ShadowSteps, _ShadowSharpness);
-        }
-        else
-        {
-            // Gradient Mode: Smooth gradient shading
-            shadingValue = GradientShading(lightTerm, _ShadingGradientWidth);
-        }
+        // Choose between Toon and Gradient shading modes - Optimized: no branching
+        // Calculate both modes and blend based on _ShadingMode
+        half toonValue = ToonShading(lightTerm, _ShadowSteps, _ShadowSharpness);
+        half gradientValue = GradientShading(lightTerm, _ShadingGradientWidth);
+
+        // Blend between modes: 0 = Toon, 1 = Gradient
+        half shadingValue = lerp(toonValue, gradientValue, step(HALF_VALUE, _ShadingMode));
 
         // NiloToon-style shadow color mixing for more vibrant anime look
         // Instead of simple lerp, preserve color saturation in shadows
@@ -273,6 +258,8 @@ half4 frag(v2f i) : SV_Target
             indirectLight *= lvInfluence;
 
             // Apply Light Volume with blend mode
+            // NOTE: Branching intentionally kept here as each mode has significantly different computations
+            // Removing branches would force execution of all modes, reducing performance
             if (_LightVolumeBlendMode < 0.5) // Add (Default - lilToon style)
             {
                 // Use Unity's light probes as base ambient
@@ -365,13 +352,11 @@ half4 frag(v2f i) : SV_Target
     // When AlbedoPreservation = 0.0, use traditional lighting
     col.rgb = lerp(traditionalLitColor, preservedLitColor, _AlbedoPreservation);
 
-    // Additional color preservation: prevent color shift in dark areas
+    // Additional color preservation: prevent color shift in dark areas - Optimized: no branching
     // Dark colors (like black) should stay dark, not become gray
-    if (originalLum < 0.1 && _AlbedoPreservation > 0.5)
-    {
-        // For very dark colors, preserve the darkness
-        col.rgb = min(col.rgb, originalAlbedo * (lightingLum * 1.2));
-    }
+    half darkColorFactor = step(originalLum, 0.1) * step(HALF_VALUE, _AlbedoPreservation);
+    half3 darkPreservedColor = min(col.rgb, originalAlbedo * (lightingLum * 1.2));
+    col.rgb = lerp(col.rgb, darkPreservedColor, darkColorFactor);
 
     // 2. Saturation Adjustment - Optimized: removed branching
     // Enhance or reduce color saturation (lerp handles _Saturation=1.0 case efficiently)
@@ -524,20 +509,17 @@ half4 frag(v2f i) : SV_Target
         // Apply glossiness and matte effect
         matcap *= _Glossiness * (1.0 - _MatteEffect);
 
-        // Blend modes: 0=Add (safe), 1=Multiply, 2=Replace
-        if (_MatCapBlendMode < 0.5) // Add - use safe additive to prevent white-out
-        {
-            half matcapStrength = saturate(_MatCapIntensity * matcapMask * 0.5);
-            col.rgb = SafeAdditiveBlend(col.rgb, matcap, matcapStrength);
-        }
-        else if (_MatCapBlendMode < 1.5) // Multiply
-        {
-            col.rgb = BlendWithSoftMask(col.rgb, col.rgb * matcap, saturate(_MatCapIntensity * matcapMask));
-        }
-        else // Replace
-        {
-            col.rgb = BlendWithSoftMask(col.rgb, matcap, saturate(_MatCapIntensity * matcapMask));
-        }
+        // Blend modes: 0=Add (safe), 1=Multiply, 2=Replace - Optimized: no branching
+        half matcapStrength = saturate(_MatCapIntensity * matcapMask * HALF_VALUE);
+        half3 addResult = SafeAdditiveBlend(col.rgb, matcap, matcapStrength);
+        half3 multiplyResult = BlendWithSoftMask(col.rgb, col.rgb * matcap, saturate(_MatCapIntensity * matcapMask));
+        half3 replaceResult = BlendWithSoftMask(col.rgb, matcap, saturate(_MatCapIntensity * matcapMask));
+
+        // Select blend mode using lerp
+        half isMultiply = step(HALF_VALUE, _MatCapBlendMode) * step(_MatCapBlendMode, 1.5);
+        half isReplace = step(1.5, _MatCapBlendMode);
+        col.rgb = lerp(addResult, multiplyResult, isMultiply);
+        col.rgb = lerp(col.rgb, replaceResult, isReplace);
     #endif
 
     // ===== Cubemap Reflection (ForwardBase only) =====

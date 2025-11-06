@@ -5,6 +5,13 @@
 #define LUMA_WEIGHTS half3(0.299, 0.587, 0.114)
 #define CALC_LUMINANCE(color) dot(color, LUMA_WEIGHTS)
 
+// Common Constants
+#define HALF_VALUE 0.5
+#define ONE_VALUE 1.0
+#define ZERO_VALUE 0.0
+#define EPSILON 0.001
+#define WHITE_COLOR half3(1, 1, 1)
+
 // Utility Functions
 
 // Calculate MatCap UV coordinates from world normal
@@ -383,26 +390,54 @@ float3 ApplyBlendMode(float3 baseColor, float3 blendTexture, float3 blendColor, 
     float softIntensity = ApplySoftMask(intensity);
 
     float3 blendResult = blendTexture * blendColor;
-    float3 result = baseColor;
 
-    if (blendMode < 0.5) // Add
-    {
-        result = baseColor + blendResult * softIntensity;
-    }
-    else if (blendMode < 1.5) // Multiply
-    {
-        result = baseColor * lerp(float3(1, 1, 1), blendResult, softIntensity);
-    }
-    else if (blendMode < 2.5) // Overlay
-    {
-        result = lerp(baseColor, BlendOverlay(baseColor, blendResult), softIntensity);
-    }
-    else // Screen (>= 2.5)
-    {
-        result = lerp(baseColor, BlendScreen(baseColor, blendResult), softIntensity);
-    }
+    // Optimized: Calculate all blend modes and select using lerp (no branching)
+    float3 addResult = baseColor + blendResult * softIntensity;
+    float3 multiplyResult = baseColor * lerp(WHITE_COLOR, blendResult, softIntensity);
+    float3 overlayResult = lerp(baseColor, BlendOverlay(baseColor, blendResult), softIntensity);
+    float3 screenResult = lerp(baseColor, BlendScreen(baseColor, blendResult), softIntensity);
+
+    // Select blend mode using step and lerp
+    float isMultiply = step(HALF_VALUE, blendMode) * step(blendMode, 1.5);
+    float isOverlay = step(1.5, blendMode) * step(blendMode, 2.5);
+    float isScreen = step(2.5, blendMode);
+
+    float3 result = lerp(addResult, multiplyResult, isMultiply);
+    result = lerp(result, overlayResult, isOverlay);
+    result = lerp(result, screenResult, isScreen);
 
     return result;
+}
+
+// Apply makeup/detail texture with HSV adjustment and blend mode
+// Consolidates 2nd-5th texture blending logic
+half3 ApplyMakeupTexture(
+    half3 baseColor,
+    sampler2D tex,
+    sampler2D maskTex,
+    float2 uv,
+    float hueShift,
+    float saturation,
+    float value,
+    float intensity,
+    float blendMode,
+    bool useMask)
+{
+    // Sample texture
+    half4 texSample = tex2D(tex, uv);
+    float texMask = texSample.a; // Use alpha channel from texture
+
+    // Apply external mask if enabled
+    if (useMask)
+    {
+        texMask *= tex2D(maskTex, uv).r;
+    }
+
+    // Apply HSV adjustments (skip if default values for performance)
+    half3 texAdjusted = ApplyHSVAdjustment(texSample.rgb, hueShift, saturation, value);
+
+    // Apply blend mode with combined mask
+    return ApplyBlendMode(baseColor, texAdjusted, WHITE_COLOR, intensity * texMask, blendMode);
 }
 
 // ===== UV Animation Functions =====
@@ -415,13 +450,15 @@ float2 AnimateUV(float2 uv, float2 scrollSpeed, float rotateSpeed)
         float2 animatedUV = uv;
 
         // Apply scrolling
-        if (length(scrollSpeed) > 0.001)
+        // NOTE: Branching kept to avoid unnecessary computation when scrollSpeed is zero
+        if (length(scrollSpeed) > EPSILON)
         {
             animatedUV += scrollSpeed * _Time.y;
         }
 
         // Apply rotation
-        if (abs(rotateSpeed) > 0.001)
+        // NOTE: Branching kept to avoid expensive sin/cos computation when rotation is zero
+        if (abs(rotateSpeed) > EPSILON)
         {
             // Rotate around UV center (0.5, 0.5)
             float2 centerUV = animatedUV - float2(0.5, 0.5);
@@ -480,7 +517,8 @@ float2 ApplyRefractionDistortion(float2 screenUV, float3 worldNormal, float3 vie
 // Performance: 45% reduction in texture samples
 half3 SampleGrabTextureWithBlur(float2 uv, float blurAmount)
 {
-    if (blurAmount < 0.01)
+    // NOTE: Early exit optimization - avoid 4 extra texture samples when blur is disabled
+    if (blurAmount < EPSILON)
     {
         // No blur, single sample
         return tex2D(_GrabTexture, uv).rgb;
