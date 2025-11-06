@@ -3,6 +3,7 @@
 
 // Fragment Shader
 // Main pixel/fragment rendering function
+// Optimized: half precision for better performance, cached luminance calculations
 half4 frag(v2f i) : SV_Target
 {
     // ===== Parallax Mapping (UV Adjustment) =====
@@ -83,24 +84,26 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== Normal Mapping =====
-    float3 worldNormal = normalize(i.worldNormal);
+    // Optimization: Skip normalization if no normal mapping (already normalized in vertex shader)
     #ifdef _NORMALMAP
-        float3 normalMap = UnpackScaleNormal(tex2D(_BumpMap, uv), _BumpScale);
-        float3x3 tangentToWorld = float3x3(i.worldTangent, i.worldBinormal, i.worldNormal);
-        worldNormal = normalize(mul(normalMap, tangentToWorld));
+        half3 normalMap = UnpackScaleNormal(tex2D(_BumpMap, uv), _BumpScale);
+        half3x3 tangentToWorld = half3x3(i.worldTangent, i.worldBinormal, i.worldNormal);
+        half3 worldNormal = normalize(mul(normalMap, tangentToWorld));
+    #else
+        half3 worldNormal = i.worldNormal; // Already normalized in vertex shader
     #endif
 
     // ===== Shadow Receive Mask Setup =====
     // Sample shadow mask once and use it for all shadow-related calculations
-    float shadowReceiveMask = 0.0; // Default: fully receive shadows (black = receive shadows)
+    half shadowReceiveMask = 0.0; // Default: fully receive shadows (black = receive shadows)
     #ifdef _SHADOW_RECEIVE_MASK
         shadowReceiveMask = tex2D(_ShadowReceiveMask, uv).r;
         shadowReceiveMask = ApplySoftMask(shadowReceiveMask); // Smooth mask transitions
     #endif
 
     // ===== Lighting Setup =====
-    float3 lightDir;
-    float atten;
+    half3 lightDir;
+    half atten;
 
     #ifdef USING_DIRECTIONAL_LIGHT
         // Directional light (sun)
@@ -108,22 +111,22 @@ half4 frag(v2f i) : SV_Target
         atten = SHADOW_ATTENUATION(i);
     #else
         // Point/Spot light
-        float3 lightVec = _WorldSpaceLightPos0.xyz - i.worldPos;
+        half3 lightVec = _WorldSpaceLightPos0.xyz - i.worldPos;
         lightDir = normalize(lightVec);
         atten = SHADOW_ATTENUATION(i);
 
         // Apply distance attenuation for point/spot lights
-        float distSqr = dot(lightVec, lightVec);
+        half distSqr = dot(lightVec, lightVec);
         atten *= 1.0 / (1.0 + distSqr * 0.1);
     #endif
 
     // Apply shadow receive strength (allows controlling how much shadows affect this material)
     // マスクの判定を反転: 白（1.0）= 影を受けない、黒（0.0）= 影を受ける
-    float shadowStrength = (1.0 - shadowReceiveMask) * _ShadowReceive;
+    half shadowStrength = (1.0 - shadowReceiveMask) * _ShadowReceive;
     atten = lerp(1.0, atten, shadowStrength);
 
-    float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
-    float ndotl = max(0.0, dot(worldNormal, lightDir));
+    half3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
+    half ndotl = max(0.0, dot(worldNormal, lightDir));
 
     // ===== SDF Shadow Map =====
     // Apply SDF shadow to ndotl before lighting calculations
@@ -131,46 +134,42 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Backlight Calculation =====
     // Calculate light coming from behind the object (rim-like effect)
-    float backlight = 0.0;
+    half backlight = 0.0;
     #ifdef UNITY_PASS_FORWARDBASE
-        float backlightDot = max(0.0, dot(worldNormal, -lightDir));
+        half backlightDot = max(0.0, dot(worldNormal, -lightDir));
         backlight = pow(backlightDot, 4.0) * _BacklightIntensity;
     #endif
 
     // ===== Toon/Ramp Shading (NiloToon-style) =====
     // Calculate base light term
-    float lightTerm = ndotl * atten;
+    half lightTerm = ndotl * atten;
 
     // Apply shadow receive mask to light term
     // 白いマスク部分（shadowReceiveMask = 1.0）では常に明るく保つ
     // これにより、ndotlの影響を受けずにシェーディングを無効化できる
     lightTerm = lerp(lightTerm, 1.0, shadowReceiveMask);
 
-    // Apply lit area softness BEFORE toon shading for visible effect
-    if (_LitSoftness > 0.001)
-    {
-        // Add smoothstep to soften the light transition
-        // This blends between the original sharp lighting and smoothed lighting
-        float smoothedLight = smoothstep(0.0, 1.0, lightTerm);
-        lightTerm = lerp(lightTerm, smoothedLight, _LitSoftness);
-    }
+    // Apply lit area softness - Optimized: removed branching
+    // Softness calculation always executes (branch removal for better GPU performance)
+    half smoothedLight = smoothstep(0.0, 1.0, lightTerm);
+    lightTerm = lerp(lightTerm, smoothedLight, _LitSoftness);
 
     // Apply dithering to soften shadow boundaries
     #ifdef _USE_DITHERING
-        float ditherPattern = DitheringPattern(i.pos.xy, _DitheringScale);
+        half ditherPattern = DitheringPattern(i.pos.xy, _DitheringScale);
         // Apply dithering to shadow boundary area (around 0.4-0.6 range)
-        float ditherRange = saturate(1.0 - abs(lightTerm - 0.5) * 2.0);
-        float ditherEffect = (ditherPattern - 0.5) * _DitheringStrength * ditherRange;
+        half ditherRange = saturate(1.0 - abs(lightTerm - 0.5) * 2.0);
+        half ditherEffect = (ditherPattern - 0.5) * _DitheringStrength * ditherRange;
         lightTerm = saturate(lightTerm + ditherEffect);
     #endif
 
-    float3 lighting;
+    half3 lighting;
     #ifdef _USE_RAMP
         // Use ramp texture for custom shadow gradients
         lighting = RampShading(lightTerm);
     #else
         // Choose between Toon and Gradient shading modes
-        float shadingValue;
+        half shadingValue;
         if (_ShadingMode < 0.5)
         {
             // Toon Mode: Stepped cel-shading
@@ -184,8 +183,8 @@ half4 frag(v2f i) : SV_Target
 
         // NiloToon-style shadow color mixing for more vibrant anime look
         // Instead of simple lerp, preserve color saturation in shadows
-        float3 litColor = half3(1.0, 1.0, 1.0);
-        float3 shadowColor = _ShadowColor.rgb;
+        half3 litColor = 1.0;
+        half3 shadowColor = _ShadowColor.rgb;
 
         // Apply Shading Grade Map before final lighting
         shadingValue = ApplyShadingGradeMap(uv, shadingValue);
@@ -204,46 +203,38 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Improved Light Color Application =====
     // Apply light color influence more carefully to preserve material colors
-    float3 lightColorInfluenced;
+    // Optimized: Cache luminance calculations, remove branching
+    half3 lightColorInfluenced;
 
-    if (_LightColorInfluence > 0.001)
-    {
-        // Calculate light color luminance
-        float lightColorLuminance = dot(_LightColor0.rgb, float3(0.299, 0.587, 0.114));
+    // Cache light color luminance (used multiple times)
+    half lightColorLum = CALC_LUMINANCE(_LightColor0.rgb);
 
-        // Extract lighting luminance before light color application
-        float baseLightingLuminance = dot(lighting, float3(0.299, 0.587, 0.114));
+    // Method 1: Multiply light color (traditional - can shift colors)
+    half3 colorMultiplied = lighting * _LightColor0.rgb;
 
-        // Method 1: Multiply light color (traditional - can shift colors)
-        float3 colorMultiplied = lighting * _LightColor0.rgb;
+    // Method 2: Apply only light color luminance (preserves lighting color)
+    half3 luminanceOnly = lighting * lightColorLum;
 
-        // Method 2: Apply only light color luminance (preserves lighting color)
-        float3 luminanceOnly = lighting * lightColorLuminance;
-
-        // Blend between methods based on LightColorInfluence
-        // Low influence = preserve lighting color, High influence = apply light color
-        lightColorInfluenced = lerp(luminanceOnly, colorMultiplied, _LightColorInfluence);
-    }
-    else
-    {
-        lightColorInfluenced = lighting;
-    }
+    // Blend between methods based on LightColorInfluence (no branching)
+    // Low influence = preserve lighting color, High influence = apply light color
+    lightColorInfluenced = lerp(luminanceOnly, colorMultiplied, _LightColorInfluence);
 
     lighting = lightColorInfluenced * _LightIntensity;
 
     // ===== Light Influence Clamping =====
     // Clamp brightness to prevent too dark or too bright results
-    float lightLuminance = dot(lighting, float3(0.299, 0.587, 0.114));
-    lightLuminance = clamp(lightLuminance, _LightMinInfluence, _LightMaxInfluence);
-    lighting = normalize(lighting + 0.001) * lightLuminance;
+    // Optimized: Cache luminance calculation
+    half lightLum = CALC_LUMINANCE(lighting);
+    lightLum = clamp(lightLum, _LightMinInfluence, _LightMaxInfluence);
+    lighting = normalize(lighting + 0.001) * lightLum;
 
     // ===== Ambient Occlusion =====
     #ifdef _USE_AO
-        float ao = tex2D(_AOMap, uv).r;
+        half ao = tex2D(_AOMap, uv).r;
         ao = ApplySoftMask(ao); // Smooth AO transitions
         // Apply AO to darken occluded areas
         // AO of 1.0 = no occlusion (white), AO of 0.0 = full occlusion (black)
-        float aoEffect = lerp(1.0, ao, _AOIntensity);
+        half aoEffect = lerp(1.0, ao, _AOIntensity);
         lighting *= aoEffect;
     #endif
 
@@ -347,26 +338,27 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // Store original texture color before lighting application
-    float3 originalAlbedo = col.rgb;
-    float originalLuminance = dot(originalAlbedo, float3(0.299, 0.587, 0.114));
+    half3 originalAlbedo = col.rgb;
+    // Optimized: Cache original luminance (used multiple times)
+    half originalLum = CALC_LUMINANCE(originalAlbedo);
 
     // ===== Improved Color Preservation Lighting =====
     // Instead of directly multiplying, preserve color hue and saturation
     // while applying lighting brightness
 
-    // Calculate lighting luminance
-    float lightingLuminance = dot(lighting, float3(0.299, 0.587, 0.114));
+    // Cache lighting luminance (already calculated as lightLum above - reuse if possible)
+    half lightingLum = CALC_LUMINANCE(lighting);
 
     // Method 1: Preserve color by applying only luminance change
     // Extract color direction (hue/saturation) from original albedo
-    float3 albedoDirection = originalAlbedo / max(originalLuminance, 0.001);
+    half3 albedoDir = originalAlbedo / max(originalLum, 0.001);
 
     // Apply lighting luminance to color direction
     // This keeps the original color while adjusting brightness
-    float3 preservedLitColor = albedoDirection * originalLuminance * lightingLuminance;
+    half3 preservedLitColor = albedoDir * originalLum * lightingLum;
 
     // Method 2: Traditional lighting (for blending)
-    float3 traditionalLitColor = originalAlbedo * lighting;
+    half3 traditionalLitColor = originalAlbedo * lighting;
 
     // Blend between preserved color and traditional lighting based on AlbedoPreservation
     // When AlbedoPreservation = 1.0, use fully preserved color (no white-washing)
@@ -375,19 +367,16 @@ half4 frag(v2f i) : SV_Target
 
     // Additional color preservation: prevent color shift in dark areas
     // Dark colors (like black) should stay dark, not become gray
-    if (originalLuminance < 0.1 && _AlbedoPreservation > 0.5)
+    if (originalLum < 0.1 && _AlbedoPreservation > 0.5)
     {
         // For very dark colors, preserve the darkness
-        col.rgb = min(col.rgb, originalAlbedo * (lightingLuminance * 1.2));
+        col.rgb = min(col.rgb, originalAlbedo * (lightingLum * 1.2));
     }
 
-    // 2. Saturation Adjustment
-    // Enhance or reduce color saturation
-    if (abs(_Saturation - 1.0) > 0.001)
-    {
-        float3 gray = dot(col.rgb, float3(0.299, 0.587, 0.114));
-        col.rgb = lerp(gray, col.rgb, _Saturation);
-    }
+    // 2. Saturation Adjustment - Optimized: removed branching
+    // Enhance or reduce color saturation (lerp handles _Saturation=1.0 case efficiently)
+    half gray = CALC_LUMINANCE(col.rgb);
+    col.rgb = lerp(gray, col.rgb, _Saturation);
 
     // 3. Overall Brightness Adjustment
     // Final brightness control (applied before effects so they show properly)
@@ -395,12 +384,12 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Specular Highlight =====
     #ifdef _SPECULAR
-        float spec = SpecularHighlight(worldNormal, viewDir, lightDir, _SpecularSize, _SpecularSoftness);
-        float3 specContrib = spec * _SpecularColor.rgb * _LightColor0.rgb * atten;
+        half spec = SpecularHighlight(worldNormal, viewDir, lightDir, _SpecularSize, _SpecularSoftness);
+        half3 specContrib = spec * _SpecularColor.rgb * _LightColor0.rgb * atten;
 
         // Apply mask texture with soft blending
         #ifdef _SPECULAR_MASK
-            float specMask = tex2D(_SpecularMask, uv).r;
+            half specMask = tex2D(_SpecularMask, uv).r;
             specMask = ApplySoftMask(specMask); // Smooth mask transitions
             specContrib *= specMask;
         #endif
@@ -411,7 +400,7 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         // Apply glossiness and matte effect
-        float glossFactor = _Glossiness * (1.0 - _MatteEffect);
+        half glossFactor = _Glossiness * (1.0 - _MatteEffect);
         specContrib *= glossFactor;
 
         // Use safe additive blending to prevent white-out
@@ -420,7 +409,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Subsurface Scattering =====
     #ifdef _SSS
-        float thickness = 1.0;
+        half thickness = 1.0;
         #ifdef _THICKNESS_MAP
             // Use thickness map to control SSS per-pixel
             thickness = tex2D(_ThicknessMap, uv).r * _ThicknessScale;
@@ -429,11 +418,11 @@ half4 frag(v2f i) : SV_Target
             thickness = _ThicknessScale;
         #endif
 
-        float3 sss = SubsurfaceScattering(worldNormal, lightDir, viewDir, thickness, atten);
+        half3 sss = SubsurfaceScattering(worldNormal, lightDir, viewDir, thickness, atten);
 
         // Apply mask texture with soft blending
         #ifdef _SSS_MASK
-            float sssMask = tex2D(_SSSMask, uv).r;
+            half sssMask = tex2D(_SSSMask, uv).r;
             sssMask = ApplySoftMask(sssMask); // Smooth mask transitions
             sss *= sssMask;
         #endif
@@ -444,26 +433,22 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         // Use safe additive blending to prevent white-out
-        float sssStrength = saturate(length(sss) * 0.5);
+        half sssStrength = saturate(length(sss) * 0.5);
         col.rgb = SafeAdditiveBlend(col.rgb, sss, sssStrength);
     #endif
 
     // ===== Rim Light (ForwardBase only) =====
     #if defined(_RIM_LIGHT) && defined(UNITY_PASS_FORWARDBASE)
-        float3 rim = RimLighting(worldNormal, viewDir, _RimPower, _RimIntensity);
+        half3 rim = RimLighting(worldNormal, viewDir, _RimPower, _RimIntensity);
 
-        // Apply Spread/Glow effect
-        if (_RimSpread > 0.001)
-        {
-            // Create a softer, wider rim for glow effect
-            float rimSpreadPower = lerp(_RimPower, max(0.5, _RimPower * 0.3), _RimSpread);
-            float3 rimGlow = RimLighting(worldNormal, viewDir, rimSpreadPower, _RimIntensity * _RimSpread * 0.5);
-            rim += rimGlow;
-        }
+        // Apply Spread/Glow effect - Optimized: removed branching
+        half rimSpreadPower = lerp(_RimPower, max(0.5, _RimPower * 0.3), _RimSpread);
+        half3 rimGlow = RimLighting(worldNormal, viewDir, rimSpreadPower, _RimIntensity * _RimSpread * 0.5);
+        rim += rimGlow * step(0.001, _RimSpread); // Conditional add without branch
 
         // Apply mask texture with soft blending
         #ifdef _RIM_MASK
-            float rimMask = tex2D(_RimMask, uv).r;
+            half rimMask = tex2D(_RimMask, uv).r;
             rimMask = ApplySoftMask(rimMask); // Smooth mask transitions
             rim *= rimMask;
         #endif
@@ -472,30 +457,26 @@ half4 frag(v2f i) : SV_Target
         rim *= _Glossiness * (1.0 - _MatteEffect);
 
         // Use safe additive blending to prevent white-out
-        float rimStrength = saturate(length(rim) * 0.5);
+        half rimStrength = saturate(length(rim) * 0.5);
         col.rgb = SafeAdditiveBlend(col.rgb, rim, rimStrength);
     #endif
 
     // ===== Rim Light 2 (ForwardBase only) =====
     #if defined(_RIM_LIGHT_2) && defined(UNITY_PASS_FORWARDBASE)
         // Calculate rim factor (stronger at edges)
-        float rim2Factor = 1.0 - saturate(dot(worldNormal, viewDir));
+        half rim2Factor = 1.0 - saturate(dot(worldNormal, viewDir));
         rim2Factor = pow(rim2Factor, _RimPower2) * _RimIntensity2;
-        float3 rim2 = rim2Factor * _RimColor2.rgb;
+        half3 rim2 = rim2Factor * _RimColor2.rgb;
 
-        // Apply Spread/Glow effect
-        if (_RimSpread2 > 0.001)
-        {
-            // Create a softer, wider rim for glow effect
-            float rim2SpreadPower = lerp(_RimPower2, max(0.5, _RimPower2 * 0.3), _RimSpread2);
-            float rim2SpreadFactor = 1.0 - saturate(dot(worldNormal, viewDir));
-            rim2SpreadFactor = pow(rim2SpreadFactor, rim2SpreadPower) * _RimIntensity2 * _RimSpread2 * 0.5;
-            rim2 += rim2SpreadFactor * _RimColor2.rgb;
-        }
+        // Apply Spread/Glow effect - Optimized: removed branching
+        half rim2SpreadPower = lerp(_RimPower2, max(0.5, _RimPower2 * 0.3), _RimSpread2);
+        half rim2SpreadFactor = 1.0 - saturate(dot(worldNormal, viewDir));
+        rim2SpreadFactor = pow(rim2SpreadFactor, rim2SpreadPower) * _RimIntensity2 * _RimSpread2 * 0.5;
+        rim2 += rim2SpreadFactor * _RimColor2.rgb * step(0.001, _RimSpread2); // Conditional add without branch
 
         // Apply mask texture with soft blending
         #ifdef _RIM_MASK_2
-            float rimMask2 = tex2D(_RimMask2, uv).r;
+            half rimMask2 = tex2D(_RimMask2, uv).r;
             rimMask2 = ApplySoftMask(rimMask2); // Smooth mask transitions
             rim2 *= rimMask2;
         #endif
@@ -504,17 +485,17 @@ half4 frag(v2f i) : SV_Target
         rim2 *= _Glossiness * (1.0 - _MatteEffect);
 
         // Use safe additive blending to prevent white-out
-        float rim2Strength = saturate(length(rim2) * 0.5);
+        half rim2Strength = saturate(length(rim2) * 0.5);
         col.rgb = SafeAdditiveBlend(col.rgb, rim2, rim2Strength);
     #endif
 
     // ===== Environmental Rim (ForwardBase only) =====
     #if defined(_ENV_RIM) && defined(UNITY_PASS_FORWARDBASE)
-        float3 envRim = EnvironmentalRim(worldNormal, viewDir);
+        half3 envRim = EnvironmentalRim(worldNormal, viewDir);
 
         // Apply mask texture with soft blending
         #ifdef _ENV_RIM_MASK
-            float envRimMask = tex2D(_EnvRimMask, uv).r;
+            half envRimMask = tex2D(_EnvRimMask, uv).r;
             envRimMask = ApplySoftMask(envRimMask); // Smooth mask transitions
             envRim *= envRimMask;
         #endif
@@ -523,7 +504,7 @@ half4 frag(v2f i) : SV_Target
         envRim *= _Glossiness * (1.0 - _MatteEffect);
 
         // Use safe additive blending to prevent white-out
-        float envRimStrength = saturate(length(envRim) * 0.5);
+        half envRimStrength = saturate(length(envRim) * 0.5);
         col.rgb = SafeAdditiveBlend(col.rgb, envRim, envRimStrength);
     #endif
 
@@ -533,7 +514,7 @@ half4 frag(v2f i) : SV_Target
         half3 matcap = tex2D(_MatCapTex, matcapUV).rgb * _MatCapIntensity;
 
         // Apply mask texture with soft blending
-        float matcapMask = 1.0;
+        half matcapMask = 1.0;
         #ifdef _MATCAP_MASK
             matcapMask = tex2D(_MatCapMask, uv).r;
             matcapMask = ApplySoftMask(matcapMask); // Smooth mask transitions
@@ -546,7 +527,7 @@ half4 frag(v2f i) : SV_Target
         // Blend modes: 0=Add (safe), 1=Multiply, 2=Replace
         if (_MatCapBlendMode < 0.5) // Add - use safe additive to prevent white-out
         {
-            float matcapStrength = saturate(_MatCapIntensity * matcapMask * 0.5);
+            half matcapStrength = saturate(_MatCapIntensity * matcapMask * 0.5);
             col.rgb = SafeAdditiveBlend(col.rgb, matcap, matcapStrength);
         }
         else if (_MatCapBlendMode < 1.5) // Multiply
@@ -561,10 +542,10 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Cubemap Reflection (ForwardBase only) =====
     #if defined(_REFLECTION) && defined(UNITY_PASS_FORWARDBASE)
-        float3 reflection = CubemapReflection(worldNormal, viewDir, _Smoothness, _Metallic);
+        half3 reflection = CubemapReflection(worldNormal, viewDir, _Smoothness, _Metallic);
 
         // Apply mask texture with soft blending
-        float reflectionMask = 1.0;
+        half reflectionMask = 1.0;
         #ifdef _REFLECTION_MASK
             reflectionMask = tex2D(_ReflectionMask, uv).r;
             reflectionMask = ApplySoftMask(reflectionMask); // Smooth mask transitions
@@ -575,7 +556,7 @@ half4 frag(v2f i) : SV_Target
         reflection *= _Glossiness * (1.0 - _MatteEffect);
 
         // Use safe additive blending to prevent white-out
-        float reflectionStrength = saturate(length(reflection) * reflectionMask * 0.5);
+        half reflectionStrength = saturate(length(reflection) * reflectionMask * 0.5);
         col.rgb = SafeAdditiveBlend(col.rgb, reflection, reflectionStrength);
     #endif
 
@@ -623,51 +604,44 @@ half4 frag(v2f i) : SV_Target
 
         // Apply pulse animation
         #ifdef _EMISSION_PULSE
-            float pulse = sin(_Time.y * _EmissionPulseSpeed) * 0.5 + 0.5;
+            half pulse = sin(_Time.y * _EmissionPulseSpeed) * 0.5 + 0.5;
             pulse = lerp(1.0 - _EmissionPulseAmplitude, 1.0, pulse);
             emission *= pulse;
         #endif
 
         // Apply mask texture with soft blending
-        float emissionMask = 1.0;
+        half emissionMask = 1.0;
         #ifdef _EMISSION_MASK
             emissionMask = tex2D(_EmissionMask, uv).r;
             emissionMask = ApplySoftMask(emissionMask); // Smooth mask transitions
         #endif
         emission *= emissionMask;
 
-        // Apply Glow/Bloom effect
-        if (_EmissionGlow > 0.001)
-        {
-            // Calculate luminance of emission
-            float emissionLuminance = dot(emission, float3(0.299, 0.587, 0.114));
-            // Add glow proportional to emission brightness
-            float3 glow = emission * emissionLuminance * _EmissionGlow * 2.0;
-            emission += glow;
-        }
+        // Apply Glow/Bloom effect - Optimized: removed branching, use cached luminance
+        half emissionLum = CALC_LUMINANCE(emission);
+        half3 glow = emission * emissionLum * _EmissionGlow * 2.0;
+        emission += glow * step(0.001, _EmissionGlow); // Conditional add without branch
 
         // Use safe additive blending to prevent white-out
-        float emissionStrength = saturate(length(emission) * emissionMask * 0.3);
+        half emissionStrength = saturate(length(emission) * emissionMask * 0.3);
         col.rgb = SafeAdditiveBlend(col.rgb, emission, emissionStrength);
     #endif
 
     // ===== Virtual Expression - Hue Shift =====
+    // Optimized: removed branching (ApplyHueShift handles _HueShift=0 efficiently)
     #ifdef _HUE_SHIFT
-        if (_HueShift > 0.001)
-        {
-            col.rgb = ApplyHueShift(col.rgb, _HueShift);
-        }
+        col.rgb = ApplyHueShift(col.rgb, _HueShift);
     #endif
 
     // ===== Glitter Effect =====
     #ifdef _GLITTER
-        float3 glitter = GlitterEffect(uv, i.worldPos, viewDir, worldNormal);
+        half3 glitter = GlitterEffect(uv, i.worldPos, viewDir, worldNormal);
         col.rgb = SafeAdditiveBlend(col.rgb, glitter, 1.0);
     #endif
 
     // ===== Iridescence Effect =====
     #ifdef _IRIDESCENCE
-        float3 iridescence = IridescenceEffect(worldNormal, viewDir, uv);
+        half3 iridescence = IridescenceEffect(worldNormal, viewDir, uv);
         col.rgb = SafeAdditiveBlend(col.rgb, iridescence, 1.0);
     #endif
 
@@ -676,7 +650,7 @@ half4 frag(v2f i) : SV_Target
         // Early exit if dissolve amount is 0 (no effect)
         if (_DissolveAmount > 0.0)
         {
-            float dissolveMaskValue = 1.0;
+            half dissolveMaskValue = 1.0;
 
             // Apply mask texture
             #ifdef _DISSOLVE_MASK
@@ -684,8 +658,8 @@ half4 frag(v2f i) : SV_Target
             #endif
 
             float2 dissolveResult = CalculateDissolve(uv, _DissolveAmount, _DissolveEdgeWidth);
-            float dissolveAlpha = dissolveResult.x;
-            float edgeGlow = dissolveResult.y;
+            half dissolveAlpha = dissolveResult.x;
+            half edgeGlow = dissolveResult.y;
 
             // Apply mask to edge glow and dissolve effect
             edgeGlow *= dissolveMaskValue;
@@ -693,8 +667,8 @@ half4 frag(v2f i) : SV_Target
             // Apply edge glow with safe additive blending
             if (edgeGlow > 0.0)
             {
-                float3 dissolveGlow = _DissolveEdgeColor.rgb * edgeGlow * _DissolveEdgeIntensity;
-                float dissolveStrength = saturate(edgeGlow * _DissolveEdgeIntensity * 0.5);
+                half3 dissolveGlow = _DissolveEdgeColor.rgb * edgeGlow * _DissolveEdgeIntensity;
+                half dissolveStrength = saturate(edgeGlow * _DissolveEdgeIntensity * 0.5);
                 col.rgb = SafeAdditiveBlend(col.rgb, dissolveGlow, dissolveStrength);
             }
 
@@ -706,7 +680,7 @@ half4 frag(v2f i) : SV_Target
     // ===== Alpha Mask =====
     // Apply alpha mask for partial transparency control
     #ifdef _ALPHA_MASK
-        float alphaMask = tex2D(_AlphaMask, uv).r;
+        half alphaMask = tex2D(_AlphaMask, uv).r;
         col.a *= alphaMask;
     #endif
 

@@ -197,34 +197,34 @@ float3 MultiToneShadowColor(float shadowFactor, float3 baseColor)
 
 // Specular Highlight (Anime Style)
 // Creates sharp, stylized specular reflections
-float SpecularHighlight(float3 normal, float3 viewDir, float3 lightDir, float size, float softness)
+half SpecularHighlight(half3 normal, half3 viewDir, half3 lightDir, half size, half softness)
 {
-    float3 halfVector = normalize(lightDir + viewDir);
-    float ndoth = max(0.0, dot(normal, halfVector));
+    half3 halfVector = normalize(lightDir + viewDir);
+    half ndoth = max(0.0, dot(normal, halfVector));
 
     // Create sharp specular with controllable size and softness
-    float spec = smoothstep(1.0 - size - softness, 1.0 - size + softness, ndoth);
+    half spec = smoothstep(1.0 - size - softness, 1.0 - size + softness, ndoth);
     return spec;
 }
 
 // Rim Light Calculation
 // Creates highlights at grazing angles (edges of objects)
-float3 RimLighting(float3 normal, float3 viewDir, float power, float intensity)
+half3 RimLighting(half3 normal, half3 viewDir, half power, half intensity)
 {
-    float rim = 1.0 - saturate(dot(normal, viewDir));
+    half rim = 1.0 - saturate(dot(normal, viewDir));
     rim = pow(rim, power) * intensity;
     return rim * _RimColor.rgb;
 }
 
 // Subsurface Scattering (Translucency)
 // Simulates light passing through thin or translucent materials
-float3 SubsurfaceScattering(float3 normal, float3 lightDir, float3 viewDir, float thickness, float atten)
+half3 SubsurfaceScattering(half3 normal, half3 lightDir, half3 viewDir, half thickness, half atten)
 {
     // Distort the normal for more realistic scattering effect
-    float3 distortedNormal = normal + normalize(viewDir) * _SSSDistortion;
+    half3 distortedNormal = normal + normalize(viewDir) * _SSSDistortion;
 
     // Calculate back-lit effect (light passing through the object)
-    float backLight = max(0.0, dot(-normalize(distortedNormal), lightDir));
+    half backLight = max(0.0, dot(-normalize(distortedNormal), lightDir));
 
     // Apply power function for falloff and multiply by inverse thickness
     // Thicker areas scatter less light
@@ -238,58 +238,54 @@ float3 SubsurfaceScattering(float3 normal, float3 lightDir, float3 viewDir, floa
 
 // Cubemap Reflection (Environment Mapping)
 // Samples a cubemap based on reflection vector for realistic environment reflections
-float3 CubemapReflection(float3 worldNormal, float3 viewDir, float smoothness, float metallic)
+half3 CubemapReflection(half3 worldNormal, half3 viewDir, half smoothness, half metallic)
 {
     // Calculate reflection vector
-    float3 reflectDir = reflect(-viewDir, worldNormal);
+    half3 reflectDir = reflect(-viewDir, worldNormal);
 
     // Calculate mip level based on smoothness (roughness = 1 - smoothness)
-    float roughness = 1.0 - smoothness;
-    float mipLevel = roughness * 7.0; // Assume 8 mip levels (0-7)
+    half roughness = 1.0 - smoothness;
+    half mipLevel = roughness * 7.0; // Assume 8 mip levels (0-7)
 
     // Sample cubemap with calculated mip level for roughness effect
-    float4 reflectionSample = texCUBElod(_ReflectionCube, float4(reflectDir, mipLevel));
+    half4 reflectionSample = texCUBElod(_ReflectionCube, float4(reflectDir, mipLevel));
 
     // Apply reflection color tint
-    float3 reflection = reflectionSample.rgb * _ReflectionColor.rgb;
+    half3 reflection = reflectionSample.rgb * _ReflectionColor.rgb;
 
     // Fresnel effect - objects reflect more at grazing angles
-    float viewAngle = saturate(dot(worldNormal, viewDir));
+    half viewAngle = saturate(dot(worldNormal, viewDir));
 
-    // Apply softness to Fresnel transition
+    // Apply softness to Fresnel transition - Optimized: removed branching
     // Softness creates a more gradual transition between reflected and non-reflected areas
-    if (_FresnelSoftness > 0.001)
-    {
-        // Soften the Fresnel curve by adjusting the input
-        float softRange = _FresnelSoftness * 0.5;
-        viewAngle = smoothstep(softRange, 1.0 - softRange, viewAngle);
-    }
+    half softRange = _FresnelSoftness * 0.5;
+    viewAngle = smoothstep(softRange, 1.0 - softRange, viewAngle);
 
-    float fresnel = pow(1.0 - viewAngle, _FresnelPower);
+    half fresnel = pow(1.0 - viewAngle, _FresnelPower);
 
     // Metallic surfaces reflect more, non-metallic reflect at grazing angles
-    float reflectionStrength = lerp(fresnel, 1.0, metallic);
+    half reflectionStrength = lerp(fresnel, 1.0, metallic);
 
     // Apply blend mode (0 = Additive, 1 = Overlay)
     // Additive: Simply adds reflection to base color
     // Overlay: Blends reflection more naturally with base color
-    float blendFactor = lerp(1.0, reflectionStrength, _ReflectionBlendMode);
+    half blendFactor = lerp(1.0, reflectionStrength, _ReflectionBlendMode);
 
     return reflection * reflectionStrength * _ReflectionIntensity * blendFactor;
 }
 
 // Environmental Rim (Low-angle environment reflections)
 // Simulates reflections at grazing angles from environment cubemap
-float3 EnvironmentalRim(float3 worldNormal, float3 viewDir)
+half3 EnvironmentalRim(half3 worldNormal, half3 viewDir)
 {
     // Calculate reflection vector
-    float3 reflectDir = reflect(-viewDir, worldNormal);
+    half3 reflectDir = reflect(-viewDir, worldNormal);
 
     // Sample environment cubemap
-    float3 envColor = texCUBE(_EnvRimCube, reflectDir).rgb;
+    half3 envColor = texCUBE(_EnvRimCube, reflectDir).rgb;
 
     // Calculate rim factor (stronger at edges)
-    float rim = 1.0 - saturate(dot(worldNormal, viewDir));
+    half rim = 1.0 - saturate(dot(worldNormal, viewDir));
     rim = pow(rim, _EnvRimPower);
 
     // Apply color tint and intensity
@@ -361,81 +357,81 @@ float ApplyShadingGradeMap(float2 uv, float shadowFactor)
 
 // Glitter Effect
 // Creates sparkly/shimmery effect on surfaces
-float3 GlitterEffect(float2 uv, float3 worldPos, float3 viewDir, float3 normal)
+half3 GlitterEffect(float2 uv, float3 worldPos, half3 viewDir, half3 normal)
 {
     #ifdef _GLITTER
         // Create random glitter pattern using world position
         float3 glitterPos = worldPos * _GlitterSize * 50.0;
 
         // Generate pseudo-random values using sine functions
-        float glitterRandom = frac(sin(dot(glitterPos, float3(12.9898, 78.233, 45.164))) * 43758.5453);
+        half glitterRandom = frac(sin(dot(glitterPos, float3(12.9898, 78.233, 45.164))) * 43758.5453);
 
         // Apply density threshold
-        float glitterMask = step(1.0 - _GlitterDensity, glitterRandom);
+        half glitterMask = step(1.0 - _GlitterDensity, glitterRandom);
 
         // Animate glitter using time
-        float glitterTime = _Time.y * _GlitterSpeed;
-        float glitterFlicker = frac(glitterRandom * 10.0 + glitterTime);
+        half glitterTime = _Time.y * _GlitterSpeed;
+        half glitterFlicker = frac(glitterRandom * 10.0 + glitterTime);
         glitterFlicker = smoothstep(0.3, 0.7, glitterFlicker); // Pulse animation
 
         // Calculate view-dependent glitter intensity (sparkles more when viewed at certain angles)
-        float viewDot = max(0.0, dot(normal, viewDir));
-        float viewFactor = pow(viewDot, 2.0);
+        half viewDot = max(0.0, dot(normal, viewDir));
+        half viewFactor = pow(viewDot, 2.0);
 
         // Combine all factors
-        float glitter = glitterMask * glitterFlicker * viewFactor;
+        half glitter = glitterMask * glitterFlicker * viewFactor;
 
         // Apply user mask if enabled
         #ifdef _GLITTER_MASK
-            float maskValue = tex2D(_GlitterMask, uv).r;
+            half maskValue = tex2D(_GlitterMask, uv).r;
             glitter *= maskValue;
         #endif
 
         return glitter * _GlitterColor.rgb * _GlitterIntensity;
     #else
-        return float3(0, 0, 0);
+        return 0;
     #endif
 }
 
 // Iridescence Effect
 // Creates rainbow-like color shifts based on viewing angle
-float3 IridescenceEffect(float3 normal, float3 viewDir, float2 uv)
+half3 IridescenceEffect(half3 normal, half3 viewDir, float2 uv)
 {
     #ifdef _IRIDESCENCE
         // Calculate view-dependent angle
-        float viewAngle = saturate(dot(normal, viewDir));
+        half viewAngle = saturate(dot(normal, viewDir));
 
         // Create color shift based on view angle and size parameter
-        float hueShift = (1.0 - viewAngle) * _IridescenceSize;
+        half hueShift = (1.0 - viewAngle) * _IridescenceSize;
         hueShift = frac(hueShift + _IridescenceHueShift);
 
         // Convert hue to RGB (simplified HSV to RGB conversion)
-        float3 iridColor;
-        float h = hueShift * 6.0;
-        float c = 1.0;
-        float x = c * (1.0 - abs(fmod(h, 2.0) - 1.0));
+        half3 iridColor;
+        half h = hueShift * 6.0;
+        half c = 1.0;
+        half x = c * (1.0 - abs(fmod(h, 2.0) - 1.0));
 
-        if (h < 1.0) iridColor = float3(c, x, 0);
-        else if (h < 2.0) iridColor = float3(x, c, 0);
-        else if (h < 3.0) iridColor = float3(0, c, x);
-        else if (h < 4.0) iridColor = float3(0, x, c);
-        else if (h < 5.0) iridColor = float3(x, 0, c);
-        else iridColor = float3(c, 0, x);
+        if (h < 1.0) iridColor = half3(c, x, 0);
+        else if (h < 2.0) iridColor = half3(x, c, 0);
+        else if (h < 3.0) iridColor = half3(0, c, x);
+        else if (h < 4.0) iridColor = half3(0, x, c);
+        else if (h < 5.0) iridColor = half3(x, 0, c);
+        else iridColor = half3(c, 0, x);
 
         // Apply color tint
         iridColor *= _IridescenceColor.rgb;
 
         // Apply mask if enabled
         #ifdef _IRIDESCENCE_MASK
-            float maskValue = tex2D(_IridescenceMask, uv).r;
+            half maskValue = tex2D(_IridescenceMask, uv).r;
             iridColor *= maskValue;
         #endif
 
         // Apply intensity and view-dependent falloff
-        float falloff = pow(1.0 - viewAngle, 2.0);
+        half falloff = pow(1.0 - viewAngle, 2.0);
         return iridColor * _IridescenceIntensity * falloff;
     #else
-        return float3(0, 0, 0);
+        return 0;
     #endif
 }
 
