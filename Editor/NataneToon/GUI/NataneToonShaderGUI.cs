@@ -742,6 +742,9 @@ public class NataneToonShaderGUI : ShaderGUI
             DrawProperty("_IndirectLightIntensity", "間接光の強度");
             DrawHelpToggle("IndirectLightIntensity", "環境光やライトプローブからの間接照明の強さを制御します。", MessageType.Info);
 
+            DrawProperty("_GIIntensity", "GI強度（環境反射）");
+            DrawHelpToggle("GIIntensity", "環境反射（Light Probes/GI）の影響度を制御します。\n• 0 = 環境反射を完全に無効化（環境光の影響を受けない）\n• 0.5 = 環境反射を50%に軽減\n• 1 = 通常通り環境反射を適用\nVRChatで暗いワールドやライティングが強すぎるワールドで、見た目を安定させるために使用します。", MessageType.Info);
+
             DrawProperty("_LightColorInfluence", "ライトカラー影響度");
             DrawHelpToggle("LightColorInfluence", "ライトの色がマテリアルに与える影響を制御します。\n• 0 = ライトの色を無視（白色光として処理）\n• 1 = ライトの色を完全に反映\n• 0.5 = 中間（推奨）", MessageType.Info);
 
