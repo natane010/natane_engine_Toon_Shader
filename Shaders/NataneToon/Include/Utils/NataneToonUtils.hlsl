@@ -451,4 +451,64 @@ float2 AnimateUV(float2 uv, float2 scrollSpeed, float rotateSpeed)
     #endif
 }
 
+// ===== Refraction Functions =====
+
+// Apply refraction distortion to screen UV
+// Returns distorted UV for sampling GrabTexture
+float2 ApplyRefractionDistortion(float2 screenUV, float3 worldNormal, float3 viewDir, float intensity, float refractionIndex, float blur)
+{
+    // Calculate refraction using Snell's law
+    // IOR ratio: from air (1.0) to material (refractionIndex)
+    float iorRatio = 1.0 / refractionIndex;
+
+    // Refract the view direction through the surface
+    float3 refractDir = refract(-viewDir, worldNormal, iorRatio);
+
+    // If total internal reflection occurs, use reflection instead
+    if (length(refractDir) < 0.01)
+    {
+        refractDir = reflect(-viewDir, worldNormal);
+    }
+
+    // Calculate distortion offset based on refracted direction
+    // Project refraction direction to screen space
+    float2 distortion = refractDir.xy * intensity * 0.1;
+
+    // Apply distortion to UV
+    float2 distortedUV = screenUV + distortion;
+
+    // Keep UV in valid range [0, 1]
+    distortedUV = saturate(distortedUV);
+
+    return distortedUV;
+}
+
+// Sample GrabTexture with optional blur
+// Blur is approximated using multiple samples
+float3 SampleGrabTextureWithBlur(float2 uv, float blurAmount)
+{
+    if (blurAmount < 0.01)
+    {
+        // No blur, single sample
+        return tex2D(_GrabTexture, uv).rgb;
+    }
+
+    // Simple box blur with 9 samples
+    float3 color = float3(0, 0, 0);
+    float blurRadius = blurAmount * 0.01; // Scale blur amount
+
+    // 3x3 kernel
+    float weight = 1.0 / 9.0;
+    for (int x = -1; x <= 1; x++)
+    {
+        for (int y = -1; y <= 1; y++)
+        {
+            float2 offset = float2(x, y) * blurRadius * _GrabTexture_TexelSize.xy;
+            color += tex2D(_GrabTexture, uv + offset).rgb * weight;
+        }
+    }
+
+    return color;
+}
+
 #endif // NATANE_TOON_UTILS_INCLUDED
