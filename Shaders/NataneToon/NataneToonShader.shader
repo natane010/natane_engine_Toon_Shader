@@ -327,6 +327,21 @@ Shader "Natane/Toon Shader"
         [Toggle(_VERTEX_ANIM_MASK)] _UseVertexAnimMask ("Use Vertex Anim Mask", Float) = 0
         _VertexAnimMask ("Vertex Anim Mask", 2D) = "white" {}
 
+        [Header(Vertex Animation Texture Houdini VAT)]
+        [Toggle(_VAT)] _VAT ("Enable VAT Animation", Float) = 0
+        _VATPositionMap ("VAT Position Map", 2D) = "black" {}
+        [Toggle(_VAT_NORMAL)] _VATNormal ("Use VAT Normal Map", Float) = 0
+        _VATNormalMap ("VAT Normal Map", 2D) = "black" {}
+        _VATNumOfFrames ("Number of Frames", Float) = 24
+        _VATSpeed ("Animation Speed", Float) = 1
+        _VATIntensity ("Animation Intensity", Range(0, 2)) = 1
+        _VATPositionMin ("Position Min Value", Float) = -1
+        _VATPositionMax ("Position Max Value", Float) = 1
+        _VATNormalMin ("Normal Min Value", Float) = -1
+        _VATNormalMax ("Normal Max Value", Float) = 1
+        [Space(10)]
+        [Enum(Absolute,0,Offset,1)] _VATPackingMode ("VAT Packing Mode", Float) = 1
+
         [Header(Hologram Glitch Effect)]
         [Toggle(_HOLOGRAM)] _Hologram ("Enable Hologram", Float) = 0
         _HologramScanlineSpeed ("Scanline Speed", Float) = 1
@@ -595,6 +610,8 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature _VIDEO_TEXTURE
             #pragma shader_feature _LTCGI
             #pragma shader_feature _DITHERING_ALPHA
+            #pragma shader_feature _VAT
+            #pragma shader_feature _VAT_NORMAL
 
             #include "Include/Core/NataneToonCore.hlsl"
 
@@ -670,6 +687,8 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature _VIDEO_TEXTURE
             #pragma shader_feature _LTCGI
             #pragma shader_feature _DITHERING_ALPHA
+            #pragma shader_feature _VAT
+            #pragma shader_feature _VAT_NORMAL
 
             #include "Include/Core/NataneToonCore.hlsl"
 

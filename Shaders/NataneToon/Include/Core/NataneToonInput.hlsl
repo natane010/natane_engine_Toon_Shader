@@ -306,6 +306,21 @@ CBUFFER_START(UnityPerMaterial)
 
     // Dithering Alpha
     float _DitheringAlphaScale;
+
+    // Vertex Animation Texture (VAT)
+    sampler2D _VATPositionMap;
+    float4 _VATPositionMap_ST;
+    sampler2D _VATNormalMap;
+    float4 _VATNormalMap_ST;
+    float _VATNumOfFrames;
+    float _VATSpeed;
+    float _VATIntensity;
+    float _VATPadding;
+    float _VATPositionMin;
+    float _VATPositionMax;
+    float _VATNormalMin;
+    float _VATNormalMax;
+    float _VATPackingMode;
 CBUFFER_END
 
 // Cubemap samplers (outside CBUFFER)
