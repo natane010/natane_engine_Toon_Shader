@@ -248,8 +248,8 @@ half4 frag(v2f i) : SV_Target
 
             // Apply intensity controls (scale down for natural appearance)
             // Light Volumeは非常に明るくなりがちなので、より控えめに
-            directLightLV *= _IndirectLightIntensity * 0.5;  // 50% reduction for more natural look
-            indirectLight *= _IndirectLightIntensity * 0.5;
+            directLightLV *= _IndirectLightIntensity * _GIIntensity * 0.5;  // 50% reduction for more natural look
+            indirectLight *= _IndirectLightIntensity * _GIIntensity * 0.5;
 
             // Apply Shadow Receive Mask to Light Volume
             // マスクされた部分（白）はLight Volumeの影響を軽減
@@ -299,7 +299,7 @@ half4 frag(v2f i) : SV_Target
             // Add Light Volume specular if enabled
             #ifdef _LIGHT_VOLUME_SPECULAR
                 float3 lvSpecular = LightVolumeSpecular(col.rgb, _Smoothness, _Metallic, worldNormal, viewDir, L0, L1r, L1g, L1b);
-                lvSpecular *= _LightVolumeIntensity;
+                lvSpecular *= _LightVolumeIntensity * _GIIntensity;
                 // Apply glossiness and matte effect
                 lvSpecular *= _Glossiness * (1.0 - _MatteEffect);
                 // Use safe additive blending to prevent white-out
