@@ -262,8 +262,9 @@ half4 frag(v2f i) : SV_Target
             // Removing branches would force execution of all modes, reducing performance
             if (_LightVolumeBlendMode < 0.5) // Add (Default - lilToon style)
             {
-                // Use Unity's light probes as base ambient
-                ambient = ShadeSH9(float4(worldNormal, 1.0)) * _IndirectLightIntensity * _GIIntensity;
+                // Light Volume使用時はUnityのAmbient Colorを使用しない（lilToon style）
+                // これによりLighting設定のEnvironment Lightingに影響されなくなる
+                ambient = float3(0, 0, 0);
 
                 // Add Light Volume contribution (lilToon style - only add the difference)
                 // Direct light: add only what's brighter than current lighting
@@ -283,8 +284,8 @@ half4 frag(v2f i) : SV_Target
             }
             else if (_LightVolumeBlendMode < 1.5) // Multiply
             {
-                // Use Unity's light probes as base ambient
-                ambient = ShadeSH9(float4(worldNormal, 1.0)) * _IndirectLightIntensity * _GIIntensity;
+                // Light Volume使用時はUnityのAmbient Colorを使用しない（lilToon style）
+                ambient = float3(0, 0, 0);
 
                 // Use as modulation factor
                 lighting *= lerp(float3(1, 1, 1), directLightLV, _LightVolumeIntensity);
