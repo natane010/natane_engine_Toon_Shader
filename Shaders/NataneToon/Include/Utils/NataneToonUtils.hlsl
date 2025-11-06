@@ -413,6 +413,44 @@ float3 ApplyBlendMode(float3 baseColor, float3 blendTexture, float3 blendColor, 
     return result;
 }
 
+// ===== UV Animation Functions =====
+
+// Animate UV coordinates with scroll and rotation
+// Returns transformed UV coordinates
+float2 AnimateUV(float2 uv, float2 scrollSpeed, float rotateSpeed)
+{
+    #ifdef _MAIN_TEX_ANIMATION
+        float2 animatedUV = uv;
+
+        // Apply scrolling
+        if (length(scrollSpeed) > 0.001)
+        {
+            animatedUV += scrollSpeed * _Time.y;
+        }
+
+        // Apply rotation
+        if (abs(rotateSpeed) > 0.001)
+        {
+            // Rotate around UV center (0.5, 0.5)
+            float2 centerUV = animatedUV - float2(0.5, 0.5);
+            float angle = rotateSpeed * _Time.y;
+            float s = sin(angle);
+            float c = cos(angle);
+
+            // Rotation matrix
+            float2 rotatedUV;
+            rotatedUV.x = centerUV.x * c - centerUV.y * s;
+            rotatedUV.y = centerUV.x * s + centerUV.y * c;
+
+            animatedUV = rotatedUV + float2(0.5, 0.5);
+        }
+
+        return animatedUV;
+    #else
+        return uv;
+    #endif
+}
+
 // ===== Refraction Functions =====
 
 // Apply refraction distortion to screen UV

@@ -8,6 +8,10 @@ CBUFFER_START(UnityPerMaterial)
     float4 _MainTex_ST;
     half4 _Color;
 
+    // Main Texture Animation
+    float4 _MainTexScrollSpeed;
+    float _MainTexRotateSpeed;
+
     // Color Preservation
     float _AlbedoPreservation;
     float _Saturation;
@@ -76,6 +80,16 @@ CBUFFER_START(UnityPerMaterial)
     float _ShadowBlend;
     sampler2D _ShadowReceiveMask;
 
+    // SDF Shadow Map
+    sampler2D _SDFMap;
+    float _SDFIntensity;
+    float _SDFSoftness;
+    float _SDFOffset;
+
+    // Shading Grade Map
+    sampler2D _ShadingGradeMap;
+    float _ShadingGradeScale;
+
     // Ambient Occlusion
     sampler2D _AOMap;
     float _AOIntensity;
@@ -129,6 +143,14 @@ CBUFFER_START(UnityPerMaterial)
     float _MatCapBlendMode;
     sampler2D _MatCapMask;
 
+    // Glitter
+    half4 _GlitterColor;
+    float _GlitterSize;
+    float _GlitterDensity;
+    float _GlitterSpeed;
+    float _GlitterIntensity;
+    sampler2D _GlitterMask;
+
     // Outline
     half4 _OutlineColor;
     float _OutlineWidth;
@@ -181,6 +203,13 @@ CBUFFER_START(UnityPerMaterial)
     float _FresnelSoftness;
     float _ReflectionBlendMode;
     sampler2D _ReflectionMask;
+
+    // Iridescence
+    half4 _IridescenceColor;
+    float _IridescenceIntensity;
+    float _IridescenceHueShift;
+    float _IridescenceSize;
+    sampler2D _IridescenceMask;
 
     // Environmental Rim
     half4 _EnvRimColor;

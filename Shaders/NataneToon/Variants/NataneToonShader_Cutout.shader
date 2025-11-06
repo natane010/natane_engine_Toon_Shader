@@ -5,6 +5,10 @@ Shader "Natane/Toon Shader (Cutout)"
         [Header(Main Texture)]
         _MainTex ("Main Texture", 2D) = "white" {}
         _Color ("Color", Color) = (1,1,1,1)
+        [Space(10)]
+        [Toggle(_MAIN_TEX_ANIMATION)] _MainTexAnimation ("Main Tex Animation", Float) = 0
+        _MainTexScrollSpeed ("Scroll Speed (XY)", Vector) = (0,0,0,0)
+        _MainTexRotateSpeed ("Rotate Speed", Float) = 0
         _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
 
         [Header(Color Preservation)]
@@ -69,6 +73,16 @@ Shader "Natane/Toon Shader (Cutout)"
         _LitSoftness ("Lit Area Softness", Range(0, 1)) = 0
         [Toggle(_SHADOW_RECEIVE_MASK)] _UseShadowReceiveMask ("Use Shadow Receive Mask", Float) = 0
         _ShadowReceiveMask ("Shadow Receive Mask", 2D) = "white" {}
+        [Space(10)]
+        [Toggle(_SDF_MAP)] _UseSDFMap ("Use SDF Shadow Map", Float) = 0
+        _SDFMap ("SDF Shadow Map", 2D) = "white" {}
+        _SDFIntensity ("SDF Intensity", Range(0, 1)) = 0.5
+        _SDFSoftness ("SDF Softness", Range(0, 1)) = 0.1
+        _SDFOffset ("SDF Offset", Range(-1, 1)) = 0
+        [Space(10)]
+        [Toggle(_SHADING_GRADE_MAP)] _UseGradeMap ("Use Shading Grade Map", Float) = 0
+        _ShadingGradeMap ("Shading Grade Map", 2D) = "white" {}
+        _ShadingGradeScale ("Shading Grade Scale", Range(-1, 1)) = 0
         [Toggle(_USE_AO)] _UseAO ("Use Ambient Occlusion", Float) = 0
         _AOMap ("AO Map", 2D) = "white" {}
         _AOIntensity ("AO Intensity", Range(0, 1)) = 1
@@ -138,6 +152,16 @@ Shader "Natane/Toon Shader (Cutout)"
         [Toggle(_MATCAP_MASK)] _UseMatCapMask ("Use MatCap Mask", Float) = 0
         _MatCapMask ("MatCap Mask", 2D) = "white" {}
 
+        [Header(Glitter)]
+        [Toggle(_GLITTER)] _Glitter ("Enable Glitter", Float) = 0
+        _GlitterColor ("Glitter Color", Color) = (1,1,1,1)
+        _GlitterSize ("Glitter Size", Range(0, 1)) = 0.1
+        _GlitterDensity ("Glitter Density", Range(0, 1)) = 0.5
+        _GlitterSpeed ("Glitter Speed", Float) = 1
+        _GlitterIntensity ("Glitter Intensity", Range(0, 2)) = 1
+        [Toggle(_GLITTER_MASK)] _UseGlitterMask ("Use Glitter Mask", Float) = 0
+        _GlitterMask ("Glitter Mask", 2D) = "white" {}
+
         [Header(Outline)]
         [Toggle(_OUTLINE)] _Outline ("Enable Outline", Float) = 0
         [Enum(Inverted Hull,0,Back Face,1)] _OutlineMode ("Outline Mode", Float) = 0
@@ -145,6 +169,8 @@ Shader "Natane/Toon Shader (Cutout)"
         _OutlineColor ("Outline Color", Color) = (0,0,0,1)
         [Toggle(_OUTLINE_MASK)] _UseOutlineMask ("Use Outline Mask", Float) = 0
         _OutlineMask ("Outline Mask", 2D) = "white" {}
+        [Toggle(_OUTLINE_WIDTH_MAP)] _UseOutlineWidthMap ("Use Outline Width Map", Float) = 0
+        _OutlineWidthMap ("Outline Width Map", 2D) = "white" {}
 
         [Header(Emission)]
         [Toggle(_EMISSION)] _Emission ("Enable Emission", Float) = 0
@@ -192,6 +218,15 @@ Shader "Natane/Toon Shader (Cutout)"
         _ReflectionBlendMode ("Reflection Blend Mode", Range(0, 1)) = 0
         [Toggle(_REFLECTION_MASK)] _UseReflectionMask ("Use Reflection Mask", Float) = 0
         _ReflectionMask ("Reflection Mask", 2D) = "white" {}
+
+        [Header(Iridescence)]
+        [Toggle(_IRIDESCENCE)] _Iridescence ("Enable Iridescence", Float) = 0
+        _IridescenceColor ("Iridescence Color", Color) = (1, 1, 1, 1)
+        _IridescenceIntensity ("Intensity", Range(0, 2)) = 0.5
+        _IridescenceHueShift ("Hue Shift", Range(0, 1)) = 0.5
+        _IridescenceSize ("Size (Frequency)", Range(0, 10)) = 1
+        [Toggle(_IRIDESCENCE_MASK)] _UseIridescenceMask ("Use Iridescence Mask", Float) = 0
+        _IridescenceMask ("Iridescence Mask", 2D) = "white" {}
 
         [Header(Environmental Rim)]
         [Toggle(_ENV_RIM)] _EnvRim ("Enable Environmental Rim", Float) = 0
