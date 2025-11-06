@@ -94,7 +94,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _LightIntensity ("Light Intensity Global", Range(0, 2)) = 1
         _IndirectLightIntensity ("Indirect Light Intensity", Range(0, 2)) = 1
         [Header(Environment Reflection Control)]
-        _GIIntensity ("GI Intensity (環境反射強度)", Range(0, 1)) = 1
+        _GIIntensity ("GI Intensity (環境反射強度)", Range(0, 1)) = 0
         _LightColorInfluence ("Light Color Influence", Range(0, 1)) = 1
         _ShadowReceive ("Shadow Receive", Range(0, 1)) = 1
         _ShadowMaxDarkness ("Shadow Max Darkness", Range(0, 1)) = 0
