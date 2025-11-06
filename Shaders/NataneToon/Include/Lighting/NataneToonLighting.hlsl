@@ -316,4 +316,127 @@ float3 CalculateRefraction(float3 worldNormal, float3 viewDir, float refractionI
     return refractDir;
 }
 
+// SDF Shadow Map
+// Uses signed distance field to add directional-independent shadows (like face shadows)
+float ApplySDFShadow(float2 uv, float ndotl)
+{
+    #ifdef _SDF_MAP
+        // Sample SDF map (white = lit, black = shadow)
+        float sdfValue = tex2D(_SDFMap, uv).r;
+
+        // Apply offset to adjust shadow threshold
+        sdfValue = saturate(sdfValue + _SDFOffset);
+
+        // Apply softness to blend shadow edges
+        float shadowEdge = _SDFSoftness * 0.5;
+        float sdfShadow = smoothstep(0.5 - shadowEdge, 0.5 + shadowEdge, sdfValue);
+
+        // Combine SDF shadow with lighting shadow using intensity control
+        // Higher intensity = more pronounced SDF shadows
+        return lerp(ndotl, ndotl * sdfShadow, _SDFIntensity);
+    #else
+        return ndotl;
+    #endif
+}
+
+// Shading Grade Map
+// Adjusts shadow intensity per-pixel for fine control
+float ApplyShadingGradeMap(float2 uv, float shadowFactor)
+{
+    #ifdef _SHADING_GRADE_MAP
+        // Sample shading grade map (0.5 = neutral, <0.5 = darker, >0.5 = lighter)
+        float gradeValue = tex2D(_ShadingGradeMap, uv).r;
+
+        // Remap from 0-1 to -1 to +1 range, then scale by user parameter
+        float gradeAdjust = (gradeValue - 0.5) * 2.0 * _ShadingGradeScale;
+
+        // Apply grade adjustment to shadow factor
+        shadowFactor = saturate(shadowFactor + gradeAdjust);
+
+        return shadowFactor;
+    #else
+        return shadowFactor;
+    #endif
+}
+
+// Glitter Effect
+// Creates sparkly/shimmery effect on surfaces
+float3 GlitterEffect(float2 uv, float3 worldPos, float3 viewDir, float3 normal)
+{
+    #ifdef _GLITTER
+        // Create random glitter pattern using world position
+        float3 glitterPos = worldPos * _GlitterSize * 50.0;
+
+        // Generate pseudo-random values using sine functions
+        float glitterRandom = frac(sin(dot(glitterPos, float3(12.9898, 78.233, 45.164))) * 43758.5453);
+
+        // Apply density threshold
+        float glitterMask = step(1.0 - _GlitterDensity, glitterRandom);
+
+        // Animate glitter using time
+        float glitterTime = _Time.y * _GlitterSpeed;
+        float glitterFlicker = frac(glitterRandom * 10.0 + glitterTime);
+        glitterFlicker = smoothstep(0.3, 0.7, glitterFlicker); // Pulse animation
+
+        // Calculate view-dependent glitter intensity (sparkles more when viewed at certain angles)
+        float viewDot = max(0.0, dot(normal, viewDir));
+        float viewFactor = pow(viewDot, 2.0);
+
+        // Combine all factors
+        float glitter = glitterMask * glitterFlicker * viewFactor;
+
+        // Apply user mask if enabled
+        #ifdef _GLITTER_MASK
+            float maskValue = tex2D(_GlitterMask, uv).r;
+            glitter *= maskValue;
+        #endif
+
+        return glitter * _GlitterColor.rgb * _GlitterIntensity;
+    #else
+        return float3(0, 0, 0);
+    #endif
+}
+
+// Iridescence Effect
+// Creates rainbow-like color shifts based on viewing angle
+float3 IridescenceEffect(float3 normal, float3 viewDir, float2 uv)
+{
+    #ifdef _IRIDESCENCE
+        // Calculate view-dependent angle
+        float viewAngle = saturate(dot(normal, viewDir));
+
+        // Create color shift based on view angle and size parameter
+        float hueShift = (1.0 - viewAngle) * _IridescenceSize;
+        hueShift = frac(hueShift + _IridescenceHueShift);
+
+        // Convert hue to RGB (simplified HSV to RGB conversion)
+        float3 iridColor;
+        float h = hueShift * 6.0;
+        float c = 1.0;
+        float x = c * (1.0 - abs(fmod(h, 2.0) - 1.0));
+
+        if (h < 1.0) iridColor = float3(c, x, 0);
+        else if (h < 2.0) iridColor = float3(x, c, 0);
+        else if (h < 3.0) iridColor = float3(0, c, x);
+        else if (h < 4.0) iridColor = float3(0, x, c);
+        else if (h < 5.0) iridColor = float3(x, 0, c);
+        else iridColor = float3(c, 0, x);
+
+        // Apply color tint
+        iridColor *= _IridescenceColor.rgb;
+
+        // Apply mask if enabled
+        #ifdef _IRIDESCENCE_MASK
+            float maskValue = tex2D(_IridescenceMask, uv).r;
+            iridColor *= maskValue;
+        #endif
+
+        // Apply intensity and view-dependent falloff
+        float falloff = pow(1.0 - viewAngle, 2.0);
+        return iridColor * _IridescenceIntensity * falloff;
+    #else
+        return float3(0, 0, 0);
+    #endif
+}
+
 #endif // NATANE_TOON_LIGHTING_INCLUDED

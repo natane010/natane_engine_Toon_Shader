@@ -12,8 +12,14 @@ half4 frag(v2f i) : SV_Target
         uv = ParallaxMapping(i.uv, tangentViewDir);
     #endif
 
+    // ===== UV Animation =====
+    float2 mainUV = uv;
+    #ifdef _MAIN_TEX_ANIMATION
+        mainUV = AnimateUV(uv, _MainTexScrollSpeed.xy, _MainTexRotateSpeed);
+    #endif
+
     // ===== Texture Sampling =====
-    half4 mainTex = tex2D(_MainTex, uv);
+    half4 mainTex = tex2D(_MainTex, mainUV);
     half4 col = mainTex * _Color;
 
     // ===== 2nd Texture (Makeup) Blending =====
@@ -119,6 +125,10 @@ half4 frag(v2f i) : SV_Target
     float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
     float ndotl = max(0.0, dot(worldNormal, lightDir));
 
+    // ===== SDF Shadow Map =====
+    // Apply SDF shadow to ndotl before lighting calculations
+    ndotl = ApplySDFShadow(uv, ndotl);
+
     // ===== Backlight Calculation =====
     // Calculate light coming from behind the object (rim-like effect)
     float backlight = 0.0;
@@ -176,6 +186,9 @@ half4 frag(v2f i) : SV_Target
         // Instead of simple lerp, preserve color saturation in shadows
         float3 litColor = half3(1.0, 1.0, 1.0);
         float3 shadowColor = _ShadowColor.rgb;
+
+        // Apply Shading Grade Map before final lighting
+        shadingValue = ApplyShadingGradeMap(uv, shadingValue);
 
         // Preserve hue and saturation better in shadows
         // This creates more vibrant, anime-style shadows
@@ -613,6 +626,18 @@ half4 frag(v2f i) : SV_Target
         {
             col.rgb = ApplyHueShift(col.rgb, _HueShift);
         }
+    #endif
+
+    // ===== Glitter Effect =====
+    #ifdef _GLITTER
+        float3 glitter = GlitterEffect(uv, i.worldPos, viewDir, worldNormal);
+        col.rgb = SafeAdditiveBlend(col.rgb, glitter, 1.0);
+    #endif
+
+    // ===== Iridescence Effect =====
+    #ifdef _IRIDESCENCE
+        float3 iridescence = IridescenceEffect(worldNormal, viewDir, uv);
+        col.rgb = SafeAdditiveBlend(col.rgb, iridescence, 1.0);
     #endif
 
     // ===== Virtual Expression - Dissolve =====
