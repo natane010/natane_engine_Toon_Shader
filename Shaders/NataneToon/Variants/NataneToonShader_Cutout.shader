@@ -266,6 +266,13 @@ Shader "Natane/Toon Shader (Cutout)"
             "IgnoreProjector"="True"
         }
 
+        // GrabPass for Refraction
+        // Captures the screen content behind the object
+        GrabPass
+        {
+            "_GrabTexture"
+        }
+
         // Outline Pass
         Pass
         {

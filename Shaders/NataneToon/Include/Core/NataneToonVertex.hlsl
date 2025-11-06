@@ -26,6 +26,9 @@ v2f vert(appdata v)
     // tangent.w contains handedness information for correct orientation
     o.worldBinormal = cross(o.worldNormal, o.worldTangent) * v.tangent.w * unity_WorldTransformParams.w;
 
+    // Calculate screen position for GrabPass (Refraction)
+    o.screenPos = ComputeScreenPos(o.pos);
+
     // Transfer fog and shadow coordinates
     UNITY_TRANSFER_FOG(o, o.pos);
     TRANSFER_SHADOW(o);

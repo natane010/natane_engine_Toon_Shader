@@ -579,6 +579,37 @@ half4 frag(v2f i) : SV_Target
         col.rgb = SafeAdditiveBlend(col.rgb, reflection, reflectionStrength);
     #endif
 
+    // ===== Refraction (ForwardBase only) =====
+    #if defined(_REFRACTION) && defined(UNITY_PASS_FORWARDBASE)
+        // Calculate screen UV from screen position
+        float2 screenUV = i.screenPos.xy / i.screenPos.w;
+
+        // Apply refraction mask
+        float refractionMask = 1.0;
+        #ifdef _REFRACTION_MASK
+            refractionMask = tex2D(_RefractionMask, uv).r;
+            refractionMask = ApplySoftMask(refractionMask);
+        #endif
+
+        // Calculate distorted UV based on surface normal and refraction settings
+        float2 distortedUV = ApplyRefractionDistortion(
+            screenUV,
+            worldNormal,
+            viewDir,
+            _RefractionIntensity * refractionMask,
+            _RefractionIndex,
+            _RefractionBlur
+        );
+
+        // Sample background with optional blur
+        float3 refractedColor = SampleGrabTextureWithBlur(distortedUV, _RefractionBlur);
+
+        // Blend refracted color with current color based on alpha and refraction intensity
+        // Higher intensity = more refraction visible
+        float refractionBlend = _RefractionIntensity * refractionMask * (1.0 - col.a);
+        col.rgb = lerp(col.rgb, refractedColor, saturate(refractionBlend));
+    #endif
+
     // ===== Emission (ForwardBase only) =====
     #if defined(_EMISSION) && defined(UNITY_PASS_FORWARDBASE)
         float2 emissionUV = uv;
