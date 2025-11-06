@@ -243,6 +243,21 @@ Shader "Natane/Toon Shader (Transparent)"
         _ParallaxMinSamples ("Min Samples Flat View", Range(4, 16)) = 4
         _ParallaxMaxSamples ("Max Samples Steep View", Range(16, 64)) = 32
 
+        [Header(Vertex Animation Texture Houdini VAT)]
+        [Toggle(_VAT)] _VAT ("Enable VAT Animation", Float) = 0
+        _VATPositionMap ("VAT Position Map", 2D) = "black" {}
+        [Toggle(_VAT_NORMAL)] _VATNormal ("Use VAT Normal Map", Float) = 0
+        _VATNormalMap ("VAT Normal Map", 2D) = "black" {}
+        _VATNumOfFrames ("Number of Frames", Float) = 24
+        _VATSpeed ("Animation Speed", Float) = 1
+        _VATIntensity ("Animation Intensity", Range(0, 2)) = 1
+        _VATPositionMin ("Position Min Value", Float) = -1
+        _VATPositionMax ("Position Max Value", Float) = 1
+        _VATNormalMin ("Normal Min Value", Float) = -1
+        _VATNormalMax ("Normal Max Value", Float) = 1
+        [Space(10)]
+        [Enum(Absolute,0,Offset,1)] _VATPackingMode ("VAT Packing Mode", Float) = 1
+
         [Header(Refraction)]
         [Toggle(_REFRACTION)] _Refraction ("Enable Refraction", Float) = 0
         _RefractionIndex ("Refraction Index IOR", Range(1, 3)) = 1.5
@@ -431,6 +446,8 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature _ENV_RIM
             #pragma shader_feature _ENV_RIM_MASK
             #pragma shader_feature _PARALLAX
+            #pragma shader_feature _VAT
+            #pragma shader_feature _VAT_NORMAL
             #pragma shader_feature _REFRACTION
             #pragma shader_feature _REFRACTION_MASK
             #define TRANSPARENT_VARIANT
@@ -478,6 +495,8 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature _ALPHA_MASK
             #pragma shader_feature _HUE_SHIFT
             #pragma shader_feature _PARALLAX
+            #pragma shader_feature _VAT
+            #pragma shader_feature _VAT_NORMAL
             #pragma shader_feature _REFRACTION
             #pragma shader_feature _REFRACTION_MASK
             #define TRANSPARENT_VARIANT
