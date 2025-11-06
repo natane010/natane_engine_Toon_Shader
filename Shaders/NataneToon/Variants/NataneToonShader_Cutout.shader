@@ -169,6 +169,9 @@ Shader "Natane/Toon Shader (Cutout)"
         [Toggle(_DISSOLVE_MASK)] _UseDissolveMask ("Use Dissolve Mask", Float) = 0
         _DissolveMask ("Dissolve Mask", 2D) = "white" {}
         [Space(10)]
+        [Toggle(_ALPHA_MASK)] _UseAlphaMask ("Use Alpha Mask", Float) = 0
+        _AlphaMask ("Alpha Mask", 2D) = "white" {}
+        [Space(10)]
         [Toggle(_HUE_SHIFT)] _HueShiftEnable ("Enable Hue Shift", Float) = 0
         _HueShift ("Hue Shift", Range(0, 1)) = 0
 
@@ -376,6 +379,7 @@ Shader "Natane/Toon Shader (Cutout)"
             #pragma shader_feature _NORMALMAP
             #pragma shader_feature _DISSOLVE
             #pragma shader_feature _DISSOLVE_MASK
+            #pragma shader_feature _ALPHA_MASK
             #pragma shader_feature _HUE_SHIFT
             #pragma shader_feature _REFLECTION
             #pragma shader_feature _REFLECTION_MASK
@@ -388,7 +392,7 @@ Shader "Natane/Toon Shader (Cutout)"
 
             float _Cutoff;
 
-            #include "../Include/NataneToonCore.hlsl"
+            #include "../Include/Core/NataneToonCore.hlsl"
 
             half4 frag_cutout(v2f i) : SV_Target
             {
@@ -437,6 +441,7 @@ Shader "Natane/Toon Shader (Cutout)"
             #pragma shader_feature _NORMALMAP
             #pragma shader_feature _DISSOLVE
             #pragma shader_feature _DISSOLVE_MASK
+            #pragma shader_feature _ALPHA_MASK
             #pragma shader_feature _HUE_SHIFT
             #pragma shader_feature _PARALLAX
             #pragma shader_feature _REFRACTION
@@ -445,7 +450,7 @@ Shader "Natane/Toon Shader (Cutout)"
 
             float _Cutoff;
 
-            #include "../Include/NataneToonCore.hlsl"
+            #include "../Include/Core/NataneToonCore.hlsl"
 
             half4 frag_cutout(v2f i) : SV_Target
             {
