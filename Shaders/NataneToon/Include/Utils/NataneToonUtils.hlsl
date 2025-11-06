@@ -415,22 +415,6 @@ float3 ApplyBlendMode(float3 baseColor, float3 blendTexture, float3 blendColor, 
 
 // ===== Refraction Functions =====
 
-// Calculate screen position for GrabPass sampling
-// Returns screen-space UV coordinates for the current pixel
-float4 ComputeGrabScreenPos(float4 pos)
-{
-    #if UNITY_UV_STARTS_AT_TOP
-        float scale = -1.0;
-    #else
-        float scale = 1.0;
-    #endif
-
-    float4 o = pos * 0.5;
-    o.xy = float2(o.x, o.y * scale) + o.w;
-    o.zw = pos.zw;
-    return o;
-}
-
 // Apply refraction distortion to screen UV
 // Returns distorted UV for sampling GrabTexture
 float2 ApplyRefractionDistortion(float2 screenUV, float3 worldNormal, float3 viewDir, float intensity, float refractionIndex, float blur)
