@@ -228,6 +228,84 @@ CBUFFER_START(UnityPerMaterial)
     float _RefractionIntensity;
     float _RefractionBlur;
     sampler2D _RefractionMask;
+
+    // MatCap 2 & 3
+    sampler2D _MatCapTex2;
+    float _MatCapIntensity2;
+    float _MatCapBlendMode2;
+    sampler2D _MatCapMask2;
+    sampler2D _MatCapTex3;
+    float _MatCapIntensity3;
+    float _MatCapBlendMode3;
+    sampler2D _MatCapMask3;
+
+    // Rim Direction Control
+    float4 _RimLightDirection;
+    float _RimDirectionRange;
+
+    // Shadow Color Texture
+    sampler2D _ShadowColorTex;
+    float _ShadowColorTexStrength;
+
+    // Outline Multi-Color
+    half4 _OutlineColor2;
+    float _OutlineColorMix;
+
+    // AudioLink
+    float _AudioLinkEmissionBand;
+    float _AudioLinkEmissionIntensity;
+    float _AudioLinkRimBand;
+    float _AudioLinkRimIntensity;
+    float _AudioLinkHueBand;
+    float _AudioLinkHueShiftIntensity;
+    float _AudioLinkDissolveBand;
+    float _AudioLinkDissolveIntensity;
+    float _AudioLinkOutlineBand;
+    float _AudioLinkOutlineIntensity;
+
+    // Distance Fade
+    float _DistanceFadeStart;
+    float _DistanceFadeEnd;
+    float _DistanceFadeMode;
+
+    // Vertex Animation
+    float _VertexAnimSpeed;
+    float _VertexAnimStrength;
+    float _VertexAnimFrequency;
+    float _VertexAnimType;
+    sampler2D _VertexAnimMask;
+
+    // Hologram & Glitch
+    float _HologramScanlineSpeed;
+    float _HologramScanlineIntensity;
+    float _HologramFlickerSpeed;
+    float _HologramFlickerAmount;
+    float _GlitchIntensity;
+    float _GlitchSpeed;
+    float _GlitchBlockSize;
+
+    // Decal
+    sampler2D _DecalTex;
+    half4 _DecalColor;
+    float4 _DecalPosition;
+    float _DecalRotation;
+    float _DecalScale;
+    float _DecalBlendMode;
+
+    // Backface Texture
+    sampler2D _BackfaceTex;
+    half4 _BackfaceColor;
+
+    // Video Texture
+    sampler2D _VideoTex;
+    float _VideoEmission;
+
+    // LTCGI
+    float _LTCGIIntensity;
+    float _LTCGISpecular;
+
+    // Dithering Alpha
+    float _DitheringAlphaScale;
 CBUFFER_END
 
 // Cubemap samplers (outside CBUFFER)
@@ -237,6 +315,10 @@ samplerCUBE _EnvRimCube;
 // GrabPass texture for Refraction
 sampler2D _GrabTexture;
 float4 _GrabTexture_TexelSize;
+
+// AudioLink texture (VRChat)
+sampler2D _AudioTexture;
+sampler2D _AudioTexture2D;
 
 // Vertex Input Structure
 struct appdata

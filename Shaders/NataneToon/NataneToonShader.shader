@@ -100,6 +100,10 @@ Shader "Natane/Toon Shader"
         [Toggle(_USE_DITHERING)] _UseDithering ("Use Dithering Shadow Edge Only", Float) = 0
         _DitheringScale ("Dithering Scale Pattern Size", Range(1, 100)) = 10
         _DitheringStrength ("Dithering Strength Boundary Softness", Range(0, 1)) = 0.5
+        [Space(10)]
+        [Toggle(_SHADOW_COLOR_TEX)] _UseShadowColorTex ("Use Shadow Color Texture", Float) = 0
+        _ShadowColorTex ("Shadow Color Texture", 2D) = "white" {}
+        _ShadowColorTexStrength ("Shadow Color Tex Strength", Range(0, 1)) = 1
 
         [Header(Advanced Lighting)]
         [Toggle(_SOFT_LIGHTING_MODE)] _SoftLightingMode ("Soft Lighting Mode Global", Float) = 0
@@ -146,6 +150,10 @@ Shader "Natane/Toon Shader"
         _RimSpread2 ("Rim Spread Glow", Range(0, 1)) = 0
         [Toggle(_RIM_MASK_2)] _UseRimMask2 ("Use Rim Mask 2", Float) = 0
         _RimMask2 ("Rim Mask 2", 2D) = "white" {}
+        [Space(10)]
+        [Toggle(_RIM_DIRECTION_CONTROL)] _RimDirectionControl ("Rim Direction Control", Float) = 0
+        _RimLightDirection ("Rim Light Direction", Vector) = (0,1,0,0)
+        _RimDirectionRange ("Direction Range", Range(0, 1)) = 0.5
 
         [Header(Subsurface Scattering)]
         [Toggle(_SSS)] _SSS ("Enable SSS", Float) = 0
@@ -166,6 +174,20 @@ Shader "Natane/Toon Shader"
         [Enum(Add,0,Multiply,1,Replace,2)] _MatCapBlendMode ("MatCap Blend Mode", Float) = 0
         [Toggle(_MATCAP_MASK)] _UseMatCapMask ("Use MatCap Mask", Float) = 0
         _MatCapMask ("MatCap Mask", 2D) = "white" {}
+        [Space(10)]
+        [Toggle(_MATCAP_2)] _MatCap2 ("Enable MatCap 2", Float) = 0
+        _MatCapTex2 ("MatCap Texture 2", 2D) = "black" {}
+        _MatCapIntensity2 ("MatCap 2 Intensity", Range(0, 2)) = 1
+        [Enum(Add,0,Multiply,1,Replace,2)] _MatCapBlendMode2 ("MatCap 2 Blend Mode", Float) = 0
+        [Toggle(_MATCAP_MASK_2)] _UseMatCapMask2 ("Use MatCap 2 Mask", Float) = 0
+        _MatCapMask2 ("MatCap 2 Mask", 2D) = "white" {}
+        [Space(10)]
+        [Toggle(_MATCAP_3)] _MatCap3 ("Enable MatCap 3", Float) = 0
+        _MatCapTex3 ("MatCap Texture 3", 2D) = "black" {}
+        _MatCapIntensity3 ("MatCap 3 Intensity", Range(0, 2)) = 1
+        [Enum(Add,0,Multiply,1,Replace,2)] _MatCapBlendMode3 ("MatCap 3 Blend Mode", Float) = 0
+        [Toggle(_MATCAP_MASK_3)] _UseMatCapMask3 ("Use MatCap 3 Mask", Float) = 0
+        _MatCapMask3 ("MatCap 3 Mask", 2D) = "white" {}
 
         [Header(Glitter)]
         [Toggle(_GLITTER)] _Glitter ("Enable Glitter", Float) = 0
@@ -186,6 +208,10 @@ Shader "Natane/Toon Shader"
         _OutlineMask ("Outline Mask", 2D) = "white" {}
         [Toggle(_OUTLINE_WIDTH_MAP)] _UseOutlineWidthMap ("Use Outline Width Map", Float) = 0
         _OutlineWidthMap ("Outline Width Map", 2D) = "white" {}
+        [Space(10)]
+        [Toggle(_OUTLINE_MULTI_COLOR)] _OutlineMultiColor ("Multi-Color Outline", Float) = 0
+        _OutlineColor2 ("Outline Color 2", Color) = (0.5,0,0,1)
+        _OutlineColorMix ("Color Mix", Range(0, 1)) = 0.5
 
         [Header(Emission)]
         [Toggle(_EMISSION)] _Emission ("Enable Emission", Float) = 0
@@ -267,6 +293,79 @@ Shader "Natane/Toon Shader"
         [Toggle(_REFRACTION_MASK)] _UseRefractionMask ("Use Refraction Mask", Float) = 0
         _RefractionMask ("Refraction Mask", 2D) = "white" {}
 
+        [Header(AudioLink VRChat Club Events)]
+        [Toggle(_AUDIOLINK)] _AudioLink ("Enable AudioLink", Float) = 0
+        [Toggle(_AUDIOLINK_EMISSION)] _AudioLinkEmission ("AudioLink Emission", Float) = 0
+        [Enum(Bass,0,Low Mid,1,High Mid,2,Treble,3)] _AudioLinkEmissionBand ("Emission Band", Float) = 0
+        _AudioLinkEmissionIntensity ("Emission Intensity", Range(0, 5)) = 1
+        [Toggle(_AUDIOLINK_RIM)] _AudioLinkRim ("AudioLink Rim Light", Float) = 0
+        [Enum(Bass,0,Low Mid,1,High Mid,2,Treble,3)] _AudioLinkRimBand ("Rim Band", Float) = 0
+        _AudioLinkRimIntensity ("Rim Intensity", Range(0, 5)) = 1
+        [Toggle(_AUDIOLINK_HUE_SHIFT)] _AudioLinkHueShift ("AudioLink Hue Shift", Float) = 0
+        [Enum(Bass,0,Low Mid,1,High Mid,2,Treble,3)] _AudioLinkHueBand ("Hue Band", Float) = 0
+        _AudioLinkHueShiftIntensity ("Hue Shift Intensity", Range(0, 1)) = 0.5
+        [Toggle(_AUDIOLINK_DISSOLVE)] _AudioLinkDissolve ("AudioLink Dissolve", Float) = 0
+        [Enum(Bass,0,Low Mid,1,High Mid,2,Treble,3)] _AudioLinkDissolveBand ("Dissolve Band", Float) = 0
+        _AudioLinkDissolveIntensity ("Dissolve Intensity", Range(0, 1)) = 0.5
+        [Toggle(_AUDIOLINK_OUTLINE)] _AudioLinkOutline ("AudioLink Outline", Float) = 0
+        [Enum(Bass,0,Low Mid,1,High Mid,2,Treble,3)] _AudioLinkOutlineBand ("Outline Band", Float) = 0
+        _AudioLinkOutlineIntensity ("Outline Intensity", Range(0, 1)) = 0.5
+        [Toggle(_AUDIOLINK_CHRONOTENSITY)] _AudioLinkChronotensity ("Use Chronotensity", Float) = 0
+
+        [Header(Distance Fade VRChat Optimization)]
+        [Toggle(_DISTANCE_FADE)] _DistanceFade ("Enable Distance Fade", Float) = 0
+        _DistanceFadeStart ("Fade Start Distance", Float) = 10
+        _DistanceFadeEnd ("Fade End Distance", Float) = 20
+        [Enum(Alpha,0,Simplify,1)] _DistanceFadeMode ("Fade Mode", Float) = 0
+
+        [Header(Vertex Offset Animation Wind Breathing)]
+        [Toggle(_VERTEX_ANIMATION)] _VertexAnimation ("Enable Vertex Animation", Float) = 0
+        _VertexAnimSpeed ("Animation Speed", Float) = 1
+        _VertexAnimStrength ("Animation Strength", Range(0, 1)) = 0.1
+        _VertexAnimFrequency ("Animation Frequency", Range(0, 10)) = 1
+        [Enum(Wave,0,Breath,1,Wind,2,Pulse,3)] _VertexAnimType ("Animation Type", Float) = 2
+        [Toggle(_VERTEX_ANIM_MASK)] _UseVertexAnimMask ("Use Vertex Anim Mask", Float) = 0
+        _VertexAnimMask ("Vertex Anim Mask", 2D) = "white" {}
+
+        [Header(Hologram Glitch Effect)]
+        [Toggle(_HOLOGRAM)] _Hologram ("Enable Hologram", Float) = 0
+        _HologramScanlineSpeed ("Scanline Speed", Float) = 1
+        _HologramScanlineIntensity ("Scanline Intensity", Range(0, 1)) = 0.5
+        _HologramFlickerSpeed ("Flicker Speed", Float) = 5
+        _HologramFlickerAmount ("Flicker Amount", Range(0, 1)) = 0.3
+        [Toggle(_GLITCH)] _Glitch ("Enable Glitch", Float) = 0
+        _GlitchIntensity ("Glitch Intensity", Range(0, 1)) = 0.5
+        _GlitchSpeed ("Glitch Speed", Float) = 1
+        _GlitchBlockSize ("Glitch Block Size", Range(0, 1)) = 0.1
+
+        [Header(Decal System Stickers)]
+        [Toggle(_DECAL)] _Decal ("Enable Decal", Float) = 0
+        _DecalTex ("Decal Texture", 2D) = "white" {}
+        _DecalColor ("Decal Color", Color) = (1,1,1,1)
+        _DecalPosition ("Decal Position XY", Vector) = (0,0,0,0)
+        _DecalRotation ("Decal Rotation", Range(0, 360)) = 0
+        _DecalScale ("Decal Scale", Float) = 1
+        [Enum(Add,0,Multiply,1,Overlay,2,Replace,3)] _DecalBlendMode ("Decal Blend Mode", Float) = 0
+
+        [Header(Backface Texture Cloth Interior)]
+        [Toggle(_BACKFACE_TEXTURE)] _BackfaceTexture ("Enable Backface Texture", Float) = 0
+        _BackfaceTex ("Backface Texture", 2D) = "white" {}
+        _BackfaceColor ("Backface Color", Color) = (1,1,1,1)
+
+        [Header(Video Render Texture Screen Display)]
+        [Toggle(_VIDEO_TEXTURE)] _VideoTexture ("Enable Video Texture", Float) = 0
+        _VideoTex ("Video Render Texture", 2D) = "black" {}
+        _VideoEmission ("Video Emission", Range(0, 5)) = 1
+
+        [Header(LTCGI Realtime GI Support)]
+        [Toggle(_LTCGI)] _LTCGI ("Enable LTCGI", Float) = 0
+        _LTCGIIntensity ("LTCGI Intensity", Range(0, 2)) = 1
+        _LTCGISpecular ("LTCGI Specular", Range(0, 1)) = 0.5
+
+        [Header(Dithering Alpha Transparent Dithering)]
+        [Toggle(_DITHERING_ALPHA)] _DitheringAlpha ("Enable Dithering Alpha", Float) = 0
+        _DitheringAlphaScale ("Dithering Alpha Scale", Range(1, 100)) = 10
+
         [Header(Rendering)]
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull Mode", Float) = 2
         [Enum(Off,0,On,1)] _ZWrite ("Z Write", Float) = 1
@@ -322,6 +421,8 @@ Shader "Natane/Toon Shader"
 
             float _OutlineWidth;
             float4 _OutlineColor;
+            float4 _OutlineColor2;
+            float _OutlineColorMix;
             float _Outline;
             float _OutlineMode;
             sampler2D _OutlineMask;
@@ -379,6 +480,13 @@ Shader "Natane/Toon Shader"
             {
                 #ifdef _OUTLINE
                     fixed4 col = _OutlineColor;
+
+                    // Apply multi-color outline
+                    #ifdef _OUTLINE_MULTI_COLOR
+                        // Mix between two colors based on UV or other parameter
+                        float mixFactor = frac(i.uv.y * 5.0 + _Time.y * 0.5); // Animated gradient
+                        col.rgb = lerp(_OutlineColor.rgb, _OutlineColor2.rgb, mixFactor * _OutlineColorMix);
+                    #endif
 
                     // Apply outline mask
                     #ifdef _OUTLINE_MASK
@@ -463,6 +571,30 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature _PARALLAX
             #pragma shader_feature _REFRACTION
             #pragma shader_feature _REFRACTION_MASK
+            #pragma shader_feature _MATCAP_2
+            #pragma shader_feature _MATCAP_MASK_2
+            #pragma shader_feature _MATCAP_3
+            #pragma shader_feature _MATCAP_MASK_3
+            #pragma shader_feature _RIM_DIRECTION_CONTROL
+            #pragma shader_feature _SHADOW_COLOR_TEX
+            #pragma shader_feature _OUTLINE_MULTI_COLOR
+            #pragma shader_feature _AUDIOLINK
+            #pragma shader_feature _AUDIOLINK_EMISSION
+            #pragma shader_feature _AUDIOLINK_RIM
+            #pragma shader_feature _AUDIOLINK_HUE_SHIFT
+            #pragma shader_feature _AUDIOLINK_DISSOLVE
+            #pragma shader_feature _AUDIOLINK_OUTLINE
+            #pragma shader_feature _AUDIOLINK_CHRONOTENSITY
+            #pragma shader_feature _DISTANCE_FADE
+            #pragma shader_feature _VERTEX_ANIMATION
+            #pragma shader_feature _VERTEX_ANIM_MASK
+            #pragma shader_feature _HOLOGRAM
+            #pragma shader_feature _GLITCH
+            #pragma shader_feature _DECAL
+            #pragma shader_feature _BACKFACE_TEXTURE
+            #pragma shader_feature _VIDEO_TEXTURE
+            #pragma shader_feature _LTCGI
+            #pragma shader_feature _DITHERING_ALPHA
 
             #include "Include/Core/NataneToonCore.hlsl"
 
@@ -514,6 +646,30 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature _PARALLAX
             #pragma shader_feature _REFRACTION
             #pragma shader_feature _REFRACTION_MASK
+            #pragma shader_feature _MATCAP_2
+            #pragma shader_feature _MATCAP_MASK_2
+            #pragma shader_feature _MATCAP_3
+            #pragma shader_feature _MATCAP_MASK_3
+            #pragma shader_feature _RIM_DIRECTION_CONTROL
+            #pragma shader_feature _SHADOW_COLOR_TEX
+            #pragma shader_feature _OUTLINE_MULTI_COLOR
+            #pragma shader_feature _AUDIOLINK
+            #pragma shader_feature _AUDIOLINK_EMISSION
+            #pragma shader_feature _AUDIOLINK_RIM
+            #pragma shader_feature _AUDIOLINK_HUE_SHIFT
+            #pragma shader_feature _AUDIOLINK_DISSOLVE
+            #pragma shader_feature _AUDIOLINK_OUTLINE
+            #pragma shader_feature _AUDIOLINK_CHRONOTENSITY
+            #pragma shader_feature _DISTANCE_FADE
+            #pragma shader_feature _VERTEX_ANIMATION
+            #pragma shader_feature _VERTEX_ANIM_MASK
+            #pragma shader_feature _HOLOGRAM
+            #pragma shader_feature _GLITCH
+            #pragma shader_feature _DECAL
+            #pragma shader_feature _BACKFACE_TEXTURE
+            #pragma shader_feature _VIDEO_TEXTURE
+            #pragma shader_feature _LTCGI
+            #pragma shader_feature _DITHERING_ALPHA
 
             #include "Include/Core/NataneToonCore.hlsl"
 
