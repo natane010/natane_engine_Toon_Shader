@@ -662,15 +662,15 @@ float2 CalculateDecalUV(float2 baseUV, float2 position, float rotation, float sc
 // Bayer matrix 4x4 for ordered dithering
 float BayerMatrix4x4(float2 screenPos)
 {
-    float4x4 matrix = float4x4(
-        0.0,  8.0,  2.0, 10.0,
-        12.0, 4.0, 14.0,  6.0,
-        3.0, 11.0,  1.0,  9.0,
-        15.0, 7.0, 13.0,  5.0
-    ) / 16.0;
+    static const float bayer[16] = {
+        0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
+        12.0/16.0, 4.0/16.0, 14.0/16.0,  6.0/16.0,
+        3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
+        15.0/16.0, 7.0/16.0, 13.0/16.0,  5.0/16.0
+    };
 
     int2 pos = int2(fmod(screenPos.x, 4), fmod(screenPos.y, 4));
-    return matrix[pos.x][pos.y];
+    return bayer[pos.y * 4 + pos.x];
 }
 
 // Apply dithering to alpha channel
