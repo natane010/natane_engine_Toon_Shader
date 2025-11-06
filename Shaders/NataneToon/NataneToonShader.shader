@@ -6,15 +6,90 @@ Shader "Natane/Toon Shader"
         _MainTex ("Main Texture", 2D) = "white" {}
         _Color ("Color", Color) = (1,1,1,1)
 
+        [Header(Color Preservation)]
+        _AlbedoPreservation ("Texture Color Preservation", Range(0, 1)) = 0
+        _Saturation ("Saturation", Range(0, 2)) = 1
+        _Brightness ("Overall Brightness", Range(0.5, 1.5)) = 1
+
+        [Header(Surface Finish)]
+        _Glossiness ("Glossiness (Overall Gloss)", Range(0, 1)) = 1
+        _MatteEffect ("Matte Effect (Reduce Gloss)", Range(0, 1)) = 0
+
+        [Header(Final Color Blending)]
+        _FinalHighlightBlend ("Highlight Blend (White Smoothing)", Range(0, 1)) = 0
+        _HighlightThreshold ("Highlight Threshold", Range(0, 1)) = 0.75
+        _FinalShadowBlend ("Shadow Blend (Dark Smoothing)", Range(0, 1)) = 0
+        _ShadowThreshold ("Shadow Threshold", Range(0, 1)) = 0.25
+
+        [Header(Makeup Textures)]
+        [Toggle(_2ND_TEXTURE)] _Use2ndTexture ("Enable 2nd Texture", Float) = 0
+        _2ndTex ("2nd Texture (Makeup)", 2D) = "white" {}
+        _2ndTexHueShift ("Hue Shift", Range(-0.5, 0.5)) = 0
+        _2ndTexSaturation ("Saturation", Range(0, 2)) = 1
+        _2ndTexValue ("Brightness", Range(0, 2)) = 1
+        _2ndTexIntensity ("2nd Tex Intensity", Range(0, 2)) = 1
+        [Enum(Add,0,Multiply,1,Overlay,2,Screen,3)] _2ndTexBlendMode ("2nd Tex Blend Mode", Float) = 0
+        [Toggle(_2ND_TEX_MASK)] _Use2ndTexMask ("Use 2nd Tex Mask", Float) = 0
+        _2ndTexMask ("2nd Tex Mask", 2D) = "white" {}
+        [Space(10)]
+        [Toggle(_3RD_TEXTURE)] _Use3rdTexture ("Enable 3rd Texture", Float) = 0
+        _3rdTex ("3rd Texture (Makeup)", 2D) = "white" {}
+        _3rdTexHueShift ("Hue Shift", Range(-0.5, 0.5)) = 0
+        _3rdTexSaturation ("Saturation", Range(0, 2)) = 1
+        _3rdTexValue ("Brightness", Range(0, 2)) = 1
+        _3rdTexIntensity ("3rd Tex Intensity", Range(0, 2)) = 1
+        [Enum(Add,0,Multiply,1,Overlay,2,Screen,3)] _3rdTexBlendMode ("3rd Tex Blend Mode", Float) = 0
+        [Toggle(_3RD_TEX_MASK)] _Use3rdTexMask ("Use 3rd Tex Mask", Float) = 0
+        _3rdTexMask ("3rd Tex Mask", 2D) = "white" {}
+        [Space(10)]
+        [Toggle(_4TH_TEXTURE)] _Use4thTexture ("Enable 4th Texture", Float) = 0
+        _4thTex ("4th Texture (Makeup)", 2D) = "white" {}
+        _4thTexHueShift ("Hue Shift", Range(-0.5, 0.5)) = 0
+        _4thTexSaturation ("Saturation", Range(0, 2)) = 1
+        _4thTexValue ("Brightness", Range(0, 2)) = 1
+        _4thTexIntensity ("4th Tex Intensity", Range(0, 2)) = 1
+        [Enum(Add,0,Multiply,1,Overlay,2,Screen,3)] _4thTexBlendMode ("4th Tex Blend Mode", Float) = 0
+        [Toggle(_4TH_TEX_MASK)] _Use4thTexMask ("Use 4th Tex Mask", Float) = 0
+        _4thTexMask ("4th Tex Mask", 2D) = "white" {}
+        [Space(10)]
+        [Toggle(_5TH_TEXTURE)] _Use5thTexture ("Enable 5th Texture", Float) = 0
+        _5thTex ("5th Texture (Makeup)", 2D) = "white" {}
+        _5thTexHueShift ("Hue Shift", Range(-0.5, 0.5)) = 0
+        _5thTexSaturation ("Saturation", Range(0, 2)) = 1
+        _5thTexValue ("Brightness", Range(0, 2)) = 1
+        _5thTexIntensity ("5th Tex Intensity", Range(0, 2)) = 1
+        [Enum(Add,0,Multiply,1,Overlay,2,Screen,3)] _5thTexBlendMode ("5th Tex Blend Mode", Float) = 0
+        [Toggle(_5TH_TEX_MASK)] _Use5thTexMask ("Use 5th Tex Mask", Float) = 0
+        _5thTexMask ("5th Tex Mask", 2D) = "white" {}
+
         [Header(Shading)]
+        [Enum(Toon,0,Gradient,1)] _ShadingMode ("Shading Mode", Float) = 0
+        _ShadingGradientWidth ("Gradient Width", Range(0.001, 1)) = 0.2
         [Toggle(_USE_RAMP)] _UseRamp ("Use Ramp Texture", Float) = 0
         _RampTex ("Ramp Texture", 2D) = "white" {}
-        _ShadowColor ("Shadow Color", Color) = (0.5, 0.5, 0.5, 1)
+        _ShadowColor ("Shadow Color (1st)", Color) = (0.5, 0.5, 0.5, 1)
+        [Toggle(_USE_MULTI_SHADOW)] _UseMultiShadow ("Use Multi-tone Shadow", Float) = 0
+        _Shadow2ndColor ("Shadow Color (2nd)", Color) = (0.35, 0.35, 0.35, 1)
+        _Shadow2ndBorder ("2nd Shadow Border", Range(0, 1)) = 0.3
+        _Shadow3rdColor ("Shadow Color (3rd)", Color) = (0.2, 0.2, 0.2, 1)
+        _Shadow3rdBorder ("3rd Shadow Border", Range(0, 1)) = 0.15
         _ShadowSteps ("Shadow Steps", Range(1, 10)) = 2
         _ShadowSharpness ("Shadow Sharpness", Range(0.001, 1)) = 0.1
         _ShadowOffset ("Shadow Offset", Range(-1, 1)) = 0
+        _LitSoftness ("Lit Area Softness", Range(0, 1)) = 0
+        _ShadowBlend ("Shadow Blend (Softness)", Range(0, 1)) = 0
+        [Toggle(_SHADOW_RECEIVE_MASK)] _UseShadowReceiveMask ("Use Shadow Receive Mask", Float) = 0
+        _ShadowReceiveMask ("Shadow Receive Mask", 2D) = "white" {}
+        [Toggle(_USE_AO)] _UseAO ("Use Ambient Occlusion", Float) = 0
+        _AOMap ("AO Map", 2D) = "white" {}
+        _AOIntensity ("AO Intensity", Range(0, 1)) = 1
+        [Toggle(_USE_DITHERING)] _UseDithering ("Use Dithering", Float) = 0
+        _DitheringScale ("Dithering Scale", Range(1, 100)) = 10
+        _DitheringStrength ("Dithering Strength", Range(0, 1)) = 0.5
 
         [Header(Advanced Lighting)]
+        [Toggle(_SOFT_LIGHTING_MODE)] _SoftLightingMode ("Soft Lighting Mode (Global)", Float) = 0
+        _SoftLightingIntensity ("Soft Lighting Intensity", Range(0, 1)) = 0.5
         _LightIntensity ("Light Intensity (Global)", Range(0, 2)) = 1
         _IndirectLightIntensity ("Indirect Light Intensity", Range(0, 2)) = 1
         _LightColorInfluence ("Light Color Influence", Range(0, 1)) = 1
@@ -22,6 +97,8 @@ Shader "Natane/Toon Shader"
         _ShadowMaxDarkness ("Shadow Max Darkness", Range(0, 1)) = 0
         _LightMinInfluence ("Light Min Influence", Range(0, 1)) = 0
         _LightMaxInfluence ("Light Max Influence", Range(1, 5)) = 2
+        _LightBlend ("Light Blend (Softness)", Range(0, 1)) = 0
+        _HighlightSoftness ("Highlight Softness", Range(0, 1)) = 0
         _BacklightIntensity ("Backlight Intensity", Range(0, 2)) = 0
         _BacklightColor ("Backlight Color", Color) = (1, 1, 1, 1)
         _AdditionalLightIntensity ("Additional Light Intensity", Range(0, 1)) = 0.5
@@ -29,6 +106,7 @@ Shader "Natane/Toon Shader"
         [Header(VRC Light Volumes)]
         [Toggle(_USE_LIGHT_VOLUME)] _UseLightVolume ("Use Light Volume", Float) = 1
         _LightVolumeIntensity ("Light Volume Intensity", Range(0, 1)) = 1
+        [Enum(Add,0,Multiply,1,Replace,2)] _LightVolumeBlendMode ("Light Volume Blend Mode", Float) = 0
         [Toggle(_LIGHT_VOLUME_SPECULAR)] _LightVolumeSpecular ("Light Volume Specular", Float) = 0
 
         [Header(Specular)]
@@ -44,18 +122,26 @@ Shader "Natane/Toon Shader"
         _RimColor ("Rim Color", Color) = (1,1,1,1)
         _RimPower ("Rim Power", Range(0.1, 10)) = 3
         _RimIntensity ("Rim Intensity", Range(0, 5)) = 1
+        _RimSpread ("Rim Spread (Glow)", Range(0, 1)) = 0
         [Toggle(_RIM_MASK)] _UseRimMask ("Use Rim Mask", Float) = 0
         _RimMask ("Rim Mask", 2D) = "white" {}
+        [Toggle(_RIM_LIGHT_2)] _RimLight2 ("Enable Rim Light 2", Float) = 0
+        _RimColor2 ("Rim Color 2", Color) = (0.5,0.8,1,1)
+        _RimPower2 ("Rim Power 2", Range(0.1, 10)) = 5
+        _RimIntensity2 ("Rim Intensity 2", Range(0, 5)) = 0.5
+        _RimSpread2 ("Rim Spread 2 (Glow)", Range(0, 1)) = 0
+        [Toggle(_RIM_MASK_2)] _UseRimMask2 ("Use Rim Mask 2", Float) = 0
+        _RimMask2 ("Rim Mask 2", 2D) = "white" {}
 
         [Header(Subsurface Scattering)]
         [Toggle(_SSS)] _SSS ("Enable SSS", Float) = 0
         _SSSColor ("SSS Color", Color) = (1, 0.5, 0.5, 1)
-        _SSSIntensity ("SSS Intensity", Range(0, 2)) = 1
+        _SSSIntensity ("SSS Intensity", Range(0, 5)) = 1.5
         _SSSPower ("SSS Power", Range(0.1, 10)) = 3
         _SSSDistortion ("SSS Distortion", Range(0, 1)) = 0.5
         [Toggle(_THICKNESS_MAP)] _UseThicknessMap ("Use Thickness Map", Float) = 0
         _ThicknessMap ("Thickness Map", 2D) = "white" {}
-        _ThicknessScale ("Thickness Scale", Range(0, 1)) = 0.5
+        _ThicknessScale ("Thickness Scale", Range(0, 1)) = 0.2
         [Toggle(_SSS_MASK)] _UseSSS_Mask ("Use SSS Mask", Float) = 0
         _SSSMask ("SSS Mask", 2D) = "white" {}
 
@@ -70,7 +156,7 @@ Shader "Natane/Toon Shader"
         [Header(Outline)]
         [Toggle(_OUTLINE)] _Outline ("Enable Outline", Float) = 0
         [Enum(Inverted Hull,0,Back Face,1)] _OutlineMode ("Outline Mode", Float) = 0
-        _OutlineWidth ("Outline Width", Range(0, 0.1)) = 0.01
+        _OutlineWidth ("Outline Width", Range(0, 1)) = 0.1
         _OutlineColor ("Outline Color", Color) = (0,0,0,1)
         [Toggle(_OUTLINE_MASK)] _UseOutlineMask ("Use Outline Mask", Float) = 0
         _OutlineMask ("Outline Mask", 2D) = "white" {}
@@ -86,6 +172,7 @@ Shader "Natane/Toon Shader"
         _EmissionPulseAmplitude ("Emission Pulse Amplitude", Range(0, 1)) = 0.5
         [Toggle(_EMISSION_MASK)] _UseEmissionMask ("Use Emission Mask", Float) = 0
         _EmissionMask ("Emission Mask", 2D) = "white" {}
+        _EmissionGlow ("Emission Glow (Bloom)", Range(0, 1)) = 0
 
         [Header(Virtual Expression)]
         [Toggle(_DISSOLVE)] _Dissolve ("Enable Dissolve", Float) = 0
@@ -113,6 +200,8 @@ Shader "Natane/Toon Shader"
         _Smoothness ("Smoothness (Glossiness)", Range(0, 1)) = 0.5
         _Metallic ("Metallic", Range(0, 1)) = 0
         _FresnelPower ("Fresnel Power", Range(0, 10)) = 5
+        _FresnelSoftness ("Fresnel Softness", Range(0, 1)) = 0
+        _ReflectionBlendMode ("Reflection Blend Mode", Range(0, 1)) = 0
         [Toggle(_REFLECTION_MASK)] _UseReflectionMask ("Use Reflection Mask", Float) = 0
         _ReflectionMask ("Reflection Mask", 2D) = "white" {}
 
@@ -211,14 +300,16 @@ Shader "Natane/Toon Shader"
                         o.pos = UnityObjectToClipPos(v.vertex);
 
                         // Apply distance compensation for consistent outline width
-                        float outlineWidth = _OutlineWidth * (1.0 + distanceFactor);
+                        // Scale down by 0.01 to maintain original scale with new range (0-1)
+                        float outlineWidth = _OutlineWidth * 0.01 * (1.0 + distanceFactor);
                         o.pos.xy += offset * o.pos.z * outlineWidth;
                     }
                     else
                     {
                         // Mode 1: Back Face - Scale up vertices along normals in object space
                         // Improved with distance compensation
-                        float outlineWidth = _OutlineWidth * 10.0 * (1.0 + distanceFactor * 0.5);
+                        // Scale down by 0.1 to maintain original scale with new range (0-1)
+                        float outlineWidth = _OutlineWidth * 0.1 * (1.0 + distanceFactor * 0.5);
                         float3 scaledPos = v.vertex.xyz + normalize(v.normal) * outlineWidth;
                         o.pos = UnityObjectToClipPos(float4(scaledPos, 1.0));
                     }
@@ -268,13 +359,28 @@ Shader "Natane/Toon Shader"
             #pragma multi_compile_fwdbase
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
+            #pragma shader_feature _2ND_TEXTURE
+            #pragma shader_feature _2ND_TEX_MASK
+            #pragma shader_feature _3RD_TEXTURE
+            #pragma shader_feature _3RD_TEX_MASK
+            #pragma shader_feature _4TH_TEXTURE
+            #pragma shader_feature _4TH_TEX_MASK
+            #pragma shader_feature _5TH_TEXTURE
+            #pragma shader_feature _5TH_TEX_MASK
             #pragma shader_feature _USE_RAMP
+            #pragma shader_feature _USE_MULTI_SHADOW
+            #pragma shader_feature _SHADOW_RECEIVE_MASK
+            #pragma shader_feature _USE_AO
+            #pragma shader_feature _USE_DITHERING
+            #pragma shader_feature _SOFT_LIGHTING_MODE
             #pragma shader_feature _USE_LIGHT_VOLUME
             #pragma shader_feature _LIGHT_VOLUME_SPECULAR
             #pragma shader_feature _SPECULAR
             #pragma shader_feature _SPECULAR_MASK
             #pragma shader_feature _RIM_LIGHT
             #pragma shader_feature _RIM_MASK
+            #pragma shader_feature _RIM_LIGHT_2
+            #pragma shader_feature _RIM_MASK_2
             #pragma shader_feature _SSS
             #pragma shader_feature _SSS_MASK
             #pragma shader_feature _THICKNESS_MAP
@@ -316,7 +422,20 @@ Shader "Natane/Toon Shader"
             #pragma multi_compile_fwdadd_fullshadows
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
+            #pragma shader_feature _2ND_TEXTURE
+            #pragma shader_feature _2ND_TEX_MASK
+            #pragma shader_feature _3RD_TEXTURE
+            #pragma shader_feature _3RD_TEX_MASK
+            #pragma shader_feature _4TH_TEXTURE
+            #pragma shader_feature _4TH_TEX_MASK
+            #pragma shader_feature _5TH_TEXTURE
+            #pragma shader_feature _5TH_TEX_MASK
             #pragma shader_feature _USE_RAMP
+            #pragma shader_feature _USE_MULTI_SHADOW
+            #pragma shader_feature _SHADOW_RECEIVE_MASK
+            #pragma shader_feature _USE_AO
+            #pragma shader_feature _USE_DITHERING
+            #pragma shader_feature _SOFT_LIGHTING_MODE
             #pragma shader_feature _SPECULAR
             #pragma shader_feature _SPECULAR_MASK
             #pragma shader_feature _SSS

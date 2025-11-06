@@ -44,6 +44,17 @@ float ToonShading(float ndotl, float steps, float sharpness)
     // Apply shadow offset to adjust shadow threshold
     ndotl = ndotl + _ShadowOffset;
 
+    // Apply shadow blend (softness) if enabled
+    #ifdef _SOFT_LIGHTING_MODE
+        sharpness = lerp(sharpness, sharpness * 2.0, _SoftLightingIntensity);
+    #endif
+
+    // Apply shadow blend parameter for individual softness control
+    if (_ShadowBlend > 0.001)
+    {
+        sharpness = lerp(sharpness, sharpness * (1.0 + _ShadowBlend * 2.0), _ShadowBlend);
+    }
+
     // For anime-style clean shadows, use a sharper threshold approach
     // This creates more distinct light/shadow boundaries
     float stepValue = 1.0 / steps;
@@ -65,12 +76,123 @@ float ToonShading(float ndotl, float steps, float sharpness)
     return saturate(toon);
 }
 
+// Gradient Shading
+// Creates smooth gradient lighting effect for softer appearance
+float GradientShading(float ndotl, float gradientWidth)
+{
+    // Apply shadow offset to adjust shadow threshold
+    ndotl = ndotl + _ShadowOffset;
+
+    // Apply soft lighting mode to make gradient even softer
+    #ifdef _SOFT_LIGHTING_MODE
+        gradientWidth = lerp(gradientWidth, gradientWidth * 1.5, _SoftLightingIntensity);
+    #endif
+
+    // Apply shadow blend for additional softness control
+    if (_ShadowBlend > 0.001)
+    {
+        gradientWidth = lerp(gradientWidth, gradientWidth * (1.0 + _ShadowBlend), _ShadowBlend);
+    }
+
+    // Calculate shadow boundary position (0.5 is the default lit/shadow boundary)
+    float shadowBoundary = 0.5;
+
+    // Create smooth gradient using smoothstep
+    // gradientWidth controls the softness of the transition
+    float halfWidth = gradientWidth * 0.5;
+    float gradient = smoothstep(shadowBoundary - halfWidth, shadowBoundary + halfWidth, ndotl);
+
+    return saturate(gradient);
+}
+
+// Apply Light Blend (Softness)
+// Softens lighting transitions for smoother appearance
+float ApplyLightBlend(float lightValue)
+{
+    #ifdef _SOFT_LIGHTING_MODE
+        // Global soft lighting mode
+        float softness = _SoftLightingIntensity;
+        lightValue = smoothstep(0.0, 1.0, lightValue * (1.0 + softness));
+    #endif
+
+    // Individual light blend control
+    if (_LightBlend > 0.001)
+    {
+        lightValue = smoothstep(0.0, 1.0, lightValue * (1.0 + _LightBlend));
+    }
+
+    // Highlight softness
+    if (_HighlightSoftness > 0.001 && lightValue > 0.7)
+    {
+        // Soften highlights (bright areas)
+        float highlightFactor = (lightValue - 0.7) / 0.3; // Normalize to 0-1 for highlight range
+        highlightFactor = smoothstep(0.0, 1.0, highlightFactor * (1.0 - _HighlightSoftness));
+        lightValue = lerp(0.7, 1.0, highlightFactor);
+    }
+
+    return saturate(lightValue);
+}
+
+// Dithering Pattern (Bayer Matrix)
+// Creates a dithering effect for softer shadow transitions
+float DitheringPattern(float2 screenPos, float scale)
+{
+    // 4x4 Bayer matrix for dithering
+    float4x4 bayerMatrix = float4x4(
+        0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
+        12.0/16.0, 4.0/16.0, 14.0/16.0,  6.0/16.0,
+        3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
+        15.0/16.0, 7.0/16.0, 13.0/16.0,  5.0/16.0
+    );
+
+    // Scale screen position and get matrix indices
+    float2 scaledPos = screenPos * scale;
+    int2 matrixPos = int2(fmod(scaledPos.x, 4.0), fmod(scaledPos.y, 4.0));
+
+    // Return dithering value
+    return bayerMatrix[matrixPos.x][matrixPos.y];
+}
+
 // Ramp Texture Shading
 // Uses a gradient texture to control shadow colors
 float3 RampShading(float ndotl)
 {
     float2 rampUV = float2(saturate(ndotl + _ShadowOffset), 0.5);
     return tex2D(_RampTex, rampUV).rgb;
+}
+
+// Multi-tone Shadow Colors
+// Applies multiple shadow color tones based on lighting intensity
+float3 MultiToneShadowColor(float shadowFactor, float3 baseColor)
+{
+    #ifdef _USE_MULTI_SHADOW
+        // Calculate which shadow level to use based on shadow factor
+        // shadowFactor: 0 = darkest, 1 = brightest
+
+        // Start with base shadow color (1st level)
+        float3 shadowColor = _ShadowColor.rgb;
+
+        // Apply 2nd shadow level (intermediate shadow)
+        if (shadowFactor < _Shadow2ndBorder)
+        {
+            // Blend towards 2nd shadow color
+            float blend2nd = smoothstep(_Shadow2ndBorder - 0.05, _Shadow2ndBorder, shadowFactor);
+            shadowColor = lerp(_Shadow2ndColor.rgb, shadowColor, blend2nd);
+        }
+
+        // Apply 3rd shadow level (deepest shadow)
+        if (shadowFactor < _Shadow3rdBorder)
+        {
+            // Blend towards 3rd shadow color
+            float blend3rd = smoothstep(_Shadow3rdBorder - 0.05, _Shadow3rdBorder, shadowFactor);
+            shadowColor = lerp(_Shadow3rdColor.rgb, _Shadow2ndColor.rgb, blend3rd);
+        }
+
+        return shadowColor * baseColor;
+    #else
+        // Single shadow color mode
+        return _ShadowColor.rgb * baseColor;
+    #endif
 }
 
 // Specular Highlight (Anime Style)
@@ -132,12 +254,28 @@ float3 CubemapReflection(float3 worldNormal, float3 viewDir, float smoothness, f
     float3 reflection = reflectionSample.rgb * _ReflectionColor.rgb;
 
     // Fresnel effect - objects reflect more at grazing angles
-    float fresnel = pow(1.0 - saturate(dot(worldNormal, viewDir)), _FresnelPower);
+    float viewAngle = saturate(dot(worldNormal, viewDir));
+
+    // Apply softness to Fresnel transition
+    // Softness creates a more gradual transition between reflected and non-reflected areas
+    if (_FresnelSoftness > 0.001)
+    {
+        // Soften the Fresnel curve by adjusting the input
+        float softRange = _FresnelSoftness * 0.5;
+        viewAngle = smoothstep(softRange, 1.0 - softRange, viewAngle);
+    }
+
+    float fresnel = pow(1.0 - viewAngle, _FresnelPower);
 
     // Metallic surfaces reflect more, non-metallic reflect at grazing angles
     float reflectionStrength = lerp(fresnel, 1.0, metallic);
 
-    return reflection * reflectionStrength * _ReflectionIntensity;
+    // Apply blend mode (0 = Additive, 1 = Overlay)
+    // Additive: Simply adds reflection to base color
+    // Overlay: Blends reflection more naturally with base color
+    float blendFactor = lerp(1.0, reflectionStrength, _ReflectionBlendMode);
+
+    return reflection * reflectionStrength * _ReflectionIntensity * blendFactor;
 }
 
 // Environmental Rim (Low-angle environment reflections)

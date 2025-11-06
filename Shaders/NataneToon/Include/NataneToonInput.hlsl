@@ -8,14 +8,84 @@ CBUFFER_START(UnityPerMaterial)
     float4 _MainTex_ST;
     half4 _Color;
 
+    // Color Preservation
+    float _AlbedoPreservation;
+    float _Saturation;
+    float _Brightness;
+
+    // Surface Finish
+    float _Glossiness;
+    float _MatteEffect;
+
+    // Final Color Blending
+    float _FinalHighlightBlend;
+    float _HighlightThreshold;
+    float _FinalShadowBlend;
+    float _ShadowThreshold;
+
+    // Makeup Textures
+    sampler2D _2ndTex;
+    float4 _2ndTex_ST;
+    float _2ndTexHueShift;
+    float _2ndTexSaturation;
+    float _2ndTexValue;
+    float _2ndTexIntensity;
+    float _2ndTexBlendMode;
+    sampler2D _2ndTexMask;
+
+    sampler2D _3rdTex;
+    float4 _3rdTex_ST;
+    float _3rdTexHueShift;
+    float _3rdTexSaturation;
+    float _3rdTexValue;
+    float _3rdTexIntensity;
+    float _3rdTexBlendMode;
+    sampler2D _3rdTexMask;
+
+    sampler2D _4thTex;
+    float4 _4thTex_ST;
+    float _4thTexHueShift;
+    float _4thTexSaturation;
+    float _4thTexValue;
+    float _4thTexIntensity;
+    float _4thTexBlendMode;
+    sampler2D _4thTexMask;
+
+    sampler2D _5thTex;
+    float4 _5thTex_ST;
+    float _5thTexHueShift;
+    float _5thTexSaturation;
+    float _5thTexValue;
+    float _5thTexIntensity;
+    float _5thTexBlendMode;
+    sampler2D _5thTexMask;
+
     // Shading
+    float _ShadingMode;
+    float _ShadingGradientWidth;
     sampler2D _RampTex;
     half4 _ShadowColor;
+    half4 _Shadow2ndColor;
+    float _Shadow2ndBorder;
+    half4 _Shadow3rdColor;
+    float _Shadow3rdBorder;
     float _ShadowSteps;
     float _ShadowSharpness;
     float _ShadowOffset;
+    float _LitSoftness;
+    float _ShadowBlend;
+    sampler2D _ShadowReceiveMask;
+
+    // Ambient Occlusion
+    sampler2D _AOMap;
+    float _AOIntensity;
+
+    // Dithering
+    float _DitheringScale;
+    float _DitheringStrength;
 
     // Advanced Lighting Controls
+    float _SoftLightingIntensity;
     float _LightIntensity;
     float _IndirectLightIntensity;
     float _LightColorInfluence;
@@ -23,12 +93,15 @@ CBUFFER_START(UnityPerMaterial)
     float _ShadowMaxDarkness;
     float _LightMinInfluence;
     float _LightMaxInfluence;
+    float _LightBlend;
+    float _HighlightSoftness;
     float _BacklightIntensity;
     half4 _BacklightColor;
     float _AdditionalLightIntensity;
 
     // VRC Light Volumes
     float _LightVolumeIntensity;
+    float _LightVolumeBlendMode;
 
     // Specular
     half4 _SpecularColor;
@@ -40,7 +113,15 @@ CBUFFER_START(UnityPerMaterial)
     half4 _RimColor;
     float _RimPower;
     float _RimIntensity;
+    float _RimSpread;
     sampler2D _RimMask;
+
+    // Rim Light 2
+    half4 _RimColor2;
+    float _RimPower2;
+    float _RimIntensity2;
+    float _RimSpread2;
+    sampler2D _RimMask2;
 
     // MatCap
     sampler2D _MatCapTex;
@@ -57,6 +138,7 @@ CBUFFER_START(UnityPerMaterial)
     half4 _EmissionColor;
     sampler2D _EmissionMap;
     sampler2D _EmissionMask;
+    float _EmissionGlow;
 
     // Normal Map
     sampler2D _BumpMap;
@@ -93,6 +175,8 @@ CBUFFER_START(UnityPerMaterial)
     float _Smoothness;
     float _Metallic;
     float _FresnelPower;
+    float _FresnelSoftness;
+    float _ReflectionBlendMode;
     sampler2D _ReflectionMask;
 
     // Environmental Rim
