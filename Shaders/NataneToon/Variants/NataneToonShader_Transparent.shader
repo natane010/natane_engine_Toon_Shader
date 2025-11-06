@@ -236,8 +236,8 @@ Shader "Natane/Toon Shader (Transparent)"
         [Toggle(_ENV_RIM_MASK)] _UseEnvRimMask ("Use Env Rim Mask", Float) = 0
         _EnvRimMask ("Env Rim Mask", 2D) = "white" {}
 
-        [Header(Parallax Mapping (WARNING: Performance Heavy in VR!))]
-        [Toggle(_PARALLAX)] _Parallax ("Enable Parallax (Max 64 Samples!)", Float) = 0
+        [Header(Parallax Mapping - WARNING Performance Heavy in VR)]
+        [Toggle(_PARALLAX)] _Parallax ("Enable Parallax - Max 64 Samples", Float) = 0
         _ParallaxMap ("Height Map", 2D) = "grey" {}
         _ParallaxScale ("Parallax Scale (Distortion Strength)", Range(0, 0.1)) = 0.02
         _ParallaxMinSamples ("Min Samples (Flat View)", Range(4, 16)) = 4
