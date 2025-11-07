@@ -43,7 +43,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/Material Validator", false, 60)]
         public static void ShowWindow()
         {
-            var window = GetWindow<MaterialValidator>("Material Validator");
+            var window = GetWindow<MaterialValidator>("マテリアル検証 Validator");
             window.minSize = new Vector2(600, 400);
             window.Show();
         }
