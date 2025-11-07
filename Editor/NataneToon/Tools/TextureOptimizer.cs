@@ -6,7 +6,9 @@ namespace NataneToon.Editor
 {
     /// <summary>
     /// Texture optimization tool
+    /// テクスチャ最適化ツール
     /// Automatically optimizes textures for performance
+    /// テクスチャを自動的にパフォーマンス最適化
     /// </summary>
     public class TextureOptimizer : EditorWindow
     {
@@ -32,15 +34,15 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/Texture Optimizer", false, 110)]
         public static void ShowWindow()
         {
-            var window = GetWindow<TextureOptimizer>("Texture Optimizer");
+            var window = GetWindow<TextureOptimizer>("テクスチャ最適化 Texture Optimizer");
             window.minSize = new Vector2(600, 500);
             window.Show();
         }
 
         private void OnGUI()
         {
-            EditorGUILayout.LabelField("Texture Optimizer", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox("Optimize textures for better performance", MessageType.Info);
+            EditorGUILayout.LabelField("テクスチャ最適化ツール Texture Optimizer", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("パフォーマンス向上のためにテクスチャを最適化\nOptimize textures for better performance", MessageType.Info);
 
             EditorGUILayout.Space(10);
 
@@ -54,33 +56,33 @@ namespace NataneToon.Editor
         private void DrawSettings()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("Optimization Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("最適化設定 Optimization Settings", EditorStyles.boldLabel);
 
-            maxTextureSize = EditorGUILayout.IntPopup("Max Texture Size", maxTextureSize,
+            maxTextureSize = EditorGUILayout.IntPopup("最大テクスチャサイズ Max Texture Size", maxTextureSize,
                 new[] { "512", "1024", "2048", "4096" },
                 new[] { 512, 1024, 2048, 4096 });
 
-            enableCompression = EditorGUILayout.Toggle("Enable Compression", enableCompression);
+            enableCompression = EditorGUILayout.Toggle("圧縮を有効化 Enable Compression", enableCompression);
             if (enableCompression)
             {
-                compressionQuality = (TextureImporterCompression)EditorGUILayout.EnumPopup("Quality", compressionQuality);
+                compressionQuality = (TextureImporterCompression)EditorGUILayout.EnumPopup("品質 Quality", compressionQuality);
             }
 
-            generateMipmaps = EditorGUILayout.Toggle("Generate Mipmaps", generateMipmaps);
+            generateMipmaps = EditorGUILayout.Toggle("ミップマップを生成 Generate Mipmaps", generateMipmaps);
 
             EditorGUILayout.Space(5);
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Add Selected Textures")) AddSelectedTextures();
-            if (GUILayout.Button("Scan Project")) ScanProject();
-            if (GUILayout.Button("Clear")) texturesToOptimize.Clear();
+            if (GUILayout.Button("選択テクスチャを追加 Add Selected Textures")) AddSelectedTextures();
+            if (GUILayout.Button("プロジェクトをスキャン Scan Project")) ScanProject();
+            if (GUILayout.Button("クリア Clear")) texturesToOptimize.Clear();
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(5);
 
             if (texturesToOptimize.Count > 0)
             {
-                if (GUILayout.Button("Analyze & Optimize", GUILayout.Height(30)))
+                if (GUILayout.Button("分析して最適化 Analyze & Optimize", GUILayout.Height(30)))
                 {
                     AnalyzeAndOptimize();
                 }
@@ -93,7 +95,7 @@ namespace NataneToon.Editor
         {
             if (texturesToOptimize.Count == 0) return;
 
-            EditorGUILayout.LabelField($"Textures to Optimize ({texturesToOptimize.Count})", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField($"最適化するテクスチャ Textures to Optimize ({texturesToOptimize.Count})", EditorStyles.boldLabel);
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Height(150));
             for (int i = texturesToOptimize.Count - 1; i >= 0; i--)
@@ -114,26 +116,26 @@ namespace NataneToon.Editor
             if (results.Count == 0) return;
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("Optimization Results", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("最適化結果 Optimization Results", EditorStyles.boldLabel);
 
             long totalSaved = 0;
             foreach (var result in results)
             {
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 EditorGUILayout.LabelField(result.texture.name, EditorStyles.boldLabel);
-                EditorGUILayout.LabelField($"Issue: {result.issue}");
-                EditorGUILayout.LabelField($"Fix: {result.fix}");
+                EditorGUILayout.LabelField($"問題 Issue: {result.issue}");
+                EditorGUILayout.LabelField($"修正 Fix: {result.fix}");
                 if (result.memoryAfter < result.memoryBefore)
                 {
                     long saved = result.memoryBefore - result.memoryAfter;
-                    EditorGUILayout.LabelField($"Memory saved: {saved / 1024}KB");
+                    EditorGUILayout.LabelField($"節約メモリ Memory saved: {saved / 1024}KB");
                     totalSaved += saved;
                 }
                 EditorGUILayout.EndVertical();
             }
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField($"Total memory saved: {totalSaved / (1024 * 1024)}MB", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField($"合計節約メモリ Total memory saved: {totalSaved / (1024 * 1024)}MB", EditorStyles.boldLabel);
 
             EditorGUILayout.EndVertical();
         }

@@ -7,7 +7,9 @@ namespace NataneToon.Editor
 {
     /// <summary>
     /// Material validation and optimization checker
+    /// マテリアル検証と最適化チェッカー
     /// Provides VRChat optimization checks, performance ratings, and auto-fix suggestions
+    /// VRChat最適化チェック、パフォーマンス評価、自動修正提案を提供
     /// </summary>
     public class MaterialValidator : EditorWindow
     {
@@ -61,8 +63,10 @@ namespace NataneToon.Editor
 
         private void DrawHeader()
         {
-            EditorGUILayout.LabelField("Material Validator & Optimizer", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("マテリアル検証&最適化 Material Validator & Optimizer", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
+                "VRChat最適化、パフォーマンス問題、一般的な問題についてマテリアルを検証します。\n" +
+                "可能な場合は自動修正の提案が提供されます。\n" +
                 "Validates materials for VRChat optimization, performance issues, and common problems.\n" +
                 "Auto-fix suggestions provided where possible.",
                 MessageType.Info);
@@ -71,21 +75,21 @@ namespace NataneToon.Editor
         private void DrawMaterialSelection()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("Materials to Validate", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("検証するマテリアル Materials to Validate", EditorStyles.boldLabel);
 
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("Add Selected Materials", GUILayout.Height(25)))
+            if (GUILayout.Button("選択マテリアルを追加 Add Selected Materials", GUILayout.Height(25)))
             {
                 AddSelectedMaterials();
             }
 
-            if (GUILayout.Button("Add All Natane Toon Materials", GUILayout.Height(25)))
+            if (GUILayout.Button("全Natane Toonマテリアルを追加 Add All Natane Toon Materials", GUILayout.Height(25)))
             {
                 AddAllNataneToonMaterials();
             }
 
-            if (GUILayout.Button("Clear List", GUILayout.Height(25)))
+            if (GUILayout.Button("リストをクリア Clear List", GUILayout.Height(25)))
             {
                 materialsToValidate.Clear();
                 validationResults.Clear();
@@ -98,11 +102,14 @@ namespace NataneToon.Editor
             // Display material list
             if (materialsToValidate.Count == 0)
             {
-                EditorGUILayout.HelpBox("No materials selected. Use the buttons above to add materials.", MessageType.Info);
+                EditorGUILayout.HelpBox(
+                    "マテリアルが選択されていません。上のボタンを使用してマテリアルを追加してください。\n" +
+                    "No materials selected. Use the buttons above to add materials.",
+                    MessageType.Info);
             }
             else
             {
-                EditorGUILayout.LabelField($"Selected Materials ({materialsToValidate.Count}):", EditorStyles.miniLabel);
+                EditorGUILayout.LabelField($"選択マテリアル Selected Materials ({materialsToValidate.Count}):", EditorStyles.miniLabel);
 
                 scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Height(100));
                 for (int i = materialsToValidate.Count - 1; i >= 0; i--)
@@ -130,26 +137,26 @@ namespace NataneToon.Editor
         private void DrawValidationSettings()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("Validation Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("検証設定 Validation Settings", EditorStyles.boldLabel);
 
-            checkVRChatOptimization = EditorGUILayout.ToggleLeft("VRChat Optimization Check", checkVRChatOptimization);
-            checkTextureSize = EditorGUILayout.ToggleLeft("Texture Size Check", checkTextureSize);
-            checkPerformance = EditorGUILayout.ToggleLeft("Performance Rating Check", checkPerformance);
-            checkUnusedFeatures = EditorGUILayout.ToggleLeft("Unused Features Check", checkUnusedFeatures);
-            checkTextureCompression = EditorGUILayout.ToggleLeft("Texture Compression Check", checkTextureCompression);
+            checkVRChatOptimization = EditorGUILayout.ToggleLeft("VRChat最適化チェック VRChat Optimization Check", checkVRChatOptimization);
+            checkTextureSize = EditorGUILayout.ToggleLeft("テクスチャサイズチェック Texture Size Check", checkTextureSize);
+            checkPerformance = EditorGUILayout.ToggleLeft("パフォーマンス評価チェック Performance Rating Check", checkPerformance);
+            checkUnusedFeatures = EditorGUILayout.ToggleLeft("未使用機能チェック Unused Features Check", checkUnusedFeatures);
+            checkTextureCompression = EditorGUILayout.ToggleLeft("テクスチャ圧縮チェック Texture Compression Check", checkTextureCompression);
 
             EditorGUILayout.Space(5);
 
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("Validate All", GUILayout.Height(30)))
+            if (GUILayout.Button("すべて検証 Validate All", GUILayout.Height(30)))
             {
                 ValidateAllMaterials();
             }
 
             using (new EditorGUI.DisabledScope(!autoFixAvailable))
             {
-                if (GUILayout.Button("Auto-Fix All Issues", GUILayout.Height(30)))
+                if (GUILayout.Button("すべての問題を自動修正 Auto-Fix All Issues", GUILayout.Height(30)))
                 {
                     AutoFixAllIssues();
                 }
@@ -165,7 +172,7 @@ namespace NataneToon.Editor
             if (validationResults.Count == 0) return;
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("Validation Results", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("検証結果 Validation Results", EditorStyles.boldLabel);
 
             // Summary
             int errors = validationResults.Count(r => r.severity == ValidationSeverity.Error);
@@ -174,11 +181,11 @@ namespace NataneToon.Editor
 
             EditorGUILayout.BeginHorizontal();
             GUI.color = errors > 0 ? Color.red : Color.white;
-            EditorGUILayout.LabelField($"Errors: {errors}", EditorStyles.boldLabel, GUILayout.Width(100));
+            EditorGUILayout.LabelField($"エラー Errors: {errors}", EditorStyles.boldLabel, GUILayout.Width(150));
             GUI.color = warnings > 0 ? Color.yellow : Color.white;
-            EditorGUILayout.LabelField($"Warnings: {warnings}", EditorStyles.boldLabel, GUILayout.Width(100));
+            EditorGUILayout.LabelField($"警告 Warnings: {warnings}", EditorStyles.boldLabel, GUILayout.Width(150));
             GUI.color = Color.white;
-            EditorGUILayout.LabelField($"Info: {infos}", EditorStyles.boldLabel, GUILayout.Width(100));
+            EditorGUILayout.LabelField($"情報 Info: {infos}", EditorStyles.boldLabel, GUILayout.Width(120));
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(5);
@@ -236,14 +243,14 @@ namespace NataneToon.Editor
             EditorGUILayout.EndHorizontal();
 
             // Issue description
-            EditorGUILayout.LabelField("Issue:", EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField("問題 Issue:", EditorStyles.miniBoldLabel);
             EditorGUILayout.LabelField(result.issue, EditorStyles.wordWrappedLabel);
 
             // Suggestion
             if (!string.IsNullOrEmpty(result.suggestion))
             {
                 EditorGUILayout.Space(3);
-                EditorGUILayout.LabelField("Suggestion:", EditorStyles.miniBoldLabel);
+                EditorGUILayout.LabelField("提案 Suggestion:", EditorStyles.miniBoldLabel);
                 EditorGUILayout.LabelField(result.suggestion, EditorStyles.wordWrappedLabel);
             }
 
@@ -251,11 +258,13 @@ namespace NataneToon.Editor
             if (result.autoFixAction != null)
             {
                 EditorGUILayout.Space(3);
-                if (GUILayout.Button("Auto-Fix", GUILayout.Height(20)))
+                if (GUILayout.Button("自動修正 Auto-Fix", GUILayout.Height(20)))
                 {
                     result.autoFixAction.Invoke();
-                    EditorUtility.DisplayDialog("Auto-Fix Applied",
-                        $"Fixed issue for material: {result.material.name}", "OK");
+                    EditorUtility.DisplayDialog(
+                        "自動修正を適用しました Auto-Fix Applied",
+                        $"マテリアルの問題を修正しました: {result.material.name}\nFixed issue for material: {result.material.name}",
+                        "OK");
                 }
             }
 
@@ -544,8 +553,10 @@ namespace NataneToon.Editor
             }
 
             EditorUtility.DisplayDialog(
-                "Auto-Fix Complete",
+                "自動修正完了 Auto-Fix Complete",
+                $"{fixedCount}個の問題を自動的に修正しました。\n" +
                 $"Fixed {fixedCount} issues automatically.\n" +
+                $"残りの問題は手動での対処が必要です。\n" +
                 $"Remaining issues require manual intervention.",
                 "OK");
 
