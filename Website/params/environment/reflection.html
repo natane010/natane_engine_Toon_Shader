@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>リフレクション - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>リフレクション</h1>
+    <p class="page-subtitle">キューブマップによる環境反射</p>
+
+    <p>キューブマップを使用して環境反射をシミュレートするエフェクトです。金属、ガラス、光沢のあるプラスチックなど、反射素材の表現に最適です。フレネル設定により、見る角度に応じた自然な反射表現が可能です。</p>
+    <p>キーワード: <code>_REFLECTION</code></p>
+
+    <h2 id="basic">基本設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">リフレクションキューブマップ</span>
+        <span class="param-prop">_ReflectionCube</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>環境反射に使用するキューブマップテクスチャです。周囲の風景を映り込みとして表示します。</p>
+        <p class="param-default">デフォルト: "black"（反射なし）</p>
+      </div>
+      <div class="param-tip">Skyboxからキューブマップを生成するか、カスタムHDRIを使用してリアルな映り込みを作成できます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">リフレクションの色</span>
+        <span class="param-prop">_ReflectionColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>反射の色味を調整します。白で元のキューブマップの色そのまま、色付きで反射に色味を加えます。</p>
+        <p class="param-default">デフォルト: (1, 1, 1, 1)（白・変更なし）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">リフレクションの強さ</span>
+        <span class="param-prop">_ReflectionIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>環境反射の強度を設定します。値が大きいほど反射が強くなります。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 2）</p>
+      </div>
+    </div>
+
+    <h2 id="surface">サーフェス設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">滑らかさ（光沢）</span>
+        <span class="param-prop">_Smoothness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>表面の滑らかさ（光沢度）を設定します。値が大きいほど鏡面に近い反射になり、小さいほどぼやけた反射になります。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+      <div class="param-tip">金属は 0.7-1.0、プラスチックは 0.3-0.6、マットな素材は 0-0.2 が目安です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">メタリック</span>
+        <span class="param-prop">_Metallic</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>素材の金属度を設定します。金属素材では反射が強く、非金属素材ではフレネル効果が強調されます。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <h2 id="fresnel">フレネル設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フレネルパワー</span>
+        <span class="param-prop">_FresnelPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>フレネル効果の強さを設定します。値が大きいほど、エッジ部分（斜めから見た部分）でのみ反射が表示されます。</p>
+        <p class="param-default">デフォルト: 5（範囲: 0 - 10）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フレネルソフトネス</span>
+        <span class="param-prop">_FresnelSoftness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>反射の境界を柔らかくして、より自然で芸術的な反射を実現します。</p>
+        <ul>
+          <li>0 = シャープな境界（現実的）</li>
+          <li>0.5 - 0.7 = 柔らかい境界（推奨）</li>
+          <li>1.0 = 非常に柔らかい境界（芸術的）</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <h2 id="blend">ブレンド設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_ReflectionBlendMode</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>リフレクションとベースカラーの合成方法を設定します。</p>
+        <ul>
+          <li>0 = 加算（明るく追加）</li>
+          <li>1 = オーバーレイ（自然な統合）</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（加算）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_ReflectionBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>リフレクションエフェクトの全体的な適用度を設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">リフレクションマスク</span>
+        <span class="param-prop">_ReflectionMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>リフレクションの適用範囲をテクスチャで制御します。キーワード <code>_REFLECTION_MASK</code> で有効化します。</p>
+        <p class="param-default">デフォルト: "white"（全体に適用）</p>
+      </div>
+      <div class="param-tip">白 = リフレクションあり、黒 = リフレクションなし。金属パーツのみ反射させたい場合に活用できます。</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

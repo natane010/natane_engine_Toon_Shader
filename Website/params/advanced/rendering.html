@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>レンダリング設定 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>レンダリング設定</h1>
+    <p class="page-subtitle">レンダリングモード、カリング、ステンシルなどの描画制御</p>
+
+    <h2>概要</h2>
+    <p>レンダリング設定は、マテリアルの基本的な描画方法を制御するセクションです。不透明/切り抜き/半透明のモード選択、ポリゴンの表裏描画制御、深度バッファの書き込み、ブレンドモードなど、シェーダーの根幹となる設定が含まれます。</p>
+
+    <h2>レンダリングモード</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">描画タイプ</span>
+        <span class="param-prop">RenderingMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>マテリアルのレンダリングモードを選択します。モードに応じて内部的に適切なシェーダーバリアントに切り替わります。すべてのプロパティは保持されます。</p>
+        <ul>
+          <li><strong>Opaque（不透明）</strong> - 標準的な不透明オブジェクト。肌、服、硬い物体などに使用。最も高速で推奨されるモードです。</li>
+          <li><strong>Cutout（切り抜き）</strong> - アルファ閾値による透過。髪の毛、葉っぱ、フェンスなどに使用。ピクセル単位で完全に透明か不透明かの2択です。</li>
+          <li><strong>Transparent（半透明）</strong> - 滑らかな透過。ガラス、水、煙、エフェクトなどに使用。アルファ値に応じて段階的に透過しますが、最も負荷が高いモードです。</li>
+        </ul>
+        <p class="param-default">デフォルト: Opaque</p>
+      </div>
+      <div class="param-tip">パフォーマンスの観点では Opaque > Cutout > Transparent の順で効率的です。可能な限りOpaqueを使用してください。</div>
+    </div>
+
+    <h2>Cutout専用設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">アルファカットオフ</span>
+        <span class="param-prop">_Cutoff</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Cutoutモード時のアルファ閾値です。テクスチャの透明度がこの値以下のピクセルを非表示にします。</p>
+        <ul>
+          <li>値を下げると: より多くのピクセルが表示される</li>
+          <li>値を上げると: より多くのピクセルが非表示になる</li>
+        </ul>
+        <p class="param-default">デフォルト: 0.5（推奨）</p>
+      </div>
+    </div>
+
+    <h2>詳細設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">カリングモード</span>
+        <span class="param-prop">_Cull</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>ポリゴンのどちら側を描画するかを制御します。</p>
+        <ul>
+          <li><strong>Back (2)</strong> - 裏面を非表示（デフォルト。一般的な設定です）</li>
+          <li><strong>Front (1)</strong> - 表面を非表示（特殊な用途向け）</li>
+          <li><strong>Off (0)</strong> - 両面描画（裏面テクスチャ機能と併用する場合に設定）</li>
+        </ul>
+        <p class="param-default">デフォルト: Back (2)</p>
+      </div>
+      <div class="param-tip">両面描画（Off）は描画コストが2倍になります。必要な場合のみ使用してください。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Z書き込み</span>
+        <span class="param-prop">_ZWrite</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>深度バッファへの書き込みを制御します。通常はONのままにしてください。</p>
+        <ul>
+          <li><strong>On (1)</strong> - 深度バッファに書き込む（不透明オブジェクトの標準設定）</li>
+          <li><strong>Off (0)</strong> - 深度バッファに書き込まない（半透明やエフェクト向け）</li>
+        </ul>
+        <p class="param-default">デフォルト: On (1)</p>
+      </div>
+    </div>
+
+    <h2>Transparent専用設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ソースブレンド</span>
+        <span class="param-prop">_SrcBlend</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>半透明描画時のソース（前景）のブレンド係数です。</p>
+        <p class="param-default">デフォルト: SrcAlpha (5)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">宛先ブレンド</span>
+        <span class="param-prop">_DstBlend</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>半透明描画時のデスティネーション（背景）のブレンド係数です。</p>
+        <p class="param-default">デフォルト: OneMinusSrcAlpha (10)</p>
+      </div>
+      <div class="param-tip">ブレンドモードは通常変更する必要はありません。標準設定で適切なアルファブレンドが行われます。</div>
+    </div>
+
+    <h2>使い方のポイント</h2>
+    <ul>
+      <li>VRChatアバターの多くのパーツ（肌、服、靴）にはOpaqueが最適です</li>
+      <li>髪の毛や眉毛にはCutoutモードが適しています</li>
+      <li>ガラスや宝石などの透過素材にはTransparentを使用します</li>
+      <li>カリングOffは裏面テクスチャ使用時に必要ですが、パフォーマンスコストに注意してください</li>
+      <li>レンダリングモードの変更はシェーダーバリアントの切り替えを伴いますが、プロパティは保持されます</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

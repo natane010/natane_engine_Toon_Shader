@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>溶解 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>溶解</h1>
+    <p class="page-subtitle">マテリアルが溶けて消えるトランジション効果</p>
+
+    <p>ディゾルブ（溶解）エフェクトは、マテリアルが徐々に消滅・分解するトランジション効果を作成します。VRChatアバターの出現・消滅アニメーションに最適で、ディゾルブ量パラメータをアニメーションさせることでオブジェクトを出現または消滅させることができます。</p>
+    <p>キーワード: <code>_DISSOLVE</code></p>
+
+    <h2 id="settings">ディゾルブ設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ディゾルブ量</span>
+        <span class="param-prop">_DissolveAmount</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ディゾルブの進行度を制御します。このパラメータをアニメーションキーで操作することで、出現・消滅エフェクトを実現できます。</p>
+        <ul>
+          <li>0 = 完全に表示（溶解なし）</li>
+          <li>0.5 = 半分溶解</li>
+          <li>1 = 完全に消滅</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+      <div class="param-tip">VRChatでアニメーションコントローラーからこのパラメータを制御して、出現・消滅エフェクトを作成できます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ディゾルブテクスチャ（ノイズ）</span>
+        <span class="param-prop">_DissolveTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>ディゾルブのパターンを定義するノイズテクスチャです。テクスチャの明暗に基づいて溶解が進行します。</p>
+        <p class="param-default">デフォルト: "white"</p>
+      </div>
+      <div class="param-tip">パーリンノイズやボロノイノイズなど、異なるパターンで多様な溶解表現が可能です。</div>
+    </div>
+
+    <h2 id="edge">エッジ設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エッジの幅</span>
+        <span class="param-prop">_DissolveEdgeWidth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>溶解境界のエッジ（光る縁）の幅を設定します。</p>
+        <p class="param-default">デフォルト: 0.1（範囲: 0 - 0.5）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エッジの色</span>
+        <span class="param-prop">_DissolveEdgeColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>溶解境界に表示される光るエッジの色です。HDRカラー対応で、明るい色を設定すると発光して見えます。</p>
+        <p class="param-default">デフォルト: (1, 0.5, 0, 1)（オレンジ）</p>
+      </div>
+      <div class="param-tip">炎のようなオレンジ、魔法的な青、デジタル的な緑など、世界観に合わせて選択してください。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エッジの強さ</span>
+        <span class="param-prop">_DissolveEdgeIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>溶解エッジの発光強度を設定します。値が大きいほどエッジが強く光ります。</p>
+        <p class="param-default">デフォルト: 2（範囲: 0 - 10）</p>
+      </div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ディゾルブマスク</span>
+        <span class="param-prop">_DissolveMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>ディゾルブの適用範囲をテクスチャで制御します。キーワード <code>_DISSOLVE_MASK</code> で有効化します。</p>
+        <p class="param-default">デフォルト: "white"（全体に適用）</p>
+      </div>
+      <div class="param-tip">白 = ディゾルブあり、黒 = ディゾルブなし。特定の部位だけを溶解させたい場合に使用します。</div>
+    </div>
+
+    <h2 id="blend">ブレンド設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_DissolveBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>ディゾルブエフェクトの合成方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常合成</li>
+          <li><strong>Soft (1)</strong> - ソフトライト</li>
+          <li><strong>Screen (2)</strong> - スクリーン</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Normal）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_DissolveBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ディゾルブエフェクトの全体的な適用度を設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_DissolveBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ディゾルブエフェクトの境界をぼかします。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

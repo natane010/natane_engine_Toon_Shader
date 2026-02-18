@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パラメータ一覧 - Natane Toon Shader</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+<header class="site-header"></header>
+
+<div class="page-wrapper no-sidebar">
+    <main class="main-content">
+
+        <h1>パラメータ一覧</h1>
+        <p class="page-subtitle">Natane Toon Shader の全パラメータグループを5つのカテゴリに分類しています。</p>
+
+        <div id="param-categories" class="category-cards"></div>
+
+    </main>
+</div>
+
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+
+<script src="../nav.js"></script>
+<script>
+(function() {
+    var data = window.NataneNav;
+    if (!data) return;
+    var container = document.getElementById('param-categories');
+    var catOrder = ['basic', 'lighting', 'effects', 'environment', 'advanced'];
+    var catDesc = {
+        basic:       'メインテクスチャ、カラー、メイクアップ、シェーディングの基本設定',
+        lighting:    '光源制御、バックライト、VRC Light Volumes、AO などのライティング設定',
+        effects:     'スペキュラー、リムライト、MatCap、ホログラム、アウトライン等のエフェクト',
+        environment: 'リフレクション、イリデッセンス、環境リム、屈折の環境設定',
+        advanced:    'ノーマルマップ、パララックス、VAT、レンダリング設定などの詳細項目'
+    };
+    catOrder.forEach(function(key) {
+        var cat = data.CATEGORIES[key];
+        var pages = data.PAGE_ORDER[key];
+        if (!cat || !pages) return;
+        var a = document.createElement('a');
+        a.className = 'category-card';
+        a.href = key + '/' + pages[0].file;
+        a.innerHTML =
+            '<div class="card-icon">' + cat.icon + '</div>' +
+            '<h3>' + cat.label + '</h3>' +
+            '<p>' + (catDesc[key] || '') + '</p>' +
+            '<span class="page-count">' + pages.length + ' ページ</span>';
+        container.appendChild(a);
+    });
+})();
+</script>
+</body>
+</html>

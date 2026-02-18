@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>最終カラーブレンド - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>最終カラーブレンド</h1>
+    <p class="page-subtitle">ハイライトの白飛び・シャドーの黒つぶれを防止するなじませ処理</p>
+
+    <h2 id="highlight">ハイライトなじませ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ハイライトなじませ（白飛び防止）</span>
+        <span class="param-prop">_FinalHighlightBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>明るすぎる部分（ハイライト）を自然になじませます。スムーズショルダートーンマッピングにより輝度60%以上の明るい部分を自然に圧縮し、色の鮮やかさを保ちながら白飛びを防止します。</p>
+        <p>処理フロー: (1) トーンマッピング圧縮 → (2) ハイライトブレンド（30%デサチュレーション） → (3) ジェントルクランプ（1.05まで許容）</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">おすすめ設定: 通常は0.3〜0.5、強めは0.7〜0.9、最大は1.0。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ハイライト閾値</span>
+        <span class="param-prop">_HighlightThreshold</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>この値より明るい部分に追加のハイライトブレンドが適用されます。低い値ほど広い範囲にブレンドが適用されます。</p>
+        <p class="param-default">デフォルト: 0.75</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">推奨値は0.75。強めに効かせたい場合は0.6、最大効果の場合は0.5に設定してください。</div>
+    </div>
+
+    <h2 id="shadow">シャドーなじませ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">シャドーなじませ（黒つぶれ防止）</span>
+        <span class="param-prop">_FinalShadowBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>暗すぎる部分（シャドー）を周囲となじませます。黒つぶれを防止し、ディテールを保持します。影の境界を柔らかくし、わずかにシャドーを持ち上げて自然な見た目にします。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">暗いワールドでディテールが潰れる場合に有効です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">シャドー閾値</span>
+        <span class="param-prop">_ShadowThreshold</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>この値より暗い部分にシャドーブレンドが適用されます。高い値ほど広い範囲に効果が適用されます。</p>
+        <p class="param-default">デフォルト: 0.25</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">推奨値は0.25。影が深い場合は0.3〜0.4に引き上げてください。</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

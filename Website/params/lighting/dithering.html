@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ディザリング - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ディザリング</h1>
+    <p class="page-subtitle">シェーディングにディザパターンを追加</p>
+
+    <p>ディザリング（ハーフトーン）は影の境界にドットパターンを追加して、より柔らかく芸術的な印象を与えます。印刷物やマンガ風の柔らかい影の表現（スクリーントーン）に最適です。</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">パターンサイズ</span>
+        <span class="param-prop">_DitheringScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ディザパターンの大きさを制御します。小さい値で細かいパターン、大きい値で粗いパターンになります。</p>
+        <p class="param-default">デフォルト: 10</p>
+        <p class="param-range">範囲: 1 〜 100</p>
+      </div>
+      <div class="param-tip">推奨: 5〜20。マンガ風スクリーントーンには10〜20、繊細なディザリングには5〜10が適しています。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">境界のソフトネス</span>
+        <span class="param-prop">_DitheringStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ディザリング効果の強さ（境界のぼかし具合）を制御します。0で効果なし、1で最大効果です。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">推奨: 0.3〜0.7。低すぎるとほぼ見えず、高すぎるとパターンが目立ちすぎます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_DitheringBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ディザリング効果のブレンド強度です。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_DitheringBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ディザリング効果のぼかし具合です。0でシャープなパターン、1で柔らかいパターンです。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">ブラーを加えるとパターンの輪郭が柔らかくなり、より自然な仕上がりになります。</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

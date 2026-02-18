@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MatCap 2/3 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>MatCap 2/3</h1>
+    <p class="page-subtitle">追加のMatCapレイヤーで複雑な反射効果</p>
+
+    <h2 id="overview">概要</h2>
+    <p>MatCap 2とMatCap 3は、MatCap 1に追加で重ねられる独立したMatCapレイヤーです。複数のMatCapテクスチャを異なるブレンドモードで重ねることで、より複雑で表現力の高い環境反射を実現します。</p>
+    <p>各レイヤーはキーワード <code>_MATCAP_2</code>、<code>_MATCAP_3</code> で個別に制御され、無効時はシェーダー命令が生成されません。</p>
+
+    <div class="feature-section">
+      <h4>マルチMatCapの活用例</h4>
+      <ul>
+        <li><strong>MatCap 1</strong>: メインの環境反射（Add モード）</li>
+        <li><strong>MatCap 2</strong>: 金属的なハイライト（Add モード、高強度）</li>
+        <li><strong>MatCap 3</strong>: 汚れ・傷の表現（Multiply モード）</li>
+      </ul>
+      <p>マスクを使い分けることで、1つのマテリアルで金属・布・皮革など異なる質感を同時に表現できます。</p>
+    </div>
+
+    <!-- ==================== MatCap 2 ==================== -->
+    <h2 id="matcap2">MatCap 2</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 2 テクスチャ</span>
+        <span class="param-prop">_MatCapTex2</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>2番目のMatCapテクスチャ（球面反射マップ）を設定します。</p>
+        <p class="param-default">デフォルト: "black"（黒テクスチャ）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 2の強さ</span>
+        <span class="param-prop">_MatCapIntensity2</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>MatCap 2エフェクトの強度を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 2のブレンドモード</span>
+        <span class="param-prop">_MatCapBlendMode2</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>MatCap 2のブレンド方法を選択します。</p>
+        <ul>
+          <li><strong>Add (0)</strong> - 加算合成</li>
+          <li><strong>Multiply (1)</strong> - 乗算合成</li>
+          <li><strong>Replace (2)</strong> - 置換</li>
+        </ul>
+        <p class="param-default">デフォルト: Add (0)</p>
+      </div>
+    </div>
+
+    <h3 id="matcap2-mask">MatCap 2 マスク</h3>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 2マスク</span>
+        <span class="param-prop">_MatCapMask2</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>MatCap 2の適用領域を制御するマスクテクスチャです。キーワード <code>_MATCAP_MASK_2</code> で有効化します。</p>
+        <p class="param-default">デフォルト: "white"（全面適用）</p>
+      </div>
+      <div class="param-tip">白 = MatCap適用、黒 = 適用なし。MatCap 1のマスクとは独立しているため、異なるパーツに異なるMatCapを適用できます。</div>
+    </div>
+
+    <h3 id="matcap2-blend">MatCap 2 ブレンド＆ブラー</h3>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_MatCapBlend2</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>MatCap 2エフェクトの強度（不透明度）を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_MatCap2Blur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>MatCap 2エフェクトのぼかし量を調整します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <!-- ==================== MatCap 3 ==================== -->
+    <h2 id="matcap3">MatCap 3</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 3 テクスチャ</span>
+        <span class="param-prop">_MatCapTex3</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>3番目のMatCapテクスチャ（球面反射マップ）を設定します。</p>
+        <p class="param-default">デフォルト: "black"（黒テクスチャ）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 3の強さ</span>
+        <span class="param-prop">_MatCapIntensity3</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>MatCap 3エフェクトの強度を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 3のブレンドモード</span>
+        <span class="param-prop">_MatCapBlendMode3</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>MatCap 3のブレンド方法を選択します。</p>
+        <ul>
+          <li><strong>Add (0)</strong> - 加算合成</li>
+          <li><strong>Multiply (1)</strong> - 乗算合成</li>
+          <li><strong>Replace (2)</strong> - 置換</li>
+        </ul>
+        <p class="param-default">デフォルト: Add (0)</p>
+      </div>
+    </div>
+
+    <h3 id="matcap3-mask">MatCap 3 マスク</h3>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 3マスク</span>
+        <span class="param-prop">_MatCapMask3</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>MatCap 3の適用領域を制御するマスクテクスチャです。キーワード <code>_MATCAP_MASK_3</code> で有効化します。</p>
+        <p class="param-default">デフォルト: "white"（全面適用）</p>
+      </div>
+      <div class="param-tip">白 = MatCap適用、黒 = 適用なし。</div>
+    </div>
+
+    <h3 id="matcap3-blend">MatCap 3 ブレンド＆ブラー</h3>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_MatCapBlend3</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>MatCap 3エフェクトの強度（不透明度）を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_MatCap3Blur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>MatCap 3エフェクトのぼかし量を調整します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <h2 id="performance">パフォーマンスに関する注意</h2>
+    <div class="feature-section">
+      <p>MatCapレイヤーを増やすほどシェーダーの負荷が増加します。VRChat Quest環境では、MatCapは1レイヤーまでに抑えることを推奨します。</p>
+      <ul>
+        <li>MatCap 1のみ: パフォーマンスへの影響は軽微</li>
+        <li>MatCap 1+2: 中程度の負荷増加</li>
+        <li>MatCap 1+2+3: 負荷が大きくなるため、PC向け推奨</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

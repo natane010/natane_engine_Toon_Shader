@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>イリデッセンス - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>イリデッセンス</h1>
+    <p class="page-subtitle">玉虫色の虹色光沢エフェクト</p>
+
+    <p>見る角度によって色が変化する玉虫色（イリデッセンス）効果を追加します。光の干渉による虹色効果を再現し、シャボン玉、オイルスリック、昆虫の羽、魚の鱗など、自然界の美しい色彩変化を表現できます。</p>
+    <p>キーワード: <code>_IRIDESCENCE</code></p>
+
+    <h2 id="settings">イリデッセンス設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">イリデッセンスの色</span>
+        <span class="param-prop">_IridescenceColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>イリデッセンス効果のベースとなる色調を設定します。虹色の色彩変化の基準色になります。</p>
+        <p class="param-default">デフォルト: (1, 1, 1, 1)（白）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">強度</span>
+        <span class="param-prop">_IridescenceIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>イリデッセンス効果の明るさ（強度）を設定します。値が大きいほど虹色効果が強くなります。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 2）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">色相シフト</span>
+        <span class="param-prop">_IridescenceHueShift</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>色の変化の開始位置を色相環上でオフセットします。虹色の色味を全体的にシフトさせます。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">サイズ（周波数）</span>
+        <span class="param-prop">_IridescenceSize</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>色の変化の周波数（細かさ）を設定します。値が大きいほど角度の変化に対して色が早く変化します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 10）</p>
+      </div>
+      <div class="param-tip">シャボン玉のような繊細な変化は低い値、オイルスリックのようなダイナミックな変化は高い値がおすすめです。</div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">イリデッセンスマスク</span>
+        <span class="param-prop">_IridescenceMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>R（赤）チャンネルを使用してイリデッセンスの表示領域を制御します。キーワード <code>_IRIDESCENCE_MASK</code> で有効化します。</p>
+        <ul>
+          <li>白 (1.0): イリデッセンスを完全に表示</li>
+          <li>黒 (0.0): イリデッセンスを非表示</li>
+          <li>グレー: 部分的に表示</li>
+        </ul>
+        <p class="param-default">デフォルト: "white"（全体に適用）</p>
+      </div>
+    </div>
+
+    <h2 id="blend">ブレンド設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_IridescenceBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>イリデッセンスとベースカラーの合成方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常合成</li>
+          <li><strong>Soft (1)</strong> - ソフトライト</li>
+          <li><strong>Screen (2)</strong> - スクリーン</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Normal）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_IridescenceBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>イリデッセンスエフェクトの全体的な適用度を設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_IridescenceBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>イリデッセンスエフェクトの境界をぼかします。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

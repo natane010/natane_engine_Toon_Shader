@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ノーマルマップ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ノーマルマップ</h1>
+    <p class="page-subtitle">法線マップでサーフェスの凹凸をシミュレート</p>
+
+    <h2>概要</h2>
+    <p>ノーマルマップ（法線マップ）は、実際にポリゴンを増やすことなくサーフェスに凹凸感を付与する技術です。テクスチャのRGBチャンネルに法線方向の情報を格納し、ライティング計算時にサーフェスの向きを変化させることで、彫り込みやシワ、布の質感などをリアルに表現します。</p>
+    <p>キーワード <code>_NORMALMAP</code> で制御され、無効時はシェーダー命令がゼロになります。</p>
+
+    <h2>プロパティ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ノーマルマップを使用</span>
+        <span class="param-prop">_UseNormalMap</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>ノーマルマップ機能の有効/無効を切り替えます。無効にするとシェーダーキーワード <code>_NORMALMAP</code> がオフになり、処理負荷がゼロになります。</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ノーマルマップ</span>
+        <span class="param-prop">_BumpMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>法線情報を格納したテクスチャです。Unity の「Normal map」タイプでインポートしたテクスチャを使用してください。タンジェント空間の法線マップに対応しています。</p>
+        <p class="param-default">デフォルト: "bump"（フラット法線）</p>
+      </div>
+      <div class="param-tip">テクスチャのインポート設定で「Texture Type」を「Normal map」に設定すると、自動的に適切な圧縮形式が適用されます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ノーマルのスケール</span>
+        <span class="param-prop">_BumpScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ノーマルマップの強度を制御します。値が大きいほど凹凸感が強くなり、0にすると効果がなくなります。</p>
+        <p class="param-default">デフォルト: 1.0</p>
+      </div>
+      <div class="param-tip">肌の表現では0.3〜0.7程度、石や壁では1.0以上がおすすめです。</div>
+    </div>
+
+    <h2>使い方のポイント</h2>
+    <ul>
+      <li>トゥーンシェーディングではノーマルマップの効果がシャドウの境界線に影響します</li>
+      <li>スペキュラーやリムライトと組み合わせることで、より立体的な表現が可能です</li>
+      <li>VRChat向けでは1024x1024〜2048x2048のテクスチャサイズが推奨されます</li>
+      <li>シェーダーキーワードベースなので、不要な場合はOFFにすることでパフォーマンスが向上します</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

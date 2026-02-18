@@ -1,0 +1,11 @@
+{
+  "name": "Natane Toon Shader",
+  "id": "com.natane.toonshader.listing",
+  "url": "https://natanetoon.com/index.json",
+  "author": "Natane",
+  "packages": {
+    "com.natane.toonshader": {
+      "versions": {}
+    }
+  }
+}

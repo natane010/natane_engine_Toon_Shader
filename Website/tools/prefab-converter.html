@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>プレハブバリアント変換 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>プレハブバリアント変換</h1>
+    <p class="page-subtitle">プレハブバリアントを生成し、lilToonマテリアルをNataneToonに一括変換</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Migration &gt; Prefab Variant Converter</span>
+      <span>カテゴリ: 移行</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>プレハブバリアント変換は、既存のプレハブ（アバターなど）からバリアントを作成し、そのバリアント内のlilToonマテリアルをNatane Toon Shaderに一括変換するツールです。元のプレハブとマテリアルはそのまま保持されるため、安全にシェーダーの移行を試すことができます。</p>
+    <p>VRChatアバター制作では、購入した素体やアクセサリーのプレハブを直接変更すると、アップデート時に問題が発生する可能性があります。このツールはUnityのプレハブバリアント機能を活用して、元のプレハブへの参照を維持しつつ、マテリアルだけをNatane Toon Shader版に差し替えます。これにより、元のプレハブが更新されても基本的な変更は自動的に反映されます。</p>
+    <p>マテリアルの命名規則をカスタマイズでき（接頭辞・接尾辞の設定）、変換前にプレビューで確認できるため、プロジェクト内のマテリアル管理も整理しやすくなります。lilToonからの移行に特化していますが、変換後のマテリアルは完全にNatane Toon Shaderとして動作するため、すべてのNatane Toon機能が利用可能になります。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li><strong>プレハブバリアントの自動生成</strong> — 元のプレハブを変更せず、バリアントを自動作成。元のプレハブのアップデートにも追従可能</li>
+      <li><strong>マテリアルの一括変換</strong> — バリアント内のlilToonマテリアルを検出し、Natane Toon Shaderに一括変換</li>
+      <li><strong>lilToonからNataneToonへの移行</strong> — lilToon専用の自動プロパティマッピングで、テクスチャ・色・パラメータを自動引き継ぎ</li>
+      <li><strong>マテリアル名のカスタマイズ</strong> — 変換後のマテリアル名に接頭辞や接尾辞を追加。例: 「Natane_Body」のような命名ルールを設定</li>
+      <li><strong>実行前のプレビュー</strong> — 検出されたlilToonマテリアルの一覧と、変換後のマテリアル名をプレビュー表示。変換対象を個別に選択可能</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>プレハブを選択</strong>
+        <p>シーンビューまたはプロジェクトビューでアバターのプレハブを選択します。Hierarchyにインスタンスがある場合はそちらを選択しても構いません。</p>
+      </li>
+      <li>
+        <strong>設定を構成</strong>
+        <p>マテリアルの接頭辞/接尾辞と保存場所を設定します。接頭辞に「Natane_」と設定すると、変換後のマテリアル名が「Natane_Body」「Natane_Hair」のようになります。</p>
+      </li>
+      <li>
+        <strong>マテリアルをプレビュー</strong>
+        <p>検出されたlilToonマテリアルの一覧を確認し、変換するものを選択します。特定のマテリアルだけ変換したくない場合はチェックを外してください。</p>
+      </li>
+      <li>
+        <strong>変換を実行</strong>
+        <p>「バリアント生成＆変換実行」をクリックすると、プレハブバリアントが作成され、選択したマテリアルがNatane Toon Shaderに変換されます。</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>元のプレハブとマテリアルは一切変更されません。いつでも元の状態に戻せるため、気軽に試してみてください</li>
+      <li>統一された接頭辞を使用すると、Projectビューでの整理が簡単になります。おすすめは「Natane_」または「NT_」です</li>
+      <li>プレビュー画面で変換前の正確なマテリアル名を確認できるので、命名の重複がないかチェックしましょう</li>
+      <li>複数のマテリアルを一括変換できるため、アバター全体の移行が一回の操作で完了します</li>
+      <li>変換後は、Natane Toon Shader独自の機能（カスタムリムライト、マットキャップ、ディゾルブなど）を追加して、表現力をさらに高めることができます</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>リムライト1 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>リムライト1</h1>
+    <p class="page-subtitle">オブジェクトの縁に光を追加して立体感を強調</p>
+
+    <h2 id="overview">概要</h2>
+    <p>リムライトは、視線方向とオブジェクトの法線が垂直に近い部分（縁）に光を追加するエフェクトです。キャラクターの立体感を強調し、背景から浮き上がらせる効果があります。</p>
+    <p>キーワード <code>_RIM_LIGHT</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">リムライトの色</span>
+        <span class="param-prop">_RimColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>リムライトの色を設定します。環境光に合わせた色や、キャラクターの雰囲気に合った色を選択できます。</p>
+        <p class="param-default">デフォルト: (1, 1, 1, 1)（白）</p>
+      </div>
+      <div class="param-tip">夕焼けシーンではオレンジ系、水中シーンでは青系の色がおすすめです。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">リムライトのパワー</span>
+        <span class="param-prop">_RimPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>リムライトの鋭さを制御します。値が大きいほど縁の細い部分のみに集中し、小さいほど広範囲に広がります。</p>
+        <p class="param-default">デフォルト: 3</p>
+        <p class="param-range">範囲: 0.1 〜 10</p>
+      </div>
+      <div class="param-tip">繊細な輪郭線のような効果は5〜8、ふんわりしたオーラのような効果は1〜2がおすすめです。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">リムライトの強さ</span>
+        <span class="param-prop">_RimIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>リムライトの明るさ（強度）を制御します。1.0を超える値を設定すると、HDR的な発光効果が得られます。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">リムの広がり（グロー）</span>
+        <span class="param-prop">_RimSpread</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>リムライトを滲ませて広げ、柔らかく発光しているような効果を追加します。</p>
+        <ul>
+          <li><strong>0</strong> - 広がりなし（シャープなリム）</li>
+          <li><strong>0.3〜0.5</strong> - 適度な広がり（推奨）</li>
+          <li><strong>0.7〜1.0</strong> - 大きな広がり（強いグロー）</li>
+        </ul>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">グロー効果は低いパワー値と組み合わせると、幻想的な発光演出に最適です。</div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">リムマスク</span>
+        <span class="param-prop">_RimMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>リムライトの表示領域を制御するマスクテクスチャです。キーワード <code>_RIM_MASK</code> で有効化します。</p>
+        <p class="param-default">デフォルト: "white"（全面表示）</p>
+      </div>
+      <div class="param-tip">白 = リムライトあり、黒 = リムライトなし。顔だけにリムライトを集中させたり、衣装の一部を除外するのに便利です。</div>
+    </div>
+
+    <h2 id="blend">ブレンド＆ブラー</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_RimBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>リムライトエフェクトのブレンド方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常の加算合成</li>
+          <li><strong>Soft (1)</strong> - ソフトな加算。明るくなりすぎを防ぐ</li>
+          <li><strong>Screen (2)</strong> - スクリーン合成。自然な明るさ加算</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ合成。コントラスト強調</li>
+        </ul>
+        <p class="param-default">デフォルト: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_RimBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>リムライトエフェクトの強度（不透明度）を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_RimBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>リムライトエフェクトのぼかし量を調整します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

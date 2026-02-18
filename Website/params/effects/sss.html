@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSS - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>SSS（サブサーフェススキャッタリング）</h1>
+    <p class="page-subtitle">表面下散乱（Subsurface Scattering）で肌のような半透明感</p>
+
+    <h2 id="overview">概要</h2>
+    <p>SSS（サブサーフェススキャッタリング）は、オブジェクトを通過する光をシミュレートするエフェクトです。人の肌、葉、蝋燭、薄い布など、光が表面を透過して散乱する素材の表現に最適です。</p>
+    <p>キーワード <code>_SSS</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SSSの色</span>
+        <span class="param-prop">_SSSColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>サブサーフェス散乱光の色を設定します。肌では赤みのある色が自然な印象になります。</p>
+        <p class="param-default">デフォルト: (1, 0.5, 0.5, 1)（薄い赤）</p>
+      </div>
+      <div class="param-tip">肌には (1, 0.5, 0.5)〜(1, 0.7, 0.6) の暖色系、葉には (0.5, 1, 0.3) の緑系がおすすめです。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SSSの強さ</span>
+        <span class="param-prop">_SSSIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>サブサーフェス散乱エフェクトの全体的な強度を制御します。</p>
+        <p class="param-default">デフォルト: 1.5</p>
+        <p class="param-range">範囲: 0 〜 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SSSのパワー</span>
+        <span class="param-prop">_SSSPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>散乱光の集中度を制御します。値が大きいほど散乱が狭い範囲に集中し、小さいほど広範囲に広がります。</p>
+        <p class="param-default">デフォルト: 3</p>
+        <p class="param-range">範囲: 0.1 〜 10</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SSSの歪み</span>
+        <span class="param-prop">_SSSDistortion</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>散乱光の方向歪みを制御します。法線方向にどれだけ歪ませるかを設定し、より自然な散乱パターンを作ります。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <h2 id="thickness">厚さマップ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">厚さマップ</span>
+        <span class="param-prop">_ThicknessMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>オブジェクトの厚さ情報を格納するテクスチャです。キーワード <code>_THICKNESS_MAP</code> で有効化します。薄い部分ほど光が透過しやすくなります。</p>
+        <p class="param-default">デフォルト: "white"（均一な厚さ）</p>
+      </div>
+      <div class="param-tip">白 = 薄い（SSSが強い）、黒 = 厚い（SSSが弱い）。耳や鼻、指先などの薄い部分を白くペイントすると効果的です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">厚さのスケール</span>
+        <span class="param-prop">_ThicknessScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>厚さマップの影響度をスケーリングします。値が小さいほど厚さの差異が軽減されます。</p>
+        <p class="param-default">デフォルト: 0.2</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SSSマスク</span>
+        <span class="param-prop">_SSSMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>SSSの適用領域を制御するマスクテクスチャです。キーワード <code>_SSS_MASK</code> で有効化します。</p>
+        <p class="param-default">デフォルト: "white"（全面適用）</p>
+      </div>
+      <div class="param-tip">白 = SSSあり、黒 = SSSなし。肌部分のみにSSSを適用し、衣装や金属パーツは除外するのが一般的です。</div>
+    </div>
+
+    <h2 id="blend">ブレンド＆ブラー</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_SSSBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>SSSエフェクトのブレンド方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常の加算合成</li>
+          <li><strong>Soft (1)</strong> - ソフトな加算。明るくなりすぎを防ぐ</li>
+          <li><strong>Screen (2)</strong> - スクリーン合成。自然な明るさ加算</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ合成。コントラスト強調</li>
+        </ul>
+        <p class="param-default">デフォルト: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_SSSBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>SSSエフェクトの強度（不透明度）を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_SSSBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>SSSエフェクトのぼかし量を調整します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

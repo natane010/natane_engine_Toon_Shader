@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ホログラム - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ホログラム</h1>
+    <p class="page-subtitle">SFスタイルのホログラム効果</p>
+
+    <p>サイバーパンクやSF風のホログラム投影を再現するエフェクトです。スキャンライン、エッジグロウ、フリッカー、ノイズ歪みを組み合わせて、リアルなホログラム表現を作成できます。</p>
+    <p>キーワード: <code>_HOLOGRAM</code></p>
+
+    <h2 id="basic">ホログラム基本設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ホログラム色</span>
+        <span class="param-prop">_HologramColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>ホログラムエフェクト全体の色を設定します。スキャンラインやエッジグロウなど、すべてのホログラム要素に影響します。</p>
+        <p class="param-default">デフォルト: (0, 1, 1, 1)（シアン）</p>
+      </div>
+      <div class="param-tip">SF風のシアンや緑がおすすめですが、キャラクターに合わせて自由に変更できます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">モノクロ化</span>
+        <span class="param-prop">_HologramMonochrome</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>元のテクスチャ色をホログラム色に統一します。値を上げるほど、テクスチャの色味が失われてホログラム色のモノクロ表現になります。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+      <div class="param-tip">1.0 にすると完全なモノクロホログラムになり、SF的な雰囲気が強くなります。</div>
+    </div>
+
+    <h2 id="scanline">スキャンライン</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スキャンライン速度</span>
+        <span class="param-prop">_HologramScanlineSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>スキャンライン（走査線）が上下に移動する速度を設定します。3層構成の走査線エフェクトがアニメーションします。</p>
+        <p class="param-default">デフォルト: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スキャンライン強度</span>
+        <span class="param-prop">_HologramScanlineIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スキャンラインの明暗のコントラストを設定します。値が大きいほど走査線がはっきりと見えます。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スキャンライン密度</span>
+        <span class="param-prop">_HologramScanlineDensity</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>スキャンラインの本数（密度）を設定します。値が大きいほど走査線が細かく密に表示されます。</p>
+        <p class="param-default">デフォルト: 100</p>
+      </div>
+      <div class="param-tip">50-200 程度が一般的です。大きすぎるとモアレが発生する場合があります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スキャンライン幅</span>
+        <span class="param-prop">_HologramScanlineWidth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>各スキャンラインの太さを設定します。値が大きいほどスキャンラインが太くなります。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <h2 id="edge-glow">エッジグロウ（Fresnel）</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エッジグロウ範囲</span>
+        <span class="param-prop">_HologramEdgeGlowPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Fresnelベースの縁光り効果の範囲を設定します。値が小さいほどグロウが広く、大きいほどエッジのみに集中します。</p>
+        <p class="param-default">デフォルト: 3（範囲: 0.1 - 10）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エッジグロウ強度</span>
+        <span class="param-prop">_HologramEdgeGlowIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>エッジグロウの明るさを設定します。値が大きいほどエッジが強く光ります。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 5）</p>
+      </div>
+    </div>
+
+    <h2 id="alpha-flicker">透明度・フリッカー</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ホログラム透明度</span>
+        <span class="param-prop">_HologramAlpha</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ホログラム全体の透明度をFresnel連動で自動制御します。値を上げるとホログラムが半透明になります。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+      <div class="param-tip">Transparent バリアントとの組み合わせでよりリアルなホログラム投影を実現できます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フリッカー速度</span>
+        <span class="param-prop">_HologramFlickerSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>ホログラムが明滅（フリッカー）する速度を設定します。</p>
+        <p class="param-default">デフォルト: 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フリッカー量</span>
+        <span class="param-prop">_HologramFlickerAmount</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>フリッカー（明滅）の振幅を設定します。値が大きいほど激しく明滅します。</p>
+        <p class="param-default">デフォルト: 0.3（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <h2 id="noise">ノイズ歪み</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ノイズ強度</span>
+        <span class="param-prop">_HologramNoiseIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ホログラムに加わるノイズ歪みの強さを設定します。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ノイズ速度</span>
+        <span class="param-prop">_HologramNoiseSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>ノイズ歪みがアニメーションする速度を設定します。</p>
+        <p class="param-default">デフォルト: 1</p>
+      </div>
+    </div>
+
+    <h2 id="mask-texture">マスク・テクスチャ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ホログラムマスク</span>
+        <span class="param-prop">_HologramMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>ホログラムエフェクトの適用範囲をテクスチャで制御します。キーワード <code>_HOLOGRAM_MASK</code> で有効化します。</p>
+        <p class="param-default">デフォルト: "white"（全体に適用）</p>
+      </div>
+      <div class="param-tip">白 = ホログラムあり、黒 = ホログラムなし。部位ごとにホログラムの有無を制御できます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ノイズテクスチャ</span>
+        <span class="param-prop">_HologramNoiseTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>カスタムノイズテクスチャを使用してホログラムの歪みパターンを制御します。キーワード <code>_HOLOGRAM_NOISE</code> で有効化します。</p>
+        <p class="param-default">デフォルト: "white"</p>
+      </div>
+    </div>
+
+    <h2 id="blend">ブレンド設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_HologramBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>ホログラムエフェクトとベースカラーの合成方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常合成</li>
+          <li><strong>Soft (1)</strong> - ソフトライト</li>
+          <li><strong>Screen (2)</strong> - スクリーン（明るく追加）</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Normal）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_HologramBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ホログラムエフェクトの全体的な適用度を設定します。0 で無効、1 で完全適用です。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_HologramBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ホログラムエフェクトの境界をぼかします。値が大きいほど柔らかい合成になります。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

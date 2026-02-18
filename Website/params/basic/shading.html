@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>シェーディング - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>シェーディング</h1>
+    <p class="page-subtitle">トゥーンシェーディングのスタイルと影の設定</p>
+
+    <p>アニメ調のセルシェーディングにより、クリーンで明瞭な陰影境界を実現し、高品質なアニメ調レンダリングを提供します。ToonモードとGradientモード、またはランプテクスチャから選択できます。</p>
+
+    <h2 id="shading-mode">シェーディングモード</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">モード</span>
+        <span class="param-prop">_ShadingMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>シェーディングのスタイルを選択します。</p>
+        <ul>
+          <li><strong>Toon (0)</strong>: 階段状のセルシェーディング。クラシックなアニメ調の表現です。</li>
+          <li><strong>Gradient (1)</strong>: 滑らかなグラデーションシェーディング。柔らかい印象を与えます。</li>
+        </ul>
+        <p class="param-default">デフォルト: Toon (0)</p>
+      </div>
+      <div class="param-tip">ランプテクスチャを有効にすると、このモード設定は無視されランプテクスチャに基づくシェーディングが適用されます。</div>
+    </div>
+
+    <h2 id="gradient-settings">グラデーション設定</h2>
+    <p>Gradientモード選択時に表示されるパラメータです。</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グラデーション幅</span>
+        <span class="param-prop">_ShadingGradientWidth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>影と光の境界の滑らかさを調整します。0.1で狭いグラデーション（シャープな境界）、0.2〜0.3で標準的なグラデーション、0.5以上で広いグラデーション（非常に柔らかい）になります。</p>
+        <p class="param-default">デフォルト: 0.2</p>
+        <p class="param-range">範囲: 0.001 〜 1</p>
+      </div>
+      <div class="param-tip">柔らかい印象を与えるために、0.2以上の値がおすすめです。</div>
+    </div>
+
+    <h2 id="shadow-colors">影の色設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">影の色（1段目）</span>
+        <span class="param-prop">_ShadowColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>メインの影色です。Toonモードでは1段目の影色として、Gradientモードでは影全体の色として使用されます。</p>
+        <p class="param-default">デフォルト: (0.5, 0.5, 0.5, 1)</p>
+      </div>
+      <div class="param-tip">肌の影にはわずかに赤みを加えると自然に見えます。例: (0.55, 0.45, 0.45)</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">影の色（2段目）</span>
+        <span class="param-prop">_Shadow2ndColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>2段目の影色です。多段階影を有効にした場合に使用されます。1段目より濃い色を設定してください。</p>
+        <p class="param-default">デフォルト: (0.35, 0.35, 0.35, 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">2段目の境界</span>
+        <span class="param-prop">_Shadow2ndBorder</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>2段目の影が適用される暗さの境界値です。この値より暗い部分に2段目の影色が適用されます。0.5で半分より暗い部分、0.3でやや暗い部分（推奨）、0.1で最も暗い部分のみです。</p>
+        <p class="param-default">デフォルト: 0.3</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">影の色（3段目）</span>
+        <span class="param-prop">_Shadow3rdColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>3段目の影色（最も濃い影）です。多段階影を有効にした場合に使用されます。</p>
+        <p class="param-default">デフォルト: (0.2, 0.2, 0.2, 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">3段目の境界</span>
+        <span class="param-prop">_Shadow3rdBorder</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>3段目の影が適用される暗さの境界値です。0.15〜0.2で標準的な最暗部（推奨）、0.05〜0.1で非常に暗い部分のみです。</p>
+        <p class="param-default">デフォルト: 0.15</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">境界値は 1段目 &gt; 2段目 &gt; 3段目 の順に設定してください。</div>
+    </div>
+
+    <h2 id="toon-settings">Toonモード設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">影のステップ数</span>
+        <span class="param-prop">_ShadowSteps</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>セルシェーディングの段階数です。少ないステップでアニメ調、多いステップでグラデーション的な効果になります。</p>
+        <p class="param-default">デフォルト: 2</p>
+        <p class="param-range">範囲: 1 〜 10</p>
+      </div>
+      <div class="param-tip">推奨値: 2〜3（アニメ調）。より多いステップでグラデーション効果が得られます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">影のシャープネス</span>
+        <span class="param-prop">_ShadowSharpness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>影の境界のシャープさを制御します。低い値でシャープな境界（アニメ調）、高い値で柔らかい境界（イラスト調）になります。</p>
+        <p class="param-default">デフォルト: 0.1</p>
+        <p class="param-range">範囲: 0.001 〜 1</p>
+      </div>
+      <div class="param-tip">アニメ調推奨: 0.05〜0.15</div>
+    </div>
+
+    <h2 id="common-settings">共通設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">影のオフセット</span>
+        <span class="param-prop">_ShadowOffset</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>影の境界位置を調整します。正の値で影を明るく（影領域を小さく）、負の値で影を暗く（影領域を大きく）します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: -1 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ライト部分のソフトネス</span>
+        <span class="param-prop">_LitSoftness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>光の当たっている部分を周囲となじませます。0でシャープな境界（デフォルト）、0.3〜0.5で適度な柔らかさ、1.0で最大のなじませ効果です。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">光の当たり方が強すぎる場合や、より滑らかなグラデーションが欲しい場合に調整してください。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">影のなじませ（柔らかさ）</span>
+        <span class="param-prop">_ShadowBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>影の境界を周囲となじませて、より柔らかい印象にします。0でシャープな境界（デフォルト）、0.3〜0.5で適度な柔らかさ（推奨）、0.7〜1.0で非常に柔らかい境界です。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">影の境界が鋭すぎる場合や、よりイラスト調の柔らかな影が欲しい場合に調整してください。0.7以上に設定する場合は「高度なライティング」タブの他のソフトネスパラメータも確認することを推奨します。</div>
+    </div>
+
+    <h2 id="ramp-texture">ランプテクスチャ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ランプテクスチャ</span>
+        <span class="param-prop">_RampTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>ランプテクスチャを使用したシェーディングです。暗い色（左）から明るい色（右）へのグラデーションテクスチャを設定します。有効にするとToon/Gradientモードの代わりにランプテクスチャに基づくシェーディングが適用されます。キーワード: _USE_RAMP</p>
+        <p class="param-default">デフォルト: "white"（トグルで有効化）</p>
+      </div>
+      <div class="param-tip">カスタムグラデーションで独自の影の色合いを作成できます。暖色系グラデーションで温かみのある影、寒色系で冷たい印象の影が作れます。</div>
+    </div>
+
+    <h2 id="sdf-shadow">SDF Shadow Map</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SDFマップ</span>
+        <span class="param-prop">_SDFMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>SDF（距離場）Shadow Mapテクスチャです。テクスチャベースで影の位置を正確にコントロールできる高度な機能です。白 = 明るい、黒 = 影。キーワード: _SDF_MAP</p>
+        <p class="param-default">デフォルト: "white"（トグルで有効化）</p>
+      </div>
+      <div class="param-tip">顔の影を細かく制御したい場合や、特定の場所に常に影を落としたい場合に使用します。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SDF強度</span>
+        <span class="param-prop">_SDFIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>SDF影の強さを制御します。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SDFソフトネス</span>
+        <span class="param-prop">_SDFSoftness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>SDF影の境界の柔らかさです。</p>
+        <p class="param-default">デフォルト: 0.1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SDFオフセット</span>
+        <span class="param-prop">_SDFOffset</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>SDF影の位置調整です。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: -1 〜 1</p>
+      </div>
+    </div>
+
+    <h2 id="shading-grade-map">Shading Grade Map</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shading Grade Map</span>
+        <span class="param-prop">_ShadingGradeMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>影の濃さを部分的に調整できるテクスチャです。白 = 明るく（影が薄くなる）、黒 = 暗く（影が濃くなる）、グレー = 中間。キーワード: _SHADING_GRADE_MAP</p>
+        <p class="param-default">デフォルト: "white"（トグルで有効化）</p>
+      </div>
+      <div class="param-tip">顔は明るく、服は暗くなど、部位ごとに影の濃さを変えたい場合に使用します。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グレードスケール</span>
+        <span class="param-prop">_ShadingGradeScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Shading Grade Mapの影響度を調整します。-1で暗く、0で変化なし、1で明るくなります。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: -1 〜 1</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

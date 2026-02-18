@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>パララックス - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>パララックス</h1>
+    <p class="page-subtitle">視差マッピングで疑似的な立体感</p>
+
+    <h2>概要</h2>
+    <p>パララックス（視差マッピング）は、高さマップを使用してサーフェスに深度の錯覚を作成する技法です。カメラの視線角度に応じてテクスチャ座標をオフセットすることで、実際のポリゴンを変形させることなく、石畳やレンガ壁、タイルなどに立体的な奥行き感を追加します。</p>
+    <p>キーワード <code>_PARALLAX</code> で制御されます。</p>
+
+    <h2>プロパティ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">視差マッピングを有効化</span>
+        <span class="param-prop">_Parallax</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>視差マッピング機能の有効/無効を切り替えます。キーワード <code>_PARALLAX</code> でコンパイル時に分岐します。</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">高さマップ</span>
+        <span class="param-prop">_ParallaxMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>サーフェスの高さ情報を格納したグレースケールテクスチャです。白い部分が高く、黒い部分が低くなります。</p>
+        <p class="param-default">デフォルト: "black"</p>
+      </div>
+      <div class="param-tip">高さマップはノーマルマップと併用するとより効果的です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">視差のスケール</span>
+        <span class="param-prop">_ParallaxScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>視差効果の強さを制御します。値を大きくすると深い凹凸感が得られますが、大きすぎると不自然なアーティファクトが発生する場合があります。</p>
+        <p class="param-default">デフォルト: 0.02</p>
+      </div>
+      <div class="param-tip">0.01〜0.05の範囲で調整するのがおすすめです。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">最小サンプル数</span>
+        <span class="param-prop">_ParallaxMinSamples</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>正面から見た場合のレイマーチングサンプル数です。サンプル数が少ないほど処理が軽くなりますが、品質が低下します。</p>
+        <p class="param-default">デフォルト: 4</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">最大サンプル数</span>
+        <span class="param-prop">_ParallaxMaxSamples</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>斜めから見た場合の最大レイマーチングサンプル数です。急角度では多くのサンプルが必要になるため、この値で品質とパフォーマンスのバランスをとります。</p>
+        <p class="param-default">デフォルト: 16</p>
+      </div>
+      <div class="param-tip">VRChat Quest向けでは最大サンプル数を8〜12に抑えると、パフォーマンスへの影響を軽減できます。</div>
+    </div>
+
+    <h2>使い方のポイント</h2>
+    <ul>
+      <li>石や壁などの硬い素材に最適な効果です</li>
+      <li>ノーマルマップと高さマップを組み合わせて使用すると、最もリアルな結果が得られます</li>
+      <li>スケール値は控えめに設定し、視覚的な破綻を防ぎましょう</li>
+      <li>サンプル数を増やすと品質が向上しますが、GPUへの負荷も増加します</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

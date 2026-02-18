@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スペキュラー - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>スペキュラー</h1>
+    <p class="page-subtitle">光のハイライト反射を制御</p>
+
+    <h2 id="overview">概要</h2>
+    <p>スペキュラーは、光源からの直接的なハイライト反射を表現するエフェクトです。金属的な光沢や、髪の天使の輪のような鏡面反射をトゥーンスタイルで描画します。</p>
+    <p>キーワード <code>_SPECULAR</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スペキュラーの色</span>
+        <span class="param-prop">_SpecularColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>スペキュラーハイライトの色を設定します。アルファチャンネルも使用可能です。</p>
+        <p class="param-default">デフォルト: (1, 1, 1, 1)（白）</p>
+      </div>
+      <div class="param-tip">光源色に近い白系が自然な仕上がりになります。色付きスペキュラーで宝石や金属のような表現も可能です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スペキュラーのサイズ</span>
+        <span class="param-prop">_SpecularSize</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スペキュラーハイライトの大きさを調整します。値が大きいほど広範囲にハイライトが広がります。</p>
+        <p class="param-default">デフォルト: 0.1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">小さい値（0.05〜0.15）はシャープで金属的な光沢、大きい値（0.3〜0.5）は柔らかいプラスチックのような光沢になります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スペキュラーの柔らかさ</span>
+        <span class="param-prop">_SpecularSoftness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スペキュラーハイライトのエッジの柔らかさを制御します。値が小さいほどシャープなエッジ、大きいほど滑らかなグラデーションになります。</p>
+        <p class="param-default">デフォルト: 0.05</p>
+        <p class="param-range">範囲: 0.001 〜 1</p>
+      </div>
+      <div class="param-tip">トゥーンスタイルではシャープなエッジ（0.01〜0.1）が一般的です。リアル寄りの表現では0.3以上を試してみてください。</div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スペキュラーマスク</span>
+        <span class="param-prop">_SpecularMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>スペキュラーの表示領域を制御するマスクテクスチャです。キーワード <code>_SPECULAR_MASK</code> で有効化します。</p>
+        <p class="param-default">デフォルト: "white"（全面表示）</p>
+      </div>
+      <div class="param-tip">白 = スペキュラーあり、黒 = スペキュラーなし。肌にはスペキュラーを入れて、衣装部分は抑えるといった使い分けに便利です。</div>
+    </div>
+
+    <h2 id="blend">ブレンド＆ブラー</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_SpecularBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>スペキュラーエフェクトのブレンド方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常の加算合成</li>
+          <li><strong>Soft (1)</strong> - ソフトな加算。明るくなりすぎを防ぐ</li>
+          <li><strong>Screen (2)</strong> - スクリーン合成。自然な明るさ加算</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ合成。コントラスト強調</li>
+        </ul>
+        <p class="param-default">デフォルト: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_SpecularBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スペキュラーエフェクトの強度（不透明度）を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_SpecularBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スペキュラーエフェクトのぼかし量を調整します。エッジを柔らかくして自然な見た目にします。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

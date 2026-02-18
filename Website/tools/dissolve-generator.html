@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ディゾルブパターン生成 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ディゾルブパターン生成</h1>
+    <p class="page-subtitle">プロシージャルなディゾルブテクスチャの生成</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Dissolve Generator</span>
+      <span>カテゴリ: エフェクト</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>ディゾルブパターン生成ツールは、ディゾルブ（溶解）エフェクトで使用するノイズテクスチャをプロシージャルに生成するツールです。複数のノイズアルゴリズムから選択でき、パラメータを調整しながらリアルタイムでプレビューを確認し、テクスチャとして出力できます。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li>複数のノイズタイプ（パーリン、ボロノイ、セルラー、ランダム、グラデーション）</li>
+      <li>スケール、コントラスト、オクターブなどの調整可能なパラメータ</li>
+      <li>リアルタイムプレビュー</li>
+      <li>テクスチャファイルへの出力（PNG）</li>
+      <li>プリセットパターン</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>ノイズタイプを選択します: パーリン、ボロノイ、セルラー、ランダム、グラデーション</li>
+      <li>スケール、コントラスト、その他の設定を調整します</li>
+      <li>プレビューウィンドウで生成パターンをリアルタイムで確認します</li>
+      <li>「テクスチャを生成」をクリックしてアセットとして保存します</li>
+    </ol>
+
+    <h2>ノイズタイプ</h2>
+    <ul>
+      <li><strong>パーリン（Perlin）</strong> - 滑らかで自然なノイズ。汎用的なディゾルブパターンに最適</li>
+      <li><strong>ボロノイ（Voronoi）</strong> - 細胞状のパターン。有機的なディゾルブに最適</li>
+      <li><strong>セルラー（Cellular）</strong> - 格子状のパターン。デジタル的な表現向け</li>
+      <li><strong>ランダム（Random）</strong> - 完全ランダムなノイズ。粒子状のディゾルブ向け</li>
+      <li><strong>グラデーション（Gradient）</strong> - 方向性のあるグラデーション。スワイプ的なディゾルブ向け</li>
+    </ul>
+
+    <h2>パラメータ</h2>
+    <ul>
+      <li><strong>スケール</strong> - ノイズパターンの大きさ。値が大きいほど細かいパターンに</li>
+      <li><strong>コントラスト</strong> - 白黒のメリハリ。高いほどシャープなエッジのディゾルブに</li>
+      <li><strong>解像度</strong> - 出力テクスチャのサイズ（256〜2048）</li>
+      <li><strong>シード</strong> - ランダムシード値。異なるバリエーションを生成</li>
+    </ul>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>ボロノイは有機的なディゾルブパターンを作成するのに最適です</li>
+      <li>高コントラストに設定するとシャープなエッジのディゾルブになります</li>
+      <li>ディゾルブテクスチャには通常512x512で十分な解像度です</li>
+      <li>シード値を変えて複数のバリエーションを試してみましょう</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

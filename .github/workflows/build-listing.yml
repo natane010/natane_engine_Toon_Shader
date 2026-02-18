@@ -1,0 +1,107 @@
+name: Build VPM Listing
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+env:
+  PACKAGE_NAME: com.natane.toonshader
+  LISTING_URL: https://natanetoon.com/index.json
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read package.json
+        id: pkg
+        run: |
+          echo "version=$(jq -r '.version' package.json)" >> $GITHUB_OUTPUT
+
+      - name: Create package zip
+        run: |
+          VERSION="${{ steps.pkg.outputs.version }}"
+          mkdir -p _build
+          # Copy package files (exclude CI, website, git, claude config)
+          rsync -av . _build/ \
+            --exclude .git \
+            --exclude .github \
+            --exclude Website \
+            --exclude _build \
+            --exclude .claude
+          # VPM requires package.json at zip root (no subdirectory wrapper)
+          cd _build
+          zip -r ../${{ env.PACKAGE_NAME }}-${VERSION}.zip .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.PACKAGE_NAME }}-${{ steps.pkg.outputs.version }}.zip
+          generate_release_notes: true
+
+      - name: Fetch existing listing from gh-pages
+        run: |
+          mkdir -p _site
+          # Try to get existing listing from gh-pages branch
+          git fetch origin gh-pages --depth=1 2>/dev/null || true
+          if git show origin/gh-pages:index.json > _site/index.json 2>/dev/null; then
+            echo "Found existing listing"
+          else
+            echo "No existing listing, creating new one"
+            cat > _site/index.json << 'EOF'
+          {
+            "name": "Natane Toon Shader",
+            "id": "com.natane.toonshader.listing",
+            "url": "https://natanetoon.com/index.json",
+            "author": "Natane",
+            "packages": {
+              "com.natane.toonshader": {
+                "versions": {}
+              }
+            }
+          }
+          EOF
+          fi
+
+      - name: Add version to listing
+        run: |
+          VERSION="${{ steps.pkg.outputs.version }}"
+          ZIP_URL="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.PACKAGE_NAME }}-${VERSION}.zip"
+          ZIP_SHA=$(sha256sum "${{ env.PACKAGE_NAME }}-${VERSION}.zip" | cut -d' ' -f1)
+
+          # Build version entry from package.json + url + sha
+          VERSION_ENTRY=$(jq --arg url "$ZIP_URL" --arg sha "$ZIP_SHA" \
+            '. + {url: $url, zipSHA256: $sha}' package.json)
+
+          # Merge into existing listing (preserves previous versions)
+          jq --arg pkg "${{ env.PACKAGE_NAME }}" \
+             --arg ver "$VERSION" \
+             --argjson entry "$VERSION_ENTRY" \
+             '.packages[$pkg].versions[$ver] = $entry' \
+             _site/index.json > _site/index.json.tmp
+          mv _site/index.json.tmp _site/index.json
+
+          echo "=== VPM Listing ==="
+          jq . _site/index.json
+
+      - name: Copy website assets
+        run: |
+          # Copy all website files including subdirectories (params/, tools/)
+          # Exclude index.json to preserve the generated VPM listing
+          rsync -av Website/ _site/ --exclude '*.meta' --exclude 'index.json'
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          destination_dir: ./

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アルファマスク - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>アルファマスク</h1>
+    <p class="page-subtitle">テクスチャで透明度を部分的に制御</p>
+
+    <p>アルファマスクは、テクスチャのR（赤）チャンネルを使用してマテリアルの透明度を部分的に制御する機能です。ガラスの一部だけを透明にしたり、服の一部をシースルーにしたり、グラデーションでフェードアウトさせたりなど、複雑な透明度制御が可能です。</p>
+    <p>キーワード: <code>_ALPHA_MASK</code></p>
+
+    <h2 id="settings">アルファマスク設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">アルファマスク</span>
+        <span class="param-prop">_AlphaMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>Rチャンネルを使用して、マテリアルの透明度を部分的に制御するマスクテクスチャです。</p>
+        <ul>
+          <li>白 (1.0) = 完全に不透明</li>
+          <li>グレー (0.5) = 半透明</li>
+          <li>黒 (0.0) = 完全に透明</li>
+        </ul>
+        <p class="param-default">デフォルト: "white"（全体不透明）</p>
+      </div>
+      <div class="param-tip">半透明効果を使用するには、レンダリングモードを「Transparent」に設定してください。Opaque モードではアルファマスクは機能しません。</div>
+    </div>
+
+    <h2 id="usage">主な用途</h2>
+
+    <div class="feature-section">
+      <h4>ガラス表現</h4>
+      <p>ガラスの一部だけを透明にすることで、すりガラスや模様入りガラスを表現できます。</p>
+    </div>
+
+    <div class="feature-section">
+      <h4>シースルー効果</h4>
+      <p>服やベールの一部を半透明にして、シースルー素材を表現できます。</p>
+    </div>
+
+    <div class="feature-section">
+      <h4>フェードアウト</h4>
+      <p>グラデーションテクスチャを使用して、端を透明にするフェードアウト効果を作成できます。</p>
+    </div>
+
+    <div class="feature-section">
+      <h4>複雑な形状の透明度制御</h4>
+      <p>レース模様やメッシュ素材など、複雑なパターンの透明度を1枚のマスクテクスチャで制御できます。</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

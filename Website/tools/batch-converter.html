@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>一括マテリアル変換 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>一括マテリアル変換</h1>
+    <p class="page-subtitle">複数のマテリアルを一括でNatane Toon Shaderに変換する汎用ツール</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Migration &gt; Batch Converter</span>
+      <span>カテゴリ: 移行</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>一括マテリアル変換は、任意のシェーダーからNatane Toon Shaderへのマテリアル変換を一括で行う汎用マイグレーションツールです。lilToonのような専用移行ツールがないシェーダーからの移行にも対応しています。</p>
+    <p>このツールは、指定したシェーダーを使用しているマテリアルをプロジェクト全体から検出し、リスト表示します。変換元シェーダーのプロパティ名が同じであれば自動的にマッピングされ、異なる場合は手動でマッピングを設定できます。テクスチャプロパティについては、_MainTexや_BumpMapなどの一般的なプロパティ名は自動認識されます。</p>
+    <p>大規模プロジェクトでシェーダーを統一したい場合や、Standard ShaderやUnlit Shaderなどの基本シェーダーからの移行、サードパーティシェーダーからの移行など、幅広い用途で使えます。変換前にバックアップ機能でマテリアルを安全に保護でき、変換後の結果もUndo可能です。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li><strong>複数マテリアル一括処理</strong> — 選択したすべてのマテリアルを一度に変換。大規模プロジェクトの移行を効率化</li>
+      <li><strong>フォルダ指定</strong> — 特定のフォルダを指定して、そのフォルダ内のマテリアルのみを変換対象にできます</li>
+      <li><strong>プロパティ保持</strong> — 変換元と変換先で同名のプロパティは自動的に値を引き継ぎ。テクスチャ、色、数値パラメータに対応</li>
+      <li><strong>バックアップ</strong> — 変換前にマテリアルのバックアップを自動作成。問題が発生した場合の復元に使用</li>
+      <li><strong>フィルタリング</strong> — シェーダー名やマテリアル名でフィルタリングして、変換対象を絞り込み可能</li>
+      <li><strong>変換レポート</strong> — 変換完了後、成功/失敗/スキップされたマテリアルの詳細レポートを表示</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>変換元シェーダーを選択</strong>
+        <p>変換したいマテリアルが現在使用しているシェーダーを選択します。プロジェクト内で使用中のシェーダー一覧がドロップダウンで表示されます。</p>
+      </li>
+      <li>
+        <strong>マテリアルリストを確認</strong>
+        <p>選択したシェーダーを使用しているマテリアルの一覧が表示されます。変換したくないマテリアルはチェックボックスで除外できます。</p>
+      </li>
+      <li>
+        <strong>設定</strong>
+        <p>変換先のバリアント（Opaque / Cutout / Transparent）、プロパティマッピング、バックアップの有無を設定します。</p>
+      </li>
+      <li>
+        <strong>一括変換</strong>
+        <p>「一括変換」ボタンで変換を実行します。プログレスバーで進捗が表示され、完了後にレポートが表示されます。</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>バックアップ機能は必ず有効にしておきましょう。予期しない変換結果が出た場合に復元できます</li>
+      <li>Standard Shaderからのテクスチャマッピングはほぼ自動で行われます（_MainTex、_BumpMap、_MetallicGlossMap など）</li>
+      <li>変換後は必ずSceneビューで見た目を確認し、必要に応じて影の色やリムライトなどのトゥーンシェーダー固有の設定を追加してください</li>
+      <li>大量のマテリアルを一度に変換する場合は、フォルダ単位で段階的に進めると管理しやすくなります</li>
+      <li>変換レポートに「スキップ」と表示されたマテリアルは、プロパティの互換性がなかった可能性があるため、手動で確認してください</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

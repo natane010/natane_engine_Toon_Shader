@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アンビエントオクルージョン - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>アンビエントオクルージョン</h1>
+    <p class="page-subtitle">接触面の影を強調してリアルな陰影を表現</p>
+
+    <p>アンビエントオクルージョン（AO）は、隙間や窪みなど環境光が届きにくい部分を暗くして、より立体的で柔らかい印象を与えます。衣服の折り目、髪の毛の重なり、耳の内側などの自然な陰影を表現するのに最適です。</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">AO マップ</span>
+        <span class="param-prop">_AOMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>アンビエントオクルージョンのマップテクスチャです。白 = 影なし（明るい）、黒 = 完全な影（暗い）。キーワード: _USE_AO</p>
+        <p class="param-default">デフォルト: "white"（トグルで有効化）</p>
+      </div>
+      <div class="param-tip">キャラクターの脇の下や首元などの影表現に最適です。AOマップは3Dモデリングソフトからベイクするか、手動でペイントして作成します。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">AO強度</span>
+        <span class="param-prop">_AOIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>AOの効果の強さを制御します。0で効果なし、1で最大効果です。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">推奨強度: 0.5〜0.8。強すぎると不自然な影が目立ちます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_AOBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>AO効果のブレンド強度です。エフェクトがベースカラーにどの程度混合されるかを制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_AOBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>AOのブレンド方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong>: 通常の合成</li>
+          <li><strong>Soft (1)</strong>: 柔らかい合成</li>
+          <li><strong>Screen (2)</strong>: スクリーン</li>
+          <li><strong>Overlay (3)</strong>: オーバーレイ</li>
+        </ul>
+        <p class="param-default">デフォルト: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_AOBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>AO効果のぼかし具合です。0でシャープ、1で最大ぼかしです。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">ぼかしを加えると、AO の境界がより柔らかく自然な印象になります。テクスチャの解像度が低い場合にも有効です。</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

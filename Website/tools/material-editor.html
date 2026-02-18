@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>マテリアルエディタ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>マテリアルエディタ</h1>
+    <p class="page-subtitle">複数マテリアルの一括処理</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Batch Material Processor</span>
+      <span>カテゴリ: マテリアル</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>一括マテリアル処理ツールは、複数のマテリアルに対してパラメータ調整、色の変更、テクスチャ置換、機能の切り替えなどを一度に実行できる強力なバッチ処理ツールです。大量のマテリアルを扱うプロジェクトでの作業効率を大幅に向上させます。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li>パラメータの一括調整（Set/Multiply/Add モード対応）</li>
+      <li>カラーの一括変更</li>
+      <li>テクスチャの一括置換</li>
+      <li>シェーダー機能の一括切り替え（ON/OFF）</li>
+      <li>シェーダーバリアントの一括変換（Opaque/Cutout/Transparent）</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>マテリアルリストから処理対象のマテリアルを追加します</li>
+      <li>操作タブを選択します: パラメータ / 色 / テクスチャ / 機能 / バリアント</li>
+      <li>選択した操作の値を設定します</li>
+      <li>「プレビュー」で適用前に変更内容を確認します</li>
+      <li>「すべてに適用」ですべてのマテリアルを一括処理します</li>
+    </ol>
+
+    <h2>操作モード</h2>
+    <h3>パラメータ調整</h3>
+    <ul>
+      <li><strong>Set</strong> - 指定した値に直接設定します</li>
+      <li><strong>Multiply</strong> - 現在の値に係数を乗算します（相対的な調整に便利）</li>
+      <li><strong>Add</strong> - 現在の値に値を加算します</li>
+    </ul>
+    <h3>テクスチャ置換</h3>
+    <ul>
+      <li>特定のプロパティスロットのテクスチャを一括で差し替え</li>
+      <li>テクスチャのタイリングとオフセットも一括設定可能</li>
+    </ul>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>「Set」モードで正確な値を設定できます</li>
+      <li>「Multiply」で相対的な調整が可能です（例: 全マテリアルのアウトライン幅を1.5倍に）</li>
+      <li>一括操作前に必ずバックアップをとりましょう（Undo対応済みですが、念のため）</li>
+      <li>プレビュー機能を活用して意図しない変更を防ぎましょう</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

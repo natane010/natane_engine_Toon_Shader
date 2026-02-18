@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>グリッター - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>グリッター</h1>
+    <p class="page-subtitle">キラキラと輝くグリッターエフェクト</p>
+
+    <h2 id="overview">概要</h2>
+    <p>グリッターは、キラキラと輝くハイライト効果を追加するエフェクトです。衣装やアクセサリーに華やかさを追加したい場合に使用します。ノイズベースのアニメーションにより、リアルなきらめき表現を実現します。</p>
+    <p>キーワード <code>_GLITTER</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グリッター色</span>
+        <span class="param-prop">_GlitterColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>グリッターの輝きの色を設定します。アルファチャンネルも使用可能です。</p>
+        <p class="param-default">デフォルト: (1, 1, 1, 1)（白）</p>
+      </div>
+      <div class="param-tip">金色のグリッターには (1, 0.85, 0.5)、虹色の効果にはエミッションと組み合わせるのも効果的です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グリッターサイズ</span>
+        <span class="param-prop">_GlitterSize</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>グリッターの粒子サイズを制御します。値が大きいほど粒子が大きくなります。</p>
+        <p class="param-default">デフォルト: 0.1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グリッター密度</span>
+        <span class="param-prop">_GlitterDensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>グリッターの出現頻度を制御します。値が大きいほど多くのグリッターが表示されます。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">0 = 少ない、1 = 多い。宝石のような効果には高密度（0.7〜1.0）、控えめな輝きには低密度（0.2〜0.4）が適しています。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グリッター速度</span>
+        <span class="param-prop">_GlitterSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>グリッターの点滅速度を制御します。値が大きいほど速く点滅します。</p>
+        <p class="param-default">デフォルト: 1</p>
+      </div>
+      <div class="param-tip">0に設定するとアニメーションが停止し、静的なグリッターになります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グリッター強度</span>
+        <span class="param-prop">_GlitterIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>グリッターの明るさを制御します。1.0を超える値でHDR的な強い輝き効果が得られます。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グリッターマスク</span>
+        <span class="param-prop">_GlitterMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>グリッターの表示領域を制御するマスクテクスチャです。キーワード <code>_GLITTER_MASK</code> で有効化します。Rチャンネル（赤）を使用してグリッターの表示領域を制御します。</p>
+        <p class="param-default">デフォルト: "white"（全面表示）</p>
+      </div>
+      <div class="param-tip">白 (1.0) = グリッターを完全に表示、黒 (0.0) = グリッターを非表示、グレー = 部分的に表示。アクセサリーや衣装の装飾部分にだけグリッターを適用するのに使います。</div>
+    </div>
+
+    <h2 id="blend">ブレンド＆ブラー</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_GlitterBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>グリッターエフェクトのブレンド方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常の加算合成</li>
+          <li><strong>Soft (1)</strong> - ソフトな加算。明るくなりすぎを防ぐ</li>
+          <li><strong>Screen (2)</strong> - スクリーン合成。自然な明るさ加算</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ合成。コントラスト強調</li>
+        </ul>
+        <p class="param-default">デフォルト: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_GlitterBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>グリッターエフェクトの強度（不透明度）を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_GlitterBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>グリッターエフェクトのぼかし量を調整します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <h4>衣装やアクセサリーに華やかさを追加</h4>
+      <ul>
+        <li><strong>サイズ</strong>: グリッターの粒子サイズ</li>
+        <li><strong>密度</strong>: グリッターの出現頻度（0=少ない、1=多い）</li>
+        <li><strong>速度</strong>: グリッターの点滅速度</li>
+        <li><strong>強度</strong>: グリッターの明るさ</li>
+      </ul>
+      <p>マスクテクスチャを活用して、宝石やスパンコールのように特定の装飾部分にだけグリッターを適用するのがおすすめです。</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

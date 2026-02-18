@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ソフトライティング - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ソフトライティング</h1>
+    <p class="page-subtitle">柔らかく自然なライティングの調整</p>
+
+    <p>ソフトライティングモードを有効にすると、すべてのライティングとシェーディングが全体的に柔らかくなります。影の境界、ライトの強さ、ハイライトなどが一括で柔らかく調整され、イラスト調や水彩画風の柔らかな表現に最適です。</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ソフトライティングモード</span>
+        <span class="param-prop">_SoftLightingMode</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>ソフトライティングモードを有効化するトグルです。すべてのライティングとシェーディングをグローバルに柔らかくします。キーワード: _SOFT_LIGHTING_MODE</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ソフトライティング強度</span>
+        <span class="param-prop">_SoftLightingIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ソフトライティングの強度です。値が大きいほど全体のライティングが柔らかくなります。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">推奨設定: 0.3〜0.5で適度な柔らかさ、0.5〜0.7でかなり柔らかい、0.7〜1.0で非常に柔らかい。個々のパラメータを調整するよりも簡単に全体の柔らかさを制御できます。</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

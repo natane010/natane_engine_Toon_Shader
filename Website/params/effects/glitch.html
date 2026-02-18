@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>グリッチ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>グリッチ</h1>
+    <p class="page-subtitle">デジタルノイズとRGBスプリットの不具合効果</p>
+
+    <p>デジタル映像の乱れや不具合を再現するエフェクトです。ランダムなUV歪みとRGB色ずれを組み合わせて、サイバーパンク風の演出やトランジション効果を作成できます。ホログラムエフェクトと併用することで、より強烈なSF表現が可能です。</p>
+    <p>キーワード: <code>_GLITCH</code></p>
+
+    <h2 id="settings">グリッチ設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グリッチ強度</span>
+        <span class="param-prop">_GlitchIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>グリッチによるUV歪みの強さを設定します。値が大きいほど画面の乱れが激しくなります。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グリッチ速度</span>
+        <span class="param-prop">_GlitchSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>グリッチのアニメーション速度を設定します。値が大きいほど高速にグリッチが切り替わります。</p>
+        <p class="param-default">デフォルト: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブロックサイズ</span>
+        <span class="param-prop">_GlitchBlockSize</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>グリッチで歪むブロックの大きさを設定します。値が大きいほど大きな塊で歪みます。</p>
+        <p class="param-default">デフォルト: 0.1（範囲: 0.01 - 1）</p>
+      </div>
+      <div class="param-tip">小さい値で細かいノイズ風、大きい値でブロック崩壊風のグリッチになります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">RGBスプリット強度</span>
+        <span class="param-prop">_GlitchRGBSplitIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>RGB色収差（色ずれ）の強さを設定します。赤・緑・青の各チャンネルをずらして、テレビの色ずれのような効果を出します。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グリッチ発生頻度</span>
+        <span class="param-prop">_GlitchFrequency</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>グリッチが発生する頻度を設定します。値が大きいほど頻繁にグリッチが発生します。</p>
+        <p class="param-default">デフォルト: 0.3（範囲: 0 - 1）</p>
+      </div>
+      <div class="param-tip">0.1-0.3 で断続的、0.7 以上でほぼ常時グリッチが発生します。</div>
+    </div>
+
+    <h2 id="blend">ブレンド設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_GlitchBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>グリッチエフェクトとベースカラーの合成方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常合成</li>
+          <li><strong>Soft (1)</strong> - ソフトライト</li>
+          <li><strong>Screen (2)</strong> - スクリーン</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Normal）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_GlitchBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>グリッチエフェクトの全体的な適用度を設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_GlitchBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>グリッチエフェクトの境界をぼかします。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

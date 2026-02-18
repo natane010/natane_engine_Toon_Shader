@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MatCap 1 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>MatCap 1</h1>
+    <p class="page-subtitle">Material Capture テクスチャでリアルな環境反射を表現</p>
+
+    <h2 id="overview">概要</h2>
+    <p>MatCap（Material Capture）は、球面状にキャプチャされたマテリアル環境マップを使用して、リアルな反射や質感を表現するエフェクトです。法線方向に基づいてテクスチャをサンプリングするため、軽量ながら高品質な環境反射を実現します。</p>
+    <p>キーワード <code>_MATCAP</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCapテクスチャ</span>
+        <span class="param-prop">_MatCapTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>MatCapテクスチャ（球面反射マップ）を設定します。球体にマテリアルを適用した状態をキャプチャした正方形テクスチャを使用します。</p>
+        <p class="param-default">デフォルト: "black"（黒テクスチャ）</p>
+      </div>
+      <div class="param-tip">MatCapテクスチャは球面反射マップである必要があります。インターネットで「MatCap texture」と検索すると、多数のフリー素材が見つかります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCapの強さ</span>
+        <span class="param-prop">_MatCapIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>MatCapエフェクトの強度を制御します。1.0を超える値でHDR的な強い反射効果が得られます。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCapのブレンドモード</span>
+        <span class="param-prop">_MatCapBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>MatCapエフェクトのブレンド方法を選択します。</p>
+        <ul>
+          <li><strong>Add (0)</strong> - 加算合成。反射光を追加して明るくする</li>
+          <li><strong>Multiply (1)</strong> - 乗算合成。暗い部分はより暗く</li>
+          <li><strong>Replace (2)</strong> - 置換。MatCapテクスチャで完全に上書き</li>
+        </ul>
+        <p class="param-default">デフォルト: Add (0)</p>
+      </div>
+      <div class="param-tip">金属的な反射にはAdd、汚れや傷の表現にはMultiply、特殊なスタイライズにはReplaceが適しています。</div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCapマスク</span>
+        <span class="param-prop">_MatCapMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>MatCapの適用領域を制御するマスクテクスチャです。キーワード <code>_MATCAP_MASK</code> で有効化します。</p>
+        <p class="param-default">デフォルト: "white"（全面適用）</p>
+      </div>
+      <div class="param-tip">白 = MatCapあり、黒 = MatCapなし。金属パーツにのみMatCapを適用する場合に便利です。</div>
+    </div>
+
+    <h2 id="blend">ブレンド＆ブラー</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_MatCapBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>MatCapエフェクトの強度（不透明度）を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_MatCapBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>MatCapエフェクトのぼかし量を調整します。ぼかしを入れることで柔らかい反射表現になります。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

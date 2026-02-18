@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スクリーンエフェクト設定 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>スクリーンエフェクト設定</h1>
+    <p class="page-subtitle">VRC向けフルスクリーンポストエフェクトをカメラに自動セットアップ</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Effects &gt; Screen FX Setup</span>
+      <span>カテゴリ: エフェクト</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>スクリーンエフェクト設定は、VRChat向けのフルスクリーンポストエフェクトをカメラに自動セットアップするツールです。GrabPassを利用したオーバーレイ方式で、ランタイムスクリプトを使わずにPosterize（ポスタライズ）、Edge Detection（エッジ検出）、Vignette（ビネット）、Chromatic Aberration（色収差）などの画面効果を実現します。</p>
+    <p>VRChatではランタイムスクリプトの使用が制限されているため、通常のポストプロセッシングスタックが使えません。このツールはシェーダーベースのアプローチで、カメラ前面にオーバーレイメッシュを自動配置し、GrabPassで画面をキャプチャして各種エフェクトを適用します。設定はマテリアルのプロパティとして保存されるため、アバターに組み込んでアップロードするだけで機能します。</p>
+    <p>写真撮影、映像制作、VRChatイベントでの演出など、画面全体にエフェクトをかけたいシーンで活用できます。Natane Toon Shader本体の陰影表現と組み合わせることで、統一感のあるビジュアルスタイルを実現できます。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li><strong>GrabPassベース</strong> — ランタイムスクリプト不要。シェーダーだけで動作するため、VRChatの制限に完全対応しています</li>
+      <li><strong>カメラ自動配置</strong> — カメラ直下にオーバーレイオブジェクトを自動生成・配置。面倒な手動セットアップが不要です</li>
+      <li><strong>推奨初期値</strong> — 各エフェクトに推奨初期値が設定済み。そのまま使えるプリセットとして機能します</li>
+      <li><strong>Posterize（ポスタライズ）</strong> — 色の階調を制限してレトロ・アニメ調の表現を作成</li>
+      <li><strong>Edge Detection（エッジ検出）</strong> — 画面全体にアウトラインを追加。漫画やイラスト風の演出に</li>
+      <li><strong>Vignette（ビネット）</strong> — 画面周辺を暗くして視線を中央に誘導する映画的な効果</li>
+      <li><strong>Chromatic Aberration（色収差）</strong> — RGB色ずれによるレンズ風の効果を追加</li>
+      <li><strong>Scanline（スキャンライン）</strong> — CRTモニター風の走査線効果</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>カメラを選択</strong>
+        <p>シーン内のカメラオブジェクトを選択します。未選択の場合はMainCameraが自動的に使用されます。VRChatアバターの場合は、Head内のカメラを選択してください。</p>
+      </li>
+      <li>
+        <strong>セットアップを実行</strong>
+        <p><code>Tools &gt; Natane &gt; Effects &gt; Screen FX Setup</code> を実行します。カメラ直下にオーバーレイオブジェクトとマテリアルが自動生成されます。</p>
+      </li>
+      <li>
+        <strong>マテリアルを調整</strong>
+        <p>生成されたマテリアルのInspectorで各エフェクトを調整します。Posterize、Edge Detection、Vignette、Chromatic Aberration の各パラメータをお好みの値に設定してください。</p>
+      </li>
+      <li>
+        <strong>プレビューで確認</strong>
+        <p>Game ビューまたは Scene ビューでエフェクトの効果を確認します。パラメータの変更はリアルタイムに反映されます。</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>Quest向けはChromatic AberrationとScanlineを低めに設定して、パフォーマンスへの影響を最小限に抑えましょう</li>
+      <li>Overlayはカメラ直下に維持して、位置ズレを防止してください。手動で移動するとエフェクトが正しく表示されない場合があります</li>
+      <li>Natane Toon本体の陰影表現を活かす場合は、Edgeの強度を0.2前後から調整を始めるのがおすすめです</li>
+      <li>Posterizeの階調数を3〜5に設定すると、アニメ風のフラットな色合いが得られます</li>
+      <li>Vignetteは0.3〜0.5程度で控えめに使うと、自然な映画的雰囲気を演出できます</li>
+      <li>複数のエフェクトを同時に使う場合は、それぞれの強度を控えめにして全体のバランスを取りましょう</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

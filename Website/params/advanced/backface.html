@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>裏面テクスチャ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>裏面テクスチャ</h1>
+    <p class="page-subtitle">ポリゴンの裏面に別テクスチャを適用</p>
+
+    <h2>概要</h2>
+    <p>裏面テクスチャ機能は、ポリゴンの裏側に表面とは異なるテクスチャやカラーを表示する機能です。服の裏地、紙の裏面、旗の裏側表現など、両面が見える場合に表裏で異なる見た目を実現します。</p>
+    <p>キーワード <code>_BACKFACE_TEXTURE</code> で制御されます。この機能を使用するには、カリングモードを「Off」（両面描画）に設定する必要があります。</p>
+
+    <h2>プロパティ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">裏面テクスチャを有効化</span>
+        <span class="param-prop">_BackfaceTexture</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>裏面テクスチャ機能の有効/無効を切り替えます。</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">裏面テクスチャ</span>
+        <span class="param-prop">_BackfaceTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>裏面に表示するテクスチャです。表面のメインテクスチャとは独立して設定できます。</p>
+        <p class="param-default">デフォルト: "white"</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">裏面カラー</span>
+        <span class="param-prop">_BackfaceColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>裏面テクスチャに乗算されるカラーです。テクスチャの色味を調整したり、テクスチャなしで単色の裏面を作成できます。</p>
+        <p class="param-default">デフォルト: (1, 1, 1, 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">裏面ブレンド</span>
+        <span class="param-prop">_BackfaceBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>裏面テクスチャの適用強度です。0で効果なし、1で完全適用になります。</p>
+        <p class="param-default">デフォルト: 1.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">裏面ブレンドモード</span>
+        <span class="param-prop">_BackfaceBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>裏面テクスチャの合成方法を選択します。Replace（置換）、Multiply（乗算）、Additive（加算）などが選択できます。</p>
+        <p class="param-default">デフォルト: 0（Replace）</p>
+      </div>
+    </div>
+
+    <h2>使い方のポイント</h2>
+    <ul>
+      <li>裏面を見せるには「レンダリング設定」のカリングモードを「Off」に設定してください</li>
+      <li>服の裏地や紙の裏面表現に最適です</li>
+      <li>ブレンドモードを変更することで、表面テクスチャとの合成方法を調整できます</li>
+      <li>裏面テクスチャの解像度は表面より低くても問題ない場合が多いです</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

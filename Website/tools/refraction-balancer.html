@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>屈折品質バランサー - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>屈折品質バランサー</h1>
+    <p class="page-subtitle">屈折エフェクトの品質とパフォーマンスを最適にバランス調整</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Optimization &gt; Refraction Balancer</span>
+      <span>カテゴリ: 最適化</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>屈折品質バランサーは、屈折（リフラクション）エフェクトの品質とパフォーマンスのバランスを調整するための専用ツールです。屈折エフェクトはガラスや水、宝石などの透明・半透明マテリアルに美しい表現を加えますが、GrabPassとブラーサンプリングを使用するため、GPUへの負荷が比較的高いエフェクトです。</p>
+    <p>このツールは、プラットフォーム別にサンプル数を自動最適化します。PC向けでは高品質（9サンプル）の屈折ブラーを維持しつつ、Quest向けでは5サンプルに削減してモバイルGPUへの負荷を抑えます。品質プリセットを使えば、ワンクリックで適切なバランスに設定できます。</p>
+    <p>また、屈折の強度、ブラー半径、色収差などのパラメータをまとめて管理し、パフォーマンスコストの見積もりをリアルタイムで表示します。パフォーマンスと見た目のトレードオフを視覚的に比較しながら、最適な設定を見つけることができます。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li><strong>品質プリセット</strong> — Low / Medium / High / Ultra の4段階プリセット。プラットフォームと用途に合わせて即座に切り替え可能</li>
+      <li><strong>サンプル数調整</strong> — ブラーのサンプル数を直接指定可能。サンプル数が多いほど滑らかなブラーですが、GPUコストが増加します</li>
+      <li><strong>プラットフォーム別設定</strong> — PC / Quest それぞれに異なる品質設定を保持。ビルドターゲットに応じて自動切替</li>
+      <li><strong>パフォーマンス比較</strong> — 各品質レベルでの推定GPUコストを並べて比較。どの設定がどの程度のパフォーマンス影響を持つかが一目瞭然</li>
+      <li><strong>リアルタイムプレビュー</strong> — 品質設定の変更がプレビューに即座に反映され、ブラーの見え方を確認できます</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>マテリアルを選択</strong>
+        <p>屈折機能（_REFRACTION）が有効になっているNatane Toon Shaderマテリアルを選択します。Transparent バリアントのマテリアルが対象です。</p>
+      </li>
+      <li>
+        <strong>プラットフォームを選択</strong>
+        <p>ターゲットプラットフォーム（PC / Quest）を選択します。プラットフォームに応じた推奨値が自動で表示されます。</p>
+      </li>
+      <li>
+        <strong>品質レベルを調整</strong>
+        <p>品質プリセット（Low〜Ultra）を選択するか、サンプル数を直接調整します。パフォーマンスコストの見積もりがリアルタイムで更新されます。</p>
+      </li>
+      <li>
+        <strong>適用</strong>
+        <p>調整した設定をマテリアルに適用します。複数マテリアルへの一括適用にも対応しています。</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>Quest向けは必ずLowまたはMedium品質を使用してください。High以上はモバイルGPUでフレームレートが大幅に低下する可能性があります</li>
+      <li>PC向けでもMedium品質で十分な見た目が得られる場合が多いです。Ultra品質は写真撮影用と考えましょう</li>
+      <li>屈折の強度（Refraction Strength）を下げると、サンプル数が少なくてもアーティファクトが目立ちにくくなります</li>
+      <li>アバターに複数の屈折マテリアルがある場合、最も目立つ部分のみHigh品質にし、他はMediumにするとバランスが取れます</li>
+      <li>ブラー半径が小さい場合はサンプル数も少なくて済むため、繊細な屈折効果であればLow品質でも十分です</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

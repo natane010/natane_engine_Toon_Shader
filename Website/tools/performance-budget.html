@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>パフォーマンスバジェット - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>パフォーマンスバジェット</h1>
+    <p class="page-subtitle">マテリアルのパフォーマンスコストを可視化し、予算内に収まるよう管理</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Optimization &gt; Performance Budget</span>
+      <span>カテゴリ: 最適化</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>パフォーマンスバジェットツールは、マテリアルのパフォーマンスコストを可視化し、プラットフォーム別の予算内に収まるよう管理するためのツールです。各シェーダー機能がどの程度のGPU負荷をかけるかをポイント制で表示し、PC/Quest両方のプラットフォームに対応した最適化指針を提供します。</p>
+    <p>Natane Toon Shaderは多くの機能を備えていますが、すべてを同時に有効にするとパフォーマンスに影響が出る場合があります。このツールを使えば、有効にしている各機能のコスト（ポイント）を一覧で確認でき、プラットフォームごとの推奨予算と比較できます。どの機能を有効にし、どの機能を無効にすべきかの判断を、データに基づいて行えます。</p>
+    <p>特にVRChatのQuest対応アバターを制作する場合、モバイルGPUの制約に収まるマテリアル設定を見つけるのに非常に有用です。パフォーマンス評価レーティング（A/B/C/D）もリアルタイムで表示されるため、VRChatのパフォーマンスランクの目安としても活用できます。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li><strong>プラットフォーム別予算</strong> — PC版とQuest版で異なるパフォーマンス予算を設定。各プラットフォームのGPU性能に合わせた基準で評価します</li>
+      <li><strong>機能コスト計算</strong> — 各シェーダー機能（リムライト、マットキャップ、スペキュラ、屈折など）のGPU負荷をポイント化して表示</li>
+      <li><strong>リアルタイム追跡</strong> — マテリアルの設定を変更するたびに、コストがリアルタイムで更新されます</li>
+      <li><strong>パフォーマンス評価</strong> — A（軽量: 0〜3機能）、B（標準: 4〜6機能）、C（重め: 7〜9機能）、D（高負荷: 10機能以上）の4段階評価</li>
+      <li><strong>最適化提案</strong> — 予算オーバー時に、コスト効率の悪い機能を自動検出して無効化の提案を表示</li>
+      <li><strong>複数マテリアル比較</strong> — アバター内の全マテリアルのコストを一覧比較し、最も負荷の高いマテリアルを特定</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>ツールを開く</strong>
+        <p><code>Tools &gt; Natane &gt; Optimization &gt; Performance Budget</code> からツールウィンドウを開きます。</p>
+      </li>
+      <li>
+        <strong>マテリアルを選択</strong>
+        <p>分析したいマテリアルをProjectビューから選択するか、ドラッグ&ドロップで追加します。アバター全体を分析する場合は、シーン上のアバターオブジェクトを選択します。</p>
+      </li>
+      <li>
+        <strong>プラットフォームを選択</strong>
+        <p>ターゲットプラットフォーム（PC / Quest）を選択します。プラットフォームによって予算の上限が変わります。</p>
+      </li>
+      <li>
+        <strong>コスト分析を確認</strong>
+        <p>各機能のコストと合計ポイント、パフォーマンス評価を確認します。予算オーバーの機能は赤色でハイライトされます。</p>
+      </li>
+      <li>
+        <strong>最適化を実施</strong>
+        <p>提案された最適化を参考に、不要な機能を無効化してパフォーマンスを改善します。</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>Quest向けアバターは40ポイント以下を目標にしましょう。これはパフォーマンスランクB相当です</li>
+      <li>不要な機能は積極的に無効化しましょう。Natane Toon Shaderはキーワードベースの分岐を使用しているため、無効化した機能のGPU負荷はゼロになります</li>
+      <li>屈折（Refraction）とスクリーンエフェクトは特にコストが高いため、Quest版では慎重に使用してください</li>
+      <li>同じアバターの全マテリアルを同時に分析すると、全体のパフォーマンスバランスが把握しやすくなります</li>
+      <li>パフォーマンス評価Bを維持しつつ、見た目に最も効果の大きい機能を優先的に有効にするのがおすすめです</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>
