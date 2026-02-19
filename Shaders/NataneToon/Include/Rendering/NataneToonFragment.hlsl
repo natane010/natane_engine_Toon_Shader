@@ -26,41 +26,74 @@ half4 frag(v2f i) : SV_Target
     // ===== Makeup/Detail Textures Blending =====
     // Consolidated texture blending using shared function
     #ifdef _2ND_TEXTURE
-        col.rgb = ApplyMakeupTexture(col.rgb, _2ndTex, _2ndTexMask, uv,
+    {
+        float2 _2ndAnimUV = uv;
+        if (dot(_2ndTexScrollSpeed.xy, _2ndTexScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_2ndTexRotateSpeed) > EPSILON)
+        {
+            _2ndAnimUV = AnimateUV(uv, _2ndTexScrollSpeed.xy, _2ndTexRotateSpeed);
+        }
+        col.rgb = ApplyMakeupTexture(col.rgb, _2ndTex, _2ndTexMask, _2ndAnimUV, uv,
             _2ndTexHueShift, _2ndTexSaturation, _2ndTexValue,
             _2ndTexIntensity, _2ndTexBlendMode,
             true
         );
+    }
     #endif
 
     #ifdef _3RD_TEXTURE
-        col.rgb = ApplyMakeupTexture(col.rgb, _3rdTex, _3rdTexMask, uv,
+    {
+        float2 _3rdAnimUV = uv;
+        if (dot(_3rdTexScrollSpeed.xy, _3rdTexScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_3rdTexRotateSpeed) > EPSILON)
+        {
+            _3rdAnimUV = AnimateUV(uv, _3rdTexScrollSpeed.xy, _3rdTexRotateSpeed);
+        }
+        col.rgb = ApplyMakeupTexture(col.rgb, _3rdTex, _3rdTexMask, _3rdAnimUV, uv,
             _3rdTexHueShift, _3rdTexSaturation, _3rdTexValue,
             _3rdTexIntensity, _3rdTexBlendMode,
             true
         );
+    }
     #endif
 
     #ifdef _4TH_TEXTURE
-        col.rgb = ApplyMakeupTexture(col.rgb, _4thTex, _4thTexMask, uv,
+    {
+        float2 _4thAnimUV = uv;
+        if (dot(_4thTexScrollSpeed.xy, _4thTexScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_4thTexRotateSpeed) > EPSILON)
+        {
+            _4thAnimUV = AnimateUV(uv, _4thTexScrollSpeed.xy, _4thTexRotateSpeed);
+        }
+        col.rgb = ApplyMakeupTexture(col.rgb, _4thTex, _4thTexMask, _4thAnimUV, uv,
             _4thTexHueShift, _4thTexSaturation, _4thTexValue,
             _4thTexIntensity, _4thTexBlendMode,
             true
         );
+    }
     #endif
 
     #ifdef _5TH_TEXTURE
-        col.rgb = ApplyMakeupTexture(col.rgb, _5thTex, _5thTexMask, uv,
+    {
+        float2 _5thAnimUV = uv;
+        if (dot(_5thTexScrollSpeed.xy, _5thTexScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_5thTexRotateSpeed) > EPSILON)
+        {
+            _5thAnimUV = AnimateUV(uv, _5thTexScrollSpeed.xy, _5thTexRotateSpeed);
+        }
+        col.rgb = ApplyMakeupTexture(col.rgb, _5thTex, _5thTexMask, _5thAnimUV, uv,
             _5thTexHueShift, _5thTexSaturation, _5thTexValue,
             _5thTexIntensity, _5thTexBlendMode,
             true
         );
+    }
     #endif
 
     // ===== Normal Mapping =====
     // Optimization: Skip normalization if no normal mapping (already normalized in vertex shader)
     #ifdef _NORMALMAP
-        half3 normalMap = UnpackScaleNormal(tex2D(_BumpMap, uv), _BumpScale);
+        float2 bumpUV = uv;
+        if (dot(_BumpMapScrollSpeed.xy, _BumpMapScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_BumpMapRotateSpeed) > EPSILON)
+        {
+            bumpUV = AnimateUV(uv, _BumpMapScrollSpeed.xy, _BumpMapRotateSpeed);
+        }
+        half3 normalMap = UnpackScaleNormal(tex2D(_BumpMap, bumpUV), _BumpScale);
         half3x3 tangentToWorld = half3x3(i.worldTangent, i.worldBinormal, i.worldNormal);
         half3 worldNormal = normalize(mul(normalMap, tangentToWorld));
     #else
@@ -470,7 +503,12 @@ half4 frag(v2f i) : SV_Target
         half3 specContrib = spec * _SpecularColor.rgb * _LightColor0.rgb * atten;
 
         // Apply mask texture with soft blending
-        half specMask = tex2D(_SpecularMask, uv).r;
+        float2 specMaskUV = uv;
+        if (dot(_SpecularMaskScrollSpeed.xy, _SpecularMaskScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_SpecularMaskRotateSpeed) > EPSILON)
+        {
+            specMaskUV = AnimateUV(uv, _SpecularMaskScrollSpeed.xy, _SpecularMaskRotateSpeed);
+        }
+        half specMask = tex2D(_SpecularMask, specMaskUV).r;
         specMask = ApplySoftMask(specMask); // Smooth mask transitions
         specContrib *= specMask;
 
@@ -524,7 +562,12 @@ half4 frag(v2f i) : SV_Target
         rim += rimGlow * step(0.001, _RimSpread); // Conditional add without branch
 
         // Apply mask texture with soft blending
-        half rimMask = tex2D(_RimMask, uv).r;
+        float2 rimMaskUV = uv;
+        if (dot(_RimMaskScrollSpeed.xy, _RimMaskScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_RimMaskRotateSpeed) > EPSILON)
+        {
+            rimMaskUV = AnimateUV(uv, _RimMaskScrollSpeed.xy, _RimMaskRotateSpeed);
+        }
+        half rimMask = tex2D(_RimMask, rimMaskUV).r;
         rimMask = ApplySoftMask(rimMask); // Smooth mask transitions
         rim *= rimMask;
 
@@ -560,7 +603,12 @@ half4 frag(v2f i) : SV_Target
         rim2 += rim2SpreadFactor * _RimColor2.rgb * step(0.001, _RimSpread2); // Conditional add without branch
 
         // Apply mask texture with soft blending
-        half rimMask2 = tex2D(_RimMask2, uv).r;
+        float2 rimMask2UV = uv;
+        if (dot(_RimMask2ScrollSpeed.xy, _RimMask2ScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_RimMask2RotateSpeed) > EPSILON)
+        {
+            rimMask2UV = AnimateUV(uv, _RimMask2ScrollSpeed.xy, _RimMask2RotateSpeed);
+        }
+        half rimMask2 = tex2D(_RimMask2, rimMask2UV).r;
         rimMask2 = ApplySoftMask(rimMask2); // Smooth mask transitions
         rim2 *= rimMask2;
 
@@ -728,10 +776,10 @@ half4 frag(v2f i) : SV_Target
     #if defined(_EMISSION) && defined(UNITY_PASS_FORWARDBASE)
         float2 emissionUV = uv;
 
-        // Apply scrolling animation
-        if (abs(_EmissionScrollSpeed) > 0.001)
+        // Apply UV animation (scroll XY + rotation)
+        if (abs(_EmissionScrollSpeed) > 0.001 || abs(_EmissionScrollSpeedY) > 0.001 || abs(_EmissionRotateSpeed) > 0.001)
         {
-            emissionUV += float2(_Time.y * _EmissionScrollSpeed, 0.0);
+            emissionUV = AnimateUV(uv, float2(_EmissionScrollSpeed, _EmissionScrollSpeedY), _EmissionRotateSpeed);
         }
 
         half3 emission = SampleTex2DBlur3(_EmissionMap, emissionUV, _EmissionBlur) * _EmissionColor.rgb;
@@ -745,7 +793,12 @@ half4 frag(v2f i) : SV_Target
         }
 
         // Apply mask texture with soft blending
-        half emissionMask = tex2D(_EmissionMask, uv).r;
+        float2 emMaskUV = uv;
+        if (dot(_EmissionMaskScrollSpeed.xy, _EmissionMaskScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_EmissionMaskRotateSpeed) > EPSILON)
+        {
+            emMaskUV = AnimateUV(uv, _EmissionMaskScrollSpeed.xy, _EmissionMaskRotateSpeed);
+        }
+        half emissionMask = tex2D(_EmissionMask, emMaskUV).r;
         emissionMask = ApplySoftMask(emissionMask); // Smooth mask transitions
         emission *= emissionMask;
 
@@ -803,7 +856,12 @@ half4 frag(v2f i) : SV_Target
         if (_AudioLinkDissolveIntensity > 0.001)
         {
             half alDissolve = SampleAudioLink(_AudioLinkDissolveBand);
-            float2 alDissolveResult = CalculateDissolve(uv, alDissolve * _AudioLinkDissolveIntensity, 0.1);
+            float2 alDissolveUV = uv;
+            if (dot(_DissolveTexScrollSpeed.xy, _DissolveTexScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_DissolveTexRotateSpeed) > EPSILON)
+            {
+                alDissolveUV = AnimateUV(uv, _DissolveTexScrollSpeed.xy, _DissolveTexRotateSpeed);
+            }
+            float2 alDissolveResult = CalculateDissolve(alDissolveUV, alDissolve * _AudioLinkDissolveIntensity, 0.1);
             half3 alDissolveGlow = _DissolveEdgeColor.rgb * alDissolveResult.y * 2.0;
             col.rgb = SafeAdditiveBlendFast(col.rgb, alDissolveGlow, saturate(alDissolveResult.y));
         }
@@ -813,7 +871,12 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Glitter Effect =====
     #if defined(_GLITTER) && defined(UNITY_PASS_FORWARDBASE)
-        half3 glitter = GlitterEffect(uv, i.worldPos, viewDir, worldNormal, _GlitterBlur);
+        float2 glitterMaskUV = uv;
+        if (dot(_GlitterMaskScrollSpeed.xy, _GlitterMaskScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_GlitterMaskRotateSpeed) > EPSILON)
+        {
+            glitterMaskUV = AnimateUV(uv, _GlitterMaskScrollSpeed.xy, _GlitterMaskRotateSpeed);
+        }
+        half3 glitter = GlitterEffect(glitterMaskUV, i.worldPos, viewDir, worldNormal, _GlitterBlur);
         half3 preGlitter = col.rgb;
         col.rgb = SafeAdditiveBlendFast(col.rgb, glitter, 1.0);
         col.rgb = ApplyEffectBlendPost(preGlitter, col.rgb, _GlitterBlend, _GlitterBlendMode);
@@ -831,7 +894,12 @@ half4 frag(v2f i) : SV_Target
     // ===== Water Drip Effect (ForwardBase only) =====
     #if defined(_WATER_DRIP) && defined(UNITY_PASS_FORWARDBASE)
     {
-        half dripMaskValue = tex2D(_DripMask, uv).r;
+        float2 dripMaskUV = uv;
+        if (dot(_DripMaskScrollSpeed.xy, _DripMaskScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_DripMaskRotateSpeed) > EPSILON)
+        {
+            dripMaskUV = AnimateUV(uv, _DripMaskScrollSpeed.xy, _DripMaskRotateSpeed);
+        }
+        half dripMaskValue = tex2D(_DripMask, dripMaskUV).r;
         dripMaskValue = ApplySoftMask(dripMaskValue);
 
         float dripSharpnessBlurred = max(0.1, _DripSharpness * (1.0 - _DripBlur * 0.8));
@@ -861,7 +929,12 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         // Hologram mask
-        half holoMask = tex2D(_HologramMask, uv).r;
+        float2 holoMaskUV = uv;
+        if (dot(_HologramMaskScrollSpeed.xy, _HologramMaskScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_HologramMaskRotateSpeed) > EPSILON)
+        {
+            holoMaskUV = AnimateUV(uv, _HologramMaskScrollSpeed.xy, _HologramMaskRotateSpeed);
+        }
+        half holoMask = tex2D(_HologramMask, holoMaskUV).r;
 
         // Multi-layer scanline (blur widens scanline width for softer effect)
         float holoWidthBlurred = _HologramScanlineWidth + _HologramBlur * 0.3;
@@ -954,7 +1027,12 @@ half4 frag(v2f i) : SV_Target
             dissolveMaskValue = tex2D(_DissolveMask, uv).r;
 
             float dissolveEdgeBlurred = _DissolveEdgeWidth + _DissolveBlur * 0.15;
-            float2 dissolveResult = CalculateDissolve(uv, _DissolveAmount, dissolveEdgeBlurred);
+            float2 dissolveUV = uv;
+            if (dot(_DissolveTexScrollSpeed.xy, _DissolveTexScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_DissolveTexRotateSpeed) > EPSILON)
+            {
+                dissolveUV = AnimateUV(uv, _DissolveTexScrollSpeed.xy, _DissolveTexRotateSpeed);
+            }
+            float2 dissolveResult = CalculateDissolve(dissolveUV, _DissolveAmount, dissolveEdgeBlurred);
             half dissolveAlpha = dissolveResult.x;
             half edgeGlow = dissolveResult.y;
 

@@ -128,6 +128,18 @@ namespace NataneToon.Editor
                 NataneToolMenuPaths.BatchMaterialConverter, "NataneToon.Editor.BatchMaterialConverter", ASSEMBLY_MIGRATION),
             new ToolRegistryEntry("PrefabVariantConverter", "プレハブバリアント変換 Prefab Converter",
                 NataneToolMenuPaths.PrefabVariantConverter, "NataneToon.Editor.PrefabVariantConverter", ASSEMBLY_TOOLS),
+
+            // --- Mask Texture / Generator Tools (Tools assembly) ---
+            new ToolRegistryEntry("UVTextureGenerator", "マスクテクスチャスタジオ Mask Texture Studio",
+                NataneToolMenuPaths.UVTextureGenerator, "NataneToon.Editor.UVTextureGenerator", ASSEMBLY_TOOLS),
+            new ToolRegistryEntry("ShaderPrewarming", "シェーダープリウォーミング Shader Prewarming",
+                NataneToolMenuPaths.ShaderPrewarming, "NataneToon.Editor.ShaderPrewarmingEditor", ASSEMBLY_TOOLS),
+
+            // --- Other Tools (Editor assembly) ---
+            new ToolRegistryEntry("ParticleEffectEditor", "パーティクルエフェクトエディタ Particle Effect Editor",
+                NataneToolMenuPaths.ParticleEffectEditor, "NataneParticleSystemEditor.ParticleEffectEditorWindow", ASSEMBLY_EDITOR),
+            new ToolRegistryEntry("VTuberPresetGenerator", "VTuberプリセット生成 VTuber Preset Generator",
+                NataneToolMenuPaths.VTuberPresetGenerator, "NataneToon.Editor.VTuberPresetGenerator", ASSEMBLY_EDITOR),
         };
 
         // =====================================================================

@@ -35,6 +35,8 @@ Shader "Natane/Toon Shader (Transparent)"
         [Enum(Add,0,Multiply,1,Overlay,2,Screen,3)] _2ndTexBlendMode ("2nd Tex Blend Mode", Float) = 0
         [Toggle(_2ND_TEX_MASK)] _Use2ndTexMask ("Use 2nd Tex Mask", Float) = 0
         _2ndTexMask ("2nd Tex Mask", 2D) = "white" {}
+        _2ndTexScrollSpeed ("2nd Tex Scroll Speed XY", Vector) = (0,0,0,0)
+        _2ndTexRotateSpeed ("2nd Tex Rotate Speed", Float) = 0
         [Space(10)]
         [Toggle(_3RD_TEXTURE)] _Use3rdTexture ("Enable 3rd Texture", Float) = 0
         _3rdTex ("Texture Makeup", 2D) = "white" {}
@@ -45,6 +47,8 @@ Shader "Natane/Toon Shader (Transparent)"
         [Enum(Add,0,Multiply,1,Overlay,2,Screen,3)] _3rdTexBlendMode ("3rd Tex Blend Mode", Float) = 0
         [Toggle(_3RD_TEX_MASK)] _Use3rdTexMask ("Use 3rd Tex Mask", Float) = 0
         _3rdTexMask ("3rd Tex Mask", 2D) = "white" {}
+        _3rdTexScrollSpeed ("3rd Tex Scroll Speed XY", Vector) = (0,0,0,0)
+        _3rdTexRotateSpeed ("3rd Tex Rotate Speed", Float) = 0
         [Space(10)]
         [Toggle(_4TH_TEXTURE)] _Use4thTexture ("Enable 4th Texture", Float) = 0
         _4thTex ("Texture Makeup", 2D) = "white" {}
@@ -55,6 +59,8 @@ Shader "Natane/Toon Shader (Transparent)"
         [Enum(Add,0,Multiply,1,Overlay,2,Screen,3)] _4thTexBlendMode ("4th Tex Blend Mode", Float) = 0
         [Toggle(_4TH_TEX_MASK)] _Use4thTexMask ("Use 4th Tex Mask", Float) = 0
         _4thTexMask ("4th Tex Mask", 2D) = "white" {}
+        _4thTexScrollSpeed ("4th Tex Scroll Speed XY", Vector) = (0,0,0,0)
+        _4thTexRotateSpeed ("4th Tex Rotate Speed", Float) = 0
         [Space(10)]
         [Toggle(_5TH_TEXTURE)] _Use5thTexture ("Enable 5th Texture", Float) = 0
         _5thTex ("Texture Makeup", 2D) = "white" {}
@@ -65,6 +71,8 @@ Shader "Natane/Toon Shader (Transparent)"
         [Enum(Add,0,Multiply,1,Overlay,2,Screen,3)] _5thTexBlendMode ("5th Tex Blend Mode", Float) = 0
         [Toggle(_5TH_TEX_MASK)] _Use5thTexMask ("Use 5th Tex Mask", Float) = 0
         _5thTexMask ("5th Tex Mask", 2D) = "white" {}
+        _5thTexScrollSpeed ("5th Tex Scroll Speed XY", Vector) = (0,0,0,0)
+        _5thTexRotateSpeed ("5th Tex Rotate Speed", Float) = 0
 
         [Header(Shading)]
         [Toggle(_USE_RAMP)] _UseRamp ("Use Ramp Texture", Float) = 0
@@ -149,6 +157,8 @@ Shader "Natane/Toon Shader (Transparent)"
         _SpecularSoftness ("Specular Softness", Range(0.001, 1)) = 0.05
         [Toggle(_SPECULAR_MASK)] _UseSpecularMask ("Use Specular Mask", Float) = 0
         _SpecularMask ("Specular Mask", 2D) = "white" {}
+        _SpecularMaskScrollSpeed ("Specular Mask Scroll Speed XY", Vector) = (0,0,0,0)
+        _SpecularMaskRotateSpeed ("Specular Mask Rotate Speed", Float) = 0
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _SpecularBlendMode ("Specular Blend Mode", Float) = 0
         _SpecularBlend ("Specular Blend", Range(0, 1)) = 1
         _SpecularBlur ("Specular Blur", Range(0, 1)) = 0
@@ -161,6 +171,8 @@ Shader "Natane/Toon Shader (Transparent)"
         _RimSpread ("Rim Spread (Glow)", Range(0, 1)) = 0
         [Toggle(_RIM_MASK)] _UseRimMask ("Use Rim Mask", Float) = 0
         _RimMask ("Rim Mask", 2D) = "white" {}
+        _RimMaskScrollSpeed ("Rim Mask Scroll Speed XY", Vector) = (0,0,0,0)
+        _RimMaskRotateSpeed ("Rim Mask Rotate Speed", Float) = 0
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _RimBlendMode ("Rim Blend Mode", Float) = 0
         _RimBlend ("Rim Blend", Range(0, 1)) = 1
         _RimBlur ("Rim Blur", Range(0, 1)) = 0
@@ -171,6 +183,8 @@ Shader "Natane/Toon Shader (Transparent)"
         _RimSpread2 ("Rim Spread 2 (Glow)", Range(0, 1)) = 0
         [Toggle(_RIM_MASK_2)] _UseRimMask2 ("Use Rim Mask 2", Float) = 0
         _RimMask2 ("Rim Mask 2", 2D) = "white" {}
+        _RimMask2ScrollSpeed ("Rim Mask 2 Scroll Speed XY", Vector) = (0,0,0,0)
+        _RimMask2RotateSpeed ("Rim Mask 2 Rotate Speed", Float) = 0
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _RimBlendMode2 ("Rim 2 Blend Mode", Float) = 0
         _RimBlend2 ("Rim 2 Blend", Range(0, 1)) = 1
         _Rim2Blur ("Rim 2 Blur", Range(0, 1)) = 0
@@ -231,6 +245,8 @@ Shader "Natane/Toon Shader (Transparent)"
         _GlitterIntensity ("Glitter Intensity", Range(0, 2)) = 1
         [Toggle(_GLITTER_MASK)] _UseGlitterMask ("Use Glitter Mask", Float) = 0
         _GlitterMask ("Glitter Mask", 2D) = "white" {}
+        _GlitterMaskScrollSpeed ("Glitter Mask Scroll Speed XY", Vector) = (0,0,0,0)
+        _GlitterMaskRotateSpeed ("Glitter Mask Rotate Speed", Float) = 0
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _GlitterBlendMode ("Glitter Blend Mode", Float) = 0
         _GlitterBlend ("Glitter Blend", Range(0, 1)) = 1
         _GlitterBlur ("Glitter Blur", Range(0, 1)) = 0
@@ -259,16 +275,22 @@ Shader "Natane/Toon Shader (Transparent)"
         _EmissionBlur ("Emission Blur", Range(0, 1)) = 0
         [Toggle(_EMISSION_SCROLL)] _EmissionScroll ("Emission Scroll", Float) = 0
         _EmissionScrollSpeed ("Emission Scroll Speed", Float) = 1
+        _EmissionScrollSpeedY ("Emission Scroll Speed Y", Float) = 0
+        _EmissionRotateSpeed ("Emission Rotate Speed", Float) = 0
         [Toggle(_EMISSION_PULSE)] _EmissionPulse ("Emission Pulse", Float) = 0
         _EmissionPulseSpeed ("Emission Pulse Speed", Float) = 1
         _EmissionPulseAmplitude ("Emission Pulse Amplitude", Range(0, 1)) = 0.5
         [Toggle(_EMISSION_MASK)] _UseEmissionMask ("Use Emission Mask", Float) = 0
         _EmissionMask ("Emission Mask", 2D) = "white" {}
+        _EmissionMaskScrollSpeed ("Emission Mask Scroll Speed XY", Vector) = (0,0,0,0)
+        _EmissionMaskRotateSpeed ("Emission Mask Rotate Speed", Float) = 0
 
         [Header(Virtual Expression)]
         [Toggle(_DISSOLVE)] _Dissolve ("Enable Dissolve", Float) = 0
         _DissolveAmount ("Dissolve Amount", Range(0, 1)) = 0
         _DissolveTex ("Dissolve Texture (Noise)", 2D) = "white" {}
+        _DissolveTexScrollSpeed ("Dissolve Tex Scroll Speed XY", Vector) = (0,0,0,0)
+        _DissolveTexRotateSpeed ("Dissolve Tex Rotate Speed", Float) = 0
         _DissolveEdgeWidth ("Dissolve Edge Width", Range(0, 0.5)) = 0.1
         [HDR] _DissolveEdgeColor ("Dissolve Edge Color", Color) = (1, 0.5, 0, 1)
         _DissolveEdgeIntensity ("Dissolve Edge Intensity", Range(0, 10)) = 2
@@ -290,6 +312,8 @@ Shader "Natane/Toon Shader (Transparent)"
         [Toggle(_NORMALMAP)] _UseNormalMap ("Use Normal Map", Float) = 0
         _BumpMap ("Normal Map", 2D) = "bump" {}
         _BumpScale ("Normal Scale", Range(0, 2)) = 1
+        _BumpMapScrollSpeed ("Normal Map Scroll Speed XY", Vector) = (0,0,0,0)
+        _BumpMapRotateSpeed ("Normal Map Rotate Speed", Float) = 0
 
         [Header(Cubemap Reflection)]
         [Toggle(_REFLECTION)] _Reflection ("Enable Reflection", Float) = 0
@@ -406,6 +430,8 @@ Shader "Natane/Toon Shader (Transparent)"
         _HologramNoiseSpeed ("Noise Speed", Float) = 1
         [Toggle(_HOLOGRAM_MASK)] _UseHologramMask ("Use Hologram Mask", Float) = 0
         _HologramMask ("Hologram Mask", 2D) = "white" {}
+        _HologramMaskScrollSpeed ("Hologram Mask Scroll Speed XY", Vector) = (0,0,0,0)
+        _HologramMaskRotateSpeed ("Hologram Mask Rotate Speed", Float) = 0
         [Toggle(_HOLOGRAM_NOISE)] _UseHologramNoise ("Use Noise Texture", Float) = 0
         _HologramNoiseTex ("Noise Texture", 2D) = "white" {}
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _HologramBlendMode ("Hologram Blend Mode", Float) = 0
@@ -464,6 +490,8 @@ Shader "Natane/Toon Shader (Transparent)"
         _DripSharpness ("Drip Sharpness", Range(0.5, 5)) = 2
         [Toggle(_DRIP_MASK)] _UseDripMask ("Use Drip Mask", Float) = 0
         _DripMask ("Drip Mask", 2D) = "white" {}
+        _DripMaskScrollSpeed ("Drip Mask Scroll Speed XY", Vector) = (0,0,0,0)
+        _DripMaskRotateSpeed ("Drip Mask Rotate Speed", Float) = 0
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _DripBlendMode ("Drip Blend Mode", Float) = 0
         _DripBlend ("Drip Blend", Range(0, 1)) = 1
         _DripBlur ("Drip Blur", Range(0, 1)) = 0

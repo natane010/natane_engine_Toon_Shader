@@ -437,7 +437,8 @@ half3 ApplyMakeupTexture(
     half3 baseColor,
     sampler2D tex,
     sampler2D maskTex,
-    float2 uv,
+    float2 texUV,
+    float2 maskUV,
     float hueShift,
     float saturation,
     float value,
@@ -446,13 +447,13 @@ half3 ApplyMakeupTexture(
     bool useMask)
 {
     // Sample texture
-    half4 texSample = tex2D(tex, uv);
+    half4 texSample = tex2D(tex, texUV);
     float texMask = texSample.a; // Use alpha channel from texture
 
     // Apply external mask if enabled
     if (useMask)
     {
-        texMask *= tex2D(maskTex, uv).r;
+        texMask *= tex2D(maskTex, maskUV).r;
     }
 
     // Apply HSV adjustments (skip if default values for performance)
@@ -541,39 +542,35 @@ half SampleTex2DBlur1(sampler2D tex, float2 uv, float blur)
 // Returns transformed UV coordinates
 float2 AnimateUV(float2 uv, float2 scrollSpeed, float rotateSpeed)
 {
-    #ifdef _MAIN_TEX_ANIMATION
-        float2 animatedUV = uv;
+    float2 animatedUV = uv;
 
-        // Apply scrolling
-        // NOTE: Branching kept to avoid unnecessary computation when scrollSpeed is zero.
-        // Uses squared length to avoid sqrt.
-        if (dot(scrollSpeed, scrollSpeed) > (EPSILON * EPSILON))
-        {
-            animatedUV += scrollSpeed * _Time.y;
-        }
+    // Apply scrolling
+    // NOTE: Branching kept to avoid unnecessary computation when scrollSpeed is zero.
+    // Uses squared length to avoid sqrt.
+    if (dot(scrollSpeed, scrollSpeed) > (EPSILON * EPSILON))
+    {
+        animatedUV += scrollSpeed * _Time.y;
+    }
 
-        // Apply rotation
-        // NOTE: Branching kept to avoid expensive sin/cos computation when rotation is zero
-        if (abs(rotateSpeed) > EPSILON)
-        {
-            // Rotate around UV center (0.5, 0.5)
-            float2 centerUV = animatedUV - float2(0.5, 0.5);
-            float angle = rotateSpeed * _Time.y;
-            float s = sin(angle);
-            float c = cos(angle);
+    // Apply rotation
+    // NOTE: Branching kept to avoid expensive sin/cos computation when rotation is zero
+    if (abs(rotateSpeed) > EPSILON)
+    {
+        // Rotate around UV center (0.5, 0.5)
+        float2 centerUV = animatedUV - float2(0.5, 0.5);
+        float angle = rotateSpeed * _Time.y;
+        float s = sin(angle);
+        float c = cos(angle);
 
-            // Rotation matrix
-            float2 rotatedUV;
-            rotatedUV.x = centerUV.x * c - centerUV.y * s;
-            rotatedUV.y = centerUV.x * s + centerUV.y * c;
+        // Rotation matrix
+        float2 rotatedUV;
+        rotatedUV.x = centerUV.x * c - centerUV.y * s;
+        rotatedUV.y = centerUV.x * s + centerUV.y * c;
 
-            animatedUV = rotatedUV + float2(0.5, 0.5);
-        }
+        animatedUV = rotatedUV + float2(0.5, 0.5);
+    }
 
-        return animatedUV;
-    #else
-        return uv;
-    #endif
+    return animatedUV;
 }
 
 // ===== Refraction Functions =====
@@ -663,15 +660,28 @@ float SampleAudioLink(int band)
 }
 
 // Sample AudioLink Chronotensity (time-based intensity)
-float SampleAudioLinkChronotensity()
+// band: 0=Bass, 1=Low Mid, 2=High Mid, 3=Treble
+// mode: 0=MotionIncrease, 1=MotionSpeed, 2=SelfIntensity, 3=ColorChord
+float SampleAudioLinkChronotensity(int band, int mode)
 {
     #ifdef _AUDIOLINK_CHRONOTENSITY
-        // Chronotensity is stored at a specific UV coordinate
-        float2 chronoUV = float2(0.5, 0.125); // Standard chronotensity location
-        return saturate(tex2D(_AudioTexture, chronoUV).r);
+        // AudioLink Chronotensity data layout (standard 128x64 texture):
+        // ALPASS_CHRONOTENSITY = row 16, 4 rows for 4 bands
+        // Columns correspond to chronotensity modes
+        float2 chronoUV = float2(
+            (float(mode) + 0.5) / 128.0,
+            (16.0 + float(band) + 0.5) / 64.0
+        );
+        return saturate(tex2Dlod(_AudioTexture, float4(chronoUV, 0, 0)).r);
     #else
         return 0.0;
     #endif
+}
+
+// Convenience overload: sample chronotensity for a single band (MotionIncrease mode)
+float SampleAudioLinkChronotensity(int band)
+{
+    return SampleAudioLinkChronotensity(band, 0);
 }
 
 // ===== Distance Fade Functions =====

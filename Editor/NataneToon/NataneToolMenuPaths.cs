@@ -34,13 +34,19 @@ namespace NataneToon.Editor
         public const string TextureOptimizer = "Tools/Natane/最適化 Optimization/テクスチャ最適化 Texture Optimizer";
         public const string OutlineOptimizer = "Tools/Natane/最適化 Optimization/アウトライン最適化 Outline Optimizer";
         public const string RefractionQualityBalancer = "Tools/Natane/最適化 Optimization/屈折品質バランサー Refraction Quality Balancer";
+        public const string AssetReferenceChecker = "Tools/Natane/最適化 Optimization/アセット参照チェック Asset Reference Checker";
 
         public const string LilToonMigration = "Tools/Natane/移行 Migration/lilToon移行ツール lilToon Migration Tool";
         public const string BatchMaterialConverter = "Tools/Natane/移行 Migration/一括マテリアル変換 Batch Material Converter";
         public const string PrefabVariantConverter = "Tools/Natane/移行 Migration/プレハブバリアント変換 Prefab Variant Converter";
 
         public const string ShaderVariantCollector = "Tools/Natane/シェーダー Shader/シェーダーバリアント収集 Shader Variant Collector";
+        public const string ShaderPrewarming = "Tools/Natane/シェーダー Shader/シェーダープリウォーミング Shader Prewarming/設定 Settings";
         public const string VRCLightVolumesHelper = "Tools/Natane/VRChat/VRCライトボリュームヘルパー VRC Light Volumes Helper";
+
+        public const string UVTextureGenerator = "Tools/Natane/UVテクスチャ生成 UV Texture Generator";
+        public const string ParticleEffectEditor = "Tools/Natane/パーティクルエフェクトエディタ Particle Effect Editor";
+        public const string VTuberPresetGenerator = "Tools/Natane/VTuberプリセット生成 Generate VTuber Presets";
 
         // Not an actual Unity menu path. Used by launchers for direct tab open.
         public const string HelpToolTab = "__NATANE_HELP_TOOL_TAB__";
@@ -58,7 +64,12 @@ namespace NataneToon.Editor
             { "ScreenFXSetup", ScreenFXSetup },
             { "PerformanceBudget", PerformanceBudgetTool },
             { "VRCLightVolumes", VRCLightVolumesHelper },
-            { "PrefabVariantConverter", PrefabVariantConverter }
+            { "PrefabVariantConverter", PrefabVariantConverter },
+            { "UVTextureGenerator", UVTextureGenerator },
+            { "ParticleEffectEditor", ParticleEffectEditor },
+            { "VTuberPresetGenerator", VTuberPresetGenerator },
+            { "ShaderPrewarming", ShaderPrewarming },
+            { "AssetReferenceChecker", AssetReferenceChecker }
         };
 
         private static readonly Dictionary<string, string> LegacyPathAliases = new Dictionary<string, string>
@@ -155,9 +166,10 @@ namespace NataneToon.Editor
                 MaterialPresetBrowser, ColorPaletteManager, GenerateDefaultPresets, RegenerateAllPresets,
                 ShadowAdjustmentWizard, MatCapLayerComposer, DissolvePatternGenerator,
                 RimLightDirectionVisualizer, ScreenFXSetup,
-                PerformanceBudgetTool, TextureOptimizer, OutlineOptimizer, RefractionQualityBalancer,
+                PerformanceBudgetTool, TextureOptimizer, OutlineOptimizer, RefractionQualityBalancer, AssetReferenceChecker,
                 LilToonMigration, BatchMaterialConverter, PrefabVariantConverter,
-                ShaderVariantCollector, VRCLightVolumesHelper,
+                ShaderVariantCollector, ShaderPrewarming, VRCLightVolumesHelper,
+                UVTextureGenerator, ParticleEffectEditor, VTuberPresetGenerator,
             };
             return paths;
         }

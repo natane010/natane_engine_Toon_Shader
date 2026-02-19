@@ -129,6 +129,14 @@ namespace NataneToon.Editor
                 "🔄"
             ));
 
+            allTools.Add(new ToolInfo(
+                "VTuberプリセット生成 VTuber Preset Generator",
+                "VTuber向けマテリアルプリセットの自動生成（肌/髪/衣装/瞳/ライブ）",
+                NataneToolMenuPaths.VTuberPresetGenerator,
+                ToolCategory.Presets,
+                "🎤"
+            ));
+
             // Advanced Tools (Effects + Makeup)
             allTools.Add(new ToolInfo(
                 "シャドウ調整ウィザード Shadow Adjustment Wizard",
@@ -184,6 +192,22 @@ namespace NataneToon.Editor
                 NataneToolMenuPaths.RefractionQualityBalancer,
                 ToolCategory.Advanced,
                 "🔮"
+            ));
+
+            allTools.Add(new ToolInfo(
+                "マスクテクスチャスタジオ Mask Texture Studio",
+                "ノイズ/グラデーション/メッシュ情報ベースのマスクテクスチャ生成、レイヤー合成、ブラシペイント、チャネルパッキング",
+                NataneToolMenuPaths.UVTextureGenerator,
+                ToolCategory.Advanced,
+                "🎭"
+            ));
+
+            allTools.Add(new ToolInfo(
+                "パーティクルエフェクトエディタ Particle Effect Editor",
+                "パーティクルエフェクトのビジュアル編集、テンプレートプリセット",
+                NataneToolMenuPaths.ParticleEffectEditor,
+                ToolCategory.Advanced,
+                "✨"
             ));
 
             // Migration Tools
@@ -242,6 +266,14 @@ namespace NataneToon.Editor
                 NataneToolMenuPaths.ShaderVariantCollector,
                 ToolCategory.Performance,
                 "📊"
+            ));
+
+            allTools.Add(new ToolInfo(
+                "シェーダープリウォーミング Shader Prewarming",
+                "ビルド前シェーダーウォーミングでVRChat初回フリーズ防止",
+                NataneToolMenuPaths.ShaderPrewarming,
+                ToolCategory.Performance,
+                "🔥"
             ));
 
             allTools.Add(new ToolInfo(

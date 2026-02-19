@@ -18,6 +18,28 @@ namespace NataneToon.Editor
         private bool showPreview = false;
         private Material previewMaterial = null;
 
+        // モード切替
+        private enum MigrationMode { Project, Prefab }
+        private MigrationMode currentMode = MigrationMode.Project;
+        private string[] modeNames = new[] { "全プロジェクト Project", "アバター/プレハブ Avatar/Prefab" };
+
+        // プレハブモード用フィールド
+        private GameObject targetPrefab = null;
+        private List<PrefabMaterialInfo> prefabMaterials = new List<PrefabMaterialInfo>();
+        private Vector2 prefabScrollPosition;
+        private bool updatePrefabReferences = true;
+
+        // プレハブ内マテリアル情報
+        private class PrefabMaterialInfo
+        {
+            public Material original;
+            public Material converted;
+            public Renderer renderer;
+            public int materialIndex;
+            public bool willConvert = true;
+            public string rendererPath;
+        }
+
         // 変換レポート
         private class ConversionReport
         {
@@ -81,6 +103,26 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space();
 
+            // モード切替タブ
+            currentMode = (MigrationMode)GUILayout.Toolbar((int)currentMode, modeNames);
+            EditorGUILayout.Space();
+
+            switch (currentMode)
+            {
+                case MigrationMode.Project:
+                    DrawProjectMode();
+                    break;
+                case MigrationMode.Prefab:
+                    DrawPrefabMode();
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 全プロジェクトモードのUI描画
+        /// </summary>
+        private void DrawProjectMode()
+        {
             // Scan button
             if (GUILayout.Button("lilToonマテリアルをスキャン Scan for lilToon Materials", GUILayout.Height(30)))
             {
@@ -121,6 +163,164 @@ namespace NataneToon.Editor
             if (GUILayout.Button("すべて変換 Convert All Materials", GUILayout.Height(40)))
             {
                 ConvertAllMaterials();
+            }
+            GUI.enabled = true;
+        }
+
+        /// <summary>
+        /// アバター/プレハブモードのUI描画
+        /// </summary>
+        private void DrawPrefabMode()
+        {
+            // セクション1: プレハブ選択
+            EditorGUILayout.LabelField("プレハブ選択 Prefab Selection", EditorStyles.boldLabel);
+            EditorGUILayout.BeginHorizontal();
+            EditorGUI.BeginChangeCheck();
+            targetPrefab = (GameObject)EditorGUILayout.ObjectField(
+                "対象プレハブ Target Prefab",
+                targetPrefab,
+                typeof(GameObject),
+                true // allowSceneObjects - シーン上のインスタンスもD&D可能
+            );
+            if (EditorGUI.EndChangeCheck() && targetPrefab != null)
+            {
+                ScanPrefabMaterials();
+            }
+            EditorGUILayout.EndHorizontal();
+
+            if (targetPrefab == null)
+            {
+                EditorGUILayout.HelpBox(
+                    "変換するプレハブまたはシーン上のアバターをここにドラッグ＆ドロップしてください。\n\n" +
+                    "Drag & drop a prefab or scene avatar here to scan for lilToon materials.",
+                    MessageType.Info
+                );
+                return;
+            }
+
+            EditorGUILayout.Space();
+
+            // セクション2: プレハブ設定
+            EditorGUILayout.LabelField("プレハブ設定 Prefab Settings", EditorStyles.boldLabel);
+            updatePrefabReferences = EditorGUILayout.Toggle(
+                "参照を自動更新 Auto-update References",
+                updatePrefabReferences
+            );
+            if (updatePrefabReferences && !replaceOriginal)
+            {
+                EditorGUILayout.HelpBox(
+                    "変換後、プレハブ内のRenderer参照を新しいマテリアルに自動的に差し替えます。\n\n" +
+                    "After conversion, Renderer references in the prefab will be automatically updated to new materials.",
+                    MessageType.Info
+                );
+            }
+            else if (replaceOriginal)
+            {
+                EditorGUILayout.HelpBox(
+                    "「元を置換」モードでは元のマテリアル自体が変更されるため、参照の更新は不要です。\n\n" +
+                    "In 'Replace Original' mode, the original material is modified in-place, so reference updates are unnecessary.",
+                    MessageType.Info
+                );
+            }
+
+            EditorGUILayout.Space();
+
+            // スキャンボタン
+            if (GUILayout.Button("マテリアルを再スキャン Rescan Materials", GUILayout.Height(25)))
+            {
+                ScanPrefabMaterials();
+            }
+
+            EditorGUILayout.Space();
+
+            // セクション3: マテリアル一覧
+            if (prefabMaterials.Count == 0)
+            {
+                EditorGUILayout.HelpBox(
+                    "このプレハブにはlilToonマテリアルが見つかりませんでした。\n\n" +
+                    "No lilToon materials found in this prefab.",
+                    MessageType.Warning
+                );
+                return;
+            }
+
+            EditorGUILayout.LabelField(
+                $"検出されたlilToonマテリアル Found {prefabMaterials.Select(m => m.original).Distinct().Count()} lilToon Materials",
+                EditorStyles.boldLabel
+            );
+
+            prefabScrollPosition = EditorGUILayout.BeginScrollView(prefabScrollPosition, GUILayout.MinHeight(200));
+
+            // 同一マテリアルでグループ化して表示
+            var grouped = prefabMaterials.GroupBy(m => m.original);
+            foreach (var group in grouped)
+            {
+                Material mat = group.Key;
+                var entries = group.ToList();
+                bool willConvert = entries[0].willConvert;
+
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+                // マテリアル行
+                EditorGUILayout.BeginHorizontal();
+                bool newWillConvert = EditorGUILayout.Toggle(willConvert, GUILayout.Width(20));
+                if (newWillConvert != willConvert)
+                {
+                    foreach (var entry in entries)
+                    {
+                        entry.willConvert = newWillConvert;
+                    }
+                }
+
+                EditorGUILayout.ObjectField(mat, typeof(Material), false);
+
+                if (entries[0].converted != null)
+                {
+                    EditorGUILayout.LabelField("→", GUILayout.Width(20));
+                    EditorGUILayout.ObjectField(entries[0].converted, typeof(Material), false);
+                }
+
+                if (GUILayout.Button("個別変換 Convert", GUILayout.Width(100)))
+                {
+                    ConvertSinglePrefabMaterial(mat);
+                }
+
+                EditorGUILayout.EndHorizontal();
+
+                // 使用箇所を表示
+                EditorGUI.indentLevel++;
+                foreach (var entry in entries)
+                {
+                    EditorGUILayout.LabelField(
+                        $"使用箇所: {entry.rendererPath} [スロット {entry.materialIndex}]",
+                        EditorStyles.miniLabel
+                    );
+                }
+                EditorGUI.indentLevel--;
+
+                EditorGUILayout.EndVertical();
+            }
+
+            EditorGUILayout.EndScrollView();
+
+            EditorGUILayout.Space();
+
+            // セクション4: 実行ボタン
+            int convertCount = prefabMaterials.Where(m => m.willConvert && m.converted == null)
+                                              .Select(m => m.original).Distinct().Count();
+
+            if (convertCount > 0)
+            {
+                EditorGUILayout.LabelField(
+                    $"変換対象: {convertCount}個のマテリアル Target: {convertCount} materials",
+                    EditorStyles.boldLabel
+                );
+            }
+
+            GUI.enabled = convertCount > 0;
+            if (GUILayout.Button($"選択したマテリアルを一括変換 Convert Selected ({convertCount})", GUILayout.Height(40)))
+            {
+                ConvertPrefabMaterials();
             }
             GUI.enabled = true;
         }
@@ -805,6 +1005,276 @@ namespace NataneToon.Editor
                 case 2: return "Screen";
                 case 3: return "Overlay";
                 default: return "Unknown";
+            }
+        }
+
+        // ===================================
+        // プレハブモード用メソッド群
+        // ===================================
+
+        /// <summary>
+        /// プレハブ内のlilToonマテリアルをスキャンして一覧を構築
+        /// </summary>
+        private void ScanPrefabMaterials()
+        {
+            prefabMaterials.Clear();
+
+            if (targetPrefab == null) return;
+
+            Renderer[] renderers = targetPrefab.GetComponentsInChildren<Renderer>(true);
+
+            foreach (var renderer in renderers)
+            {
+                Material[] sharedMats = renderer.sharedMaterials;
+                for (int i = 0; i < sharedMats.Length; i++)
+                {
+                    Material mat = sharedMats[i];
+                    if (mat == null || mat.shader == null) continue;
+
+                    string shaderName = mat.shader.name;
+                    if (shaderName.Contains("lilToon") || shaderName.StartsWith("_lil/"))
+                    {
+                        prefabMaterials.Add(new PrefabMaterialInfo
+                        {
+                            original = mat,
+                            converted = null,
+                            renderer = renderer,
+                            materialIndex = i,
+                            willConvert = true,
+                            rendererPath = GetHierarchyPath(renderer.transform, targetPrefab.transform)
+                        });
+                    }
+                }
+            }
+
+            Debug.Log($"プレハブ '{targetPrefab.name}' から {prefabMaterials.Select(m => m.original).Distinct().Count()} 個のlilToonマテリアルを検出しました。");
+        }
+
+        /// <summary>
+        /// Transform階層パスを取得（プレハブルートからの相対パス）
+        /// </summary>
+        private string GetHierarchyPath(Transform target, Transform root)
+        {
+            var parts = new List<string>();
+            Transform current = target;
+
+            while (current != null && current != root)
+            {
+                parts.Insert(0, current.name);
+                current = current.parent;
+            }
+
+            return parts.Count > 0 ? string.Join("/", parts) : target.name;
+        }
+
+        /// <summary>
+        /// プレハブ内の選択マテリアルを一括変換
+        /// </summary>
+        private void ConvertPrefabMaterials()
+        {
+            // 変換対象を取得（重複排除）
+            var materialsToConvert = prefabMaterials
+                .Where(m => m.willConvert && m.converted == null)
+                .Select(m => m.original)
+                .Distinct()
+                .ToList();
+
+            if (materialsToConvert.Count == 0) return;
+
+            if (!EditorUtility.DisplayDialog(
+                "プレハブマテリアル変換 Convert Prefab Materials",
+                $"'{targetPrefab.name}' 内の {materialsToConvert.Count} 個のマテリアルを変換してもよろしいですか？\n" +
+                $"Are you sure you want to convert {materialsToConvert.Count} materials in '{targetPrefab.name}'?",
+                "はい Yes", "キャンセル Cancel"))
+            {
+                return;
+            }
+
+            // Undoグループ登録
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName($"lilToon Migration - {targetPrefab.name}");
+
+            int successCount = 0;
+            List<ConversionReport> reports = new List<ConversionReport>();
+            Dictionary<Material, Material> materialMapping = new Dictionary<Material, Material>();
+
+            for (int i = 0; i < materialsToConvert.Count; i++)
+            {
+                Material sourceMat = materialsToConvert[i];
+
+                EditorUtility.DisplayProgressBar(
+                    "Converting Prefab Materials",
+                    $"Converting {i + 1}/{materialsToConvert.Count}: {sourceMat.name}",
+                    (float)i / materialsToConvert.Count
+                );
+
+                var report = ConvertMaterialWithReport(sourceMat);
+                reports.Add(report);
+
+                if (report.success)
+                {
+                    successCount++;
+
+                    // materialMappingを構築
+                    if (!replaceOriginal)
+                    {
+                        // 新しいマテリアルのパスを取得
+                        string sourcePath = AssetDatabase.GetAssetPath(sourceMat);
+                        string newPath = sourcePath.Replace(".mat", "_NataneToon.mat");
+                        Material newMat = AssetDatabase.LoadAssetAtPath<Material>(newPath);
+                        if (newMat != null)
+                        {
+                            materialMapping[sourceMat] = newMat;
+                        }
+                    }
+                }
+            }
+
+            EditorUtility.ClearProgressBar();
+
+            // プレハブ参照を更新
+            if (updatePrefabReferences && !replaceOriginal && materialMapping.Count > 0)
+            {
+                UpdatePrefabReferences(materialMapping);
+            }
+
+            // Undoグループを閉じる
+            Undo.CollapseUndoOperations(undoGroup);
+
+            // レポート表示
+            ShowConversionReport(reports, successCount);
+
+            // リスト更新
+            ScanPrefabMaterials();
+        }
+
+        /// <summary>
+        /// 個別のマテリアルを変換（プレハブモード用）
+        /// </summary>
+        private void ConvertSinglePrefabMaterial(Material sourceMaterial)
+        {
+            // Undoグループ登録
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName($"lilToon Migration - {sourceMaterial.name}");
+
+            var report = ConvertMaterialWithReport(sourceMaterial);
+
+            if (report.success)
+            {
+                // プレハブ参照の更新
+                if (updatePrefabReferences && !replaceOriginal)
+                {
+                    string sourcePath = AssetDatabase.GetAssetPath(sourceMaterial);
+                    string newPath = sourcePath.Replace(".mat", "_NataneToon.mat");
+                    Material newMat = AssetDatabase.LoadAssetAtPath<Material>(newPath);
+
+                    if (newMat != null)
+                    {
+                        var mapping = new Dictionary<Material, Material> { { sourceMaterial, newMat } };
+                        UpdatePrefabReferences(mapping);
+                    }
+                }
+
+                ShowConversionReport(new List<ConversionReport> { report }, 1);
+            }
+
+            // Undoグループを閉じる
+            Undo.CollapseUndoOperations(undoGroup);
+
+            // リスト更新
+            ScanPrefabMaterials();
+        }
+
+        /// <summary>
+        /// プレハブのマテリアル参照を新しいマテリアルに更新
+        /// シーン上のインスタンスとプレハブアセットの両方に対応
+        /// </summary>
+        private void UpdatePrefabReferences(Dictionary<Material, Material> materialMapping)
+        {
+            if (targetPrefab == null || materialMapping.Count == 0) return;
+
+            // シーン上のインスタンスの場合はプレハブアセットパスを取得
+            string prefabPath = AssetDatabase.GetAssetPath(targetPrefab);
+            bool isSceneInstance = string.IsNullOrEmpty(prefabPath);
+
+            if (isSceneInstance)
+            {
+                prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(targetPrefab);
+            }
+
+            // プレハブアセットを編集する場合
+            if (!string.IsNullOrEmpty(prefabPath))
+            {
+                GameObject prefabContents = null;
+                try
+                {
+                    prefabContents = PrefabUtility.LoadPrefabContents(prefabPath);
+
+                    Renderer[] renderers = prefabContents.GetComponentsInChildren<Renderer>(true);
+                    bool changed = false;
+
+                    foreach (var renderer in renderers)
+                    {
+                        Material[] materials = renderer.sharedMaterials;
+                        bool rendererChanged = false;
+
+                        for (int i = 0; i < materials.Length; i++)
+                        {
+                            if (materials[i] != null && materialMapping.ContainsKey(materials[i]))
+                            {
+                                materials[i] = materialMapping[materials[i]];
+                                rendererChanged = true;
+                            }
+                        }
+
+                        if (rendererChanged)
+                        {
+                            renderer.sharedMaterials = materials;
+                            changed = true;
+                        }
+                    }
+
+                    if (changed)
+                    {
+                        PrefabUtility.SaveAsPrefabAsset(prefabContents, prefabPath);
+                        Debug.Log($"プレハブ '{System.IO.Path.GetFileName(prefabPath)}' のマテリアル参照を更新しました。");
+                    }
+                }
+                finally
+                {
+                    if (prefabContents != null)
+                    {
+                        PrefabUtility.UnloadPrefabContents(prefabContents);
+                    }
+                }
+            }
+
+            // シーン上のインスタンスも直接更新
+            if (isSceneInstance)
+            {
+                Renderer[] sceneRenderers = targetPrefab.GetComponentsInChildren<Renderer>(true);
+                foreach (var renderer in sceneRenderers)
+                {
+                    Undo.RecordObject(renderer, "Update Material References");
+                    Material[] materials = renderer.sharedMaterials;
+                    bool rendererChanged = false;
+
+                    for (int i = 0; i < materials.Length; i++)
+                    {
+                        if (materials[i] != null && materialMapping.ContainsKey(materials[i]))
+                        {
+                            materials[i] = materialMapping[materials[i]];
+                            rendererChanged = true;
+                        }
+                    }
+
+                    if (rendererChanged)
+                    {
+                        renderer.sharedMaterials = materials;
+                    }
+                }
+
+                Debug.Log($"シーン上のインスタンス '{targetPrefab.name}' のマテリアル参照を更新しました。");
             }
         }
 

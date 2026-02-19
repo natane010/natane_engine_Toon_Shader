@@ -6,22 +6,59 @@ using System.Linq;
 namespace NataneToon.Editor
 {
     /// <summary>
-    /// UV Texture Generator
-    /// UVテクスチャ生成ツール - ノイズ・UVアイランドマスク・複合テクスチャを生成
+    /// UV Texture Generator - Comprehensive mask texture creation tool.
+    /// UVテクスチャ生成ツール - 包括的なマスクテクスチャ作成ツール
+    /// Integrates noise, UV mask, gradient, mesh info, combined, templates, and channel packing.
     /// </summary>
     public class UVTextureGenerator : EditorWindow
     {
         // ===== Enums =====
-        private enum GeneratorTab { Noise, UVMask, Combined }
+        private enum GeneratorTab { Noise, UVMask, Gradient, MeshInfo, Combined, Templates, ChannelPack }
         private enum NoiseType { Perlin, Voronoi, Cellular, FBM, Value }
         private enum FillMode { Solid, BoundaryGradient }
         private enum GradientDirection { Inward, Outward }
         private enum CombineMode { Multiply, MaskOnly }
 
-        // ===== Shared State =====
+        // ===== Tab State =====
         private GeneratorTab currentTab = GeneratorTab.Noise;
         private Vector2 scrollPosition;
+
+        // ===== Canvas State =====
         private Texture2D previewTexture;
+        private float canvasZoom = 1f;
+        private Vector2 canvasPan;
+        private bool isDraggingCanvas;
+        private Vector2 lastCanvasMousePos;
+        private bool showUVWireframe;
+
+        // ===== Layer System =====
+        private MaskLayerStack layerStack;
+        private Vector2 layerScrollPosition;
+        private bool layerPanelFoldout = true;
+
+        // ===== Filter State =====
+        private bool filterFoldout;
+        private float filterBlurSigma = 1f;
+        private float filterLevelInputMin;
+        private float filterLevelInputMax = 1f;
+        private float filterLevelGamma = 1f;
+        private float filterLevelOutputMin;
+        private float filterLevelOutputMax = 1f;
+        private float filterEdgeStrength = 1f;
+        private float filterSharpenAmount = 0.5f;
+        private float filterSharpenSigma = 1f;
+        private float filterThreshold = 0.5f;
+
+        // ===== 3D Preview =====
+        private MaskTexture3DPreview preview3D;
+        private bool show3DPreview;
+
+        // ===== Brush Tool =====
+        private BrushSettings brushSettings = new BrushSettings();
+        private MaskTextureBrush brush;
+        private bool brushEnabled;
+
+        // ===== Material Assignment =====
         private Material targetMaterial;
         private int selectedPropertyIndex;
 
@@ -49,11 +86,28 @@ namespace NataneToon.Editor
         private Vector2 islandScrollPosition;
         private bool islandsFoldout = true;
 
+        // ===== Gradient Parameters =====
+        private GradientType gradientType = GradientType.Linear;
+        private GradientParams gradientParams = new GradientParams();
+
+        // ===== Mesh Info Parameters =====
+        private MeshInfoType meshInfoType = MeshInfoType.Curvature;
+        private float curvatureSensitivity = 1f;
+        private Vector3 normalDirection = Vector3.up;
+        private float normalThreshold = 0.3f;
+        private int vertexColorChannel;
+
         // ===== Combined Parameters =====
         private CombineMode combineMode = CombineMode.Multiply;
 
+        // ===== Template Parameters =====
+        private MaskTemplate selectedTemplate = MaskTemplate.FaceSSS;
+        private Vector2 templateScrollPosition;
+
         // ===== Tab Labels =====
-        private static readonly string[] tabLabels = { "ノイズ Noise", "UVマスク UV Mask", "複合 Combined" };
+        private static readonly string[] tabLabels = {
+            "ノイズ", "UVマスク", "グラデ", "メッシュ", "複合", "テンプレ", "CHパック"
+        };
         private static readonly int[] textureSizes = { 256, 512, 1024, 2048, 4096 };
         private static readonly string[] textureSizeLabels = { "256", "512", "1024", "2048", "4096" };
 
@@ -71,16 +125,45 @@ namespace NataneToon.Editor
         public static void ShowWindow()
         {
             var window = GetWindow<UVTextureGenerator>("UVテクスチャ生成 UV Texture Generator");
-            window.minSize = new Vector2(520, 600);
+            window.minSize = new Vector2(580, 700);
             window.Show();
         }
+
+        private void OnEnable()
+        {
+            if (layerStack == null)
+                layerStack = new MaskLayerStack(textureSize, textureSize);
+            if (layerStack.Layers.Count == 0)
+                layerStack.AddLayer("Base Layer");
+            brush = new MaskTextureBrush(brushSettings);
+        }
+
+        private void OnDisable()
+        {
+            preview3D?.Dispose();
+            preview3D = null;
+        }
+
+        private void OnDestroy()
+        {
+            if (previewTexture != null)
+                DestroyImmediate(previewTexture);
+            preview3D?.Dispose();
+            preview3D = null;
+        }
+
+        // ================================================================
+        // Main GUI
+        // ================================================================
 
         private void OnGUI()
         {
             EditorGUILayout.Space(10);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             NataneToonShaderGUIUtility.DrawHeaderWithHelp("UVテクスチャ生成", "UV Texture Generator", "UVTextureGenerator");
-            EditorGUILayout.LabelField("ノイズ・UVマスク・複合テクスチャを生成\nGenerate noise, UV mask, and combined textures", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(
+                "マスクテクスチャの生成・編集・エクスポート\nGenerate, edit, and export mask textures",
+                EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(5);
 
@@ -97,14 +180,58 @@ namespace NataneToon.Editor
                 case GeneratorTab.UVMask:
                     DrawUVMaskTab();
                     break;
+                case GeneratorTab.Gradient:
+                    DrawGradientTab();
+                    break;
+                case GeneratorTab.MeshInfo:
+                    DrawMeshInfoTab();
+                    break;
                 case GeneratorTab.Combined:
                     DrawCombinedTab();
+                    break;
+                case GeneratorTab.Templates:
+                    DrawTemplatesTab();
+                    break;
+                case GeneratorTab.ChannelPack:
+                    DrawChannelPackTab();
                     break;
             }
 
             EditorGUILayout.Space(10);
-            DrawPreview();
-            EditorGUILayout.Space(10);
+            DrawCanvas();
+
+            // Layer panel
+            EditorGUILayout.Space(5);
+            layerPanelFoldout = NataneToonShaderGUIUtility.DrawFoldoutHeader(
+                "レイヤー Layers", layerPanelFoldout);
+            if (layerPanelFoldout)
+            {
+                bool layerChanged = MaskLayerPanelUI.DrawLayerPanel(layerStack, ref layerScrollPosition);
+                if (layerChanged)
+                    RefreshPreviewFromLayers();
+            }
+
+            // Filter panel
+            EditorGUILayout.Space(5);
+            DrawFilterPanel();
+
+            // Brush settings
+            if (brushEnabled)
+            {
+                EditorGUILayout.Space(5);
+                BrushSettingsUI.DrawBrushSettingsUI(brushSettings);
+            }
+
+            // 3D Preview
+            EditorGUILayout.Space(5);
+            Draw3DPreviewSection();
+
+            // Export
+            EditorGUILayout.Space(5);
+            MaskTextureExporter.DrawExportUI(previewTexture);
+
+            // Material assignment
+            EditorGUILayout.Space(5);
             DrawMaterialAssignment();
 
             EditorGUILayout.EndScrollView();
@@ -139,10 +266,16 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space(10);
 
-            if (GUILayout.Button("テクスチャを生成 Generate Texture", GUILayout.Height(30)))
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("プレビュー生成 Generate Preview", GUILayout.Height(30)))
             {
                 GenerateNoiseTexture();
             }
+            if (GUILayout.Button("レイヤーに追加 Add to Layer", GUILayout.Height(30)))
+            {
+                GenerateNoiseToLayer();
+            }
+            EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.EndVertical();
         }
@@ -150,8 +283,27 @@ namespace NataneToon.Editor
         private void GenerateNoiseTexture()
         {
             int size = textureSize;
-            Color[] pixels = new Color[size * size];
+            Color[] pixels = GenerateNoisePixels(size);
+            UpdatePreview(pixels, size);
+        }
 
+        private void GenerateNoiseToLayer()
+        {
+            EnsureLayerStack();
+            int size = layerStack.Width;
+            Color[] pixels = GenerateNoisePixels(size);
+            var layer = layerStack.ActiveLayer;
+            if (layer != null && layer.pixels != null && layer.pixels.Length == pixels.Length)
+            {
+                System.Array.Copy(pixels, layer.pixels, pixels.Length);
+                layer.sourceType = MaskTextureLayer.SourceType.Noise;
+            }
+            RefreshPreviewFromLayers();
+        }
+
+        private Color[] GenerateNoisePixels(int size)
+        {
+            Color[] pixels = new Color[size * size];
             for (int y = 0; y < size; y++)
             {
                 for (int x = 0; x < size; x++)
@@ -164,8 +316,7 @@ namespace NataneToon.Editor
                     pixels[y * size + x] = new Color(value, value, value);
                 }
             }
-
-            UpdatePreview(pixels, size);
+            return pixels;
         }
 
         // ================================================================
@@ -180,9 +331,7 @@ namespace NataneToon.Editor
             EditorGUI.BeginChangeCheck();
             meshSource = EditorGUILayout.ObjectField("メッシュソース", meshSource, typeof(Object), true);
             if (EditorGUI.EndChangeCheck())
-            {
                 islands.Clear();
-            }
 
             uvChannel = EditorGUILayout.IntPopup("UVチャンネル", uvChannel, new[] { "UV0", "UV1", "UV2", "UV3" }, new[] { 0, 1, 2, 3 });
             maskTextureSize = EditorGUILayout.IntPopup("テクスチャサイズ", maskTextureSize, textureSizeLabels, textureSizes);
@@ -190,9 +339,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(5);
 
             if (GUILayout.Button("アイランドを検出 Detect Islands", GUILayout.Height(25)))
-            {
                 DetectIslands();
-            }
 
             EditorGUILayout.EndVertical();
 
@@ -203,10 +350,12 @@ namespace NataneToon.Editor
 
                 EditorGUILayout.Space(10);
 
-                if (GUILayout.Button("テクスチャを生成 Generate Texture", GUILayout.Height(30)))
-                {
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("プレビュー生成 Generate Preview", GUILayout.Height(30)))
                     GenerateUVMaskTexture();
-                }
+                if (GUILayout.Button("レイヤーに追加 Add to Layer", GUILayout.Height(30)))
+                    GenerateUVMaskToLayer();
+                EditorGUILayout.EndHorizontal();
             }
         }
 
@@ -222,13 +371,9 @@ namespace NataneToon.Editor
 
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("全選択 Select All", GUILayout.Height(20)))
-            {
                 foreach (var island in islands) island.selected = true;
-            }
             if (GUILayout.Button("全解除 Deselect All", GUILayout.Height(20)))
-            {
                 foreach (var island in islands) island.selected = false;
-            }
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(3);
@@ -240,7 +385,7 @@ namespace NataneToon.Editor
             {
                 var island = islands[i];
                 island.selected = EditorGUILayout.ToggleLeft(
-                    $"アイランド #{i}  (△{island.triangleCount}, 面積: {island.area:F3})",
+                    $"アイランド #{i}  (\u25B3{island.triangleCount}, 面積: {island.area:F3})",
                     island.selected);
             }
 
@@ -270,24 +415,18 @@ namespace NataneToon.Editor
         private Mesh ExtractMesh()
         {
             if (meshSource == null) return null;
-
             if (meshSource is Mesh mesh) return mesh;
-
             if (meshSource is GameObject go)
             {
                 var smr = go.GetComponent<SkinnedMeshRenderer>();
                 if (smr != null && smr.sharedMesh != null) return smr.sharedMesh;
-
                 var mf = go.GetComponent<MeshFilter>();
                 if (mf != null && mf.sharedMesh != null) return mf.sharedMesh;
             }
-
             if (meshSource is MeshFilter meshFilter && meshFilter.sharedMesh != null)
                 return meshFilter.sharedMesh;
-
             if (meshSource is SkinnedMeshRenderer skinned && skinned.sharedMesh != null)
                 return skinned.sharedMesh;
-
             return null;
         }
 
@@ -296,7 +435,8 @@ namespace NataneToon.Editor
             Mesh mesh = ExtractMesh();
             if (mesh == null)
             {
-                EditorUtility.DisplayDialog("エラー", "メッシュを取得できません。\nMesh, GameObject, MeshFilter, SkinnedMeshRenderer を指定してください。", "OK");
+                EditorUtility.DisplayDialog("エラー",
+                    "メッシュを取得できません。\nMesh, GameObject, MeshFilter, SkinnedMeshRenderer を指定してください。", "OK");
                 return;
             }
 
@@ -312,34 +452,25 @@ namespace NataneToon.Editor
             islands = UVIslandDetector.DetectIslands(mesh, uvs);
 
             if (islands.Count == 0)
-            {
                 EditorUtility.DisplayDialog("情報", "アイランドが検出されませんでした。", "OK");
-            }
         }
 
-        private void GenerateUVMaskTexture()
+        private Color[] GenerateUVMaskPixels(int size)
         {
             Mesh mesh = ExtractMesh();
-            if (mesh == null) return;
+            if (mesh == null) return null;
 
             List<Vector2> uvs = new List<Vector2>();
             mesh.GetUVs(uvChannel, uvs);
-            if (uvs.Count == 0) return;
+            if (uvs.Count == 0) return null;
 
-            int size = maskTextureSize;
             Color[] pixels = new Color[size * size];
-
-            // Rasterize selected islands
             bool[] selectedFlags = islands.Select(i => i.selected).ToArray();
             TriangleRasterizer.RasterizeIslands(pixels, size, mesh, uvs, islands, selectedFlags);
 
-            // Apply boundary gradient if needed
             if (fillMode == FillMode.BoundaryGradient)
-            {
                 BoundaryGradient.Apply(pixels, size, gradientWidth, gradientDirection);
-            }
 
-            // Invert if needed
             if (maskInvert)
             {
                 for (int i = 0; i < pixels.Length; i++)
@@ -349,11 +480,226 @@ namespace NataneToon.Editor
                 }
             }
 
-            UpdatePreview(pixels, size);
+            return pixels;
+        }
+
+        private void GenerateUVMaskTexture()
+        {
+            int size = maskTextureSize;
+            Color[] pixels = GenerateUVMaskPixels(size);
+            if (pixels != null) UpdatePreview(pixels, size);
+        }
+
+        private void GenerateUVMaskToLayer()
+        {
+            EnsureLayerStack();
+            int size = layerStack.Width;
+            Color[] pixels = GenerateUVMaskPixels(size);
+            if (pixels == null) return;
+            var layer = layerStack.ActiveLayer;
+            if (layer != null && layer.pixels != null && layer.pixels.Length == pixels.Length)
+            {
+                System.Array.Copy(pixels, layer.pixels, pixels.Length);
+                layer.sourceType = MaskTextureLayer.SourceType.UVMask;
+            }
+            RefreshPreviewFromLayers();
         }
 
         // ================================================================
-        // Tab 3: Combined
+        // Tab 3: Gradient
+        // ================================================================
+
+        private void DrawGradientTab()
+        {
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField("グラデーション設定 Gradient Settings", EditorStyles.boldLabel);
+
+            textureSize = EditorGUILayout.IntPopup("テクスチャサイズ", textureSize, textureSizeLabels, textureSizes);
+            gradientType = (GradientType)EditorGUILayout.EnumPopup("タイプ Type", gradientType);
+
+            if (gradientType == GradientType.HeightBased)
+            {
+                DrawMeshSourceField();
+                EditorGUILayout.HelpBox(
+                    "高さベースグラデーションにはメッシュが必要です。\nHeight-based gradient requires a mesh.",
+                    MessageType.Info);
+            }
+            else
+            {
+                if (gradientType == GradientType.Linear || gradientType == GradientType.Angular)
+                    gradientParams.angle = EditorGUILayout.Slider("角度 Angle", gradientParams.angle, 0f, 360f);
+
+                if (gradientType == GradientType.Radial)
+                    gradientParams.radius = EditorGUILayout.Slider("半径 Radius", gradientParams.radius, 0.01f, 2f);
+
+                gradientParams.center = EditorGUILayout.Vector2Field("中心 Center", gradientParams.center);
+            }
+
+            gradientParams.curve = EditorGUILayout.CurveField("カーブ Curve", gradientParams.curve);
+            gradientParams.invert = EditorGUILayout.Toggle("反転 Invert", gradientParams.invert);
+
+            EditorGUILayout.Space(10);
+
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("プレビュー生成 Generate Preview", GUILayout.Height(30)))
+                GenerateGradientTexture();
+            if (GUILayout.Button("レイヤーに追加 Add to Layer", GUILayout.Height(30)))
+                GenerateGradientToLayer();
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void GenerateGradientTexture()
+        {
+            int size = textureSize;
+            Color[] pixels = GenerateGradientPixels(size);
+            if (pixels != null) UpdatePreview(pixels, size);
+        }
+
+        private void GenerateGradientToLayer()
+        {
+            EnsureLayerStack();
+            int size = layerStack.Width;
+            Color[] pixels = GenerateGradientPixels(size);
+            if (pixels == null) return;
+            var layer = layerStack.ActiveLayer;
+            if (layer != null && layer.pixels != null && layer.pixels.Length == pixels.Length)
+            {
+                System.Array.Copy(pixels, layer.pixels, pixels.Length);
+                layer.sourceType = MaskTextureLayer.SourceType.Gradient;
+            }
+            RefreshPreviewFromLayers();
+        }
+
+        private Color[] GenerateGradientPixels(int size)
+        {
+            Color[] pixels = new Color[size * size];
+
+            if (gradientType == GradientType.HeightBased)
+            {
+                Mesh mesh = ExtractMesh();
+                if (mesh == null)
+                {
+                    EditorUtility.DisplayDialog("エラー", "メッシュを取得できません。", "OK");
+                    return null;
+                }
+                List<Vector2> uvs = new List<Vector2>();
+                mesh.GetUVs(uvChannel, uvs);
+                if (uvs.Count == 0)
+                {
+                    EditorUtility.DisplayDialog("エラー", $"UV{uvChannel} が存在しません。", "OK");
+                    return null;
+                }
+                GradientGenerator.GenerateHeightBased(pixels, size, mesh, uvs,
+                    gradientParams.curve, gradientParams.invert);
+            }
+            else
+            {
+                GradientGenerator.Generate(pixels, size, gradientType, gradientParams);
+            }
+
+            return pixels;
+        }
+
+        // ================================================================
+        // Tab 4: Mesh Info
+        // ================================================================
+
+        private void DrawMeshInfoTab()
+        {
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField("メッシュ情報 Mesh Info Settings", EditorStyles.boldLabel);
+
+            DrawMeshSourceField();
+            textureSize = EditorGUILayout.IntPopup("テクスチャサイズ", textureSize, textureSizeLabels, textureSizes);
+            meshInfoType = (MeshInfoType)EditorGUILayout.EnumPopup("タイプ Type", meshInfoType);
+
+            switch (meshInfoType)
+            {
+                case MeshInfoType.Curvature:
+                    curvatureSensitivity = EditorGUILayout.Slider("感度 Sensitivity", curvatureSensitivity, 0.1f, 5f);
+                    break;
+                case MeshInfoType.NormalDirection:
+                    normalDirection = EditorGUILayout.Vector3Field("方向 Direction", normalDirection);
+                    normalThreshold = EditorGUILayout.Slider("閾値 Threshold", normalThreshold, 0f, 1f);
+                    break;
+                case MeshInfoType.VertexColor:
+                    vertexColorChannel = EditorGUILayout.IntPopup("チャンネル Channel", vertexColorChannel,
+                        new[] { "R", "G", "B", "A" }, new[] { 0, 1, 2, 3 });
+                    break;
+            }
+
+            EditorGUILayout.Space(10);
+
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("プレビュー生成 Generate Preview", GUILayout.Height(30)))
+                GenerateMeshInfoTexture();
+            if (GUILayout.Button("レイヤーに追加 Add to Layer", GUILayout.Height(30)))
+                GenerateMeshInfoToLayer();
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private Color[] GenerateMeshInfoPixels(int size)
+        {
+            Mesh mesh = ExtractMesh();
+            if (mesh == null)
+            {
+                EditorUtility.DisplayDialog("エラー", "メッシュを取得できません。", "OK");
+                return null;
+            }
+            List<Vector2> uvs = new List<Vector2>();
+            mesh.GetUVs(uvChannel, uvs);
+            if (uvs.Count == 0)
+            {
+                EditorUtility.DisplayDialog("エラー", $"UV{uvChannel} が存在しません。", "OK");
+                return null;
+            }
+
+            Color[] pixels = new Color[size * size];
+
+            switch (meshInfoType)
+            {
+                case MeshInfoType.Curvature:
+                    MeshInfoGenerator.GenerateCurvature(pixels, size, mesh, uvs, curvatureSensitivity);
+                    break;
+                case MeshInfoType.NormalDirection:
+                    MeshInfoGenerator.GenerateNormalDirection(pixels, size, mesh, uvs, normalDirection, normalThreshold);
+                    break;
+                case MeshInfoType.VertexColor:
+                    MeshInfoGenerator.GenerateVertexColor(pixels, size, mesh, uvs, vertexColorChannel);
+                    break;
+            }
+
+            return pixels;
+        }
+
+        private void GenerateMeshInfoTexture()
+        {
+            int size = textureSize;
+            Color[] pixels = GenerateMeshInfoPixels(size);
+            if (pixels != null) UpdatePreview(pixels, size);
+        }
+
+        private void GenerateMeshInfoToLayer()
+        {
+            EnsureLayerStack();
+            int size = layerStack.Width;
+            Color[] pixels = GenerateMeshInfoPixels(size);
+            if (pixels == null) return;
+            var layer = layerStack.ActiveLayer;
+            if (layer != null && layer.pixels != null && layer.pixels.Length == pixels.Length)
+            {
+                System.Array.Copy(pixels, layer.pixels, pixels.Length);
+                layer.sourceType = MaskTextureLayer.SourceType.MeshInfo;
+            }
+            RefreshPreviewFromLayers();
+        }
+
+        // ================================================================
+        // Tab 5: Combined
         // ================================================================
 
         private void DrawCombinedTab()
@@ -365,25 +711,19 @@ namespace NataneToon.Editor
             EditorGUI.BeginChangeCheck();
             meshSource = EditorGUILayout.ObjectField("メッシュソース", meshSource, typeof(Object), true);
             if (EditorGUI.EndChangeCheck())
-            {
                 islands.Clear();
-            }
 
             uvChannel = EditorGUILayout.IntPopup("UVチャンネル", uvChannel, new[] { "UV0", "UV1", "UV2", "UV3" }, new[] { 0, 1, 2, 3 });
 
             EditorGUILayout.Space(5);
 
             if (GUILayout.Button("アイランドを検出 Detect Islands", GUILayout.Height(25)))
-            {
                 DetectIslands();
-            }
 
             EditorGUILayout.EndVertical();
 
             if (islands.Count > 0)
-            {
                 DrawIslandList();
-            }
 
             // Noise settings
             EditorGUILayout.Space(5);
@@ -421,9 +761,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(10);
 
             if (GUILayout.Button("テクスチャを生成 Generate Texture", GUILayout.Height(30)))
-            {
                 GenerateCombinedTexture();
-            }
         }
 
         private void GenerateCombinedTexture()
@@ -445,12 +783,10 @@ namespace NataneToon.Editor
 
             int size = textureSize;
 
-            // Generate mask
             Color[] maskPixels = new Color[size * size];
             bool[] selectedFlags = islands.Select(i => i.selected).ToArray();
             TriangleRasterizer.RasterizeIslands(maskPixels, size, mesh, uvs, islands, selectedFlags);
 
-            // Generate noise
             Color[] pixels = new Color[size * size];
             for (int y = 0; y < size; y++)
             {
@@ -486,45 +822,384 @@ namespace NataneToon.Editor
         }
 
         // ================================================================
-        // Preview
+        // Tab 6: Templates
         // ================================================================
 
-        private void DrawPreview()
+        private void DrawTemplatesTab()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("プレビュー Preview", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("テンプレート Templates", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "テンプレートを選択してレイヤースタックに適用します。\nSelect a template to apply to the layer stack.",
+                MessageType.Info);
 
-            if (previewTexture != null)
+            DrawMeshSourceField();
+
+            EditorGUILayout.Space(5);
+
+            var templates = MaskTextureTemplates.GetAllTemplateInfos();
+
+            templateScrollPosition = EditorGUILayout.BeginScrollView(
+                templateScrollPosition, GUILayout.Height(Mathf.Min(templates.Count * 60f, 300f)));
+
+            foreach (var (template, info) in templates)
             {
-                Rect rect = GUILayoutUtility.GetRect(200, 200);
-                EditorGUI.DrawPreviewTexture(rect, previewTexture, null, ScaleMode.ScaleToFit);
+                bool isSelected = (template == selectedTemplate);
+                var bgColor = GUI.backgroundColor;
+                if (isSelected)
+                    GUI.backgroundColor = new Color(0.6f, 0.8f, 1f);
 
-                EditorGUILayout.Space(5);
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.BeginHorizontal();
 
-                if (GUILayout.Button("テクスチャを保存 Save Texture", GUILayout.Height(25)))
-                {
-                    SaveTexture();
-                }
+                if (GUILayout.Button(isSelected ? "\u25CF" : "\u25CB", GUILayout.Width(20)))
+                    selectedTemplate = template;
+
+                EditorGUILayout.BeginVertical();
+                EditorGUILayout.LabelField($"{info.nameJP} / {info.nameEN}", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField(info.descriptionJP, EditorStyles.wordWrappedMiniLabel);
+                if (info.requiresMesh)
+                    EditorGUILayout.LabelField("* メッシュ必要 Mesh required", EditorStyles.miniLabel);
+                EditorGUILayout.EndVertical();
+
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.EndVertical();
+
+                GUI.backgroundColor = bgColor;
             }
-            else
+
+            EditorGUILayout.EndScrollView();
+
+            EditorGUILayout.Space(10);
+
+            if (GUILayout.Button("テンプレートを適用 Apply Template", GUILayout.Height(30)))
             {
-                EditorGUILayout.HelpBox("「テクスチャを生成」を押すとプレビューが表示されます。\nClick 'Generate Texture' to see preview.", MessageType.Info);
+                ApplySelectedTemplate();
             }
 
             EditorGUILayout.EndVertical();
         }
 
-        private void UpdatePreview(Color[] pixels, int size)
+        private void ApplySelectedTemplate()
         {
-            if (previewTexture != null)
+            EnsureLayerStack();
+            Mesh mesh = ExtractMesh();
+            List<Vector2> uvs = null;
+            if (mesh != null)
             {
-                DestroyImmediate(previewTexture);
+                uvs = new List<Vector2>();
+                mesh.GetUVs(uvChannel, uvs);
+            }
+            MaskTextureTemplates.ApplyTemplate(selectedTemplate, layerStack, layerStack.Width, mesh, uvs);
+            RefreshPreviewFromLayers();
+        }
+
+        // ================================================================
+        // Tab 7: Channel Pack
+        // ================================================================
+
+        private void DrawChannelPackTab()
+        {
+            MaskTextureChannelPacker.DrawChannelPackUI();
+        }
+
+        // ================================================================
+        // Canvas with Zoom/Pan and Brush Support
+        // ================================================================
+
+        private void DrawCanvas()
+        {
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+            // Canvas header with controls
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("キャンバス Canvas", EditorStyles.boldLabel);
+            GUILayout.FlexibleSpace();
+
+            showUVWireframe = GUILayout.Toggle(showUVWireframe,
+                new GUIContent("UV", "UVワイヤーフレーム表示 Show UV wireframe"),
+                EditorStyles.miniButton, GUILayout.Width(30));
+
+            brushEnabled = GUILayout.Toggle(brushEnabled,
+                new GUIContent("Brush", "ブラシツール有効化 Enable brush tool"),
+                EditorStyles.miniButton, GUILayout.Width(50));
+
+            if (GUILayout.Button("Fit", EditorStyles.miniButton, GUILayout.Width(30)))
+            {
+                canvasZoom = 1f;
+                canvasPan = Vector2.zero;
             }
 
-            previewTexture = new Texture2D(size, size, TextureFormat.RGB24, false);
-            previewTexture.SetPixels(pixels);
-            previewTexture.Apply();
-            Repaint();
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.Space(3);
+
+            // Canvas area
+            float canvasDisplaySize = 300f;
+            Rect canvasArea = GUILayoutUtility.GetRect(canvasDisplaySize, canvasDisplaySize);
+
+            // Background
+            EditorGUI.DrawRect(canvasArea, new Color(0.15f, 0.15f, 0.15f));
+
+            if (previewTexture != null)
+            {
+                // Calculate zoomed/panned rect
+                float texSize = canvasDisplaySize * canvasZoom;
+                float offsetX = canvasArea.x + (canvasDisplaySize - texSize) * 0.5f + canvasPan.x;
+                float offsetY = canvasArea.y + (canvasDisplaySize - texSize) * 0.5f + canvasPan.y;
+                Rect texRect = new Rect(offsetX, offsetY, texSize, texSize);
+
+                // Clip to canvas
+                GUI.BeginClip(canvasArea);
+                Rect clippedRect = new Rect(
+                    texRect.x - canvasArea.x,
+                    texRect.y - canvasArea.y,
+                    texRect.width, texRect.height);
+                EditorGUI.DrawPreviewTexture(clippedRect, previewTexture, null, ScaleMode.ScaleToFit);
+
+                // UV wireframe overlay
+                if (showUVWireframe)
+                {
+                    Mesh mesh = ExtractMesh();
+                    if (mesh != null)
+                    {
+                        List<Vector2> uvs = new List<Vector2>();
+                        mesh.GetUVs(uvChannel, uvs);
+                        if (uvs.Count > 0)
+                            UVWireframeRenderer.DrawWireframe(clippedRect, mesh, uvs);
+                    }
+                }
+
+                GUI.EndClip();
+
+                // Brush input handling
+                if (brushEnabled && layerStack != null && layerStack.ActiveLayer != null)
+                {
+                    var activeLayer = layerStack.ActiveLayer;
+                    if (activeLayer.pixels != null && !activeLayer.locked)
+                    {
+                        bool modified;
+                        BrushCanvasInputHandler.HandleBrushInput(
+                            canvasArea, brush, brushSettings,
+                            activeLayer.pixels, activeLayer.width, activeLayer.height,
+                            out modified);
+                        if (modified)
+                        {
+                            activeLayer.sourceType = MaskTextureLayer.SourceType.Paint;
+                            RefreshPreviewFromLayers();
+                        }
+                    }
+                }
+
+                // Brush cursor
+                if (brushEnabled && canvasArea.Contains(Event.current.mousePosition))
+                {
+                    float cursorRadius = brushSettings.size * canvasZoom *
+                        (canvasDisplaySize / Mathf.Max(1, layerStack != null ? layerStack.Width : textureSize));
+                    BrushCursorRenderer.DrawCursorWithHardness(
+                        Event.current.mousePosition, cursorRadius, brushSettings.hardness,
+                        Color.white);
+                    Repaint();
+                }
+
+                // Canvas pan/zoom (only when brush is off)
+                if (!brushEnabled)
+                    HandleCanvasInput(canvasArea);
+            }
+            else
+            {
+                EditorGUI.LabelField(canvasArea,
+                    "「テクスチャを生成」を押すとプレビューが表示されます\nClick 'Generate' to see preview",
+                    new GUIStyle(EditorStyles.centeredGreyMiniLabel)
+                    { alignment = TextAnchor.MiddleCenter, wordWrap = true });
+            }
+
+            // Zoom info
+            EditorGUILayout.LabelField($"Zoom: {canvasZoom:F1}x", EditorStyles.miniLabel);
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void HandleCanvasInput(Rect canvasArea)
+        {
+            Event e = Event.current;
+            if (!canvasArea.Contains(e.mousePosition) && !isDraggingCanvas) return;
+
+            switch (e.type)
+            {
+                case EventType.MouseDown:
+                    if (e.button == 2 || (e.button == 0 && e.alt))
+                    {
+                        isDraggingCanvas = true;
+                        lastCanvasMousePos = e.mousePosition;
+                        e.Use();
+                    }
+                    break;
+                case EventType.MouseDrag:
+                    if (isDraggingCanvas)
+                    {
+                        canvasPan += e.mousePosition - lastCanvasMousePos;
+                        lastCanvasMousePos = e.mousePosition;
+                        e.Use();
+                        Repaint();
+                    }
+                    break;
+                case EventType.MouseUp:
+                    if (isDraggingCanvas)
+                    {
+                        isDraggingCanvas = false;
+                        e.Use();
+                    }
+                    break;
+                case EventType.ScrollWheel:
+                    if (canvasArea.Contains(e.mousePosition))
+                    {
+                        float zoomDelta = -e.delta.y * 0.05f;
+                        canvasZoom = Mathf.Clamp(canvasZoom + zoomDelta * canvasZoom, 0.1f, 10f);
+                        e.Use();
+                        Repaint();
+                    }
+                    break;
+            }
+        }
+
+        // ================================================================
+        // Filter Panel
+        // ================================================================
+
+        private void DrawFilterPanel()
+        {
+            filterFoldout = NataneToonShaderGUIUtility.DrawFoldoutHeader("フィルター Filters", filterFoldout);
+            if (!filterFoldout) return;
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+            bool hasLayer = layerStack != null && layerStack.ActiveLayer != null
+                && layerStack.ActiveLayer.pixels != null;
+
+            // Gaussian Blur
+            EditorGUILayout.BeginHorizontal();
+            filterBlurSigma = EditorGUILayout.Slider("ブラー Blur (sigma)", filterBlurSigma, 0.1f, 20f);
+            EditorGUI.BeginDisabledGroup(!hasLayer);
+            if (GUILayout.Button("適用", GUILayout.Width(40)))
+            {
+                ApplyFilterToActiveLayer((pixels, w, h) =>
+                    MaskTextureFilters.GaussianBlur(pixels, w, h, filterBlurSigma));
+            }
+            EditorGUI.EndDisabledGroup();
+            EditorGUILayout.EndHorizontal();
+
+            // Levels
+            EditorGUILayout.LabelField("レベル補正 Levels", EditorStyles.miniLabel);
+            EditorGUILayout.BeginHorizontal();
+            filterLevelInputMin = EditorGUILayout.FloatField("入力Min", filterLevelInputMin, GUILayout.Width(120));
+            filterLevelInputMax = EditorGUILayout.FloatField("入力Max", filterLevelInputMax, GUILayout.Width(120));
+            EditorGUILayout.EndHorizontal();
+            filterLevelGamma = EditorGUILayout.Slider("ガンマ Gamma", filterLevelGamma, 0.01f, 10f);
+            EditorGUILayout.BeginHorizontal();
+            filterLevelOutputMin = EditorGUILayout.FloatField("出力Min", filterLevelOutputMin, GUILayout.Width(120));
+            filterLevelOutputMax = EditorGUILayout.FloatField("出力Max", filterLevelOutputMax, GUILayout.Width(120));
+            EditorGUI.BeginDisabledGroup(!hasLayer);
+            if (GUILayout.Button("適用", GUILayout.Width(40)))
+            {
+                ApplyFilterToActiveLayer((pixels, w, h) =>
+                    MaskTextureFilters.Levels(pixels, w, h,
+                        filterLevelInputMin, filterLevelInputMax, filterLevelGamma,
+                        filterLevelOutputMin, filterLevelOutputMax));
+            }
+            EditorGUI.EndDisabledGroup();
+            EditorGUILayout.EndHorizontal();
+
+            // Edge Detection
+            EditorGUILayout.BeginHorizontal();
+            filterEdgeStrength = EditorGUILayout.Slider("エッジ検出 Edge", filterEdgeStrength, 0.1f, 5f);
+            EditorGUI.BeginDisabledGroup(!hasLayer);
+            if (GUILayout.Button("適用", GUILayout.Width(40)))
+            {
+                ApplyFilterToActiveLayer((pixels, w, h) =>
+                    MaskTextureFilters.SobelEdge(pixels, w, h, filterEdgeStrength));
+            }
+            EditorGUI.EndDisabledGroup();
+            EditorGUILayout.EndHorizontal();
+
+            // Sharpen
+            EditorGUILayout.BeginHorizontal();
+            filterSharpenAmount = EditorGUILayout.Slider("シャープ Sharpen", filterSharpenAmount, 0f, 3f);
+            EditorGUI.BeginDisabledGroup(!hasLayer);
+            if (GUILayout.Button("適用", GUILayout.Width(40)))
+            {
+                ApplyFilterToActiveLayer((pixels, w, h) =>
+                    MaskTextureFilters.Sharpen(pixels, w, h, filterSharpenAmount, filterSharpenSigma));
+            }
+            EditorGUI.EndDisabledGroup();
+            EditorGUILayout.EndHorizontal();
+
+            // Threshold
+            EditorGUILayout.BeginHorizontal();
+            filterThreshold = EditorGUILayout.Slider("二値化 Threshold", filterThreshold, 0f, 1f);
+            EditorGUI.BeginDisabledGroup(!hasLayer);
+            if (GUILayout.Button("適用", GUILayout.Width(40)))
+            {
+                ApplyFilterToActiveLayer((pixels, w, h) =>
+                    MaskTextureFilters.Threshold(pixels, w, h, filterThreshold));
+            }
+            EditorGUI.EndDisabledGroup();
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void ApplyFilterToActiveLayer(System.Action<Color[], int, int> filterAction)
+        {
+            if (layerStack == null || layerStack.ActiveLayer == null) return;
+            var layer = layerStack.ActiveLayer;
+            if (layer.pixels == null || layer.locked) return;
+
+            filterAction(layer.pixels, layer.width, layer.height);
+            RefreshPreviewFromLayers();
+        }
+
+        // ================================================================
+        // 3D Preview
+        // ================================================================
+
+        private void Draw3DPreviewSection()
+        {
+            show3DPreview = NataneToonShaderGUIUtility.DrawFoldoutHeader(
+                "3Dプレビュー 3D Preview", show3DPreview);
+
+            if (!show3DPreview) return;
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+            Mesh mesh = ExtractMesh();
+            if (mesh == null)
+            {
+                EditorGUILayout.HelpBox(
+                    "3Dプレビューにはメッシュが必要です。メッシュソースを設定してください。\n" +
+                    "Mesh is required for 3D preview. Set a mesh source.",
+                    MessageType.Info);
+                EditorGUILayout.EndVertical();
+                return;
+            }
+
+            if (preview3D == null)
+                preview3D = new MaskTexture3DPreview();
+
+            preview3D.SetMesh(mesh);
+            if (previewTexture != null)
+                preview3D.SetTexture(previewTexture);
+
+            preview3D.DrawPreviewUI();
+
+            Rect previewRect = GUILayoutUtility.GetRect(300, 200);
+            preview3D.HandleInput(previewRect);
+            preview3D.DrawPreview(previewRect);
+
+            if (Event.current.type == EventType.Repaint || Event.current.type == EventType.MouseDrag)
+                Repaint();
+
+            EditorGUILayout.EndVertical();
         }
 
         // ================================================================
@@ -540,7 +1215,6 @@ namespace NataneToon.Editor
 
             if (targetMaterial != null)
             {
-                // Build list of available properties on this material
                 List<string> availableProps = new List<string>();
                 List<string> availableLabels = new List<string>();
 
@@ -560,7 +1234,9 @@ namespace NataneToon.Editor
                 }
                 else
                 {
-                    EditorGUILayout.HelpBox("対応するテクスチャプロパティが見つかりません。\nNo compatible texture properties found.", MessageType.Warning);
+                    EditorGUILayout.HelpBox(
+                        "対応するテクスチャプロパティが見つかりません。\nNo compatible texture properties found.",
+                        MessageType.Warning);
                 }
             }
 
@@ -568,65 +1244,51 @@ namespace NataneToon.Editor
         }
 
         // ================================================================
-        // Save Texture
+        // Helpers
         // ================================================================
 
-        private void SaveTexture()
+        private void DrawMeshSourceField()
         {
-            if (previewTexture == null) return;
+            EditorGUI.BeginChangeCheck();
+            meshSource = EditorGUILayout.ObjectField("メッシュソース Mesh Source", meshSource, typeof(Object), true);
+            if (EditorGUI.EndChangeCheck())
+                islands.Clear();
 
-            string defaultName = currentTab switch
-            {
-                GeneratorTab.Noise => $"Noise_{noiseType}",
-                GeneratorTab.UVMask => "UVMask",
-                GeneratorTab.Combined => $"Combined_{noiseType}",
-                _ => "Texture"
-            };
-
-            string path = EditorUtility.SaveFilePanelInProject(
-                "テクスチャを保存 Save Texture",
-                defaultName,
-                "png",
-                "保存場所を選択 Choose save location");
-
-            if (string.IsNullOrEmpty(path)) return;
-
-            byte[] bytes = previewTexture.EncodeToPNG();
-            System.IO.File.WriteAllBytes(path, bytes);
-            AssetDatabase.Refresh();
-
-            Texture2D savedTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-
-            // Assign to material if configured
-            if (targetMaterial != null && savedTexture != null)
-            {
-                List<string> availableProps = new List<string>();
-                foreach (string prop in maskProperties)
-                {
-                    if (targetMaterial.HasProperty(prop))
-                        availableProps.Add(prop);
-                }
-
-                if (availableProps.Count > 0 && selectedPropertyIndex < availableProps.Count)
-                {
-                    Undo.RecordObject(targetMaterial, "Assign UV Texture");
-                    targetMaterial.SetTexture(availableProps[selectedPropertyIndex], savedTexture);
-                    EditorUtility.SetDirty(targetMaterial);
-                }
-            }
-
-            EditorUtility.DisplayDialog(
-                "生成完了 Complete",
-                $"テクスチャを保存しました: {path}",
-                "OK");
+            uvChannel = EditorGUILayout.IntPopup("UVチャンネル", uvChannel,
+                new[] { "UV0", "UV1", "UV2", "UV3" }, new[] { 0, 1, 2, 3 });
         }
 
-        private void OnDestroy()
+        private void EnsureLayerStack()
+        {
+            if (layerStack == null)
+                layerStack = new MaskLayerStack(textureSize, textureSize);
+            if (layerStack.Layers.Count == 0)
+                layerStack.AddLayer("Base Layer");
+        }
+
+        private void RefreshPreviewFromLayers()
+        {
+            if (layerStack == null) return;
+            Color[] flattened = layerStack.Flatten();
+            if (flattened != null)
+            {
+                UpdatePreview(flattened, layerStack.Width);
+                if (preview3D != null)
+                    preview3D.MarkDirty();
+            }
+        }
+
+        private void UpdatePreview(Color[] pixels, int size)
         {
             if (previewTexture != null)
-            {
                 DestroyImmediate(previewTexture);
-            }
+
+            previewTexture = new Texture2D(size, size, TextureFormat.RGB24, false);
+            previewTexture.filterMode = FilterMode.Bilinear;
+            previewTexture.wrapMode = TextureWrapMode.Clamp;
+            previewTexture.SetPixels(pixels);
+            previewTexture.Apply();
+            Repaint();
         }
 
         // ================================================================
@@ -672,7 +1334,6 @@ namespace NataneToon.Editor
                     {
                         int cx = xi + i;
                         int cy = yi + j;
-                        // Deterministic hash for point position
                         float px = cx + Hash2DFloat(cx, cy, seed, 0);
                         float py = cy + Hash2DFloat(cx, cy, seed, 1);
 
@@ -719,7 +1380,6 @@ namespace NataneToon.Editor
                     }
                 }
 
-                // F2 - F1 for cellular pattern
                 return Mathf.Clamp01(Mathf.Sqrt(minDist2) - Mathf.Sqrt(minDist1));
             }
 
@@ -748,7 +1408,6 @@ namespace NataneToon.Editor
                 float xf = x - xi;
                 float yf = y - yi;
 
-                // Smoothstep interpolation
                 float u = xf * xf * (3f - 2f * xf);
                 float v = yf * yf * (3f - 2f * yf);
 
@@ -762,9 +1421,6 @@ namespace NataneToon.Editor
                 return Mathf.Lerp(a, b, v);
             }
 
-            /// <summary>
-            /// Deterministic hash returning [0,1) float
-            /// </summary>
             private static float Hash2DFloat(int x, int y, int seed, int channel)
             {
                 int h = x * 73856093 ^ y * 19349663 ^ seed * 83492791 ^ channel * 39916801;
@@ -800,12 +1456,10 @@ namespace NataneToon.Editor
 
                 if (triCount == 0) return new List<UVIsland>();
 
-                // Union-Find
                 int[] parent = new int[triCount];
                 int[] rank = new int[triCount];
                 for (int i = 0; i < triCount; i++) parent[i] = i;
 
-                // Edge dictionary: shared UV edges connect triangles
                 var edgeToTriangle = new Dictionary<long, int>();
 
                 for (int t = 0; t < triCount; t++)
@@ -821,7 +1475,6 @@ namespace NataneToon.Editor
                     ProcessEdge(edgeToTriangle, parent, rank, uvs[i2], uvs[i0], t);
                 }
 
-                // Group triangles by root
                 var groups = new Dictionary<int, List<int>>();
                 for (int t = 0; t < triCount; t++)
                 {
@@ -831,7 +1484,6 @@ namespace NataneToon.Editor
                     groups[root].Add(t);
                 }
 
-                // Build island list
                 var result = new List<UVIsland>();
                 foreach (var group in groups.Values)
                 {
@@ -858,7 +1510,6 @@ namespace NataneToon.Editor
                         minV = Mathf.Min(minV, Mathf.Min(uv0.y, Mathf.Min(uv1.y, uv2.y)));
                         maxV = Mathf.Max(maxV, Mathf.Max(uv0.y, Mathf.Max(uv1.y, uv2.y)));
 
-                        // UV space triangle area
                         totalArea += Mathf.Abs(
                             (uv1.x - uv0.x) * (uv2.y - uv0.y) -
                             (uv2.x - uv0.x) * (uv1.y - uv0.y)) * 0.5f;
@@ -870,19 +1521,15 @@ namespace NataneToon.Editor
                     result.Add(island);
                 }
 
-                // Sort by area descending
                 result.Sort((a, b) => b.area.CompareTo(a.area));
-
                 return result;
             }
 
             private static void ProcessEdge(Dictionary<long, int> edgeToTriangle, int[] parent, int[] rank, Vector2 a, Vector2 b, int triIndex)
             {
-                // Quantize UV coordinates for reliable matching
                 long keyA = QuantizeUV(a);
                 long keyB = QuantizeUV(b);
 
-                // Sort edge vertices for consistent key
                 long edgeKey;
                 if (keyA < keyB)
                     edgeKey = keyA * 100000007L + keyB;
@@ -890,13 +1537,9 @@ namespace NataneToon.Editor
                     edgeKey = keyB * 100000007L + keyA;
 
                 if (edgeToTriangle.TryGetValue(edgeKey, out int otherTri))
-                {
                     Union(parent, rank, triIndex, otherTri);
-                }
                 else
-                {
                     edgeToTriangle[edgeKey] = triIndex;
-                }
             }
 
             private static long QuantizeUV(Vector2 uv)
@@ -910,7 +1553,7 @@ namespace NataneToon.Editor
             {
                 while (parent[i] != i)
                 {
-                    parent[i] = parent[parent[i]]; // path compression
+                    parent[i] = parent[parent[i]];
                     i = parent[i];
                 }
                 return i;
@@ -959,7 +1602,6 @@ namespace NataneToon.Editor
 
             public static void RasterizeTriangle(Color[] pixels, int size, Vector2 v0, Vector2 v1, Vector2 v2, Color color)
             {
-                // Convert to pixel coordinates
                 float px0 = v0.x * (size - 1);
                 float py0 = v0.y * (size - 1);
                 float px1 = v1.x * (size - 1);
@@ -967,15 +1609,13 @@ namespace NataneToon.Editor
                 float px2 = v2.x * (size - 1);
                 float py2 = v2.y * (size - 1);
 
-                // Bounding box
                 int minX = Mathf.Clamp(Mathf.FloorToInt(Mathf.Min(px0, Mathf.Min(px1, px2))), 0, size - 1);
                 int maxX = Mathf.Clamp(Mathf.CeilToInt(Mathf.Max(px0, Mathf.Max(px1, px2))), 0, size - 1);
                 int minY = Mathf.Clamp(Mathf.FloorToInt(Mathf.Min(py0, Mathf.Min(py1, py2))), 0, size - 1);
                 int maxY = Mathf.Clamp(Mathf.CeilToInt(Mathf.Max(py0, Mathf.Max(py1, py2))), 0, size - 1);
 
-                // Precompute triangle edge function denominators
                 float denom = (py1 - py2) * (px0 - px2) + (px2 - px1) * (py0 - py2);
-                if (Mathf.Abs(denom) < 1e-8f) return; // Degenerate triangle
+                if (Mathf.Abs(denom) < 1e-8f) return;
 
                 float invDenom = 1f / denom;
 
@@ -991,9 +1631,7 @@ namespace NataneToon.Editor
                         float w2 = 1f - w0 - w1;
 
                         if (w0 >= 0f && w1 >= 0f && w2 >= 0f)
-                        {
                             pixels[y * size + x] = color;
-                        }
                     }
                 }
             }
@@ -1011,19 +1649,13 @@ namespace NataneToon.Editor
 
                 int totalPixels = size * size;
 
-                // Build binary mask: true = inside island
                 bool[] mask = new bool[totalPixels];
                 for (int i = 0; i < totalPixels; i++)
-                {
                     mask[i] = pixels[i].r > 0.5f;
-                }
 
-                // Distance from boundary via iterative erosion
                 float[] distance = new float[totalPixels];
                 for (int i = 0; i < totalPixels; i++)
-                {
                     distance[i] = mask[i] ? widthPixels : 0f;
-                }
 
                 bool[] current = (bool[])mask.Clone();
 
@@ -1038,7 +1670,6 @@ namespace NataneToon.Editor
                             int idx = y * size + x;
                             if (!current[idx]) continue;
 
-                            // Check 4-connected neighbors
                             bool onBoundary = false;
                             if (x > 0 && !current[idx - 1]) onBoundary = true;
                             else if (x < size - 1 && !current[idx + 1]) onBoundary = true;
@@ -1056,7 +1687,6 @@ namespace NataneToon.Editor
                     current = next;
                 }
 
-                // Normalize and write back
                 float invWidth = 1f / widthPixels;
                 for (int i = 0; i < totalPixels; i++)
                 {
@@ -1069,9 +1699,7 @@ namespace NataneToon.Editor
                     float value = distance[i] * invWidth;
 
                     if (direction == GradientDirection.Outward)
-                    {
                         value = 1f - value;
-                    }
 
                     pixels[i] = new Color(value, value, value);
                 }

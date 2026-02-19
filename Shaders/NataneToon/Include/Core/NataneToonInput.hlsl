@@ -33,6 +33,8 @@ CBUFFER_START(UnityPerMaterial)
     float _2ndTexValue;
     float _2ndTexIntensity;
     float _2ndTexBlendMode;
+    float4 _2ndTexScrollSpeed;
+    float _2ndTexRotateSpeed;
 
     float4 _3rdTex_ST;
     float _3rdTexHueShift;
@@ -40,6 +42,8 @@ CBUFFER_START(UnityPerMaterial)
     float _3rdTexValue;
     float _3rdTexIntensity;
     float _3rdTexBlendMode;
+    float4 _3rdTexScrollSpeed;
+    float _3rdTexRotateSpeed;
 
     float4 _4thTex_ST;
     float _4thTexHueShift;
@@ -47,6 +51,8 @@ CBUFFER_START(UnityPerMaterial)
     float _4thTexValue;
     float _4thTexIntensity;
     float _4thTexBlendMode;
+    float4 _4thTexScrollSpeed;
+    float _4thTexRotateSpeed;
 
     float4 _5thTex_ST;
     float _5thTexHueShift;
@@ -54,6 +60,8 @@ CBUFFER_START(UnityPerMaterial)
     float _5thTexValue;
     float _5thTexIntensity;
     float _5thTexBlendMode;
+    float4 _5thTexScrollSpeed;
+    float _5thTexRotateSpeed;
 
     // Shading
     float _ShadingMode;
@@ -126,6 +134,8 @@ CBUFFER_START(UnityPerMaterial)
     float _SpecularBlend;
     float _SpecularBlendMode;
     float _SpecularBlur;
+    float4 _SpecularMaskScrollSpeed;
+    float _SpecularMaskRotateSpeed;
     #endif
 
     // Rim Light
@@ -137,6 +147,8 @@ CBUFFER_START(UnityPerMaterial)
     float _RimBlend;
     float _RimBlendMode;
     float _RimBlur;
+    float4 _RimMaskScrollSpeed;
+    float _RimMaskRotateSpeed;
     #endif
 
     // Rim Light 2
@@ -148,6 +160,8 @@ CBUFFER_START(UnityPerMaterial)
     float _RimBlend2;
     float _RimBlendMode2;
     float _Rim2Blur;
+    float4 _RimMask2ScrollSpeed;
+    float _RimMask2RotateSpeed;
     #endif
 
     // MatCap
@@ -168,6 +182,8 @@ CBUFFER_START(UnityPerMaterial)
     float _GlitterBlend;
     float _GlitterBlendMode;
     float _GlitterBlur;
+    float4 _GlitterMaskScrollSpeed;
+    float _GlitterMaskRotateSpeed;
     #endif
 
     // Outline
@@ -187,6 +203,9 @@ CBUFFER_START(UnityPerMaterial)
 
     // Normal Map
     float _BumpScale;
+    // Normal Map UV Animation
+    float4 _BumpMapScrollSpeed;
+    float _BumpMapRotateSpeed;
 
     // Subsurface Scattering
     #if defined(_SSS)
@@ -209,6 +228,8 @@ CBUFFER_START(UnityPerMaterial)
     float _DissolveBlend;
     float _DissolveBlendMode;
     float _DissolveBlur;
+    float4 _DissolveTexScrollSpeed;
+    float _DissolveTexRotateSpeed;
     #endif
 
     // Virtual Expression - Hue Shift
@@ -221,6 +242,10 @@ CBUFFER_START(UnityPerMaterial)
     // Virtual Expression - Emission Animation
     #if defined(_EMISSION)
     float _EmissionScrollSpeed;
+    float _EmissionScrollSpeedY;
+    float _EmissionRotateSpeed;
+    float4 _EmissionMaskScrollSpeed;
+    float _EmissionMaskRotateSpeed;
     float _EmissionPulseSpeed;
     float _EmissionPulseAmplitude;
     #endif
@@ -354,6 +379,8 @@ CBUFFER_START(UnityPerMaterial)
     float _HologramBlend;
     float _HologramBlendMode;
     float _HologramBlur;
+    float4 _HologramMaskScrollSpeed;
+    float _HologramMaskRotateSpeed;
     #endif
     #if defined(_GLITCH)
     float _GlitchIntensity;
@@ -416,6 +443,8 @@ CBUFFER_START(UnityPerMaterial)
     float _DripBlend;
     float _DripBlendMode;
     float _DripBlur;
+    float4 _DripMaskScrollSpeed;
+    float _DripMaskRotateSpeed;
     #endif
 
     // Vertex Animation Texture (VAT)

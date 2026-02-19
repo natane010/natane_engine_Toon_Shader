@@ -288,6 +288,21 @@ public class NataneToonShaderGUI : ShaderGUI
             DrawProperty("_MainTex", "メインテクスチャ");
             DrawProperty("_Color", "カラー");
 
+            // Main Texture Animation
+            EditorGUILayout.Space(5);
+            bool mainTexAnim = DrawToggle("_MAIN_TEX_ANIMATION", "_MainTexAnimation", "メインテクスチャアニメーション");
+            if (mainTexAnim)
+            {
+                DrawUVAnimationSettings("_MainTexScrollSpeed", "_MainTexRotateSpeed", "メインテクスチャ");
+                DrawHelpToggle("MainTexAnimation",
+                    "📌 メインテクスチャアニメーション:\n" +
+                    "メインテクスチャのUV座標をスクロール・回転させます。\n\n" +
+                    "• スクロール速度 XY: X方向とY方向のスクロール速度\n" +
+                    "• 回転速度: UV座標の回転速度（ラジアン/秒）\n\n" +
+                    "💡 流水表現やホログラムパターンの移動に使用できます。",
+                    MessageType.Info);
+            }
+
             EditorGUILayout.Space(10);
             EditorGUILayout.LabelField("カラー保持・強化設定", EditorStyles.boldLabel);
 
@@ -532,6 +547,9 @@ public class NataneToonShaderGUI : ShaderGUI
                 "白 = テクスチャ適用、黒 = 適用なし\n" +
                 "マスクはアルファチャンネルと乗算されます",
                 MessageType.Info);
+
+            // UV Animation
+            DrawUVAnimationSettings($"_{layerName}TexScrollSpeed", $"_{layerName}TexRotateSpeed", $"{layerName} Texture");
         }
     }
 
@@ -910,6 +928,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUILayout.Space();
                 DrawProperty("_SpecularMask", "スペキュラーマスク");
                 DrawHelpToggle("SpecularMask", "白 = スペキュラーあり、黒 = スペキュラーなし", MessageType.Info);
+                DrawUVAnimationSettings("_SpecularMaskScrollSpeed", "_SpecularMaskRotateSpeed", "スペキュラーマスク");
 
                 DrawBlendControls(materialEditor, targetMaterial, "_SpecularBlend", "_SpecularBlendMode", "_SpecularBlur");
                 EditorGUI.indentLevel--;
@@ -953,6 +972,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUILayout.Space();
                 DrawProperty("_RimMask", "リムマスク");
                 DrawHelpToggle("RimMask", "白 = リムライトあり、黒 = リムライトなし", MessageType.Info);
+                DrawUVAnimationSettings("_RimMaskScrollSpeed", "_RimMaskRotateSpeed", "リムマスク");
 
                 DrawBlendControls(materialEditor, targetMaterial, "_RimBlend", "_RimBlendMode", "_RimBlur");
                 EditorGUI.indentLevel--;
@@ -989,6 +1009,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUILayout.Space();
                 DrawProperty("_RimMask2", "リムマスク2");
                 DrawHelpToggle("RimMask2", "白 = リムライトあり、黒 = リムライトなし", MessageType.Info);
+                DrawUVAnimationSettings("_RimMask2ScrollSpeed", "_RimMask2RotateSpeed", "リムマスク2");
 
                 DrawBlendControls(materialEditor, targetMaterial, "_RimBlend2", "_RimBlendMode2", "_Rim2Blur");
                 EditorGUI.indentLevel--;
@@ -1147,6 +1168,7 @@ public class NataneToonShaderGUI : ShaderGUI
                     "• 黒 (0.0): グリッターを非表示\n" +
                     "• グレー: 部分的に表示",
                     MessageType.Info);
+                DrawUVAnimationSettings("_GlitterMaskScrollSpeed", "_GlitterMaskRotateSpeed", "グリッターマスク");
 
                 EditorGUILayout.Space(5);
                 DrawHelpToggle("GlitterInfo",
@@ -1204,6 +1226,7 @@ public class NataneToonShaderGUI : ShaderGUI
                     "• 黒 (0.0): 雫を非表示\n" +
                     "• グレー: 部分的に表示",
                     MessageType.Info);
+                DrawUVAnimationSettings("_DripMaskScrollSpeed", "_DripMaskRotateSpeed", "雫マスク");
 
                 EditorGUILayout.Space(5);
                 DrawHelpToggle("DripInfo",
@@ -1273,6 +1296,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_HologramNoiseSpeed", "ノイズ速度");
 
                 DrawProperty("_HologramMask", "ホログラムマスク");
+                DrawUVAnimationSettings("_HologramMaskScrollSpeed", "_HologramMaskRotateSpeed", "ホログラムマスク");
 
                 bool useNoiseTex = DrawToggle("_HOLOGRAM_NOISE", "_UseHologramNoise", "ノイズテクスチャを使用");
                 if (useNoiseTex)
@@ -1431,7 +1455,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_EmissionMap", "エミッションマップ");
 
                 EditorGUILayout.Space();
-                DrawProperty("_EmissionScrollSpeed", "スクロール速度");
+                DrawEmissionUVAnimationSettings();
 
                 DrawProperty("_EmissionPulseSpeed", "パルス速度");
                 DrawProperty("_EmissionPulseAmplitude", "パルスの振幅");
@@ -1439,6 +1463,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUILayout.Space();
                 DrawProperty("_EmissionMask", "エミッションマスク");
                 DrawHelpToggle("EmissionMask", "白 = エミッションあり、黒 = エミッションなし", MessageType.Info);
+                DrawUVAnimationSettings("_EmissionMaskScrollSpeed", "_EmissionMaskRotateSpeed", "エミッションマスク");
 
                 EditorGUILayout.Space();
                 DrawProperty("_EmissionGlow", "エミッショングロー（ブルーム）");
@@ -1482,6 +1507,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawHelpToggle("DissolveAmount", "0 = 完全に表示、1 = 完全に消滅", MessageType.Info);
 
                 DrawProperty("_DissolveTex", "ディゾルブテクスチャ（ノイズ）");
+                DrawUVAnimationSettings("_DissolveTexScrollSpeed", "_DissolveTexRotateSpeed", "ディゾルブ");
                 DrawProperty("_DissolveEdgeWidth", "エッジの幅");
                 DrawProperty("_DissolveEdgeColor", "エッジの色");
                 DrawProperty("_DissolveEdgeIntensity", "エッジの強さ");
@@ -1558,6 +1584,7 @@ public class NataneToonShaderGUI : ShaderGUI
             {
                 DrawProperty("_BumpMap", "ノーマルマップ");
                 DrawProperty("_BumpScale", "ノーマルのスケール");
+                DrawUVAnimationSettings("_BumpMapScrollSpeed", "_BumpMapRotateSpeed", "ノーマルマップ");
             }
 
             EditorGUI.indentLevel--;
@@ -2407,6 +2434,29 @@ public class NataneToonShaderGUI : ShaderGUI
         }
 
         EditorGUI.indentLevel--;
+    }
+
+    /// <summary>
+    /// Draw UV animation settings (scroll speed XY + rotation speed) for any texture
+    /// </summary>
+    private void DrawUVAnimationSettings(string scrollProp, string rotateProp, string label)
+    {
+        EditorGUILayout.Space(3);
+        EditorGUILayout.LabelField($"UVアニメーション ({label})", EditorStyles.miniLabel);
+        DrawProperty(scrollProp, "スクロール速度 XY");
+        DrawProperty(rotateProp, "回転速度");
+    }
+
+    /// <summary>
+    /// Draw Emission-specific UV animation settings (backward-compatible Float×2 + Float layout)
+    /// </summary>
+    private void DrawEmissionUVAnimationSettings()
+    {
+        EditorGUILayout.Space(3);
+        EditorGUILayout.LabelField("UVアニメーション (エミッション)", EditorStyles.miniLabel);
+        DrawProperty("_EmissionScrollSpeed", "スクロール速度 X");
+        DrawProperty("_EmissionScrollSpeedY", "スクロール速度 Y");
+        DrawProperty("_EmissionRotateSpeed", "回転速度");
     }
 
     /// <summary>
