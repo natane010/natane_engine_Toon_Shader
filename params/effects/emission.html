@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>エミッション - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>エミッション</h1>
+    <p class="page-subtitle">自己発光による光り輝くエフェクト</p>
+
+    <p>マテリアルの一部または全体を自己発光させるエフェクトです。光るサイン、ネオン表現、魔法効果、発光するアクセサリーなどの表現に使用します。スクロールやパルスのアニメーションも可能です。</p>
+    <p>キーワード: <code>_EMISSION</code>、<code>_EMISSION_SCROLL</code>、<code>_EMISSION_PULSE</code></p>
+
+    <h2 id="basic">基本設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エミッションの色</span>
+        <span class="param-prop">_EmissionColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>エミッション（発光）の色を設定します。HDRカラーに対応しており、強度1以上の明るい色を設定することでブルーム効果と組み合わせた強い発光が可能です。</p>
+        <p class="param-default">デフォルト: (0, 0, 0, 1)（黒・発光なし）</p>
+      </div>
+      <div class="param-tip">HDRカラーで強度を上げると、ポストプロセスのブルームと組み合わせて輝く効果が得られます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エミッションマップ</span>
+        <span class="param-prop">_EmissionMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>エミッションの発光パターンを定義するテクスチャです。白い部分が発光し、黒い部分は発光しません。</p>
+        <p class="param-default">デフォルト: "white"（全体が発光）</p>
+      </div>
+    </div>
+
+    <h2 id="scroll">スクロールアニメーション</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スクロール速度</span>
+        <span class="param-prop">_EmissionScrollSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>エミッションテクスチャがスクロールする速度を設定します。キーワード <code>_EMISSION_SCROLL</code> で有効化します。</p>
+        <p class="param-default">デフォルト: 1</p>
+      </div>
+      <div class="param-tip">流れる光や回路のような動きのあるエフェクトを作成できます。</div>
+    </div>
+
+    <h2 id="pulse">パルスアニメーション</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">パルス速度</span>
+        <span class="param-prop">_EmissionPulseSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>エミッションが明滅（パルス）する速度を設定します。キーワード <code>_EMISSION_PULSE</code> で有効化します。</p>
+        <p class="param-default">デフォルト: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">パルスの振幅</span>
+        <span class="param-prop">_EmissionPulseAmplitude</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>パルスの明暗の振幅を設定します。値が大きいほど明暗の差が大きくなります。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エミッションマスク</span>
+        <span class="param-prop">_EmissionMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>エミッションの適用範囲をテクスチャで制御します。キーワード <code>_EMISSION_MASK</code> で有効化します。</p>
+        <p class="param-default">デフォルト: "white"（全体に適用）</p>
+      </div>
+      <div class="param-tip">白 = エミッションあり、黒 = エミッションなし。エミッションマップとは別に、追加のマスク制御が可能です。</div>
+    </div>
+
+    <h2 id="glow">グロー（ブルーム）</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エミッショングロー（ブルーム）</span>
+        <span class="param-prop">_EmissionGlow</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>発光部分を滲ませて明るく広げ、柔らかく輝いているような効果を追加します。</p>
+        <ul>
+          <li>0 = グローなし（シャープな発光）</li>
+          <li>0.3 - 0.5 = 適度なグロー（推奨）</li>
+          <li>0.7 - 1.0 = 強いグロー（強烈な輝き）</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+      <div class="param-tip">HDRカラーと組み合わせると、より鮮やかな発光効果が得られます。</div>
+    </div>
+
+    <h2 id="blend">ブレンド設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_EmissionBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>エミッションとベースカラーの合成方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常合成</li>
+          <li><strong>Soft (1)</strong> - ソフトライト</li>
+          <li><strong>Screen (2)</strong> - スクリーン</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Normal）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_EmissionBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>エミッションエフェクトの全体的な適用度を設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_EmissionBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>エミッションの境界をぼかします。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

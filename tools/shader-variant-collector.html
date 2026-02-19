@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>シェーダーバリアント収集 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>シェーダーバリアント収集</h1>
+    <p class="page-subtitle">プロジェクト内のシェーダーバリアントを自動収集してビルドサイズを大幅削減</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Shader &gt; Shader Variant Collector</span>
+      <span>カテゴリ: シェーダー</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>シェーダーバリアント収集ツールは、プロジェクト内で実際に使用されているシェーダーバリアント（キーワードの組み合わせ）を自動的にスキャンし、ShaderVariantCollectionを生成するツールです。これにより、ビルド時に不要なシェーダーバリアントを除外し、ビルドサイズを50〜80%削減できます。</p>
+    <p>Natane Toon Shaderは多くのオプション機能を持ち、各機能はshader_featureキーワードで切り替えられています。すべてのキーワードの組み合わせ（バリアント）をビルドに含めると膨大なサイズになりますが、実際に使用されている組み合わせは限られています。このツールは、プロジェクト内のすべてのマテリアルを調査し、実際に有効になっているキーワードの組み合わせだけを収集します。</p>
+    <p>収集されたバリアントはShaderVariantCollectionアセットとして保存され、ビルド時のシェーダーストリッピングに活用されます。VRChatアバターのアップロードサイズを削減したい場合に特に有効で、シェーダーのコンパイル時間も短縮されます。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li><strong>自動バリアント検出</strong> — プロジェクト内のすべてのNatane Toon Shaderマテリアルをスキャンし、有効なキーワードの組み合わせを自動検出</li>
+      <li><strong>ShaderVariantCollection生成</strong> — 検出されたバリアントからShaderVariantCollectionアセットを自動生成。Unityの標準的なバリアント管理システムと完全互換</li>
+      <li><strong>ビルドサイズ分析</strong> — 全バリアント vs 使用中バリアントのサイズ比較を表示。削減率を具体的な数値で確認可能</li>
+      <li><strong>不要バリアント除去</strong> — 使用されていないバリアントをリストから確認でき、将来必要になる可能性のあるものを手動で追加することも可能</li>
+      <li><strong>プレウォーミング対応</strong> — エディタ環境でのシェーダープレウォーミングにも使用可能（VRChatのランタイムスクリプト制限に対応したエディタ専用処理）</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>スキャン実行</strong>
+        <p><code>Tools &gt; Natane &gt; Shader &gt; Shader Variant Collector</code> を開き、「スキャン」ボタンでプロジェクト内のマテリアルをスキャンします。すべてのNatane Toon Shaderマテリアルが自動検出されます。</p>
+      </li>
+      <li>
+        <strong>バリアント一覧を確認</strong>
+        <p>検出されたシェーダーバリアント（キーワードの組み合わせ）が一覧表示されます。各バリアントがどのマテリアルで使用されているかも確認できます。</p>
+      </li>
+      <li>
+        <strong>不要分を除外</strong>
+        <p>将来使用する予定のないバリアントがあれば、手動で除外できます。通常は自動検出の結果をそのまま使用すれば問題ありません。</p>
+      </li>
+      <li>
+        <strong>コレクション生成</strong>
+        <p>「コレクション生成」ボタンで ShaderVariantCollection アセットを保存します。保存先は ShaderVariants フォルダが推奨されます。</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>新しいマテリアルを追加したり、既存マテリアルの機能設定を変更した後は、再度スキャンを実行してコレクションを更新しましょう</li>
+      <li>VRChatアバターのアップロード前にこのツールを実行すると、アップロードサイズを大幅に削減できます</li>
+      <li>バリアント数が極端に多い場合は、使用していない機能をマテリアルで無効にすることでさらに削減可能です</li>
+      <li>ShaderVariantCollectionはバージョン管理（Git等）に含めて、チーム全体で共有するのがおすすめです</li>
+      <li>シェーダーのコンパイルが遅いと感じたら、まずこのツールでバリアント数を確認してみてください</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

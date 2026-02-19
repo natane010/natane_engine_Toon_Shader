@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MatCapコンポーザー - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>MatCapコンポーザー</h1>
+    <p class="page-subtitle">複数のMatCapレイヤーをブレンドモードで合成</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; MatCap Composer</span>
+      <span>カテゴリ: エフェクト</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>MatCapコンポーザーは、最大3つのMatCap（Material Capture）レイヤーを重ねてブレンドモードで合成できるビジュアルツールです。異なるMatCapテクスチャを組み合わせることで、単体では表現できない複雑な光沢や質感を作り出すことができます。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li>最大3レイヤーのMatCap合成</li>
+      <li>レイヤーごとのブレンドモード選択</li>
+      <li>強度（不透明度）の個別調整</li>
+      <li>リアルタイムプレビュー</li>
+      <li>マテリアルへの直接適用</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>対象のマテリアルを選択してツールを開きます</li>
+      <li>各レイヤーにMatCapテクスチャをドラッグ&ドロップします</li>
+      <li>各レイヤーのブレンドモード（加算、乗算、オーバーレイなど）を選択します</li>
+      <li>強度スライダーで各レイヤーの効果量を調整します</li>
+      <li>プレビューで結果を確認し、マテリアルに適用します</li>
+    </ol>
+
+    <h2>活用例</h2>
+    <ul>
+      <li><strong>金属光沢</strong> - ベースMatCapにハイライトMatCapを加算して複雑な金属感を表現</li>
+      <li><strong>肌の質感</strong> - 柔らかいMatCapにフレネルMatCapをオーバーレイして自然な肌質に</li>
+      <li><strong>宝石</strong> - カラフルなMatCapを乗算で重ねて深みのある光沢を表現</li>
+    </ul>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>レイヤーを重ねて複雑な効果を作り出しましょう</li>
+      <li>加算モードで光沢感を追加するのが最も一般的な使い方です</li>
+      <li>3レイヤー全て使用すると処理負荷が増えるため、必要最小限のレイヤーで表現しましょう</li>
+      <li>MatCap 2/3のキーワードが有効になるため、パフォーマンスへの影響を確認してください</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

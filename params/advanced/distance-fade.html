@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>距離フェード - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>距離フェード</h1>
+    <p class="page-subtitle">カメラ距離に応じた自動フェード（LOD）</p>
+
+    <h2>概要</h2>
+    <p>距離フェードは、カメラからの距離に応じてオブジェクトを段階的にフェードアウトさせる機能です。遠くのオブジェクトの描画負荷を軽減するLOD（Level of Detail）的な効果を、シェーダーレベルで実現します。VRChatでのパフォーマンス最適化に特に有効です。</p>
+    <p>キーワード <code>_DISTANCE_FADE</code> で制御されます。</p>
+
+    <h2>プロパティ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">距離フェードを有効化</span>
+        <span class="param-prop">_DistanceFade</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>距離フェード機能の有効/無効を切り替えます。</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フェード開始距離</span>
+        <span class="param-prop">_DistanceFadeStart</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>フェードが始まるカメラからの距離（メートル単位）です。この距離まではオブジェクトが完全に表示されます。</p>
+        <p class="param-default">デフォルト: 10.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フェード終了距離</span>
+        <span class="param-prop">_DistanceFadeEnd</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>オブジェクトが完全に消える距離です。開始距離から終了距離にかけて徐々にフェードアウトします。</p>
+        <p class="param-default">デフォルト: 20.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フェードモード</span>
+        <span class="param-prop">_DistanceFadeMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>フェードの方法を選択します。</p>
+        <ul>
+          <li><strong>Alpha</strong> - 透明度でフェードします。半透明描画になります。</li>
+          <li><strong>Simplify</strong> - エフェクトを簡略化することでフェード効果を実現します。</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Alpha）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フェードブレンド</span>
+        <span class="param-prop">_DistanceFadeBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>距離フェード効果全体のブレンド強度です。</p>
+        <p class="param-default">デフォルト: 1.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フェードぼかし</span>
+        <span class="param-prop">_DistFadeBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>フェード境界のぼかし量です。値が大きいほど滑らかなフェード遷移になります。</p>
+        <p class="param-default">デフォルト: 0.0</p>
+      </div>
+    </div>
+
+    <h2>使い方のポイント</h2>
+    <ul>
+      <li>パフォーマンス最適化に有効です。遠距離のオブジェクト描画負荷を軽減します</li>
+      <li>VRChatの大規模ワールドで遠くのアバターや装飾品のコストを削減するのに最適です</li>
+      <li>フェード開始距離と終了距離の差を大きくすると、より滑らかなフェード遷移になります</li>
+      <li>Alphaモードは見た目が自然ですが、半透明描画のオーバーヘッドが発生します</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

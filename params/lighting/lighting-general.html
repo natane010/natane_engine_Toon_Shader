@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ライティング全般 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ライティング全般</h1>
+    <p class="page-subtitle">光源の強度、間接光、ライトカラーの影響を制御</p>
+
+    <h2 id="global-light">グローバルライト制御</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ライト強度（グローバル）</span>
+        <span class="param-prop">_LightIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>全体的なライティングの強さを制御します。0でライトなし、1で標準、2で明るくなります。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">間接光の強度</span>
+        <span class="param-prop">_IndirectLightIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>環境光やライトプローブからの間接照明の強さを制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">GI強度（環境反射）</span>
+        <span class="param-prop">_GIIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>環境反射（Light Probes/GI）の影響度を制御します。0で環境反射を完全に無効化（環境光の影響を受けない）、0.5で環境反射を50%に軽減、1で通常通り環境反射を適用します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">VRChatで暗いワールドやライティングが強すぎるワールドで、見た目を安定させるために使用します。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ライトカラー影響度</span>
+        <span class="param-prop">_LightColorInfluence</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ライトの色がマテリアルに与える影響を制御します。0でライトの色を無視（白色光として処理）、0.5で中間（推奨）、1でライトの色を完全に反映します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">色の強いライトを使うワールドでマテリアルの色味を安定させたい場合に下げてください。</div>
+    </div>
+
+    <h2 id="shadow-settings">シャドウ設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">影の受け取り</span>
+        <span class="param-prop">_ShadowReceive</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>他のオブジェクトからの影がこのマテリアルに与える影響を制御します。1で完全な影、0で影なしです。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">影の最大暗さ</span>
+        <span class="param-prop">_ShadowMaxDarkness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>影の最小明るさを制御します。0で完全に暗い、1で暗くならない。影が真っ黒になりすぎるのを防ぎます。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">影が極端に暗くなるワールドでは0.2〜0.4に設定すると見栄えが改善します。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">シャドー受け取りマスク</span>
+        <span class="param-prop">_ShadowReceiveMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>影の受け取りを部分的に制御するマスクテクスチャです。白 = 影を受けない（明るく保つ、シェーディングも無効化）、黒 = 影を完全に受ける（通常の影とシェーディング）、グレー = 影を部分的に受けます。キーワード: _SHADOW_RECEIVE_MASK</p>
+        <p class="param-default">デフォルト: "white"（トグルで有効化）</p>
+      </div>
+      <div class="param-tip">顔が髪の影で暗くなる場合、顔部分を白く塗ったマスクを使用することで顔に影がかからないようにできます。VRChatアバターでよく使われるテクニックです。Light Volumeの間接光（リム効果）も制御します。</div>
+    </div>
+
+    <h2 id="light-range">ライト影響範囲</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ライトの最小影響</span>
+        <span class="param-prop">_LightMinInfluence</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ライティングの最小値を設定します。暗くなりすぎを防ぎます。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ライトの最大影響</span>
+        <span class="param-prop">_LightMaxInfluence</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ライティングの最大値を設定します。露出オーバーを防ぎます。</p>
+        <p class="param-default">デフォルト: 2</p>
+        <p class="param-range">範囲: 1 〜 5</p>
+      </div>
+    </div>
+
+    <h2 id="light-softness">ライトの柔らかさ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ライトのなじませ（柔らかさ）</span>
+        <span class="param-prop">_LightBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ライティングの変化を周囲となじませて、より滑らかにします。0でシャープな変化（デフォルト）、0.3〜0.5で適度な柔らかさ（推奨）、0.7〜1.0で非常に柔らかい変化です。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">ライトの強弱が急激すぎる場合に調整してください。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ハイライトの柔らかさ</span>
+        <span class="param-prop">_HighlightSoftness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>明るい部分（ハイライト）を周囲となじませます。0でシャープなハイライト（デフォルト）、0.3〜0.5で適度な柔らかさ（推奨）、0.7〜1.0で非常に柔らかいハイライトです。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">ハイライトが強すぎる場合や、より柔らかい印象が欲しい場合に調整してください。影のなじませ・ライトのなじませ・ハイライトの柔らかさの3つ全てを0.5以上にすると、シェーディングが非常にぼやける可能性があります。メインパラメータ1〜2個を選び、他は0.3以下に抑えることを推奨します。</div>
+    </div>
+
+    <h2 id="additional-light">追加ライト</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">追加ライトの強さ</span>
+        <span class="param-prop">_AdditionalLightIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>追加ライト（ForwardAddパス）の強度を制御します。低い値は複数のライトを使用する際の明るくなりすぎを防ぎます。0で追加ライトなし、1で最大強度です。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">VRChatのクラブワールドなど、多数のライトが使われる環境では低めの値が安定します。</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

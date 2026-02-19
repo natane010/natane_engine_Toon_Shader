@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>マテリアル検証 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>マテリアル検証</h1>
+    <p class="page-subtitle">VRChat最適化とパフォーマンスの自動チェック</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Material Validator</span>
+      <span>カテゴリ: マテリアル</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>マテリアル検証ツールは、Natane Toon Shaderを使用したマテリアルのVRChat最適化とパフォーマンスを自動的に検証します。テクスチャサイズ、有効化されている機能数、パフォーマンスレーティングなどを包括的にチェックし、問題がある場合は自動修正の提案も行います。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li>VRChat最適化チェック（Quest/PC両対応）</li>
+      <li>テクスチャサイズの検証と推奨サイズの提案</li>
+      <li>パフォーマンス評価（A/B/C/D レーティング）</li>
+      <li>自動修正提案と一括適用</li>
+      <li>複数マテリアルの一括検証</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>マテリアルをドラッグ&ドロップするか「選択したマテリアルを追加」をクリックして検証対象を追加します</li>
+      <li>必要に応じて検証項目を有効/無効化します</li>
+      <li>「マテリアルを検証」をクリックして検証を開始します</li>
+      <li>重要度別（エラー/警告/情報）に問題を確認します</li>
+      <li>「自動修正」ボタンで提案された修正を適用します</li>
+    </ol>
+
+    <h2>検証項目</h2>
+    <h3>パフォーマンス</h3>
+    <ul>
+      <li>有効化されている機能数によるレーティング（A: 0-3, B: 4-6, C: 7-9, D: 10+）</li>
+      <li>テクスチャ合計メモリ使用量</li>
+      <li>シェーダーキーワード数</li>
+    </ul>
+    <h3>テクスチャ</h3>
+    <ul>
+      <li>テクスチャの最大サイズチェック（VRChat推奨: 2048x2048以下）</li>
+      <li>圧縮形式の確認</li>
+      <li>未使用テクスチャスロットの検出</li>
+    </ul>
+    <h3>VRChat固有</h3>
+    <ul>
+      <li>Quest対応チェック（レーティングB以上推奨）</li>
+      <li>フォールバックシェーダーの互換性</li>
+    </ul>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>VRChatアップロード前に検証を実行しましょう</li>
+      <li>アバター互換性のため「VRChat最適化」をチェック</li>
+      <li>最良の結果のため、警告より先にエラーを修正してください</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

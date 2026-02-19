@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>リムライト方向制御 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>リムライト方向制御</h1>
+    <p class="page-subtitle">リムライトの方向を制限して演出効果を高める</p>
+
+    <h2 id="overview">概要</h2>
+    <p>リムライト方向制御は、通常すべての縁に均等にかかるリムライトを特定の方向に制限する機能です。上からの光、横からの光など、方向を指定することでよりリアルで演出的なリムライト表現が可能になります。</p>
+    <p>キーワード <code>_RIM_DIRECTION_CONTROL</code> で制御されます。この設定はリムライト1・リムライト2の両方に共通で適用されます。</p>
+
+    <div class="feature-section">
+      <h4>この設定の影響範囲</h4>
+      <p>リムライト方向制御を有効にすると、リムライト1とリムライト2の両方に同じ方向制限がかかります。個別の方向制御はできません。</p>
+    </div>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">リムライト方向</span>
+        <span class="param-prop">_RimLightDirection</span>
+        <span class="param-badge badge-vector">vector</span>
+      </div>
+      <div class="param-body">
+        <p>リムライトを適用する方向をワールド空間のベクトルで指定します。指定した方向に面している法線にのみリムライトが適用されます。</p>
+        <p class="param-default">デフォルト: (0, 1, 0, 0)（上方向）</p>
+      </div>
+      <div class="param-tip">ベクトルは自動的に正規化されます。(0,1,0) = 上から、(1,0,0) = 右から、(0,0,1) = 前方から。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">方向の範囲</span>
+        <span class="param-prop">_RimDirectionRange</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>方向制限の緩さを制御します。値が大きいほど指定方向から離れた部分にもリムライトが適用され、値が小さいほど厳密に方向に沿った部分のみに制限されます。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">0に近い値は非常に狭い範囲にのみリムが出ます。0.5前後がバランスの良い設定です。</div>
+    </div>
+
+    <h2 id="presets">方向プリセット</h2>
+    <p><code>Tools &gt; Natane &gt; エフェクト Effects &gt; リムライト方向ビジュアライザー</code> を使用すると、視覚的に方向を調整できます。以下のプリセット方向がワンクリックで設定可能です:</p>
+
+    <div class="feature-section">
+      <ul>
+        <li><strong>上 (Top)</strong>: (0, 1, 0) - 上方向からのリム。逆光演出に最適</li>
+        <li><strong>下 (Bottom)</strong>: (0, -1, 0) - 下方向からのリム。不気味な演出に</li>
+        <li><strong>左 (Left)</strong>: (-1, 0, 0) - 左方向からのリム</li>
+        <li><strong>右 (Right)</strong>: (1, 0, 0) - 右方向からのリム</li>
+        <li><strong>前 (Front)</strong>: (0, 0, 1) - 前方からのリム</li>
+        <li><strong>後 (Back)</strong>: (0, 0, -1) - 後方からのリム</li>
+      </ul>
+      <p>方位角（Azimuth）と仰角（Elevation）スライダーで細かい角度調整も可能です。</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

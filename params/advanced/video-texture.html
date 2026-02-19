@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ビデオテクスチャ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ビデオテクスチャ</h1>
+    <p class="page-subtitle">動画テクスチャのブレンド制御</p>
+
+    <h2>概要</h2>
+    <p>ビデオテクスチャ機能は、RenderTexture を使用してビデオ映像をマテリアルに表示する機能です。VRChatのスクリーン表示やモニター表現、ゲーム内のテレビ画面などで動画コンテンツを表示する際に使用します。</p>
+    <p>キーワード <code>_VIDEO_TEXTURE</code> で制御されます。</p>
+
+    <h2>プロパティ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ビデオテクスチャを有効化</span>
+        <span class="param-prop">_VideoTexture</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>ビデオテクスチャ機能の有効/無効を切り替えます。</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ビデオレンダーテクスチャ</span>
+        <span class="param-prop">_VideoTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>ビデオ映像のRenderTextureを設定します。VRChatのAVProビデオプレーヤーやUnityのVideo Playerから出力されるRenderTextureを使用します。</p>
+        <p class="param-default">デフォルト: "black"</p>
+      </div>
+      <div class="param-tip">VRChatではAVPro Video PlayerのRenderTextureを割り当てることで、ワールド内のビデオ映像を表示できます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ビデオエミッション強度</span>
+        <span class="param-prop">_VideoEmission</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ビデオテクスチャの発光強度です。画面が光って見える効果を制御します。暗い環境でもビデオが見えるように調整できます。</p>
+        <p class="param-default">デフォルト: 1.0</p>
+      </div>
+      <div class="param-tip">エミッション値を高くすると、暗所でもスクリーンが明るく光って見えます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ビデオブレンド</span>
+        <span class="param-prop">_VideoBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ビデオテクスチャの適用強度です。0で非表示、1で完全表示になります。</p>
+        <p class="param-default">デフォルト: 1.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ビデオブレンドモード</span>
+        <span class="param-prop">_VideoBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>ビデオテクスチャの合成方法です。Replace（置換）でベーステクスチャを完全に置き換えるか、他のモードでブレンドするかを選択できます。</p>
+        <p class="param-default">デフォルト: 0（Replace）</p>
+      </div>
+    </div>
+
+    <h2>使い方のポイント</h2>
+    <ul>
+      <li>VRChatのスクリーンやモニター表現に最適です</li>
+      <li>エミッション強度を調整して、環境の明るさに合わせた画面の見え方にしましょう</li>
+      <li>ビデオが再生されていない時の表示はベーステクスチャが使用されます</li>
+      <li>RenderTextureの解像度はビデオの品質に直結します</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

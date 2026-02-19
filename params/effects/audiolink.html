@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AudioLink - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>AudioLink</h1>
+    <p class="page-subtitle">VRChat AudioLink で音楽に反応するエフェクト</p>
+
+    <p>VRChat の AudioLink 対応ワールドで、音楽のビートやリズムに連動してシェーダーエフェクトがリアルタイムに変化します。エミッション、リムライト、色相シフト、ディゾルブ、アウトラインの各エフェクトを個別に音楽連動させることが可能です。クラブやライブイベント向けに最適なエフェクトです。</p>
+    <p>キーワード: <code>_AUDIOLINK</code></p>
+
+    <h2 id="bands">周波数帯域について</h2>
+
+    <div class="feature-section">
+      <h4>AudioLink 周波数帯域</h4>
+      <p>各エフェクトで使用する周波数帯域を選択できます。</p>
+      <ul>
+        <li><strong>Bass (0)</strong> - ベース音域。キックドラムやベースラインに反応します。</li>
+        <li><strong>Low Mid (1)</strong> - 中低音域。スネアドラムやギターの低音に反応します。</li>
+        <li><strong>High Mid (2)</strong> - 中高音域。ボーカルやメロディに反応します。</li>
+        <li><strong>Treble (3)</strong> - 高音域。ハイハットやシンバルに反応します。</li>
+      </ul>
+    </div>
+
+    <h2 id="emission">エミッション連動</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">周波数帯域</span>
+        <span class="param-prop">_AudioLinkEmissionBand</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>エミッション（発光）が反応する周波数帯域を選択します。キーワード <code>_AUDIOLINK_EMISSION</code> で有効化します。</p>
+        <p class="param-default">デフォルト: 0（Bass）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エミッション強度</span>
+        <span class="param-prop">_AudioLinkEmissionIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>音楽に連動したエミッションの発光強度を設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 5）</p>
+      </div>
+    </div>
+
+    <h2 id="rim">リムライト連動</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">周波数帯域</span>
+        <span class="param-prop">_AudioLinkRimBand</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>リムライトが反応する周波数帯域を選択します。キーワード <code>_AUDIOLINK_RIM</code> で有効化します。</p>
+        <p class="param-default">デフォルト: 0（Bass）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">リムライト強度</span>
+        <span class="param-prop">_AudioLinkRimIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>音楽に連動したリムライトの強度を設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 5）</p>
+      </div>
+    </div>
+
+    <h2 id="hue">色相シフト連動</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">周波数帯域</span>
+        <span class="param-prop">_AudioLinkHueBand</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>色相シフトが反応する周波数帯域を選択します。キーワード <code>_AUDIOLINK_HUE_SHIFT</code> で有効化します。</p>
+        <p class="param-default">デフォルト: 0（Bass）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">色相シフト強度</span>
+        <span class="param-prop">_AudioLinkHueShiftIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>音楽に連動した色相シフトの強度を設定します。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <h2 id="dissolve">ディゾルブ連動</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">周波数帯域</span>
+        <span class="param-prop">_AudioLinkDissolveBand</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>ディゾルブが反応する周波数帯域を選択します。キーワード <code>_AUDIOLINK_DISSOLVE</code> で有効化します。</p>
+        <p class="param-default">デフォルト: 0（Bass）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ディゾルブ強度</span>
+        <span class="param-prop">_AudioLinkDissolveIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>音楽に連動したディゾルブの強度を設定します。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <h2 id="outline">アウトライン連動</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">周波数帯域</span>
+        <span class="param-prop">_AudioLinkOutlineBand</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>アウトラインが反応する周波数帯域を選択します。キーワード <code>_AUDIOLINK_OUTLINE</code> で有効化します。</p>
+        <p class="param-default">デフォルト: 0（Bass）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">アウトライン強度</span>
+        <span class="param-prop">_AudioLinkOutlineIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>音楽に連動したアウトラインの強度を設定します。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <h2 id="blend">ブレンド設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_AudioLinkBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>AudioLink エフェクト全体の合成方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常合成</li>
+          <li><strong>Soft (1)</strong> - ソフトライト</li>
+          <li><strong>Screen (2)</strong> - スクリーン</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Normal）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_AudioLinkBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>AudioLink エフェクトの全体的な適用度を設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

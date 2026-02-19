@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>メインテクスチャ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>メインテクスチャ</h1>
+    <p class="page-subtitle">メインテクスチャとカラーの基本設定</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">メインテクスチャ</span>
+        <span class="param-prop">_MainTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>マテリアルの基本となるメインテクスチャです。アルベド（拡散反射色）マップとして使用され、オブジェクトの表面色を定義します。</p>
+        <p class="param-default">デフォルト: "white"（白テクスチャ）</p>
+      </div>
+      <div class="param-tip">UV のタイリングとオフセットを調整することで、テクスチャの繰り返しや位置を変更できます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">カラー</span>
+        <span class="param-prop">_Color</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>メインテクスチャに乗算されるカラーです。テクスチャの色味を全体的に調整したり、テクスチャなしで単色マテリアルを作成する際に使用します。</p>
+        <p class="param-default">デフォルト: (1, 1, 1, 1)（白・完全不透明）</p>
+      </div>
+      <div class="param-tip">テクスチャの色を変えずに明るさだけ調整したい場合は、カラーのRGB値を均一に変更してください。</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>リムライト方向ビジュアライザー - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>リムライト方向ビジュアライザー</h1>
+    <p class="page-subtitle">リムライトの方向パラメータを3Dプレビューでビジュアルに調整するツール</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Effects &gt; Rimlight Visualizer</span>
+      <span>カテゴリ: エフェクト</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>リムライト方向ビジュアライザーは、リムライトの方向パラメータをビジュアルに調整するための専用ツールです。通常のマテリアルインスペクターでは数値スライダーでしか操作できないリムライトの方向を、3Dプレビュー上でインタラクティブに設定できます。</p>
+    <p>リムライトはキャラクターの輪郭を美しく際立たせる重要なエフェクトですが、方向パラメータ（X, Y, Z ベクトル）を数値だけで調整するのは直感的ではありません。このツールを使えば、3D空間上でリムライトの方向と範囲をリアルタイムに確認しながら、理想的なリムライト表現を追求できます。</p>
+    <p>VRChatアバターにおいて、ステージ照明やワールドの環境光と調和するリムライト設定を見つけるのに特に便利です。プレビューウィンドウ内でドラッグ操作するだけで方向を変更でき、その結果がマテリアルにリアルタイムで反映されます。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li><strong>3D方向ビジュアライズ</strong> — リムライトの方向ベクトルを3D空間上に矢印やガイドとして可視化。どの方向からリムライトが当たるかが一目でわかります</li>
+      <li><strong>リアルタイムプレビュー</strong> — 方向パラメータを変更すると、プレビューオブジェクト上のリムライト効果が即座に更新されます</li>
+      <li><strong>方向ベクトル編集</strong> — ドラッグ操作による直感的な方向編集に加え、数値入力による精密な設定にも対応</li>
+      <li><strong>マテリアルへの直接反映</strong> — 調整結果をワンクリックでマテリアルに反映。Undo対応で安心して操作できます</li>
+      <li><strong>リムライト範囲プレビュー</strong> — リムライトの幅（Fresnel Power）も同時にプレビューでき、方向と範囲を同時に最適化できます</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>マテリアルを選択</strong>
+        <p>Natane Toon Shaderが適用されたマテリアルをProjectビューまたはInspectorから選択します。リムライト機能（_RIMLIGHT）が有効になっていることを確認してください。</p>
+      </li>
+      <li>
+        <strong>ビジュアライザーを開く</strong>
+        <p><code>Tools &gt; Natane &gt; Effects &gt; Rimlight Visualizer</code> からツールウィンドウを開きます。選択中のマテリアルの現在のリムライト方向が3Dプレビューに表示されます。</p>
+      </li>
+      <li>
+        <strong>方向を調整</strong>
+        <p>3Dプレビュー内でドラッグして方向を変更します。上下左右にドラッグすると、リムライトの方向ベクトルがリアルタイムで更新されます。数値フィールドで精密な調整も可能です。</p>
+      </li>
+      <li>
+        <strong>プレビューで確認</strong>
+        <p>プレビューオブジェクト上でリムライトの効果を確認します。ライトの方向や強度を変えて、様々な照明環境でのリムライトの見え方をテストしましょう。</p>
+      </li>
+      <li>
+        <strong>マテリアルに適用</strong>
+        <p>「適用」ボタンでマテリアルに設定を反映します。Ctrl+Z でいつでもUndo可能です。</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>VRChatのワールドではライトの方向が場所によって変わるため、複数方向でプレビューして最も汎用的な設定を見つけましょう</li>
+      <li>リムライトの方向を「斜め上」に設定すると、多くの照明環境で自然に見えます</li>
+      <li>リムライトの幅（Fresnel Power）を大きくすると細いリム、小さくすると太いリムになります</li>
+      <li>カスタム方向リムライトは、固定光源のある特定ワールド用のアバターに特に効果的です</li>
+      <li>方向ビジュアライザーでの調整後は、Scene ビューでもアバターを確認して最終チェックしましょう</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

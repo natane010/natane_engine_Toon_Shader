@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>lilToon移行ツール - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>lilToon移行ツール</h1>
+    <p class="page-subtitle">lilToonシェーダーからNatane Toon Shaderへの自動マイグレーション</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Migration &gt; lilToon Migration</span>
+      <span>カテゴリ: 移行</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>lilToon移行ツールは、lilToonシェーダーで設定されたマテリアルをNatane Toon Shaderに自動変換するためのマイグレーションツールです。lilToonのプロパティ名とNatane Toonのプロパティ名の対応関係（マッピング）を内蔵しており、テクスチャ、色、数値パラメータを自動的に引き継ぎます。</p>
+    <p>lilToonはVRChat向けトゥーンシェーダーとして広く使われていますが、Natane Toon Shaderに乗り換える際に手動でパラメータを一つ一つ設定し直すのは非常に手間がかかります。このツールを使えば、基本的なプロパティ（メインテクスチャ、影色、影の境界、リムライト、マットキャップなど）の大部分を自動的にマッピングし、変換してくれます。</p>
+    <p>lilToonのバリアント（Opaque、Cutout、Transparent、Outline付きなど）も自動検出し、Natane Toon Shaderの対応するバリアントに変換します。変換前にプレビューで確認でき、Undo対応なので安心して使えます。一括変換にも対応しているため、アバター全体のマテリアルを一度に移行することも可能です。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li><strong>自動プロパティマッピング</strong> — lilToonの各プロパティ（_MainTex、_ShadowColor、_RimColor など）をNatane Toon Shaderの対応プロパティに自動変換</li>
+      <li><strong>バリアント検出</strong> — lilToon Opaque / Cutout / Transparent / TwoPass など、使用中のバリアントを自動検出して適切なNatane Toonバリアントを選択</li>
+      <li><strong>一括変換</strong> — フォルダ内やシーン内のlilToonマテリアルを一度に変換。大規模なアバタープロジェクトの移行に最適</li>
+      <li><strong>プレビュー</strong> — 変換前にマッピング結果をプレビュー表示。どのプロパティがどのように変換されるかを事前に確認</li>
+      <li><strong>Undo対応</strong> — すべての変換操作はUndo可能。問題があればCtrl+Zで即座に元に戻せます</li>
+      <li><strong>カスタムマッピング</strong> — 自動マッピングで対応できないプロパティは、手動でマッピングを追加・修正可能</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>lilToonマテリアルを選択</strong>
+        <p>Projectビューで変換したいlilToonマテリアルを選択します。フォルダを指定すると、フォルダ内のlilToonマテリアルが自動検出されます。</p>
+      </li>
+      <li>
+        <strong>プロパティマッピングを確認</strong>
+        <p>自動検出されたプロパティマッピングの一覧が表示されます。各プロパティの変換先を確認し、必要に応じて修正してください。</p>
+      </li>
+      <li>
+        <strong>プレビュー</strong>
+        <p>「プレビュー」ボタンで変換後のマテリアルの見た目を確認します。Sceneビューでリアルタイムにプレビューされます。</p>
+      </li>
+      <li>
+        <strong>変換を実行</strong>
+        <p>「変換実行」ボタンでマテリアルを変換します。元のマテリアルのシェーダーがNatane Toon Shaderに切り替わり、マッピングされたプロパティが自動設定されます。</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>変換前に元のマテリアルのバックアップを取ることをおすすめします。プレハブバリアント変換ツールを使えば、元のプレハブを保持したまま変換できます</li>
+      <li>lilToonの2nd/3rd Shadow はNatane Toonの多階調シャドウにマッピングされます。変換後に色味の微調整が必要な場合があります</li>
+      <li>マットキャップやリムライトの強度は、シェーダー間で計算方法が異なるため、変換後に微調整が必要になることがあります</li>
+      <li>lilToonのアウトライン設定も自動的に変換されますが、太さのスケールが異なる場合があるため確認してください</li>
+      <li>一括変換の際は、最初に1つのマテリアルで試してから残りを変換するのが安全です</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

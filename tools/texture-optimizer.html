@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>テクスチャ最適化 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>テクスチャ最適化</h1>
+    <p class="page-subtitle">テクスチャをパフォーマンス用に自動最適化するツール</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Optimization &gt; Texture Optimizer</span>
+      <span>カテゴリ: 最適化</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>テクスチャ最適化ツールは、プロジェクト内のテクスチャを分析し、パフォーマンスに最適な設定を自動で適用するツールです。テクスチャのサイズ、圧縮形式、ミップマップ設定を一括で管理し、VRAM使用量を大幅に削減できます。</p>
+    <p>VRChatアバターでは、テクスチャがメモリ使用量の大部分を占めることが多く、適切な最適化なしでは不要にVRAMを消費してしまいます。このツールはマテリアルが使用しているテクスチャを自動検出し、用途に応じた最適なサイズと圧縮設定を提案します。メインテクスチャ、法線マップ、マスクテクスチャなど、テクスチャの種類に合わせた最適化が可能です。</p>
+    <p>最適化前後のメモリ使用量の比較も表示されるため、どの程度の改善が見込めるかを事前に確認できます。一括処理にも対応しているため、アバター全体のテクスチャを一度に最適化することも可能です。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li><strong>サイズ最適化</strong> — テクスチャの最大解像度を用途に応じて自動設定。不要に大きなテクスチャを検出してリサイズを提案します</li>
+      <li><strong>圧縮設定</strong> — プラットフォーム別の最適な圧縮形式（BC7、ASTC、ETC2など）を自動選択</li>
+      <li><strong>ミップマップ生成</strong> — ミップマップの有効/無効を用途に合わせて最適化。UIテクスチャなど不要な場合はオフにしてメモリを節約</li>
+      <li><strong>メモリ計算</strong> — 各テクスチャと合計のVRAM使用量をリアルタイムで計算・表示。最適化前後の比較が可能</li>
+      <li><strong>一括処理</strong> — マテリアル単位またはフォルダ単位でテクスチャを一括最適化</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>テクスチャを追加</strong>
+        <p>最適化するテクスチャをProjectビューから選択するか、マテリアルを指定して関連テクスチャを自動検出します。フォルダをドラッグ&ドロップして、フォルダ内の全テクスチャを追加することもできます。</p>
+      </li>
+      <li>
+        <strong>設定を構成</strong>
+        <p>最大サイズ（推奨: メインテクスチャ 2048、マスク/ノーマル 1024）、圧縮方式、ミップマップオプションを設定します。プラットフォームごとの設定も可能です。</p>
+      </li>
+      <li>
+        <strong>分析</strong>
+        <p>「分析」ボタンをクリックして、現在のテクスチャ状態を確認します。各テクスチャの現在のサイズ、圧縮形式、メモリ使用量が一覧表示されます。</p>
+      </li>
+      <li>
+        <strong>最適化</strong>
+        <p>「すべて最適化」ボタンをクリックして変更を適用します。最適化前後のメモリ使用量の差分がサマリーとして表示されます。</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>VRChatアバターには2048x2048が推奨最大サイズです。それ以上のテクスチャはVRAM使用量が急増するため、特別な理由がなければ2048以下に抑えましょう</li>
+      <li>パフォーマンス向上のためテクスチャ圧縮を有効にしましょう。視覚品質への影響は最小限で、メモリ使用量を1/4〜1/8に削減できます</li>
+      <li>最適化後は必ず視覚品質を確認してください。特にノーマルマップやグラデーションマップは圧縮アーティファクトが出やすい場合があります</li>
+      <li>マスクテクスチャ（影マスク、発光マスクなど）は1024x1024でも十分な品質が得られることが多いです</li>
+      <li>Quest向けにはASTC圧縮が推奨されます。BC7はPC向けで最高品質/圧縮率のバランスが良いです</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ライトボリュームヘルパー - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>VRCライトボリュームヘルパー</h1>
+    <p class="page-subtitle">VRC Light Volumesの統合を簡単に設定するサポートツール</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Shader &gt; Light Volumes Helper</span>
+      <span>カテゴリ: シェーダー</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>VRCライトボリュームヘルパーは、VRChat の Light Volumes（ボクセルベースライティングシステム）との統合を設定するためのサポートツールです。VRC Light Volumes は VRChat v1.0.1 以降で利用可能な高度なライティングシステムで、ワールド内の照明情報をボクセルデータとして保持し、アバターに対してより正確で美しいライティングを提供します。</p>
+    <p>Natane Toon Shader は VRC Light Volumes に対応しており、ワールドのボクセルライティングデータを受け取ってトゥーンシェーディングに反映できます。しかし、品質設定やパフォーマンスの調整にはいくつかのパラメータを適切に設定する必要があります。このツールは、その設定を品質プリセットで簡単に行えるようにします。</p>
+    <p>Light Volumes対応のワールドでは、アバターの見た目が大幅に向上しますが、パフォーマンスコストも増加します。このツールの品質プリセットを使えば、PC向けの高品質設定からQuest向けの軽量設定まで、適切なバランスを簡単に見つけることができます。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li><strong>品質プリセット</strong> — Low / Medium / High の3段階プリセット。ワンクリックでLight Volumesの品質とパフォーマンスのバランスを設定</li>
+      <li><strong>自動設定</strong> — マテリアルにLight Volumes関連のキーワードとパラメータを自動設定。手動でのシェーダーキーワード管理が不要</li>
+      <li><strong>パフォーマンス最適化</strong> — サンプリング精度とパフォーマンスのトレードオフを視覚的に比較しながら調整可能</li>
+      <li><strong>互換性チェック</strong> — 現在のシーンやワールドがLight Volumesに対応しているかを確認</li>
+      <li><strong>一括適用</strong> — アバター内のすべてのNatane Toon Shaderマテリアルに同じLight Volumes設定を一括適用</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>ツールを開く</strong>
+        <p><code>Tools &gt; Natane &gt; Shader &gt; Light Volumes Helper</code> からツールウィンドウを開きます。</p>
+      </li>
+      <li>
+        <strong>マテリアルを選択</strong>
+        <p>Light Volumes設定を適用したいNatane Toon Shaderマテリアルを選択します。アバターのルートオブジェクトを選択すると、配下のすべてのマテリアルが自動検出されます。</p>
+      </li>
+      <li>
+        <strong>品質プリセットを選択</strong>
+        <p>Low / Medium / High から品質レベルを選択します。各プリセットの推定パフォーマンスコストが表示されるので、ターゲットプラットフォームに合わせて選択してください。</p>
+      </li>
+      <li>
+        <strong>設定を適用</strong>
+        <p>「適用」ボタンで選択したマテリアルにLight Volumes設定を反映します。Undo対応です。</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>VRChatワールドでの最高の照明品質を得るためにLight Volumesを有効にしましょう。対応ワールドでは劇的にライティング品質が向上します</li>
+      <li>Medium品質で十分な視覚品質が得られる場合がほとんどです。Highは写真撮影やショーケース用と考えましょう</li>
+      <li>Light Volumes非対応のワールドでは自動的にフォールバック処理が行われるため、有効にしておいてもデメリットはありません</li>
+      <li>Quest向けアバターではLow品質を推奨します。モバイルGPUでのLight Volumesサンプリングは負荷が高くなりがちです</li>
+      <li>Light Volumesの効果を確認するには、対応ワールドでのテストが最も確実です。エディタ上ではフル効果を確認しにくい場合があります</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>表面仕上げ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>表面仕上げ</h1>
+    <p class="page-subtitle">光沢度とマット効果による表面質感の制御</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">光沢度（グロッシネス）</span>
+        <span class="param-prop">_Glossiness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スペキュラー、リフレクション、リムライトなどの反射系エフェクトの強度を一括で調整します。0で光沢なし（完全マット）、0.5で中程度の光沢、1.0で最大光沢（デフォルト）です。</p>
+        <p>適用されるエフェクト: スペキュラーハイライト、リムライト（1 &amp; 2）、環境リム、MatCap、キューブマップリフレクション、Light Volume Specular。Emission（発光）には影響しません。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">布や肌など光沢が不要な素材は0.3〜0.5に、金属や革などは0.8〜1.0に設定するのが効果的です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">マット効果（追加の光沢抑制）</span>
+        <span class="param-prop">_MatteEffect</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>光沢度に加えて、さらに光沢を減らすための追加パラメータです。0で光沢度のみで制御、0.5で光沢度の50%に減少、1.0で完全にマット（光沢ゼロ）になります。</p>
+        <p>光沢度と組み合わせることで、より細かい調整が可能です。例: 光沢度0.8 x マット効果0.3 = 実質56%の光沢。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">光沢度を下げたくないがマット感を加えたい場合に便利です。テクスチャマスクと併用すると部分的にマット効果を適用できます。</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

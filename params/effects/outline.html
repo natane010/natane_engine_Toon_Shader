@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アウトライン - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>アウトライン</h1>
+    <p class="page-subtitle">オブジェクトの輪郭線を描画</p>
+
+    <p>オブジェクトの輪郭に線を描画するアウトラインエフェクトです。トゥーンシェーダーの基本機能として、キャラクターや小物にアニメ風の輪郭線を追加できます。カメラ距離に応じた自動補正機能を搭載しています。</p>
+    <p>キーワード: <code>_OUTLINE</code></p>
+
+    <h2 id="settings">アウトライン設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">描画方法</span>
+        <span class="param-prop">_OutlineMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>アウトラインの描画方法を選択します。</p>
+        <ul>
+          <li><strong>反転ハル方式 (0)</strong> - 法線方向に頂点を押し出してアウトラインを描画。一般的に安定した結果が得られ、カメラ距離による自動調整機能を搭載。ローポリモデルやハードエッジで乱れる場合があります。</li>
+          <li><strong>背面法 (1)</strong> - メッシュを拡大して背面を描画。スムーズなアウトラインで、ハイポリモデルに適しています。内部構造が見える場合があります。</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（反転ハル方式）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">アウトラインの幅</span>
+        <span class="param-prop">_OutlineWidth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>アウトラインの太さを設定します。カメラ距離による自動補正が適用されるため、遠近で一貫した太さが維持されます。</p>
+        <p class="param-default">デフォルト: 0.1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">アウトラインの色</span>
+        <span class="param-prop">_OutlineColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>アウトラインの色を設定します。</p>
+        <p class="param-default">デフォルト: (0, 0, 0, 1)（黒）</p>
+      </div>
+      <div class="param-tip">キャラクターの場合、完全な黒よりもやや茶色や紺色にするとアニメ風に馴染みます。</div>
+    </div>
+
+    <h2 id="mask">アウトラインマスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">アウトラインマスク (R)</span>
+        <span class="param-prop">_OutlineMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>R（赤）チャンネルを使用してアウトラインの表示を制御します。キーワード <code>_OUTLINE_MASK</code> で有効化します。</p>
+        <ul>
+          <li>白 (1.0): アウトラインを完全に表示</li>
+          <li>黒 (0.0): アウトラインを非表示</li>
+          <li>グレー: 部分的に表示</li>
+        </ul>
+        <p class="param-default">デフォルト: "white"（全体に表示）</p>
+      </div>
+      <div class="param-tip">顔の目や口の周辺でアウトラインを消したい場合に活用できます。</div>
+    </div>
+
+    <h2 id="width-map">アウトライン幅マップ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">アウトライン幅マップ (R)</span>
+        <span class="param-prop">_OutlineWidthMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>R（赤）チャンネルを使用してアウトラインの幅を部位ごとに制御します。キーワード <code>_OUTLINE_WIDTH_MAP</code> で有効化します。</p>
+        <ul>
+          <li>白 (1.0): 通常の幅</li>
+          <li>黒 (0.0): 幅ゼロ（アウトライン非表示）</li>
+          <li>グレー: 部分的な幅</li>
+        </ul>
+        <p class="param-default">デフォルト: "white"（均一な幅）</p>
+      </div>
+      <div class="param-tip">顔は細く、体は太くなど、部位ごとにアウトラインの太さを調整できます。</div>
+    </div>
+
+    <h2 id="multi-color">マルチカラーアウトライン</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">アウトラインの色 2</span>
+        <span class="param-prop">_OutlineColor2</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>2色グラデーションアウトラインの2番目の色です。キーワード <code>_OUTLINE_MULTI_COLOR</code> で有効化します。</p>
+        <p class="param-default">デフォルト: (0.5, 0, 0, 1)（暗い赤）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">カラーミックス</span>
+        <span class="param-prop">_OutlineColorMix</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>アウトラインの色1と色2の混合度を設定します。0 で色1のみ、1 で色2のみになります。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+      <div class="param-tip">アウトラインにグラデーションやアニメーション効果を追加したい場合に使用します。</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>雫エフェクト - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>雫エフェクト（ウォータードリップ）</h1>
+    <p class="page-subtitle">水滴が流れ落ちるアニメーションエフェクト</p>
+
+    <h2 id="overview">概要</h2>
+    <p>雫エフェクト（ウォータードリップ）は、水滴が表面を滴り落ちるような表現を追加するアニメーションエフェクトです。雨に濡れた衣装やガラス表面の表現に適しています。</p>
+    <p>キーワード <code>_WATER_DRIP</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">雫の色</span>
+        <span class="param-prop">_DripColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>水滴の色を設定します。透明感のある色が自然な仕上がりになります。</p>
+        <p class="param-default">デフォルト: (0.7, 0.85, 1.0, 1)（薄い青白）</p>
+      </div>
+      <div class="param-tip">リアルな水滴には (0.7, 0.85, 1.0) の薄い青白、血の表現には (0.8, 0.1, 0.1) の赤系も使えます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">雫の速度</span>
+        <span class="param-prop">_DripSpeed</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>雫が落ちる速度を制御します。値が大きいほど速く落下します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0.1 〜 5</p>
+      </div>
+      <div class="param-tip">ゆっくりとした雨の表現には0.3〜0.5、激しい雨には2〜3がおすすめです。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">雫の密度</span>
+        <span class="param-prop">_DripDensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>雫の出現頻度を制御します。値が大きいほど多くの雫が表示されます。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">0 = 少ない、1 = 多い。少量の汗や結露には低密度（0.1〜0.3）、大雨には高密度（0.7〜1.0）が効果的です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">雫のサイズ</span>
+        <span class="param-prop">_DripSize</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>個々の雫の大きさを制御します。</p>
+        <p class="param-default">デフォルト: 0.15</p>
+        <p class="param-range">範囲: 0.01 〜 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">雫の尾の長さ</span>
+        <span class="param-prop">_DripTrailLength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>雫が残す水跡（尾）の長さを制御します。値が大きいほど長い水跡が残ります。</p>
+        <p class="param-default">デフォルト: 1.0</p>
+        <p class="param-range">範囲: 0 〜 3</p>
+      </div>
+      <div class="param-tip">0に設定すると尾がなくなり、丸い水滴のみが表示されます。長い尾は窓ガラスを流れる雨のような表現に最適です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">雫の強度</span>
+        <span class="param-prop">_DripIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>エフェクトの明るさ（強度）を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">雫のシャープさ</span>
+        <span class="param-prop">_DripSharpness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>雫の輪郭の鮮明さを制御します。値が大きいほどくっきりとした輪郭、小さいほどぼやけた輪郭になります。</p>
+        <p class="param-default">デフォルト: 2</p>
+        <p class="param-range">範囲: 0.5 〜 5</p>
+      </div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">雫マスク</span>
+        <span class="param-prop">_DripMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>雫の表示領域を制御するマスクテクスチャです。キーワード <code>_DRIP_MASK</code> で有効化します。Rチャンネル（赤）を使用して雫の表示領域を制御します。</p>
+        <p class="param-default">デフォルト: "white"（全面表示）</p>
+      </div>
+      <div class="param-tip">白 (1.0) = 雫を完全に表示、黒 (0.0) = 雫を非表示、グレー = 部分的に表示。マスクテクスチャで雫が流れる領域を制限できます。</div>
+    </div>
+
+    <h2 id="blend">ブレンド＆ブラー</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_DripBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>雫エフェクトのブレンド方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常の加算合成</li>
+          <li><strong>Soft (1)</strong> - ソフトな加算。明るくなりすぎを防ぐ</li>
+          <li><strong>Screen (2)</strong> - スクリーン合成。自然な明るさ加算</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ合成。コントラスト強調</li>
+        </ul>
+        <p class="param-default">デフォルト: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_DripBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>雫エフェクトの強度（不透明度）を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_DripBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>雫エフェクトのぼかし量を調整します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <h4>雨に濡れた衣装やガラス表面の表現</h4>
+      <ul>
+        <li><strong>速度</strong>: 雫が落ちる速度</li>
+        <li><strong>密度</strong>: 雫の出現頻度（0=少ない、1=多い）</li>
+        <li><strong>サイズ</strong>: 雫の大きさ</li>
+        <li><strong>尾の長さ</strong>: 雫が残す水跡の長さ</li>
+        <li><strong>強度</strong>: エフェクトの明るさ</li>
+        <li><strong>シャープさ</strong>: 雫の輪郭の鮮明さ</li>
+      </ul>
+      <p>マスクテクスチャで雫が流れる領域を制限することで、肩から流れ落ちる雨や、窓の一部だけに結露がつくような自然な表現が可能です。</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

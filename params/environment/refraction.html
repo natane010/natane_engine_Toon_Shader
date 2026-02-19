@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>屈折 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>屈折</h1>
+    <p class="page-subtitle">GrabPass による屈折・歪みエフェクト</p>
+
+    <p>GrabPass を使用して、ガラスや水などの透明素材で光が曲がる屈折効果をシミュレートします。背景が歪んで見えるリアルな屈折表現が可能です。透明マテリアルに最適なエフェクトです。</p>
+    <p>キーワード: <code>_REFRACTION</code></p>
+
+    <h2 id="settings">屈折設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">屈折率（IOR）</span>
+        <span class="param-prop">_RefractionIndex</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>素材の屈折率（Index of Refraction）を設定します。実際の素材の物理的な屈折率を参考に設定できます。</p>
+        <ul>
+          <li>1.0 = 空気（屈折なし）</li>
+          <li>1.33 = 水</li>
+          <li>1.5 = ガラス（デフォルト）</li>
+          <li>2.42 = ダイヤモンド</li>
+        </ul>
+        <p class="param-default">デフォルト: 1.5（範囲: 1 - 3）</p>
+      </div>
+      <div class="param-tip">値が大きいほど背景の歪みが強くなります。ガラスなら 1.5、宝石なら 1.8-2.4 が適切です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">屈折の強さ</span>
+        <span class="param-prop">_RefractionIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>屈折による歪みの全体的な強度を設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">屈折のぼかし</span>
+        <span class="param-prop">_RefractionBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>屈折で歪んだ背景にぼかしを加えます。すりガラスのような効果を作成できます。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+      <div class="param-tip">すりガラス表現には 0.3-0.5 程度のぼかしがおすすめです。VRChat Quest では負荷軽減のため 5 サンプルに削減されています。</div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">屈折マスク</span>
+        <span class="param-prop">_RefractionMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>屈折の適用範囲をテクスチャで制御します。キーワード <code>_REFRACTION_MASK</code> で有効化します。</p>
+        <p class="param-default">デフォルト: "white"（全体に適用）</p>
+      </div>
+      <div class="param-tip">白 = 屈折あり、黒 = 屈折なし。ガラス窓の枠部分を屈折させないといった使い方ができます。</div>
+    </div>
+
+    <h2 id="blend">ブレンド設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_RefractionBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>屈折エフェクトの合成方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常合成</li>
+          <li><strong>Soft (1)</strong> - ソフトライト</li>
+          <li><strong>Screen (2)</strong> - スクリーン</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Normal）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_RefractionBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>屈折エフェクトの全体的な適用度を設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

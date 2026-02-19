@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>シャドウカラーテクスチャ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>シャドウカラーテクスチャ</h1>
+    <p class="page-subtitle">影の色をテクスチャで制御</p>
+
+    <p>Shadow Color Textureは、影の色をテクスチャで指定できる高度な機能です。服の影を青っぽく、肌の影を赤っぽくなど、部位ごとに異なる影色を設定したい場合に使用します。テクスチャの色が影色として直接使用されます。</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Color Texture</span>
+        <span class="param-prop">_ShadowColorTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>影の色を定義するテクスチャです。テクスチャの各ピクセルの色がその部分の影色として使用されます。キーワード: _SHADOW_COLOR_TEX</p>
+        <p class="param-default">デフォルト: "white"（トグルで有効化）</p>
+      </div>
+      <div class="param-tip">肌の部分に暖色（赤み）、服の部分に寒色（青み）をペイントすると、自然で美しい影の色分けが実現できます。メインテクスチャと同じUVマッピングが使用されます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">適用強度</span>
+        <span class="param-prop">_ShadowColorTexStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Shadow Color Textureの影響度を制御します。0でテクスチャの影色を使わない（通常の影色のみ）、1でテクスチャの影色をフル適用します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">0.5〜0.8 に設定すると、テクスチャの影色と通常の影色が自然にブレンドされます。</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

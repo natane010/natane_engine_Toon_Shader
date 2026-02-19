@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>環境リム - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>環境リム</h1>
+    <p class="page-subtitle">環境マップを使ったリムライト効果</p>
+
+    <p>キューブマップを使用して、環境に基づいたリムライト効果を作成します。通常のリムライトが単色であるのに対し、環境リムはキューブマップの色情報を使用するため、周囲の環境色を反映した自然なリムライトを表現できます。</p>
+    <p>キーワード: <code>_ENV_RIM</code></p>
+
+    <h2 id="settings">環境リム設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">環境キューブマップ</span>
+        <span class="param-prop">_EnvRimCube</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>環境リムに使用するキューブマップテクスチャです。リムライトの色が環境に基づいて変化します。</p>
+        <p class="param-default">デフォルト: "black"（反射なし）</p>
+      </div>
+      <div class="param-tip">リフレクション用と同じキューブマップを使用すると、統一感のある環境表現になります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">環境リムの色</span>
+        <span class="param-prop">_EnvRimColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>環境リムの色味を調整します。キューブマップの色に乗算されます。</p>
+        <p class="param-default">デフォルト: (1, 1, 1, 1)（白・変更なし）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">環境リムのパワー</span>
+        <span class="param-prop">_EnvRimPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>環境リムのフレネル効果の強さを設定します。値が大きいほどリムがエッジに集中し、小さいほど広がります。</p>
+        <p class="param-default">デフォルト: 3（範囲: 0.1 - 10）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">環境リムの強さ</span>
+        <span class="param-prop">_EnvRimIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>環境リムの全体的な明るさを設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 5）</p>
+      </div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">環境リムマスク</span>
+        <span class="param-prop">_EnvRimMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>環境リムの適用範囲をテクスチャで制御します。キーワード <code>_ENV_RIM_MASK</code> で有効化します。</p>
+        <p class="param-default">デフォルト: "white"（全体に適用）</p>
+      </div>
+      <div class="param-tip">白 = 環境リムあり、黒 = 環境リムなし。顔など環境リムを見せたくない部分をマスクできます。</div>
+    </div>
+
+    <h2 id="blend">ブレンド設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_EnvRimBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>環境リムとベースカラーの合成方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常合成</li>
+          <li><strong>Soft (1)</strong> - ソフトライト</li>
+          <li><strong>Screen (2)</strong> - スクリーン</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Normal）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_EnvRimBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>環境リムエフェクトの全体的な適用度を設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_EnvRimBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>環境リムエフェクトの境界をぼかします。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

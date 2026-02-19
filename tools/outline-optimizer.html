@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アウトライン最適化 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>アウトライン最適化</h1>
+    <p class="page-subtitle">アウトラインレンダリングのパフォーマンスと品質を最適化</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Optimization &gt; Outline Optimizer</span>
+      <span>カテゴリ: 最適化</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>アウトライン最適化ツールは、アウトライン（輪郭線）レンダリングのパフォーマンスと視覚品質のバランスを調整するためのツールです。アウトラインはトゥーンシェーダーの重要な要素ですが、追加の描画パスを必要とするため、パフォーマンスへの影響も無視できません。</p>
+    <p>このツールは、アウトラインの幅、距離フェード、LOD（Level of Detail）ベースの調整を統合的に管理します。カメラからの距離に応じてアウトラインの幅を自動調整する「距離フェード」機能により、遠くのオブジェクトではアウトラインを薄くして不要な描画負荷を削減できます。</p>
+    <p>「バランス」「パフォーマンス」「品質」の3つのプリセットが用意されており、用途に合わせた最適な設定を素早く適用できます。VRChatでは多くのアバターが同時に表示されるため、距離フェードの適切な設定はフレームレートの安定に大きく貢献します。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li><strong>幅の最適化</strong> — アウトラインの幅をピクセル単位で精密に制御。太すぎるアウトラインを検出して適正値を提案します</li>
+      <li><strong>LODベースの調整</strong> — カメラ距離に応じたアウトラインの自動調整。近距離では鮮明に、遠距離では薄くなるよう設定</li>
+      <li><strong>距離フェード</strong> — 指定距離以上でアウトラインを徐々にフェードアウトさせ、遠景での不要な描画を削減</li>
+      <li><strong>パフォーマンスプリセット</strong> — バランス/パフォーマンス/品質の3プリセットでワンクリック設定</li>
+      <li><strong>視覚品質バランス</strong> — パフォーマンスと見た目の最適なバランスポイントを自動計算</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>ターゲットを選択</strong>
+        <p>最適化するマテリアルまたはシーン上のオブジェクトを選択します。複数のマテリアルを同時に選択して一括最適化することも可能です。</p>
+      </li>
+      <li>
+        <strong>分析</strong>
+        <p>現在のアウトライン設定が分析され、幅、色、距離フェード設定の現在の状態が表示されます。パフォーマンスへの影響度も合わせて確認できます。</p>
+      </li>
+      <li>
+        <strong>プリセットを選択</strong>
+        <p>最適化レベルを選択します。「バランス」は汎用的、「パフォーマンス」はQuest向け、「品質」はスクリーンショットや映像制作向けです。</p>
+      </li>
+      <li>
+        <strong>適用</strong>
+        <p>最適化された設定をマテリアルに適用します。Undo対応なので、適用前の状態にいつでも戻せます。</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>一般的な使用には「バランス」プリセットがおすすめです。多くの環境で良好なパフォーマンスと見た目を両立します</li>
+      <li>パフォーマンス向上のため、距離フェードを有効にしましょう。VRChatでは他のプレイヤーからある程度離れると、アウトラインは視認しにくくなるため、フェードしても見た目への影響は最小限です</li>
+      <li>細いアウトラインほどパフォーマンスが良くなります。0.5〜1.0の範囲でも十分なアウトライン効果が得られます</li>
+      <li>Quest向けアバターでは距離フェードの開始距離を短めに設定して、描画コストを抑えましょう</li>
+      <li>アウトラインの色をマテリアルの基本色に近い暗い色にすると、自然な印象になり、太いアウトラインでも違和感が少なくなります</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

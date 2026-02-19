@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>色相シフト - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>色相シフト</h1>
+    <p class="page-subtitle">色相をリアルタイムで変化させるカラーエフェクト</p>
+
+    <p>マテリアル全体の色相をリアルタイムで変更するエフェクトです。VRChatでの色変更エフェクトに最適で、アニメーションコントローラーからパラメータを制御することで、衣装やアクセサリーの色をリアルタイムで切り替えることができます。</p>
+    <p>キーワード: <code>_HUE_SHIFT</code></p>
+
+    <h2 id="settings">色相シフト設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">色相シフト</span>
+        <span class="param-prop">_HueShift</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>マテリアル全体の色相を変更します。色相環に沿って色が回転します。</p>
+        <ul>
+          <li>0 = 変更なし（元の色）</li>
+          <li>0.25 = 90度回転</li>
+          <li>0.5 = 補色（180度回転）</li>
+          <li>0.75 = 270度回転</li>
+          <li>1 = 完全な回転（元の色に戻る）</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+      <div class="param-tip">VRChatのExpression Menuと連動させて、プレイ中に衣装の色をリアルタイムで変更するのに最適です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_HueShiftBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>色相シフトエフェクトの全体的な適用度を設定します。0 で元の色のまま、1 で完全に色相シフトが適用されます。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_HueShiftBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>色相シフトの境界をぼかします。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

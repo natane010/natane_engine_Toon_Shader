@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>メイクアップ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>メイクアップ</h1>
+    <p class="page-subtitle">最大4レイヤーのメイクアップテクスチャ（HSVカラー調整対応）</p>
+
+    <p>透過PNG対応のメイクアップテクスチャを最大4レイヤー重ねることができます。各レイヤーはHSVカラー調整、強度制御、ブレンドモード選択、追加マスクに対応しています。アルファチャンネルで適用範囲を制御し、複数のブレンドモードで自然なメイクアップ表現が可能です。</p>
+
+    <h2 id="layer-2nd">2nd Texture レイヤー</h2>
+    <p>用途: ハイライト、アイシャドウ</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">2nd Textureを有効化</span>
+        <span class="param-prop">_Use2ndTexture</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>2番目のメイクアップテクスチャレイヤーを有効にします。キーワード: _2ND_TEXTURE</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">2nd Texture</span>
+        <span class="param-prop">_2ndTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>2番目のメイクアップテクスチャです。透過PNGに対応しており、アルファチャンネルが適用強度として使用されます。</p>
+        <p class="param-default">デフォルト: なし</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hue Shift</span>
+        <span class="param-prop">_2ndTexHueShift</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの色相をシフトします。0で変化なし、正負の値で色相環に沿って色を変更します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: -0.5 〜 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Saturation</span>
+        <span class="param-prop">_2ndTexSaturation</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの彩度を調整します。1で元の彩度、0でグレースケール、2で非常に鮮やかになります。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Brightness</span>
+        <span class="param-prop">_2ndTexValue</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの明度を調整します。1で元の明度、0で完全に暗く、2で非常に明るくなります。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">強度</span>
+        <span class="param-prop">_2ndTexIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>メイクアップテクスチャの適用強度です。0で効果なし、1で最大適用になります。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_2ndTexBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの合成方法を選択します。</p>
+        <ul>
+          <li><strong>Add</strong>: 加算（ハイライトに最適）</li>
+          <li><strong>Multiply</strong>: 乗算（アイシャドウに最適）</li>
+          <li><strong>Overlay</strong>: オーバーレイ（自然なメイク）</li>
+          <li><strong>Screen</strong>: スクリーン（柔らかいハイライト）</li>
+        </ul>
+        <p class="param-default">デフォルト: Add (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">2nd Texマスク</span>
+        <span class="param-prop">_2ndTexMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>追加のマスクテクスチャです。白 = テクスチャ適用、黒 = 適用なし。マスクはアルファチャンネルと乗算されます。キーワード: _2ND_TEX_MASK</p>
+        <p class="param-default">デフォルト: なし（トグルで有効化）</p>
+      </div>
+    </div>
+
+    <h2 id="layer-3rd">3rd Texture レイヤー</h2>
+    <p>用途: チーク</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">3rd Textureを有効化</span>
+        <span class="param-prop">_Use3rdTexture</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>3番目のメイクアップテクスチャレイヤーを有効にします。キーワード: _3RD_TEXTURE</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">3rd Texture</span>
+        <span class="param-prop">_3rdTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>3番目のメイクアップテクスチャです。透過PNGに対応しており、チーク表現に最適です。</p>
+        <p class="param-default">デフォルト: なし</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hue Shift</span>
+        <span class="param-prop">_3rdTexHueShift</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの色相をシフトします。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: -0.5 〜 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Saturation</span>
+        <span class="param-prop">_3rdTexSaturation</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの彩度を調整します。1で元の彩度。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Brightness</span>
+        <span class="param-prop">_3rdTexValue</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの明度を調整します。1で元の明度。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">強度</span>
+        <span class="param-prop">_3rdTexIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>メイクアップテクスチャの適用強度です。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_3rdTexBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの合成方法を選択します。Add / Multiply / Overlay / Screen から選択可能です。チークにはMultiplyが最適です。</p>
+        <p class="param-default">デフォルト: Add (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">3rd Texマスク</span>
+        <span class="param-prop">_3rdTexMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>追加のマスクテクスチャです。白 = テクスチャ適用、黒 = 適用なし。キーワード: _3RD_TEX_MASK</p>
+        <p class="param-default">デフォルト: なし（トグルで有効化）</p>
+      </div>
+    </div>
+
+    <h2 id="layer-4th">4th Texture レイヤー</h2>
+    <p>用途: グリッター、シャドウ</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">4th Textureを有効化</span>
+        <span class="param-prop">_Use4thTexture</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>4番目のメイクアップテクスチャレイヤーを有効にします。キーワード: _4TH_TEXTURE</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">4th Texture</span>
+        <span class="param-prop">_4thTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>4番目のメイクアップテクスチャです。グリッターやシャドウ表現に最適です。</p>
+        <p class="param-default">デフォルト: なし</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hue Shift</span>
+        <span class="param-prop">_4thTexHueShift</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの色相をシフトします。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: -0.5 〜 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Saturation</span>
+        <span class="param-prop">_4thTexSaturation</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの彩度を調整します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Brightness</span>
+        <span class="param-prop">_4thTexValue</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの明度を調整します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">強度</span>
+        <span class="param-prop">_4thTexIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>メイクアップテクスチャの適用強度です。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_4thTexBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの合成方法を選択します。グリッターにはAddまたはScreen、シャドウにはMultiplyが最適です。</p>
+        <p class="param-default">デフォルト: Add (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">4th Texマスク</span>
+        <span class="param-prop">_4thTexMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>追加のマスクテクスチャです。白 = テクスチャ適用、黒 = 適用なし。キーワード: _4TH_TEX_MASK</p>
+        <p class="param-default">デフォルト: なし（トグルで有効化）</p>
+      </div>
+    </div>
+
+    <h2 id="layer-5th">5th Texture レイヤー</h2>
+    <p>用途: 細部のハイライト、細部のシャドウ</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">5th Textureを有効化</span>
+        <span class="param-prop">_Use5thTexture</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>5番目のメイクアップテクスチャレイヤーを有効にします。キーワード: _5TH_TEXTURE</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">5th Texture</span>
+        <span class="param-prop">_5thTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>5番目のメイクアップテクスチャです。細部のハイライトやシャドウ表現に使用します。</p>
+        <p class="param-default">デフォルト: なし</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hue Shift</span>
+        <span class="param-prop">_5thTexHueShift</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの色相をシフトします。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: -0.5 〜 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Saturation</span>
+        <span class="param-prop">_5thTexSaturation</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの彩度を調整します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Brightness</span>
+        <span class="param-prop">_5thTexValue</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの明度を調整します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">強度</span>
+        <span class="param-prop">_5thTexIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>メイクアップテクスチャの適用強度です。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_5thTexBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>テクスチャの合成方法を選択します。細部のハイライトにはAddまたはScreen、細部のシャドウにはMultiplyが最適です。</p>
+        <p class="param-default">デフォルト: Add (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">5th Texマスク</span>
+        <span class="param-prop">_5thTexMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>追加のマスクテクスチャです。白 = テクスチャ適用、黒 = 適用なし。キーワード: _5TH_TEX_MASK</p>
+        <p class="param-default">デフォルト: なし（トグルで有効化）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

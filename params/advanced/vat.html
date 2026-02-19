@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VAT - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>VAT（頂点アニメーションテクスチャ）</h1>
+    <p class="page-subtitle">頂点アニメーションテクスチャによるメッシュアニメーション</p>
+
+    <h2>概要</h2>
+    <p>VAT（Vertex Animation Texture）は、Houdiniなどで作成した頂点アニメーションをテクスチャとしてベイクし、シェーダー上で再生する技術です。流体シミュレーション、布シミュレーション、複雑な変形アニメーションなど、リアルタイムでは重すぎる物理演算をテクスチャに焼き込んで軽量に再生できます。</p>
+    <p>キーワード <code>_VAT</code> で制御されます。Houdini互換のフォーマットに対応しています。</p>
+
+    <h2>基本設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">VATアニメーションを有効化</span>
+        <span class="param-prop">_VAT</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>VAT機能の有効/無効を切り替えます。キーワード <code>_VAT</code> でコンパイル分岐します。</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">VAT位置マップ</span>
+        <span class="param-prop">_VATPositionMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>頂点の位置情報を格納したテクスチャです。HoudiniのVATエクスポートで生成されるPosition Map（.exr）を使用します。</p>
+        <p class="param-default">デフォルト: "black"</p>
+      </div>
+      <div class="param-tip">テクスチャのインポート設定で圧縮を「None」、sRGBをOFFに設定してください。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フレーム数</span>
+        <span class="param-prop">_VATNumOfFrames</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>VATアニメーションの総フレーム数です。Houdiniのエクスポート設定と一致させる必要があります。</p>
+        <p class="param-default">デフォルト: 30</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">アニメーション速度</span>
+        <span class="param-prop">_VATSpeed</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>アニメーションの再生速度の倍率です。1.0で通常速度、2.0で2倍速になります。</p>
+        <p class="param-default">デフォルト: 1.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">アニメーション強度</span>
+        <span class="param-prop">_VATIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>アニメーション効果の強さです。0で効果なし、1で通常、2で誇張された動きになります。</p>
+        <p class="param-default">デフォルト: 1.0</p>
+        <p class="param-range">範囲: 0〜2</p>
+      </div>
+    </div>
+
+    <h2>位置パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">位置最小値</span>
+        <span class="param-prop">_VATPositionMin</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Houdiniエクスポート時の位置範囲の最小値です。テクスチャの値をワールド座標に変換する際に使用されます。</p>
+        <p class="param-default">デフォルト: -1.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">位置最大値</span>
+        <span class="param-prop">_VATPositionMax</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Houdiniエクスポート時の位置範囲の最大値です。</p>
+        <p class="param-default">デフォルト: 1.0</p>
+      </div>
+    </div>
+
+    <h2>VAT法線マップ（オプション）</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">VAT法線マップを使用</span>
+        <span class="param-prop">_VATNormal</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>VAT法線マップの使用を有効化します。位置だけでなく法線もアニメーションさせたい場合に使用します。キーワード <code>_VAT_NORMAL</code> で制御されます。</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">VAT法線マップ</span>
+        <span class="param-prop">_VATNormalMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>法線情報を格納したVATテクスチャです。HoudiniのNormal Map（.exr）を使用します。</p>
+        <p class="param-default">デフォルト: "bump"</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">法線最小値</span>
+        <span class="param-prop">_VATNormalMin</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>法線テクスチャの値範囲の最小値です。</p>
+        <p class="param-default">デフォルト: -1.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">法線最大値</span>
+        <span class="param-prop">_VATNormalMax</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>法線テクスチャの値範囲の最大値です。</p>
+        <p class="param-default">デフォルト: 1.0</p>
+      </div>
+    </div>
+
+    <h2>詳細設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">パッキングモード</span>
+        <span class="param-prop">_VATPackingMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>VATテクスチャの位置データの解釈方法を選択します。</p>
+        <ul>
+          <li><strong>Absolute (0)</strong> - 絶対位置モード。頂点位置を直接置き換えます。</li>
+          <li><strong>Offset (1)</strong> - オフセットモード。元の位置にオフセットを追加します（推奨）。</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Absolute）</p>
+      </div>
+      <div class="param-tip">通常はOffset モードが推奨です。元メッシュの形状を保持したままアニメーションを加算できます。</div>
+    </div>
+
+    <h2>セットアップ方法</h2>
+    <ol>
+      <li>Houdiniで VAT（ROP Output Driver）を使用してエクスポート</li>
+      <li>Position Map（.exr）をUnityにインポートし、VAT位置マップとして設定</li>
+      <li>必要に応じてNormal Map（.exr）をVAT法線マップとして設定</li>
+      <li>フレーム数をHoudiniの設定と一致させる</li>
+      <li>位置最小値/最大値をHoudiniのエクスポート範囲に合わせる</li>
+    </ol>
+
+    <h2>注意事項</h2>
+    <ul>
+      <li>VATテクスチャは通常のテクスチャよりメモリを多く使用します</li>
+      <li>VRChatでは適切な解像度とフレーム数を選択してください</li>
+      <li>テクスチャの圧縮は無効（None）にしてください。圧縮するとアニメーションが乱れます</li>
+      <li>sRGBカラースペースをOFFに設定してください</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

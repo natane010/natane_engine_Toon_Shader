@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>デカル - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>デカル</h1>
+    <p class="page-subtitle">UV空間にステッカーやマークを貼り付け</p>
+
+    <p>メッシュの表面にテクスチャを貼り付けるデカルシステムです。ロゴ、マーク、タトゥー、ワッペンなどの装飾表現に最適です。UV空間での位置・回転・スケールを自由に調整できます。</p>
+    <p>キーワード: <code>_DECAL</code></p>
+
+    <h2 id="texture">デカルテクスチャ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">デカールテクスチャ</span>
+        <span class="param-prop">_DecalTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>貼り付けるデカルのテクスチャです。アルファチャンネルを使用することで、不規則な形状のデカルも作成できます。</p>
+        <p class="param-default">デフォルト: "white"</p>
+      </div>
+      <div class="param-tip">透過PNGを使えば、丸いステッカーや複雑な形状のロゴも綺麗に貼れます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">デカールカラー</span>
+        <span class="param-prop">_DecalColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>デカルテクスチャに乗算されるカラーです。テクスチャの色味を調整したり、単色デカルを作成する際に使用します。</p>
+        <p class="param-default">デフォルト: (1, 1, 1, 1)（白・変更なし）</p>
+      </div>
+    </div>
+
+    <h2 id="transform">位置・変形</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">デカール位置 (XY)</span>
+        <span class="param-prop">_DecalPosition</span>
+        <span class="param-badge badge-vector">vector</span>
+      </div>
+      <div class="param-body">
+        <p>UV空間でのデカルの位置を設定します。X と Y でデカルの配置場所を調整します。</p>
+        <p class="param-default">デフォルト: (0, 0, 0, 0)</p>
+      </div>
+      <div class="param-tip">UV空間の座標系なので、メッシュのUV展開を確認しながら位置を調整してください。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">回転</span>
+        <span class="param-prop">_DecalRotation</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>デカルの回転角度を度数法で設定します。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 360）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スケール</span>
+        <span class="param-prop">_DecalScale</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>デカルの大きさを設定します。1.0 が基準サイズで、値を大きくするとデカルが拡大されます。</p>
+        <p class="param-default">デフォルト: 1</p>
+      </div>
+    </div>
+
+    <h2 id="blend">ブレンド設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">合成モード</span>
+        <span class="param-prop">_DecalBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>デカルとベースカラーの合成方法を選択します。</p>
+        <ul>
+          <li><strong>Add (0)</strong> - 加算合成（明るく追加）</li>
+          <li><strong>Multiply (1)</strong> - 乗算（暗くなる）</li>
+          <li><strong>Overlay (2)</strong> - オーバーレイ</li>
+          <li><strong>Replace (3)</strong> - 置き換え（デカルで上書き）</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Add）</p>
+      </div>
+      <div class="param-tip">ロゴやワッペンには Replace、光る模様には Add がおすすめです。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_DecalBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>デカルエフェクトの全体的な適用度を設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_DecalBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>デカルの境界をぼかします。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

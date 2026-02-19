@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UVテクスチャ生成 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>UVテクスチャ生成</h1>
+    <p class="page-subtitle">メッシュのUVアイランドからノイズ・マスクテクスチャを生成するツール</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; Shader &gt; UV Texture Generator</span>
+      <span>カテゴリ: シェーダー</span>
+    </div>
+
+    <h2>概要</h2>
+    <p>UVテクスチャ生成は、メッシュのUVレイアウトを分析してノイズテクスチャやマスクテクスチャを自動生成するツールです。5種類のノイズタイプ（Perlin、Voronoi、Cellular、FBM、Value）に対応し、UVアイランド単位でのマスク生成やノイズとマスクの複合モードなど、高度なテクスチャ生成機能を備えています。</p>
+    <p>トゥーンシェーダーでは、ディゾルブ効果やエミッションマスク、影マスクなど、様々な用途でマスクテクスチャが必要になります。このツールを使えば、外部ペイントソフトを開くことなくUnityエディタ内で必要なテクスチャを生成できます。Union-Findアルゴリズムによる正確なUVアイランド検出により、メッシュの部位ごとに異なるマスク値を設定することも可能です。</p>
+    <p>生成したテクスチャはPNGとして保存でき、さらにマテリアルのプロパティに直接割り当てることもできます。ディゾルブのノイズテクスチャ作成、パーツ別のマスクテクスチャ作成、エミッション範囲の指定など、様々なシーンで活用できます。</p>
+
+    <h2>主な機能</h2>
+    <ul>
+      <li><strong>5種のノイズ生成</strong> — Perlin（滑らか）、Voronoi（セル状）、Cellular（有機的）、FBM（フラクタル）、Value（粒状）の5種類のプロシージャルノイズに対応</li>
+      <li><strong>Union-FindによるUVアイランド検出</strong> — メッシュのUV座標からアイランド（連続した面のグループ）を自動検出。頂点の接続情報に基づく正確な検出</li>
+      <li><strong>アイランド単位のマスク生成</strong> — 各UVアイランドに異なるマスク値を割り当て可能。頭、体、衣服などのパーツ別マスクを自動生成</li>
+      <li><strong>侵食法による境界グラデーション</strong> — UVアイランドの境界に滑らかなグラデーションを生成。自然なトランジション効果に使用</li>
+      <li><strong>ノイズ＋マスクの複合モード</strong> — ノイズテクスチャとマスクテクスチャを組み合わせて、アイランド固有のノイズパターンを生成</li>
+      <li><strong>マテリアルプロパティへの直接割当</strong> — 生成したテクスチャをワンクリックでマテリアルの任意のテクスチャスロットに割り当て</li>
+    </ul>
+
+    <h2>使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>タブを選択</strong>
+        <p>「ノイズ」「UVマスク」「複合モード」の3つのタブから目的に合ったモードを選択します。ディゾルブ用ならノイズ、パーツ別制御ならUVマスク、両方を組み合わせるなら複合モードを使います。</p>
+      </li>
+      <li>
+        <strong>パラメータを設定</strong>
+        <p>ノイズモードではノイズタイプとスケール、UVマスクモードではメッシュソースとUVチャンネルを設定します。テクスチャの解像度（128〜2048）も指定できます。</p>
+      </li>
+      <li>
+        <strong>プレビューを生成</strong>
+        <p>「テクスチャを生成」ボタンでプレビューを確認します。ノイズのスケールやマスクの境界設定を調整して、理想的な結果を追求できます。</p>
+      </li>
+      <li>
+        <strong>保存＆割当</strong>
+        <p>PNGとしてプロジェクトに保存し、必要に応じてマテリアルのテクスチャプロパティに直接割り当てます。ディゾルブマップ、エミッションマスクなど、任意のスロットに設定可能です。</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>自然なディゾルブパターンにはFBM（Fractal Brownian Motion）ノイズが最適です。複数のオクターブを重ねたフラクタルパターンが生成されます</li>
+      <li>ボロノイノイズはセルラーマスク（ひび割れ、結晶パターン）に最適です。ディゾルブ効果に使うとガラスが割れるような演出ができます</li>
+      <li>複合モードではアイランド固有のノイズを作成できるため、体のパーツごとに異なるディゾルブ速度を設定するような高度な演出が可能です</li>
+      <li>ほとんどのマスクテクスチャには512x512の解像度で十分です。メモリ使用量を抑えるため、必要以上に大きなサイズは避けましょう</li>
+      <li>UVマスクモードでは、メッシュのUV展開が適切であることが前提です。UV1以外のチャンネルも使用可能なので、用途に合わせて選択してください</li>
+      <li>エミッションマスクを作成する場合は、光らせたい部分のUVアイランドに白（1.0）、その他に黒（0.0）を割り当てると効果的です</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>
