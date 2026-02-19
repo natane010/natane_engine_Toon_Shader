@@ -104,6 +104,7 @@
     { file: 'texture-optimizer.html',     label: 'テクスチャ最適化',             cat: 'optimization' },
     { file: 'outline-optimizer.html',     label: 'アウトライン最適化',           cat: 'optimization' },
     { file: 'refraction-balancer.html',   label: '屈折品質バランサー',           cat: 'optimization' },
+    { file: 'asset-reference-checker.html', label: 'アセット参照チェック',        cat: 'optimization' },
     { file: 'liltoon-migration.html',     label: 'lilToon移行',                  cat: 'migration' },
     { file: 'batch-converter.html',       label: '一括マテリアル変換',           cat: 'migration' },
     { file: 'prefab-converter.html',      label: 'プレハブバリアント変換',       cat: 'migration' },
