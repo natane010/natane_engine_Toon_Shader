@@ -630,6 +630,8 @@ Shader "Natane/Toon Shader (Transparent)"
 
             fixed4 frag(v2f i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+
                 #ifdef _OUTLINE
                     fixed4 col = _OutlineColor;
 

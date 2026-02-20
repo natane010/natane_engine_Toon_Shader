@@ -626,6 +626,8 @@ Shader "Natane/Toon Shader"
 
             fixed4 frag(v2f i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+
                 #ifdef _OUTLINE
                     fixed4 col = _OutlineColor;
 
@@ -802,12 +804,14 @@ Shader "Natane/Toon Shader"
                 v2f o;
                 UNITY_SETUP_INSTANCE_ID(v);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+                UNITY_TRANSFER_INSTANCE_ID(v, o);
                 TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
                 return o;
             }
 
             float4 frag(v2f i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 SHADOW_CASTER_FRAGMENT(i)
             }
             ENDCG

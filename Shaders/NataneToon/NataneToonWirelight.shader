@@ -161,14 +161,15 @@ Shader "Natane/Toon Shader Wirelight"
             #pragma geometry geom
             #pragma fragment frag
             #pragma multi_compile_fog
-            #pragma shader_feature _WIRELIGHT
-            #pragma shader_feature _USE_VERTEX_COLOR_POS
-            #pragma shader_feature _AUDIOLINK
-            #pragma shader_feature _CYBER_SCANLINE
-            #pragma shader_feature _CYBER_CHROMA
-            #pragma shader_feature _CYBER_GLITCH
-            #pragma shader_feature _CYBER_DATASTREAM
-            #pragma shader_feature _WL_DISTANCE_FADE
+            #pragma multi_compile_instancing
+            #pragma shader_feature_local _WIRELIGHT
+            #pragma shader_feature_local _USE_VERTEX_COLOR_POS
+            #pragma shader_feature_local _AUDIOLINK
+            #pragma shader_feature_local _CYBER_SCANLINE
+            #pragma shader_feature_local _CYBER_CHROMA
+            #pragma shader_feature_local _CYBER_GLITCH
+            #pragma shader_feature_local _CYBER_DATASTREAM
+            #pragma shader_feature_local _WL_DISTANCE_FADE
 
             #include "UnityCG.cginc"
             #include "Include/Wirelight/MorgansNoiseFunctions.cginc"
@@ -288,6 +289,7 @@ Shader "Natane/Toon Shader Wirelight"
                 float2 coluv : TEXCOORD2;
                 float3 worldPos : TEXCOORD3;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             struct g2f
@@ -310,6 +312,7 @@ Shader "Natane/Toon Shader Wirelight"
                 v2g o;
                 UNITY_SETUP_INSTANCE_ID(v);
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 o.coluv = TRANSFORM_TEX(v.uv, _ColorTexture);
@@ -389,6 +392,9 @@ Shader "Natane/Toon Shader Wirelight"
                 // Output three vertices with barycentric coordinates
                 for (int i = 0; i < 3; i++)
                 {
+                    UNITY_TRANSFER_INSTANCE_ID(IN[i], o);
+                    UNITY_TRANSFER_VERTEX_OUTPUT_STEREO(IN[i], o);
+
                     o.pos = IN[i].pos;
                     o.bary = float3(
                         i == 0 ? 1 : 0,
@@ -417,6 +423,8 @@ Shader "Natane/Toon Shader Wirelight"
             // Fragment shader
             fixed4 frag(g2f i) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+
                 #ifndef _WIRELIGHT
                     discard;
                     return fixed4(0, 0, 0, 0);
