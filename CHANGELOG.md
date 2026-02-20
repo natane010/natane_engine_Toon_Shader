@@ -5,7 +5,7 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.7] - 2026-02-20
+## [1.2.7] - 2026-02-21
 
 ### Fixed
 - **VR Single Pass Instanced (SPI) 互換性修正**: Outline / ShadowCaster パスに VR ステレオインスタンシングマクロ一式を追加（`UNITY_VERTEX_INPUT_INSTANCE_ID`, `UNITY_VERTEX_OUTPUT_STEREO`, `UNITY_SETUP_INSTANCE_ID`, `UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO`, `#pragma multi_compile_instancing`）。全3バリアント（Opaque/Cutout/Transparent）対応
@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **GrabPass（屈折）VR ステレオ対応**: `sampler2D _GrabTexture` を `UNITY_DECLARE_SCREENSPACE_TEXTURE(_GrabTexture)` に置換、全サンプリングを `UNITY_SAMPLE_SCREENSPACE_TEXTURE` に変更。VR SPI モードで屈折エフェクトが両眼で正しくレンダリングされるように
 - **AudioLink コンパイルエラー修正**: Rim Light / Dissolve 機能無効時に AudioLink の対応サブ機能がコンパイルエラーになる問題を修正（キーワードガード追加）
 - **グリッチ RGB Split マゼンタ修正**: RGB Split がライティング未適用の生テクスチャ値と適用済みの値を混合していたため、影部分でマゼンタ色（エラー色）が発生していた問題を修正。デルタ方式に変更しライティングを保持
+- **Outline パス VR 修正**: 全3バリアントの Outline フラグメントシェーダーに `UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX` を追加。VR でアウトラインが正しくレンダリングされるように
+- **ShadowCaster パス VR 修正**: Opaque/Cutout の ShadowCaster に `UNITY_TRANSFER_INSTANCE_ID` + `UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX` を追加。VR でシャドウが正しく描画されるように
+- **Wirelight VR 完全対応**: `#pragma multi_compile_instancing` 追加、全 `shader_feature` を `shader_feature_local` に変更、v2g 構造体にステレオ出力追加、ジオメトリシェーダーで `UNITY_TRANSFER_INSTANCE_ID` / `UNITY_TRANSFER_VERTEX_OUTPUT_STEREO` による頂点→ジオメトリ→フラグメント間のステレオ情報転送を修正
 
 ---
 
