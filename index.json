@@ -48,7 +48,7 @@
           "legacyFolders": {},
           "legacyFiles": {},
           "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.6/com.natane.toonshader-1.2.6.zip",
-          "zipSHA256": "5907bb301927422b1e1326c59fc0f9ca90e0165bce8c46554110b834b1be3556"
+          "zipSHA256": "dec281c806b7b3a54e073085ed3d00e87f7b9acf4a58850594ca666dc971773a"
         },
         "1.2.5": {
           "name": "com.natane.toonshader",
@@ -94,10 +94,10 @@
           "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.5/com.natane.toonshader-1.2.5.zip",
           "zipSHA256": "098ac833d98524e65899b834f055e5ee54b046be0719ca70a3b4b8a05f4ae1a2"
         },
-        "1.2.6": {
+        "1.2.7": {
           "name": "com.natane.toonshader",
           "displayName": "Natane Toon Shader",
-          "version": "1.2.6",
+          "version": "1.2.7",
           "unity": "2019.4",
           "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline. NEW v1.2.0: AudioLink support (club events), Multiple MatCaps (2nd/3rd), Distance Fade, Vertex Animation (wind/breath), Hologram/Glitch effects, Decal system, Backface Texture, Video/Render Texture support, LTCGI integration, Dithering Alpha, Shadow Color Texture, Rim Direction Control, Multi-Color Outlines. Features material preset system with 59 defaults (30 character, 10 Toon/NPR styles), intelligent inspector UI, parameter sharing, visual preset browser, material validator (VRChat optimization), interactive help system (24 glossary terms, 6 tutorials), batch processor (5 modes), realtime preview, color palette management, scene material editor, texture optimizer, cubemap reflection, environmental rim, parallax mapping, refraction, advanced lighting, VRC Light Volumes support, SSS, virtual expressions, mask textures, particle system editor, shader prewarming (VRChat-safe), asset reference checker, mask texture brush, lilToon prefab migration. Full Japanese UI localization. Designer-friendly with comprehensive non-engineer support tools.",
           "keywords": [
@@ -135,8 +135,8 @@
           "vpmDependencies": {},
           "legacyFolders": {},
           "legacyFiles": {},
-          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.6/com.natane.toonshader-1.2.6.zip",
-          "zipSHA256": "dec281c806b7b3a54e073085ed3d00e87f7b9acf4a58850594ca666dc971773a"
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.7/com.natane.toonshader-1.2.7.zip",
+          "zipSHA256": "cc8e40728c6d7ea719a3b209c383901126b45d936549d89634492942393b0d12"
         }
       }
     }
