@@ -824,13 +824,20 @@ float2 CalculateGlitchUV(float2 uv, float intensity, float speed, float blockSiz
 }
 
 // Calculate RGB split for glitch effect
+// Uses delta method: computes channel shift from texture, applies to lit color
+// This preserves lighting/shading and prevents magenta artifacts
 half3 CalculateGlitchRGBSplit(half3 baseColor, float2 uv,
                                sampler2D tex, float intensity)
 {
     float offset = intensity * 0.01;
-    half r = tex2D(tex, uv + float2(offset, 0)).r;
-    half b = tex2D(tex, uv - float2(offset, 0)).b;
-    return half3(r, baseColor.g, b);
+    half3 center = tex2D(tex, uv).rgb;
+    half rShifted = tex2D(tex, uv + float2(offset, 0)).r;
+    half bShifted = tex2D(tex, uv - float2(offset, 0)).b;
+
+    // Apply relative color shift to preserve lighting
+    half rDelta = rShifted - center.r;
+    half bDelta = bShifted - center.b;
+    return saturate(half3(baseColor.r + rDelta, baseColor.g, baseColor.b + bDelta));
 }
 
 #endif // _GLITCH
