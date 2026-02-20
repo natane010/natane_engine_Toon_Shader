@@ -634,11 +634,7 @@ samplerCUBE _ReflectionCube;
 samplerCUBE _EnvRimCube;
 #endif
 
-// GrabPass texture for Refraction
-#if defined(_REFRACTION)
-sampler2D _GrabTexture;
-float4 _GrabTexture_TexelSize;
-#endif
+// GrabPass texture for Refraction — declared in NataneToonUtils.hlsl (VR stereo-aware)
 
 // AudioLink texture (VRChat)
 #if defined(_AUDIOLINK)

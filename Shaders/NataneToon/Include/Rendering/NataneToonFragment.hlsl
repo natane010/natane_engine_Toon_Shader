@@ -6,6 +6,8 @@
 // Optimized: half precision for better performance, cached luminance calculations
 half4 frag(v2f i) : SV_Target
 {
+    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+
     // ===== Parallax Mapping (UV Adjustment) =====
     float2 uv = i.uv;
     #ifdef _PARALLAX
@@ -836,7 +838,8 @@ half4 frag(v2f i) : SV_Target
             #endif
         }
 
-        // AudioLink Rim - audio-reactive rim light
+        // AudioLink Rim - audio-reactive rim light (requires Rim Light feature)
+        #if defined(_RIM_LIGHT)
         if (_AudioLinkRimIntensity > 0.001)
         {
             half alRim = SampleAudioLink(_AudioLinkRimBand);
@@ -844,6 +847,7 @@ half4 frag(v2f i) : SV_Target
             alRimFactor = alRimFactor * alRimFactor * alRimFactor;
             col.rgb = SafeAdditiveBlendFast(col.rgb, _RimColor.rgb * alRim * _AudioLinkRimIntensity * alRimFactor, 1.0);
         }
+        #endif
 
         // AudioLink Hue Shift - audio-reactive color shift
         if (_AudioLinkHueShiftIntensity > 0.001)
@@ -852,7 +856,8 @@ half4 frag(v2f i) : SV_Target
             col.rgb = ApplyHueShift(col.rgb, alHue * _AudioLinkHueShiftIntensity);
         }
 
-        // AudioLink Dissolve - audio-reactive dissolve
+        // AudioLink Dissolve - audio-reactive dissolve (requires Dissolve feature)
+        #if defined(_DISSOLVE)
         if (_AudioLinkDissolveIntensity > 0.001)
         {
             half alDissolve = SampleAudioLink(_AudioLinkDissolveBand);
@@ -865,6 +870,7 @@ half4 frag(v2f i) : SV_Target
             half3 alDissolveGlow = _DissolveEdgeColor.rgb * alDissolveResult.y * 2.0;
             col.rgb = SafeAdditiveBlendFast(col.rgb, alDissolveGlow, saturate(alDissolveResult.y));
         }
+        #endif
         col.rgb = ApplyEffectBlendPost(preAL, col.rgb, _AudioLinkBlend, _AudioLinkBlendMode);
     }
     #endif

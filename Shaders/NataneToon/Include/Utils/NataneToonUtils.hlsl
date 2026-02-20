@@ -576,6 +576,10 @@ float2 AnimateUV(float2 uv, float2 scrollSpeed, float rotateSpeed)
 // ===== Refraction Functions =====
 #if defined(_REFRACTION)
 
+// Stereo-aware GrabPass texture declaration for VR Single Pass Instanced
+UNITY_DECLARE_SCREENSPACE_TEXTURE(_GrabTexture);
+float4 _GrabTexture_TexelSize;
+
 // Apply refraction distortion to screen UV
 // Returns distorted UV for sampling GrabTexture
 float2 ApplyRefractionDistortion(float2 screenUV, float3 worldNormal, float3 viewDir, float intensity, float refractionIndex, float blur)
@@ -614,8 +618,8 @@ half3 SampleGrabTextureWithBlur(float2 uv, float blurAmount)
     // NOTE: Early exit optimization - avoid 4 extra texture samples when blur is disabled
     if (blurAmount < EPSILON)
     {
-        // No blur, single sample
-        return tex2D(_GrabTexture, uv).rgb;
+        // No blur, single sample (stereo-aware for VR SPI)
+        return UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, uv).rgb;
     }
 
     // Optimized 5-sample cross blur: center + 4 directions
@@ -623,14 +627,14 @@ half3 SampleGrabTextureWithBlur(float2 uv, float blurAmount)
     float blurRadius = blurAmount * 0.01;
     float2 texelSize = blurRadius * _GrabTexture_TexelSize.xy;
 
-    // Center sample with higher weight
-    half3 color = tex2D(_GrabTexture, uv).rgb * 0.4;
+    // Center sample with higher weight (stereo-aware for VR SPI)
+    half3 color = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, uv).rgb * 0.4;
 
     // Cross pattern (up, down, left, right)
-    color += tex2D(_GrabTexture, uv + float2(texelSize.x, 0)).rgb * 0.15;
-    color += tex2D(_GrabTexture, uv + float2(-texelSize.x, 0)).rgb * 0.15;
-    color += tex2D(_GrabTexture, uv + float2(0, texelSize.y)).rgb * 0.15;
-    color += tex2D(_GrabTexture, uv + float2(0, -texelSize.y)).rgb * 0.15;
+    color += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, uv + float2(texelSize.x, 0)).rgb * 0.15;
+    color += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, uv + float2(-texelSize.x, 0)).rgb * 0.15;
+    color += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, uv + float2(0, texelSize.y)).rgb * 0.15;
+    color += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, uv + float2(0, -texelSize.y)).rgb * 0.15;
 
     return color;
 }
