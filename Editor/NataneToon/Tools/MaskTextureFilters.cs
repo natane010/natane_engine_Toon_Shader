@@ -37,7 +37,7 @@ namespace NataneToon.Editor
             {
                 for (int x = 0; x < width; x++)
                 {
-                    float r = 0f, g = 0f, b = 0f;
+                    float r = 0f, g = 0f, b = 0f, a = 0f;
                     for (int k = -radius; k <= radius; k++)
                     {
                         int sx = Mathf.Clamp(x + k, 0, width - 1);
@@ -46,8 +46,9 @@ namespace NataneToon.Editor
                         r += c.r * w;
                         g += c.g * w;
                         b += c.b * w;
+                        a += c.a * w;
                     }
-                    temp[y * width + x] = new Color(r, g, b, 1f);
+                    temp[y * width + x] = new Color(r, g, b, a);
                 }
             }
 
@@ -56,7 +57,7 @@ namespace NataneToon.Editor
             {
                 for (int x = 0; x < width; x++)
                 {
-                    float r = 0f, g = 0f, b = 0f;
+                    float r = 0f, g = 0f, b = 0f, a = 0f;
                     for (int k = -radius; k <= radius; k++)
                     {
                         int sy = Mathf.Clamp(y + k, 0, height - 1);
@@ -65,8 +66,9 @@ namespace NataneToon.Editor
                         r += c.r * w;
                         g += c.g * w;
                         b += c.b * w;
+                        a += c.a * w;
                     }
-                    pixels[y * width + x] = new Color(r, g, b, 1f);
+                    pixels[y * width + x] = new Color(r, g, b, a);
                 }
             }
         }
@@ -133,6 +135,7 @@ namespace NataneToon.Editor
                 c.r = ApplyLevelsChannel(c.r, inputBlack, invInputRange, invGamma, outputBlack, outputRange);
                 c.g = ApplyLevelsChannel(c.g, inputBlack, invInputRange, invGamma, outputBlack, outputRange);
                 c.b = ApplyLevelsChannel(c.b, inputBlack, invInputRange, invGamma, outputBlack, outputRange);
+                c.a = ApplyLevelsChannel(c.a, inputBlack, invInputRange, invGamma, outputBlack, outputRange);
                 pixels[i] = c;
             }
         }
@@ -184,7 +187,7 @@ namespace NataneToon.Editor
                     float gy = (-tl - 2f * tc - tr) + (bl + 2f * bc + br);
 
                     float edge = Mathf.Clamp01(Mathf.Sqrt(gx * gx + gy * gy) * strength);
-                    pixels[y * width + x] = new Color(edge, edge, edge, 1f);
+                    pixels[y * width + x] = new Color(edge, edge, edge, source[y * width + x].a);
                 }
             }
         }
@@ -229,7 +232,7 @@ namespace NataneToon.Editor
                     Mathf.Clamp01(orig.r + amount * (orig.r - blur.r)),
                     Mathf.Clamp01(orig.g + amount * (orig.g - blur.g)),
                     Mathf.Clamp01(orig.b + amount * (orig.b - blur.b)),
-                    1f);
+                    Mathf.Clamp01(orig.a + amount * (orig.a - blur.a)));
             }
         }
 
@@ -248,9 +251,10 @@ namespace NataneToon.Editor
 
             for (int i = 0; i < pixels.Length; i++)
             {
+                float a = pixels[i].a;
                 float lum = Luminance(pixels[i]);
                 float val = lum >= threshold ? 1f : 0f;
-                pixels[i] = new Color(val, val, val, 1f);
+                pixels[i] = new Color(val, val, val, a);
             }
         }
     }

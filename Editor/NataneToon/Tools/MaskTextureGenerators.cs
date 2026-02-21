@@ -74,7 +74,7 @@ namespace NataneToon.Editor
 
                     if (param.invert) value = 1f - value;
                     value = Mathf.Clamp01(value);
-                    pixels[y * size + x] = new Color(value, value, value);
+                    pixels[y * size + x] = new Color(value, value, value, 1f);
                 }
             }
         }
@@ -367,7 +367,7 @@ namespace NataneToon.Editor
                             interpolated = 1f - interpolated;
 
                         interpolated = Mathf.Clamp01(interpolated);
-                        pixels[y * size + x] = new Color(interpolated, interpolated, interpolated);
+                        pixels[y * size + x] = new Color(interpolated, interpolated, interpolated, 1f);
                     }
                 }
             }

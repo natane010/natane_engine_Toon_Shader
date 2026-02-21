@@ -8,7 +8,7 @@ namespace NataneToon.Editor
     /// Brush mode for mask texture painting.
     /// マスクテクスチャペイント用ブラシモード
     /// </summary>
-    internal enum BrushMode { Paint, Erase, Smooth }
+    internal enum BrushMode { Paint, Erase, Smooth, EraseAlpha }
 
     /// <summary>
     /// Settings for the mask texture brush tool.
@@ -21,6 +21,7 @@ namespace NataneToon.Editor
         public float hardness = 0.8f;
         public float opacity = 1f;
         public float strength = 1f;
+        public float paintAlpha = 1f;
         public BrushMode mode = BrushMode.Paint;
     }
 
@@ -149,10 +150,12 @@ namespace NataneToon.Editor
                         case BrushMode.Paint:
                         {
                             float target = settings.strength;
+                            float targetA = settings.paintAlpha;
                             float r = Mathf.Lerp(current.r, target, alpha);
                             float g = Mathf.Lerp(current.g, target, alpha);
                             float b = Mathf.Lerp(current.b, target, alpha);
-                            pixels[idx] = new Color(r, g, b, 1f);
+                            float a2 = Mathf.Lerp(current.a, targetA, alpha);
+                            pixels[idx] = new Color(r, g, b, a2);
                             break;
                         }
                         case BrushMode.Erase:
@@ -160,7 +163,7 @@ namespace NataneToon.Editor
                             float r = Mathf.Lerp(current.r, 0f, alpha);
                             float g = Mathf.Lerp(current.g, 0f, alpha);
                             float b = Mathf.Lerp(current.b, 0f, alpha);
-                            pixels[idx] = new Color(r, g, b, 1f);
+                            pixels[idx] = new Color(r, g, b, current.a);
                             break;
                         }
                         case BrushMode.Smooth:
@@ -169,7 +172,14 @@ namespace NataneToon.Editor
                             float r = Mathf.Lerp(current.r, avg.r, alpha);
                             float g = Mathf.Lerp(current.g, avg.g, alpha);
                             float b = Mathf.Lerp(current.b, avg.b, alpha);
-                            pixels[idx] = new Color(r, g, b, 1f);
+                            float a2 = Mathf.Lerp(current.a, avg.a, alpha);
+                            pixels[idx] = new Color(r, g, b, a2);
+                            break;
+                        }
+                        case BrushMode.EraseAlpha:
+                        {
+                            float a2 = Mathf.Lerp(current.a, 0f, alpha);
+                            pixels[idx] = new Color(current.r, current.g, current.b, a2);
                             break;
                         }
                     }
@@ -183,7 +193,7 @@ namespace NataneToon.Editor
         /// </summary>
         private static Color GetAverageNeighbors(Color[] pixels, int cx, int cy, int width, int height)
         {
-            float r = 0f, g = 0f, b = 0f;
+            float r = 0f, g = 0f, b = 0f, a = 0f;
             int count = 0;
 
             for (int dy = -1; dy <= 1; dy++)
@@ -198,12 +208,13 @@ namespace NataneToon.Editor
                     r += c.r;
                     g += c.g;
                     b += c.b;
+                    a += c.a;
                     count++;
                 }
             }
 
             if (count == 0) return Color.black;
-            return new Color(r / count, g / count, b / count, 1f);
+            return new Color(r / count, g / count, b / count, a / count);
         }
     }
 
@@ -332,7 +343,8 @@ namespace NataneToon.Editor
         {
             new GUIContent("ペイント Paint", "Paint grayscale values / グレースケール値をペイント"),
             new GUIContent("消しゴム Erase", "Erase to black / 黒に消去"),
-            new GUIContent("スムーズ Smooth", "Smooth/blur values / 値をスムーズ・ぼかし")
+            new GUIContent("スムーズ Smooth", "Smooth/blur values / 値をスムーズ・ぼかし"),
+            new GUIContent("α消去 Erase Alpha", "Erase alpha channel / アルファチャンネルを消去")
         };
 
         /// <summary>
@@ -372,6 +384,10 @@ namespace NataneToon.Editor
                     settings.strength = EditorGUILayout.Slider(
                         new GUIContent("強度 Strength", "Paint value (grayscale 0-1) / ペイント値（グレースケール 0-1）"),
                         settings.strength, 0f, 1f);
+
+                    settings.paintAlpha = EditorGUILayout.Slider(
+                        new GUIContent("アルファ Alpha", "Paint alpha value (0=transparent, 1=opaque) / ペイントアルファ値（0=透明, 1=不透明）"),
+                        settings.paintAlpha, 0f, 1f);
                 }
 
                 EditorGUILayout.Space(2);
@@ -395,8 +411,17 @@ namespace NataneToon.Editor
         /// Process input events for the brush canvas. Returns true if the event was consumed.
         /// ブラシキャンバスの入力イベントを処理。イベントが消費された場合trueを返す
         /// </summary>
+        /// <param name="canvasRect">Display area for hit testing (visible canvas region).</param>
+        /// <param name="textureRect">Actual texture display rect for coordinate mapping (accounts for zoom/pan).</param>
+        /// <param name="brush">Brush instance.</param>
+        /// <param name="settings">Brush settings.</param>
+        /// <param name="pixels">Pixel array to paint on.</param>
+        /// <param name="width">Texture width.</param>
+        /// <param name="height">Texture height.</param>
+        /// <param name="textureModified">Set to true if pixels were modified.</param>
         public static bool HandleBrushInput(
             Rect canvasRect,
+            Rect textureRect,
             MaskTextureBrush brush,
             BrushSettings settings,
             Color[] pixels,
@@ -411,7 +436,8 @@ namespace NataneToon.Editor
             if (!canvasRect.Contains(e.mousePosition) && !brush.IsStroking)
                 return false;
 
-            Vector2 canvasPos = MouseToPixelPos(e.mousePosition, canvasRect, width, height);
+            // Use textureRect for coordinate mapping (zoom/pan aware)
+            Vector2 canvasPos = MouseToPixelPos(e.mousePosition, textureRect, width, height);
 
             switch (e.type)
             {
@@ -460,6 +486,22 @@ namespace NataneToon.Editor
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Process input events for the brush canvas (legacy overload without separate textureRect).
+        /// ブラシキャンバスの入力イベントを処理（textureRect分離なしのレガシーオーバーロード）
+        /// </summary>
+        public static bool HandleBrushInput(
+            Rect canvasRect,
+            MaskTextureBrush brush,
+            BrushSettings settings,
+            Color[] pixels,
+            int width,
+            int height,
+            out bool textureModified)
+        {
+            return HandleBrushInput(canvasRect, canvasRect, brush, settings, pixels, width, height, out textureModified);
         }
 
         /// <summary>

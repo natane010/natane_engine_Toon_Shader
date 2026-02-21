@@ -288,7 +288,7 @@ namespace NataneToon.Editor
             int h = Height;
             Color[] result = new Color[w * h];
             for (int i = 0; i < result.Length; i++)
-                result[i] = Color.black;
+                result[i] = new Color(0f, 0f, 0f, 0f);
 
             for (int layerIdx = 0; layerIdx < Layers.Count; layerIdx++)
             {
@@ -350,31 +350,31 @@ namespace NataneToon.Editor
                     blended = new Color(
                         bottom.r * top.r,
                         bottom.g * top.g,
-                        bottom.b * top.b, 1f);
+                        bottom.b * top.b, top.a);
                     break;
                 case MaskBlendMode.Add:
                     blended = new Color(
                         Mathf.Clamp01(bottom.r + top.r),
                         Mathf.Clamp01(bottom.g + top.g),
-                        Mathf.Clamp01(bottom.b + top.b), 1f);
+                        Mathf.Clamp01(bottom.b + top.b), top.a);
                     break;
                 case MaskBlendMode.Subtract:
                     blended = new Color(
                         Mathf.Clamp01(bottom.r - top.r),
                         Mathf.Clamp01(bottom.g - top.g),
-                        Mathf.Clamp01(bottom.b - top.b), 1f);
+                        Mathf.Clamp01(bottom.b - top.b), top.a);
                     break;
                 case MaskBlendMode.Overlay:
                     blended = new Color(
                         OverlayChannel(bottom.r, top.r),
                         OverlayChannel(bottom.g, top.g),
-                        OverlayChannel(bottom.b, top.b), 1f);
+                        OverlayChannel(bottom.b, top.b), top.a);
                     break;
                 case MaskBlendMode.Screen:
                     blended = new Color(
                         1f - (1f - bottom.r) * (1f - top.r),
                         1f - (1f - bottom.g) * (1f - top.g),
-                        1f - (1f - bottom.b) * (1f - top.b), 1f);
+                        1f - (1f - bottom.b) * (1f - top.b), top.a);
                     break;
                 default:
                     blended = top;

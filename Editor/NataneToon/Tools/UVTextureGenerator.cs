@@ -74,6 +74,14 @@ namespace NataneToon.Editor
         private float persistence = 0.5f;
         private Vector2 offset;
 
+        // ===== Noise Alpha Parameters =====
+        private bool noiseAlphaEnabled;
+        private NoiseType noiseAlphaType = NoiseType.Perlin;
+        private float noiseAlphaScale = 5f;
+        private int noiseAlphaSeed = 42;
+        private float noiseAlphaContrast = 1f;
+        private bool noiseAlphaInvert;
+
         // ===== UV Mask Parameters =====
         private Object meshSource;
         private int uvChannel;
@@ -264,6 +272,24 @@ namespace NataneToon.Editor
 
             offset = EditorGUILayout.Vector2Field("オフセット", offset);
 
+            // Alpha noise settings
+            NataneToonShaderGUIUtility.DrawSeparator();
+            noiseAlphaEnabled = EditorGUILayout.Toggle(
+                new GUIContent("アルファノイズ有効 Enable Alpha Noise",
+                    "Generate alpha channel from noise / ノイズからアルファチャンネルを生成"),
+                noiseAlphaEnabled);
+
+            if (noiseAlphaEnabled)
+            {
+                EditorGUI.indentLevel++;
+                noiseAlphaType = (NoiseType)EditorGUILayout.EnumPopup("αノイズタイプ Alpha Noise Type", noiseAlphaType);
+                noiseAlphaScale = EditorGUILayout.Slider("αスケール Alpha Scale", noiseAlphaScale, 0.5f, 50f);
+                noiseAlphaSeed = EditorGUILayout.IntField("αシード Alpha Seed", noiseAlphaSeed);
+                noiseAlphaContrast = EditorGUILayout.Slider("αコントラスト Alpha Contrast", noiseAlphaContrast, 0.1f, 3f);
+                noiseAlphaInvert = EditorGUILayout.Toggle("α反転 Alpha Invert", noiseAlphaInvert);
+                EditorGUI.indentLevel--;
+            }
+
             EditorGUILayout.Space(10);
 
             EditorGUILayout.BeginHorizontal();
@@ -313,7 +339,18 @@ namespace NataneToon.Editor
                     float value = NoiseGenerator.Generate(noiseType, fx, fy, seed, octaves, lacunarity, persistence);
                     value = Mathf.Pow(Mathf.Clamp01(value), contrast);
                     if (invert) value = 1f - value;
-                    pixels[y * size + x] = new Color(value, value, value);
+
+                    float alpha = 1f;
+                    if (noiseAlphaEnabled)
+                    {
+                        float afx = (float)x / size * noiseAlphaScale + offset.x;
+                        float afy = (float)y / size * noiseAlphaScale + offset.y;
+                        alpha = NoiseGenerator.Generate(noiseAlphaType, afx, afy, noiseAlphaSeed, octaves, lacunarity, persistence);
+                        alpha = Mathf.Pow(Mathf.Clamp01(alpha), noiseAlphaContrast);
+                        if (noiseAlphaInvert) alpha = 1f - alpha;
+                    }
+
+                    pixels[y * size + x] = new Color(value, value, value, alpha);
                 }
             }
             return pixels;
@@ -476,7 +513,7 @@ namespace NataneToon.Editor
                 for (int i = 0; i < pixels.Length; i++)
                 {
                     float v = 1f - pixels[i].r;
-                    pixels[i] = new Color(v, v, v);
+                    pixels[i] = new Color(v, v, v, 1f);
                 }
             }
 
@@ -814,7 +851,7 @@ namespace NataneToon.Editor
                     }
 
                     if (invert) combined = 1f - combined;
-                    pixels[y * size + x] = new Color(combined, combined, combined);
+                    pixels[y * size + x] = new Color(combined, combined, combined, 1f);
                 }
             }
 
@@ -938,8 +975,9 @@ namespace NataneToon.Editor
             float canvasDisplaySize = 300f;
             Rect canvasArea = GUILayoutUtility.GetRect(canvasDisplaySize, canvasDisplaySize);
 
-            // Background
+            // Background with checkerboard pattern for transparency visualization
             EditorGUI.DrawRect(canvasArea, new Color(0.15f, 0.15f, 0.15f));
+            DrawCheckerboard(canvasArea, 8);
 
             if (previewTexture != null)
             {
@@ -979,8 +1017,9 @@ namespace NataneToon.Editor
                     if (activeLayer.pixels != null && !activeLayer.locked)
                     {
                         bool modified;
+                        // canvasArea = hit test area, texRect = coordinate mapping (zoom/pan aware)
                         BrushCanvasInputHandler.HandleBrushInput(
-                            canvasArea, brush, brushSettings,
+                            canvasArea, texRect, brush, brushSettings,
                             activeLayer.pixels, activeLayer.width, activeLayer.height,
                             out modified);
                         if (modified)
@@ -1060,6 +1099,31 @@ namespace NataneToon.Editor
                         Repaint();
                     }
                     break;
+            }
+        }
+
+        /// <summary>
+        /// Draw a checkerboard pattern for transparency visualization.
+        /// 透過表示用のチェッカーボードパターンを描画
+        /// </summary>
+        private static void DrawCheckerboard(Rect rect, int cellSize)
+        {
+            Color light = new Color(0.4f, 0.4f, 0.4f);
+            Color dark = new Color(0.25f, 0.25f, 0.25f);
+            int cols = Mathf.CeilToInt(rect.width / cellSize);
+            int rows = Mathf.CeilToInt(rect.height / cellSize);
+
+            for (int r = 0; r < rows; r++)
+            {
+                for (int c = 0; c < cols; c++)
+                {
+                    bool isDark = (r + c) % 2 == 0;
+                    float x = rect.x + c * cellSize;
+                    float y = rect.y + r * cellSize;
+                    float w = Mathf.Min(cellSize, rect.xMax - x);
+                    float h = Mathf.Min(cellSize, rect.yMax - y);
+                    EditorGUI.DrawRect(new Rect(x, y, w, h), isDark ? dark : light);
+                }
             }
         }
 
@@ -1283,7 +1347,7 @@ namespace NataneToon.Editor
             if (previewTexture != null)
                 DestroyImmediate(previewTexture);
 
-            previewTexture = new Texture2D(size, size, TextureFormat.RGB24, false);
+            previewTexture = new Texture2D(size, size, TextureFormat.RGBA32, false);
             previewTexture.filterMode = FilterMode.Bilinear;
             previewTexture.wrapMode = TextureWrapMode.Clamp;
             previewTexture.SetPixels(pixels);
@@ -1692,7 +1756,7 @@ namespace NataneToon.Editor
                 {
                     if (!mask[i])
                     {
-                        pixels[i] = Color.black;
+                        pixels[i] = new Color(0f, 0f, 0f, 0f);
                         continue;
                     }
 
@@ -1701,7 +1765,7 @@ namespace NataneToon.Editor
                     if (direction == GradientDirection.Outward)
                         value = 1f - value;
 
-                    pixels[i] = new Color(value, value, value);
+                    pixels[i] = new Color(value, value, value, 1f);
                 }
             }
         }
