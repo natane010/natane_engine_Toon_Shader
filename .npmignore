@@ -1,0 +1,18 @@
+# VPM/UPM package ignore file
+# These files/folders are excluded from the distributed package
+
+# Website (VPM listing site)
+Website/
+Website.meta
+
+# GitHub CI/CD
+.github/
+
+# Git files
+.gitignore
+.gitattributes
+
+# Claude Code config
+.claude/
+CLAUDE.md
+CLAUDE.md.meta
