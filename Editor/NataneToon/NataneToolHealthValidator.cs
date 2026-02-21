@@ -117,7 +117,9 @@ namespace NataneToon.Editor
             new ToolRegistryEntry("RefractionQualityBalancer", "屈折品質バランサー Refraction Balancer",
                 NataneToolMenuPaths.RefractionQualityBalancer, "NataneToon.Editor.RefractionQualityBalancer", ASSEMBLY_TOOLS),
             new ToolRegistryEntry("ShaderVariantCollector", "シェーダーバリアント収集 Shader Variant Collector",
-                NataneToolMenuPaths.ShaderVariantCollector, "ShaderVariantCollector", ASSEMBLY_TOOLS),
+                NataneToolMenuPaths.ShaderVariantCollector, "NataneToon.Editor.ShaderVariantCollector", ASSEMBLY_TOOLS),
+            new ToolRegistryEntry("ShaderVariantStripper", "シェーダーバリアントストリッパー Shader Variant Stripper",
+                NataneToolMenuPaths.ShaderVariantStripper, "NataneToon.Editor.ShaderVariantStripper", ASSEMBLY_TOOLS),
             new ToolRegistryEntry("VRCLightVolumesHelper", "VRCライトボリュームヘルパー VRC Light Volumes Helper",
                 NataneToolMenuPaths.VRCLightVolumesHelper, "NataneToon.Editor.VRCLightVolumesHelper", ASSEMBLY_TOOLS),
 

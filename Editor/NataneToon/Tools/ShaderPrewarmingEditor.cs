@@ -1,9 +1,10 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 
 namespace NataneToon.Editor
 {
@@ -20,20 +21,41 @@ namespace NataneToon.Editor
         // Build callback priority (lower = earlier execution)
         public int callbackOrder => 0;
 
-        private const string SHADER_VARIANT_PATH = "Assets/ShaderVariants/NataneToonShaderVariants.shadervariants";
         private const string PREWARM_ENABLED_KEY = "NataneToon_PrewarmOnBuild";
         private const string AUTO_FIND_ENABLED_KEY = "NataneToon_AutoFindVariants";
 
+        // Natane shader names for filtering
+        private static readonly HashSet<string> NataneShaderNames = new HashSet<string>
+        {
+            "Natane/Toon Shader",
+            "Natane/Toon Shader (Cutout)",
+            "Natane/Toon Shader (Transparent)",
+            "Natane/Toon Shader Wirelight"
+        };
+
         /// <summary>
-        /// Automatically prewarm shaders before build
+        /// Automatically prewarm shaders before build.
+        /// Also auto-collects variants if the collection is empty.
+        /// ビルド前にシェーダーを自動プリウォーム。
+        /// コレクションが空の場合は自動収集も実行。
         /// </summary>
         public void OnPreprocessBuild(BuildReport report)
         {
-            if (EditorPrefs.GetBool(PREWARM_ENABLED_KEY, true))
+            if (!EditorPrefs.GetBool(PREWARM_ENABLED_KEY, true))
+                return;
+
+            Debug.Log("[Natane Toon] Pre-build shader prewarming started...");
+
+            // Auto-collect if collection is empty
+            ShaderVariantCollection collection = FindShaderVariantCollection();
+            if (collection != null && collection.variantCount == 0)
             {
-                Debug.Log("[Natane Toon] Pre-build shader prewarming started...");
-                PrewarmShaders(true);
+                Debug.Log("[Natane Toon] コレクションが空です。マテリアルから自動収集します... " +
+                          "Collection is empty. Auto-collecting from materials...");
+                AutoCollectVariantsFromMaterials(collection);
             }
+
+            PrewarmShaders(false);
         }
 
         /// <summary>
@@ -70,26 +92,54 @@ namespace NataneToon.Editor
         }
 
         /// <summary>
-        /// Main prewarming logic
+        /// Main prewarming logic with progress bar support.
+        /// プログレスバー対応のメインプリウォーミングロジック。
         /// </summary>
         private static void PrewarmShaders(bool showDialog)
         {
             float startTime = Time.realtimeSinceStartup;
             int totalWarmed = 0;
 
-            // Method 1: Prewarm ShaderVariantCollection if exists
-            ShaderVariantCollection collection = FindShaderVariantCollection();
-            if (collection != null)
+            try
             {
-                PrewarmShaderVariantCollection(collection);
-                totalWarmed += collection.variantCount;
-            }
+                // Stage 1: Prewarm ShaderVariantCollection if exists
+                EditorUtility.DisplayProgressBar(
+                    "シェーダープリウォーミング Shader Prewarming",
+                    "ShaderVariantCollectionを検索中... Finding ShaderVariantCollection...",
+                    0.1f);
 
-            // Method 2: Auto-find and prewarm all Natane Toon Shader materials
-            if (EditorPrefs.GetBool(AUTO_FIND_ENABLED_KEY, true))
+                ShaderVariantCollection collection = FindShaderVariantCollection();
+                if (collection != null)
+                {
+                    EditorUtility.DisplayProgressBar(
+                        "シェーダープリウォーミング Shader Prewarming",
+                        $"コレクションをウォームアップ中... Warming up collection ({collection.variantCount} variants)...",
+                        0.3f);
+
+                    PrewarmShaderVariantCollection(collection);
+                    totalWarmed += collection.variantCount;
+                }
+
+                // Stage 2: Auto-find and prewarm all Natane Toon Shader materials
+                if (EditorPrefs.GetBool(AUTO_FIND_ENABLED_KEY, true))
+                {
+                    EditorUtility.DisplayProgressBar(
+                        "シェーダープリウォーミング Shader Prewarming",
+                        "Natane Toonマテリアルをウォームアップ中... Warming up Natane Toon materials...",
+                        0.6f);
+
+                    int materialCount = PrewarmAllNataneToonMaterials();
+                    totalWarmed += materialCount;
+                }
+
+                EditorUtility.DisplayProgressBar(
+                    "シェーダープリウォーミング Shader Prewarming",
+                    "完了 Complete!",
+                    1.0f);
+            }
+            finally
             {
-                int materialCount = PrewarmAllNataneToonMaterials();
-                totalWarmed += materialCount;
+                EditorUtility.ClearProgressBar();
             }
 
             float elapsedTime = Time.realtimeSinceStartup - startTime;
@@ -125,6 +175,9 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Find all materials using Natane Toon Shader and prewarm them
+        /// using a temporary ShaderVariantCollection (targeted, not Shader.WarmupAllShaders).
+        /// Natane Toon Shaderを使用する全マテリアルを一時ShaderVariantCollectionで
+        /// ターゲット指定でプリウォームします。
         /// </summary>
         private static int PrewarmAllNataneToonMaterials()
         {
@@ -132,61 +185,74 @@ namespace NataneToon.Editor
             int materialCount = 0;
             HashSet<string> uniqueShaderNames = new HashSet<string>();
 
+            // Create a temporary ShaderVariantCollection for targeted warmup
+            ShaderVariantCollection tempCollection = new ShaderVariantCollection();
+
             foreach (string guid in materialGUIDs)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
 
                 if (material == null || material.shader == null)
-                {
                     continue;
-                }
 
-                // Check if it's a Natane Toon Shader
-                if (!IsNataneToonShader(material.shader.name))
-                {
+                if (!NataneShaderNames.Contains(material.shader.name))
                     continue;
-                }
 
                 materialCount++;
                 uniqueShaderNames.Add(material.shader.name);
+
+                // Add base variant for this shader
+                var variant = new ShaderVariantCollection.ShaderVariant
+                {
+                    shader = material.shader,
+                    passType = PassType.ForwardBase,
+                    keywords = new string[] { }
+                };
+
+                if (!tempCollection.Contains(variant))
+                {
+                    tempCollection.Add(variant);
+                }
             }
 
-            // WarmupAllShaders affects all loaded shaders, so running it once is sufficient.
+            // Warm up only Natane Toon shader variants
             if (materialCount > 0)
             {
-                Shader.WarmupAllShaders();
-                Debug.Log($"[Natane Toon] Prewarmed {materialCount} Natane Toon materials across {uniqueShaderNames.Count} shaders");
+                tempCollection.WarmUp();
+                Debug.Log($"[Natane Toon] Prewarmed {materialCount} Natane Toon materials " +
+                          $"across {uniqueShaderNames.Count} shaders (targeted warmup)");
             }
 
             return materialCount;
         }
 
-        private static bool IsNataneToonShader(string shaderName)
-        {
-            return shaderName.Contains("Natane") && shaderName.Contains("Toon");
-        }
-
         /// <summary>
-        /// Find ShaderVariantCollection asset
+        /// Dynamically find the ShaderVariantCollection asset.
+        /// Searches multiple known paths to support both Assets and UPM package layouts.
+        /// ShaderVariantCollectionアセットを動的に検索します。
+        /// Assets配置とUPMパッケージ配置の両方をサポートします。
         /// </summary>
         private static ShaderVariantCollection FindShaderVariantCollection()
         {
-            // Try to find at the default path first
-            ShaderVariantCollection collection = AssetDatabase.LoadAssetAtPath<ShaderVariantCollection>(SHADER_VARIANT_PATH);
+            string resolvedPath = FindShaderVariantPath();
 
-            if (collection != null)
+            if (!string.IsNullOrEmpty(resolvedPath))
             {
-                return collection;
+                ShaderVariantCollection collection =
+                    AssetDatabase.LoadAssetAtPath<ShaderVariantCollection>(resolvedPath);
+                if (collection != null)
+                    return collection;
             }
 
-            // If not found, search all ShaderVariantCollections
+            // Fallback: search all ShaderVariantCollections by name
             string[] collectionGUIDs = AssetDatabase.FindAssets("t:ShaderVariantCollection");
 
             foreach (string guid in collectionGUIDs)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
-                collection = AssetDatabase.LoadAssetAtPath<ShaderVariantCollection>(path);
+                ShaderVariantCollection collection =
+                    AssetDatabase.LoadAssetAtPath<ShaderVariantCollection>(path);
 
                 if (collection != null && collection.name.Contains("NataneToon"))
                 {
@@ -195,8 +261,145 @@ namespace NataneToon.Editor
                 }
             }
 
-            Debug.LogWarning("[Natane Toon] No ShaderVariantCollection found. Create one at: " + SHADER_VARIANT_PATH);
+            Debug.LogWarning("[Natane Toon] No ShaderVariantCollection found. " +
+                           "Use Tools > Natane > Shader > Shader Variant Collector to create one.");
             return null;
+        }
+
+        /// <summary>
+        /// Dynamically resolve the ShaderVariantCollection file path.
+        /// Checks AssetDatabase search first, then known fallback paths.
+        /// ShaderVariantCollectionファイルパスを動的に解決します。
+        /// まずAssetDatabase検索、次に既知のフォールバックパスを確認します。
+        /// </summary>
+        private static string FindShaderVariantPath()
+        {
+            // 1. Search via AssetDatabase
+            string[] guids = AssetDatabase.FindAssets("NataneToonShaderVariants t:ShaderVariantCollection");
+            if (guids.Length > 0)
+            {
+                return AssetDatabase.GUIDToAssetPath(guids[0]);
+            }
+
+            // 2. Check known fallback paths
+            string[] knownPaths = new string[]
+            {
+                "Assets/natane_engine_Toon_Shader/ShaderVariants/NataneToonShaderVariants.shadervariants",
+                "Packages/com.natane.toonshader/ShaderVariants/NataneToonShaderVariants.shadervariants",
+                "Assets/ShaderVariants/NataneToonShaderVariants.shadervariants",
+            };
+
+            foreach (string path in knownPaths)
+            {
+                if (AssetDatabase.LoadAssetAtPath<ShaderVariantCollection>(path) != null)
+                {
+                    return path;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Auto-collect variants from project materials into the given collection.
+        /// Runs when the collection is empty at build time.
+        /// プロジェクトマテリアルからバリアントを自動収集します。
+        /// ビルド時にコレクションが空の場合に実行されます。
+        /// </summary>
+        private static void AutoCollectVariantsFromMaterials(ShaderVariantCollection collection)
+        {
+            if (collection == null) return;
+
+            string[] materialGuids = AssetDatabase.FindAssets("t:Material");
+            var uniqueSets = new HashSet<string>();
+            var keywordSets = new List<string[]>();
+            int nataneMaterialCount = 0;
+
+            foreach (string guid in materialGuids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+
+                if (material == null || material.shader == null)
+                    continue;
+
+                if (!NataneShaderNames.Contains(material.shader.name))
+                    continue;
+
+                nataneMaterialCount++;
+
+                string[] keywords = material.shaderKeywords
+                    .Where(k => !string.IsNullOrEmpty(k))
+                    .Distinct()
+                    .OrderBy(k => k)
+                    .ToArray();
+
+                string key = string.Join(";", keywords);
+                if (uniqueSets.Add(key))
+                {
+                    keywordSets.Add(keywords);
+                }
+            }
+
+            // Always include base variant
+            if (uniqueSets.Add(string.Empty))
+            {
+                keywordSets.Insert(0, new string[] { });
+            }
+
+            // Find shaders and add variants
+            Shader opaqueShader = Shader.Find("Natane/Toon Shader");
+            Shader cutoutShader = Shader.Find("Natane/Toon Shader (Cutout)");
+            Shader transparentShader = Shader.Find("Natane/Toon Shader (Transparent)");
+            Shader wirelightShader = Shader.Find("Natane/Toon Shader Wirelight");
+
+            int totalAdded = 0;
+
+            foreach (string[] keywords in keywordSets)
+            {
+                totalAdded += AddVariantSafe(collection, opaqueShader, PassType.ForwardBase, keywords);
+                totalAdded += AddVariantSafe(collection, opaqueShader, PassType.ForwardAdd, keywords);
+                totalAdded += AddVariantSafe(collection, cutoutShader, PassType.ForwardBase, keywords);
+                totalAdded += AddVariantSafe(collection, cutoutShader, PassType.ForwardAdd, keywords);
+                totalAdded += AddVariantSafe(collection, transparentShader, PassType.ForwardBase, keywords);
+                totalAdded += AddVariantSafe(collection, transparentShader, PassType.ForwardAdd, keywords);
+                totalAdded += AddVariantSafe(collection, wirelightShader, PassType.ForwardBase, keywords);
+            }
+
+            // ShadowCaster base variants
+            totalAdded += AddVariantSafe(collection, opaqueShader, PassType.ShadowCaster, new string[] { });
+            totalAdded += AddVariantSafe(collection, cutoutShader, PassType.ShadowCaster, new string[] { });
+            totalAdded += AddVariantSafe(collection, transparentShader, PassType.ShadowCaster, new string[] { });
+
+            EditorUtility.SetDirty(collection);
+            AssetDatabase.SaveAssets();
+
+            Debug.Log($"[Natane Toon] Auto-collected {totalAdded} variants from {nataneMaterialCount} materials " +
+                      $"({keywordSets.Count} unique keyword sets)");
+        }
+
+        /// <summary>
+        /// Safely add a variant to a collection. Returns 1 if added, 0 if skipped.
+        /// </summary>
+        private static int AddVariantSafe(ShaderVariantCollection collection, Shader shader,
+            PassType passType, string[] keywords)
+        {
+            if (shader == null || collection == null) return 0;
+
+            var variant = new ShaderVariantCollection.ShaderVariant
+            {
+                shader = shader,
+                passType = passType,
+                keywords = keywords
+            };
+
+            if (!collection.Contains(variant))
+            {
+                collection.Add(variant);
+                return 1;
+            }
+
+            return 0;
         }
     }
 
@@ -290,20 +493,11 @@ namespace NataneToon.Editor
             {
                 EditorApplication.delayCall += () =>
                 {
-                    EditorUtility.DisplayProgressBar("Shader Prewarming", "Prewarming shaders...", 0.5f);
-
-                    try
-                    {
-                        // Use reflection to call private method
-                        var method = typeof(ShaderPrewarmingEditor).GetMethod(
-                            "PrewarmShaders",
-                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-                        method.Invoke(null, new object[] { true });
-                    }
-                    finally
-                    {
-                        EditorUtility.ClearProgressBar();
-                    }
+                    // Use reflection to call private method
+                    var method = typeof(ShaderPrewarmingEditor).GetMethod(
+                        "PrewarmShaders",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                    method.Invoke(null, new object[] { true });
                 };
             }
 
@@ -337,14 +531,14 @@ namespace NataneToon.Editor
             if (runtimeScriptExists)
             {
                 EditorGUILayout.HelpBox(
-                    "✓ ランタイムプリウォーミングスクリプトが有効です Runtime prewarming script is ENABLED\n" +
+                    "ランタイムプリウォーミングスクリプトが有効です Runtime prewarming script is ENABLED\n" +
                     "場所 Location: " + RUNTIME_SCRIPT_PATH,
                     MessageType.Info);
             }
             else
             {
                 EditorGUILayout.HelpBox(
-                    "✗ ランタイムプリウォーミングスクリプトが無効です Runtime prewarming script is DISABLED",
+                    "ランタイムプリウォーミングスクリプトが無効です Runtime prewarming script is DISABLED",
                     MessageType.None);
             }
 

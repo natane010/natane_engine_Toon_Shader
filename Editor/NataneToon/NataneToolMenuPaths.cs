@@ -42,6 +42,7 @@ namespace NataneToon.Editor
 
         public const string ShaderVariantCollector = "Tools/Natane/シェーダー Shader/シェーダーバリアント収集 Shader Variant Collector";
         public const string ShaderPrewarming = "Tools/Natane/シェーダー Shader/シェーダープリウォーミング Shader Prewarming/設定 Settings";
+        public const string ShaderVariantStripper = "Tools/Natane/シェーダー Shader/バリアントストリッピング設定 Variant Stripping Settings";
         public const string VRCLightVolumesHelper = "Tools/Natane/VRChat/VRCライトボリュームヘルパー VRC Light Volumes Helper";
 
         public const string UVTextureGenerator = "Tools/Natane/UVテクスチャ生成 UV Texture Generator";
@@ -69,6 +70,8 @@ namespace NataneToon.Editor
             { "ParticleEffectEditor", ParticleEffectEditor },
             { "VTuberPresetGenerator", VTuberPresetGenerator },
             { "ShaderPrewarming", ShaderPrewarming },
+            { "ShaderVariantStripper", ShaderVariantStripper },
+            { "ShaderVariantCollector", ShaderVariantCollector },
             { "AssetReferenceChecker", AssetReferenceChecker }
         };
 
@@ -168,7 +171,7 @@ namespace NataneToon.Editor
                 RimLightDirectionVisualizer, ScreenFXSetup,
                 PerformanceBudgetTool, TextureOptimizer, OutlineOptimizer, RefractionQualityBalancer, AssetReferenceChecker,
                 LilToonMigration, BatchMaterialConverter, PrefabVariantConverter,
-                ShaderVariantCollector, ShaderPrewarming, VRCLightVolumesHelper,
+                ShaderVariantCollector, ShaderPrewarming, ShaderVariantStripper, VRCLightVolumesHelper,
                 UVTextureGenerator, ParticleEffectEditor, VTuberPresetGenerator,
             };
             return paths;
