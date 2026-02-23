@@ -87,6 +87,7 @@ Shader "Natane/Toon Shader"
         _Shadow3rdBorder ("3rd Shadow Border", Range(0, 1)) = 0.15
         _ShadowSteps ("Shadow Steps", Range(1, 10)) = 2
         _ShadowSharpness ("Shadow Sharpness", Range(0.001, 1)) = 0.1
+        _StepBorderSmooth ("Step Border Smooth", Range(0, 1)) = 0
         _ShadowOffset ("Shadow Offset", Range(-1, 1)) = 0
         _LitSoftness ("Lit Area Softness Global Smoothstep", Range(0, 1)) = 0
         _ShadowBlend ("Shadow Blend Softness", Range(0, 1)) = 0

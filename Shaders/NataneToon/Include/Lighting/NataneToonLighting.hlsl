@@ -82,7 +82,8 @@ float ToonShading(float ndotl, float steps, float sharpness)
 
     // Apply anti-aliasing to prevent harsh pixelation while maintaining sharpness
     // Use smaller smoothstep range for cleaner anime look
-    float smoothRange = sharpness * 0.5;
+    // _StepBorderSmooth を追加して段階境界のなじませ幅を拡張
+    float smoothRange = saturate(sharpness + _StepBorderSmooth) * 0.5;
     float smoothedStep = smoothstep(0.5 - smoothRange, 0.5 + smoothRange, stepPosition);
 
     // Combine for final toon value with better precision
@@ -210,7 +211,7 @@ float3 MultiToneShadowColor(float shadowFactor, float3 baseColor)
 
         // Calculate blend width from _ShadowBlend parameter
         // _ShadowBlend=0: 0.02 (sharp, backward compatible), _ShadowBlend=1: 0.5 (wide smooth fade)
-        float blendWidth = max(0.01, lerp(0.02, 0.5, _ShadowBlend));
+        float blendWidth = max(0.01, lerp(0.02, 0.5, _ShadowBlend) + _StepBorderSmooth * 0.3);
 
         // Symmetric multi-tone shadow blending using smoothstep centered on border
         // This creates a natural, even fade around each shadow boundary

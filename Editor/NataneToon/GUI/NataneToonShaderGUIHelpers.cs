@@ -296,6 +296,18 @@ namespace NataneToon.Editor
                 "高い値: 柔らかい境界（イラスト調）\n" +
                 "アニメ調推奨: 0.05-0.15",
                 MessageType.Info);
+
+            drawProperty("_StepBorderSmooth", "段階境界のなじみ");
+            drawHelpToggle("StepBorderSmooth",
+                "🎨 段階境界のなじみ:\n" +
+                "多段階影のステップ間の境界をなじませます。\n\n" +
+                "• 0 = シャープな境界（デフォルト）\n" +
+                "• 0.1-0.3 = 軽いなじみ（推奨）\n" +
+                "• 0.4-0.7 = 柔らかい境界\n" +
+                "• 0.8-1.0 = ほぼグラデーション\n\n" +
+                "💡 「影のシャープネス」とは独立して動作します。\n" +
+                "多段階影の色の遷移にも適用されます。",
+                MessageType.Info);
         }
 
         /// <summary>

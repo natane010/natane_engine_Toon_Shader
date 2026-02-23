@@ -337,38 +337,39 @@ half3 ApplyFinalColorBlending(half3 color)
     return min(color, 1.05);
 }
 
-// Safe additive blending - prevents harsh white spots
-// Optimized version with reduced complexity while maintaining quality
-// Performance: ~40% faster than full version
+// Safe additive blending - prevents harsh white spots while preserving effect colors
+// Balanced compression: allows effect colors to show through on bright surfaces
 half3 SafeAdditiveBlend(half3 baseColor, half3 additiveColor, half strength)
 {
     // Calculate current luminance (using optimized macro)
     half baseLum = CALC_LUMINANCE(baseColor);
 
-    // Combined compression: reduce strength as brightness increases
-    // and on very dark colors to prevent unnatural highlights
-    half compressionFactor = saturate(1.0 - baseLum * 0.8);
-    half darknessFactor = smoothstep(0.0, 0.2, baseLum);
-    half finalStrength = strength * compressionFactor * darknessFactor;
+    // Gentle compression: reduce strength as brightness increases
+    // but keep enough headroom for effect colors to remain visible
+    half compressionFactor = saturate(1.0 - baseLum * 0.4);
+    half darknessFactor = smoothstep(0.0, 0.05, baseLum);
+    half finalStrength = strength * max(compressionFactor * darknessFactor, 0.15);
 
-    // For dark colored surfaces, tint additive towards base hue
+    // For dark colored surfaces, lightly tint additive towards base hue
     half3 tintedAdditive = additiveColor;
     if (baseLum < 0.3 && baseLum > 0.01)
     {
         half3 baseDir = normalize(baseColor + 0.01);
         half tintAmount = (0.3 - baseLum) * 1.67; // 1.67 = 1/0.6 optimization
-        tintedAdditive = lerp(additiveColor, additiveColor * baseDir * 2.0, tintAmount * 0.5);
+        tintedAdditive = lerp(additiveColor, additiveColor * baseDir * 2.0, tintAmount * 0.2);
     }
 
     // Apply additive with strength control
     half3 result = baseColor + tintedAdditive * finalStrength;
 
-    // Soft clamp: compress values above 0.95
+    // Hue-preserving soft clamp: compress luminance while keeping color direction
     half resultLum = CALC_LUMINANCE(result);
     if (resultLum > 0.95)
     {
-        half compression = smoothstep(0.95, 1.2, resultLum);
-        result = lerp(result, 0.98, compression * 0.5);
+        half compression = smoothstep(0.95, 1.3, resultLum);
+        half3 resultDir = result / max(resultLum, 0.01);
+        half clampedLum = lerp(resultLum, 0.98, compression * 0.5);
+        result = resultDir * clampedLum;
     }
 
     return result;
@@ -380,8 +381,8 @@ half3 SafeAdditiveBlend(half3 baseColor, half3 additiveColor, half strength)
 half3 SafeAdditiveBlendFast(half3 baseColor, half3 additiveColor, half strength)
 {
     half baseLum = CALC_LUMINANCE(baseColor);
-    half compression = saturate(1.0 - baseLum * 0.75);
-    return baseColor + additiveColor * strength * compression;
+    half compression = saturate(1.0 - baseLum * 0.4);
+    return baseColor + additiveColor * strength * max(compression, 0.15);
 }
 
 // ===== Blend Mode Functions for Makeup Textures =====

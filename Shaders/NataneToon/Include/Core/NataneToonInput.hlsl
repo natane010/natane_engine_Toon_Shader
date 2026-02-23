@@ -73,6 +73,7 @@ CBUFFER_START(UnityPerMaterial)
     float _Shadow3rdBorder;
     float _ShadowSteps;
     float _ShadowSharpness;
+    float _StepBorderSmooth;
     float _ShadowOffset;
     float _LitSoftness;
     float _ShadowBlend;

@@ -536,7 +536,7 @@ half4 frag(v2f i) : SV_Target
 
         // Use safe additive blending to prevent white-out
         half3 preSpec = col.rgb;
-        col.rgb = SafeAdditiveBlend(col.rgb, specContrib, saturate(spec * 0.5 + 0.5));
+        col.rgb = SafeAdditiveBlend(col.rgb, specContrib, saturate(length(specContrib) * 0.5));
         col.rgb = ApplyEffectBlendPost(preSpec, col.rgb, _SpecularBlend, _SpecularBlendMode);
     #endif
 
@@ -721,7 +721,7 @@ half4 frag(v2f i) : SV_Target
 
         // Blend modes: 0=Add (safe), 1=Multiply, 2=Replace - Optimized: no branching
         half3 preMatCap = col.rgb;
-        half matcapStrength = saturate(_MatCapIntensity * matcapMask * HALF_VALUE);
+        half matcapStrength = saturate(_MatCapIntensity * matcapMask);
         half3 addResult = SafeAdditiveBlend(col.rgb, matcap, matcapStrength);
         half3 multiplyResult = BlendWithSoftMask(col.rgb, col.rgb * matcap, saturate(_MatCapIntensity * matcapMask));
         half3 replaceResult = BlendWithSoftMask(col.rgb, matcap, saturate(_MatCapIntensity * matcapMask));
@@ -745,7 +745,7 @@ half4 frag(v2f i) : SV_Target
         matcap2 *= _Glossiness * (1.0 - _MatteEffect);
 
         half3 preMatCap2 = col.rgb;
-        half matcapStrength2 = saturate(_MatCapIntensity2 * matcapMask2 * HALF_VALUE);
+        half matcapStrength2 = saturate(_MatCapIntensity2 * matcapMask2);
         half3 addResult2 = SafeAdditiveBlend(col.rgb, matcap2, matcapStrength2);
         half3 multiplyResult2 = BlendWithSoftMask(col.rgb, col.rgb * matcap2, saturate(_MatCapIntensity2 * matcapMask2));
         half3 replaceResult2 = BlendWithSoftMask(col.rgb, matcap2, saturate(_MatCapIntensity2 * matcapMask2));
@@ -768,7 +768,7 @@ half4 frag(v2f i) : SV_Target
         matcap3 *= _Glossiness * (1.0 - _MatteEffect);
 
         half3 preMatCap3 = col.rgb;
-        half matcapStrength3 = saturate(_MatCapIntensity3 * matcapMask3 * HALF_VALUE);
+        half matcapStrength3 = saturate(_MatCapIntensity3 * matcapMask3);
         half3 addResult3 = SafeAdditiveBlend(col.rgb, matcap3, matcapStrength3);
         half3 multiplyResult3 = BlendWithSoftMask(col.rgb, col.rgb * matcap3, saturate(_MatCapIntensity3 * matcapMask3));
         half3 replaceResult3 = BlendWithSoftMask(col.rgb, matcap3, saturate(_MatCapIntensity3 * matcapMask3));
@@ -865,7 +865,7 @@ half4 frag(v2f i) : SV_Target
         emission += glow * step(0.001, _EmissionGlow); // Conditional add without branch
 
         // Use safe additive blending to prevent white-out
-        half emissionStrength = saturate(length(emission) * emissionMask * 0.3);
+        half emissionStrength = saturate(length(emission) * emissionMask * 0.6);
         half3 preEmission = col.rgb;
         col.rgb = SafeAdditiveBlend(col.rgb, emission, emissionStrength);
         col.rgb = ApplyEffectBlendPost(preEmission, col.rgb, _EmissionBlend, _EmissionBlendMode);

@@ -83,6 +83,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _ShadowColor ("Shadow Color 1st", Color) = (0.5, 0.5, 0.5, 1)
         _ShadowSteps ("Shadow Steps", Range(1, 10)) = 2
         _ShadowSharpness ("Shadow Sharpness", Range(0.001, 1)) = 0.1
+        _StepBorderSmooth ("Step Border Smooth", Range(0, 1)) = 0
         _ShadowOffset ("Shadow Offset", Range(-1, 1)) = 0
         _LitSoftness ("Lit Area Softness Global Smoothstep", Range(0, 1)) = 0
         _ShadowBlend ("Shadow Blend Softness", Range(0, 1)) = 0
