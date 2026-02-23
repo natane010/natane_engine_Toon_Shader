@@ -240,6 +240,50 @@ half SpecularHighlight(half3 normal, half3 viewDir, half3 lightDir, half size, h
 }
 #endif // _SPECULAR
 
+// Hair Specular (Kajiya-Kay)
+#if defined(_HAIR_SPECULAR)
+half KajiyaKaySpecular(half3 shiftedTangent, half3 halfVector, half exponent)
+{
+    half TdotH = dot(shiftedTangent, halfVector);
+    half sinTH = sqrt(max(0.001, 1.0 - TdotH * TdotH));
+    return pow(sinTH, exponent);
+}
+
+half3 HairSpecularHighlight(half3 worldNormal, half3 worldTangent, half3 worldBinormal,
+                             half3 viewDir, half3 lightDir, float2 uv)
+{
+    half3 halfVec = normalize(lightDir + viewDir);
+
+    // Use binormal as primary tangent direction (hair strands typically follow V-axis)
+    half3 tangent = worldBinormal;
+
+    // Sample shift texture if enabled
+    half shiftTexValue = 0.0;
+    #ifdef _HAIR_SPEC_SHIFT_TEX
+        shiftTexValue = tex2D(_HairSpecShiftTex, uv).r - 0.5;
+    #endif
+
+    // Shift tangent along normal for each lobe
+    half3 shiftedTangent1 = normalize(tangent + worldNormal * (_HairSpecShift1 + shiftTexValue));
+    half3 shiftedTangent2 = normalize(tangent + worldNormal * (_HairSpecShift2 + shiftTexValue));
+
+    // Calculate two specular lobes
+    half spec1 = KajiyaKaySpecular(shiftedTangent1, halfVec, _HairSpecWidth1);
+    half spec2 = KajiyaKaySpecular(shiftedTangent2, halfVec, _HairSpecWidth2);
+
+    // Combine lobes with their colors
+    half3 specular = spec1 * _HairSpecColor1.rgb + spec2 * _HairSpecColor2.rgb;
+
+    // Apply mask if enabled
+    #ifdef _HAIR_SPEC_MASK
+        half mask = tex2D(_HairSpecMask, uv).r;
+        specular *= mask;
+    #endif
+
+    return specular * _HairSpecIntensity;
+}
+#endif // _HAIR_SPECULAR
+
 // Rim Light Calculation
 // Creates highlights at grazing angles (edges of objects)
 #if defined(_RIM_LIGHT)
@@ -357,22 +401,52 @@ float3 CalculateRefraction(float3 worldNormal, float3 viewDir, float refractionI
 
 // SDF Shadow Map
 // Uses signed distance field to add directional-independent shadows (like face shadows)
-float ApplySDFShadow(float2 uv, float ndotl)
+float ApplySDFShadow(float2 uv, float ndotl, float3 lightDir, float3 worldPos)
 {
     #ifdef _SDF_MAP
-        // Sample SDF map (white = lit, black = shadow)
-        float sdfValue = tex2D(_SDFMap, uv).r;
+        #ifdef _FACE_SDF_ROTATION
+            // Transform face directions from object to world space
+            float3 faceForward = normalize(mul((float3x3)unity_ObjectToWorld, _FaceForwardDirection.xyz));
+            float3 faceRight = normalize(mul((float3x3)unity_ObjectToWorld, _FaceRightDirection.xyz));
+            float3 faceUp = cross(faceForward, faceRight);
 
-        // Apply offset to adjust shadow threshold
-        sdfValue = saturate(sdfValue + _SDFOffset);
+            // Project light direction onto face plane (remove vertical component)
+            float3 lightDirFlat = normalize(lightDir - dot(lightDir, faceUp) * faceUp);
 
-        // Apply softness to blend shadow edges
-        float shadowEdge = _SDFSoftness * 0.5;
-        float sdfShadow = smoothstep(0.5 - shadowEdge, 0.5 + shadowEdge, sdfValue);
+            // Calculate light direction relative to face
+            float FdotL = dot(faceForward, lightDirFlat);
+            float RdotL = dot(faceRight, lightDirFlat);
 
-        // Combine SDF shadow with lighting shadow using intensity control
-        // Higher intensity = more pronounced SDF shadows
-        return lerp(ndotl, ndotl * sdfShadow, _SDFIntensity);
+            // Mirror UV.x when light comes from the left
+            float2 sdfUV = uv;
+            sdfUV.x = (RdotL < 0) ? (1.0 - sdfUV.x) : sdfUV.x;
+
+            // Sample SDF map
+            float sdfValue = tex2D(_SDFMap, sdfUV).r;
+
+            // Threshold based on forward dot light
+            float threshold = FdotL * 0.5 + 0.5 + _SDFOffset;
+
+            // Apply softness
+            float shadowEdge = _SDFSoftness * 0.5;
+            float sdfShadow = smoothstep(threshold - shadowEdge, threshold + shadowEdge, sdfValue);
+
+            // SDF fully controls face shadow when rotation is enabled
+            return lerp(ndotl, sdfShadow, _SDFIntensity);
+        #else
+            // Original UV-fixed behavior
+            float sdfValue = tex2D(_SDFMap, uv).r;
+
+            // Apply offset to adjust shadow threshold
+            sdfValue = saturate(sdfValue + _SDFOffset);
+
+            // Apply softness to blend shadow edges
+            float shadowEdge = _SDFSoftness * 0.5;
+            float sdfShadow = smoothstep(0.5 - shadowEdge, 0.5 + shadowEdge, sdfValue);
+
+            // Combine SDF shadow with lighting shadow using intensity control
+            return lerp(ndotl, ndotl * sdfShadow, _SDFIntensity);
+        #endif
     #else
         return ndotl;
     #endif

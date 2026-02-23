@@ -170,6 +170,7 @@ public class NataneToonShaderGUI : ShaderGUI
     private bool showVideo;
     private bool showAudioLink;
     private bool showDistanceFade;
+    private bool showHairSpecular;
 
     public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties)
     {
@@ -939,6 +940,63 @@ public class NataneToonShaderGUI : ShaderGUI
         }
     }
 
+    private void DrawHairSpecularSection()
+    {
+        EditorGUI.BeginChangeCheck();
+        showHairSpecular = EditorGUILayout.Foldout(showHairSpecular, "ヘアスペキュラー（Kajiya-Kay）", true, EditorStyles.foldoutHeader);
+        if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
+
+        if (showHairSpecular)
+        {
+            EditorGUI.indentLevel++;
+
+            bool enableHairSpec = DrawToggle("_HAIR_SPECULAR", "_HairSpecular", "ヘアスペキュラーを有効化");
+
+            if (enableHairSpec)
+            {
+                EditorGUI.indentLevel++;
+
+                EditorGUILayout.LabelField("プライマリローブ", EditorStyles.boldLabel);
+                DrawProperty("_HairSpecColor1", "プライマリスペキュラー色");
+                DrawProperty("_HairSpecShift1", "プライマリタンジェントシフト");
+                DrawProperty("_HairSpecWidth1", "プライマリスペキュラー幅");
+
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField("セカンダリローブ", EditorStyles.boldLabel);
+                DrawProperty("_HairSpecColor2", "セカンダリスペキュラー色");
+                DrawProperty("_HairSpecShift2", "セカンダリタンジェントシフト");
+                DrawProperty("_HairSpecWidth2", "セカンダリスペキュラー幅");
+
+                EditorGUILayout.Space(5);
+                DrawProperty("_HairSpecIntensity", "ヘアスペキュラー強度");
+
+                EditorGUILayout.Space(5);
+                DrawProperty("_HairSpecMask", "ヘアスペキュラーマスク");
+                DrawProperty("_HairSpecShiftTex", "シフトテクスチャ");
+
+                DrawBlendControls(materialEditor, targetMaterial, "_HairSpecBlend", "_HairSpecBlendMode", null);
+
+                DrawHelpToggle("HairSpecular",
+                    "💇 ヘアスペキュラー（Kajiya-Kay）:\n" +
+                    "髪の毛専用の異方性スペキュラーハイライトです。\n" +
+                    "「天使の輪」（エンジェルリング）効果を再現します。\n\n" +
+                    "• プライマリローブ: メインのハイライト\n" +
+                    "• セカンダリローブ: 補助的なハイライト\n" +
+                    "• タンジェントシフト: ハイライトの位置をずらす\n" +
+                    "• シフトテクスチャ: ピクセルごとのシフト制御\n\n" +
+                    "💡 使い方:\n" +
+                    "髪のマテリアルに使用し、光源に応じたリアルな\n" +
+                    "髪のハイライトを表現します。",
+                    MessageType.Info);
+
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUI.indentLevel--;
+            EditorGUILayout.Space();
+        }
+    }
+
     private void DrawRimLightSection()
     {
         EditorGUI.BeginChangeCheck();
@@ -1404,6 +1462,29 @@ public class NataneToonShaderGUI : ShaderGUI
                     "💡 使い方:\n" +
                     "アウトラインにグラデーションやアニメーション効果を追加したい場合に使用します。",
                     MessageType.Info);
+
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField("テクスチャカラーアウトライン", EditorStyles.boldLabel);
+
+                bool texColor = DrawToggle("_OUTLINE_TEXTURE_COLOR", "_OutlineTextureColor", "テクスチャ連動カラー");
+                if (texColor)
+                {
+                    EditorGUI.indentLevel++;
+                    DrawProperty("_OutlineTexColorBlend", "テクスチャカラーブレンド");
+                    DrawProperty("_OutlineTexColorDarken", "テクスチャカラー暗化");
+                    DrawHelpToggle("OutlineTextureColor",
+                        "🎨 テクスチャカラーアウトライン:\n" +
+                        "アウトラインの色をベーステクスチャから取得します。\n" +
+                        "アークナイツ：エンドフィールドスタイルのアウトラインを再現。\n\n" +
+                        "• ブレンド: テクスチャ色の混合度\n" +
+                        "• 暗化: テクスチャ色をどの程度暗くするか\n\n" +
+                        "💡 使い方:\n" +
+                        "肌色→暗い肌色、髪色→暗い髪色のように\n" +
+                        "自然なアウトラインカラーを自動生成します。\n" +
+                        "マルチカラーアウトラインと組み合わせ可能です。",
+                        MessageType.Info);
+                    EditorGUI.indentLevel--;
+                }
 
                 EditorGUILayout.Space(5);
 
@@ -2548,6 +2629,7 @@ public class NataneToonShaderGUI : ShaderGUI
         showVideo = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowVideo"), false);
         showAudioLink = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowAudioLink"), false);
         showDistanceFade = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowDistanceFade"), false);
+        showHairSpecular = EditorPrefs.GetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowHairSpecular"), false);
     }
 
     /// <summary>
@@ -2588,6 +2670,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowVideo"), showVideo);
         EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowAudioLink"), showAudioLink);
         EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowDistanceFade"), showDistanceFade);
+        EditorPrefs.SetBool(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "ShowHairSpecular"), showHairSpecular);
     }
 
     // ===== UI HELPER METHODS =====
@@ -2676,6 +2759,7 @@ public class NataneToonShaderGUI : ShaderGUI
     private void DrawEffectsTab()
     {
         SafeDrawSection(DrawSpecularSection, "スペキュラー");
+        SafeDrawSection(DrawHairSpecularSection, "ヘアスペキュラー");
         SafeDrawSection(DrawRimLightSection, "リムライト");
         SafeDrawSection(DrawSSSSection, "SSS");
         SafeDrawSection(DrawMatCapSection, "MatCap");

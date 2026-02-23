@@ -82,6 +82,10 @@ CBUFFER_START(UnityPerMaterial)
     float _SDFSoftness;
     float _SDFOffset;
 
+    // Face SDF Rotation
+    float4 _FaceForwardDirection;
+    float4 _FaceRightDirection;
+
     // Shading Grade Map
     float _ShadingGradeScale;
 
@@ -136,6 +140,19 @@ CBUFFER_START(UnityPerMaterial)
     float _SpecularBlur;
     float4 _SpecularMaskScrollSpeed;
     float _SpecularMaskRotateSpeed;
+    #endif
+
+    // Hair Specular (Kajiya-Kay)
+    #if defined(_HAIR_SPECULAR)
+    half4 _HairSpecColor1;
+    float _HairSpecShift1;
+    float _HairSpecWidth1;
+    half4 _HairSpecColor2;
+    float _HairSpecShift2;
+    float _HairSpecWidth2;
+    float _HairSpecIntensity;
+    float _HairSpecBlend;
+    float _HairSpecBlendMode;
     #endif
 
     // Rim Light
@@ -492,6 +509,12 @@ sampler2D _AOMap;
 // Specular
 #if defined(_SPECULAR)
 sampler2D _SpecularMask;
+#endif
+
+// Hair Specular
+#if defined(_HAIR_SPECULAR)
+sampler2D _HairSpecMask;
+sampler2D _HairSpecShiftTex;
 #endif
 
 // Rim Light

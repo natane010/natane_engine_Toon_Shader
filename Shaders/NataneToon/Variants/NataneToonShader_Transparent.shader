@@ -98,6 +98,9 @@ Shader "Natane/Toon Shader (Transparent)"
         _SDFIntensity ("SDF Intensity", Range(0, 1)) = 0.5
         _SDFSoftness ("SDF Softness", Range(0, 1)) = 0.1
         _SDFOffset ("SDF Offset", Range(-1, 1)) = 0
+        [Toggle(_FACE_SDF_ROTATION)] _FaceSDFRotation ("Face SDF Rotation", Float) = 0
+        _FaceForwardDirection ("Face Forward Direction", Vector) = (0,0,1,0)
+        _FaceRightDirection ("Face Right Direction", Vector) = (1,0,0,0)
         [Space(10)]
         [Toggle(_SHADING_GRADE_MAP)] _UseGradeMap ("Use Shading Grade Map", Float) = 0
         _ShadingGradeMap ("Shading Grade Map", 2D) = "white" {}
@@ -162,6 +165,22 @@ Shader "Natane/Toon Shader (Transparent)"
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _SpecularBlendMode ("Specular Blend Mode", Float) = 0
         _SpecularBlend ("Specular Blend", Range(0, 1)) = 1
         _SpecularBlur ("Specular Blur", Range(0, 1)) = 0
+
+        [Header(Hair Specular Kajiya Kay)]
+        [Toggle(_HAIR_SPECULAR)] _HairSpecular ("Enable Hair Specular", Float) = 0
+        _HairSpecColor1 ("Primary Spec Color", Color) = (1,1,1,1)
+        _HairSpecShift1 ("Primary Tangent Shift", Range(-1, 1)) = 0.1
+        _HairSpecWidth1 ("Primary Spec Width", Range(1, 256)) = 64
+        _HairSpecColor2 ("Secondary Spec Color", Color) = (0.5,0.5,0.5,1)
+        _HairSpecShift2 ("Secondary Tangent Shift", Range(-1, 1)) = -0.1
+        _HairSpecWidth2 ("Secondary Spec Width", Range(1, 256)) = 32
+        _HairSpecIntensity ("Hair Spec Intensity", Range(0, 2)) = 1
+        [Toggle(_HAIR_SPEC_MASK)] _UseHairSpecMask ("Use Hair Spec Mask", Float) = 0
+        _HairSpecMask ("Hair Spec Mask", 2D) = "white" {}
+        [Toggle(_HAIR_SPEC_SHIFT_TEX)] _UseHairSpecShiftTex ("Use Shift Texture", Float) = 0
+        _HairSpecShiftTex ("Shift Texture", 2D) = "grey" {}
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _HairSpecBlendMode ("Hair Spec Blend Mode", Float) = 0
+        _HairSpecBlend ("Hair Spec Blend", Range(0, 1)) = 1
 
         [Header(Rim Light)]
         [Toggle(_RIM_LIGHT)] _RimLight ("Enable Rim Light", Float) = 0
@@ -264,6 +283,10 @@ Shader "Natane/Toon Shader (Transparent)"
         [Toggle(_OUTLINE_MULTI_COLOR)] _OutlineMultiColor ("Multi-Color Outline", Float) = 0
         _OutlineColor2 ("Outline Color 2", Color) = (0.5,0,0,1)
         _OutlineColorMix ("Color Mix", Range(0, 1)) = 0.5
+        [Space(10)]
+        [Toggle(_OUTLINE_TEXTURE_COLOR)] _OutlineTextureColor ("Texture-linked Color", Float) = 0
+        _OutlineTexColorBlend ("Tex Color Blend", Range(0, 1)) = 0.8
+        _OutlineTexColorDarken ("Tex Color Darken", Range(0, 1)) = 0.5
 
         [Header(Emission)]
         [Toggle(_EMISSION)] _Emission ("Enable Emission", Float) = 0
@@ -547,6 +570,7 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma vertex vert
             #pragma fragment frag
             #pragma shader_feature_local _OUTLINE
+            #pragma shader_feature_local _OUTLINE_TEXTURE_COLOR
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
@@ -577,6 +601,12 @@ Shader "Natane/Toon Shader (Transparent)"
             float _OutlineMode;
             sampler2D _OutlineMask;
             sampler2D _OutlineWidthMap;
+            #ifdef _OUTLINE_TEXTURE_COLOR
+                sampler2D _MainTex;
+                float4 _MainTex_ST;
+                float _OutlineTexColorBlend;
+                float _OutlineTexColorDarken;
+            #endif
 
             v2f vert(appdata v)
             {
@@ -635,6 +665,13 @@ Shader "Natane/Toon Shader (Transparent)"
                 #ifdef _OUTLINE
                     fixed4 col = _OutlineColor;
 
+                    // Apply texture-linked outline color
+                    #ifdef _OUTLINE_TEXTURE_COLOR
+                        fixed4 texColor = tex2D(_MainTex, TRANSFORM_TEX(i.uv, _MainTex));
+                        fixed3 darkenedTexColor = texColor.rgb * (1.0 - _OutlineTexColorDarken);
+                        col.rgb = lerp(col.rgb, darkenedTexColor, _OutlineTexColorBlend);
+                    #endif
+
                     // Apply multi-color outline
                     #ifdef _OUTLINE_MULTI_COLOR
                         // Mix between two colors based on UV or other parameter
@@ -685,6 +722,7 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _USE_MULTI_SHADOW
             #pragma shader_feature_local _SHADOW_RECEIVE_MASK
             #pragma shader_feature_local _SDF_MAP
+            #pragma shader_feature_local _FACE_SDF_ROTATION
             #pragma shader_feature_local _SHADING_GRADE_MAP
             #pragma shader_feature_local _USE_AO
             #pragma shader_feature_local _USE_DITHERING
@@ -692,6 +730,7 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _USE_LIGHT_VOLUME
             #pragma shader_feature_local _LIGHT_VOLUME_SPECULAR
             #pragma shader_feature_local _SPECULAR
+            #pragma shader_feature_local _HAIR_SPECULAR
             #pragma shader_feature_local _RIM_LIGHT
             #pragma shader_feature_local _RIM_LIGHT_2
             #pragma shader_feature_local _SSS
@@ -763,6 +802,7 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _USE_AO
             #pragma shader_feature_local _USE_DITHERING
             #pragma shader_feature_local _SPECULAR
+            #pragma shader_feature_local _HAIR_SPECULAR
             #pragma shader_feature_local _SSS
             #pragma shader_feature_local _NORMALMAP
             #pragma shader_feature_local _DISSOLVE

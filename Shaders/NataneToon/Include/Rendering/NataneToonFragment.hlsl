@@ -156,7 +156,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== SDF Shadow Map =====
     // Apply SDF shadow to ndotl before lighting calculations
-    ndotl = ApplySDFShadow(uv, ndotl);
+    ndotl = ApplySDFShadow(uv, ndotl, lightDir, i.worldPos);
 
     // ===== Backlight Calculation =====
     // Calculate light coming from behind the object (rim-like effect)
@@ -527,6 +527,27 @@ half4 frag(v2f i) : SV_Target
         half3 preSpec = col.rgb;
         col.rgb = SafeAdditiveBlend(col.rgb, specContrib, saturate(spec * 0.5 + 0.5));
         col.rgb = ApplyEffectBlendPost(preSpec, col.rgb, _SpecularBlend, _SpecularBlendMode);
+    #endif
+
+    // ===== Hair Specular (Kajiya-Kay) =====
+    #ifdef _HAIR_SPECULAR
+        half3 hairSpec = HairSpecularHighlight(worldNormal, i.worldTangent, i.worldBinormal,
+                                                viewDir, lightDir, uv);
+        hairSpec *= _LightColor0.rgb * atten;
+
+        // Apply additional light intensity scaling in ForwardAdd pass
+        #ifndef UNITY_PASS_FORWARDBASE
+            hairSpec *= _AdditionalLightIntensity;
+        #endif
+
+        // Apply glossiness and matte effect
+        hairSpec *= _Glossiness * (1.0 - _MatteEffect);
+
+        // Use safe additive blending to prevent white-out
+        half hairSpecStrength = saturate(length(hairSpec) * 0.5);
+        half3 preHairSpec = col.rgb;
+        col.rgb = SafeAdditiveBlend(col.rgb, hairSpec, hairSpecStrength);
+        col.rgb = ApplyEffectBlendPost(preHairSpec, col.rgb, _HairSpecBlend, _HairSpecBlendMode);
     #endif
 
     // ===== Subsurface Scattering =====

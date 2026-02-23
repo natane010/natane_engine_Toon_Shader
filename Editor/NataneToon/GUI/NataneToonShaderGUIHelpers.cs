@@ -419,6 +419,27 @@ namespace NataneToon.Editor
                     "顔の影を細かく制御したい場合や、特定の場所に常に影を落としたい場合に使用します。",
                     MessageType.Info);
             }
+
+            // Face SDF Rotation (Genshin/AK:EF style)
+            bool faceSDFRotation = drawToggle("_FACE_SDF_ROTATION", "_FaceSDFRotation", "Face SDF回転追従を有効化");
+            if (faceSDFRotation)
+            {
+                EditorGUI.indentLevel++;
+                drawProperty("_FaceForwardDirection", "顔の正面方向");
+                drawProperty("_FaceRightDirection", "顔の右方向");
+                drawHelpToggle("FaceSDFRotation",
+                    "🔄 Face SDF回転追従:\n" +
+                    "SDF影がライトの方向に追従して回転します。\n" +
+                    "Genshin Impact / アークナイツ：エンドフィールド スタイルの\n" +
+                    "顔影表現を実現します。\n\n" +
+                    "• 正面方向: キャラの顔が向いている方向（オブジェクト空間）\n" +
+                    "• 右方向: キャラの顔の右側の方向（オブジェクト空間）\n\n" +
+                    "💡 使い方:\n" +
+                    "顔のSDF影がライトの方向に応じて自動的に回転し、\n" +
+                    "どの角度からでも自然な影表現を維持します。",
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
         }
 
         /// <summary>
