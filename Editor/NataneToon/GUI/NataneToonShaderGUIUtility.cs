@@ -189,6 +189,47 @@ namespace NataneToon.Editor
         }
 
         /// <summary>
+        /// Draw a category divider with centered label
+        /// カテゴリ区切り線（中央ラベル付き）
+        /// </summary>
+        public static void DrawCategoryDivider(string label)
+        {
+            EditorGUILayout.Space(8);
+
+            Rect rect = EditorGUILayout.GetControlRect(false, 20);
+            float lineY = rect.y + rect.height * 0.5f;
+
+            // Determine colors based on theme
+            bool isDark = EditorGUIUtility.isProSkin;
+            Color lineColor = isDark ? new Color(0.5f, 0.5f, 0.5f, 0.4f) : new Color(0.3f, 0.3f, 0.3f, 0.3f);
+            Color textColor = isDark ? new Color(0.6f, 0.6f, 0.6f, 0.8f) : new Color(0.4f, 0.4f, 0.4f, 0.8f);
+
+            // Measure text width
+            GUIStyle labelStyle = new GUIStyle(EditorStyles.miniLabel)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = textColor },
+                fontSize = 10
+            };
+            GUIContent content = new GUIContent(label);
+            float textWidth = labelStyle.CalcSize(content).x + 16; // padding
+
+            float centerX = rect.x + rect.width * 0.5f;
+            float halfTextWidth = textWidth * 0.5f;
+
+            // Draw left line
+            EditorGUI.DrawRect(new Rect(rect.x, lineY, centerX - halfTextWidth - rect.x, 1), lineColor);
+
+            // Draw right line
+            EditorGUI.DrawRect(new Rect(centerX + halfTextWidth, lineY, rect.x + rect.width - centerX - halfTextWidth, 1), lineColor);
+
+            // Draw label
+            EditorGUI.LabelField(rect, label, labelStyle);
+
+            EditorGUILayout.Space(4);
+        }
+
+        /// <summary>
         /// Draw a help box with icon
         /// </summary>
         public static void DrawHelpBox(string message, MessageType type = MessageType.Info)

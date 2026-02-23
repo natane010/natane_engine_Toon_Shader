@@ -209,12 +209,13 @@ float3 MultiToneShadowColor(float shadowFactor, float3 baseColor)
         float border3rd = min(_Shadow2ndBorder, _Shadow3rdBorder);
 
         // Calculate blend width from _ShadowBlend parameter
-        // _ShadowBlend=0: 0.05 (backward compatible), _ShadowBlend=1: 0.3 (wide blend)
-        float blendWidth = max(0.01, lerp(0.05, 0.3, _ShadowBlend));
+        // _ShadowBlend=0: 0.02 (sharp, backward compatible), _ShadowBlend=1: 0.5 (wide smooth fade)
+        float blendWidth = max(0.01, lerp(0.02, 0.5, _ShadowBlend));
 
-        // Branchless multi-tone shadow blending using smoothstep + lerp
-        float blend2nd = smoothstep(border2nd - blendWidth, border2nd, shadowFactor);
-        float blend3rd = smoothstep(border3rd - blendWidth, border3rd, shadowFactor);
+        // Symmetric multi-tone shadow blending using smoothstep centered on border
+        // This creates a natural, even fade around each shadow boundary
+        float blend2nd = smoothstep(border2nd - blendWidth * 0.5, border2nd + blendWidth * 0.5, shadowFactor);
+        float blend3rd = smoothstep(border3rd - blendWidth * 0.5, border3rd + blendWidth * 0.5, shadowFactor);
         float3 shadowColor = _ShadowColor.rgb;
         shadowColor = lerp(_Shadow2ndColor.rgb, shadowColor, blend2nd);
         shadowColor = lerp(_Shadow3rdColor.rgb, shadowColor, blend3rd);
@@ -246,7 +247,7 @@ half KajiyaKaySpecular(half3 shiftedTangent, half3 halfVector, half exponent)
 {
     half TdotH = dot(shiftedTangent, halfVector);
     half sinTH = sqrt(max(0.001, 1.0 - TdotH * TdotH));
-    return pow(sinTH, exponent);
+    return saturate(pow(sinTH, exponent));
 }
 
 half3 HairSpecularHighlight(half3 worldNormal, half3 worldTangent, half3 worldBinormal,
@@ -294,6 +295,39 @@ half3 RimLighting(half3 normal, half3 viewDir, half power, half intensity)
     return rim * _RimColor.rgb;
 }
 #endif // _RIM_LIGHT
+
+// Offset Rim Light Calculation
+// Creates rim highlights with manual XY offset and optional light direction linking
+#if defined(_OFFSET_RIM_LIGHT)
+half3 OffsetRimLighting(half3 normal, half3 viewDir, half3 lightDir, half power, half intensity)
+{
+    // ビュー空間に法線を変換してXYオフセットを適用
+    float3 viewNormal = mul((float3x3)UNITY_MATRIX_V, normal);
+
+    // マニュアルオフセット
+    float2 manualOffset = float2(_OffsetRimOffsetX, _OffsetRimOffsetY);
+
+    // ライト方向連動オフセット
+    float3 viewLightDir = mul((float3x3)UNITY_MATRIX_V, lightDir);
+    float2 lightOffset = viewLightDir.xy * _OffsetRimLightDirStrength;
+
+    // オフセット合成（マニュアル + ライト方向 * UseLightDir）
+    float2 totalOffset = manualOffset + lightOffset * _OffsetRimUseLightDir;
+
+    // オフセット適用
+    float3 offsetViewNormal = normalize(float3(viewNormal.xy + totalOffset, viewNormal.z));
+
+    // Fresnel計算（オフセット後）
+    half rim = 1.0 - saturate(dot(offsetViewNormal, float3(0, 0, 1)));
+    rim = pow(rim, power);
+
+    // トゥーンシャープネス
+    rim = smoothstep(_OffsetRimSharpness - 0.01, _OffsetRimSharpness + max(0.02, (1.0 - _OffsetRimSharpness) * 0.5), rim);
+
+    rim *= intensity;
+    return rim * _OffsetRimColor.rgb;
+}
+#endif // _OFFSET_RIM_LIGHT
 
 // Subsurface Scattering (Translucency)
 // Simulates light passing through thin or translucent materials

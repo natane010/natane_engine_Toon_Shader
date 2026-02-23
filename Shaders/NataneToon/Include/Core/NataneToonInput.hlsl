@@ -110,6 +110,8 @@ CBUFFER_START(UnityPerMaterial)
     float _ShadowReceive;
     float _ShadowSmoothing;
     float _ShadowMaxDarkness;
+    float _SmoothNormalShadingBlend;
+    float _SmoothNormalMode;
     float _LightMinInfluence;
     float _LightMaxInfluence;
     float _LightBlend;
@@ -179,6 +181,22 @@ CBUFFER_START(UnityPerMaterial)
     float _Rim2Blur;
     float4 _RimMask2ScrollSpeed;
     float _RimMask2RotateSpeed;
+    #endif
+
+    // Offset Rim Light
+    #if defined(_OFFSET_RIM_LIGHT)
+    half4 _OffsetRimColor;
+    float _OffsetRimPower;
+    float _OffsetRimIntensity;
+    float _OffsetRimOffsetX;
+    float _OffsetRimOffsetY;
+    float _OffsetRimUseLightDir;
+    float _OffsetRimLightDirStrength;
+    float _OffsetRimSharpness;
+    float _OffsetRimShadowMask;
+    float _OffsetRimBlend;
+    float _OffsetRimBlendMode;
+    float _OffsetRimBlur;
     #endif
 
     // MatCap
@@ -524,6 +542,9 @@ sampler2D _RimMask;
 #if defined(_RIM_LIGHT_2)
 sampler2D _RimMask2;
 #endif
+#if defined(_OFFSET_RIM_LIGHT)
+sampler2D _OffsetRimMask;
+#endif
 
 // MatCap
 #if defined(_MATCAP)
@@ -635,6 +656,11 @@ sampler2D _VertexAnimMask;
 sampler2D _DripMask;
 #endif
 
+// Smooth Normal Texture (for Mode 2: Baked Normal Texture)
+#if defined(_SMOOTH_NORMAL)
+sampler2D _SmoothNormalTex;
+#endif
+
 // Hologram (conditionally compiled)
 #if defined(_HOLOGRAM)
 sampler2D _HologramMask;
@@ -672,6 +698,9 @@ struct appdata
     float3 normal : NORMAL;
     float4 tangent : TANGENT;
     float2 uv : TEXCOORD0;
+    #ifdef _SMOOTH_NORMAL
+        float4 color : COLOR;
+    #endif
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
@@ -691,6 +720,9 @@ struct v2f
     #endif
     #if defined(VERTEXLIGHT_ON) && !defined(_PIXEL_VERTEX_LIGHTS)
         float3 vertexLightColor : TEXCOORD8;
+    #endif
+    #ifdef _SMOOTH_NORMAL
+        float3 smoothWorldNormal : TEXCOORD9;
     #endif
     UNITY_VERTEX_OUTPUT_STEREO
 };

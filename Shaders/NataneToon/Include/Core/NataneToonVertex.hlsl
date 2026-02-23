@@ -55,6 +55,7 @@ v2f vert(appdata v)
     v2f o;
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+    UNITY_TRANSFER_INSTANCE_ID(v, o);
 
     // Apply VAT animation before transforming to clip space
     #ifdef _VAT
@@ -77,6 +78,35 @@ v2f vert(appdata v)
     // Calculate binormal (bitangent) using cross product
     // tangent.w contains handedness information for correct orientation
     o.worldBinormal = cross(o.worldNormal, o.worldTangent) * v.tangent.w * unity_WorldTransformParams.w;
+
+    // Smooth Normal: Decode from vertex color and transform to world space for shading
+    #ifdef _SMOOTH_NORMAL
+    {
+        float3 smoothNormalOS = v.normal; // fallback to original
+        if (_SmoothNormalMode < 0.5)
+        {
+            // Mode 0: Vertex Color Object Space
+            smoothNormalOS = v.color.rgb * 2.0 - 1.0;
+        }
+        else if (_SmoothNormalMode < 1.5)
+        {
+            // Mode 1: Vertex Color Tangent Space (lilToon compatible)
+            float3 smoothTS = v.color.rgb * 2.0 - 1.0;
+            float3 binormal = cross(v.normal, v.tangent.xyz) * v.tangent.w;
+            float3x3 tbnOS = float3x3(v.tangent.xyz, binormal, v.normal);
+            smoothNormalOS = mul(smoothTS, tbnOS);
+        }
+        else
+        {
+            // Mode 2: Baked Normal Texture (tangent space, same as outline pass)
+            float3 bakedNormal = tex2Dlod(_SmoothNormalTex, float4(v.uv, 0, 0)).rgb * 2.0 - 1.0;
+            float3 binormal = cross(v.normal, v.tangent.xyz) * v.tangent.w;
+            float3x3 tbnOS = float3x3(v.tangent.xyz, binormal, v.normal);
+            smoothNormalOS = mul(bakedNormal, tbnOS);
+        }
+        o.smoothWorldNormal = UnityObjectToWorldNormal(normalize(smoothNormalOS));
+    }
+    #endif
 
     // Calculate screen position for GrabPass (Refraction) / Dithering Alpha
     #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA)

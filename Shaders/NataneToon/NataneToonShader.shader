@@ -207,6 +207,20 @@ Shader "Natane/Toon Shader"
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _RimBlendMode2 ("Rim 2 Blend Mode", Float) = 0
         _RimBlend2 ("Rim 2 Blend", Range(0, 1)) = 1
         _Rim2Blur ("Rim 2 Blur", Range(0, 1)) = 0
+        [Toggle(_OFFSET_RIM_LIGHT)] _OffsetRimLight ("Enable Offset Rim Light", Float) = 0
+        _OffsetRimColor ("Offset Rim Color", Color) = (0.8,0.9,1,1)
+        _OffsetRimPower ("Offset Rim Power", Range(0.1, 10)) = 3
+        _OffsetRimIntensity ("Offset Rim Intensity", Range(0, 5)) = 1
+        _OffsetRimOffsetX ("Offset Rim X", Range(-1, 1)) = 0.3
+        _OffsetRimOffsetY ("Offset Rim Y", Range(-1, 1)) = 0.1
+        [Toggle] _OffsetRimUseLightDir ("Use Light Direction", Float) = 0
+        _OffsetRimLightDirStrength ("Light Dir Strength", Range(0, 1)) = 0.5
+        _OffsetRimSharpness ("Offset Rim Sharpness", Range(0, 1)) = 0.5
+        _OffsetRimShadowMask ("Shadow Mask", Range(0, 1)) = 0.5
+        _OffsetRimMask ("Offset Rim Mask", 2D) = "white" {}
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _OffsetRimBlendMode ("Offset Rim Blend Mode", Float) = 0
+        _OffsetRimBlend ("Offset Rim Blend", Range(0, 1)) = 1
+        _OffsetRimBlur ("Offset Rim Blur", Range(0, 1)) = 0
         [Space(10)]
         [Toggle(_RIM_DIRECTION_CONTROL)] _RimDirectionControl ("Rim Direction Control", Float) = 0
         _RimLightDirection ("Rim Light Direction", Vector) = (0,1,0,0)
@@ -287,6 +301,11 @@ Shader "Natane/Toon Shader"
         [Toggle(_OUTLINE_TEXTURE_COLOR)] _OutlineTextureColor ("Texture-linked Color", Float) = 0
         _OutlineTexColorBlend ("Tex Color Blend", Range(0, 1)) = 0.8
         _OutlineTexColorDarken ("Tex Color Darken", Range(0, 1)) = 0.5
+        [Space(10)]
+        [Toggle(_SMOOTH_NORMAL)] _SmoothNormal ("Smooth Normal", Float) = 0
+        [Enum(Vertex Color ObjectSpace,0,Vertex Color TangentSpace,1,Baked Normal Texture,2)] _SmoothNormalMode ("Smooth Normal Mode", Float) = 0
+        _SmoothNormalTex ("Smooth Normal Texture", 2D) = "bump" {}
+        _SmoothNormalShadingBlend ("Smooth Normal Shading Blend", Range(0, 1)) = 0
 
         [Header(Emission)]
         [Toggle(_EMISSION)] _Emission ("Enable Emission", Float) = 0
@@ -443,6 +462,7 @@ Shader "Natane/Toon Shader"
         _VATPositionMax ("Position Max Value", Float) = 1
         _VATNormalMin ("Normal Min Value", Float) = -1
         _VATNormalMax ("Normal Max Value", Float) = 1
+        _VATPadding ("VAT Padding", Range(0, 1)) = 0
         [Space(10)]
         [Enum(Absolute,0,Offset,1)] _VATPackingMode ("VAT Packing Mode", Float) = 1
 
@@ -567,6 +587,10 @@ Shader "Natane/Toon Shader"
             #pragma fragment frag
             #pragma shader_feature_local _OUTLINE
             #pragma shader_feature_local _OUTLINE_TEXTURE_COLOR
+            #pragma shader_feature_local _OUTLINE_WIDTH_MAP
+            #pragma shader_feature_local _OUTLINE_MULTI_COLOR
+            #pragma shader_feature_local _OUTLINE_MASK
+            #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
@@ -577,6 +601,8 @@ Shader "Natane/Toon Shader"
             {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
+                float4 tangent : TANGENT;
+                float4 color : COLOR;
                 float2 uv : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
@@ -603,6 +629,10 @@ Shader "Natane/Toon Shader"
                 float _OutlineTexColorBlend;
                 float _OutlineTexColorDarken;
             #endif
+            #ifdef _SMOOTH_NORMAL
+                float _SmoothNormalMode;
+                sampler2D _SmoothNormalTex;
+            #endif
 
             v2f vert(appdata v)
             {
@@ -623,11 +653,41 @@ Shader "Natane/Toon Shader"
                         widthMultiplier = tex2Dlod(_OutlineWidthMap, float4(v.uv, 0, 0)).r;
                     #endif
 
+                    // Resolve outline normal (smooth normal or original)
+                    float3 outlineNormal = v.normal;
+                    #ifdef _SMOOTH_NORMAL
+                        if (_SmoothNormalMode < 0.5)
+                        {
+                            // Mode 0: Vertex Color Object Space
+                            // Decode from vertex color RGB: [0,1] -> [-1,1]
+                            outlineNormal = v.color.rgb * 2.0 - 1.0;
+                        }
+                        else if (_SmoothNormalMode < 1.5)
+                        {
+                            // Mode 1: Vertex Color Tangent Space (lilToon compatible)
+                            // Decode from vertex color RGB and transform via TBN matrix
+                            float3 smoothTS = v.color.rgb * 2.0 - 1.0;
+                            float3 binormal = cross(v.normal, v.tangent.xyz) * v.tangent.w;
+                            float3x3 tbnOS = float3x3(v.tangent.xyz, binormal, v.normal);
+                            outlineNormal = mul(smoothTS, tbnOS);
+                        }
+                        else
+                        {
+                            // Mode 2: Baked Normal Texture
+                            // Sample baked normal from texture and transform from tangent space
+                            float3 bakedNormal = tex2Dlod(_SmoothNormalTex, float4(v.uv, 0, 0)).rgb * 2.0 - 1.0;
+                            float3 binormal = cross(v.normal, v.tangent.xyz) * v.tangent.w;
+                            float3x3 tbnOS = float3x3(v.tangent.xyz, binormal, v.normal);
+                            outlineNormal = mul(bakedNormal, tbnOS);
+                        }
+                        outlineNormal = normalize(outlineNormal);
+                    #endif
+
                     if (_OutlineMode < 0.5)
                     {
                         // Mode 0: Inverted Hull - Extrusion along normals in view space
                         // Improved for better consistency at different angles
-                        float3 norm = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, v.normal));
+                        float3 norm = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, outlineNormal));
                         float2 offset = TransformViewToProjection(norm.xy);
 
                         o.pos = UnityObjectToClipPos(v.vertex);
@@ -643,7 +703,7 @@ Shader "Natane/Toon Shader"
                         // Improved with distance compensation
                         // Scale down by 0.1 to maintain original scale with new range (0-1)
                         float outlineWidth = _OutlineWidth * 0.1 * (1.0 + distanceFactor * 0.5) * widthMultiplier;
-                        float3 scaledPos = v.vertex.xyz + normalize(v.normal) * outlineWidth;
+                        float3 scaledPos = v.vertex.xyz + normalize(outlineNormal) * outlineWidth;
                         o.pos = UnityObjectToClipPos(float4(scaledPos, 1.0));
                     }
                 #else
@@ -728,6 +788,7 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature_local _HAIR_SPECULAR
             #pragma shader_feature_local _RIM_LIGHT
             #pragma shader_feature_local _RIM_LIGHT_2
+            #pragma shader_feature_local _OFFSET_RIM_LIGHT
             #pragma shader_feature_local _SSS
             #pragma shader_feature_local _MATCAP
             #pragma shader_feature_local _GLITTER
@@ -758,6 +819,7 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature_local _VAT
             #pragma shader_feature_local _VAT_NORMAL
             #pragma shader_feature_local _PIXEL_VERTEX_LIGHTS
+            #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Include/Core/NataneToonCore.hlsl"
@@ -804,6 +866,7 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature_local _DITHERING_ALPHA
             #pragma shader_feature_local _VAT
             #pragma shader_feature_local _VAT_NORMAL
+            #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Include/Core/NataneToonCore.hlsl"

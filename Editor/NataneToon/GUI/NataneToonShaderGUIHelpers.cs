@@ -35,57 +35,54 @@ namespace NataneToon.Editor
             SaveFoldoutStatesDelegate saveFoldoutStates,
             FindPropertyDelegate findProperty)
         {
-            EditorGUI.BeginChangeCheck();
-            showShading = EditorGUILayout.Foldout(showShading, "シェーディング", true, EditorStyles.foldoutHeader);
-            if (EditorGUI.EndChangeCheck()) saveFoldoutStates();
+            // Content only (foldout/boxed section handled by caller)
+            DrawShadingSectionContent(properties, drawToggle, drawProperty, drawHelpToggle, findProperty);
+        }
 
-            if (showShading)
-            {
-                EditorGUI.indentLevel++;
+        /// <summary>
+        /// Draw shading section content without foldout wrapper
+        /// フォルダウトなしでシェーディングセクションの内容を描画（呼び出し元がBoxedSectionを管理）
+        /// </summary>
+        public static void DrawShadingSectionContent(
+            MaterialProperty[] properties,
+            DrawToggleDelegate drawToggle,
+            DrawPropertyDelegate drawProperty,
+            DrawHelpToggleDelegate drawHelpToggle,
+            FindPropertyDelegate findProperty)
+        {
+            drawHelpToggle("ShadingSection",
+                "アニメ調セルシェーディング - クリーンで明瞭な陰影境界を実現します。",
+                MessageType.None);
 
-                drawHelpToggle("ShadingSection",
-                    "🎨 アニメ調セルシェーディング\n" +
-                    "クリーンで明瞭な陰影境界を実現し、高品質なアニメ調レンダリングを提供します。",
-                    MessageType.None);
+            EditorGUILayout.Space(5);
 
-                EditorGUILayout.Space(5);
+            // Main shading controls (Ramp or Toon/Gradient mode)
+            DrawShadingModeControls(properties, drawToggle, drawProperty, drawHelpToggle, findProperty);
 
-                // Main shading controls (Ramp or Toon/Gradient mode)
-                DrawShadingModeControls(properties, drawToggle, drawProperty, drawHelpToggle, findProperty);
+            EditorGUILayout.Space(10);
 
-                EditorGUILayout.Space(10);
+            // Shadow Receive Mask
+            DrawShadowReceiveMaskControls(drawToggle, drawProperty, drawHelpToggle);
 
-                // Shadow Receive Mask
-                DrawShadowReceiveMaskControls(drawToggle, drawProperty, drawHelpToggle);
+            EditorGUILayout.Space(10);
 
-                EditorGUILayout.Space(10);
+            // AO・ディザリング設定は「ライト&影」タブに移動
+            EditorGUILayout.Space(5);
+            EditorGUILayout.HelpBox("AO・ディザリング設定は「ライト&影」タブに移動しました。", MessageType.None);
+            EditorGUILayout.Space(5);
 
-                // Ambient Occlusion
-                DrawAmbientOcclusionControls(drawToggle, drawProperty, drawHelpToggle);
+            // SDF Shadow Map
+            DrawSDFShadowMapControls(drawToggle, drawProperty, drawHelpToggle);
 
-                EditorGUILayout.Space(10);
+            EditorGUILayout.Space(10);
 
-                // Dithering
-                DrawDitheringControls(drawToggle, drawProperty, drawHelpToggle);
+            // Shading Grade Map
+            DrawShadingGradeMapControls(drawToggle, drawProperty, drawHelpToggle);
 
-                EditorGUILayout.Space(10);
+            EditorGUILayout.Space(10);
 
-                // SDF Shadow Map
-                DrawSDFShadowMapControls(drawToggle, drawProperty, drawHelpToggle);
-
-                EditorGUILayout.Space(10);
-
-                // Shading Grade Map
-                DrawShadingGradeMapControls(drawToggle, drawProperty, drawHelpToggle);
-
-                EditorGUILayout.Space(10);
-
-                // Shadow Color Texture
-                DrawShadowColorTextureControls(drawToggle, drawProperty, drawHelpToggle);
-
-                EditorGUI.indentLevel--;
-                EditorGUILayout.Space();
-            }
+            // Shadow Color Texture
+            DrawShadowColorTextureControls(drawToggle, drawProperty, drawHelpToggle);
         }
 
         /// <summary>
@@ -170,12 +167,14 @@ namespace NataneToon.Editor
                 "_ShadowBlend",
                 "影のなじませ（柔らかさ）",
                 "✨ 影のなじませ調整:\n" +
-                "影の境界を周囲となじませて、より柔らかい印象にします。\n" +
+                "影の境界（特に多段階影の境目）を周囲となじませて、\n" +
+                "より柔らかく美しい印象にします。\n\n" +
                 "• 0 = シャープな境界（デフォルト）\n" +
-                "• 0.3-0.5 = 適度な柔らかさ（推奨）\n" +
-                "• 0.7-1.0 = 非常に柔らかい境界\n\n" +
-                "💡 使い方: 影の境界が鋭すぎる場合や、\n" +
-                "よりイラスト調の柔らかな影が欲しい場合に調整してください。",
+                "• 0.2-0.4 = 適度な柔らかさ（推奨）\n" +
+                "• 0.5-0.7 = かなり柔らかい境界\n" +
+                "• 0.8-1.0 = 非常に広いフェード（水彩風）\n\n" +
+                "💡 多段階影の境目がパっきり出る場合:\n" +
+                "この値を0.3〜0.5に設定すると自然になじみます。",
                 drawProperty);
 
             // Show warning when shadow blend is very high
@@ -479,19 +478,24 @@ namespace NataneToon.Editor
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("Shadow Color Texture設定", EditorStyles.boldLabel);
-            drawProperty("_ShadowColorTex", "Shadow Color Texture");
-            drawProperty("_ShadowColorTexStrength", "適用強度");
-            drawHelpToggle("ShadowColorTexture",
-                "🌈 Shadow Color Texture:\n" +
-                "影の色をテクスチャで指定できる高度な機能です。\n\n" +
-                "• テクスチャの色が影色として使用されます\n" +
-                "• 強度: テクスチャの影響度（0 = 使わない、1 = フル適用）\n\n" +
-                "💡 使い方:\n" +
-                "服の影を青っぽく、肌の影を赤っぽくなど、\n" +
-                "部位ごとに異なる影色を設定したい場合に使用します。",
-                MessageType.Info);
+            bool useShadowColorTex = drawToggle("_SHADOW_COLOR_TEX", "_UseShadowColorTex", "影色テクスチャを使用");
+
+            if (useShadowColorTex)
+            {
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField("Shadow Color Texture設定", EditorStyles.boldLabel);
+                drawProperty("_ShadowColorTex", "Shadow Color Texture");
+                drawProperty("_ShadowColorTexStrength", "適用強度");
+                drawHelpToggle("ShadowColorTexture",
+                    "🌈 Shadow Color Texture:\n" +
+                    "影の色をテクスチャで指定できる高度な機能です。\n\n" +
+                    "• テクスチャの色が影色として使用されます\n" +
+                    "• 強度: テクスチャの影響度（0 = 使わない、1 = フル適用）\n\n" +
+                    "💡 使い方:\n" +
+                    "服の影を青っぽく、肌の影を赤っぽくなど、\n" +
+                    "部位ごとに異なる影色を設定したい場合に使用します。",
+                    MessageType.Info);
+            }
         }
     }
 }

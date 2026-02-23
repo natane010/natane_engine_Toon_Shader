@@ -45,6 +45,8 @@ namespace NataneToon.Editor
         public const string ShaderVariantStripper = "Tools/Natane/シェーダー Shader/バリアントストリッピング設定 Variant Stripping Settings";
         public const string VRCLightVolumesHelper = "Tools/Natane/VRChat/VRCライトボリュームヘルパー VRC Light Volumes Helper";
 
+        public const string SmoothNormalBaker = "Tools/Natane/メッシュ Mesh/スムース法線ベイク Smooth Normal Baker";
+
         public const string UVTextureGenerator = "Tools/Natane/UVテクスチャ生成 UV Texture Generator";
         public const string ParticleEffectEditor = "Tools/Natane/パーティクルエフェクトエディタ Particle Effect Editor";
         public const string VTuberPresetGenerator = "Tools/Natane/VTuberプリセット生成 Generate VTuber Presets";
@@ -72,7 +74,8 @@ namespace NataneToon.Editor
             { "ShaderPrewarming", ShaderPrewarming },
             { "ShaderVariantStripper", ShaderVariantStripper },
             { "ShaderVariantCollector", ShaderVariantCollector },
-            { "AssetReferenceChecker", AssetReferenceChecker }
+            { "AssetReferenceChecker", AssetReferenceChecker },
+            { "SmoothNormalBaker", SmoothNormalBaker }
         };
 
         private static readonly Dictionary<string, string> LegacyPathAliases = new Dictionary<string, string>
@@ -172,6 +175,7 @@ namespace NataneToon.Editor
                 PerformanceBudgetTool, TextureOptimizer, OutlineOptimizer, RefractionQualityBalancer, AssetReferenceChecker,
                 LilToonMigration, BatchMaterialConverter, PrefabVariantConverter,
                 ShaderVariantCollector, ShaderPrewarming, ShaderVariantStripper, VRCLightVolumesHelper,
+                SmoothNormalBaker,
                 UVTextureGenerator, ParticleEffectEditor, VTuberPresetGenerator,
             };
             return paths;

@@ -152,7 +152,18 @@ half4 frag(v2f i) : SV_Target
     atten = lerp(1.0, atten, shadowStrength);
 
     half3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
-    half ndotl = dot(worldNormal, lightDir);
+
+    // ===== Smooth Normal Shading Blend =====
+    // Blend world normal with smooth normal for softer shadow boundaries on hard-edge models
+    half3 shadingNormal = worldNormal;
+    #ifdef _SMOOTH_NORMAL
+        if (_SmoothNormalShadingBlend > 0.001)
+        {
+            half3 smoothN = normalize(i.smoothWorldNormal);
+            shadingNormal = normalize(lerp(worldNormal, smoothN, _SmoothNormalShadingBlend));
+        }
+    #endif
+    half ndotl = dot(shadingNormal, lightDir);
 
     // ===== SDF Shadow Map =====
     // Apply SDF shadow to ndotl before lighting calculations
@@ -650,6 +661,29 @@ half4 frag(v2f i) : SV_Target
         half3 preRim2 = col.rgb;
         col.rgb = SafeAdditiveBlendFast(col.rgb, rim2, rim2Strength);
         col.rgb = ApplyEffectBlendPost(preRim2, col.rgb, _RimBlend2, _RimBlendMode2);
+    #endif
+
+    // ===== Offset Rim Light (ForwardBase only) =====
+    #if defined(_OFFSET_RIM_LIGHT) && defined(UNITY_PASS_FORWARDBASE)
+        float offsetRimPowerBlurred = max(0.1, _OffsetRimPower * (1.0 - _OffsetRimBlur * 0.8));
+        half3 offsetRim = OffsetRimLighting(worldNormal, viewDir, lightDir, offsetRimPowerBlurred, _OffsetRimIntensity);
+
+        // Apply mask texture
+        half offsetRimMask = tex2D(_OffsetRimMask, uv).r;
+        offsetRimMask = ApplySoftMask(offsetRimMask);
+        offsetRim *= offsetRimMask;
+
+        // Apply shadow mask (suppress rim in shadowed areas)
+        offsetRim *= lerp(1.0, shadingValue, _OffsetRimShadowMask);
+
+        // Apply glossiness and matte effect
+        offsetRim *= _Glossiness * (1.0 - _MatteEffect);
+
+        // Safe additive blend
+        half offsetRimStrength = saturate(length(offsetRim) * 0.5);
+        half3 preOffsetRim = col.rgb;
+        col.rgb = SafeAdditiveBlend(col.rgb, offsetRim, offsetRimStrength);
+        col.rgb = ApplyEffectBlendPost(preOffsetRim, col.rgb, _OffsetRimBlend, _OffsetRimBlendMode);
     #endif
 
     // ===== Environmental Rim (ForwardBase only) =====

@@ -29,6 +29,18 @@ namespace NataneToon.Editor
         public static readonly Color TextSecondary = new Color(0.7f, 0.7f, 0.7f);
         public static readonly Color TextDisabled = new Color(0.5f, 0.5f, 0.5f);
 
+        // Section Category Colors (Inspector UI)
+        public static readonly Color SectionBasic = new Color(0.35f, 0.70f, 0.95f);
+        public static readonly Color SectionShading = new Color(0.55f, 0.45f, 0.85f);
+        public static readonly Color SectionLighting = new Color(0.95f, 0.75f, 0.30f);
+        public static readonly Color SectionEffects = new Color(0.40f, 0.85f, 0.55f);
+        public static readonly Color SectionEnvironment = new Color(0.45f, 0.80f, 0.90f);
+        public static readonly Color SectionAdvanced = new Color(0.75f, 0.55f, 0.55f);
+
+        // Toggle Badge Colors
+        public static readonly Color ToggleOn = new Color(0.3f, 0.8f, 0.3f);
+        public static readonly Color ToggleOff = new Color(0.5f, 0.5f, 0.5f);
+
         /// <summary>
         /// Get performance rating color by rating string
         /// パフォーマンス評価文字列から色を取得
