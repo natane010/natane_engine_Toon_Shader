@@ -74,11 +74,11 @@ namespace NataneToon.Editor
 
             EditorGUILayout.HelpBox(
                 "このツールはlilToonマテリアルを自動的にNatane Toon Shaderに変換します。\n" +
-                "プロパティをできるだけ近い形でマッピングし、テクスチャ参照を保持します。\n" +
-                "変換後は自動調整機能により最適な設定が適用されます。\n\n" +
+                "基本設定（テクスチャ・カラー・シャドウ）のみを有効にし、その他の機能はオフの状態で移行します。\n" +
+                "プロパティ値は保持されるため、移行後にインスペクターから必要な機能を個別に有効化できます。\n\n" +
                 "This tool automatically converts lilToon materials to Natane Toon Shader.\n" +
-                "It will map properties as closely as possible and preserve texture references.\n" +
-                "Auto-adjustment features will apply optimal settings after conversion.",
+                "Only basic settings (texture, color, shadow) are enabled. All other features are disabled.\n" +
+                "Property values are preserved, so you can enable features individually after migration.",
                 MessageType.Info
             );
 
@@ -449,6 +449,10 @@ namespace NataneToon.Editor
 
                 // Map properties
                 MapPropertiesWithReport(originalProperties, targetMaterial, report);
+
+                // 基本タブ以外の機能をすべてオフにする
+                // プロパティ値は保持されるため、移行後にユーザーが必要な機能を個別に有効化できる
+                DisableNonBasicFeatures(targetMaterial, report);
 
                 // プレビュー機能
                 if (showPreview)
@@ -1006,6 +1010,72 @@ namespace NataneToon.Editor
                 case 3: return "Overlay";
                 default: return "Unknown";
             }
+        }
+
+        /// <summary>
+        /// 基本タブ以外のすべての機能をオフにする
+        /// プロパティの値は保持されるが、トグルとキーワードを無効化する
+        /// 移行後にユーザーが必要な機能を個別に有効化することを想定
+        /// </summary>
+        private void DisableNonBasicFeatures(Material material, ConversionReport report)
+        {
+            // === ライティングタブ ===
+            DisableFeature(material, "_SoftLightingMode", "_SOFT_LIGHTING_MODE");
+            DisableFeature(material, "_UsePixelVertexLights", "_PIXEL_VERTEX_LIGHTS");
+            DisableFeature(material, "_UseLightVolume", "_USE_LIGHT_VOLUME");
+            DisableFeature(material, "_LightVolumeSpecular", "_LIGHT_VOLUME_SPECULAR");
+            DisableFeature(material, "_LTCGI", "_LTCGI");
+            DisableFeature(material, "_UseAO", "_USE_AO");
+            DisableFeature(material, "_UseDithering", "_USE_DITHERING");
+
+            // === エフェクトタブ ===
+            DisableFeature(material, "_Specular", "_SPECULAR");
+            DisableFeature(material, "_RimLight", "_RIM_LIGHT");
+            DisableFeature(material, "_RimLight2", "_RIM_LIGHT_2");
+            DisableFeature(material, "_SSS", "_SSS");
+            DisableFeature(material, "_MatCap", "_MATCAP");
+            DisableFeature(material, "_MatCap2", "_MATCAP_2");
+            DisableFeature(material, "_MatCap3", "_MATCAP_3");
+            DisableFeature(material, "_Glitter", "_GLITTER");
+            DisableFeature(material, "_WaterDrip", "_WATER_DRIP");
+            DisableFeature(material, "_Hologram", "_HOLOGRAM");
+            DisableFeature(material, "_UseHologramNoise", "_HOLOGRAM_NOISE");
+            DisableFeature(material, "_Glitch", "_GLITCH");
+            DisableFeature(material, "_Outline", "_OUTLINE");
+            DisableFeature(material, "_Emission", "_EMISSION");
+            DisableFeature(material, "_Dissolve", "_DISSOLVE");
+            DisableFeature(material, "_HueShiftEnable", "_HUE_SHIFT");
+            DisableFeature(material, "_UseAlphaMask", "_ALPHA_MASK");
+            DisableFeature(material, "_AudioLink", "_AUDIOLINK");
+
+            // === 環境タブ ===
+            DisableFeature(material, "_Reflection", "_REFLECTION");
+            DisableFeature(material, "_Iridescence", "_IRIDESCENCE");
+            DisableFeature(material, "_EnvRim", "_ENV_RIM");
+            DisableFeature(material, "_Refraction", "_REFRACTION");
+
+            // === 詳細タブ ===
+            DisableFeature(material, "_UseNormalMap", "_NORMALMAP");
+            DisableFeature(material, "_Parallax", "_PARALLAX");
+            DisableFeature(material, "_VAT", "_VAT");
+            DisableFeature(material, "_VATNormal", "_VAT_NORMAL");
+            DisableFeature(material, "_BackfaceTexture", "_BACKFACE_TEXTURE");
+            DisableFeature(material, "_VideoTexture", "_VIDEO_TEXTURE");
+            DisableFeature(material, "_DistanceFade", "_DISTANCE_FADE");
+
+            report.infos.Add("基本タブ以外の機能をすべてオフにしました（プロパティ値は保持）");
+        }
+
+        /// <summary>
+        /// 個別の機能をオフにする（プロパティ値を0にし、キーワードを無効化）
+        /// </summary>
+        private void DisableFeature(Material material, string propertyName, string keyword)
+        {
+            if (material.HasProperty(propertyName))
+            {
+                material.SetFloat(propertyName, 0f);
+            }
+            material.DisableKeyword(keyword);
         }
 
         // ===================================
