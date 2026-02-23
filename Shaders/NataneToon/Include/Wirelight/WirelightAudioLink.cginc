@@ -108,10 +108,14 @@
                     break;
             }
 
+            // Ensure non-negative values from AudioLink data
+            color = max(color, 0.0);
+            color.a = saturate(color.a);
+
             // Apply inversion if requested
             if (invert > 0.5)
             {
-                color.rgb = 1.0 - color.rgb;
+                color.rgb = 1.0 - saturate(color.rgb);
             }
 
             return color;

@@ -80,7 +80,7 @@ float pattern(float3 p, float UVscale, float TimeScale1, float TimeScale2, float
     );
 
     // Final layer: warp again with the second layer
-    return fbm(p + 4.0 * r);
+    return saturate(fbm(p + 4.0 * r));
 }
 
 // Voronoi noise - creates cellular patterns

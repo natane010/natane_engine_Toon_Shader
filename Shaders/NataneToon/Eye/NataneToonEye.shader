@@ -247,6 +247,7 @@ Shader "Natane/Eye"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fog
+            #pragma multi_compile_instancing
 
             #include "UnityCG.cginc"
 
@@ -261,6 +262,7 @@ Shader "Natane/Eye"
                 float3 normal : NORMAL;
                 float4 tangent : TANGENT;
                 float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct v2f
@@ -269,8 +271,10 @@ Shader "Natane/Eye"
                 float4 vertex : SV_POSITION;
                 float2 viewDir : TEXCOORD2;
                 float3 rawViewDir : TEXCOORD5;
-                float2 screenUV : TEXCOORD3;
+                float4 screenPos : TEXCOORD3;
                 float2 screenRatio : TEXCOORD4;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             sampler2D _MainTex;
@@ -386,7 +390,7 @@ Shader "Natane/Eye"
             float NTEye_GetPupilMask(float2 uv, float2 center)
             {
                 float radial = length(NTEye_GetPupilLocal(uv, center));
-                return saturate(0.025 / saturate(radial - 1.0));
+                return saturate(0.025 / max(saturate(radial - 1.0), 1e-5));
             }
 
             void NTEye_PrepareEyeData(
@@ -592,7 +596,7 @@ Shader "Natane/Eye"
                 float2 causticUV = NTEye_GenerateParallaxUV(workingUV, workingViewDir, _IrisCausticsParallax);
                 float2 localUV = NTEye_GetPupilLocal(causticUV, eyeCenter);
                 float radial = length(localUV);
-                float angle = atan2(localUV.y, localUV.x);
+                float angle = (dot(localUV, localUV) > 1e-10) ? atan2(localUV.y, localUV.x) : 0.0;
 
                 float animTime = _Time.y * _IrisCausticsSpeed;
                 float perf = NTEye_GetPerformanceWeight();
@@ -682,7 +686,7 @@ Shader "Natane/Eye"
                 float2 exprUV = NTEye_GenerateParallaxUV(workingUV, workingViewDir, _ExpressionParallax);
                 float2 localUV = NTEye_GetPupilLocal(exprUV, eyeCenter);
                 float radial = length(localUV);
-                float angle = atan2(localUV.y, localUV.x);
+                float angle = (dot(localUV, localUV) > 1e-10) ? atan2(localUV.y, localUV.x) : 0.0;
                 float irisMask = smoothstep(1.08, 0.12, radial);
                 float animTime = _Time.y * exprSpeed * 6.2831853;
                 float effectMask = 0.0;
@@ -777,6 +781,10 @@ Shader "Natane/Eye"
             v2f vert(appdata v)
             {
                 v2f o;
+                UNITY_SETUP_INSTANCE_ID(v);
+                UNITY_INITIALIZE_OUTPUT(v2f, o);
+                UNITY_TRANSFER_INSTANCE_ID(v, o);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
 
@@ -790,8 +798,7 @@ Shader "Natane/Eye"
                 o.viewDir = normalize(rawViewDir);
                 o.rawViewDir = rawViewDir;
 
-                float4 screenPos = ComputeScreenPos(UnityObjectToClipPos(v.vertex.xyz));
-                o.screenUV = screenPos.xy / screenPos.w;
+                o.screenPos = ComputeScreenPos(o.vertex);
                 o.screenRatio = float2(_ScreenParams.x / _ScreenParams.y, 1);
 
                 return o;
@@ -810,7 +817,7 @@ Shader "Natane/Eye"
             void DoAudioLink(inout fixed4 col)
             {
                 #if defined(AUDIOLINK)
-                    col.rgb *= (_BandSelection == 4 ? NTEye_AverageOfAudioLinkBands() : AudioLinkData( ALPASS_AUDIOLINK + int2( 0, _BandSelection ) ).rrrr) * _Intensity + _MinValue;
+                    col.rgb *= (_BandSelection == 4 ? NTEye_AverageOfAudioLinkBands() : AudioLinkData( ALPASS_AUDIOLINK + int2( 0, (int)_BandSelection ) ).rrrr) * _Intensity + _MinValue;
                 #else
                     col.rgb *= _MinValue;
                 #endif
@@ -825,7 +832,8 @@ Shader "Natane/Eye"
 
             void DoAlpha(inout fixed4 col, v2f i)
             {
-                col.a = lerp(1, length(frac(i.screenUV*i.screenRatio*lerp(0, 300, _VignetteDitherScale))-.5) < vignetteDitherMask, _VignetteTransparency);
+                float2 screenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
+                col.a = lerp(1, length(frac(screenUV*i.screenRatio*lerp(0, 300, _VignetteDitherScale))-.5) < vignetteDitherMask, _VignetteTransparency);
             }
 
             fixed4 DoColor(v2f i)
@@ -847,9 +855,9 @@ Shader "Natane/Eye"
                     float deadPupilMask = NTEye_GetPupilMask(pupilUV, eyeCenter);
                     proceduralCol = lerp(_DeadBottomColor, _DeadTopColor, saturate(pupilUV.y - _DeadGradientOffset)) * saturate(1 - deadPupilMask + .9);
 
+                    texCol = tex2D(_DeadStateTex, pupilUV);
                     if (_UseTexture > 0.5)
                     {
-                        texCol = tex2D(_DeadStateTex, pupilUV);
                         proceduralCol = lerp(proceduralCol, texCol * _BackgroundColor, _TextureBlend);
                     }
 
@@ -872,28 +880,32 @@ Shader "Natane/Eye"
                     // At _NervousCenterFill = 1, fill to center (up to 6 layers)
                     int ringCount = max(1, 1 + (int)(_NervousCenterFill * 5 * perf));
                     int segmentCount = (_PerformanceTier > 1.5) ? 5 : ((_PerformanceTier > 0.5) ? 6 : 8);
-                    float sizeStep = _NervousLinesSize / ringCount;
+                    float safeLinesSize = max(_NervousLinesSize, 0.02);
+                    float sizeStep = safeLinesSize / max(ringCount, 1);
 
-                    for (int ring = 0; ring < ringCount; ring++)
+                    [loop]
+                    for (int ring = 0; ring < 6; ring++)
                     {
+                        if (ring >= ringCount) break;
                         float currentSize = _NervousLinesSize - ring * sizeStep;
                         if (currentSize < 0.02) break;
 
+                        [loop]
                         for (int e = 0; e < 8; e++)
                         {
                             if (e >= segmentCount) break;
                             float2 randOffs = float2(2 * (NTEye_rand(pow(e, 2) + seed + ring * 10) - .5), 2 * (NTEye_rand(pow(e, 2) + 2 + seed + ring * 10)-.5)) * _NervousLinesRandOffs;
                             float circleMask = abs(length(NTEye_GenerateParallaxUV(workingUV - eyeCenter + randOffs, workingViewDir, -.2)) - currentSize);
                             float front = circleMask < nervousThickness;
-                            float shadow = 1 - saturate(nervousThickness * .6 / circleMask);
+                            float shadow = 1 - saturate(nervousThickness * .6 / max(circleMask, 1e-5));
                             proceduralCol *= min(1 - front, shadow);
                             proceduralCol += max(front, 1 - shadow) * _NervousLinesColor;
                         }
                     }
 
+                    texCol = tex2D(_NervousStateTex, pupilUV);
                     if (_UseTexture > 0.5)
                     {
-                        texCol = tex2D(_NervousStateTex, pupilUV);
                         proceduralCol = lerp(proceduralCol, texCol * _NervousBackgroundColor, _TextureBlend);
                     }
 
@@ -928,7 +940,7 @@ Shader "Natane/Eye"
                     float2 heartLocal = (NTEye_ApplyPulse(pupilUV, pulseAnim * _HeartPulsePower * 3, eyeCenter) - eyeCenter) * .5;
                     heartLocal /= max(_PupilSize, 0.0001);
                     heartLocal /= max(_PupilAspect.xy, float2(0.001, 0.001));
-                    pupilMask = saturate(0.025/saturate(NTEye_HeartSDF(heartLocal)));
+                    pupilMask = saturate(0.025 / max(saturate(NTEye_HeartSDF(heartLocal)), 1e-5));
                 }
 
                 if (_UseTexture > 0.5)
@@ -941,8 +953,8 @@ Shader "Natane/Eye"
                 }
 
                 float2 glareOffset = eyeCenter + float2(0, -0.37); // Glare position relative to eye center
-                float mainFocus = saturate(0.025/saturate(length(glareUV-glareOffset)-.4));
-                float centerFocus = saturate(0.025/saturate(length(glareUV-glareOffset)-.15)) * 2;
+                float mainFocus = saturate(0.025 / max(saturate(length(glareUV-glareOffset)-.4), 1e-5));
+                float centerFocus = saturate(0.025 / max(saturate(length(glareUV-glareOffset)-.15), 1e-5)) * 2;
 
                 col += lerp(0, mainFocus * _MainColor, _MainColor.a);
                 col += lerp(0, centerFocus * _MainColor, _MainColor.a);
@@ -969,7 +981,7 @@ Shader "Natane/Eye"
                     float2 starLocal = NTEye_GetPupilLocal(pupilUV, eyeCenter);
                     float2 starUV = abs(mul(NTEye_Rot(pow(abs(starTime), 1 - _StarRockSharpness) * sign(starTime) * _StarRockAngle), starLocal)) * .25;
                     float starOffset = 1;
-                    float starMask = saturate(0.01/saturate(NTEye_smin(length(abs(starUV * float2(1, .5)) + starUV.x * starOffset), length(abs(starUV * float2(.5, 1)) + starUV.y * starOffset), .6)-.2));
+                    float starMask = saturate(0.01 / max(saturate(NTEye_smin(length(abs(starUV * float2(1, .5)) + starUV.x * starOffset), length(abs(starUV * float2(.5, 1)) + starUV.y * starOffset), .6)-.2), 1e-5));
 
                     if (_UseTexture > 0.5)
                     {
@@ -991,14 +1003,14 @@ Shader "Natane/Eye"
                 bubbleUV += wobbleWave;
 
                 float bubbleSize = _BubbleSize * 2;
-                float glare = saturate(0.001/saturate(length(bubbleUV-float2(.1, .2)) - .06 * bubbleSize));
+                float glare = saturate(0.001 / max(saturate(length(bubbleUV-float2(.1, .2)) - .06 * bubbleSize), 1e-5));
                 if (_PerformanceTier < 1.5)
                 {
-                    glare += saturate(0.001/saturate(length(bubbleUV-float2(.06, .12)) - .01 * bubbleSize));
+                    glare += saturate(0.001 / max(saturate(length(bubbleUV-float2(.06, .12)) - .01 * bubbleSize), 1e-5));
                 }
                 if (_PerformanceTier < 0.5)
                 {
-                    glare += saturate(0.001/saturate(length(bubbleUV-float2(-.1, -.1)) - .005 * bubbleSize));
+                    glare += saturate(0.001 / max(saturate(length(bubbleUV-float2(-.1, -.1)) - .005 * bubbleSize), 1e-5));
                 }
 
                 col.rgb += glare * _BubbleBrightness;
@@ -1008,7 +1020,7 @@ Shader "Natane/Eye"
 
                 if (_PerformanceTier < 1.5)
                 {
-                    col += saturate(0.001 / max(0, NTEye_EyeDetail1(glareUV, .25, eyeCenter))) * _DetailBrightness;
+                    col += saturate(0.001 / max(NTEye_EyeDetail1(glareUV, .25, eyeCenter), 1e-5)) * _DetailBrightness;
                 }
 
                 NTEye_ApplyExpressionOverlay(col, workingUV, workingViewDir, eyeCenter);
@@ -1021,6 +1033,8 @@ Shader "Natane/Eye"
 
             fixed4 frag (v2f i) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(i);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 fixed4 baseCol = tex2D(_MainTex, i.uv);
                 fixed4 col = DoColor(i);
 
@@ -1052,7 +1066,8 @@ Shader "Natane/Eye"
                 col.a = saturate(col.a * _GlobalOpacity);
                 if (_TransparencyResolveMode > 0.5)
                 {
-                    float dither = NTEye_GetDitherNoise(i.screenUV);
+                    float2 resolvedScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
+                    float dither = NTEye_GetDitherNoise(resolvedScreenUV);
                     clip(col.a - dither);
                     col.a = 1.0;
                 }

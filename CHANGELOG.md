@@ -5,6 +5,24 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.8] - 2026-02-23
+
+### Fixed
+- **Wirelight ジオメトリシェーダー VR SPI 完全修正**: g2f構造体に `UNITY_VERTEX_INPUT_INSTANCE_ID` を追加し、ジオメトリ→フラグメント間のインスタンスID伝播チェーンを完成。フラグメントシェーダーに `UNITY_SETUP_INSTANCE_ID` を追加。VR Single Pass Instanced 環境での片目描画崩れを修正
+- **Wirelight pow() 精度喪失防止**: `pow(Triangles, 2.2)` および `pow(col.rgb * brightness, power)` に `max(x, 0.0)` ガードを追加。GPU依存の未定義動作を防止
+- **Wirelight Distance Fade pow() ガード**: `pow(distanceFade, power)` に非負ガードを追加
+- **Eye texCol 初期化強化**: Dead/Nervous ステートでテクスチャサンプリングを `_UseTexture` チェックの外に移動。TexturePolish に常に有効なテクスチャデータが渡されるように
+- **Eye Nervous ループ sizeStep ガード強化**: `_NervousLinesSize` に最小値 0.02 を設定し、ゼロ除算のエッジケースを完全に排除
+- **Eye atan2 定義域エラー修正**: IrisCaustics と ExpressionOverlay の `atan2()` にゼロベクトルガード（`dot(localUV, localUV) > 1e-10`）を追加。瞳孔中心でのNaN発生を防止
+- **Eye AudioLink バンド選択型変換**: `_BandSelection` を `(int)` で明示的にキャスト。Float→Int の暗黙変換による精度問題を防止
+- **Noise 負値保護**: `pattern()` の戻り値を `saturate()` で [0,1] に制限。下流の計算での負値伝播を防止
+- **AudioLink ThemeColor 範囲外防止**: `AudioLinkGetThemeColor()` で取得したカラー値に `max(color, 0.0)` の非負保証と `saturate()` によるアルファ制限を追加
+
+### Changed
+- **lilToon 移行ツール改善**: 移行時に基本タブ以外の全機能をオフにした状態でマテリアルを生成するように変更。プロパティ値は保持されるため、移行後に必要な機能を個別に有効化可能
+
+---
+
 ## [1.2.7] - 2026-02-21
 
 ### Fixed

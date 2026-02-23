@@ -658,6 +658,7 @@ namespace NataneToon.Editor
                 targetMaterial.EnableKeyword(keyword);
             else
                 targetMaterial.DisableKeyword(keyword);
+            EditorUtility.SetDirty(targetMaterial);
         }
 
         private void ApplyCyberDefaults(bool enabled)

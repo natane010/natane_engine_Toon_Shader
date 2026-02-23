@@ -303,6 +303,7 @@ Shader "Natane/Toon Shader Wirelight"
                 float3 wp : TEXCOORD5;
                 float3 worldPos : TEXCOORD6;
                 UNITY_FOG_COORDS(4)
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
@@ -331,7 +332,7 @@ Shader "Natane/Toon Shader Wirelight"
                 #ifdef _USE_VERTEX_COLOR_POS
                     float3 worldPos = v.color.rgb + noiseOffset;
                 #else
-                    float3 worldPos = mul(unity_ObjectToWorld, v.vertex).xyz + noiseOffset;
+                    float3 worldPos = mul(UNITY_MATRIX_M, v.vertex).xyz + noiseOffset;
                 #endif
 
                 o.wp = worldPos;
@@ -358,13 +359,13 @@ Shader "Natane/Toon Shader Wirelight"
                 float finalExtrude = lerp(_Extrude, _Extrude2 + audioLinkExtrude, extrudeBlend);
 
                 // Apply cage transformation
-                float4 worldVertex = mul(unity_ObjectToWorld, v.vertex + float4(v.normal * finalExtrude, 0));
+                float4 worldVertex = mul(UNITY_MATRIX_M, v.vertex + float4(v.normal * finalExtrude, 0));
                 float4 roundedVertex = round(finalCage * worldVertex) / finalCage;
                 v.vertex = mul(unity_WorldToObject, roundedVertex);
 
                 o.pos = UnityObjectToClipPos(v.vertex);
                 o.col = float4(noiseValue, noiseValue, noiseValue, 1);
-                o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+                o.worldPos = mul(UNITY_MATRIX_M, v.vertex).xyz;
 
                 return o;
             }
@@ -423,8 +424,11 @@ Shader "Natane/Toon Shader Wirelight"
             // Fragment shader
             fixed4 frag(g2f i) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(i);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
 
+                // When _WIRELIGHT keyword is disabled, discard all fragments
+                // This allows the toggle to completely hide the wirelight effect
                 #ifndef _WIRELIGHT
                     discard;
                     return fixed4(0, 0, 0, 0);
@@ -470,7 +474,7 @@ Shader "Natane/Toon Shader Wirelight"
                              tex2D(_MaskTexture, i.uv).r;
 
                 // Bayer dithering
-                float2 screenPos = (i.suv.xy / i.suv.w) * _ScreenParams.xy;
+                float2 screenPos = (i.suv.xy / max(i.suv.w, 0.0001)) * _ScreenParams.xy;
                 uint dithx = (uint)(screenPos.x) % 4;
                 uint dithy = (uint)(screenPos.y) % 4;
                 float ditherFace = lerp(_DitherMultiple, _DitherMultiple * 0.8, perfLerp);
@@ -495,12 +499,12 @@ Shader "Natane/Toon Shader Wirelight"
                 fixed4 col;
                 col.rgb = (baseColor.rgb * lerp(1, 0, Triangles)) +           // Face color
                           (Triangles * baseColor.rgb) +                        // Edge color
-                          (pow(Triangles, 2.2) * noise * 3 * baseColor.rgb);  // Extra glow
+                          (pow(max(Triangles, 0.0), 2.2) * noise * 3 * baseColor.rgb);  // Extra glow
 
-                col.a = saturate(alpha * relLum + pow(Triangles, 2.2) * noise * 5 * relLum);
+                col.a = saturate(alpha * relLum + pow(max(Triangles, 0.0), 2.2) * noise * 5 * relLum);
 
                 // Apply brightness and gamma
-                col.rgb = pow(col.rgb * _ColorBrightness, _ColorPower) *
+                col.rgb = pow(max(col.rgb * _ColorBrightness, 0.0), _ColorPower) *
                          lerp(1, col.a, _MultAlphaAndColor);
 
                 // Cyber wire style layer
@@ -576,7 +580,7 @@ Shader "Natane/Toon Shader Wirelight"
                 #ifdef _WL_DISTANCE_FADE
                     float fadeRange = max(0.001, _WLDistanceFadeEnd - _WLDistanceFadeStart);
                     float distanceFade = saturate((_WLDistanceFadeEnd - distance(i.worldPos, _WorldSpaceCameraPos)) / fadeRange);
-                    distanceFade = pow(distanceFade, _WLDistanceFadePower);
+                    distanceFade = pow(max(distanceFade, 0.0), _WLDistanceFadePower);
                     col.a *= distanceFade;
                 #endif
 

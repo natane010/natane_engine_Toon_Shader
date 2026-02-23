@@ -56,9 +56,9 @@ float4 OKLcolShift(float4 colorin, float shift)
     // Convert RGB to OKLAB
     float3 oklab = linear_srgb_to_oklab(colorin.rgb);
 
-    // Extract hue and chroma from a and b components (polar coordinates)
-    float hue = atan2(oklab.b, oklab.g);
+    // Extract chroma and hue from a and b components (polar coordinates)
     float chroma = sqrt(oklab.g * oklab.g + oklab.b * oklab.b);
+    float hue = (chroma > 1e-6) ? atan2(oklab.b, oklab.g) : 0.0;
 
     // Shift hue
     hue += shift * (2.0 * PI);
