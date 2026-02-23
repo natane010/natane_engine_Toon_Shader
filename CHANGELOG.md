@@ -5,6 +5,34 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.10] - 2026-02-24
+
+### Fixed
+- **Outlineパス shader_feature_local 宣言欠落修正**: 全3バリアント（Opaque/Cutout/Transparent）のOutlineパスに `_OUTLINE_WIDTH_MAP`、`_OUTLINE_MULTI_COLOR`、`_OUTLINE_MASK` の `shader_feature_local` 宣言を追加。アウトラインのキーワード切り替えが正しく機能するように
+- **KajiyaKay ヘアスペキュラー NaN防止**: `KajiyaKaySpecular()` の `pow()` に `saturate()` ラッパーを追加。大きな指数値での未定義動作を防止
+- **VR SPI ForwardBase インスタンスID伝播修正**: ForwardBase頂点シェーダーに `UNITY_TRANSFER_INSTANCE_ID(v, o)` を追加。VR Single Pass Instanced環境でのインスタンスID伝播チェーンを完成
+- **_VATPadding プロパティ宣言追加**: CBUFFERに定義されていたがProperties{}ブロックに宣言がなかった `_VATPadding` を全3バリアントに追加
+- **AO強度GUI追加**: DrawAOSection()に `_AOIntensity` プロパティ表示を追加
+- **影色テクスチャToggle制御追加**: DrawShadowColorTextureControls()に `_SHADOW_COLOR_TEX` キーワードトグルを追加
+- **リム方向制御GUI追加**: DrawRimLightSection()にリム方向制御トグル・`_RimLightDirection`・`_RimDirectionRange` プロパティ表示を追加
+
+### Added
+- **Vertex Animation GUIセクション**: DrawAdvancedTab()にVertex Animation（Wind/Breath/Pulse）の完全なGUIセクションを追加。アニメーション種類・速度・強度・周波数・マスクの制御UI
+- **SmoothNormalBaker ツール**: スムースノーマルベイクツールを追加
+- **ShaderGUIStyles 分離**: GUI スタイル定義を専用ファイルに分離
+
+---
+
+## [1.2.9] - 2026-02-23
+
+### Added
+- **AK:EF Style 3機能追加**: Face SDF回転・ヘアスペキュラー・アウトラインテクスチャカラー
+
+### Changed
+- バージョンアップ
+
+---
+
 ## [1.2.8] - 2026-02-23
 
 ### Fixed

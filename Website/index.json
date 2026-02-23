@@ -5,7 +5,54 @@
   "author": "Natane",
   "packages": {
     "com.natane.toonshader": {
-      "versions": {}
+      "versions": {
+        "1.2.10": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.2.10",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline.",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.10/com.natane.toonshader-1.2.10.zip",
+          "license": "MIT",
+          "keywords": [
+            "shader",
+            "toon",
+            "cel-shading",
+            "npr",
+            "vrchat"
+          ],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
+        "1.2.9": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.2.9",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline.",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.9/com.natane.toonshader-1.2.9.zip",
+          "license": "MIT",
+          "keywords": [
+            "shader",
+            "toon",
+            "cel-shading",
+            "npr",
+            "vrchat"
+          ],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        }
+      }
     }
   }
 }
