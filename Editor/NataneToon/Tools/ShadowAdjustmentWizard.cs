@@ -38,9 +38,11 @@ namespace NataneToon.Editor
 
         private ShadowPreset selectedPreset = ShadowPreset.Custom;
 
-        // Preview settings
+        // Preview settings (reserved for future use)
+        #pragma warning disable CS0414
         private float previewLightAngle = 45f;
         private bool autoRefreshPreview = true;
+        #pragma warning restore CS0414
 
         [MenuItem("Tools/Natane/エフェクト Effects/シャドウ調整ウィザード Shadow Adjustment Wizard", false, 41)]
         public static void ShowWindow()

@@ -780,11 +780,8 @@ namespace NataneToon.Editor
 
             // MatCap - 改善された変換処理
             SetTextureIfExists(sourceProps, "_MatCapTex", targetMaterial, "_MatCapTex");
-            bool hasMatCap = false;
-
             if (sourceProps.ContainsKey("_MatCapTex") && sourceProps["_MatCapTex"] != null)
             {
-                hasMatCap = true;
                 targetMaterial.SetFloat("_MatCap", 1.0f);
                 targetMaterial.EnableKeyword("_MATCAP");
 
@@ -1359,7 +1356,6 @@ namespace NataneToon.Editor
             reportText.AppendLine();
 
             int warningCount = 0;
-            int infoCount = 0;
 
             foreach (var report in reports)
             {

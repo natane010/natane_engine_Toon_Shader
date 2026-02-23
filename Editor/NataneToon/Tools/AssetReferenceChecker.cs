@@ -658,7 +658,7 @@ namespace NataneToon.Editor
                       $"(エラー Errors: {errorCount}, 警告 Warnings: {warningCount}, 情報 Info: {infoCount})");
         }
 
-        private static T[] FindObjectsOfType<T>(bool includeInactive) where T : Object
+        private static new T[] FindObjectsOfType<T>(bool includeInactive) where T : Object
         {
             if (includeInactive)
             {
