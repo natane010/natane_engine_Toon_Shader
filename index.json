@@ -181,6 +181,50 @@
           "legacyFiles": {},
           "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.8/com.natane.toonshader-1.2.8.zip",
           "zipSHA256": "c9e017ee2f290c337b501c50d979ee1de100fb36448b38ce95a0a70fe69fa998"
+        },
+        "1.2.9": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.2.9",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline. NEW v1.2.0: AudioLink support (club events), Multiple MatCaps (2nd/3rd), Distance Fade, Vertex Animation (wind/breath), Hologram/Glitch effects, Decal system, Backface Texture, Video/Render Texture support, LTCGI integration, Dithering Alpha, Shadow Color Texture, Rim Direction Control, Multi-Color Outlines. Features material preset system with 59 defaults (30 character, 10 Toon/NPR styles), intelligent inspector UI, parameter sharing, visual preset browser, material validator (VRChat optimization), interactive help system (24 glossary terms, 6 tutorials), batch processor (5 modes), realtime preview, color palette management, scene material editor, texture optimizer, cubemap reflection, environmental rim, parallax mapping, refraction, advanced lighting, VRC Light Volumes support, SSS, virtual expressions, mask textures, particle system editor, shader prewarming (VRChat-safe), asset reference checker, mask texture brush, lilToon prefab migration. Full Japanese UI localization. Designer-friendly with comprehensive non-engineer support tools.",
+          "keywords": [
+            "shader",
+            "toon",
+            "cel-shading",
+            "npr",
+            "vrchat",
+            "avatar",
+            "lighting",
+            "light-volumes",
+            "audiolink",
+            "subsurface-scattering",
+            "dissolve",
+            "emission",
+            "matcap",
+            "hologram",
+            "glitch",
+            "decal",
+            "designer-tools",
+            "validator",
+            "batch-processing",
+            "japanese",
+            "localization"
+          ],
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "repository": {
+            "type": "git",
+            "url": "https://github.com/natane010/natane_toon_shader.git"
+          },
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {},
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.9/com.natane.toonshader-1.2.9.zip",
+          "zipSHA256": "9e6255bf7db52702a482a55ed22b7a22ebf922cc0f0374754c9b0573e7e99049"
         }
       }
     }
