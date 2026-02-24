@@ -321,7 +321,7 @@ Shader "Natane/Toon Shader"
         [Header(Outline)]
         [Toggle(_OUTLINE)] _Outline ("Enable Outline", Float) = 0
         [Enum(Inverted Hull,0,Back Face,1)] _OutlineMode ("Outline Mode", Float) = 0
-        _OutlineWidth ("Outline Width", Range(0, 1)) = 0.1
+        _OutlineWidth ("Outline Width", Range(0, 10)) = 0.1
         _OutlineColor ("Outline Color", Color) = (0,0,0,1)
         [Toggle(_OUTLINE_MASK)] _UseOutlineMask ("Use Outline Mask", Float) = 0
         _OutlineMask ("Outline Mask", 2D) = "white" {}
@@ -689,6 +689,8 @@ Shader "Natane/Toon Shader"
         _StencilRef ("Stencil Reference", Range(0, 255)) = 0
         [Enum(UnityEngine.Rendering.CompareFunction)] _StencilComp ("Stencil Comparison", Float) = 8
         [Enum(UnityEngine.Rendering.StencilOp)] _StencilOp ("Stencil Pass Operation", Float) = 0
+        [Enum(UnityEngine.Rendering.StencilOp)] _StencilFail ("Stencil Fail Operation", Float) = 0
+        [Enum(UnityEngine.Rendering.StencilOp)] _StencilZFail ("Stencil ZFail Operation", Float) = 0
         _StencilReadMask ("Read Mask", Range(0, 255)) = 255
         _StencilWriteMask ("Write Mask", Range(0, 255)) = 255
     }
@@ -706,6 +708,8 @@ Shader "Natane/Toon Shader"
             Ref [_StencilRef]
             Comp [_StencilComp]
             Pass [_StencilOp]
+            Fail [_StencilFail]
+            ZFail [_StencilZFail]
             ReadMask [_StencilReadMask]
             WriteMask [_StencilWriteMask]
         }
@@ -873,7 +877,7 @@ Shader "Natane/Toon Shader"
 
                         // Apply distance compensation for consistent outline width
                         // Scale down by 0.01 to maintain original scale with new range (0-1)
-                        float outlineWidth = _OutlineWidth * 0.01 * (1.0 + distanceFactor) * widthMultiplier;
+                        float outlineWidth = _OutlineWidth * 0.1 * (1.0 + distanceFactor) * widthMultiplier;
                         o.pos.xy += offset * o.pos.z * outlineWidth;
                     }
                     else

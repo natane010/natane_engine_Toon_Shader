@@ -2702,34 +2702,72 @@ public class NataneToonShaderGUI : ShaderGUI
             // Show blend mode properties for Transparent mode
             if (currentMode == RenderingMode.Transparent)
             {
-                DrawProperty("_SrcBlend", "ソースブレンド");
-                DrawProperty("_DstBlend", "宛先ブレンド");
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField("ブレンドモード", EditorStyles.boldLabel);
+
+                // Blend preset selector
+                MaterialProperty srcBlendProp = FindProperty("_SrcBlend", properties, false);
+                MaterialProperty dstBlendProp = FindProperty("_DstBlend", properties, false);
+                if (srcBlendProp != null && dstBlendProp != null)
+                {
+                    int currentPreset = GetBlendPresetIndex((int)srcBlendProp.floatValue, (int)dstBlendProp.floatValue);
+                    string[] presetNames = new string[] {
+                        "Alpha Blend（標準半透明）",
+                        "Additive（加算）",
+                        "Premultiplied Alpha（事前乗算）",
+                        "Multiplicative（乗算）",
+                        "カスタム"
+                    };
+
+                    EditorGUI.BeginChangeCheck();
+                    int newPreset = EditorGUILayout.Popup("ブレンドプリセット", currentPreset, presetNames);
+                    if (EditorGUI.EndChangeCheck() && newPreset != 4) // 4 = Custom, don't change
+                    {
+                        ApplyBlendPreset(newPreset, srcBlendProp, dstBlendProp);
+                    }
+
+                    DrawProperty("_SrcBlend", "ソースブレンド");
+                    DrawProperty("_DstBlend", "宛先ブレンド");
+                }
+
                 DrawHelpToggle("BlendMode",
                     "🎨 ブレンドモード:\n" +
                     "半透明の合成方法を制御します。\n\n" +
-                    "標準設定:\n" +
-                    "• ソースブレンド: SrcAlpha (5)\n" +
-                    "• 宛先ブレンド: OneMinusSrcAlpha (10)\n\n" +
-                    "通常は変更する必要はありません。",
+                    "プリセット:\n" +
+                    "• Alpha Blend: 標準的な半透明（SrcAlpha / OneMinusSrcAlpha）\n" +
+                    "• Additive: 加算合成・光るエフェクト向け（One / One）\n" +
+                    "• Premultiplied Alpha: 事前乗算アルファ（One / OneMinusSrcAlpha）\n" +
+                    "• Multiplicative: 乗算合成・影向け（DstColor / Zero）\n" +
+                    "• カスタム: SrcBlend/DstBlendを直接指定\n\n" +
+                    "💡 通常は Alpha Blend を推奨します。",
                     MessageType.Info);
             }
 
             EditorGUILayout.Space(5);
             EditorGUILayout.LabelField("Stencil", EditorStyles.boldLabel);
-            DrawProperty("_StencilRef", "Stencil Reference");
-            DrawProperty("_StencilComp", "Stencil Comparison");
-            DrawProperty("_StencilOp", "Stencil Pass Operation");
-            DrawProperty("_StencilReadMask", "Read Mask");
-            DrawProperty("_StencilWriteMask", "Write Mask");
+            DrawProperty("_StencilRef", "参照値 (Reference)");
+            DrawProperty("_StencilComp", "比較関数 (Comparison)");
+            DrawProperty("_StencilOp", "Pass操作（テスト成功時）");
+            DrawProperty("_StencilFail", "Fail操作（ステンシル不合格時）");
+            DrawProperty("_StencilZFail", "ZFail操作（深度不合格時）");
+            DrawProperty("_StencilReadMask", "読み取りマスク");
+            DrawProperty("_StencilWriteMask", "書き込みマスク");
             DrawHelpToggle("Stencil",
                 "🎭 ステンシル:\n" +
                 "ステンシルバッファを使用して描画マスクを制御します。\n\n" +
                 "• Reference: 比較/書き込み用の参照値（0-255）\n" +
                 "• Comparison: バッファ値と参照値の比較方法\n" +
-                "• Pass Operation: テスト合格時のバッファ操作\n" +
-                "• Read/Write Mask: ビットマスク\n\n" +
+                "  - Always: 常に合格 / Equal: 一致時のみ / NotEqual: 不一致時のみ\n" +
+                "• Pass: ステンシル＆深度テスト両方合格時の操作\n" +
+                "• Fail: ステンシルテスト不合格時の操作\n" +
+                "• ZFail: ステンシル合格・深度テスト不合格時の操作\n" +
+                "  - Keep: 変更なし / Replace: 参照値で上書き / Zero: 0にする\n" +
+                "• Read/Write Mask: ビットマスク（255=全ビット）\n\n" +
                 "💡 デフォルト値（Comp=Always, Op=Keep）では既存動作に影響しません。\n" +
-                "💡 同じRef値を持つオブジェクト間でマスク効果を実現できます。",
+                "💡 同じRef値を持つオブジェクト間でマスク効果を実現できます。\n\n" +
+                "使用例:\n" +
+                "• 書き込み側: Ref=1, Comp=Always, Pass=Replace\n" +
+                "• 読み取り側: Ref=1, Comp=Equal, Pass=Keep",
                 MessageType.Info);
 
         }
@@ -3238,6 +3276,27 @@ public class NataneToonShaderGUI : ShaderGUI
         if (property != null)
         {
             materialEditor.ShaderProperty(property, label);
+        }
+    }
+
+    // Blend mode preset helpers
+    private int GetBlendPresetIndex(int srcBlend, int dstBlend)
+    {
+        if (srcBlend == 5 && dstBlend == 10) return 0; // Alpha Blend (SrcAlpha / OneMinusSrcAlpha)
+        if (srcBlend == 1 && dstBlend == 1) return 1;  // Additive (One / One)
+        if (srcBlend == 1 && dstBlend == 10) return 2;  // Premultiplied Alpha (One / OneMinusSrcAlpha)
+        if (srcBlend == 2 && dstBlend == 0) return 3;   // Multiplicative (DstColor / Zero)
+        return 4; // Custom
+    }
+
+    private void ApplyBlendPreset(int preset, MaterialProperty srcBlend, MaterialProperty dstBlend)
+    {
+        switch (preset)
+        {
+            case 0: srcBlend.floatValue = 5; dstBlend.floatValue = 10; break; // Alpha Blend
+            case 1: srcBlend.floatValue = 1; dstBlend.floatValue = 1; break;  // Additive
+            case 2: srcBlend.floatValue = 1; dstBlend.floatValue = 10; break; // Premultiplied Alpha
+            case 3: srcBlend.floatValue = 2; dstBlend.floatValue = 0; break;  // Multiplicative
         }
     }
 
