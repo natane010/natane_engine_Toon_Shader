@@ -5,6 +5,32 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.15] - 2026-02-25
+
+### Added
+- **アウトライン コーナーギャップ修正**: ハードエッジメッシュでアウトラインの角に隙間が出る問題の対策機能を追加
+  - `_OutlineCornerSmooth`: スムース法線OFF時の法線フォールバック。頂点法線を頂点位置方向（オブジェクト中心→頂点）にブレンドしてコーナーギャップを軽減（Range 0-1, デフォルト0）
+  - `_OutlineEdgeCompensation`: シャープエッジ検出によるアウトライン幅自動縮小。元の法線と使用中の法線の不一致度に応じて幅を0.3〜1.0倍に調整（Range 0-1, デフォルト0）
+  - GUI: スムース法線OFF時の警告ヒント・コーナースムージング/エッジ幅補正のヘルプテキスト追加
+- デフォルト値0で後方互換性を維持、`shader_feature` 追加なしでバリアント数増加なし
+
+---
+
+## [1.2.14] - 2026-02-25
+
+### Added
+- **高さフェード（Height Fade）**: 高さに基づくフェードアウト機能。Alpha/Clip/Dithering の3モード対応、エッジグロー付き
+- **ステンシル**: Stencil Fail / ZFail Operation の追加。より柔軟なステンシル制御
+- **ワールド座標ディゾルブ**: Dissolve にワールド/ローカル座標モードを追加。軸指定・範囲指定・ノイズブレンド対応
+- **オブジェクト交差フェード（Intersection Fade）**: 深度バッファを使用したオブジェクト交差部のフェード
+- **グラデーションベースカラー**: 軸指定のグラデーションカラーをベーステクスチャにブレンド
+
+### Fixed
+- **アウトライン幅修正**: アウトラインWidthのRange上限を0-1に戻し、乗数0.1で十分な幅を確保
+- **半透明ブレンドプリセット**: 半透明バリアントのブレンドモード設定を改善
+
+---
+
 ## [1.2.13] - 2026-02-25
 
 ### Performance
