@@ -139,6 +139,12 @@ half4 frag(v2f i) : SV_Target
 
     UNITY_LIGHT_ATTENUATION(atten, i, i.worldPos);
 
+    // ===== Per-Effect Distance Fade (early calculation) =====
+    #ifdef _DISTANCE_FADE
+        float _dfRange = _DistFadeBlur * (_DistanceFadeEnd - _DistanceFadeStart) * 0.5;
+        half distanceFade = CalculateDistanceFade(i.worldPos, _DistanceFadeStart - _dfRange, _DistanceFadeEnd + _dfRange);
+    #endif
+
     // ===== Shadow Map Smoothing (PCF + Adaptive) =====
     // シャドウマップのジャギーを軽減
     // ディレクショナル: PCF 9-tap で本物のアンチエイリアシング
@@ -401,7 +407,11 @@ half4 frag(v2f i) : SV_Target
         additionalResult *= _AdditionalLightIntensity;
 
         // Backlight (apply blend amount)
-        additionalResult += backlight * _BacklightColor.rgb * effectiveLightColor * _BacklightBlend;
+        half backlightBlendFaded = _BacklightBlend;
+        #ifdef _DISTANCE_FADE
+            backlightBlendFaded *= lerp(1.0, distanceFade, _BacklightDistFade);
+        #endif
+        additionalResult += backlight * _BacklightColor.rgb * effectiveLightColor * backlightBlendFaded;
 
         // LTCGI (diffuse → additional, specular → saved for later)
         #if defined(_LTCGI)
@@ -562,7 +572,11 @@ half4 frag(v2f i) : SV_Target
         // Use safe additive blending to prevent white-out
         half3 preSpec = col.rgb;
         col.rgb = SafeAdditiveBlend(col.rgb, specContrib, saturate(length(specContrib) * 0.5));
-        col.rgb = ApplyEffectBlendPost(preSpec, col.rgb, _SpecularBlend, _SpecularBlendMode);
+        half specBlendFaded = _SpecularBlend;
+        #ifdef _DISTANCE_FADE
+            specBlendFaded *= lerp(1.0, distanceFade, _SpecularDistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preSpec, col.rgb, specBlendFaded, _SpecularBlendMode);
     #endif
 
     // ===== Hair Specular (Kajiya-Kay) =====
@@ -584,7 +598,11 @@ half4 frag(v2f i) : SV_Target
         half hairSpecStrength = saturate(length(hairSpec) * 0.5);
         half3 preHairSpec = col.rgb;
         col.rgb = SafeAdditiveBlend(col.rgb, hairSpec, hairSpecStrength);
-        col.rgb = ApplyEffectBlendPost(preHairSpec, col.rgb, _HairSpecBlend, _HairSpecBlendMode);
+        half hairSpecBlendFaded = _HairSpecBlend;
+        #ifdef _DISTANCE_FADE
+            hairSpecBlendFaded *= lerp(1.0, distanceFade, _HairSpecDistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preHairSpec, col.rgb, hairSpecBlendFaded, _HairSpecBlendMode);
     #endif
 
     // ===== Subsurface Scattering =====
@@ -608,7 +626,11 @@ half4 frag(v2f i) : SV_Target
         half sssStrength = saturate(length(sss) * 0.5);
         half3 preSSS = col.rgb;
         col.rgb = SafeAdditiveBlend(col.rgb, sss, sssStrength);
-        col.rgb = ApplyEffectBlendPost(preSSS, col.rgb, _SSSBlend, _SSSBlendMode);
+        half sssBlendFaded = _SSSBlend;
+        #ifdef _DISTANCE_FADE
+            sssBlendFaded *= lerp(1.0, distanceFade, _SSSDistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preSSS, col.rgb, sssBlendFaded, _SSSBlendMode);
     #endif
 
     // ===== Rim Light (ForwardBase only) =====
@@ -646,7 +668,11 @@ half4 frag(v2f i) : SV_Target
         half rimStrength = saturate(length(rim) * 0.5);
         half3 preRim = col.rgb;
         col.rgb = SafeAdditiveBlend(col.rgb, rim, rimStrength);
-        col.rgb = ApplyEffectBlendPost(preRim, col.rgb, _RimBlend, _RimBlendMode);
+        half rimBlendFaded = _RimBlend;
+        #ifdef _DISTANCE_FADE
+            rimBlendFaded *= lerp(1.0, distanceFade, _RimDistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preRim, col.rgb, rimBlendFaded, _RimBlendMode);
     #endif
 
     // ===== Rim Light 2 (ForwardBase only) =====
@@ -688,7 +714,11 @@ half4 frag(v2f i) : SV_Target
         half rim2Strength = saturate(length(rim2) * 0.5);
         half3 preRim2 = col.rgb;
         col.rgb = SafeAdditiveBlendFast(col.rgb, rim2, rim2Strength);
-        col.rgb = ApplyEffectBlendPost(preRim2, col.rgb, _RimBlend2, _RimBlendMode2);
+        half rim2BlendFaded = _RimBlend2;
+        #ifdef _DISTANCE_FADE
+            rim2BlendFaded *= lerp(1.0, distanceFade, _Rim2DistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preRim2, col.rgb, rim2BlendFaded, _RimBlendMode2);
     #endif
 
     // ===== Offset Rim Light (ForwardBase only) =====
@@ -712,7 +742,11 @@ half4 frag(v2f i) : SV_Target
         half offsetRimStrength = saturate(length(offsetRim) * 0.5);
         half3 preOffsetRim = col.rgb;
         col.rgb = SafeAdditiveBlend(col.rgb, offsetRim, offsetRimStrength);
-        col.rgb = ApplyEffectBlendPost(preOffsetRim, col.rgb, _OffsetRimBlend, _OffsetRimBlendMode);
+        half offsetRimBlendFaded = _OffsetRimBlend;
+        #ifdef _DISTANCE_FADE
+            offsetRimBlendFaded *= lerp(1.0, distanceFade, _OffsetRimDistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preOffsetRim, col.rgb, offsetRimBlendFaded, _OffsetRimBlendMode);
     #endif
 
     // ===== Environmental Rim (ForwardBase only) =====
@@ -733,7 +767,11 @@ half4 frag(v2f i) : SV_Target
         half envRimStrength = saturate(length(envRim) * 0.5);
         half3 preEnvRim = col.rgb;
         col.rgb = SafeAdditiveBlend(col.rgb, envRim, envRimStrength);
-        col.rgb = ApplyEffectBlendPost(preEnvRim, col.rgb, _EnvRimBlend, _EnvRimBlendMode);
+        half envRimBlendFaded = _EnvRimBlend;
+        #ifdef _DISTANCE_FADE
+            envRimBlendFaded *= lerp(1.0, distanceFade, _EnvRimDistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preEnvRim, col.rgb, envRimBlendFaded, _EnvRimBlendMode);
     #endif
 
     // ===== MatCap (ForwardBase only) =====
@@ -762,7 +800,11 @@ half4 frag(v2f i) : SV_Target
         half isReplace = step(1.5, _MatCapBlendMode);
         col.rgb = lerp(addResult, multiplyResult, isMultiply);
         col.rgb = lerp(col.rgb, replaceResult, isReplace);
-        col.rgb = lerp(preMatCap, col.rgb, _MatCapBlend);
+        half matCapBlendFaded = _MatCapBlend;
+        #ifdef _DISTANCE_FADE
+            matCapBlendFaded *= lerp(1.0, distanceFade, _MatCapDistFade);
+        #endif
+        col.rgb = lerp(preMatCap, col.rgb, matCapBlendFaded);
     #endif
 
     // ===== MatCap 2 (ForwardBase only) =====
@@ -786,7 +828,11 @@ half4 frag(v2f i) : SV_Target
         half isReplace2 = step(1.5, _MatCapBlendMode2);
         col.rgb = lerp(addResult2, multiplyResult2, isMultiply2);
         col.rgb = lerp(col.rgb, replaceResult2, isReplace2);
-        col.rgb = lerp(preMatCap2, col.rgb, _MatCapBlend2);
+        half matCap2BlendFaded = _MatCapBlend2;
+        #ifdef _DISTANCE_FADE
+            matCap2BlendFaded *= lerp(1.0, distanceFade, _MatCap2DistFade);
+        #endif
+        col.rgb = lerp(preMatCap2, col.rgb, matCap2BlendFaded);
     #endif
 
     // ===== MatCap 3 (ForwardBase only) =====
@@ -810,7 +856,11 @@ half4 frag(v2f i) : SV_Target
         half isReplace3 = step(1.5, _MatCapBlendMode3);
         col.rgb = lerp(addResult3, multiplyResult3, isMultiply3);
         col.rgb = lerp(col.rgb, replaceResult3, isReplace3);
-        col.rgb = lerp(preMatCap3, col.rgb, _MatCapBlend3);
+        half matCap3BlendFaded = _MatCapBlend3;
+        #ifdef _DISTANCE_FADE
+            matCap3BlendFaded *= lerp(1.0, distanceFade, _MatCap3DistFade);
+        #endif
+        col.rgb = lerp(preMatCap3, col.rgb, matCap3BlendFaded);
     #endif
 
     // ===== Cubemap Reflection (ForwardBase only) =====
@@ -830,7 +880,11 @@ half4 frag(v2f i) : SV_Target
         half reflectionStrength = saturate(length(reflection) * reflectionMask * 0.5);
         half3 preReflection = col.rgb;
         col.rgb = SafeAdditiveBlend(col.rgb, reflection, reflectionStrength);
-        col.rgb = lerp(preReflection, col.rgb, _ReflectionBlend);
+        half reflectionBlendFaded = _ReflectionBlend;
+        #ifdef _DISTANCE_FADE
+            reflectionBlendFaded *= lerp(1.0, distanceFade, _ReflectionDistFade);
+        #endif
+        col.rgb = lerp(preReflection, col.rgb, reflectionBlendFaded);
     #endif
 
     // ===== Refraction (ForwardBase only) =====
@@ -860,7 +914,11 @@ half4 frag(v2f i) : SV_Target
         float refractionBlend = _RefractionIntensity * refractionMask * (1.0 - col.a);
         half3 preRefraction = col.rgb;
         col.rgb = lerp(col.rgb, refractedColor, saturate(refractionBlend));
-        col.rgb = ApplyEffectBlendPost(preRefraction, col.rgb, _RefractionBlend, _RefractionBlendMode);
+        half refractionBlendFaded = _RefractionBlend;
+        #ifdef _DISTANCE_FADE
+            refractionBlendFaded *= lerp(1.0, distanceFade, _RefractionDistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preRefraction, col.rgb, refractionBlendFaded, _RefractionBlendMode);
     #endif
 
     // ===== Emission (ForwardBase only) =====
@@ -902,7 +960,11 @@ half4 frag(v2f i) : SV_Target
         half emissionStrength = saturate(length(emission) * emissionMask * 0.6);
         half3 preEmission = col.rgb;
         col.rgb = SafeAdditiveBlend(col.rgb, emission, emissionStrength);
-        col.rgb = ApplyEffectBlendPost(preEmission, col.rgb, _EmissionBlend, _EmissionBlendMode);
+        half emissionBlendFaded = _EmissionBlend;
+        #ifdef _DISTANCE_FADE
+            emissionBlendFaded *= lerp(1.0, distanceFade, _EmissionDistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preEmission, col.rgb, emissionBlendFaded, _EmissionBlendMode);
     #endif
 
     // ===== Virtual Expression - Hue Shift =====
@@ -960,7 +1022,11 @@ half4 frag(v2f i) : SV_Target
             col.rgb = SafeAdditiveBlendFast(col.rgb, alDissolveGlow, saturate(alDissolveResult.y));
         }
         #endif
-        col.rgb = ApplyEffectBlendPost(preAL, col.rgb, _AudioLinkBlend, _AudioLinkBlendMode);
+        half audioLinkBlendFaded = _AudioLinkBlend;
+        #ifdef _DISTANCE_FADE
+            audioLinkBlendFaded *= lerp(1.0, distanceFade, _AudioLinkDistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preAL, col.rgb, audioLinkBlendFaded, _AudioLinkBlendMode);
     }
     #endif
 
@@ -974,7 +1040,11 @@ half4 frag(v2f i) : SV_Target
         half3 glitter = GlitterEffect(glitterMaskUV, i.worldPos, viewDir, worldNormal, _GlitterBlur);
         half3 preGlitter = col.rgb;
         col.rgb = SafeAdditiveBlendFast(col.rgb, glitter, 1.0);
-        col.rgb = ApplyEffectBlendPost(preGlitter, col.rgb, _GlitterBlend, _GlitterBlendMode);
+        half glitterBlendFaded = _GlitterBlend;
+        #ifdef _DISTANCE_FADE
+            glitterBlendFaded *= lerp(1.0, distanceFade, _GlitterDistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preGlitter, col.rgb, glitterBlendFaded, _GlitterBlendMode);
     #endif
 
     // ===== Iridescence Effect =====
@@ -983,7 +1053,11 @@ half4 frag(v2f i) : SV_Target
         half3 iridescence = IridescenceEffect(worldNormal, viewDir, uv, iridSizeBlurred);
         half3 preIridescence = col.rgb;
         col.rgb = SafeAdditiveBlendFast(col.rgb, iridescence, 1.0);
-        col.rgb = ApplyEffectBlendPost(preIridescence, col.rgb, _IridescenceBlend, _IridescenceBlendMode);
+        half iridescenceBlendFaded = _IridescenceBlend;
+        #ifdef _DISTANCE_FADE
+            iridescenceBlendFaded *= lerp(1.0, distanceFade, _IridescenceDistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preIridescence, col.rgb, iridescenceBlendFaded, _IridescenceBlendMode);
     #endif
 
     // ===== Water Drip Effect (ForwardBase only) =====
@@ -1006,7 +1080,11 @@ half4 frag(v2f i) : SV_Target
         drip *= dripMaskValue;
         half3 preDrip = col.rgb;
         col.rgb = SafeAdditiveBlendFast(col.rgb, drip, 1.0);
-        col.rgb = ApplyEffectBlendPost(preDrip, col.rgb, _DripBlend, _DripBlendMode);
+        half dripBlendFaded = _DripBlend;
+        #ifdef _DISTANCE_FADE
+            dripBlendFaded *= lerp(1.0, distanceFade, _DripDistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preDrip, col.rgb, dripBlendFaded, _DripBlendMode);
     }
     #endif
 
@@ -1058,8 +1136,12 @@ half4 frag(v2f i) : SV_Target
         col.a = lerp(col.a,
             CalculateHologramAlpha(worldNormal, viewDir, col.a, _HologramAlpha),
             holoMask);
-        col.rgb = ApplyEffectBlendPost(preHolo, col.rgb, _HologramBlend, _HologramBlendMode);
-        col.a = ApplyEffectBlendPostAlpha(preHoloAlpha, col.a, _HologramBlend);
+        half hologramBlendFaded = _HologramBlend;
+        #ifdef _DISTANCE_FADE
+            hologramBlendFaded *= lerp(1.0, distanceFade, _HologramDistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preHolo, col.rgb, hologramBlendFaded, _HologramBlendMode);
+        col.a = ApplyEffectBlendPostAlpha(preHoloAlpha, col.a, hologramBlendFaded);
     }
     #endif
 
@@ -1084,7 +1166,11 @@ half4 frag(v2f i) : SV_Target
         }
         // Blur dampens glitch distortion by blending back towards original
         col.rgb = lerp(col.rgb, preGlitch, _GlitchBlur * 0.5);
-        col.rgb = ApplyEffectBlendPost(preGlitch, col.rgb, _GlitchBlend, _GlitchBlendMode);
+        half glitchBlendFaded = _GlitchBlend;
+        #ifdef _DISTANCE_FADE
+            glitchBlendFaded *= lerp(1.0, distanceFade, _GlitchDistFade);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preGlitch, col.rgb, glitchBlendFaded, _GlitchBlendMode);
     }
     #endif
 
@@ -1107,7 +1193,11 @@ half4 frag(v2f i) : SV_Target
             half isDecalReplace = step(2.5, _DecalBlendMode);
             col.rgb = lerp(decalAdd, decalMul, isDecalMul);
             col.rgb = lerp(col.rgb, decalReplace, isDecalReplace);
-            col.rgb = lerp(preDecal, col.rgb, _DecalBlend);
+            half decalBlendFaded = _DecalBlend;
+            #ifdef _DISTANCE_FADE
+                decalBlendFaded *= lerp(1.0, distanceFade, _DecalDistFade);
+            #endif
+            col.rgb = lerp(preDecal, col.rgb, decalBlendFaded);
         }
     #endif
 
@@ -1153,11 +1243,9 @@ half4 frag(v2f i) : SV_Target
         col.a *= alphaMask;
     #endif
 
-    // ===== Distance Fade =====
+    // ===== Distance Fade (Global Alpha) =====
+    // Note: distanceFade value was already computed early for per-effect fading
     #ifdef _DISTANCE_FADE
-        float fadeRange = _DistFadeBlur * (_DistanceFadeEnd - _DistanceFadeStart) * 0.5;
-        half distanceFade = CalculateDistanceFade(i.worldPos, _DistanceFadeStart - fadeRange, _DistanceFadeEnd + fadeRange);
-
         if (_DistanceFadeMode < 0.5)
         {
             // Alpha mode: smooth fade-out with distance.

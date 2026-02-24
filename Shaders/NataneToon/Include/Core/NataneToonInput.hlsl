@@ -387,6 +387,28 @@ CBUFFER_START(UnityPerMaterial)
     float _DistanceFadeMode;
     float _DistanceFadeBlend;
     float _DistFadeBlur;
+    // Per-effect distance fade blend (0 = no fade, 1 = full fade at distance)
+    float _SpecularDistFade;
+    float _HairSpecDistFade;
+    float _SSSDistFade;
+    float _RimDistFade;
+    float _Rim2DistFade;
+    float _OffsetRimDistFade;
+    float _EnvRimDistFade;
+    float _MatCapDistFade;
+    float _MatCap2DistFade;
+    float _MatCap3DistFade;
+    float _ReflectionDistFade;
+    float _RefractionDistFade;
+    float _EmissionDistFade;
+    float _AudioLinkDistFade;
+    float _GlitterDistFade;
+    float _IridescenceDistFade;
+    float _DripDistFade;
+    float _HologramDistFade;
+    float _GlitchDistFade;
+    float _DecalDistFade;
+    float _BacklightDistFade;
     #endif
 
     // Vertex Animation

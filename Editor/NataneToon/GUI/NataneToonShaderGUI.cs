@@ -955,6 +955,12 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawHelpToggle("Backlight", "逆光はオブジェクトの背後に光がある時に照明を追加し、リムライトのような効果を作ります。", MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_BacklightBlend", "_BacklightBlendMode", "_BacklightBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_BacklightDistFade", "距離フェード強度");
+                }
             }
 
             EditorGUILayout.Space();
@@ -1162,6 +1168,13 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawUVAnimationSettings("_SpecularMaskScrollSpeed", "_SpecularMaskRotateSpeed", "スペキュラーマスク");
 
                 DrawBlendControls(materialEditor, targetMaterial, "_SpecularBlend", "_SpecularBlendMode", "_SpecularBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_SpecularDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
         }
@@ -1213,6 +1226,12 @@ public class NataneToonShaderGUI : ShaderGUI
                     "髪のハイライトを表現します。",
                     MessageType.Info);
 
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_HairSpecDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
         }
@@ -1251,6 +1270,13 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawUVAnimationSettings("_RimMaskScrollSpeed", "_RimMaskRotateSpeed", "リムマスク");
 
                 DrawBlendControls(materialEditor, targetMaterial, "_RimBlend", "_RimBlendMode", "_RimBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_RimDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
 
@@ -1288,6 +1314,13 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawUVAnimationSettings("_RimMask2ScrollSpeed", "_RimMask2RotateSpeed", "リムマスク2");
 
                 DrawBlendControls(materialEditor, targetMaterial, "_RimBlend2", "_RimBlendMode2", "_Rim2Blur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_Rim2DistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
 
@@ -1359,6 +1392,13 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawHelpToggle("OffsetRimMask", "白 = リムあり、黒 = リムなし", MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_OffsetRimBlend", "_OffsetRimBlendMode", "_OffsetRimBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_OffsetRimDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
 
@@ -1414,6 +1454,13 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawHelpToggle("SSSInfo", "SSSはオブジェクトを通過する光をシミュレートします。肌、葉、薄い素材に最適です。", MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_SSSBlend", "_SSSBlendMode", "_SSSBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_SSSDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
         }
@@ -1442,6 +1489,13 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawHelpToggle("MatCapInfo", "MatCapテクスチャは球面反射マップである必要があります。", MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_MatCapBlend", null, "_MatCapBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_MatCapDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
 
@@ -1462,6 +1516,13 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawHelpToggle("MatCapMask2", "白 = MatCap適用、黒 = 適用なし", MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_MatCapBlend2", null, "_MatCap2Blur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_MatCap2DistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
 
@@ -1482,6 +1543,13 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawHelpToggle("MatCapMask3", "白 = MatCap適用、黒 = 適用なし", MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_MatCapBlend3", null, "_MatCap3Blur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_MatCap3DistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
         }
@@ -1532,6 +1600,13 @@ public class NataneToonShaderGUI : ShaderGUI
                     MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_GlitterBlend", "_GlitterBlendMode", "_GlitterBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_GlitterDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
         }
@@ -1587,6 +1662,13 @@ public class NataneToonShaderGUI : ShaderGUI
                     MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_DripBlend", "_DripBlendMode", "_DripBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_DripDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
         }
@@ -1639,6 +1721,13 @@ public class NataneToonShaderGUI : ShaderGUI
                     DrawProperty("_HologramNoiseTex", "ノイズテクスチャ");
 
                 DrawBlendControls(materialEditor, targetMaterial, "_HologramBlend", "_HologramBlendMode", "_HologramBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_HologramDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
 
@@ -1656,6 +1745,13 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_GlitchFrequency", "グリッチ発生頻度");
 
                 DrawBlendControls(materialEditor, targetMaterial, "_GlitchBlend", "_GlitchBlendMode", "_GlitchBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_GlitchDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
 
@@ -1863,6 +1959,13 @@ public class NataneToonShaderGUI : ShaderGUI
                     MessageType.None);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_EmissionBlend", "_EmissionBlendMode", "_EmissionBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_EmissionDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
         }
@@ -2001,6 +2104,13 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawHelpToggle("ReflectionInfo", "キューブマップを使用して環境反射をシミュレートします。金属やガラスなどの反射素材に最適です。", MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_ReflectionBlend");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_ReflectionDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
         }
@@ -2049,6 +2159,13 @@ public class NataneToonShaderGUI : ShaderGUI
                     MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_IridescenceBlend", "_IridescenceBlendMode", "_IridescenceBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_IridescenceDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
         }
@@ -2077,6 +2194,13 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawHelpToggle("EnvRimInfo", "キューブマップを使用して環境に基づいたリムライト効果を作成します。", MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_EnvRimBlend", "_EnvRimBlendMode", "_EnvRimBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_EnvRimDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
         }
@@ -2291,6 +2415,13 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawHelpToggle("RefractionInfo", "屈折はガラスや水などの透明素材で光の曲がりをシミュレートします。透明マテリアルに最適です。", MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_RefractionBlend", "_RefractionBlendMode");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_RefractionDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
         }
@@ -2451,6 +2582,13 @@ public class NataneToonShaderGUI : ShaderGUI
                     MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_DecalBlend", null, "_DecalBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_DecalDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
         }
@@ -2551,6 +2689,13 @@ public class NataneToonShaderGUI : ShaderGUI
                     MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_AudioLinkBlend", "_AudioLinkBlendMode");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_AudioLinkDistFade", "距離フェード強度");
+                }
+
                 EditorGUI.indentLevel--;
             }
         }

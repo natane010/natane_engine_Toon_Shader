@@ -449,6 +449,28 @@ Shader "Natane/Toon Shader (Cutout)"
         [Enum(Alpha,0,Simplify,1)] _DistanceFadeMode ("Fade Mode", Float) = 0
         _DistanceFadeBlend ("Distance Fade Blend", Range(0, 1)) = 1
         _DistFadeBlur ("Distance Fade Blur", Range(0, 1)) = 0
+        // Per-effect distance fade
+        _SpecularDistFade ("Specular Distance Fade", Range(0, 1)) = 0
+        _HairSpecDistFade ("Hair Specular Distance Fade", Range(0, 1)) = 0
+        _SSSDistFade ("SSS Distance Fade", Range(0, 1)) = 0
+        _RimDistFade ("Rim Light Distance Fade", Range(0, 1)) = 0
+        _Rim2DistFade ("Rim Light 2 Distance Fade", Range(0, 1)) = 0
+        _OffsetRimDistFade ("Offset Rim Distance Fade", Range(0, 1)) = 0
+        _EnvRimDistFade ("Env Rim Distance Fade", Range(0, 1)) = 0
+        _MatCapDistFade ("MatCap Distance Fade", Range(0, 1)) = 0
+        _MatCap2DistFade ("MatCap 2 Distance Fade", Range(0, 1)) = 0
+        _MatCap3DistFade ("MatCap 3 Distance Fade", Range(0, 1)) = 0
+        _ReflectionDistFade ("Reflection Distance Fade", Range(0, 1)) = 0
+        _RefractionDistFade ("Refraction Distance Fade", Range(0, 1)) = 0
+        _EmissionDistFade ("Emission Distance Fade", Range(0, 1)) = 0
+        _AudioLinkDistFade ("AudioLink Distance Fade", Range(0, 1)) = 0
+        _GlitterDistFade ("Glitter Distance Fade", Range(0, 1)) = 0
+        _IridescenceDistFade ("Iridescence Distance Fade", Range(0, 1)) = 0
+        _DripDistFade ("Water Drip Distance Fade", Range(0, 1)) = 0
+        _HologramDistFade ("Hologram Distance Fade", Range(0, 1)) = 0
+        _GlitchDistFade ("Glitch Distance Fade", Range(0, 1)) = 0
+        _DecalDistFade ("Decal Distance Fade", Range(0, 1)) = 0
+        _BacklightDistFade ("Backlight Distance Fade", Range(0, 1)) = 0
 
         [Header(Vertex Offset Animation Wind Breathing)]
         [Toggle(_VERTEX_ANIMATION)] _VertexAnimation ("Enable Vertex Animation", Float) = 0
