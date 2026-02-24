@@ -1031,4 +1031,26 @@ float ApplyDitheringAlpha(float alpha, float2 screenPos, float scale)
 }
 #endif // _DITHERING_ALPHA
 
+// ===== Directional Light Fallback (for non-directional environments) =====
+
+// SH L1 帯域から優勢光源方向を抽出（Light Probe ベース）
+half3 GetSHDominantLightDirection()
+{
+    half3 lumCoeff = half3(0.299, 0.587, 0.114);
+    half3 shDir = half3(
+        dot(half3(unity_SHAr.x, unity_SHAg.x, unity_SHAb.x), lumCoeff),
+        dot(half3(unity_SHAr.y, unity_SHAg.y, unity_SHAb.y), lumCoeff),
+        dot(half3(unity_SHAr.z, unity_SHAg.z, unity_SHAb.z), lumCoeff)
+    );
+    half len = length(shDir);
+    return (len > 0.001) ? (shDir / len) : half3(0, 1, 0);
+}
+
+// SH L0 から平均環境光色を取得（フォールバックライトカラー）
+half3 GetSHFallbackLightColor()
+{
+    half3 shAvg = half3(unity_SHAr.w, unity_SHAg.w, unity_SHAb.w);
+    return max(half3(0.05, 0.05, 0.05), shAvg);
+}
+
 #endif // NATANE_TOON_UTILS_INCLUDED

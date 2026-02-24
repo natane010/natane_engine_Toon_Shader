@@ -446,7 +446,10 @@ float ApplySDFShadow(float2 uv, float ndotl, float3 lightDir, float3 worldPos)
             float3 faceUp = cross(faceForward, faceRight);
 
             // Project light direction onto face plane (remove vertical component)
-            float3 lightDirFlat = normalize(lightDir - dot(lightDir, faceUp) * faceUp);
+            // NaN guard: if lightDir is zero or parallel to faceUp, fallback to faceForward
+            float3 rawLightDirFlat = lightDir - dot(lightDir, faceUp) * faceUp;
+            float flatLen = length(rawLightDirFlat);
+            float3 lightDirFlat = (flatLen > 0.001) ? (rawLightDirFlat / flatLen) : faceForward;
 
             // Calculate light direction relative to face
             float FdotL = dot(faceForward, lightDirFlat);

@@ -111,8 +111,32 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== Lighting Setup =====
-    // Unity's built-in attenuation handles directional/point/spot and shadow maps consistently.
-    half3 lightDir = normalize(UnityWorldSpaceLightDir(i.worldPos));
+    // Detect directional light presence and provide SH fallback for non-directional environments
+    half3 lightDir;
+    half3 effectiveLightColor;
+
+    #ifdef UNITY_PASS_FORWARDBASE
+    {
+        half dirLightLum = CALC_LUMINANCE(_LightColor0.rgb);
+        if (dirLightLum > 0.01)
+        {
+            // ディレクショナルライトあり: 通常処理
+            lightDir = normalize(UnityWorldSpaceLightDir(i.worldPos));
+            effectiveLightColor = _LightColor0.rgb;
+        }
+        else
+        {
+            // ディレクショナルライトなし: SH フォールバック
+            lightDir = GetSHDominantLightDirection();
+            effectiveLightColor = GetSHFallbackLightColor();
+        }
+    }
+    #else
+        // ForwardAdd: 常に実ライトを使用
+        lightDir = normalize(UnityWorldSpaceLightDir(i.worldPos));
+        effectiveLightColor = _LightColor0.rgb;
+    #endif
+
     UNITY_LIGHT_ATTENUATION(atten, i, i.worldPos);
 
     // ===== Shadow Map Smoothing (PCF + Adaptive) =====
@@ -352,8 +376,8 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         // Light color application (with LightColorInfluence preservation)
-        half lightColorLum = CALC_LUMINANCE(_LightColor0.rgb);
-        half3 colorMultiplied = directResult * saturate(_LightColor0.rgb);
+        half lightColorLum = CALC_LUMINANCE(effectiveLightColor);
+        half3 colorMultiplied = directResult * saturate(effectiveLightColor);
         half3 luminanceOnly = directResult * lightColorLum;
         half3 lightColorInfluenced = lerp(luminanceOnly, colorMultiplied, _LightColorInfluence);
         directResult = lightColorInfluenced * max(0.0, _LightIntensity);
@@ -377,7 +401,7 @@ half4 frag(v2f i) : SV_Target
         additionalResult *= _AdditionalLightIntensity;
 
         // Backlight (apply blend amount)
-        additionalResult += backlight * _BacklightColor.rgb * _LightColor0.rgb * _BacklightBlend;
+        additionalResult += backlight * _BacklightColor.rgb * effectiveLightColor * _BacklightBlend;
 
         // LTCGI (diffuse → additional, specular → saved for later)
         #if defined(_LTCGI)
@@ -514,7 +538,7 @@ half4 frag(v2f i) : SV_Target
     #ifdef _SPECULAR
         float specSoftnessBlurred = _SpecularSoftness + _SpecularBlur * 0.3;
         half spec = SpecularHighlight(worldNormal, viewDir, lightDir, _SpecularSize, specSoftnessBlurred);
-        half3 specContrib = spec * _SpecularColor.rgb * _LightColor0.rgb * atten;
+        half3 specContrib = spec * _SpecularColor.rgb * effectiveLightColor * atten;
 
         // Apply mask texture with soft blending
         float2 specMaskUV = uv;
@@ -545,7 +569,7 @@ half4 frag(v2f i) : SV_Target
     #ifdef _HAIR_SPECULAR
         half3 hairSpec = HairSpecularHighlight(worldNormal, i.worldTangent, i.worldBinormal,
                                                 viewDir, lightDir, uv);
-        hairSpec *= _LightColor0.rgb * atten;
+        hairSpec *= effectiveLightColor * atten;
 
         // Apply additional light intensity scaling in ForwardAdd pass
         #ifndef UNITY_PASS_FORWARDBASE
