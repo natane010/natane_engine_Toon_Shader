@@ -2081,6 +2081,43 @@ public class NataneToonShaderGUI : ShaderGUI
                 }
 
                 EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField("コーナーギャップ修正", EditorStyles.boldLabel);
+
+                // _SMOOTH_NORMAL OFF時のみ警告+フォールバック表示
+                MaterialProperty smoothNormalProp = FindProperty("_SmoothNormal", properties, false);
+                bool isSmoothNormalOff = smoothNormalProp == null || smoothNormalProp.floatValue < 0.5f;
+                if (isSmoothNormalOff)
+                {
+                    EditorGUILayout.HelpBox(
+                        "ハードエッジのモデルでアウトラインが割れる場合、" +
+                        "「スムース法線」の使用が最善の解決策です。\n" +
+                        "以下のパラメータはスムース法線が使えない場合の簡易対策です。",
+                        MessageType.Info);
+                    DrawProperty("_OutlineCornerSmooth", "コーナースムージング");
+                    DrawHelpToggle("OutlineCornerSmooth",
+                        "コーナースムージング:\n" +
+                        "頂点法線を頂点位置方向（オブジェクト中心→頂点）にブレンドします。\n" +
+                        "ハードエッジのコーナーで法線がバラバラになるのを緩和します。\n\n" +
+                        "• 0: 無効（デフォルト）\n" +
+                        "• 0.3〜0.5: 推奨。コーナーギャップを軽減しつつ形状を維持\n" +
+                        "• 1.0: 完全に位置方向の法線を使用（球体状に膨張）\n\n" +
+                        "⚠️ スムース法線ベイクの方がより正確な結果が得られます。",
+                        MessageType.Info);
+                }
+
+                // エッジ幅補正は常時表示
+                DrawProperty("_OutlineEdgeCompensation", "エッジ幅補正");
+                DrawHelpToggle("OutlineEdgeCompensation",
+                    "エッジ幅補正:\n" +
+                    "シャープエッジ部分でアウトライン幅を自動縮小します。\n" +
+                    "元の法線と使用中の法線の不一致度を検出し、\n" +
+                    "差が大きい箇所ほどアウトラインを細くします。\n\n" +
+                    "• 0: 無効（デフォルト）\n" +
+                    "• 0.5〜1.0: 推奨。コーナーの突出を抑制\n\n" +
+                    "💡 スムース法線のON/OFFに関わらず使用可能です。",
+                    MessageType.Info);
+
+                EditorGUILayout.Space(SECTION_SPACING);
 
                 float outlineMode = targetMaterial.GetFloat("_OutlineMode");
                 if (outlineMode < FLOAT_COMPARISON_THRESHOLD)

@@ -342,6 +342,9 @@ Shader "Natane/Toon Shader (Cutout)"
         [Enum(Vertex Color ObjectSpace,0,Vertex Color TangentSpace,1,Baked Normal Texture,2)] _SmoothNormalMode ("Smooth Normal Mode", Float) = 0
         _SmoothNormalTex ("Smooth Normal Texture", 2D) = "bump" {}
         _SmoothNormalShadingBlend ("Smooth Normal Shading Blend", Range(0, 1)) = 0
+        [Header(Outline Corner Fix)]
+        _OutlineCornerSmooth ("Corner Smooth Fallback", Range(0, 1)) = 0
+        _OutlineEdgeCompensation ("Edge Width Compensation", Range(0, 1)) = 0
 
         [Header(Emission)]
         [Toggle(_EMISSION)] _Emission ("Enable Emission", Float) = 0
@@ -773,6 +776,8 @@ Shader "Natane/Toon Shader (Cutout)"
             float _OutlineColorMix;
             float _Outline;
             float _OutlineMode;
+            float _OutlineCornerSmooth;
+            float _OutlineEdgeCompensation;
             sampler2D _OutlineMask;
             sampler2D _OutlineWidthMap;
             #ifdef _OUTLINE_TEXTURE_COLOR
@@ -867,6 +872,13 @@ Shader "Natane/Toon Shader (Cutout)"
                             outlineNormal = mul(bakedNormal, tbnOS);
                         }
                         outlineNormal = normalize(outlineNormal);
+                    #else
+                        // Fallback: blend vertex normal toward vertex position direction
+                        if (_OutlineCornerSmooth > 0.001)
+                        {
+                            float3 posNormal = normalize(v.vertex.xyz);
+                            outlineNormal = normalize(lerp(v.normal, posNormal, _OutlineCornerSmooth));
+                        }
                     #endif
 
                     if (_OutlineMode < 0.5)
@@ -881,6 +893,15 @@ Shader "Natane/Toon Shader (Cutout)"
                         // Apply distance compensation for consistent outline width
                         // Scale down by 0.01 to maintain original scale with new range (0-1)
                         float outlineWidth = _OutlineWidth * 0.1 * (1.0 + distanceFactor) * widthMultiplier;
+
+                        // Edge width compensation
+                        if (_OutlineEdgeCompensation > 0.001)
+                        {
+                            float normalConsistency = saturate(dot(normalize(v.normal), outlineNormal));
+                            float edgeComp = lerp(1.0, lerp(0.3, 1.0, normalConsistency), _OutlineEdgeCompensation);
+                            outlineWidth *= edgeComp;
+                        }
+
                         o.pos.xy += offset * o.pos.z * outlineWidth;
                     }
                     else
@@ -889,6 +910,15 @@ Shader "Natane/Toon Shader (Cutout)"
                         // Improved with distance compensation
                         // Scale down by 0.1 to maintain original scale with new range (0-1)
                         float outlineWidth = _OutlineWidth * 0.1 * (1.0 + distanceFactor * 0.5) * widthMultiplier;
+
+                        // Edge width compensation
+                        if (_OutlineEdgeCompensation > 0.001)
+                        {
+                            float normalConsistency = saturate(dot(normalize(v.normal), outlineNormal));
+                            float edgeComp = lerp(1.0, lerp(0.3, 1.0, normalConsistency), _OutlineEdgeCompensation);
+                            outlineWidth *= edgeComp;
+                        }
+
                         float3 scaledPos = v.vertex.xyz + normalize(outlineNormal) * outlineWidth;
                         o.pos = UnityObjectToClipPos(float4(scaledPos, 1.0));
                     }
