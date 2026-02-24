@@ -321,7 +321,7 @@ Shader "Natane/Toon Shader"
         [Header(Outline)]
         [Toggle(_OUTLINE)] _Outline ("Enable Outline", Float) = 0
         [Enum(Inverted Hull,0,Back Face,1)] _OutlineMode ("Outline Mode", Float) = 0
-        _OutlineWidth ("Outline Width", Range(0, 10)) = 0.1
+        _OutlineWidth ("Outline Width", Range(0, 1)) = 0.1
         _OutlineColor ("Outline Color", Color) = (0,0,0,1)
         [Toggle(_OUTLINE_MASK)] _UseOutlineMask ("Use Outline Mask", Float) = 0
         _OutlineMask ("Outline Mask", 2D) = "white" {}
