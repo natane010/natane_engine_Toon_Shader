@@ -120,15 +120,29 @@ half4 frag(v2f i) : SV_Target
         half dirLightLum = CALC_LUMINANCE(_LightColor0.rgb);
         if (dirLightLum > 0.01)
         {
-            // ディレクショナルライトあり: 通常処理
+            // 1. ディレクショナルライトあり: 通常処理
             lightDir = normalize(UnityWorldSpaceLightDir(i.worldPos));
             effectiveLightColor = _LightColor0.rgb;
         }
         else
         {
-            // ディレクショナルライトなし: SH フォールバック
-            lightDir = GetSHDominantLightDirection();
-            effectiveLightColor = GetSHFallbackLightColor();
+            // ディレクショナルライトなし: フォールバックチェーン
+            // 2. ポイント/スポットライトから方向を取得（ForwardBase vertex light 配列）
+            half3 vlDir, vlColor;
+            GetBrightestVertexLight(i.worldPos, vlDir, vlColor);
+            half vlLum = CALC_LUMINANCE(vlColor);
+
+            if (vlLum > 0.01)
+            {
+                lightDir = vlDir;
+                effectiveLightColor = vlColor;
+            }
+            else
+            {
+                // 3. SH Light Probe から方向を取得
+                lightDir = GetSHDominantLightDirection();
+                effectiveLightColor = GetSHFallbackLightColor();
+            }
         }
     }
     #else

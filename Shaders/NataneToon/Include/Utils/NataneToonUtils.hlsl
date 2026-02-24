@@ -1033,6 +1033,33 @@ float ApplyDitheringAlpha(float alpha, float2 screenPos, float scale)
 
 // ===== Directional Light Fallback (for non-directional environments) =====
 
+// ForwardBase の vertex light 配列から最も明るいライトの方向と色を取得
+// ポイントライト/スポットライトのみの環境で機能する
+void GetBrightestVertexLight(float3 worldPos, out half3 outDir, out half3 outColor)
+{
+    half maxLum = 0;
+    outDir = half3(0, 1, 0);
+    outColor = half3(0, 0, 0);
+
+    UNITY_UNROLL
+    for (int idx = 0; idx < 4; idx++)
+    {
+        float3 lightPos = float3(unity_4LightPosX0[idx], unity_4LightPosY0[idx], unity_4LightPosZ0[idx]);
+        float3 toLight = lightPos - worldPos;
+        float distSq = max(dot(toLight, toLight), 0.000001);
+        float atten = 1.0 / (1.0 + distSq * unity_4LightAtten0[idx]);
+        half3 color = unity_LightColor[idx].rgb * atten;
+        half lum = CALC_LUMINANCE(color);
+
+        if (lum > maxLum)
+        {
+            maxLum = lum;
+            outDir = toLight * rsqrt(distSq);
+            outColor = unity_LightColor[idx].rgb;
+        }
+    }
+}
+
 // SH L1 帯域から優勢光源方向を抽出（Light Probe ベース）
 half3 GetSHDominantLightDirection()
 {
