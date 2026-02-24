@@ -72,6 +72,28 @@ CBUFFER_START(UnityPerMaterial)
     float4 _5thTexScrollSpeed;
     float _5thTexRotateSpeed;
 
+    // Screen-Tone Overlay
+    #if defined(_SCREEN_TONE)
+    half4 _ScreenToneColor;
+    float _ScreenToneScale;
+    float _ScreenToneThreshold;
+    float _ScreenToneBlend;
+    float _ScreenToneBlendMode;
+    float _ScreenToneBlur;
+    #endif
+
+    // Gradient Base Color
+    #if defined(_GRADIENT_BASE_COLOR)
+    half4 _GradientTopColor;
+    half4 _GradientBottomColor;
+    float _GradientAxis;
+    float _GradientSpace;
+    float _GradientStart;
+    float _GradientEnd;
+    float _GradientBlend;
+    float _GradientBlendMode;
+    #endif
+
     // ===== SECTION 3: Lighting & Shading (ライティング基本) =====
     // シェーディングモード、マルチトーン、SDFシャドウマップ、影設定
     // トゥーンシェーディングの核となるライティング計算パラメータ群
@@ -299,6 +321,11 @@ CBUFFER_START(UnityPerMaterial)
     float _DissolveBlur;
     float4 _DissolveTexScrollSpeed;
     float _DissolveTexRotateSpeed;
+    float _DissolveCoordMode;
+    float _DissolveWorldAxis;
+    float _DissolveWorldMin;
+    float _DissolveWorldMax;
+    float _DissolveNoiseBlend;
     #endif
 
     // Virtual Expression - Hue Shift
@@ -458,6 +485,31 @@ CBUFFER_START(UnityPerMaterial)
     float _GlitchDistFade;
     float _DecalDistFade;
     float _BacklightDistFade;
+    float _SmearDistFade;
+    #endif
+
+    // Height Fade
+    #if defined(_HEIGHT_FADE)
+    float _HeightFadeStart;
+    float _HeightFadeEnd;
+    float _HeightFadeAxis;
+    float _HeightFadeSpace;
+    float _HeightFadeInvert;
+    float _HeightFadeMode;
+    float _HeightFadeBlend;
+    float _HeightFadeDitherScale;
+    float _HeightFadeEdgeWidth;
+    half4 _HeightFadeEdgeColor;
+    #endif
+
+    // Intersection Fade
+    #if defined(_INTERSECTION_FADE)
+    float _IntersectionFadeDistance;
+    float _IntersectionFadeMode;
+    float _IntersectionFadeBlend;
+    float _IntersectionFadeDitherScale;
+    float _IntersectionFadeEdgeWidth;
+    half4 _IntersectionFadeEdgeColor;
     #endif
 
     // ===== SECTION 10: Vertex & Special Features =====
@@ -583,6 +635,29 @@ CBUFFER_START(UnityPerMaterial)
     float _TessDispStrength;
     float _TessDispOffset;
     #endif
+
+    // Smear Effect (スミア / 残像エフェクト)
+    #if defined(_SMEAR)
+    float _SmearStretch;
+    float4 _SmearDirection;
+    float _SmearNoiseScale;
+    float _SmearNoiseStrength;
+    float _SmearTrailLength;
+    float _SmearTrailFade;
+    half4 _SmearGlowColor;
+    float _SmearGlowIntensity;
+    float _SmearGlowPower;
+    float _SmearEmission;
+    half4 _SmearEmissionColor;
+    float _SmearBlend;
+    float _SmearBlendMode;
+    float _SmearBlur;
+    float4 _SmearMaskScrollSpeed;
+    float _SmearMaskRotateSpeed;
+    float _SmearAutoMagnitude;
+    float _SmearMotionSensitivity;
+    float _SmearVATVelocity;
+    #endif
 CBUFFER_END
 
 // Texture samplers (must be outside CBUFFER per HLSL specification)
@@ -598,6 +673,11 @@ sampler2D _4thTex;
 sampler2D _4thTexMask;
 sampler2D _5thTex;
 sampler2D _5thTexMask;
+
+// Screen-Tone
+#if defined(_SCREEN_TONE)
+sampler2D _ScreenToneMask;
+#endif
 
 // Shading
 sampler2D _RampTex;
@@ -743,6 +823,11 @@ sampler2D _VertexAnimMask;
 sampler2D _DripMask;
 #endif
 
+// Smear
+#if defined(_SMEAR)
+sampler2D _SmearMask;
+#endif
+
 // Smooth Normal Texture (for Mode 2: Baked Normal Texture)
 #if defined(_SMOOTH_NORMAL)
 sampler2D _SmoothNormalTex;
@@ -773,6 +858,11 @@ samplerCUBE _ReflectionCube;
 #endif
 #if defined(_ENV_RIM)
 samplerCUBE _EnvRimCube;
+#endif
+
+// Intersection Fade
+#if defined(_INTERSECTION_FADE)
+UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
 #endif
 
 // GrabPass texture for Refraction — declared in NataneToonUtils.hlsl (VR stereo-aware)
@@ -807,14 +897,17 @@ struct v2f
     float3 worldBinormal : TEXCOORD4;
     UNITY_FOG_COORDS(5)
     SHADOW_COORDS(6)
-    #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA)
-        float4 screenPos : TEXCOORD7; // For GrabPass (Refraction) / Dithering
+    #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA) || defined(_INTERSECTION_FADE)
+        float4 screenPos : TEXCOORD7; // For GrabPass (Refraction) / Dithering / Intersection Fade
     #endif
     #if defined(VERTEXLIGHT_ON) && !defined(_PIXEL_VERTEX_LIGHTS)
         float3 vertexLightColor : TEXCOORD8;
     #endif
     #ifdef _SMOOTH_NORMAL
         float3 smoothWorldNormal : TEXCOORD9;
+    #endif
+    #ifdef _SMEAR
+        float smearStretchFactor : TEXCOORD10;
     #endif
     UNITY_VERTEX_OUTPUT_STEREO
 };

@@ -40,6 +40,18 @@ half4 frag(v2f i) : SV_Target
     half4 mainTex = tex2D(_MainTex, mainUV);
     half4 col = mainTex * _Color;
 
+    // ===== Gradient Base Color =====
+    #ifdef _GRADIENT_BASE_COLOR
+    {
+        half3 gradColor = CalculateGradientColor(i.worldPos,
+            _GradientTopColor.rgb, _GradientBottomColor.rgb,
+            _GradientAxis, _GradientSpace, _GradientStart, _GradientEnd);
+        half3 preGradient = col.rgb;
+        col.rgb *= gradColor;
+        col.rgb = ApplyEffectBlendPost(preGradient, col.rgb, _GradientBlend, _GradientBlendMode);
+    }
+    #endif
+
     // ===== Makeup/Detail Textures Blending =====
     // このセクションの処理:
     // メインテクスチャの上に2nd〜5thテクスチャを順番に重ね合わせる。
@@ -86,6 +98,17 @@ half4 frag(v2f i) : SV_Target
             _5thTexIntensity, _5thTexBlendMode,
             true
         );
+    }
+    #endif
+
+    // ===== Screen-Tone Overlay =====
+    #ifdef _SCREEN_TONE
+    {
+        half screenToneMask = SampleTex2DBlur1(_ScreenToneMask, uv, _ScreenToneBlur);
+        screenToneMask = ApplySoftMask(screenToneMask);
+        half3 preScreenTone = col.rgb;
+        col.rgb = ApplyScreenTone(col.rgb, i.pos.xy, screenToneMask);
+        col.rgb = ApplyEffectBlendPost(preScreenTone, col.rgb, _ScreenToneBlend, _ScreenToneBlendMode);
     }
     #endif
 
@@ -1143,6 +1166,57 @@ half4 frag(v2f i) : SV_Target
         col.rgb = ApplyEffectBlendPost(preIridescence, col.rgb, iridescenceBlendFaded, _IridescenceBlendMode);
     #endif
 
+    // ===== SMEAR EFFECT (スミア / 残像エフェクト) =====
+    #ifdef _SMEAR
+    {
+        float smearStretch = i.smearStretchFactor;
+
+        if (smearStretch > 0.001)
+        {
+            float3 smearDir;
+            if (_SmearAutoMagnitude > 0.5)
+            {
+                float speed = length(_SmearDirection.xyz);
+                smearDir = (speed > 0.001) ? _SmearDirection.xyz / speed : float3(0, 0, 1);
+            }
+            else
+            {
+                smearDir = normalize(_SmearDirection.xyz + float3(0.0001, 0.0001, 0.0001));
+            }
+
+            // Apply mask
+            float2 smearMaskUV = AnimateUVIfNeeded(uv, _SmearMaskScrollSpeed.xy, _SmearMaskRotateSpeed);
+            half smearMask = tex2D(_SmearMask, smearMaskUV).r;
+            smearMask = ApplySoftMask(smearMask);
+
+            // Trail
+            half3 smearTrail = CalculateSmearTrail(uv, col.rgb, smearDir, worldNormal, smearStretch, _SmearTrailLength, _SmearTrailFade);
+
+            // Glow
+            half3 smearGlow = CalculateSmearGlow(worldNormal, viewDir, smearDir, smearStretch,
+                                                  _SmearGlowColor, _SmearGlowIntensity, _SmearGlowPower);
+
+            // Emission
+            half3 smearEmission = _SmearEmissionColor.rgb * _SmearEmission * smearStretch;
+
+            // Combine
+            half3 smearEffect = (smearTrail + smearGlow + smearEmission) * smearMask;
+
+            // Store pre-smear color for blending
+            half3 preSmearColor = col.rgb;
+
+            // Apply blend
+            half3 smearBlended = SafeAdditiveBlend(col.rgb, smearEffect, _SmearBlur);
+            col.rgb = ApplyEffectBlendPost(preSmearColor, smearBlended, _SmearBlend, _SmearBlendMode);
+
+            // Distance fade
+            #ifdef _DISTANCE_FADE
+                col.rgb = lerp(col.rgb, preSmearColor, distanceFade * _SmearDistFade);
+            #endif
+        }
+    }
+    #endif
+
     // ===== Water Drip Effect (ForwardBase only) =====
     #if defined(_WATER_DRIP) && defined(UNITY_PASS_FORWARDBASE)
     {
@@ -1288,7 +1362,25 @@ half4 frag(v2f i) : SV_Target
 
             float dissolveEdgeBlurred = _DissolveEdgeWidth + _DissolveBlur * 0.15;
             float2 dissolveUV = AnimateUVIfNeeded(uv, _DissolveTexScrollSpeed.xy, _DissolveTexRotateSpeed);
-            float2 dissolveResult = CalculateDissolve(dissolveUV, _DissolveAmount, dissolveEdgeBlurred);
+
+            // Compute dissolve noise based on coordinate mode
+            float dissolveNoise;
+            if (_DissolveCoordMode > 0.5)
+            {
+                float3 dissolveCoordPos = _DissolveCoordMode < 1.5
+                    ? i.worldPos
+                    : mul(unity_WorldToObject, float4(i.worldPos, 1.0)).xyz;
+                float axisVal = _DissolveWorldAxis < 0.5 ? dissolveCoordPos.x
+                    : (_DissolveWorldAxis < 1.5 ? dissolveCoordPos.y : dissolveCoordPos.z);
+                float posNoise = saturate((axisVal - _DissolveWorldMin) / max(_DissolveWorldMax - _DissolveWorldMin, 0.01));
+                float texNoise = tex2D(_DissolveTex, dissolveUV).r;
+                dissolveNoise = lerp(posNoise, posNoise * texNoise, _DissolveNoiseBlend);
+            }
+            else
+            {
+                dissolveNoise = tex2D(_DissolveTex, dissolveUV).r;
+            }
+            float2 dissolveResult = CalculateDissolveFromNoise(dissolveNoise, _DissolveAmount, dissolveEdgeBlurred);
             half dissolveAlpha = dissolveResult.x;
             half edgeGlow = dissolveResult.y;
 
@@ -1312,6 +1404,73 @@ half4 frag(v2f i) : SV_Target
     #ifdef _ALPHA_MASK
         half alphaMask = tex2D(_AlphaMask, uv).r;
         col.a *= alphaMask;
+    #endif
+
+    // ===== Height Fade (Local Height-Based Transparency) =====
+    #ifdef _HEIGHT_FADE
+    {
+        half heightFade = CalculateHeightFade(i.worldPos, _HeightFadeStart, _HeightFadeEnd,
+            _HeightFadeAxis, _HeightFadeSpace, _HeightFadeInvert);
+
+        // Edge glow at fade boundary
+        if (_HeightFadeEdgeWidth > 0.001)
+        {
+            float edgeLower = smoothstep(0.0, _HeightFadeEdgeWidth, heightFade);
+            float edgeUpper = smoothstep(_HeightFadeEdgeWidth, _HeightFadeEdgeWidth * 2.0, heightFade);
+            float edge = edgeLower * (1.0 - edgeUpper);
+            col.rgb = lerp(col.rgb, _HeightFadeEdgeColor.rgb, edge * _HeightFadeEdgeColor.a);
+        }
+
+        if (_HeightFadeMode < 0.5)
+        {
+            half preHeightAlpha = col.a;
+            col.a *= heightFade;
+            col.a = ApplyEffectBlendPostAlpha(preHeightAlpha, col.a, _HeightFadeBlend);
+        }
+        else if (_HeightFadeMode < 1.5)
+        {
+            clip(heightFade - 0.001);
+        }
+        else
+        {
+            float ditherThreshold = DitheringPattern(i.pos.xy, max(_HeightFadeDitherScale, 1.0));
+            clip(heightFade - ditherThreshold);
+        }
+    }
+    #endif
+
+    // ===== Intersection Fade (Object Intersection Transparency) =====
+    #ifdef _INTERSECTION_FADE
+    {
+        float2 intersectScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
+        float sceneDepth = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, intersectScreenUV));
+        float fragDepth = i.screenPos.w;
+        float depthDiff = sceneDepth - fragDepth;
+        half intersectionFade = saturate(depthDiff / max(_IntersectionFadeDistance, 0.001));
+
+        // Edge highlight at intersection
+        if (_IntersectionFadeEdgeWidth > 0.001)
+        {
+            float edge = 1.0 - smoothstep(0.0, _IntersectionFadeEdgeWidth, depthDiff);
+            col.rgb = lerp(col.rgb, _IntersectionFadeEdgeColor.rgb, edge * _IntersectionFadeEdgeColor.a);
+        }
+
+        if (_IntersectionFadeMode < 0.5)
+        {
+            half preIntersectAlpha = col.a;
+            col.a *= intersectionFade;
+            col.a = ApplyEffectBlendPostAlpha(preIntersectAlpha, col.a, _IntersectionFadeBlend);
+        }
+        else if (_IntersectionFadeMode < 1.5)
+        {
+            clip(intersectionFade - 0.001);
+        }
+        else
+        {
+            float ditherThreshold = DitheringPattern(i.pos.xy, max(_IntersectionFadeDitherScale, 1.0));
+            clip(intersectionFade - ditherThreshold);
+        }
+    }
     #endif
 
     // ===== Distance Fade (Global Alpha) =====

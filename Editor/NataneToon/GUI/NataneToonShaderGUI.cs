@@ -165,6 +165,7 @@ public class NataneToonShaderGUI : ShaderGUI
         // { drawMethodSuffix, japanese, english }
         new[] { "MainTexture", "メインテクスチャ", "main texture color" },
         new[] { "MakeupTextures", "追加テクスチャ メイクアップ 2nd 3rd 4th 5th", "makeup texture layer" },
+        new[] { "ScreenTone", "スクリーントーン 網点 ドット トーン", "screen tone halftone dot pattern overlay" },
         new[] { "Shading", "シェーディング トゥーン 影 陰", "shading toon shadow" },
         new[] { "AdvancedLighting", "ライティング詳細 光源", "advanced lighting" },
         new[] { "AO", "アンビエントオクルージョン AO", "ambient occlusion ao" },
@@ -178,6 +179,7 @@ public class NataneToonShaderGUI : ShaderGUI
         new[] { "MatCap", "マットキャップ MatCap", "matcap sphere map" },
         new[] { "Glitter", "グリッター ラメ", "glitter sparkle" },
         new[] { "Drip", "雫 エフェクト ドリップ", "drip water drop" },
+        new[] { "Smear", "スミア 残像 ストレッチ トレイル グロー", "smear afterimage stretch trail glow" },
         new[] { "Hologram", "ホログラム グリッチ", "hologram glitch" },
         new[] { "Decal", "デカール 貼り付け", "decal sticker" },
         new[] { "Outline", "アウトライン 輪郭線 スムース法線", "outline contour smooth normal" },
@@ -195,7 +197,11 @@ public class NataneToonShaderGUI : ShaderGUI
         new[] { "Tessellation", "テッセレーション 曲面 スムージング", "tessellation smoothing phong" },
         new[] { "Backface", "裏面テクスチャ", "backface texture back" },
         new[] { "Video", "ビデオテクスチャ", "video texture render" },
+        new[] { "GradientBaseColor", "グラデーション ベースカラー 位置", "gradient base color position tint" },
+        new[] { "HeightFade", "高さフェード ハイトフェード ローカル", "height fade local position transparency" },
+        new[] { "IntersectionFade", "交差フェード 交差点 深度", "intersection fade depth contact" },
         new[] { "DistanceFade", "距離フェード", "distance fade lod" },
+        new[] { "Stencil", "ステンシル マスク", "stencil mask buffer" },
         new[] { "Rendering", "レンダリング設定 描画タイプ", "rendering mode opaque cutout transparent" },
     };
 
@@ -226,6 +232,7 @@ public class NataneToonShaderGUI : ShaderGUI
         { "MatCap", "ShowMatCap" },
         { "Glitter", "ShowGlitter" },
         { "Drip", "ShowDrip" },
+        { "Smear", "ShowSmear" },
         { "Hologram", "ShowHologram" },
         { "Outline", "ShowOutline" },
         { "Emission", "ShowEmission" },
@@ -248,6 +255,9 @@ public class NataneToonShaderGUI : ShaderGUI
         { "Video", "ShowVideo" },
         { "AudioLink", "ShowAudioLink" },
         { "DistanceFade", "ShowDistanceFade" },
+        { "GradientBaseColor", "ShowGradientBaseColor" },
+        { "HeightFade", "ShowHeightFade" },
+        { "IntersectionFade", "ShowIntersectionFade" },
         { "FeatureOverview", "ShowFeatureOverview" },
     };
 
@@ -837,6 +847,35 @@ public class NataneToonShaderGUI : ShaderGUI
             // UV Animation
             DrawUVAnimationSettings($"_{layerName}TexScrollSpeed", $"_{layerName}TexRotateSpeed", $"{layerName} Texture");
         }
+    }
+
+    private void DrawScreenToneSection()
+    {
+        SetFoldout("ScreenTone", DrawBoxedSection("スクリーントーン（網点オーバーレイ）", GetFoldout("ScreenTone"), SectionCategory.Basic, "_SCREEN_TONE"));
+        if (GetFoldout("ScreenTone"))
+        {
+            bool enableScreenTone = DrawToggle("_SCREEN_TONE", "_ScreenTone", "スクリーントーンを有効化");
+            if (enableScreenTone)
+            {
+                EditorGUI.indentLevel++;
+                DrawColorProperty("_ScreenToneColor", "トーンカラー");
+                DrawProperty("_ScreenToneMask", "マスクテクスチャ");
+                DrawProperty("_ScreenToneScale", "パターンサイズ（ドットの大きさ）");
+                DrawProperty("_ScreenToneThreshold", "ドット密度（0=なし〜1=全面）");
+                DrawHelpToggle("ScreenTone",
+                    "スクリーントーン（網点オーバーレイ）:\n" +
+                    "漫画やイラスト調の網点パターンをモデル表面に適用します。\n\n" +
+                    "・トーンカラー: 網点の色を指定\n" +
+                    "・マスクテクスチャ: 白=表示、黒=非表示\n" +
+                    "・パターンサイズ: 値が大きいほど網点が大きい（1-200）\n" +
+                    "・ドット密度: 値が大きいほど網点が多い（0-1）\n\n" +
+                    "影の境界ディザリングとは別の機能です。",
+                    MessageType.Info);
+                DrawBlendControls(materialEditor, targetMaterial, "_ScreenToneBlend", "_ScreenToneBlendMode", "_ScreenToneBlur");
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("ScreenTone"));
     }
 
     private void DrawShadingSection()
@@ -1726,6 +1765,106 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Drip"));
     }
 
+    private void DrawSmearSection()
+    {
+        SetFoldout("Smear", DrawBoxedSection("スミア（残像エフェクト）", GetFoldout("Smear"), SectionCategory.Effects, "_SMEAR"));
+        if (GetFoldout("Smear"))
+        {
+
+            bool enableSmear = DrawToggle("_SMEAR", "_Smear", "スミア (残像エフェクト) を有効化");
+
+            if (enableSmear)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField("スミア基本設定", EditorStyles.boldLabel);
+
+                DrawProperty("_SmearStretch", "ストレッチ量 (Auto時は最大値)");
+                DrawProperty("_SmearDirection", "スミア方向 (Animator制御)");
+                DrawProperty("_SmearNoiseScale", "ノイズスケール");
+                DrawProperty("_SmearNoiseStrength", "ノイズ強度");
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField("速度自動検出モード", EditorStyles.boldLabel);
+
+                DrawProperty("_SmearAutoMagnitude", "速度自動検出 (Auto Magnitude)");
+                DrawProperty("_SmearMotionSensitivity", "モーション感度");
+
+                // VAT Velocity toggle: only show when VAT is enabled
+                if (targetMaterial.IsKeywordEnabled("_VAT"))
+                {
+                    DrawProperty("_SmearVATVelocity", "VAT速度連動");
+                }
+
+                DrawHelpToggle("SmearAutoMode",
+                    "🏃 スミア自動モード:\n" +
+                    "「速度自動検出」をONにすると、_SmearDirectionベクトルの大きさから\n" +
+                    "ストレッチ量を自動計算します。ストレッチ量は最大値として機能します。\n\n" +
+                    "【VRChat】Animatorで VelocityX/Y/Z → _SmearDirection にマッピング\n" +
+                    "【VAT連動】VAT有効時、アニメーションの動きから自動でスミア方向と強度を算出",
+                    MessageType.Info);
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField("トレイル設定", EditorStyles.boldLabel);
+
+                DrawProperty("_SmearTrailLength", "トレイル長");
+                DrawProperty("_SmearTrailFade", "トレイル減衰");
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField("グロー・エミッション", EditorStyles.boldLabel);
+
+                DrawColorProperty("_SmearGlowColor", "グローカラー");
+                DrawProperty("_SmearGlowIntensity", "グロー強度");
+                DrawProperty("_SmearGlowPower", "フレネルパワー");
+                DrawProperty("_SmearEmission", "エミッション強度");
+                DrawColorProperty("_SmearEmissionColor", "エミッションカラー");
+
+                EditorGUILayout.Space(SECTION_SPACING);
+
+                DrawProperty("_SmearMask", "スミアマスク");
+                DrawHelpToggle("SmearMask",
+                    "スミアマスクのR(赤)チャンネルを使用してスミアの表示領域を制御します。\n" +
+                    "• 白 (1.0): スミアを完全に表示\n" +
+                    "• 黒 (0.0): スミアを非表示\n" +
+                    "• グレー: 部分的に表示",
+                    MessageType.Info);
+                DrawUVAnimationSettings("_SmearMaskScrollSpeed", "_SmearMaskRotateSpeed", "スミアマスク");
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                DrawHelpToggle("SmearInfo",
+                    "💨 スミア（残像エフェクト）:\n" +
+                    "高速移動時の残像・ストレッチ表現を追加します。\n\n" +
+                    "• ストレッチ量: 頂点の引き伸ばし量 (Auto時は最大値)\n" +
+                    "• スミア方向: Animatorで制御する移動方向ベクトル\n" +
+                    "• 速度自動検出: ベクトルの大きさからストレッチ量を自動計算\n" +
+                    "• モーション感度: 速度→ストレッチ変換の感度\n" +
+                    "• VAT速度連動: VATアニメーションの速度から自動でスミア駆動\n" +
+                    "• ノイズ: ストレッチにランダムな歪みを加える\n" +
+                    "• トレイル: 残像の長さと減衰\n" +
+                    "• グロー: フレネルベースの光沢効果\n" +
+                    "• エミッション: 残像部分の発光\n\n" +
+                    "💡 使い方:\n" +
+                    "アクションシーンやダッシュ演出に適しています。\n" +
+                    "Animatorから_SmearDirectionを制御して動的な残像を表現できます。\n" +
+                    "VRChatではVelocityX/Y/Zを_SmearDirectionにマッピングし、\n" +
+                    "速度自動検出ONで移動速度に連動したスミアが実現できます。\n" +
+                    "マスクテクスチャでスミアが適用される領域を制限できます。",
+                    MessageType.Info);
+
+                DrawBlendControls(materialEditor, targetMaterial, "_SmearBlend", "_SmearBlendMode", "_SmearBlur");
+
+                // Per-effect distance fade
+                if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
+                {
+                    DrawProperty("_SmearDistFade", "スミア距離フェード強度");
+                }
+
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("Smear"));
+    }
+
     private void DrawHologramSection()
     {
         SetFoldout("Hologram", DrawBoxedSection("ホログラム / グリッチ", GetFoldout("Hologram"), SectionCategory.Effects, "_HOLOGRAM"));
@@ -2050,6 +2189,28 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawHelpToggle("DissolveInfo", "ディゾルブはVRChatアバターの出現アニメーションに最適な消滅・分解エフェクトを作成します。ディゾルブ量パラメータをアニメーションさせることで、オブジェクトを出現または消滅させることができます。", MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_DissolveBlend", "_DissolveBlendMode", "_DissolveBlur");
+
+                EditorGUILayout.Space();
+                DrawProperty("_DissolveCoordMode", "座標モード");
+                float dissolveCoordMode = FindProperty("_DissolveCoordMode", properties).floatValue;
+                if (dissolveCoordMode > 0.5f)
+                {
+                    EditorGUI.indentLevel++;
+                    DrawProperty("_DissolveWorldAxis", "軸方向");
+                    DrawProperty("_DissolveWorldMin", "最小値");
+                    DrawProperty("_DissolveWorldMax", "最大値");
+                    DrawProperty("_DissolveNoiseBlend", "ノイズテクスチャブレンド");
+                    DrawHelpToggle("DissolveCoordMode",
+                        "🌍 ワールド座標ディゾルブ:\n" +
+                        "UV座標ではなく、ワールド/ローカル座標で\n" +
+                        "ディゾルブを制御します。\n\n" +
+                        "• 軸方向: ディゾルブの進行軸（X/Y/Z）\n" +
+                        "• 最小/最大値: ディゾルブ範囲の座標\n" +
+                        "• ノイズブレンド: テクスチャノイズの混合量\n" +
+                        "  0=座標のみ、1=テクスチャと完全混合",
+                        MessageType.Info);
+                    EditorGUI.indentLevel--;
+                }
                 EditorGUI.indentLevel--;
             }
 
@@ -2553,6 +2714,24 @@ public class NataneToonShaderGUI : ShaderGUI
                     MessageType.Info);
             }
 
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField("Stencil", EditorStyles.boldLabel);
+            DrawProperty("_StencilRef", "Stencil Reference");
+            DrawProperty("_StencilComp", "Stencil Comparison");
+            DrawProperty("_StencilOp", "Stencil Pass Operation");
+            DrawProperty("_StencilReadMask", "Read Mask");
+            DrawProperty("_StencilWriteMask", "Write Mask");
+            DrawHelpToggle("Stencil",
+                "🎭 ステンシル:\n" +
+                "ステンシルバッファを使用して描画マスクを制御します。\n\n" +
+                "• Reference: 比較/書き込み用の参照値（0-255）\n" +
+                "• Comparison: バッファ値と参照値の比較方法\n" +
+                "• Pass Operation: テスト合格時のバッファ操作\n" +
+                "• Read/Write Mask: ビットマスク\n\n" +
+                "💡 デフォルト値（Comp=Always, Op=Keep）では既存動作に影響しません。\n" +
+                "💡 同じRef値を持つオブジェクト間でマスク効果を実現できます。",
+                MessageType.Info);
+
         }
         EndBoxedSection(GetFoldout("Rendering"));
     }
@@ -2751,6 +2930,136 @@ public class NataneToonShaderGUI : ShaderGUI
             }
         }
         EndBoxedSection(GetFoldout("AudioLink"));
+    }
+
+    private void DrawGradientBaseColorSection()
+    {
+        SetFoldout("GradientBaseColor", DrawBoxedSection("グラデーションベースカラー", GetFoldout("GradientBaseColor"), SectionCategory.Basic, "_GRADIENT_BASE_COLOR"));
+        if (GetFoldout("GradientBaseColor"))
+        {
+            bool enableGradient = DrawToggle("_GRADIENT_BASE_COLOR", "_GradientBaseColor", "グラデーションベースカラーを有効化");
+            if (enableGradient)
+            {
+                EditorGUI.indentLevel++;
+                DrawColorProperty("_GradientTopColor", "上部カラー");
+                DrawColorProperty("_GradientBottomColor", "下部カラー");
+                DrawProperty("_GradientAxis", "グラデーション軸");
+                DrawProperty("_GradientSpace", "座標空間");
+                DrawProperty("_GradientStart", "開始位置");
+                DrawProperty("_GradientEnd", "終了位置");
+                DrawProperty("_GradientBlendMode", "ブレンドモード");
+                DrawProperty("_GradientBlend", "ブレンド強度");
+                DrawHelpToggle("GradientBaseColor",
+                    "🎨 グラデーションベースカラー:\n" +
+                    "ベースカラーに位置ベースのグラデーションを適用します。\n\n" +
+                    "• 上部/下部カラー: グラデーションの両端の色\n" +
+                    "• 軸: グラデーション方向（X/Y/Z）\n" +
+                    "• 座標空間: ローカル（オブジェクト基準）またはワールド\n" +
+                    "• ブレンドモード: Normal/Soft/Screen/Overlay\n" +
+                    "• ブレンド: 0=元のテクスチャ色、1=フルグラデーション",
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("GradientBaseColor"));
+    }
+
+    private void DrawHeightFadeSection()
+    {
+        SetFoldout("HeightFade", DrawBoxedSection("高さフェード", GetFoldout("HeightFade"), SectionCategory.Advanced, "_HEIGHT_FADE"));
+        if (GetFoldout("HeightFade"))
+        {
+            bool enableHeightFade = DrawToggle("_HEIGHT_FADE", "_HeightFade", "高さフェードを有効化");
+            if (enableHeightFade)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_HeightFadeAxis", "フェード軸");
+                DrawProperty("_HeightFadeSpace", "座標空間");
+                DrawProperty("_HeightFadeStart", "フェード開始位置");
+                DrawProperty("_HeightFadeEnd", "フェード終了位置");
+                DrawProperty("_HeightFadeInvert", "方向を反転");
+                DrawProperty("_HeightFadeMode", "フェードモード");
+                DrawHelpToggle("HeightFade",
+                    "📐 高さフェード:\n" +
+                    "位置（高さ）に応じてオブジェクトをフェードします。\n\n" +
+                    "• 軸: フェード方向（X/Y/Z）\n" +
+                    "• 座標空間: ローカル（オブジェクト基準）またはワールド\n" +
+                    "• Alpha: 透明度でフェード\n" +
+                    "• Clip: ハードクリップ\n" +
+                    "• Dithering: ディザパターンでクリップ\n\n" +
+                    "💡 地面から消えるエフェクトや、高さに応じた表示制御に最適です。",
+                    MessageType.Info);
+
+                // Show blend only in Alpha mode
+                float heightFadeMode = FindProperty("_HeightFadeMode", properties).floatValue;
+                if (heightFadeMode < 0.5f)
+                {
+                    DrawProperty("_HeightFadeBlend", "ブレンド強度");
+                }
+
+                // Show dither scale only in Dithering mode
+                if (heightFadeMode > 1.5f)
+                {
+                    DrawProperty("_HeightFadeDitherScale", "ディザスケール");
+                }
+
+                DrawProperty("_HeightFadeEdgeWidth", "エッジグロー幅");
+                float edgeWidth = FindProperty("_HeightFadeEdgeWidth", properties).floatValue;
+                if (edgeWidth > MIN_PARAMETER_VALUE)
+                {
+                    DrawColorProperty("_HeightFadeEdgeColor", "エッジグローカラー", true);
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("HeightFade"));
+    }
+
+    private void DrawIntersectionFadeSection()
+    {
+        SetFoldout("IntersectionFade", DrawBoxedSection("オブジェクト交差フェード", GetFoldout("IntersectionFade"), SectionCategory.Advanced, "_INTERSECTION_FADE"));
+        if (GetFoldout("IntersectionFade"))
+        {
+            bool enableIntersectionFade = DrawToggle("_INTERSECTION_FADE", "_IntersectionFade", "交差フェードを有効化");
+            if (enableIntersectionFade)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_IntersectionFadeDistance", "フェード距離");
+                DrawProperty("_IntersectionFadeMode", "フェードモード");
+                DrawHelpToggle("IntersectionFade",
+                    "🔀 オブジェクト交差フェード:\n" +
+                    "他のオブジェクトとの交差部分を透明にします。\n\n" +
+                    "• フェード距離: 交差部分のフェード範囲\n" +
+                    "• Alpha: 透明度でフェード\n" +
+                    "• Clip: ハードクリップ\n" +
+                    "• Dithering: ディザパターンでクリップ\n\n" +
+                    "💡 地面との交差部分や、オブジェクト間の滑らかな接続に最適です。\n" +
+                    "⚠️ 深度テクスチャが必要です（カメラのDepthTextureMode）。",
+                    MessageType.Info);
+
+                // Show blend only in Alpha mode
+                float intersectionFadeMode = FindProperty("_IntersectionFadeMode", properties).floatValue;
+                if (intersectionFadeMode < 0.5f)
+                {
+                    DrawProperty("_IntersectionFadeBlend", "ブレンド強度");
+                }
+
+                // Show dither scale only in Dithering mode
+                if (intersectionFadeMode > 1.5f)
+                {
+                    DrawProperty("_IntersectionFadeDitherScale", "ディザスケール");
+                }
+
+                DrawProperty("_IntersectionFadeEdgeWidth", "エッジ幅");
+                float intersectionEdgeWidth = FindProperty("_IntersectionFadeEdgeWidth", properties).floatValue;
+                if (intersectionEdgeWidth > MIN_PARAMETER_VALUE)
+                {
+                    DrawColorProperty("_IntersectionFadeEdgeColor", "エッジカラー", true);
+                }
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("IntersectionFade"));
     }
 
     private void DrawDistanceFadeSection()
@@ -3121,6 +3430,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 new[] { "_MATCAP", "MatCap" },
                 new[] { "_GLITTER", "グリッター" },
                 new[] { "_WATER_DRIP", "雫" },
+                new[] { "_SMEAR", "スミア" },
                 new[] { "_HOLOGRAM", "ホログラム" },
                 new[] { "_DECAL", "デカール" },
                 new[] { "_OUTLINE", "アウトライン" },
@@ -3330,6 +3640,8 @@ public class NataneToonShaderGUI : ShaderGUI
         DrawSurfaceFinishSection();
         EditorGUILayout.Space(SECTION_SPACING);
         SafeDrawSection(DrawMakeupTexturesSection, "メイクアップテクスチャ");
+        SafeDrawSection(DrawScreenToneSection, "スクリーントーン");
+        SafeDrawSection(DrawGradientBaseColorSection, "グラデーションベースカラー");
         SafeDrawSection(DrawShadingSection, "シェーディング");
     }
 
@@ -3361,7 +3673,7 @@ public class NataneToonShaderGUI : ShaderGUI
     {
         DrawExpandCollapseButtons((state) => {
             SetFoldout("Specular", state); SetFoldout("HairSpecular", state); SetFoldout("RimLight", state); SetFoldout("SSS", state);
-            SetFoldout("MatCap", state); SetFoldout("Glitter", state); SetFoldout("Drip", state); SetFoldout("Decal", state);
+            SetFoldout("MatCap", state); SetFoldout("Glitter", state); SetFoldout("Drip", state); SetFoldout("Smear", state); SetFoldout("Decal", state);
             SetFoldout("Hologram", state); SetFoldout("Outline", state); SetFoldout("Emission", state);
             SetFoldout("VirtualExpression", state); SetFoldout("AudioLink", state);
         });
@@ -3377,6 +3689,7 @@ public class NataneToonShaderGUI : ShaderGUI
         SafeDrawSection(DrawMatCapSection, "MatCap");
         SafeDrawSection(DrawGlitterSection, "グリッター");
         SafeDrawSection(DrawDripSection, "雫エフェクト");
+        SafeDrawSection(DrawSmearSection, "スミア");
         SafeDrawSection(DrawDecalSection, "デカール");
 
         // ─── ビジュアルエフェクト ───
@@ -3410,8 +3723,8 @@ public class NataneToonShaderGUI : ShaderGUI
     {
         DrawExpandCollapseButtons((state) => {
             SetFoldout("NormalMap", state); SetFoldout("Parallax", state); SetFoldout("VertexAnimation", state); SetFoldout("VAT", state);
-            SetFoldout("Backface", state); SetFoldout("Video", state); SetFoldout("DistanceFade", state);
-            SetFoldout("Rendering", state); SetFoldout("Tessellation", state);
+            SetFoldout("Backface", state); SetFoldout("Video", state); SetFoldout("HeightFade", state); SetFoldout("IntersectionFade", state);
+            SetFoldout("DistanceFade", state); SetFoldout("Rendering", state); SetFoldout("Tessellation", state);
         });
         // ─── マッピング ───
         NataneToonShaderGUIUtility.DrawCategoryDivider("マッピング");
@@ -3425,6 +3738,8 @@ public class NataneToonShaderGUI : ShaderGUI
         SafeDrawSection(DrawTessellationSection, "テッセレーション（曲面スムージング）");
         SafeDrawSection(DrawBackfaceSection, "裏面テクスチャ");
         SafeDrawSection(DrawVideoSection, "ビデオテクスチャ");
+        SafeDrawSection(DrawHeightFadeSection, "高さフェード");
+        SafeDrawSection(DrawIntersectionFadeSection, "オブジェクト交差フェード");
         SafeDrawSection(DrawDistanceFadeSection, "距離フェード");
 
         // ─── レンダリング ───
@@ -3474,6 +3789,7 @@ public class NataneToonShaderGUI : ShaderGUI
         {
             case "MainTexture": return DrawMainTextureSection;
             case "MakeupTextures": return DrawMakeupTexturesSection;
+            case "ScreenTone": return DrawScreenToneSection;
             case "Shading": return DrawShadingSection;
             case "AdvancedLighting": return DrawAdvancedLightingSection;
             case "AO": return DrawAOSection;
@@ -3487,6 +3803,7 @@ public class NataneToonShaderGUI : ShaderGUI
             case "MatCap": return DrawMatCapSection;
             case "Glitter": return DrawGlitterSection;
             case "Drip": return DrawDripSection;
+            case "Smear": return DrawSmearSection;
             case "Hologram": return DrawHologramSection;
             case "Decal": return DrawDecalSection;
             case "Outline": return DrawOutlineSection;
@@ -3504,6 +3821,9 @@ public class NataneToonShaderGUI : ShaderGUI
             case "Tessellation": return DrawTessellationSection;
             case "Backface": return DrawBackfaceSection;
             case "Video": return DrawVideoSection;
+            case "GradientBaseColor": return DrawGradientBaseColorSection;
+            case "HeightFade": return DrawHeightFadeSection;
+            case "IntersectionFade": return DrawIntersectionFadeSection;
             case "DistanceFade": return DrawDistanceFadeSection;
             case "Rendering": return DrawRenderingSection;
             default: return null;
@@ -3841,6 +4161,9 @@ public class NataneToonShaderGUI : ShaderGUI
             // VAT
             ("_VAT", "_VAT"),
             ("_VATNormal", "_VAT_NORMAL"),
+
+            // Smear
+            ("_Smear", "_SMEAR"),
 
             // Hologram / Glitch
             ("_Hologram", "_HOLOGRAM"),

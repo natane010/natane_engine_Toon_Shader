@@ -62,6 +62,71 @@ v2f vert(appdata v)
         ApplyVAT(v.vertex, v.normal, v.uv);
     #endif
 
+    // Smear vertex stretch
+    #ifdef _SMEAR
+    {
+        float3 rawDir = _SmearDirection.xyz;
+        float3 smearDir;
+        float smearAmount;
+
+        if (_SmearAutoMagnitude > 0.5)
+        {
+            // Auto mode: direction vector の大きさ = 速度
+            float speed = length(rawDir);
+            smearDir = (speed > 0.001) ? rawDir / speed : float3(0, 0, 1);
+            smearAmount = speed * _SmearMotionSensitivity;
+            smearAmount = min(smearAmount, _SmearStretch); // _SmearStretch を最大値として使用
+        }
+        else
+        {
+            // Manual mode: 従来通り
+            smearDir = normalize(rawDir + float3(0.0001, 0.0001, 0.0001));
+            smearAmount = _SmearStretch;
+        }
+
+        // VAT velocity integration: derive smear from VAT animation speed
+        #ifdef _VAT
+        if (_SmearVATVelocity > 0.5)
+        {
+            float frame = frac(_Time.y * _VATSpeed) * _VATNumOfFrames;
+            float prevFrame = frac((_Time.y - unity_DeltaTime.x) * _VATSpeed) * _VATNumOfFrames;
+
+            float frameV_curr = (frame + 0.5) / _VATNumOfFrames;
+            float frameV_prev = (prevFrame + 0.5) / _VATNumOfFrames;
+
+            float4 posCurr = tex2Dlod(_VATPositionMap, float4(v.uv.x, frameV_curr, 0, 0));
+            float4 posPrev = tex2Dlod(_VATPositionMap, float4(v.uv.x, frameV_prev, 0, 0));
+
+            float3 vatVel = (DecodeVATPosition(posCurr, _VATPositionMin, _VATPositionMax)
+                           - DecodeVATPosition(posPrev, _VATPositionMin, _VATPositionMax))
+                           / max(unity_DeltaTime.x, 0.001);
+
+            float vatSpeed = length(vatVel);
+            if (vatSpeed > 0.01)
+            {
+                smearDir = vatVel / vatSpeed;
+                smearAmount += vatSpeed * _SmearMotionSensitivity;
+                smearAmount = min(smearAmount, _SmearStretch);
+            }
+        }
+        #endif
+
+        float3 worldNorm = UnityObjectToWorldNormal(v.normal);
+        float dirMask = saturate(dot(worldNorm, smearDir));
+
+        // Simple noise using vertex position
+        float noise = frac(sin(dot(v.vertex.xyz, float3(12.9898, 78.233, 45.5432))) * 43758.5453);
+        noise = lerp(1.0, noise, _SmearNoiseStrength * _SmearNoiseScale * 0.2);
+
+        float3 offset = smearDir * smearAmount * dirMask * noise;
+        // Transform offset from world to object space
+        offset = mul((float3x3)unity_WorldToObject, offset);
+        v.vertex.xyz += offset;
+
+        o.smearStretchFactor = dirMask * smearAmount;
+    }
+    #endif
+
     // Transform vertex to clip space
     o.pos = UnityObjectToClipPos(v.vertex);
 
@@ -108,8 +173,8 @@ v2f vert(appdata v)
     }
     #endif
 
-    // Calculate screen position for GrabPass (Refraction) / Dithering Alpha
-    #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA)
+    // Calculate screen position for GrabPass (Refraction) / Dithering Alpha / Intersection Fade
+    #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA) || defined(_INTERSECTION_FADE)
         o.screenPos = ComputeScreenPos(o.pos);
     #endif
 

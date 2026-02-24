@@ -79,21 +79,25 @@ half3 ApplyHSVAdjustment(half3 rgb, half hueShift, half saturation, half value)
 // Calculate Dissolve alpha and edge glow
 // returns: x = alpha (for clipping), y = edge glow intensity
 #if defined(_DISSOLVE)
-float2 CalculateDissolve(float2 uv, float dissolveAmount, float edgeWidth)
+
+// Core dissolve calculation from pre-computed noise value
+float2 CalculateDissolveFromNoise(float dissolveNoise, float dissolveAmount, float edgeWidth)
 {
-    float dissolveNoise = tex2D(_DissolveTex, uv).r;
-
-    // Calculate alpha for clipping
     float dissolveAlpha = dissolveNoise - dissolveAmount;
-
-    // Calculate edge glow (peaks at the dissolve boundary) without dynamic branching.
     float safeEdgeWidth = max(edgeWidth, EPSILON);
     float edgeFactor = saturate(1.0 - (dissolveAlpha / safeEdgeWidth));
     float inEdgeRange = step(EPSILON, dissolveAlpha) * (1.0 - step(edgeWidth, dissolveAlpha));
     float edgeGlow = edgeFactor * inEdgeRange;
-
     return float2(dissolveAlpha, edgeGlow);
 }
+
+// Original function delegates to new core (backward compatible)
+float2 CalculateDissolve(float2 uv, float dissolveAmount, float edgeWidth)
+{
+    float dissolveNoise = tex2D(_DissolveTex, uv).r;
+    return CalculateDissolveFromNoise(dissolveNoise, dissolveAmount, edgeWidth);
+}
+
 #endif // _DISSOLVE
 
 // Parallax Occlusion Mapping
@@ -485,6 +489,36 @@ half3 ApplyMakeupTexture(
     return ApplyBlendMode(baseColor, texAdjusted, WHITE_COLOR, intensity * texMask, blendMode);
 }
 
+// ===== Screen-Tone Overlay Functions =====
+#if defined(_SCREEN_TONE)
+
+// Calculate screen-tone dot pattern using Bayer dithering
+half CalculateScreenTonePattern(float2 screenPos, float scale, float threshold)
+{
+    float2 scaledPos = screenPos / max(scale, 1.0);
+
+    static const float bayer[16] = {
+        0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
+        12.0/16.0, 4.0/16.0, 14.0/16.0,  6.0/16.0,
+        3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
+        15.0/16.0, 7.0/16.0, 13.0/16.0,  5.0/16.0
+    };
+
+    int2 pos = int2(fmod(scaledPos.x, 4), fmod(scaledPos.y, 4));
+    float bayerValue = bayer[pos.y * 4 + pos.x];
+
+    return step(bayerValue, threshold);
+}
+
+// Apply screen-tone overlay to base color
+half3 ApplyScreenTone(half3 baseColor, float2 screenPos, half maskValue)
+{
+    half pattern = CalculateScreenTonePattern(screenPos, _ScreenToneScale, _ScreenToneThreshold);
+    half effectAmount = pattern * maskValue;
+    return lerp(baseColor, _ScreenToneColor.rgb, effectAmount);
+}
+#endif // _SCREEN_TONE
+
 // ===== Effect Blend Post-Processing =====
 // 全エフェクトの統一的なブレンド制御
 // base: エフェクト適用前の色
@@ -732,6 +766,43 @@ float CalculateDistanceFade(float3 worldPos, float fadeStart, float fadeEnd)
 }
 
 #endif // _DISTANCE_FADE
+
+// ===== Height Fade Functions =====
+#if defined(_HEIGHT_FADE)
+
+float CalculateHeightFade(float3 worldPos, float fadeStart, float fadeEnd, float axis, float space, float invert)
+{
+    float height;
+    if (space < 0.5)
+    {
+        float3 localPos = mul(unity_WorldToObject, float4(worldPos, 1.0)).xyz;
+        height = axis < 0.5 ? localPos.x : (axis < 1.5 ? localPos.y : localPos.z);
+    }
+    else
+    {
+        height = axis < 0.5 ? worldPos.x : (axis < 1.5 ? worldPos.y : worldPos.z);
+    }
+    float fade = saturate((height - fadeStart) / max(fadeEnd - fadeStart, 0.01));
+    return invert > 0.5 ? 1.0 - fade : fade;
+}
+
+#endif // _HEIGHT_FADE
+
+// ===== Gradient Base Color Functions =====
+#if defined(_GRADIENT_BASE_COLOR)
+
+half3 CalculateGradientColor(float3 worldPos, half3 topColor, half3 bottomColor,
+    float axis, float space, float gradStart, float gradEnd)
+{
+    float3 pos = space < 0.5
+        ? mul(unity_WorldToObject, float4(worldPos, 1.0)).xyz
+        : worldPos;
+    float axisVal = axis < 0.5 ? pos.x : (axis < 1.5 ? pos.y : pos.z);
+    float t = saturate((axisVal - gradStart) / max(gradEnd - gradStart, 0.01));
+    return lerp(bottomColor, topColor, t);
+}
+
+#endif // _GRADIENT_BASE_COLOR
 
 // ===== Vertex Animation Functions =====
 #if defined(_VERTEX_ANIMATION)
@@ -1088,6 +1159,48 @@ half3 GetSHFallbackLightColor()
 {
     half3 shAvg = half3(unity_SHAr.w, unity_SHAg.w, unity_SHAb.w);
     return max(half3(0.05, 0.05, 0.05), shAvg);
+}
+
+// ===== Smear Trail (UV-based multi-sample afterimage) =====
+half3 CalculateSmearTrail(float2 uv, half3 baseColor, float3 smearDir, float3 worldNormal, float stretchFactor, float trailLength, float trailFade)
+{
+    // Project smear direction to UV-ish space using world normal's tangent plane
+    float2 uvOffset = smearDir.xy * trailLength;
+
+    half3 trail = half3(0, 0, 0);
+    float totalWeight = 0.0;
+
+    // Multi-sample along the smear direction (4 samples)
+    [unroll]
+    for (int i = 1; i <= 4; i++)
+    {
+        float t = (float)i / 4.0;
+        float2 sampleUV = uv - uvOffset * t;
+        float weight = (1.0 - t) * trailFade;
+        trail += baseColor * weight; // Use base color for trail (no re-sample needed for toon)
+        totalWeight += weight;
+    }
+
+    if (totalWeight > 0.001)
+        trail /= totalWeight;
+
+    return trail * stretchFactor;
+}
+
+// ===== Smear Glow (Fresnel + directional mask) =====
+half3 CalculateSmearGlow(float3 worldNormal, float3 viewDir, float3 smearDir, float stretchFactor,
+                          half4 glowColor, float glowIntensity, float glowPower)
+{
+    // Fresnel term
+    float NdotV = saturate(dot(worldNormal, viewDir));
+    float fresnel = pow(1.0 - NdotV, glowPower);
+
+    // Directional mask - glow stronger on edges facing the smear direction
+    float dirMask = saturate(dot(worldNormal, normalize(smearDir)));
+    float edgeMask = saturate(dirMask + (1.0 - dirMask) * 0.3); // Partial wrap to keep some glow everywhere
+
+    half3 glow = glowColor.rgb * fresnel * edgeMask * glowIntensity * stretchFactor;
+    return glow;
 }
 
 #endif // NATANE_TOON_UTILS_INCLUDED

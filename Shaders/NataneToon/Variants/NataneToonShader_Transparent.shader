@@ -79,6 +79,29 @@ Shader "Natane/Toon Shader (Transparent)"
         _5thTexScrollSpeed ("5th Tex Scroll Speed XY", Vector) = (0,0,0,0)
         _5thTexRotateSpeed ("5th Tex Rotate Speed", Float) = 0
 
+        // ===== Screen-Tone Overlay =====
+        [Header(Screen Tone)]
+        [Toggle(_SCREEN_TONE)] _ScreenTone ("Enable Screen-Tone", Float) = 0
+        _ScreenToneColor ("Screen-Tone Color", Color) = (0,0,0,1)
+        _ScreenToneMask ("Screen-Tone Mask", 2D) = "white" {}
+        _ScreenToneScale ("Pattern Scale", Range(1, 200)) = 10
+        _ScreenToneThreshold ("Dot Density", Range(0, 1)) = 0.5
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _ScreenToneBlendMode ("Blend Mode", Float) = 0
+        _ScreenToneBlend ("Blend", Range(0, 1)) = 1
+        _ScreenToneBlur ("Mask Blur", Range(0, 1)) = 0
+
+        // ===== Gradient Base Color (グラデーションベースカラー) =====
+        [Header(Gradient Base Color)]
+        [Toggle(_GRADIENT_BASE_COLOR)] _GradientBaseColor ("Enable Gradient Base Color", Float) = 0
+        _GradientTopColor ("Top Color", Color) = (1, 1, 1, 1)
+        _GradientBottomColor ("Bottom Color", Color) = (0.5, 0.5, 0.5, 1)
+        [Enum(X,0,Y,1,Z,2)] _GradientAxis ("Gradient Axis", Float) = 1
+        [Enum(Local,0,World,1)] _GradientSpace ("Coordinate Space", Float) = 0
+        _GradientStart ("Gradient Start", Float) = 0
+        _GradientEnd ("Gradient End", Float) = 1
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _GradientBlendMode ("Blend Mode", Float) = 0
+        _GradientBlend ("Blend", Range(0, 1)) = 1
+
         // ===== Shading (シェーディング) =====
         [Header(Shading)]
         [Enum(Toon,0,Gradient,1)] _ShadingMode ("Shading Mode", Float) = 0
@@ -353,6 +376,11 @@ Shader "Natane/Toon Shader (Transparent)"
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _DissolveBlendMode ("Dissolve Blend Mode", Float) = 0
         _DissolveBlend ("Dissolve Blend", Range(0, 1)) = 1
         _DissolveBlur ("Dissolve Blur", Range(0, 1)) = 0
+        [Enum(UV,0,World,1,Local,2)] _DissolveCoordMode ("Dissolve Coordinate Mode", Float) = 0
+        [Enum(X,0,Y,1,Z,2)] _DissolveWorldAxis ("Dissolve Axis", Float) = 1
+        _DissolveWorldMin ("World Min", Float) = 0
+        _DissolveWorldMax ("World Max", Float) = 1
+        _DissolveNoiseBlend ("Noise Texture Blend", Range(0, 1)) = 0
         [Space(10)]
         [Toggle(_ALPHA_MASK)] _UseAlphaMask ("Use Alpha Mask", Float) = 0
         _AlphaMask ("Alpha Mask", 2D) = "white" {}
@@ -451,6 +479,30 @@ Shader "Natane/Toon Shader (Transparent)"
         [Toggle(_AUDIOLINK_CHRONOTENSITY)] _AudioLinkChronotensity ("Use Chronotensity", Float) = 0
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _AudioLinkBlendMode ("AudioLink Blend Mode", Float) = 0
         _AudioLinkBlend ("AudioLink Blend", Range(0, 1)) = 1
+
+        // ===== Height Fade (高さフェード) =====
+        [Header(Height Fade)]
+        [Toggle(_HEIGHT_FADE)] _HeightFade ("Enable Height Fade", Float) = 0
+        _HeightFadeStart ("Fade Start Height", Float) = 0
+        _HeightFadeEnd ("Fade End Height", Float) = 1
+        [Enum(X,0,Y,1,Z,2)] _HeightFadeAxis ("Fade Axis", Float) = 1
+        [Enum(Local,0,World,1)] _HeightFadeSpace ("Coordinate Space", Float) = 0
+        [Toggle] _HeightFadeInvert ("Invert Direction", Float) = 0
+        [Enum(Alpha,0,Clip,1,Dithering,2)] _HeightFadeMode ("Fade Mode", Float) = 0
+        _HeightFadeBlend ("Height Fade Blend", Range(0, 1)) = 1
+        _HeightFadeDitherScale ("Dither Scale", Range(1, 200)) = 4
+        _HeightFadeEdgeWidth ("Edge Glow Width", Range(0, 0.5)) = 0
+        [HDR] _HeightFadeEdgeColor ("Edge Glow Color", Color) = (1, 0.5, 0, 1)
+
+        // ===== Intersection Fade (オブジェクト交差フェード) =====
+        [Header(Intersection Fade)]
+        [Toggle(_INTERSECTION_FADE)] _IntersectionFade ("Enable Intersection Fade", Float) = 0
+        _IntersectionFadeDistance ("Fade Distance", Float) = 0.5
+        [Enum(Alpha,0,Clip,1,Dithering,2)] _IntersectionFadeMode ("Fade Mode", Float) = 0
+        _IntersectionFadeBlend ("Blend", Range(0, 1)) = 1
+        _IntersectionFadeDitherScale ("Dither Scale", Range(1, 200)) = 4
+        _IntersectionFadeEdgeWidth ("Edge Width", Float) = 0
+        [HDR] _IntersectionFadeEdgeColor ("Edge Color", Color) = (0, 0.8, 1, 1)
 
         // ===== Distance Fade (距離フェード) =====
         [Header(Distance Fade VRChat Optimization)]
@@ -578,6 +630,30 @@ Shader "Natane/Toon Shader (Transparent)"
         _DripBlend ("Drip Blend", Range(0, 1)) = 1
         _DripBlur ("Drip Blur", Range(0, 1)) = 0
 
+        [Header(Smear Effect)]
+        [Toggle(_SMEAR)] _Smear ("Enable Smear", Float) = 0
+        _SmearStretch ("Stretch Amount", Range(0, 3)) = 0
+        _SmearDirection ("Smear Direction", Vector) = (0,0,0,0)
+        _SmearNoiseScale ("Noise Scale", Range(0, 5)) = 1
+        _SmearNoiseStrength ("Noise Strength", Range(0, 1)) = 0.3
+        [Toggle] _SmearAutoMagnitude ("Auto Magnitude", Float) = 0
+        _SmearMotionSensitivity ("Motion Sensitivity", Range(0.1, 10)) = 1
+        [Toggle] _SmearVATVelocity ("VAT Velocity Link", Float) = 0
+        _SmearTrailLength ("Trail Length", Range(0, 0.5)) = 0.1
+        _SmearTrailFade ("Trail Fade", Range(0, 1)) = 0.5
+        _SmearGlowColor ("Glow Color", Color) = (1,1,1,1)
+        _SmearGlowIntensity ("Glow Intensity", Range(0, 3)) = 1
+        _SmearGlowPower ("Glow Power", Range(0.5, 10)) = 3
+        _SmearEmission ("Emission Intensity", Range(0, 3)) = 0
+        _SmearEmissionColor ("Emission Color", Color) = (1,0.5,0,1)
+        _SmearMask ("Smear Mask", 2D) = "white" {}
+        _SmearMaskScrollSpeed ("Mask Scroll Speed XY", Vector) = (0,0,0,0)
+        _SmearMaskRotateSpeed ("Mask Rotate Speed", Float) = 0
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _SmearBlendMode ("Smear Blend Mode", Float) = 0
+        _SmearBlend ("Smear Blend", Range(0, 1)) = 1
+        _SmearBlur ("Smear Blur", Range(0, 1)) = 0
+        _SmearDistFade ("Smear Distance Fade", Range(0, 1)) = 0
+
         [Header(Dithering Alpha Transparent Dithering)]
         [Toggle(_DITHERING_ALPHA)] _DitheringAlpha ("Enable Dithering Alpha", Float) = 0
         _DitheringAlphaScale ("Dithering Alpha Scale", Range(1, 100)) = 10
@@ -610,6 +686,14 @@ Shader "Natane/Toon Shader (Transparent)"
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Src Blend", Float) = 5
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Float) = 10
         [Enum(Off,0,On,1)] _ZWrite ("Z Write", Float) = 0
+
+        // ===== Stencil =====
+        [Header(Stencil)]
+        _StencilRef ("Stencil Reference", Range(0, 255)) = 0
+        [Enum(UnityEngine.Rendering.CompareFunction)] _StencilComp ("Stencil Comparison", Float) = 8
+        [Enum(UnityEngine.Rendering.StencilOp)] _StencilOp ("Stencil Pass Operation", Float) = 0
+        _StencilReadMask ("Read Mask", Range(0, 255)) = 255
+        _StencilWriteMask ("Write Mask", Range(0, 255)) = 255
     }
 
     SubShader
@@ -619,6 +703,15 @@ Shader "Natane/Toon Shader (Transparent)"
             "RenderType"="Transparent"
             "Queue"="Transparent"
             "IgnoreProjector"="True"
+        }
+
+        Stencil
+        {
+            Ref [_StencilRef]
+            Comp [_StencilComp]
+            Pass [_StencilOp]
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
         }
 
         // NOTE: GrabPass is required for _REFRACTION feature.
@@ -647,6 +740,7 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _OUTLINE_MULTI_COLOR
             #pragma shader_feature_local _OUTLINE_MASK
             #pragma shader_feature_local _SMOOTH_NORMAL
+            #pragma shader_feature_local _SMEAR
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
@@ -689,6 +783,14 @@ Shader "Natane/Toon Shader (Transparent)"
                 float _SmoothNormalMode;
                 sampler2D _SmoothNormalTex;
             #endif
+            #ifdef _SMEAR
+                float _SmearStretch;
+                float4 _SmearDirection;
+                float _SmearNoiseScale;
+                float _SmearNoiseStrength;
+                float _SmearAutoMagnitude;
+                float _SmearMotionSensitivity;
+            #endif
 
             v2f vert(appdata v)
             {
@@ -696,6 +798,32 @@ Shader "Natane/Toon Shader (Transparent)"
                 UNITY_SETUP_INSTANCE_ID(v);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
                 o.uv = v.uv;
+
+                #ifdef _SMEAR
+                {
+                    float3 rawDir = _SmearDirection.xyz;
+                    float3 smDir;
+                    float smAmt;
+                    if (_SmearAutoMagnitude > 0.5)
+                    {
+                        float sp = length(rawDir);
+                        smDir = (sp > 0.001) ? rawDir / sp : float3(0, 0, 1);
+                        smAmt = min(sp * _SmearMotionSensitivity, _SmearStretch);
+                    }
+                    else
+                    {
+                        smDir = normalize(rawDir + float3(0.0001, 0.0001, 0.0001));
+                        smAmt = _SmearStretch;
+                    }
+                    float3 wn = UnityObjectToWorldNormal(v.normal);
+                    float dm = saturate(dot(wn, smDir));
+                    float ns = frac(sin(dot(v.vertex.xyz, float3(12.9898, 78.233, 45.5432))) * 43758.5453);
+                    ns = lerp(1.0, ns, _SmearNoiseStrength * _SmearNoiseScale * 0.2);
+                    float3 off = smDir * smAmt * dm * ns;
+                    off = mul((float3x3)unity_WorldToObject, off);
+                    v.vertex.xyz += off;
+                }
+                #endif
 
                 #ifdef _OUTLINE
                     // Calculate distance compensation for consistent outline width
@@ -832,6 +960,8 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _3RD_TEXTURE
             #pragma shader_feature_local _4TH_TEXTURE
             #pragma shader_feature_local _5TH_TEXTURE
+            #pragma shader_feature_local _SCREEN_TONE
+            #pragma shader_feature_local _GRADIENT_BASE_COLOR
             #pragma shader_feature_local _USE_RAMP
             #pragma shader_feature_local _USE_MULTI_SHADOW
             #pragma shader_feature_local _SHADOW_RECEIVE_MASK
@@ -864,6 +994,8 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _MATCAP_2
             #pragma shader_feature_local _MATCAP_3
             #pragma shader_feature_local _AUDIOLINK
+            #pragma shader_feature_local _HEIGHT_FADE
+            #pragma shader_feature_local _INTERSECTION_FADE
             #pragma shader_feature_local _DISTANCE_FADE
             #pragma shader_feature_local _VERTEX_ANIMATION
             #pragma shader_feature_local _HOLOGRAM
@@ -874,6 +1006,7 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _VIDEO_TEXTURE
             #pragma shader_feature_local _LTCGI
             #pragma shader_feature_local _WATER_DRIP
+            #pragma shader_feature_local _SMEAR
             #pragma shader_feature_local _DITHERING_ALPHA
             #pragma shader_feature_local _VAT
             #pragma shader_feature_local _VAT_NORMAL
@@ -912,10 +1045,14 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _3RD_TEXTURE
             #pragma shader_feature_local _4TH_TEXTURE
             #pragma shader_feature_local _5TH_TEXTURE
+            #pragma shader_feature_local _SCREEN_TONE
+            #pragma shader_feature_local _GRADIENT_BASE_COLOR
             #pragma shader_feature_local _USE_RAMP
             #pragma shader_feature_local _SHADOW_RECEIVE_MASK
             #pragma shader_feature_local _USE_MULTI_SHADOW
             #pragma shader_feature_local _SOFT_LIGHTING_MODE
+            #pragma shader_feature_local _HEIGHT_FADE
+            #pragma shader_feature_local _INTERSECTION_FADE
             #pragma shader_feature_local _DISTANCE_FADE
             #pragma shader_feature_local _DITHERING_ALPHA
             #pragma shader_feature_local _SDF_MAP
@@ -933,6 +1070,7 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _DISSOLVE
             #pragma shader_feature_local _ALPHA_MASK
             #pragma shader_feature_local _PARALLAX
+            #pragma shader_feature_local _SMEAR
             #pragma shader_feature_local _VAT
             #pragma shader_feature_local _VAT_NORMAL
             #pragma shader_feature_local _SMOOTH_NORMAL
