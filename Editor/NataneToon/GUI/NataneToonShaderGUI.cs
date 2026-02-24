@@ -1404,8 +1404,22 @@ public class NataneToonShaderGUI : ShaderGUI
 
             EditorGUILayout.Space(10);
 
-            // Rim Direction Control
-            bool enableRimDirControl = DrawToggle("_RIM_DIRECTION_CONTROL", "_RimDirectionControl", "リム方向制御を有効化");
+            // Rim Light Direction Masking (lilToon-style)
+            DrawProperty("_RimDirStrength", "ライト方向追従");
+            DrawProperty("_RimShadowMask", "影マスク");
+            DrawHelpToggle("RimDirMasking",
+                "💡 リムライト方向制御:\n" +
+                "• ライト方向追従: ライトの方向にリムを追従させる強度\n" +
+                "  0=全方向にリム、1=ライト側のみリム\n" +
+                "• 影マスク: 影の部分でリムを抑制する強度\n" +
+                "  0=影でもリム表示、1=影でリム消失\n\n" +
+                "※ ポイントライト・スポットライトにも対応",
+                MessageType.Info);
+
+            EditorGUILayout.Space(5);
+
+            // Rim Direction Control (manual)
+            bool enableRimDirControl = DrawToggle("_RIM_DIRECTION_CONTROL", "_RimDirectionControl", "手動方向制御を有効化");
 
             if (enableRimDirControl)
             {
@@ -1413,9 +1427,10 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_RimLightDirection", "リムライト方向");
                 DrawProperty("_RimDirectionRange", "方向範囲");
                 DrawHelpToggle("RimDirectionControl",
-                    "🧭 リム方向制御:\n" +
-                    "リムライトの発生方向を制限して、\n" +
-                    "特定の方向からのみリムが見えるように制御します。\n\n" +
+                    "🧭 手動リム方向制御:\n" +
+                    "リムライトの発生方向を手動で指定して制限します。\n" +
+                    "ライトの位置に関係なく、特定の方向からのみ\n" +
+                    "リムが見えるように制御します。\n\n" +
                     "• リムライト方向: リムを発生させる方向ベクトル\n" +
                     "• 方向範囲: 許容する角度の広さ（0=狭い、1=広い）",
                     MessageType.Info);

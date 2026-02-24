@@ -227,6 +227,8 @@ Shader "Natane/Toon Shader (Transparent)"
         [Toggle(_RIM_DIRECTION_CONTROL)] _RimDirectionControl ("Rim Direction Control", Float) = 0
         _RimLightDirection ("Rim Light Direction", Vector) = (0,1,0,0)
         _RimDirectionRange ("Direction Range", Range(0, 1)) = 0.5
+        _RimDirStrength ("Light Direction Strength", Range(0, 1)) = 0
+        _RimShadowMask ("Shadow Mask", Range(0, 1)) = 0
 
         [Header(Subsurface Scattering)]
         [Toggle(_SSS)] _SSS ("Enable SSS", Float) = 0
@@ -908,6 +910,10 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _USE_DITHERING
             #pragma shader_feature_local _SPECULAR
             #pragma shader_feature_local _HAIR_SPECULAR
+            #pragma shader_feature_local _RIM_LIGHT
+            #pragma shader_feature_local _RIM_LIGHT_2
+            #pragma shader_feature_local _OFFSET_RIM_LIGHT
+            #pragma shader_feature_local _ENV_RIM
             #pragma shader_feature_local _SSS
             #pragma shader_feature_local _NORMALMAP
             #pragma shader_feature_local _DISSOLVE

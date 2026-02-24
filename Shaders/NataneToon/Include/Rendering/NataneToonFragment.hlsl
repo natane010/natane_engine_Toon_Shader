@@ -216,11 +216,11 @@ half4 frag(v2f i) : SV_Target
     // ===== Backlight Calculation =====
     // Calculate light coming from behind the object (rim-like effect)
     half backlight = 0.0;
-    #ifdef UNITY_PASS_FORWARDBASE
+    {
         half backlightDot = max(0.0, dot(worldNormal, -lightDir));
         float backlightPowerBlurred = max(0.5, 4.0 * (1.0 - _BacklightBlur * 0.8));
         backlight = pow(backlightDot, backlightPowerBlurred) * _BacklightIntensity;
-    #endif
+    }
 
     // ===== Toon/Ramp Shading =====
     // Calculate base light term
@@ -515,6 +515,15 @@ half4 frag(v2f i) : SV_Target
         // ForwardAdd pass should output only additional light contribution.
         // Keep this path minimal to avoid over-brightening and reduce per-light cost.
         col.rgb = originalAlbedo * lighting * _Brightness;
+
+        // Backlight contribution in ForwardAdd
+        {
+            half backlightBlendFaded_add = _BacklightBlend;
+            #ifdef _DISTANCE_FADE
+                backlightBlendFaded_add *= lerp(1.0, distanceFade, _BacklightDistFade);
+            #endif
+            col.rgb += originalAlbedo * backlight * _BacklightColor.rgb * _LightColor0.rgb * atten * _AdditionalLightIntensity * backlightBlendFaded_add;
+        }
     #else
         // Optimized: Cache original luminance (used multiple times)
         half originalLum = CALC_LUMINANCE(originalAlbedo);
@@ -647,15 +656,15 @@ half4 frag(v2f i) : SV_Target
         col.rgb = ApplyEffectBlendPost(preSSS, col.rgb, sssBlendFaded, _SSSBlendMode);
     #endif
 
-    // ===== Rim Light (ForwardBase only) =====
-    #if defined(_RIM_LIGHT) && defined(UNITY_PASS_FORWARDBASE)
+    // ===== Rim Light =====
+    #if defined(_RIM_LIGHT)
         float rimPowerBlurred = max(0.1, _RimPower * (1.0 - _RimBlur * 0.8));
-        half3 rim = RimLighting(worldNormal, viewDir, rimPowerBlurred, _RimIntensity);
-
-        // Apply Spread/Glow effect - Optimized: removed branching
         half rimSpreadPower = lerp(rimPowerBlurred, max(0.5, rimPowerBlurred * 0.3), _RimSpread);
+
+        // Fresnel rim (same for both passes: camera-based edge detection)
+        half3 rim = RimLighting(worldNormal, viewDir, rimPowerBlurred, _RimIntensity);
         half3 rimGlow = RimLighting(worldNormal, viewDir, rimSpreadPower, _RimIntensity * _RimSpread * 0.5);
-        rim += rimGlow * step(0.001, _RimSpread); // Conditional add without branch
+        rim += rimGlow * step(0.001, _RimSpread);
 
         // Apply mask texture with soft blending
         float2 rimMaskUV = uv;
@@ -678,6 +687,20 @@ half4 frag(v2f i) : SV_Target
         rim *= _Glossiness;
         rim = ApplyMatteQuality(rim, col.rgb, _MatteEffect);
 
+        // Light direction-linked rim masking (lilToon-style Half-Lambert)
+        // Half-Lambert maps NdotL from [-1,1] to [0,1] — rim follows actual light direction
+        {
+            half rimHalfLambert = dot(worldNormal, lightDir) * 0.5 + 0.5;
+            rim *= lerp(1.0, rimHalfLambert, _RimDirStrength);
+        }
+        // Shadow-based rim suppression (independent of direction)
+        rim *= lerp(1.0, shadingValue, _RimShadowMask);
+
+        // ForwardAdd: per-light color and attenuation (same pattern as Specular/SSS)
+        #ifndef UNITY_PASS_FORWARDBASE
+            rim *= effectiveLightColor * atten * _AdditionalLightIntensity;
+        #endif
+
         // Use safe additive blending to prevent white-out
         half rimStrength = saturate(length(rim) * 0.5);
         half3 preRim = col.rgb;
@@ -689,19 +712,18 @@ half4 frag(v2f i) : SV_Target
         col.rgb = ApplyEffectBlendPost(preRim, col.rgb, rimBlendFaded, _RimBlendMode);
     #endif
 
-    // ===== Rim Light 2 (ForwardBase only) =====
-    #if defined(_RIM_LIGHT_2) && defined(UNITY_PASS_FORWARDBASE)
-        // Calculate rim factor (stronger at edges)
-        half rim2Factor = 1.0 - saturate(dot(worldNormal, viewDir));
+    // ===== Rim Light 2 =====
+    #if defined(_RIM_LIGHT_2)
         float rim2PowerBlurred = max(0.1, _RimPower2 * (1.0 - _Rim2Blur * 0.8));
+        half rim2SpreadPower = lerp(rim2PowerBlurred, max(0.5, rim2PowerBlurred * 0.3), _RimSpread2);
+
+        // Fresnel rim (same for both passes)
+        half rim2Factor = 1.0 - saturate(dot(worldNormal, viewDir));
         rim2Factor = pow(rim2Factor, rim2PowerBlurred) * _RimIntensity2;
         half3 rim2 = rim2Factor * _RimColor2.rgb;
-
-        // Apply Spread/Glow effect - Optimized: removed branching
-        half rim2SpreadPower = lerp(rim2PowerBlurred, max(0.5, rim2PowerBlurred * 0.3), _RimSpread2);
         half rim2SpreadFactor = 1.0 - saturate(dot(worldNormal, viewDir));
         rim2SpreadFactor = pow(rim2SpreadFactor, rim2SpreadPower) * _RimIntensity2 * _RimSpread2 * 0.5;
-        rim2 += rim2SpreadFactor * _RimColor2.rgb * step(0.001, _RimSpread2); // Conditional add without branch
+        rim2 += rim2SpreadFactor * _RimColor2.rgb * step(0.001, _RimSpread2);
 
         // Apply mask texture with soft blending
         float2 rimMask2UV = uv;
@@ -724,6 +746,19 @@ half4 frag(v2f i) : SV_Target
         rim2 *= _Glossiness;
         rim2 = ApplyMatteQuality(rim2, col.rgb, _MatteEffect);
 
+        // Light direction-linked rim masking (lilToon-style Half-Lambert)
+        {
+            half rim2HalfLambert = dot(worldNormal, lightDir) * 0.5 + 0.5;
+            rim2 *= lerp(1.0, rim2HalfLambert, _RimDirStrength);
+        }
+        // Shadow-based rim suppression
+        rim2 *= lerp(1.0, shadingValue, _RimShadowMask);
+
+        // ForwardAdd: per-light color and attenuation
+        #ifndef UNITY_PASS_FORWARDBASE
+            rim2 *= effectiveLightColor * atten * _AdditionalLightIntensity;
+        #endif
+
         // Use fast additive blending (secondary effect)
         half rim2Strength = saturate(length(rim2) * 0.5);
         half3 preRim2 = col.rgb;
@@ -735,9 +770,11 @@ half4 frag(v2f i) : SV_Target
         col.rgb = ApplyEffectBlendPost(preRim2, col.rgb, rim2BlendFaded, _RimBlendMode2);
     #endif
 
-    // ===== Offset Rim Light (ForwardBase only) =====
-    #if defined(_OFFSET_RIM_LIGHT) && defined(UNITY_PASS_FORWARDBASE)
+    // ===== Offset Rim Light =====
+    #if defined(_OFFSET_RIM_LIGHT)
         float offsetRimPowerBlurred = max(0.1, _OffsetRimPower * (1.0 - _OffsetRimBlur * 0.8));
+
+        // Offset rim uses lightDir for light direction linking
         half3 offsetRim = OffsetRimLighting(worldNormal, viewDir, lightDir, offsetRimPowerBlurred, _OffsetRimIntensity);
 
         // Apply mask texture
@@ -752,6 +789,11 @@ half4 frag(v2f i) : SV_Target
         offsetRim *= _Glossiness;
         offsetRim = ApplyMatteQuality(offsetRim, col.rgb, _MatteEffect);
 
+        // ForwardAdd: per-light color and attenuation
+        #ifndef UNITY_PASS_FORWARDBASE
+            offsetRim *= effectiveLightColor * atten * _AdditionalLightIntensity;
+        #endif
+
         // Safe additive blend
         half offsetRimStrength = saturate(length(offsetRim) * 0.5);
         half3 preOffsetRim = col.rgb;
@@ -763,9 +805,11 @@ half4 frag(v2f i) : SV_Target
         col.rgb = ApplyEffectBlendPost(preOffsetRim, col.rgb, offsetRimBlendFaded, _OffsetRimBlendMode);
     #endif
 
-    // ===== Environmental Rim (ForwardBase only) =====
-    #if defined(_ENV_RIM) && defined(UNITY_PASS_FORWARDBASE)
+    // ===== Environmental Rim =====
+    #if defined(_ENV_RIM)
         float envRimPowerBlurred = max(0.1, _EnvRimPower * (1.0 - _EnvRimBlur * 0.8));
+
+        // Fresnel + cubemap rim (same for both passes)
         half3 envRim = EnvironmentalRim(worldNormal, viewDir, envRimPowerBlurred);
 
         // Apply mask texture with soft blending
@@ -776,6 +820,19 @@ half4 frag(v2f i) : SV_Target
         // Apply glossiness and matte material quality
         envRim *= _Glossiness;
         envRim = ApplyMatteQuality(envRim, col.rgb, _MatteEffect);
+
+        // Light direction-linked rim masking (lilToon-style Half-Lambert)
+        {
+            half envRimHalfLambert = dot(worldNormal, lightDir) * 0.5 + 0.5;
+            envRim *= lerp(1.0, envRimHalfLambert, _RimDirStrength);
+        }
+        // Shadow-based rim suppression
+        envRim *= lerp(1.0, shadingValue, _RimShadowMask);
+
+        // ForwardAdd: per-light color and attenuation
+        #ifndef UNITY_PASS_FORWARDBASE
+            envRim *= effectiveLightColor * atten * _AdditionalLightIntensity;
+        #endif
 
         // Use safe additive blending to prevent white-out
         half envRimStrength = saturate(length(envRim) * 0.5);

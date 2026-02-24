@@ -356,6 +356,8 @@ CBUFFER_START(UnityPerMaterial)
     // Rim Direction Control
     float4 _RimLightDirection;
     float _RimDirectionRange;
+    float _RimDirStrength;
+    float _RimShadowMask;
 
     // Shadow Color Texture
     float _ShadowColorTexStrength;

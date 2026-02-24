@@ -5,6 +5,21 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.12] - 2026-02-25
+
+### Added
+- **リムライト方向追従（lilToon方式Half-Lambert）**: `_RimDirStrength` パラメータ追加。ライトの方向にリムが追従する機能。0=全方向リム、1=ライト側のみリム。Rim Light 1/2/Environmental Rim の3種に対応
+- **リムライト影マスク**: `_RimShadowMask` パラメータ追加。影の領域でリムを抑制する機能。0=影でもリム表示、1=影でリム消失
+- **リムライト ForwardAdd 対応**: Rim Light 1/2/Environmental Rim がポイントライト・スポットライトに対応。各ライトの色・距離減衰・`_AdditionalLightIntensity` で変調
+- **バックライト ForwardAdd 対応**: バックライトがポイントライト・スポットライトに対応
+- **ディレクショナルライト非依存化**: SHフォールバックでポイント/スポット/ベイク環境対応
+- **各エフェクト個別距離フェード**: 21エフェクトに個別の距離フェード機能を追加
+
+### Fixed
+- **ライト方向フォールバックチェーン強化**: ポイント/スポットライト環境でのライト方向取得を改善
+
+---
+
 ## [1.2.10] - 2026-02-24
 
 ### Fixed
