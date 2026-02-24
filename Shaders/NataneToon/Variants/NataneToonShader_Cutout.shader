@@ -212,10 +212,10 @@ Shader "Natane/Toon Shader (Cutout)"
         [Space(10)]
         [Toggle(_OFFSET_RIM_LIGHT)] _OffsetRimLight ("Enable Offset Rim Light", Float) = 0
         _OffsetRimColor ("Offset Rim Color", Color) = (0.8,0.9,1,1)
-        _OffsetRimPower ("Offset Rim Power", Range(0.1, 10)) = 3
-        _OffsetRimIntensity ("Offset Rim Intensity", Range(0, 5)) = 1
-        _OffsetRimOffsetX ("Offset Rim X", Range(-1, 1)) = 0.3
-        _OffsetRimOffsetY ("Offset Rim Y", Range(-1, 1)) = 0.1
+        _OffsetRimPower ("Offset Rim Power", Range(0.01, 10)) = 3
+        _OffsetRimIntensity ("Offset Rim Intensity", Range(0, 10)) = 1
+        _OffsetRimOffsetX ("Offset Rim X", Range(-5, 5)) = 0.3
+        _OffsetRimOffsetY ("Offset Rim Y", Range(-5, 5)) = 0.1
         [Toggle] _OffsetRimUseLightDir ("Use Light Direction", Float) = 0
         _OffsetRimLightDirStrength ("Light Dir Strength", Range(0, 1)) = 0.5
         _OffsetRimSharpness ("Offset Rim Sharpness", Range(0, 1)) = 0.5

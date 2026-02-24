@@ -104,6 +104,23 @@ public class NataneToonShaderGUI : ShaderGUI
         }
     }
 
+    private static GUIStyle _cachedHDRToggleStyle;
+    private static GUIStyle CachedHDRToggleStyle
+    {
+        get
+        {
+            if (_cachedHDRToggleStyle == null)
+            {
+                _cachedHDRToggleStyle = new GUIStyle(EditorStyles.miniButton);
+                _cachedHDRToggleStyle.fontSize = 9;
+                _cachedHDRToggleStyle.fixedWidth = 36;
+                _cachedHDRToggleStyle.fixedHeight = 16;
+                _cachedHDRToggleStyle.padding = new RectOffset(2, 2, 1, 1);
+            }
+            return _cachedHDRToggleStyle;
+        }
+    }
+
     // ===== FIELD REFERENCES =====
     /// <summary>All shader properties for the current material</summary>
     private MaterialProperty[] properties;
@@ -513,7 +530,7 @@ public class NataneToonShaderGUI : ShaderGUI
         if (showMainTexture)
         {
             DrawProperty("_MainTex", "メインテクスチャ");
-            DrawProperty("_Color", "カラー");
+            DrawColorProperty("_Color", "カラー");
 
             // Main Texture Animation
             EditorGUILayout.Space(5);
@@ -841,7 +858,7 @@ public class NataneToonShaderGUI : ShaderGUI
             DrawHelpToggle("GIIntensity", "環境反射（Light Probes/GI）の影響度を制御します。\n• 0 = 環境反射を完全に無効化（環境光の影響を受けない）\n• 0.5 = 環境反射を50%に軽減\n• 1 = 通常通り環境反射を適用\nVRChatで暗いワールドやライティングが強すぎるワールドで、見た目を安定させるために使用します。", MessageType.Info);
 
             // Indirect Lighting Controls
-            DrawProperty("_IndirectLightMinColor", "間接光の最低色");
+            DrawColorProperty("_IndirectLightMinColor", "間接光の最低色");
             DrawHelpToggle("IndirectLightMinColor", "間接光の最低保証カラーです。\n暗いワールドでもキャラクターが真っ黒にならないよう、間接光の下限を設定します。\n• 黒 (0,0,0) = 制限なし（環境光に完全依存）\n• 暗いグレー = 最低限の明るさを保証\nNatural ライティングパイプラインで使用されます。", MessageType.Info);
 
             DrawProperty("_ShadowEnvStrength", "影への環境色反映");
@@ -934,7 +951,7 @@ public class NataneToonShaderGUI : ShaderGUI
             DrawProperty("_BacklightIntensity", "逆光の強さ");
             if (targetMaterial.GetFloat("_BacklightIntensity") > 0)
             {
-                DrawProperty("_BacklightColor", "逆光の色");
+                DrawColorProperty("_BacklightColor", "逆光の色");
                 DrawHelpToggle("Backlight", "逆光はオブジェクトの背後に光がある時に照明を追加し、リムライトのような効果を作ります。", MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_BacklightBlend", "_BacklightBlendMode", "_BacklightBlur");
@@ -1135,7 +1152,7 @@ public class NataneToonShaderGUI : ShaderGUI
             if (enableSpecular)
             {
                 EditorGUI.indentLevel++;
-                DrawProperty("_SpecularColor", "スペキュラーの色");
+                DrawColorProperty("_SpecularColor", "スペキュラーの色");
                 DrawProperty("_SpecularSize", "スペキュラーのサイズ");
                 DrawProperty("_SpecularSoftness", "スペキュラーの柔らかさ");
 
@@ -1164,13 +1181,13 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUI.indentLevel++;
 
                 EditorGUILayout.LabelField("プライマリローブ", EditorStyles.boldLabel);
-                DrawProperty("_HairSpecColor1", "プライマリスペキュラー色");
+                DrawColorProperty("_HairSpecColor1", "プライマリスペキュラー色");
                 DrawProperty("_HairSpecShift1", "プライマリタンジェントシフト");
                 DrawProperty("_HairSpecWidth1", "プライマリスペキュラー幅");
 
                 EditorGUILayout.Space(5);
                 EditorGUILayout.LabelField("セカンダリローブ", EditorStyles.boldLabel);
-                DrawProperty("_HairSpecColor2", "セカンダリスペキュラー色");
+                DrawColorProperty("_HairSpecColor2", "セカンダリスペキュラー色");
                 DrawProperty("_HairSpecShift2", "セカンダリタンジェントシフト");
                 DrawProperty("_HairSpecWidth2", "セカンダリスペキュラー幅");
 
@@ -1213,7 +1230,7 @@ public class NataneToonShaderGUI : ShaderGUI
             if (enableRimLight)
             {
                 EditorGUI.indentLevel++;
-                DrawProperty("_RimColor", "リムライトの色");
+                DrawColorProperty("_RimColor", "リムライトの色");
                 DrawProperty("_RimPower", "リムライトのパワー");
                 DrawProperty("_RimIntensity", "リムライトの強さ");
 
@@ -1254,7 +1271,7 @@ public class NataneToonShaderGUI : ShaderGUI
                     "リムライト2: 淡い色、高いパワー（外側の輪郭）",
                     MessageType.None);
 
-                DrawProperty("_RimColor2", "リムライト2の色");
+                DrawColorProperty("_RimColor2", "リムライト2の色");
                 DrawProperty("_RimPower2", "リムライト2のパワー");
                 DrawProperty("_RimIntensity2", "リムライト2の強さ");
 
@@ -1293,7 +1310,7 @@ public class NataneToonShaderGUI : ShaderGUI
                     "• シャープネス=0.5: トゥーン調のくっきりリム",
                     MessageType.None);
 
-                DrawProperty("_OffsetRimColor", "オフセットリムカラー");
+                DrawColorProperty("_OffsetRimColor", "オフセットリムカラー");
                 DrawProperty("_OffsetRimPower", "パワー（幅）");
                 DrawProperty("_OffsetRimIntensity", "強度");
 
@@ -1379,7 +1396,7 @@ public class NataneToonShaderGUI : ShaderGUI
             if (enableSSS)
             {
                 EditorGUI.indentLevel++;
-                DrawProperty("_SSSColor", "SSSの色");
+                DrawColorProperty("_SSSColor", "SSSの色");
                 DrawProperty("_SSSIntensity", "SSSの強さ");
                 DrawProperty("_SSSPower", "SSSのパワー");
                 DrawProperty("_SSSDistortion", "SSSの歪み");
@@ -1485,7 +1502,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUILayout.Space(5);
                 EditorGUILayout.LabelField("グリッター設定", EditorStyles.boldLabel);
 
-                DrawProperty("_GlitterColor", "グリッター色");
+                DrawColorProperty("_GlitterColor", "グリッター色");
                 DrawProperty("_GlitterSize", "グリッターサイズ");
                 DrawProperty("_GlitterDensity", "グリッター密度");
                 DrawProperty("_GlitterSpeed", "グリッター速度");
@@ -1535,7 +1552,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUILayout.Space(5);
                 EditorGUILayout.LabelField("雫エフェクト設定", EditorStyles.boldLabel);
 
-                DrawProperty("_DripColor", "雫の色");
+                DrawColorProperty("_DripColor", "雫の色");
                 DrawProperty("_DripSpeed", "雫の速度");
                 DrawProperty("_DripDensity", "雫の密度");
                 DrawProperty("_DripSize", "雫のサイズ");
@@ -1588,7 +1605,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUI.indentLevel++;
                 EditorGUILayout.Space(5);
                 EditorGUILayout.LabelField("ホログラム基本設定", EditorStyles.boldLabel);
-                DrawProperty("_HologramColor", "ホログラム色");
+                DrawColorProperty("_HologramColor", "ホログラム色");
                 DrawProperty("_HologramMonochrome", "モノクロ化");
 
                 EditorGUILayout.Space(5);
@@ -1674,7 +1691,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
                 DrawProperty("_OutlineMode", "描画方法");
                 DrawProperty("_OutlineWidth", "アウトラインの幅");
-                DrawProperty("_OutlineColor", "アウトラインの色");
+                DrawColorProperty("_OutlineColor", "アウトラインの色");
 
                 EditorGUILayout.Space(5);
                 EditorGUILayout.LabelField("アウトラインマスク", EditorStyles.boldLabel);
@@ -1704,7 +1721,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUILayout.Space(5);
                 EditorGUILayout.LabelField("マルチカラーアウトライン", EditorStyles.boldLabel);
 
-                DrawProperty("_OutlineColor2", "アウトラインの色 2");
+                DrawColorProperty("_OutlineColor2", "アウトラインの色 2");
                 DrawProperty("_OutlineColorMix", "カラーミックス");
                 DrawHelpToggle("OutlineMultiColor",
                     "📍 マルチカラーアウトライン:\n" +
@@ -1817,7 +1834,7 @@ public class NataneToonShaderGUI : ShaderGUI
             if (enableEmission)
             {
                 EditorGUI.indentLevel++;
-                DrawProperty("_EmissionColor", "エミッションの色");
+                DrawColorProperty("_EmissionColor", "エミッションの色", true);
                 DrawProperty("_EmissionMap", "エミッションマップ");
 
                 EditorGUILayout.Space();
@@ -1869,7 +1886,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_DissolveTex", "ディゾルブテクスチャ（ノイズ）");
                 DrawUVAnimationSettings("_DissolveTexScrollSpeed", "_DissolveTexRotateSpeed", "ディゾルブ");
                 DrawProperty("_DissolveEdgeWidth", "エッジの幅");
-                DrawProperty("_DissolveEdgeColor", "エッジの色");
+                DrawColorProperty("_DissolveEdgeColor", "エッジの色", true);
                 DrawProperty("_DissolveEdgeIntensity", "エッジの強さ");
 
                 EditorGUILayout.Space();
@@ -1954,7 +1971,7 @@ public class NataneToonShaderGUI : ShaderGUI
             {
                 EditorGUI.indentLevel++;
                 DrawProperty("_ReflectionCube", "リフレクションキューブマップ");
-                DrawProperty("_ReflectionColor", "リフレクションの色");
+                DrawColorProperty("_ReflectionColor", "リフレクションの色");
                 DrawProperty("_ReflectionIntensity", "リフレクションの強さ");
                 DrawProperty("_Smoothness", "滑らかさ（光沢）");
                 DrawProperty("_Metallic", "メタリック");
@@ -2003,7 +2020,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUILayout.Space(5);
                 EditorGUILayout.LabelField("イリデッセンス設定", EditorStyles.boldLabel);
 
-                DrawProperty("_IridescenceColor", "イリデッセンスの色");
+                DrawColorProperty("_IridescenceColor", "イリデッセンスの色");
                 DrawProperty("_IridescenceIntensity", "強度");
                 DrawProperty("_IridescenceHueShift", "色相シフト");
                 DrawProperty("_IridescenceSize", "サイズ（周波数）");
@@ -2049,7 +2066,7 @@ public class NataneToonShaderGUI : ShaderGUI
             {
                 EditorGUI.indentLevel++;
                 DrawProperty("_EnvRimCube", "環境キューブマップ");
-                DrawProperty("_EnvRimColor", "環境リムの色");
+                DrawColorProperty("_EnvRimColor", "環境リムの色");
                 DrawProperty("_EnvRimPower", "環境リムのパワー");
                 DrawProperty("_EnvRimIntensity", "環境リムの強さ");
 
@@ -2420,7 +2437,7 @@ public class NataneToonShaderGUI : ShaderGUI
             {
                 EditorGUI.indentLevel++;
                 DrawProperty("_DecalTex", "デカールテクスチャ");
-                DrawProperty("_DecalColor", "デカールカラー");
+                DrawColorProperty("_DecalColor", "デカールカラー");
                 DrawProperty("_DecalPosition", "デカール位置 (XY)");
                 DrawProperty("_DecalRotation", "回転");
                 DrawProperty("_DecalScale", "スケール");
@@ -2450,7 +2467,7 @@ public class NataneToonShaderGUI : ShaderGUI
             {
                 EditorGUI.indentLevel++;
                 DrawProperty("_BackfaceTex", "裏面テクスチャ");
-                DrawProperty("_BackfaceColor", "裏面カラー");
+                DrawColorProperty("_BackfaceColor", "裏面カラー");
                 DrawHelpToggle("BackfaceTexture",
                     "🔄 裏面テクスチャ:\n" +
                     "ポリゴンの裏面に別のテクスチャを表示します。\n" +
@@ -2696,6 +2713,48 @@ public class NataneToonShaderGUI : ShaderGUI
         {
             materialEditor.ShaderProperty(property, label);
         }
+    }
+
+    private void DrawColorProperty(string propertyName, string label, bool defaultHDR = false)
+    {
+        MaterialProperty property = FindProperty(propertyName, properties, false);
+        if (property == null) return;
+
+        string prefsKey = "NataneToon_HDR_" + propertyName;
+        bool isHDR = EditorPrefs.GetBool(prefsKey, defaultHDR);
+
+        EditorGUILayout.BeginHorizontal();
+
+        // Draw color field with HDR support
+        EditorGUI.BeginChangeCheck();
+        Rect colorRect = EditorGUILayout.GetControlRect(true);
+        Color colorValue = EditorGUI.ColorField(
+            colorRect,
+            new GUIContent(label),
+            property.colorValue,
+            true,  // showEyedropper
+            true,  // showAlpha
+            isHDR  // hdr
+        );
+        if (EditorGUI.EndChangeCheck())
+        {
+            property.colorValue = colorValue;
+        }
+
+        // HDR toggle button
+        var oldBgColor = GUI.backgroundColor;
+        if (isHDR)
+        {
+            GUI.backgroundColor = new Color(1.0f, 0.85f, 0.2f); // gold
+        }
+        if (GUILayout.Button("HDR", CachedHDRToggleStyle))
+        {
+            isHDR = !isHDR;
+            EditorPrefs.SetBool(prefsKey, isHDR);
+        }
+        GUI.backgroundColor = oldBgColor;
+
+        EditorGUILayout.EndHorizontal();
     }
 
     private bool DrawToggle(string keyword, string propertyName, string label)
