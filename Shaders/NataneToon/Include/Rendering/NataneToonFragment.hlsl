@@ -427,7 +427,8 @@ half4 frag(v2f i) : SV_Target
                 float3 lvSpecular = LightVolumeSpecular(col.rgb, _Smoothness, _Metallic,
                     worldNormal, viewDir, L0, L1r, L1g, L1b);
                 lvSpecular *= _LightVolumeIntensity * _GIIntensity;
-                lvSpecular *= _Glossiness * (1.0 - _MatteEffect);
+                lvSpecular *= _Glossiness;
+                lvSpecular = ApplyMatteQuality(lvSpecular, col.rgb, _MatteEffect);
                 float lvSpecStrength = saturate(length(lvSpecular) * 0.5);
                 col.rgb = SafeAdditiveBlend(col.rgb, lvSpecular, lvSpecStrength);
             #endif
@@ -530,9 +531,9 @@ half4 frag(v2f i) : SV_Target
             specContrib *= _AdditionalLightIntensity;
         #endif
 
-        // Apply glossiness and matte effect
-        half glossFactor = _Glossiness * (1.0 - _MatteEffect);
-        specContrib *= glossFactor;
+        // Apply glossiness and matte material quality
+        specContrib *= _Glossiness;
+        specContrib = ApplyMatteQuality(specContrib, col.rgb, _MatteEffect);
 
         // Use safe additive blending to prevent white-out
         half3 preSpec = col.rgb;
@@ -551,8 +552,9 @@ half4 frag(v2f i) : SV_Target
             hairSpec *= _AdditionalLightIntensity;
         #endif
 
-        // Apply glossiness and matte effect
-        hairSpec *= _Glossiness * (1.0 - _MatteEffect);
+        // Apply glossiness and matte material quality
+        hairSpec *= _Glossiness;
+        hairSpec = ApplyMatteQuality(hairSpec, col.rgb, _MatteEffect);
 
         // Use safe additive blending to prevent white-out
         half hairSpecStrength = saturate(length(hairSpec) * 0.5);
@@ -612,8 +614,9 @@ half4 frag(v2f i) : SV_Target
             rim *= rimDirectionMask1;
         }
 
-        // Apply glossiness and matte effect
-        rim *= _Glossiness * (1.0 - _MatteEffect);
+        // Apply glossiness and matte material quality
+        rim *= _Glossiness;
+        rim = ApplyMatteQuality(rim, col.rgb, _MatteEffect);
 
         // Use safe additive blending to prevent white-out
         half rimStrength = saturate(length(rim) * 0.5);
@@ -653,8 +656,9 @@ half4 frag(v2f i) : SV_Target
             rim2 *= rimDirectionMask2;
         }
 
-        // Apply glossiness and matte effect
-        rim2 *= _Glossiness * (1.0 - _MatteEffect);
+        // Apply glossiness and matte material quality
+        rim2 *= _Glossiness;
+        rim2 = ApplyMatteQuality(rim2, col.rgb, _MatteEffect);
 
         // Use fast additive blending (secondary effect)
         half rim2Strength = saturate(length(rim2) * 0.5);
@@ -676,8 +680,9 @@ half4 frag(v2f i) : SV_Target
         // Apply shadow mask (suppress rim in shadowed areas)
         offsetRim *= lerp(1.0, shadingValue, _OffsetRimShadowMask);
 
-        // Apply glossiness and matte effect
-        offsetRim *= _Glossiness * (1.0 - _MatteEffect);
+        // Apply glossiness and matte material quality
+        offsetRim *= _Glossiness;
+        offsetRim = ApplyMatteQuality(offsetRim, col.rgb, _MatteEffect);
 
         // Safe additive blend
         half offsetRimStrength = saturate(length(offsetRim) * 0.5);
@@ -696,8 +701,9 @@ half4 frag(v2f i) : SV_Target
         envRimMask = ApplySoftMask(envRimMask); // Smooth mask transitions
         envRim *= envRimMask;
 
-        // Apply glossiness and matte effect
-        envRim *= _Glossiness * (1.0 - _MatteEffect);
+        // Apply glossiness and matte material quality
+        envRim *= _Glossiness;
+        envRim = ApplyMatteQuality(envRim, col.rgb, _MatteEffect);
 
         // Use safe additive blending to prevent white-out
         half envRimStrength = saturate(length(envRim) * 0.5);
@@ -716,8 +722,9 @@ half4 frag(v2f i) : SV_Target
         matcapMask = ApplySoftMask(matcapMask); // Smooth mask transitions
         matcap *= matcapMask;
 
-        // Apply glossiness and matte effect
-        matcap *= _Glossiness * (1.0 - _MatteEffect);
+        // Apply glossiness and matte material quality
+        matcap *= _Glossiness;
+        matcap = ApplyMatteQuality(matcap, col.rgb, _MatteEffect);
 
         // Blend modes: 0=Add (safe), 1=Multiply, 2=Replace - Optimized: no branching
         half3 preMatCap = col.rgb;
@@ -742,7 +749,8 @@ half4 frag(v2f i) : SV_Target
         half matcapMask2 = tex2D(_MatCapMask2, uv).r;
         matcapMask2 = ApplySoftMask(matcapMask2);
         matcap2 *= matcapMask2;
-        matcap2 *= _Glossiness * (1.0 - _MatteEffect);
+        matcap2 *= _Glossiness;
+        matcap2 = ApplyMatteQuality(matcap2, col.rgb, _MatteEffect);
 
         half3 preMatCap2 = col.rgb;
         half matcapStrength2 = saturate(_MatCapIntensity2 * matcapMask2);
@@ -765,7 +773,8 @@ half4 frag(v2f i) : SV_Target
         half matcapMask3 = tex2D(_MatCapMask3, uv).r;
         matcapMask3 = ApplySoftMask(matcapMask3);
         matcap3 *= matcapMask3;
-        matcap3 *= _Glossiness * (1.0 - _MatteEffect);
+        matcap3 *= _Glossiness;
+        matcap3 = ApplyMatteQuality(matcap3, col.rgb, _MatteEffect);
 
         half3 preMatCap3 = col.rgb;
         half matcapStrength3 = saturate(_MatCapIntensity3 * matcapMask3);
@@ -789,8 +798,9 @@ half4 frag(v2f i) : SV_Target
         reflectionMask = ApplySoftMask(reflectionMask); // Smooth mask transitions
         reflection *= reflectionMask;
 
-        // Apply glossiness and matte effect
-        reflection *= _Glossiness * (1.0 - _MatteEffect);
+        // Apply glossiness and matte material quality
+        reflection *= _Glossiness;
+        reflection = ApplyMatteQuality(reflection, col.rgb, _MatteEffect);
 
         // Use safe additive blending to prevent white-out
         half reflectionStrength = saturate(length(reflection) * reflectionMask * 0.5);

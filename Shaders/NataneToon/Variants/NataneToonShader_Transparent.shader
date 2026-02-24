@@ -555,6 +555,18 @@ Shader "Natane/Toon Shader (Transparent)"
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _RefractionBlendMode ("Refraction Blend Mode", Float) = 0
         _RefractionBlend ("Refraction Blend", Range(0, 1)) = 1
 
+        [Header(Tessellation Surface Smoothing)]
+        [Toggle(_TESSELLATION)] _Tessellation ("Enable Tessellation", Float) = 0
+        _TessFactor ("Tessellation Factor", Range(1, 16)) = 4
+        _TessPhongStrength ("Phong Smoothing Strength", Range(0, 1)) = 0.5
+        _TessNormalSmooth ("Normal Smooth Strength", Range(0, 1)) = 0.5
+        _TessDistanceMin ("Min Distance (Full Tess)", Float) = 1
+        _TessDistanceMax ("Max Distance (No Tess)", Float) = 20
+        [Toggle(_TESS_DISPLACEMENT)] _TessDisplacement ("Enable Displacement", Float) = 0
+        _TessDispMap ("Displacement Map", 2D) = "gray" {}
+        _TessDispStrength ("Displacement Strength", Range(-1, 1)) = 0
+        _TessDispOffset ("Displacement Offset", Range(-0.5, 0.5)) = 0
+
         [Header(Rendering)]
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull Mode", Float) = 2
         [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Src Blend", Float) = 5
@@ -770,7 +782,9 @@ Shader "Natane/Toon Shader (Transparent)"
 
             CGPROGRAM
             #pragma target 4.6
-            #pragma vertex vert
+            #pragma vertex tessVert
+            #pragma hull hull
+            #pragma domain domain
             #pragma fragment frag
             #pragma multi_compile_fwdbase
             #pragma multi_compile_fog
@@ -827,6 +841,8 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _VAT_NORMAL
             #pragma shader_feature_local _PIXEL_VERTEX_LIGHTS
             #pragma shader_feature_local _SMOOTH_NORMAL
+            #pragma shader_feature_local _TESSELLATION
+            #pragma shader_feature_local _TESS_DISPLACEMENT
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
             #define TRANSPARENT_VARIANT
 
@@ -845,7 +861,10 @@ Shader "Natane/Toon Shader (Transparent)"
             Cull [_Cull]
 
             CGPROGRAM
-            #pragma vertex vert
+            #pragma target 4.6
+            #pragma vertex tessVert
+            #pragma hull hull
+            #pragma domain domain
             #pragma fragment frag
             #pragma multi_compile_fwdadd
             #pragma multi_compile_fog
@@ -875,6 +894,8 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _VAT
             #pragma shader_feature_local _VAT_NORMAL
             #pragma shader_feature_local _SMOOTH_NORMAL
+            #pragma shader_feature_local _TESSELLATION
+            #pragma shader_feature_local _TESS_DISPLACEMENT
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
             #define TRANSPARENT_VARIANT
 

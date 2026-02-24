@@ -22,6 +22,7 @@
 #include "../Utils/NataneToonUtils.hlsl"
 #include "../Lighting/NataneToonLighting.hlsl"
 #include "NataneToonVertex.hlsl"
+#include "NataneToonTessellation.hlsl"
 #include "../Rendering/NataneToonFragment.hlsl"
 
 #endif // NATANE_TOON_CORE_INCLUDED

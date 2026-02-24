@@ -497,6 +497,17 @@ CBUFFER_START(UnityPerMaterial)
     float _VATNormalMax;
     float _VATPackingMode;
     #endif
+
+    // Tessellation
+    #if defined(_TESSELLATION)
+    float _TessFactor;
+    float _TessPhongStrength;
+    float _TessNormalSmooth;
+    float _TessDistanceMin;
+    float _TessDistanceMax;
+    float _TessDispStrength;
+    float _TessDispOffset;
+    #endif
 CBUFFER_END
 
 // Texture samplers (must be outside CBUFFER per HLSL specification)
@@ -674,6 +685,11 @@ sampler2D _HologramNoiseTex;
 #if defined(_VAT)
 sampler2D _VATPositionMap;
 sampler2D _VATNormalMap;
+#endif
+
+// Tessellation Displacement
+#if defined(_TESS_DISPLACEMENT)
+sampler2D _TessDispMap;
 #endif
 
 // Cubemap samplers (outside CBUFFER)

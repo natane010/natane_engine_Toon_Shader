@@ -167,6 +167,7 @@ public class NataneToonShaderGUI : ShaderGUI
         new[] { "Parallax", "視差マッピング パララックス", "parallax height map" },
         new[] { "VertexAnimation", "頂点アニメーション 風 呼吸 脈動", "vertex animation wind breath pulse" },
         new[] { "VAT", "VAT 頂点アニメーション Houdini", "vat vertex animation texture houdini" },
+        new[] { "Tessellation", "テッセレーション 曲面 スムージング", "tessellation smoothing phong" },
         new[] { "Backface", "裏面テクスチャ", "backface texture back" },
         new[] { "Video", "ビデオテクスチャ", "video texture render" },
         new[] { "DistanceFade", "距離フェード", "distance fade lod" },
@@ -205,6 +206,7 @@ public class NataneToonShaderGUI : ShaderGUI
     private bool showRefraction;
     private bool showRendering;
     private bool showVAT;
+    private bool showTessellation;
     private bool showVertexAnimation;
     private bool showLTCGI;
     private bool showAO;
@@ -2182,6 +2184,75 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(showVAT);
     }
 
+    private void DrawTessellationSection()
+    {
+        showTessellation = DrawBoxedSection("テッセレーション（曲面スムージング）", showTessellation, SectionCategory.Advanced, "_TESSELLATION");
+        if (showTessellation)
+        {
+            bool enableTess = DrawToggle("_TESSELLATION", "_Tessellation", "テッセレーションを有効化");
+            if (enableTess)
+            {
+                DrawProperty("_TessFactor", "テッセレーション係数");
+                DrawHelpToggle("TessFactor",
+                    "🔷 テッセレーション係数:\n" +
+                    "メッシュの分割数を制御します。\n\n" +
+                    "• 1 = 分割なし\n" +
+                    "• 2-4 = 軽いスムージング（推奨）\n" +
+                    "• 8-16 = 高品質（高負荷）\n\n" +
+                    "⚠ VR では両目分のコストがかかります。",
+                    MessageType.Info);
+                DrawProperty("_TessPhongStrength", "Phong スムージング強度");
+                DrawHelpToggle("TessPhong",
+                    "🔷 Phong スムージング:\n" +
+                    "頂点法線を使って三角形を曲面に膨らませます。\n\n" +
+                    "• 0 = フラット（分割のみ）\n" +
+                    "• 0.3-0.5 = 自然な丸み（推奨）\n" +
+                    "• 1.0 = 最大スムージング",
+                    MessageType.Info);
+                DrawProperty("_TessNormalSmooth", "法線スムージング強度");
+                DrawHelpToggle("TessNormalSmooth",
+                    "💡 法線スムージング:\n" +
+                    "テッセレーション後の法線の滑らかさを制御します。\n" +
+                    "光のあたり方・影の境界の柔らかさに影響します。\n\n" +
+                    "• 0 = 元のメッシュ法線をそのまま使用\n" +
+                    "• 0.5 = 適度にスムーズ（推奨）\n" +
+                    "• 1.0 = 最大スムーズ（光が非常に柔らかくあたる）",
+                    MessageType.Info);
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField("距離LOD", EditorStyles.boldLabel);
+                DrawProperty("_TessDistanceMin", "最小距離（最大テッセレーション）");
+                DrawProperty("_TessDistanceMax", "最大距離（テッセレーション無効）");
+                DrawHelpToggle("TessDistance",
+                    "📏 距離LOD:\n" +
+                    "カメラからの距離でテッセレーション係数を自動調整します。\n\n" +
+                    "• 最小距離以内 = 設定した係数で分割\n" +
+                    "• 最大距離以遠 = テッセレーションOFF\n" +
+                    "• その間 = 滑らかに遷移\n\n" +
+                    "💡 VRChat ではパフォーマンスのため最大距離を10-20mに設定推奨。",
+                    MessageType.Info);
+
+                EditorGUILayout.Space(5);
+                bool enableDisp = DrawToggle("_TESS_DISPLACEMENT", "_TessDisplacement", "ディスプレイスメントマップを有効化");
+                if (enableDisp)
+                {
+                    DrawProperty("_TessDispMap", "ディスプレイスメントマップ");
+                    DrawProperty("_TessDispStrength", "ディスプレイスメント強度");
+                    DrawProperty("_TessDispOffset", "ディスプレイスメントオフセット");
+                    DrawHelpToggle("TessDisp",
+                        "🗻 ディスプレイスメントマップ:\n" +
+                        "ハイトマップを使って実際にメッシュの形状を変化させます。\n" +
+                        "影や光の反応が変わり、細かい凹凸表現が可能です。\n\n" +
+                        "• グレースケールテクスチャを使用（白=高い, 黒=低い）\n" +
+                        "• 強度: + = 外側に押し出す, - = 内側に凹む\n" +
+                        "• オフセット: 基準面を調整\n\n" +
+                        "⚠ テッセレーション係数が低いと効果が粗くなります。",
+                        MessageType.Info);
+                }
+            }
+        }
+        EndBoxedSection(showTessellation);
+    }
+
     private void DrawRefractionSection()
     {
         showRefraction = DrawBoxedSection("屈折（リフラクション）", showRefraction, SectionCategory.Environment, "_REFRACTION");
@@ -3160,6 +3231,7 @@ public class NataneToonShaderGUI : ShaderGUI
         NataneToonShaderGUIUtility.DrawCategoryDivider("アニメーション＆特殊");
         SafeDrawSection(DrawVertexAnimationSection, "頂点アニメーション（風/呼吸/脈動）");
         SafeDrawSection(DrawVATSection, "VAT（頂点アニメーション）");
+        SafeDrawSection(DrawTessellationSection, "テッセレーション（曲面スムージング）");
         SafeDrawSection(DrawBackfaceSection, "裏面テクスチャ");
         SafeDrawSection(DrawVideoSection, "ビデオテクスチャ");
         SafeDrawSection(DrawDistanceFadeSection, "距離フェード");
@@ -3238,6 +3310,7 @@ public class NataneToonShaderGUI : ShaderGUI
             case "Parallax": return DrawParallaxSection;
             case "VertexAnimation": return DrawVertexAnimationSection;
             case "VAT": return DrawVATSection;
+            case "Tessellation": return DrawTessellationSection;
             case "Backface": return DrawBackfaceSection;
             case "Video": return DrawVideoSection;
             case "DistanceFade": return DrawDistanceFadeSection;

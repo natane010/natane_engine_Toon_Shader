@@ -385,6 +385,27 @@ half3 SafeAdditiveBlendFast(half3 baseColor, half3 additiveColor, half strength)
     return baseColor + additiveColor * strength * max(compression, 0.15);
 }
 
+// ===== Matte Material Quality =====
+// Instead of simply suppressing effects, transforms them to look like light on a matte surface.
+// Matte surfaces scatter light: effects become desaturated and tinted by the surface color,
+// but remain clearly visible — matte changes quality, not visibility.
+half3 ApplyMatteQuality(half3 effect, half3 baseColor, half matteAmount)
+{
+    // 1. Desaturate: matte surfaces scatter wavelengths, reducing color vibrancy
+    half effectLum = dot(effect, half3(0.299, 0.587, 0.114));
+    effect = lerp(effect, effectLum.xxx, matteAmount * 0.6);
+
+    // 2. Surface color tinting: matte surfaces impart their own color to reflected light
+    //    Brighten baseColor to prevent over-darkening on dark surfaces
+    half3 tintBase = saturate(baseColor + 0.4);
+    effect = lerp(effect, effect * tintBase, matteAmount * 0.4);
+
+    // 3. Gentle softening only (matte changes quality, not visibility)
+    effect *= lerp(1.0, 0.75, matteAmount);
+
+    return effect;
+}
+
 // ===== Blend Mode Functions for Makeup Textures =====
 // Returns blended color based on blend mode
 
