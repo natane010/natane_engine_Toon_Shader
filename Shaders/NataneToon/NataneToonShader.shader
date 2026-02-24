@@ -743,6 +743,7 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature_local _OUTLINE_MASK
             #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma shader_feature_local _SMEAR
+            #pragma shader_feature_local _HEIGHT_FADE
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
@@ -764,6 +765,9 @@ Shader "Natane/Toon Shader"
                 float4 pos : SV_POSITION;
                 float2 uv : TEXCOORD0;
                 UNITY_FOG_COORDS(1)
+                #ifdef _HEIGHT_FADE
+                float3 worldPos : TEXCOORD2;
+                #endif
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
@@ -794,6 +798,16 @@ Shader "Natane/Toon Shader"
                 float _SmearNoiseStrength;
                 float _SmearAutoMagnitude;
                 float _SmearMotionSensitivity;
+            #endif
+            #ifdef _HEIGHT_FADE
+                float _HeightFadeStart;
+                float _HeightFadeEnd;
+                float _HeightFadeAxis;
+                float _HeightFadeSpace;
+                float _HeightFadeInvert;
+                float _HeightFadeMode;
+                float _HeightFadeBlend;
+                float _HeightFadeDitherScale;
             #endif
 
             v2f vert(appdata v)
@@ -919,6 +933,10 @@ Shader "Natane/Toon Shader"
                         float3 scaledPos = v.vertex.xyz + normalize(outlineNormal) * outlineWidth;
                         o.pos = UnityObjectToClipPos(float4(scaledPos, 1.0));
                     }
+
+                    #ifdef _HEIGHT_FADE
+                    o.worldPos = worldPos;
+                    #endif
                 #else
                     o.pos = float4(0, 0, 0, 0);
                 #endif
@@ -954,6 +972,43 @@ Shader "Natane/Toon Shader"
                         col.a *= outlineMask;
                         // Discard pixels where outline is fully masked out
                         clip(col.a - 0.01);
+                    #endif
+
+                    // Apply height fade to outline
+                    #ifdef _HEIGHT_FADE
+                    {
+                        float height;
+                        if (_HeightFadeSpace < 0.5)
+                        {
+                            float3 localPos = mul(unity_WorldToObject, float4(i.worldPos, 1.0)).xyz;
+                            height = _HeightFadeAxis < 0.5 ? localPos.x : (_HeightFadeAxis < 1.5 ? localPos.y : localPos.z);
+                        }
+                        else
+                        {
+                            height = _HeightFadeAxis < 0.5 ? i.worldPos.x : (_HeightFadeAxis < 1.5 ? i.worldPos.y : i.worldPos.z);
+                        }
+                        float heightFade = saturate((height - _HeightFadeStart) / max(_HeightFadeEnd - _HeightFadeStart, 0.001));
+                        heightFade = _HeightFadeInvert > 0.5 ? 1.0 - heightFade : heightFade;
+
+                        if (_HeightFadeMode < 0.5)
+                        {
+                            // Alpha mode
+                            col.a *= heightFade;
+                            clip(col.a - 0.001);
+                        }
+                        else if (_HeightFadeMode < 1.5)
+                        {
+                            // Clip mode
+                            clip(heightFade - 0.001);
+                        }
+                        else
+                        {
+                            // Dithering mode
+                            float2 spos = i.pos.xy * max(_HeightFadeDitherScale, 1.0) * 0.1;
+                            float ditherThreshold = frac(dot(floor(spos), float2(0.067, 0.258)) * 43.0);
+                            clip(heightFade - ditherThreshold);
+                        }
+                    }
                     #endif
 
                     UNITY_APPLY_FOG(i.fogCoord, col);

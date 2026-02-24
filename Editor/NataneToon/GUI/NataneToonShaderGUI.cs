@@ -147,6 +147,13 @@ public class NataneToonShaderGUI : ShaderGUI
         Transparent = 2
     }
 
+    private static readonly string[] renderingModeLabels = new string[]
+    {
+        "不透明",
+        "カットアウト",
+        "半透明"
+    };
+
     // ===== UI STATE =====
     // Tab index for category navigation
     private int selectedTab = 0;
@@ -326,6 +333,17 @@ public class NataneToonShaderGUI : ShaderGUI
             {
                 DrawNonToonShaderGUI(NataneToon.Editor.NataneToonShaderTypeSwitcher.DetectShaderType(targetMaterial));
                 return;
+            }
+
+            // ===== Rendering Type Dropdown (below Shader Type) =====
+            {
+                RenderingMode currentMode = GetCurrentRenderingMode();
+                EditorGUI.BeginChangeCheck();
+                int newIndex = EditorGUILayout.Popup("描画タイプ", (int)currentMode, renderingModeLabels);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    SetRenderingMode((RenderingMode)newIndex);
+                }
             }
 
             // Validate and fix shader keywords (ensures keywords match property values)
@@ -2688,7 +2706,7 @@ public class NataneToonShaderGUI : ShaderGUI
             RenderingMode currentMode = GetCurrentRenderingMode();
 
             EditorGUI.BeginChangeCheck();
-            RenderingMode newMode = (RenderingMode)EditorGUILayout.EnumPopup("描画タイプ", currentMode);
+            RenderingMode newMode = (RenderingMode)(EditorGUILayout.Popup("描画タイプ", (int)currentMode, renderingModeLabels));
             if (EditorGUI.EndChangeCheck())
             {
                 SetRenderingMode(newMode);
@@ -2696,14 +2714,14 @@ public class NataneToonShaderGUI : ShaderGUI
 
             DrawHelpToggle("RenderingMode",
                 "🎨 レンダリングモード:\n\n" +
-                "• Opaque（不透明）: 標準的な不透明オブジェクト\n" +
+                "• 不透明: 標準的な不透明オブジェクト\n" +
                 "  - 肌、服、硬い物体など\n" +
                 "  - 最も高速で推奨\n\n" +
-                "• Cutout（切り抜き）: アルファ閾値による透過\n" +
+                "• カットアウト: アルファ閾値による透過\n" +
                 "  - 髪の毛、葉っぱ、フェンスなど\n" +
                 "  - アルファ値が0.5以上で表示、未満で非表示\n" +
                 "  - 半透明ではなく、完全に透明か不透明かの2択\n\n" +
-                "• Transparent（半透明）: 滑らかな透過\n" +
+                "• 半透明: 滑らかな透過\n" +
                 "  - ガラス、水、煙、エフェクトなど\n" +
                 "  - アルファ値に応じて段階的に透過\n" +
                 "  - 最も負荷が高い\n\n" +

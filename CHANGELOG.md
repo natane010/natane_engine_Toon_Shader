@@ -5,6 +5,18 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.16] - 2026-02-25
+
+### Added
+- **高さフェード アウトライン対応**: Height Fade 有効時にアウトラインパスにも高さフェードを適用。Alpha/Clip/Dithering 全3モード対応
+  - アウトラインパスに `_HEIGHT_FADE` キーワード・変数宣言・worldPos 受け渡しを追加
+  - 高さフェードでアルファモード使用時にアウトラインが残る不具合を修正
+- **描画タイプドロップダウン追加**: インスペクター上部（シェーダータイプ直下）に描画タイプセレクターを追加
+  - 「不透明」「カットアウト」「半透明」の日本語ラベルで直感的に切り替え可能
+  - 既存のレンダリング設定セクションのドロップダウンも同一の日本語ラベルに統一
+
+---
+
 ## [1.2.15] - 2026-02-25
 
 ### Added
