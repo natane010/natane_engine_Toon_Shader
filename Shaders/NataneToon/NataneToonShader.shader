@@ -1,7 +1,12 @@
+// ===== NataneToon Shader - Opaque Variant =====
+// Render Type: Opaque
+// Queue: Geometry
+// 特徴: 不透明レンダリング。アルファなし。最高のパフォーマンス。
 Shader "Natane/Toon Shader"
 {
     Properties
     {
+        // ===== Base Settings (基本設定) =====
         [Header(Main Texture)]
         _MainTex ("Main Texture", 2D) = "white" {}
         _Color ("Color", Color) = (1,1,1,1)
@@ -74,6 +79,7 @@ Shader "Natane/Toon Shader"
         _5thTexScrollSpeed ("5th Tex Scroll Speed XY", Vector) = (0,0,0,0)
         _5thTexRotateSpeed ("5th Tex Rotate Speed", Float) = 0
 
+        // ===== Shading (シェーディング) =====
         [Header(Shading)]
         [Enum(Toon,0,Gradient,1)] _ShadingMode ("Shading Mode", Float) = 0
         _ShadingGradientWidth ("Gradient Width", Range(0.001, 1)) = 0.2
@@ -154,6 +160,7 @@ Shader "Natane/Toon Shader"
         [Toggle(_LIGHT_VOLUME_SPECULAR)] _LightVolumeSpecular ("Light Volume Specular", Float) = 0
         _LightVolumeBlend ("Light Volume Blend", Range(0, 1)) = 1
 
+        // ===== Effects (エフェクト) =====
         [Header(Specular)]
         [Toggle(_SPECULAR)] _Specular ("Enable Specular", Float) = 0
         _SpecularColor ("Specular Color", Color) = (1,1,1,1)
@@ -287,6 +294,7 @@ Shader "Natane/Toon Shader"
         _GlitterBlend ("Glitter Blend", Range(0, 1)) = 1
         _GlitterBlur ("Glitter Blur", Range(0, 1)) = 0
 
+        // ===== Outline (アウトライン) =====
         [Header(Outline)]
         [Toggle(_OUTLINE)] _Outline ("Enable Outline", Float) = 0
         [Enum(Inverted Hull,0,Back Face,1)] _OutlineMode ("Outline Mode", Float) = 0
@@ -353,6 +361,7 @@ Shader "Natane/Toon Shader"
         _HueShiftBlend ("Hue Shift Blend", Range(0, 1)) = 1
         _HueShiftBlur ("Hue Shift Blur", Range(0, 1)) = 0
 
+        // ===== Normal Map (法線マップ) =====
         [Header(Normal Map)]
         [Toggle(_NORMALMAP)] _UseNormalMap ("Use Normal Map", Float) = 0
         _BumpMap ("Normal Map", 2D) = "bump" {}
@@ -436,13 +445,17 @@ Shader "Natane/Toon Shader"
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _AudioLinkBlendMode ("AudioLink Blend Mode", Float) = 0
         _AudioLinkBlend ("AudioLink Blend", Range(0, 1)) = 1
 
+        // ===== Distance Fade (距離フェード) =====
         [Header(Distance Fade VRChat Optimization)]
         [Toggle(_DISTANCE_FADE)] _DistanceFade ("Enable Distance Fade", Float) = 0
         _DistanceFadeStart ("Fade Start Distance", Float) = 10
         _DistanceFadeEnd ("Fade End Distance", Float) = 20
-        [Enum(Alpha,0,Simplify,1)] _DistanceFadeMode ("Fade Mode", Float) = 0
+        [Enum(Alpha,0,Simplify,1,Dithering,2)] _DistanceFadeMode ("Fade Mode", Float) = 0
         _DistanceFadeBlend ("Distance Fade Blend", Range(0, 1)) = 1
         _DistFadeBlur ("Distance Fade Blur", Range(0, 1)) = 0
+        _NearFadeStart ("Near Fade Start", Float) = 0
+        _NearFadeEnd ("Near Fade End", Float) = 0
+        _DistFadeDitherScale ("Distance Fade Dither Scale", Range(1, 100)) = 10
         // Per-effect distance fade
         _SpecularDistFade ("Specular Distance Fade", Range(0, 1)) = 0
         _HairSpecDistFade ("Hair Specular Distance Fade", Range(0, 1)) = 0
@@ -590,6 +603,7 @@ Shader "Natane/Toon Shader"
         _TessDispStrength ("Displacement Strength", Range(-1, 1)) = 0
         _TessDispOffset ("Displacement Offset", Range(-0.5, 0.5)) = 0
 
+        // ===== Advanced (詳細設定) =====
         [Header(Rendering)]
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull Mode", Float) = 2
         [Enum(Off,0,On,1)] _ZWrite ("Z Write", Float) = 1

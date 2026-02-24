@@ -1,6 +1,17 @@
 #ifndef NATANE_TOON_FRAGMENT_INCLUDED
 #define NATANE_TOON_FRAGMENT_INCLUDED
 
+// ===== Fragment Shader Constants =====
+#define DIST_FADE_BLUR_SCALE     0.5   // 距離フェードぼかしスケール
+#define PCF_TEXEL_SCALE          3.0   // PCF シャドウマップテクセルスケール
+#define PCF_SAMPLE_COUNT         9.0   // PCF サンプル合計数
+#define SMOOTH_WIDTH_SCALE       0.3   // シャドウスムーズ幅スケール
+#define BACKLIGHT_MIN_POWER      0.5   // バックライト最小パワー
+#define BACKLIGHT_SCALE          4.0   // バックライト基本スケール
+#define BACKLIGHT_BLUR_INFLUENCE 0.8   // バックライトブラー影響度
+#define AO_INDIRECT_STRENGTH     0.5   // AO 間接光強度
+#define SH_INDIRECT_BLEND        0.85  // SH 間接光ブレンド率
+
 // Fragment Shader
 // Main pixel/fragment rendering function
 // Optimized: half precision for better performance, cached luminance calculations
@@ -9,6 +20,10 @@ half4 frag(v2f i) : SV_Target
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
 
     // ===== Parallax Mapping (UV Adjustment) =====
+    // このセクションの処理:
+    // 視差マッピングによりテクスチャ座標を視線方向に基づいてオフセットし、
+    // ハイトマップから擬似的な凹凸の奥行き表現を生成する。
+    // 全後続テクスチャサンプリングの基準UVとなる。
     float2 uv = i.uv;
     #ifdef _PARALLAX
         float3 tangentViewDir = CalculateTangentViewDir(i.worldPos, i.worldTangent, i.worldBinormal, i.worldNormal);
@@ -26,14 +41,13 @@ half4 frag(v2f i) : SV_Target
     half4 col = mainTex * _Color;
 
     // ===== Makeup/Detail Textures Blending =====
-    // Consolidated texture blending using shared function
+    // このセクションの処理:
+    // メインテクスチャの上に2nd〜5thテクスチャを順番に重ね合わせる。
+    // 各テクスチャはUVアニメーション、HSV調整、マスク、ブレンドモード
+    // （Add/Multiply/Overlay/Screen）を個別に持ち、メイクアップ表現を実現する。
     #ifdef _2ND_TEXTURE
     {
-        float2 _2ndAnimUV = uv;
-        if (dot(_2ndTexScrollSpeed.xy, _2ndTexScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_2ndTexRotateSpeed) > EPSILON)
-        {
-            _2ndAnimUV = AnimateUV(uv, _2ndTexScrollSpeed.xy, _2ndTexRotateSpeed);
-        }
+        float2 _2ndAnimUV = AnimateUVIfNeeded(uv, _2ndTexScrollSpeed.xy, _2ndTexRotateSpeed);
         col.rgb = ApplyMakeupTexture(col.rgb, _2ndTex, _2ndTexMask, _2ndAnimUV, uv,
             _2ndTexHueShift, _2ndTexSaturation, _2ndTexValue,
             _2ndTexIntensity, _2ndTexBlendMode,
@@ -44,11 +58,7 @@ half4 frag(v2f i) : SV_Target
 
     #ifdef _3RD_TEXTURE
     {
-        float2 _3rdAnimUV = uv;
-        if (dot(_3rdTexScrollSpeed.xy, _3rdTexScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_3rdTexRotateSpeed) > EPSILON)
-        {
-            _3rdAnimUV = AnimateUV(uv, _3rdTexScrollSpeed.xy, _3rdTexRotateSpeed);
-        }
+        float2 _3rdAnimUV = AnimateUVIfNeeded(uv, _3rdTexScrollSpeed.xy, _3rdTexRotateSpeed);
         col.rgb = ApplyMakeupTexture(col.rgb, _3rdTex, _3rdTexMask, _3rdAnimUV, uv,
             _3rdTexHueShift, _3rdTexSaturation, _3rdTexValue,
             _3rdTexIntensity, _3rdTexBlendMode,
@@ -59,11 +69,7 @@ half4 frag(v2f i) : SV_Target
 
     #ifdef _4TH_TEXTURE
     {
-        float2 _4thAnimUV = uv;
-        if (dot(_4thTexScrollSpeed.xy, _4thTexScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_4thTexRotateSpeed) > EPSILON)
-        {
-            _4thAnimUV = AnimateUV(uv, _4thTexScrollSpeed.xy, _4thTexRotateSpeed);
-        }
+        float2 _4thAnimUV = AnimateUVIfNeeded(uv, _4thTexScrollSpeed.xy, _4thTexRotateSpeed);
         col.rgb = ApplyMakeupTexture(col.rgb, _4thTex, _4thTexMask, _4thAnimUV, uv,
             _4thTexHueShift, _4thTexSaturation, _4thTexValue,
             _4thTexIntensity, _4thTexBlendMode,
@@ -74,11 +80,7 @@ half4 frag(v2f i) : SV_Target
 
     #ifdef _5TH_TEXTURE
     {
-        float2 _5thAnimUV = uv;
-        if (dot(_5thTexScrollSpeed.xy, _5thTexScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_5thTexRotateSpeed) > EPSILON)
-        {
-            _5thAnimUV = AnimateUV(uv, _5thTexScrollSpeed.xy, _5thTexRotateSpeed);
-        }
+        float2 _5thAnimUV = AnimateUVIfNeeded(uv, _5thTexScrollSpeed.xy, _5thTexRotateSpeed);
         col.rgb = ApplyMakeupTexture(col.rgb, _5thTex, _5thTexMask, _5thAnimUV, uv,
             _5thTexHueShift, _5thTexSaturation, _5thTexValue,
             _5thTexIntensity, _5thTexBlendMode,
@@ -90,11 +92,7 @@ half4 frag(v2f i) : SV_Target
     // ===== Normal Mapping =====
     // Optimization: Skip normalization if no normal mapping (already normalized in vertex shader)
     #ifdef _NORMALMAP
-        float2 bumpUV = uv;
-        if (dot(_BumpMapScrollSpeed.xy, _BumpMapScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_BumpMapRotateSpeed) > EPSILON)
-        {
-            bumpUV = AnimateUV(uv, _BumpMapScrollSpeed.xy, _BumpMapRotateSpeed);
-        }
+        float2 bumpUV = AnimateUVIfNeeded(uv, _BumpMapScrollSpeed.xy, _BumpMapRotateSpeed);
         half3 normalMap = UnpackScaleNormal(tex2D(_BumpMap, bumpUV), _BumpScale);
         half3x3 tangentToWorld = half3x3(i.worldTangent, i.worldBinormal, i.worldNormal);
         half3 worldNormal = normalize(mul(normalMap, tangentToWorld));
@@ -111,7 +109,10 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== Lighting Setup =====
-    // Detect directional light presence and provide SH fallback for non-directional environments
+    // このセクションの処理:
+    // ライト方向と有効ライトカラーを決定するフォールバックチェーン。
+    // 1) ディレクショナルライト → 2) 頂点ライト（ポイント/スポット）
+    // → 3) SH Light Probe の順に最適な光源を選択する。
     half3 lightDir;
     half3 effectiveLightColor;
 
@@ -155,20 +156,34 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Per-Effect Distance Fade (early calculation) =====
     #ifdef _DISTANCE_FADE
-        float _dfRange = _DistFadeBlur * (_DistanceFadeEnd - _DistanceFadeStart) * 0.5;
-        half distanceFade = CalculateDistanceFade(i.worldPos, _DistanceFadeStart - _dfRange, _DistanceFadeEnd + _dfRange);
+        float distFadeBlurRange = _DistFadeBlur * (_DistanceFadeEnd - _DistanceFadeStart) * DIST_FADE_BLUR_SCALE;
+        half distanceFade = CalculateDistanceFade(i.worldPos, _DistanceFadeStart - distFadeBlurRange, _DistanceFadeEnd + distFadeBlurRange);
+
+        // Near fade: camera too close → transparent
+        if (_NearFadeEnd > _NearFadeStart + 0.001)
+        {
+            float cameraDist = length(_WorldSpaceCameraPos - i.worldPos);
+            float nearFadeBlurRange = _DistFadeBlur * (_NearFadeEnd - _NearFadeStart) * DIST_FADE_BLUR_SCALE;
+            half nearFade = saturate(
+                (cameraDist - (_NearFadeStart - nearFadeBlurRange)) /
+                max((_NearFadeEnd + nearFadeBlurRange) - (_NearFadeStart - nearFadeBlurRange), 0.01)
+            );
+            distanceFade *= nearFade;
+        }
     #endif
 
     // ===== Shadow Map Smoothing (PCF + Adaptive) =====
-    // シャドウマップのジャギーを軽減
-    // ディレクショナル: PCF 9-tap で本物のアンチエイリアシング
-    // ポイント/スポット: 適応型 smoothstep でエッジをぼかす
+    // このセクションの処理:
+    // シャドウマップのジャギーを軽減するアンチエイリアシング。
+    // ディレクショナルライト: スクリーンスペースシャドウに PCF 3x3 (9-tap) フィルタ適用。
+    // ポイント/スポットライト: fwidth ベースの適応型 smoothstep でエッジを滑らかにする。
+    // その後、シャドウ受け取りマスクとシャドウ強度を最終的な atten に反映する。
     if (_ShadowSmoothing > 0.001)
     {
         #if defined(UNITY_PASS_FORWARDBASE) && defined(SHADOWS_SCREEN) && !defined(UNITY_NO_SCREENSPACE_SHADOWS)
             // --- Directional Light: PCF 9-tap on screen-space shadow map ---
             float2 shadowUV = i._ShadowCoord.xy / i._ShadowCoord.w;
-            float2 texelSize = _ShadowSmoothing * 3.0 / _ScreenParams.xy;
+            float2 texelSize = _ShadowSmoothing * PCF_TEXEL_SCALE / _ScreenParams.xy;
 
             half pcfShadow = 0;
             [unroll]
@@ -180,12 +195,12 @@ half4 frag(v2f i) : SV_Target
                     pcfShadow += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_ShadowMapTexture, shadowUV + float2(sx, sy) * texelSize).r;
                 }
             }
-            atten = pcfShadow / 9.0;
+            atten = pcfShadow / PCF_SAMPLE_COUNT;
         #else
             // --- Point/Spot Light: Adaptive smoothstep ---
             half attenDeriv = fwidth(atten);
             half adaptiveCenter = clamp(atten, 0.1, 0.9);
-            half smoothWidth = max(attenDeriv, _ShadowSmoothing * 0.3);
+            half smoothWidth = max(attenDeriv, _ShadowSmoothing * SMOOTH_WIDTH_SCALE);
             atten = smoothstep(adaptiveCenter - smoothWidth, adaptiveCenter + smoothWidth, atten);
         #endif
     }
@@ -218,11 +233,15 @@ half4 frag(v2f i) : SV_Target
     half backlight = 0.0;
     {
         half backlightDot = max(0.0, dot(worldNormal, -lightDir));
-        float backlightPowerBlurred = max(0.5, 4.0 * (1.0 - _BacklightBlur * 0.8));
+        float backlightPowerBlurred = max(BACKLIGHT_MIN_POWER, BACKLIGHT_SCALE * (1.0 - _BacklightBlur * BACKLIGHT_BLUR_INFLUENCE));
         backlight = pow(backlightDot, backlightPowerBlurred) * _BacklightIntensity;
     }
 
     // ===== Toon/Ramp Shading =====
+    // このセクションの処理:
+    // NdotL を基にトゥーンシェーディング（階段状）またはランプテクスチャで
+    // 陰影の明暗を計算し、AO・ディザリング・シャドウアッテネーションを適用して
+    // 最終的な shadingValue（0=影、1=明るい）と shadowColor を決定する。
     // Calculate base light term
     half lightTerm = ndotl;
 
@@ -257,14 +276,18 @@ half4 frag(v2f i) : SV_Target
     half3 shadowColor;
     half aoForIndirect = 1.0;
 
+    // ===== AO (pre-calculate before shading branch) =====
+    half aoEffect = 1.0;
+    #ifdef _USE_AO
+        half ao = SampleTex2DBlur1(_AOMap, uv, _AOBlur);
+        ao = ApplySoftMask(ao);
+        aoEffect = lerp(1.0, ao, _AOIntensity);
+        aoForIndirect = lerp(1.0, ao, _AOIntensity * AO_INDIRECT_STRENGTH);
+    #endif
+
     #ifdef _USE_RAMP
-        // ===== AO (apply before ramp sampling for accurate shadow contribution) =====
         half rampInput = lightTerm;
         #ifdef _USE_AO
-            half ao = SampleTex2DBlur1(_AOMap, uv, _AOBlur);
-            ao = ApplySoftMask(ao);
-            half aoEffect = lerp(1.0, ao, _AOIntensity);
-            aoForIndirect = lerp(1.0, ao, _AOIntensity * 0.5);
             rampInput *= aoEffect;
         #endif
         // Shadow attenuation (separated from NdotL for clean toon boundaries)
@@ -295,12 +318,8 @@ half4 frag(v2f i) : SV_Target
         // Apply Shading Grade Map before final lighting
         shadingValue = ApplyShadingGradeMap(uv, shadingValue);
 
-        // ===== AO (apply to shading stage for accurate shadow contribution) =====
+        // ===== AO (apply cached AO to shading stage) =====
         #ifdef _USE_AO
-            half ao = SampleTex2DBlur1(_AOMap, uv, _AOBlur);
-            ao = ApplySoftMask(ao);
-            half aoEffect = lerp(1.0, ao, _AOIntensity);
-            aoForIndirect = lerp(1.0, ao, _AOIntensity * 0.5);
             half preShadingAO = shadingValue;
             shadingValue *= aoEffect;
             // Apply AO blend (how much AO affects the shading)
@@ -332,6 +351,12 @@ half4 frag(v2f i) : SV_Target
     // (backlight was already calculated above at line ~128)
 
     // ===== ForwardBase: Natural Lighting Pipeline =====
+    // このセクションの処理:
+    // 5ステップのライティング合成パイプライン:
+    // STEP 1: 間接光（Light Volume / SH Light Probe）
+    // STEP 2: 影の環境色（LV使用時のみ） → STEP 3: 直接光（ライトカラー適用）
+    // STEP 4: 追加光（頂点ライト・バックライト・LTCGI）
+    // STEP 5: 最終合成（LVブレンドモード選択 or max合成）
     #ifdef UNITY_PASS_FORWARDBASE
         // ========== STEP 1: Indirect Light ==========
         half3 indirectResult = half3(0, 0, 0);
@@ -372,7 +397,7 @@ half4 frag(v2f i) : SV_Target
             // Directional SH for ambient contribution
             float3 shDirect = ShadeSH9(float4(worldNormal, 1.0));
             float3 shIndirect = ShadeSH9(float4(-worldNormal, 1.0));
-            ambient = lerp(shIndirect, shDirect, 0.85);
+            ambient = lerp(shIndirect, shDirect, SH_INDIRECT_BLEND);
             ambient *= _IndirectLightIntensity * _GIIntensity;
         #endif
 
@@ -567,6 +592,14 @@ half4 frag(v2f i) : SV_Target
         col.rgb *= _Brightness;
     #endif
 
+    // ===== Post-Lighting Effects =====
+    // このセクションの処理:
+    // ライティング適用後に各種視覚エフェクトを順番に加算合成する。
+    // Specular → Hair Specular → SSS → Rim Light (1/2) → Offset Rim → Env Rim
+    // → MatCap (1/2/3) → Reflection → Refraction → Emission → Hue Shift
+    // → AudioLink → Glitter → Iridescence → Drip → Hologram → Glitch → Decal → Dissolve
+    // 各エフェクトは SafeAdditiveBlend で白飛びを防ぎ、距離フェードにも対応する。
+
     // ===== Specular Highlight =====
     #ifdef _SPECULAR
         float specSoftnessBlurred = _SpecularSoftness + _SpecularBlur * 0.3;
@@ -574,11 +607,7 @@ half4 frag(v2f i) : SV_Target
         half3 specContrib = spec * _SpecularColor.rgb * effectiveLightColor * atten;
 
         // Apply mask texture with soft blending
-        float2 specMaskUV = uv;
-        if (dot(_SpecularMaskScrollSpeed.xy, _SpecularMaskScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_SpecularMaskRotateSpeed) > EPSILON)
-        {
-            specMaskUV = AnimateUV(uv, _SpecularMaskScrollSpeed.xy, _SpecularMaskRotateSpeed);
-        }
+        float2 specMaskUV = AnimateUVIfNeeded(uv, _SpecularMaskScrollSpeed.xy, _SpecularMaskRotateSpeed);
         half specMask = tex2D(_SpecularMask, specMaskUV).r;
         specMask = ApplySoftMask(specMask); // Smooth mask transitions
         specContrib *= specMask;
@@ -656,6 +685,11 @@ half4 frag(v2f i) : SV_Target
         col.rgb = ApplyEffectBlendPost(preSSS, col.rgb, sssBlendFaded, _SSSBlendMode);
     #endif
 
+    // ===== Rim Light Direction (pre-calculate for both Rim Light 1 & 2) =====
+    #if defined(_RIM_LIGHT) || defined(_RIM_LIGHT_2)
+        half3 rimDirNormalized = normalize(_RimLightDirection.xyz);
+    #endif
+
     // ===== Rim Light =====
     #if defined(_RIM_LIGHT)
         float rimPowerBlurred = max(0.1, _RimPower * (1.0 - _RimBlur * 0.8));
@@ -667,19 +701,14 @@ half4 frag(v2f i) : SV_Target
         rim += rimGlow * step(0.001, _RimSpread);
 
         // Apply mask texture with soft blending
-        float2 rimMaskUV = uv;
-        if (dot(_RimMaskScrollSpeed.xy, _RimMaskScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_RimMaskRotateSpeed) > EPSILON)
-        {
-            rimMaskUV = AnimateUV(uv, _RimMaskScrollSpeed.xy, _RimMaskRotateSpeed);
-        }
+        float2 rimMaskUV = AnimateUVIfNeeded(uv, _RimMaskScrollSpeed.xy, _RimMaskRotateSpeed);
         half rimMask = tex2D(_RimMask, rimMaskUV).r;
         rimMask = ApplySoftMask(rimMask); // Smooth mask transitions
         rim *= rimMask;
 
         if (_RimDirectionRange > 0.001)
         {
-            half3 rimDirection1 = normalize(_RimLightDirection.xyz);
-            half rimDirectionMask1 = smoothstep(-_RimDirectionRange, _RimDirectionRange, dot(worldNormal, rimDirection1));
+            half rimDirectionMask1 = smoothstep(-_RimDirectionRange, _RimDirectionRange, dot(worldNormal, rimDirNormalized));
             rim *= rimDirectionMask1;
         }
 
@@ -726,19 +755,14 @@ half4 frag(v2f i) : SV_Target
         rim2 += rim2SpreadFactor * _RimColor2.rgb * step(0.001, _RimSpread2);
 
         // Apply mask texture with soft blending
-        float2 rimMask2UV = uv;
-        if (dot(_RimMask2ScrollSpeed.xy, _RimMask2ScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_RimMask2RotateSpeed) > EPSILON)
-        {
-            rimMask2UV = AnimateUV(uv, _RimMask2ScrollSpeed.xy, _RimMask2RotateSpeed);
-        }
+        float2 rimMask2UV = AnimateUVIfNeeded(uv, _RimMask2ScrollSpeed.xy, _RimMask2RotateSpeed);
         half rimMask2 = tex2D(_RimMask2, rimMask2UV).r;
         rimMask2 = ApplySoftMask(rimMask2); // Smooth mask transitions
         rim2 *= rimMask2;
 
         if (_RimDirectionRange > 0.001)
         {
-            half3 rimDirection2 = normalize(_RimLightDirection.xyz);
-            half rimDirectionMask2 = smoothstep(-_RimDirectionRange, _RimDirectionRange, dot(worldNormal, rimDirection2));
+            half rimDirectionMask2 = smoothstep(-_RimDirectionRange, _RimDirectionRange, dot(worldNormal, rimDirNormalized));
             rim2 *= rimDirectionMask2;
         }
 
@@ -1013,11 +1037,7 @@ half4 frag(v2f i) : SV_Target
         }
 
         // Apply mask texture with soft blending
-        float2 emMaskUV = uv;
-        if (dot(_EmissionMaskScrollSpeed.xy, _EmissionMaskScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_EmissionMaskRotateSpeed) > EPSILON)
-        {
-            emMaskUV = AnimateUV(uv, _EmissionMaskScrollSpeed.xy, _EmissionMaskRotateSpeed);
-        }
+        float2 emMaskUV = AnimateUVIfNeeded(uv, _EmissionMaskScrollSpeed.xy, _EmissionMaskRotateSpeed);
         half emissionMask = tex2D(_EmissionMask, emMaskUV).r;
         emissionMask = ApplySoftMask(emissionMask); // Smooth mask transitions
         emission *= emissionMask;
@@ -1083,11 +1103,7 @@ half4 frag(v2f i) : SV_Target
         if (_AudioLinkDissolveIntensity > 0.001)
         {
             half alDissolve = SampleAudioLink(_AudioLinkDissolveBand);
-            float2 alDissolveUV = uv;
-            if (dot(_DissolveTexScrollSpeed.xy, _DissolveTexScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_DissolveTexRotateSpeed) > EPSILON)
-            {
-                alDissolveUV = AnimateUV(uv, _DissolveTexScrollSpeed.xy, _DissolveTexRotateSpeed);
-            }
+            float2 alDissolveUV = AnimateUVIfNeeded(uv, _DissolveTexScrollSpeed.xy, _DissolveTexRotateSpeed);
             float2 alDissolveResult = CalculateDissolve(alDissolveUV, alDissolve * _AudioLinkDissolveIntensity, 0.1);
             half3 alDissolveGlow = _DissolveEdgeColor.rgb * alDissolveResult.y * 2.0;
             col.rgb = SafeAdditiveBlendFast(col.rgb, alDissolveGlow, saturate(alDissolveResult.y));
@@ -1103,11 +1119,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Glitter Effect =====
     #if defined(_GLITTER) && defined(UNITY_PASS_FORWARDBASE)
-        float2 glitterMaskUV = uv;
-        if (dot(_GlitterMaskScrollSpeed.xy, _GlitterMaskScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_GlitterMaskRotateSpeed) > EPSILON)
-        {
-            glitterMaskUV = AnimateUV(uv, _GlitterMaskScrollSpeed.xy, _GlitterMaskRotateSpeed);
-        }
+        float2 glitterMaskUV = AnimateUVIfNeeded(uv, _GlitterMaskScrollSpeed.xy, _GlitterMaskRotateSpeed);
         half3 glitter = GlitterEffect(glitterMaskUV, i.worldPos, viewDir, worldNormal, _GlitterBlur);
         half3 preGlitter = col.rgb;
         col.rgb = SafeAdditiveBlendFast(col.rgb, glitter, 1.0);
@@ -1134,11 +1146,7 @@ half4 frag(v2f i) : SV_Target
     // ===== Water Drip Effect (ForwardBase only) =====
     #if defined(_WATER_DRIP) && defined(UNITY_PASS_FORWARDBASE)
     {
-        float2 dripMaskUV = uv;
-        if (dot(_DripMaskScrollSpeed.xy, _DripMaskScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_DripMaskRotateSpeed) > EPSILON)
-        {
-            dripMaskUV = AnimateUV(uv, _DripMaskScrollSpeed.xy, _DripMaskRotateSpeed);
-        }
+        float2 dripMaskUV = AnimateUVIfNeeded(uv, _DripMaskScrollSpeed.xy, _DripMaskRotateSpeed);
         half dripMaskValue = tex2D(_DripMask, dripMaskUV).r;
         dripMaskValue = ApplySoftMask(dripMaskValue);
 
@@ -1173,11 +1181,7 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         // Hologram mask
-        float2 holoMaskUV = uv;
-        if (dot(_HologramMaskScrollSpeed.xy, _HologramMaskScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_HologramMaskRotateSpeed) > EPSILON)
-        {
-            holoMaskUV = AnimateUV(uv, _HologramMaskScrollSpeed.xy, _HologramMaskRotateSpeed);
-        }
+        float2 holoMaskUV = AnimateUVIfNeeded(uv, _HologramMaskScrollSpeed.xy, _HologramMaskRotateSpeed);
         half holoMask = tex2D(_HologramMask, holoMaskUV).r;
 
         // Multi-layer scanline (blur widens scanline width for softer effect)
@@ -1283,11 +1287,7 @@ half4 frag(v2f i) : SV_Target
             dissolveMaskValue = tex2D(_DissolveMask, uv).r;
 
             float dissolveEdgeBlurred = _DissolveEdgeWidth + _DissolveBlur * 0.15;
-            float2 dissolveUV = uv;
-            if (dot(_DissolveTexScrollSpeed.xy, _DissolveTexScrollSpeed.xy) > (EPSILON * EPSILON) || abs(_DissolveTexRotateSpeed) > EPSILON)
-            {
-                dissolveUV = AnimateUV(uv, _DissolveTexScrollSpeed.xy, _DissolveTexRotateSpeed);
-            }
+            float2 dissolveUV = AnimateUVIfNeeded(uv, _DissolveTexScrollSpeed.xy, _DissolveTexRotateSpeed);
             float2 dissolveResult = CalculateDissolve(dissolveUV, _DissolveAmount, dissolveEdgeBlurred);
             half dissolveAlpha = dissolveResult.x;
             half edgeGlow = dissolveResult.y;
@@ -1315,6 +1315,11 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== Distance Fade (Global Alpha) =====
+    // このセクションの処理:
+    // カメラからの距離に基づいてオブジェクト全体の透明度を制御する。
+    // Alpha モード: 距離に応じて滑らかにフェードアウト。
+    // Simplify モード: 一定距離でハードカリング（オーバードロー削減）。
+    // Dithering モード: Bayer パターンのディザリングでオペーク向けフェード。
     // Note: distanceFade value was already computed early for per-effect fading
     #ifdef _DISTANCE_FADE
         if (_DistanceFadeMode < 0.5)
@@ -1324,10 +1329,16 @@ half4 frag(v2f i) : SV_Target
             col.a *= distanceFade;
             col.a = ApplyEffectBlendPostAlpha(preDistAlpha, col.a, _DistanceFadeBlend);
         }
-        else
+        else if (_DistanceFadeMode < 1.5)
         {
             // Simplify mode: hard cull at distance for stronger overdraw reduction.
             clip(distanceFade - 0.001);
+        }
+        else
+        {
+            // Dithering mode: ordered dithering clip for opaque-friendly fade.
+            float ditherThreshold = DitheringPattern(i.pos.xy, max(_DistFadeDitherScale, 1.0));
+            clip(distanceFade - ditherThreshold);
         }
     #endif
 

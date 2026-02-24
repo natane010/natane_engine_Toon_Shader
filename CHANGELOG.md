@@ -5,6 +5,19 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.13] - 2026-02-25
+
+### Performance
+- **AO テクスチャ二重サンプリング除去**: `_USE_RAMP` 分岐の内外で同一の `SampleTex2DBlur1(_AOMap, ...)` を2回呼んでいたのを、分岐前に1回だけサンプリングしてキャッシュするように最適化。テクスチャフェッチ1回削減
+- **pow(x, 2.0) → x * x 最適化**: Vertex Animation の Pulse モードで `pow(abs(sin(...)), 2.0)` を乗算に置換。pow() 命令1回削減（5-8 ALU 節約）
+- **RimLight Direction 共通部分式除去（CSE）**: Rim Light 1 と Rim Light 2 で `normalize(_RimLightDirection.xyz)` を2回計算していたのを、1回だけ計算してキャッシュ。normalize() 1回削減（5 ALU 節約）
+
+### Changed
+- **シェーダーコード構造化コメント追加**: NataneToonInput.hlsl にセクション分けコメント（Core Rendering / Makeup / Lighting / Effects 等）を追加し可読性を向上
+- **シェーダーバリアント Properties コメント追加**: 全3バリアント（Opaque/Cutout/Transparent）にセクション分けコメントを追加
+
+---
+
 ## [1.2.12] - 2026-02-25
 
 ### Added

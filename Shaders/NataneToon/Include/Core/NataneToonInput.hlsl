@@ -3,6 +3,11 @@
 
 // Properties and Structures
 CBUFFER_START(UnityPerMaterial)
+
+    // ===== SECTION 1: Core Rendering (主表面) =====
+    // メインテクスチャ、カラー、アルファ、サーフェス設定
+    // シェーダーの基本的な表面描画に必要なパラメータ群
+
     // Main Texture
     float4 _MainTex_ST;
     half4 _Color;
@@ -25,6 +30,10 @@ CBUFFER_START(UnityPerMaterial)
     float _HighlightThreshold;
     float _FinalShadowBlend;
     float _ShadowThreshold;
+
+    // ===== SECTION 2: Makeup Textures (マルチレイヤー) =====
+    // 2nd〜5thテクスチャレイヤー（各8パラメータ）
+    // メインテクスチャの上に重ねるメイクアップ/デカール用マルチレイヤーシステム
 
     // Makeup Textures
     float4 _2ndTex_ST;
@@ -62,6 +71,10 @@ CBUFFER_START(UnityPerMaterial)
     float _5thTexBlendMode;
     float4 _5thTexScrollSpeed;
     float _5thTexRotateSpeed;
+
+    // ===== SECTION 3: Lighting & Shading (ライティング基本) =====
+    // シェーディングモード、マルチトーン、SDFシャドウマップ、影設定
+    // トゥーンシェーディングの核となるライティング計算パラメータ群
 
     // Shading
     float _ShadingMode;
@@ -133,6 +146,10 @@ CBUFFER_START(UnityPerMaterial)
     half4 _IndirectLightMinColor;
     float _ShadowEnvStrength;
 
+    // ===== SECTION 4: Effects - Light Based (光源依存エフェクト) =====
+    // スペキュラ、ヘアスペキュラ、リムライト、バックライト
+    // ライト方向に依存して変化するエフェクト群
+
     // Specular
     #if defined(_SPECULAR)
     half4 _SpecularColor;
@@ -200,6 +217,10 @@ CBUFFER_START(UnityPerMaterial)
     float _OffsetRimBlur;
     #endif
 
+    // ===== SECTION 5: Effects - View Based (視線依存エフェクト) =====
+    // MatCap、リフレクション、環境リム、イリデッセンス
+    // カメラ/視線方向に依存して変化するエフェクト群
+
     // MatCap
     #if defined(_MATCAP)
     float _MatCapIntensity;
@@ -207,6 +228,10 @@ CBUFFER_START(UnityPerMaterial)
     float _MatCapBlend;
     float _MatCapBlur;
     #endif
+
+    // ===== SECTION 6: Effects - Emission (発光効果) =====
+    // エミッション、グリッター、ホログラム、グリッチ
+    // 自己発光・特殊視覚効果系のエフェクト群
 
     // Glitter
     #if defined(_GLITTER)
@@ -237,11 +262,19 @@ CBUFFER_START(UnityPerMaterial)
     float _EmissionBlur;
     #endif
 
+    // ===== SECTION 7: Surface Modification (表面変形) =====
+    // ノーマルマップ、パララックス、リフラクション、ディゾルブ、ドリップ、デカール
+    // 表面の見た目や形状を変形・修飾するエフェクト群
+
     // Normal Map
     float _BumpScale;
     // Normal Map UV Animation
     float4 _BumpMapScrollSpeed;
     float _BumpMapRotateSpeed;
+
+    // ===== SECTION 8: Advanced Lighting (高度なライティング) =====
+    // SSS（サブサーフェス・スキャタリング）、Light Volume、LTCGI
+    // リアルタイム光学シミュレーション系の高度なライティングエフェクト
 
     // Subsurface Scattering
     #if defined(_SSS)
@@ -382,6 +415,10 @@ CBUFFER_START(UnityPerMaterial)
     float _AudioLinkBlendMode;
     #endif
 
+    // ===== SECTION 9: Distance Fade System (距離フェード) =====
+    // グローバルフェード設定 + 各エフェクト個別のフェード制御
+    // カメラ距離に応じたLOD/パフォーマンス最適化システム
+
     // Distance Fade
     #if defined(_DISTANCE_FADE)
     float _DistanceFadeStart;
@@ -389,7 +426,17 @@ CBUFFER_START(UnityPerMaterial)
     float _DistanceFadeMode;
     float _DistanceFadeBlend;
     float _DistFadeBlur;
-    // Per-effect distance fade blend (0 = no fade, 1 = full fade at distance)
+    float _NearFadeStart;
+    float _NearFadeEnd;
+    float _DistFadeDitherScale;
+    // ===== Per-Effect Distance Fade Blend =====
+    // 各エフェクトに個別の距離フェードブレンド (0=フェード無し, 1=完全フェード)
+    // Effect List:
+    //   Specular / HairSpec / SSS
+    //   Rim(1,2) / OffsetRim / EnvRim
+    //   MatCap(1,2,3) / Reflection / Refraction
+    //   Emission / AudioLink / Glitter / Iridescence
+    //   Drip / Hologram / Glitch / Decal / Backlight
     float _SpecularDistFade;
     float _HairSpecDistFade;
     float _SSSDistFade;
@@ -412,6 +459,10 @@ CBUFFER_START(UnityPerMaterial)
     float _DecalDistFade;
     float _BacklightDistFade;
     #endif
+
+    // ===== SECTION 10: Vertex & Special Features =====
+    // 頂点アニメーション、VAT、テッセレーション、AudioLink、ディザリング
+    // 頂点変形・外部連携・特殊レンダリング機能
 
     // Vertex Animation
     #if defined(_VERTEX_ANIMATION)

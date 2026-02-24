@@ -595,6 +595,15 @@ float2 AnimateUV(float2 uv, float2 scrollSpeed, float rotateSpeed)
     return animatedUV;
 }
 
+// UV アニメーション判定付きヘルパー
+// スクロール速度・回転速度が閾値以上の場合のみアニメーションを適用
+float2 AnimateUVIfNeeded(float2 baseUV, float2 scrollSpeed, float rotateSpeed)
+{
+    if (dot(scrollSpeed, scrollSpeed) > (EPSILON * EPSILON) || abs(rotateSpeed) > EPSILON)
+        return AnimateUV(baseUV, scrollSpeed, rotateSpeed);
+    return baseUV;
+}
+
 // ===== Refraction Functions =====
 #if defined(_REFRACTION)
 
@@ -752,7 +761,8 @@ float3 CalculateVertexAnimation(float3 worldPos, float3 worldNormal, float2 uv, 
     }
     else // Pulse
     {
-        float pulse = pow(abs(sin(time * frequency)), 2.0);
+        float sinVal = abs(sin(time * frequency));
+        float pulse = sinVal * sinVal;
         offset = worldNormal * pulse * strength;
     }
 
