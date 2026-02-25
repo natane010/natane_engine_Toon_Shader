@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>交差フェード - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>交差フェード</h1>
+    <p class="page-subtitle">他のオブジェクトとの交差部分を透明化</p>
+
+    <p>深度バッファを利用して、他のオブジェクトとの交差部分（めり込み部分）を自動的にフェードさせるエフェクトです。水面やフォグなど、オブジェクト同士が交わる境界を自然に見せたい場合に活用できます。</p>
+    <p>キーワード: <code>_INTERSECTION_FADE</code></p>
+
+    <h2 id="basic">基本設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フェード距離</span>
+        <span class="param-prop">_IntersectionFadeDistance</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>交差部分からどの程度の距離でフェードするかを設定します。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フェードモード</span>
+        <span class="param-prop">_IntersectionFadeMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <ul>
+          <li><strong>Alpha (0)</strong> - 半透明フェード</li>
+          <li><strong>Clip (1)</strong> - バイナリカット</li>
+          <li><strong>Dithering (2)</strong> - ディザリングフェード</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Alpha）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_IntersectionFadeBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>フェード効果の適用強度です。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ディザースケール</span>
+        <span class="param-prop">_IntersectionFadeDitherScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Ditheringモード使用時のドットパターンの大きさです。</p>
+        <p class="param-default">デフォルト: 4（範囲: 1 - 200）</p>
+      </div>
+    </div>
+
+    <h2 id="edge">エッジエフェクト</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エッジ幅</span>
+        <span class="param-prop">_IntersectionFadeEdgeWidth</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>交差境界に光るエッジエフェクトの幅です。0 で無効になります。</p>
+        <p class="param-default">デフォルト: 0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エッジカラー</span>
+        <span class="param-prop">_IntersectionFadeEdgeColor</span>
+        <span class="param-badge badge-color">color (HDR)</span>
+      </div>
+      <div class="param-body">
+        <p>エッジエフェクトの色です。HDR対応でブルーム効果と組み合わせられます。</p>
+        <p class="param-default">デフォルト: (0, 0.8, 1, 1)（シアン）</p>
+      </div>
+      <div class="param-tip">SFやホログラム風の演出に、エッジカラーにシアンや紫を使うと効果的です。</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2026 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

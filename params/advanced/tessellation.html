@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>テッセレーション - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>テッセレーション</h1>
+    <p class="page-subtitle">曲面スムージングとディスプレイスメント</p>
+
+    <p>ローポリメッシュをGPU側で細分割し、Phongスムージングで曲面化するテッセレーション機能です。ディスプレイスメントマップによる凹凸表現にも対応しています。</p>
+    <p>キーワード: <code>_TESSELLATION</code></p>
+
+    <h2 id="basic">基本設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">テッセレーションファクター</span>
+        <span class="param-prop">_TessFactor</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>メッシュの細分割数を設定します。値が大きいほど滑らかになりますが、GPU負荷も増加します。</p>
+        <p class="param-default">デフォルト: 4（範囲: 1 - 16）</p>
+      </div>
+      <div class="param-tip">VRChat PCでは 4〜8、Quest では使用を避けてください。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Phongスムージング強度</span>
+        <span class="param-prop">_TessPhongStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Phong テッセレーションによる曲面スムージングの強さです。頂点法線に基づいて平面を曲面に補正します。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">法線スムーズ強度</span>
+        <span class="param-prop">_TessNormalSmooth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>テッセレーション後の法線を滑らかに補間する強度です。シェーディングの滑らかさに影響します。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <h2 id="distance">距離ベースLOD</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">最小距離（フルテッセレーション）</span>
+        <span class="param-prop">_TessDistanceMin</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>この距離以内ではテッセレーションファクターが最大値で適用されます。</p>
+        <p class="param-default">デフォルト: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">最大距離（テッセレーションなし）</span>
+        <span class="param-prop">_TessDistanceMax</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>この距離以遠ではテッセレーションが無効になります。パフォーマンス最適化に重要です。</p>
+        <p class="param-default">デフォルト: 20</p>
+      </div>
+    </div>
+
+    <h2 id="displacement">ディスプレイスメント</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ディスプレイスメントマップ</span>
+        <span class="param-prop">_TessDispMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>法線方向に頂点を押し出すためのハイトマップです。キーワード <code>_TESS_DISPLACEMENT</code> で有効化します。</p>
+        <p class="param-default">デフォルト: "gray"（変位なし）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ディスプレイスメント強度</span>
+        <span class="param-prop">_TessDispStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>マップに基づく頂点変位の強さです。負の値で内側に凹みます。</p>
+        <p class="param-default">デフォルト: 0（範囲: -1 〜 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ディスプレイスメントオフセット</span>
+        <span class="param-prop">_TessDispOffset</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>変位の基準点を調整します。マップの中間値（グレー）の解釈を変更します。</p>
+        <p class="param-default">デフォルト: 0（範囲: -0.5 〜 0.5）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2026 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

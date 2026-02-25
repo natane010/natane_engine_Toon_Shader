@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ステンシル - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ステンシル</h1>
+    <p class="page-subtitle">ステンシルバッファによる描画制御</p>
+
+    <p>ステンシルバッファを使用して、特定のマテリアル同士の描画順や表示/非表示を制御する機能です。同じステンシル参照値を持つマテリアル間でマスク処理を行い、くり抜き表現やオーバーラップ制御に活用できます。</p>
+
+    <h2 id="reference">ステンシル参照値</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ステンシル参照値</span>
+        <span class="param-prop">_StencilRef</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ステンシルテストに使用する参照値です。同じ参照値を持つマテリアル同士で相互作用します。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 255）</p>
+      </div>
+      <div class="param-tip">マスク用と被マスク用のマテリアルに同じ参照値を設定してください。</div>
+    </div>
+
+    <h2 id="test">テスト設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">比較関数</span>
+        <span class="param-prop">_StencilComp</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>ステンシルテストの比較方法を選択します。</p>
+        <ul>
+          <li><strong>Disabled (0)</strong> - テスト無効</li>
+          <li><strong>Never (1)</strong> - 常に失敗</li>
+          <li><strong>Less (2)</strong> - 参照値 &lt; バッファ値</li>
+          <li><strong>Equal (3)</strong> - 参照値 = バッファ値</li>
+          <li><strong>LessEqual (4)</strong> - 参照値 &le; バッファ値</li>
+          <li><strong>Greater (5)</strong> - 参照値 &gt; バッファ値</li>
+          <li><strong>NotEqual (6)</strong> - 参照値 &ne; バッファ値</li>
+          <li><strong>GreaterEqual (7)</strong> - 参照値 &ge; バッファ値</li>
+          <li><strong>Always (8)</strong> - 常に成功</li>
+        </ul>
+        <p class="param-default">デフォルト: 8（Always）</p>
+      </div>
+    </div>
+
+    <h2 id="operations">オペレーション</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">パスオペレーション</span>
+        <span class="param-prop">_StencilOp</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>ステンシルテスト成功時にバッファに行う操作です。</p>
+        <ul>
+          <li><strong>Keep (0)</strong> - 変更なし</li>
+          <li><strong>Zero (1)</strong> - 0 に設定</li>
+          <li><strong>Replace (2)</strong> - 参照値で置換</li>
+          <li><strong>IncrementSaturate (3)</strong> - +1（上限クランプ）</li>
+          <li><strong>DecrementSaturate (4)</strong> - -1（下限クランプ）</li>
+          <li><strong>Invert (5)</strong> - ビット反転</li>
+          <li><strong>IncrementWrap (6)</strong> - +1（ラップ）</li>
+          <li><strong>DecrementWrap (7)</strong> - -1（ラップ）</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Keep）</p>
+      </div>
+      <div class="param-tip">マスク書き込み側は Replace、被マスク側は Equal + Keep が一般的な組み合わせです。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フェイルオペレーション</span>
+        <span class="param-prop">_StencilFail</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>ステンシルテスト失敗時にバッファに行う操作です。選択肢はパスオペレーションと同じです。</p>
+        <p class="param-default">デフォルト: 0（Keep）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ZFailオペレーション</span>
+        <span class="param-prop">_StencilZFail</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>ステンシルテスト成功、深度テスト失敗時にバッファに行う操作です。</p>
+        <p class="param-default">デフォルト: 0（Keep）</p>
+      </div>
+    </div>
+
+    <h2 id="mask">マスク設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">読み取りマスク</span>
+        <span class="param-prop">_StencilReadMask</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ステンシルバッファ読み取り時のビットマスクです。</p>
+        <p class="param-default">デフォルト: 255（範囲: 0 - 255）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">書き込みマスク</span>
+        <span class="param-prop">_StencilWriteMask</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ステンシルバッファ書き込み時のビットマスクです。</p>
+        <p class="param-default">デフォルト: 255（範囲: 0 - 255）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2026 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>グラデーションベースカラー - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>グラデーションベースカラー</h1>
+    <p class="page-subtitle">軸方向のグラデーションをベースカラーに適用</p>
+
+    <p>メッシュの特定の軸方向に沿ってグラデーションカラーを適用するエフェクトです。キャラクターの衣装に上下の色変化をつけたり、環境オブジェクトに高度に応じた色変化を加えるのに活用できます。</p>
+    <p>キーワード: <code>_GRADIENT_BASE_COLOR</code></p>
+
+    <h2 id="color">カラー設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">上部カラー</span>
+        <span class="param-prop">_GradientTopColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>グラデーションの終端（上側）の色です。</p>
+        <p class="param-default">デフォルト: (1, 1, 1, 1)（白）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">下部カラー</span>
+        <span class="param-prop">_GradientBottomColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>グラデーションの始端（下側）の色です。</p>
+        <p class="param-default">デフォルト: (0.5, 0.5, 0.5, 1)（グレー）</p>
+      </div>
+    </div>
+
+    <h2 id="axis">軸・空間設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グラデーション軸</span>
+        <span class="param-prop">_GradientAxis</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>グラデーションを適用する軸を選択します。</p>
+        <ul>
+          <li><strong>X (0)</strong> - 左右方向</li>
+          <li><strong>Y (1)</strong> - 上下方向</li>
+          <li><strong>Z (2)</strong> - 前後方向</li>
+        </ul>
+        <p class="param-default">デフォルト: 1（Y軸 / 上下方向）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">座標空間</span>
+        <span class="param-prop">_GradientSpace</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>グラデーション計算に使用する座標空間を選択します。</p>
+        <ul>
+          <li><strong>Local (0)</strong> - オブジェクトのローカル座標。移動・回転しても一緒に動きます</li>
+          <li><strong>World (1)</strong> - ワールド座標。オブジェクトの位置に関係なく固定</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Local）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グラデーション開始</span>
+        <span class="param-prop">_GradientStart</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>グラデーションの開始位置（下部カラーの位置）を設定します。</p>
+        <p class="param-default">デフォルト: 0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グラデーション終了</span>
+        <span class="param-prop">_GradientEnd</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>グラデーションの終了位置（上部カラーの位置）を設定します。</p>
+        <p class="param-default">デフォルト: 1</p>
+      </div>
+    </div>
+
+    <h2 id="blend">ブレンド設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_GradientBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>グラデーションの合成方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常合成</li>
+          <li><strong>Soft (1)</strong> - ソフト合成</li>
+          <li><strong>Screen (2)</strong> - スクリーン合成</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ合成</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Normal）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_GradientBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>グラデーションの適用強度を設定します。0 で無効、1 で完全に適用されます。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2026 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スクリーントーン - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>スクリーントーン</h1>
+    <p class="page-subtitle">漫画風の網点オーバーレイ</p>
+
+    <p>影部分やマスクされた領域にスクリーントーン（網点パターン）をオーバーレイするエフェクトです。漫画やコミック風の表現に活用できます。</p>
+    <p>キーワード: <code>_SCREEN_TONE</code></p>
+
+    <h2 id="basic">基本設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スクリーントーンカラー</span>
+        <span class="param-prop">_ScreenToneColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>スクリーントーンのドットの色を設定します。</p>
+        <p class="param-default">デフォルト: (0, 0, 0, 1)（黒）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スクリーントーンマスク</span>
+        <span class="param-prop">_ScreenToneMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>スクリーントーンが表示される領域を制御するマスクテクスチャです。</p>
+        <ul>
+          <li>白 (1.0): トーンを表示</li>
+          <li>黒 (0.0): トーンを非表示</li>
+        </ul>
+        <p class="param-default">デフォルト: "white"（全面に表示）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">パターンスケール</span>
+        <span class="param-prop">_ScreenToneScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ドットパターンの大きさを設定します。値が大きいほどドットが細かくなります。</p>
+        <p class="param-default">デフォルト: 10（範囲: 1 - 200）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ドット密度</span>
+        <span class="param-prop">_ScreenToneThreshold</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ドットの密度（カバー率）を設定します。0 で全面、1 で最小限のドットになります。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <h2 id="blend">ブレンド設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_ScreenToneBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>トーンの合成方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常合成</li>
+          <li><strong>Soft (1)</strong> - ソフト合成</li>
+          <li><strong>Screen (2)</strong> - スクリーン合成</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ合成</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Normal）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_ScreenToneBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>トーンエフェクトの適用強度を設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">マスクブラー</span>
+        <span class="param-prop">_ScreenToneBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>マスクの境界をぼかします。トーンと非トーン領域の遷移を滑らかにできます。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2026 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

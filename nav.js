@@ -64,7 +64,10 @@
       { file: 'alpha-mask.html',         label: 'アルファマスク' },
       { file: 'hue-shift.html',          label: '色相シフト' },
       { file: 'audiolink.html',          label: 'AudioLink' },
-      { file: 'fur.html',               label: 'ファー' }
+      { file: 'fur.html',               label: 'ファー' },
+      { file: 'screen-tone.html',       label: 'スクリーントーン' },
+      { file: 'gradient-base-color.html', label: 'グラデーションベースカラー' },
+      { file: 'smear.html',             label: 'スミアエフェクト' }
     ],
     environment: [
       { file: 'reflection.html',         label: 'リフレクション' },
@@ -80,7 +83,11 @@
       { file: 'video-texture.html',      label: 'ビデオテクスチャ' },
       { file: 'distance-fade.html',      label: '距離フェード' },
       { file: 'vertex-animation.html',   label: '頂点アニメーション' },
-      { file: 'rendering.html',          label: 'レンダリング設定' }
+      { file: 'rendering.html',          label: 'レンダリング設定' },
+      { file: 'tessellation.html',       label: 'テッセレーション' },
+      { file: 'height-fade.html',        label: '高さフェード' },
+      { file: 'intersection-fade.html',  label: '交差フェード' },
+      { file: 'stencil.html',            label: 'ステンシル' }
     ]
   };
 
