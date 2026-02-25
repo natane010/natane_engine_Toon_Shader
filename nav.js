@@ -63,7 +63,8 @@
       { file: 'dissolve.html',           label: '溶解' },
       { file: 'alpha-mask.html',         label: 'アルファマスク' },
       { file: 'hue-shift.html',          label: '色相シフト' },
-      { file: 'audiolink.html',          label: 'AudioLink' }
+      { file: 'audiolink.html',          label: 'AudioLink' },
+      { file: 'fur.html',               label: 'ファー' }
     ],
     environment: [
       { file: 'reflection.html',         label: 'リフレクション' },

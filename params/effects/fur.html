@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ファー - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ファー（シェルベース毛皮）</h1>
+    <p class="page-subtitle">16シェルパスによる高品質なファーレンダリング</p>
+
+    <p>シェルベース方式でメッシュ表面に毛皮を表現するエフェクトです。メッシュを法線方向に16層押し出し、プロシージャルノイズによるアルファカットオフで毛の隙間を生成します。重力・風アニメーション・距離ベースLODなど、リアルタイム向けの最適化機能を搭載しています。</p>
+    <p>キーワード: <code>_FUR</code> | シェーダー: <code>Natane/Toon Shader (Fur)</code></p>
+
+    <div class="param-card" style="border-left: 4px solid #e67e22;">
+      <div class="param-body">
+        <p><strong>使用上の注意</strong></p>
+        <ul>
+          <li>描画タイプを「ファー」に切り替えると、専用の Fur シェーダーバリアントが適用されます。</li>
+          <li>16シェルパスにより描画コールが大幅に増加します。GPU負荷が非常に高い機能です。</li>
+          <li>VRChat Quest では使用しないでください。</li>
+          <li>ファーをOFFにすると自動で不透明シェーダーに戻り、GPUコストはゼロになります。</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 id="basic">基本設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ファーの長さ</span>
+        <span class="param-prop">_FurLength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>毛の長さを設定します。値が大きいほどメッシュから離れた位置まで毛が伸びます。</p>
+        <p class="param-default">デフォルト: 0.02（範囲: 0 - 0.1）</p>
+      </div>
+      <div class="param-tip">0.01〜0.05 が自然な見た目の推奨範囲です。大きすぎるとシェル間の隙間が目立ちます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ファー密度</span>
+        <span class="param-prop">_FurDensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>プロシージャルノイズの密度（スケール）を設定します。値が大きいほど細かい毛のパターンになります。</p>
+        <p class="param-default">デフォルト: 30（範囲: 1 - 100）</p>
+      </div>
+      <div class="param-tip">低い値 (5〜15) で太い毛束、高い値 (30〜60) で細かい毛の表現になります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">アルファカットオフ</span>
+        <span class="param-prop">_FurAlphaCutoff</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ノイズ値がこの閾値以下のピクセルをカットします。低い値で密な毛、高い値でまばらな毛になります。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ノイズテクスチャ</span>
+        <span class="param-prop">_FurNoiseTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>カスタムノイズテクスチャでプロシージャルノイズをマスクします。テクスチャ未設定（白）でもプロシージャルノイズが自動生成されるため、設定は任意です。</p>
+        <p class="param-default">デフォルト: "white"（プロシージャルノイズのみ使用）</p>
+      </div>
+      <div class="param-tip">カスタムテクスチャを設定すると、プロシージャルノイズに追加のパターンを乗算できます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ファーマスク</span>
+        <span class="param-prop">_FurMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>毛が生える領域を制御するマスクテクスチャです。R チャンネルを使用します。</p>
+        <ul>
+          <li>白 (1.0): 毛が生える</li>
+          <li>黒 (0.0): 毛が生えない</li>
+        </ul>
+        <p class="param-default">デフォルト: "white"（全面に毛が生える）</p>
+      </div>
+      <div class="param-tip">顔や手など毛が不要な部分を黒く塗ることで、部分的にファーを適用できます。</div>
+    </div>
+
+    <h2 id="color">カラー</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">根元カラー</span>
+        <span class="param-prop">_FurRootColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>毛の根元（メッシュ表面に近い部分）の色です。</p>
+        <p class="param-default">デフォルト: (0.3, 0.2, 0.15, 1)（暗い茶色）</p>
+      </div>
+      <div class="param-tip">根元を暗くすると、自然なファーの陰影感が出ます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">先端カラー</span>
+        <span class="param-prop">_FurTipColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>毛の先端（外側のシェル）の色です。根元から先端にかけてグラデーションがかかります。</p>
+        <p class="param-default">デフォルト: (0.8, 0.7, 0.5, 1)（明るいベージュ）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">メインカラー混合比</span>
+        <span class="param-prop">_FurColorBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>メインテクスチャの色とファーカラーの混合度を設定します。0 でメインテクスチャの色のみ、1 でファーカラーのみになります。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <h2 id="physics">物理</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">重力</span>
+        <span class="param-prop">_FurGravity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>毛が下方向に垂れる強さです。二次関数のフォールオフにより、先端ほど大きく垂れ下がります。</p>
+        <p class="param-default">デフォルト: 0.02（範囲: 0 - 0.1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">風の強さ</span>
+        <span class="param-prop">_FurWindStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>風による毛の揺れの振幅を設定します。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 0.05）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">風の速度</span>
+        <span class="param-prop">_FurWindSpeed</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>風アニメーションの速度（周波数）を設定します。</p>
+        <p class="param-default">デフォルト: 1（範囲: 0 - 10）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">風の方向</span>
+        <span class="param-prop">_FurWindDirection</span>
+        <span class="param-badge badge-enum">vector</span>
+      </div>
+      <div class="param-body">
+        <p>風が吹く方向を XYZ ベクトルで指定します。</p>
+        <p class="param-default">デフォルト: (1, 0, 0, 0)（X方向）</p>
+      </div>
+    </div>
+
+    <h2 id="shading">シェーディング</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">セルフオクルージョン</span>
+        <span class="param-prop">_FurAO</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>毛の根元が暗くなるアンビエントオクルージョン効果の強さです。根元は暗く、先端は明るくなります。</p>
+        <p class="param-default">デフォルト: 0.3（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">セルフシャドウ強度</span>
+        <span class="param-prop">_FurShadowStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>内側のシェルが受ける光の減衰の強さです。毛の内部に自然な影が生まれます。</p>
+        <p class="param-default">デフォルト: 0.5（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スペキュラ</span>
+        <span class="param-prop">_FurSpecular</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>毛先のハイライト（スペキュラ反射）の強さです。先端のシェルほど強く反射します。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">リムライト</span>
+        <span class="param-prop">_FurRimLight</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>毛の輪郭に沿ったリムライト効果の強さです。逆光時にファーのシルエットが強調されます。</p>
+        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
+      </div>
+    </div>
+
+    <h2 id="performance">パフォーマンス</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LOD開始距離</span>
+        <span class="param-prop">_FurLODDistance</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>この距離からシェルの数を自動的に減らし始めます。遠くのオブジェクトでGPU負荷を軽減します。</p>
+        <p class="param-default">デフォルト: 10（範囲: 1 - 50）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">最小レイヤー数</span>
+        <span class="param-prop">_FurLODMinLayers</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>遠距離でも最低限維持するシェルの数です。0 にすると遠距離で完全に非表示になります。</p>
+        <p class="param-default">デフォルト: 4（範囲: 0 - 16）</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2026 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>
