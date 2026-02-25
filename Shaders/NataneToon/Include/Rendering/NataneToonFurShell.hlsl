@@ -32,6 +32,29 @@ struct v2f_fur {
 // Shared samplers and variables (from NataneToonInput.hlsl via the .shader CBUFFER)
 // These are declared in the .shader Pass block that includes this file
 
+// Procedural noise for fur strand pattern (used as fallback when no noise texture is set)
+float _furHash(float2 p)
+{
+    p = frac(p * float2(443.8975, 397.2973));
+    p += dot(p, p.yx + 19.19);
+    return frac(p.x * p.y);
+}
+
+// Smooth value noise for natural-looking fur strands
+float _furValueNoise(float2 uv)
+{
+    float2 i = floor(uv);
+    float2 f = frac(uv);
+    // Smooth interpolation
+    float2 u = f * f * (3.0 - 2.0 * f);
+    // 4 corner hash values
+    float a = _furHash(i);
+    float b = _furHash(i + float2(1.0, 0.0));
+    float c = _furHash(i + float2(0.0, 1.0));
+    float d = _furHash(i + float2(1.0, 1.0));
+    return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
+}
+
 v2f_fur furVert(appdata_fur v)
 {
     v2f_fur o;
@@ -79,9 +102,16 @@ fixed4 furFrag(v2f_fur i) : SV_Target
     float lodThreshold = lerp(_FurLODMinLayers / (float)FUR_SHELL_COUNT, 1.0, lodFade);
     clip(lodThreshold - layer - 0.001);
 
-    // Noise-based alpha cutoff
-    float2 furUV = TRANSFORM_TEX(i.uv, _FurNoiseTex) * _FurDensity;
-    float furNoise = tex2D(_FurNoiseTex, furUV).r;
+    // Noise-based alpha cutoff for fur strand pattern
+    // Procedural noise: always generates strand pattern
+    float2 cellUV = i.uv * _FurDensity;
+    float strandNoise = _furValueNoise(cellUV);
+    // Add fine detail at 2x frequency for more natural look
+    strandNoise = strandNoise * 0.7 + _furValueNoise(cellUV * 2.13 + 7.77) * 0.3;
+
+    // Texture mask: modulates procedural noise (white texture = no effect)
+    float texMask = tex2D(_FurNoiseTex, TRANSFORM_TEX(i.uv, _FurNoiseTex)).r;
+    float furNoise = strandNoise * texMask;
 
     // Height-based alpha: upper layers have less fur
     float alpha = furNoise * (1.0 - layer);
