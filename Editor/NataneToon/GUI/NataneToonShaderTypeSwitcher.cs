@@ -22,7 +22,8 @@ namespace NataneToon.Editor
         {
             "Natane/Toon Shader",
             "Natane/Toon Shader (Cutout)",
-            "Natane/Toon Shader (Transparent)"
+            "Natane/Toon Shader (Transparent)",
+            "Natane/Toon Shader (Fur)"
         };
 
         private const string EyeShaderName = "Natane/Eye";

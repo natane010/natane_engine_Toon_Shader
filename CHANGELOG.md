@@ -5,6 +5,23 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.17] - 2026-02-25
+
+### Added
+- **シェルベースファー機能**: 高品質な毛皮表現を新規シェーダーバリアント `Natane/Toon Shader (Fur)` として追加
+  - 16シェルパスによるリアルなファーレンダリング（デフォルト OFF・高GPU負荷のため手動有効化が必要）
+  - ファー長さ・密度・アルファカットオフの基本設定
+  - 根元/先端カラーグラデーション・メインテクスチャとの混合比制御
+  - 重力（二次関数ドロープ）・風アニメーション（方向・速度・強度）の物理シミュレーション
+  - ファーマスクテクスチャ（白=毛あり、黒=毛なし）
+  - セルフオクルージョン（AO）・セルフシャドウ・スペキュラ・リムライト
+  - 距離ベースLOD（遠距離でシェル数を自動削減しパフォーマンス最適化）
+  - `_FUR` キーワードOFF時はdiscardスタブでGPUコストゼロ
+  - インスペクターに日本語UIとヘルプテキスト付きの専用セクション
+  - 描画タイプ「ファー」を選択して使用
+
+---
+
 ## [1.2.16] - 2026-02-25
 
 ### Added

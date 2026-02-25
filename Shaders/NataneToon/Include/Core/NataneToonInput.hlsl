@@ -658,6 +658,27 @@ CBUFFER_START(UnityPerMaterial)
     float _SmearMotionSensitivity;
     float _SmearVATVelocity;
     #endif
+
+    // ===== 11. Fur (Shell-Based) =====
+    #if defined(_FUR)
+    float _FurLength;
+    float _FurDensity;
+    float _FurAlphaCutoff;
+    float _FurGravity;
+    half4 _FurRootColor;
+    half4 _FurTipColor;
+    float _FurColorBlend;
+    float _FurAO;
+    float _FurShadowStrength;
+    float4 _FurWindDirection;
+    float _FurWindSpeed;
+    float _FurWindStrength;
+    float _FurSpecular;
+    float _FurRimLight;
+    float _FurLODDistance;
+    float _FurLODMinLayers;
+    float4 _FurNoiseTex_ST;
+    #endif
 CBUFFER_END
 
 // Texture samplers (must be outside CBUFFER per HLSL specification)
@@ -826,6 +847,12 @@ sampler2D _DripMask;
 // Smear
 #if defined(_SMEAR)
 sampler2D _SmearMask;
+#endif
+
+// Fur
+#if defined(_FUR)
+sampler2D _FurNoiseTex;
+sampler2D _FurMask;
 #endif
 
 // Smooth Normal Texture (for Mode 2: Baked Normal Texture)

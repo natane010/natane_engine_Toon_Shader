@@ -144,14 +144,16 @@ public class NataneToonShaderGUI : ShaderGUI
     {
         Opaque = 0,
         Cutout = 1,
-        Transparent = 2
+        Transparent = 2,
+        Fur = 3
     }
 
     private static readonly string[] renderingModeLabels = new string[]
     {
         "不透明",
         "カットアウト",
-        "半透明"
+        "半透明",
+        "ファー"
     };
 
     // ===== UI STATE =====
@@ -209,6 +211,7 @@ public class NataneToonShaderGUI : ShaderGUI
         new[] { "IntersectionFade", "交差フェード 交差点 深度", "intersection fade depth contact" },
         new[] { "DistanceFade", "距離フェード", "distance fade lod" },
         new[] { "Stencil", "ステンシル マスク", "stencil mask buffer" },
+        new[] { "Fur", "ファー 毛皮 シェル 毛 ケモ", "fur shell hair strand pelt" },
         new[] { "Rendering", "レンダリング設定 描画タイプ", "rendering mode opaque cutout transparent" },
     };
 
@@ -266,6 +269,7 @@ public class NataneToonShaderGUI : ShaderGUI
         { "HeightFade", "ShowHeightFade" },
         { "IntersectionFade", "ShowIntersectionFade" },
         { "FeatureOverview", "ShowFeatureOverview" },
+        { "Fur", "ShowFur" },
     };
 
     // Default values: keys listed here default to true; all others default to false
@@ -1883,6 +1887,91 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Smear"));
     }
 
+    private void DrawFurSection()
+    {
+        SetFoldout("Fur", DrawBoxedSection("ファー（シェルベース毛皮）", GetFoldout("Fur"), SectionCategory.Effects, "_FUR"));
+        if (GetFoldout("Fur"))
+        {
+            bool enableFur = DrawToggle("_FUR", "_Fur", "ファーを有効化");
+            if (enableFur)
+            {
+                EditorGUI.indentLevel++;
+
+                // Performance warning
+                EditorGUILayout.HelpBox(
+                    "ファーは非常にGPU負荷が高い機能です。\n" +
+                    "16シェルパスにより描画コールが大幅に増加します。\n" +
+                    "VRChat Questでは使用しないでください。",
+                    MessageType.Warning);
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField("基本設定", EditorStyles.boldLabel);
+                DrawProperty("_FurLength", "ファーの長さ");
+                DrawProperty("_FurDensity", "ファー密度");
+                DrawProperty("_FurAlphaCutoff", "アルファカットオフ");
+                DrawProperty("_FurNoiseTex", "ノイズテクスチャ");
+                DrawProperty("_FurMask", "ファーマスク");
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField("カラー", EditorStyles.boldLabel);
+                DrawColorProperty("_FurRootColor", "根元カラー");
+                DrawColorProperty("_FurTipColor", "先端カラー");
+                DrawProperty("_FurColorBlend", "メインカラー混合比");
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField("物理", EditorStyles.boldLabel);
+                DrawProperty("_FurGravity", "重力");
+                DrawProperty("_FurWindStrength", "風の強さ");
+                DrawProperty("_FurWindSpeed", "風の速度");
+                DrawProperty("_FurWindDirection", "風の方向");
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField("シェーディング", EditorStyles.boldLabel);
+                DrawProperty("_FurAO", "セルフオクルージョン");
+                DrawProperty("_FurShadowStrength", "セルフシャドウ強度");
+                DrawProperty("_FurSpecular", "スペキュラ");
+                DrawProperty("_FurRimLight", "リムライト");
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField("パフォーマンス", EditorStyles.boldLabel);
+                DrawProperty("_FurLODDistance", "LOD開始距離");
+                DrawProperty("_FurLODMinLayers", "最小レイヤー数");
+
+                DrawHelpToggle("Fur",
+                    "ファー（シェルベース毛皮）:\n\n" +
+                    "メッシュを法線方向に複数レイヤーで押し出し、\n" +
+                    "ノイズテクスチャでアルファカットオフすることで\n" +
+                    "毛皮の外見を再現します。\n\n" +
+                    "【基本設定】\n" +
+                    "・ファーの長さ: 毛の長さ（0.01〜0.05推奨）\n" +
+                    "・ファー密度: ノイズテクスチャのタイリング\n" +
+                    "・アルファカットオフ: 低い値=密な毛、高い値=まばらな毛\n" +
+                    "・ノイズテクスチャ: 毛の分布パターン\n" +
+                    "・ファーマスク: 白=毛あり、黒=毛なし\n\n" +
+                    "【カラー】\n" +
+                    "・根元カラー: 毛の根元の色（暗め推奨）\n" +
+                    "・先端カラー: 毛の先端の色\n" +
+                    "・メインカラー混合比: メインテクスチャとの混合\n\n" +
+                    "【物理】\n" +
+                    "・重力: 毛が下に垂れる強さ\n" +
+                    "・風: 風による揺れアニメーション\n\n" +
+                    "【シェーディング】\n" +
+                    "・セルフオクルージョン: 根元が暗くなる効果\n" +
+                    "・セルフシャドウ: 毛の内部の影\n\n" +
+                    "【パフォーマンス】\n" +
+                    "・LOD距離: この距離からレイヤーを減らし始めます\n" +
+                    "・最小レイヤー: 遠距離での最低レイヤー数\n\n" +
+                    "※ 描画タイプを「ファー」に設定してください。\n" +
+                    "※ ファーは16シェルパスを使用し、GPUに高負荷です。\n" +
+                    "※ VRChat Questでは使用しないでください。",
+                    MessageType.Info);
+
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("Fur"));
+    }
+
     private void DrawHologramSection()
     {
         SetFoldout("Hologram", DrawBoxedSection("ホログラム / グリッチ", GetFoldout("Hologram"), SectionCategory.Effects, "_HOLOGRAM"));
@@ -2725,7 +2814,10 @@ public class NataneToonShaderGUI : ShaderGUI
                 "  - ガラス、水、煙、エフェクトなど\n" +
                 "  - アルファ値に応じて段階的に透過\n" +
                 "  - 最も負荷が高い\n\n" +
-                "💡 注意:\n" +
+                "・ファー: シェルベース毛皮レンダリング\n" +
+                "  - 16シェルパスで毛皮を表現\n" +
+                "  - GPU負荷が非常に高い（Quest非推奨）\n\n" +
+                "注意:\n" +
                 "モードを変更すると、内部的に適切なシェーダーバリアントに\n" +
                 "切り替わりますが、すべてのプロパティは保持されます。",
                 MessageType.Info);
@@ -3215,7 +3307,9 @@ public class NataneToonShaderGUI : ShaderGUI
 
         string shaderName = targetMaterial.shader.name;
 
-        if (shaderName.Contains("Transparent"))
+        if (shaderName.Contains("Fur"))
+            return RenderingMode.Fur;
+        else if (shaderName.Contains("Transparent"))
             return RenderingMode.Transparent;
         else if (shaderName.Contains("Cutout"))
             return RenderingMode.Cutout;
@@ -3246,6 +3340,9 @@ public class NataneToonShaderGUI : ShaderGUI
                 break;
             case RenderingMode.Transparent:
                 newShaderName = baseShaderName + " (Transparent)";
+                break;
+            case RenderingMode.Fur:
+                newShaderName = baseShaderName + " (Fur)";
                 break;
         }
 
@@ -3284,6 +3381,11 @@ public class NataneToonShaderGUI : ShaderGUI
                 targetMaterial.SetFloat("_ZWrite", 0);
                 targetMaterial.SetFloat("_SrcBlend", 5); // SrcAlpha
                 targetMaterial.SetFloat("_DstBlend", 10); // OneMinusSrcAlpha
+                targetMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+                break;
+
+            case RenderingMode.Fur:
+                targetMaterial.SetFloat("_ZWrite", 0);
                 targetMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
                 break;
         }
@@ -3787,7 +3889,7 @@ public class NataneToonShaderGUI : ShaderGUI
     {
         DrawExpandCollapseButtons((state) => {
             SetFoldout("Specular", state); SetFoldout("HairSpecular", state); SetFoldout("RimLight", state); SetFoldout("SSS", state);
-            SetFoldout("MatCap", state); SetFoldout("Glitter", state); SetFoldout("Drip", state); SetFoldout("Smear", state); SetFoldout("Decal", state);
+            SetFoldout("MatCap", state); SetFoldout("Glitter", state); SetFoldout("Drip", state); SetFoldout("Smear", state); SetFoldout("Fur", state); SetFoldout("Decal", state);
             SetFoldout("Hologram", state); SetFoldout("Outline", state); SetFoldout("Emission", state);
             SetFoldout("VirtualExpression", state); SetFoldout("AudioLink", state);
         });
@@ -3804,6 +3906,7 @@ public class NataneToonShaderGUI : ShaderGUI
         SafeDrawSection(DrawGlitterSection, "グリッター");
         SafeDrawSection(DrawDripSection, "雫エフェクト");
         SafeDrawSection(DrawSmearSection, "スミア");
+        SafeDrawSection(DrawFurSection, "ファー");
         SafeDrawSection(DrawDecalSection, "デカール");
 
         // ─── ビジュアルエフェクト ───
@@ -3918,6 +4021,7 @@ public class NataneToonShaderGUI : ShaderGUI
             case "Glitter": return DrawGlitterSection;
             case "Drip": return DrawDripSection;
             case "Smear": return DrawSmearSection;
+            case "Fur": return DrawFurSection;
             case "Hologram": return DrawHologramSection;
             case "Decal": return DrawDecalSection;
             case "Outline": return DrawOutlineSection;
