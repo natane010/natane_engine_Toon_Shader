@@ -1894,19 +1894,13 @@ public class NataneToonShaderGUI : ShaderGUI
         {
             bool enableFur = DrawToggle("_FUR", "_Fur", "ファーを有効化");
 
-            // Auto shader switching: keep Fur shader ↔ base shader in sync with _FUR toggle
-            if (targetMaterial != null && targetMaterial.shader != null)
+            // Auto shader switching: _FUR ON on non-Fur shader → switch to Fur variant
+            if (enableFur && targetMaterial != null && targetMaterial.shader != null)
             {
                 bool isFurShader = targetMaterial.shader.name.Contains("Fur");
-                if (enableFur && !isFurShader)
+                if (!isFurShader)
                 {
-                    // _FUR ON but not using Fur shader → switch to Fur variant
                     SetRenderingMode(RenderingMode.Fur);
-                }
-                else if (!enableFur && isFurShader)
-                {
-                    // _FUR OFF but still using Fur shader → switch back to Opaque to avoid 16 empty draw calls
-                    SetRenderingMode(RenderingMode.Opaque);
                 }
             }
 
@@ -3381,6 +3375,13 @@ public class NataneToonShaderGUI : ShaderGUI
         // Switch shader (properties with same names are preserved)
         targetMaterial.shader = newShader;
 
+        // Disable fur keyword when switching away from Fur mode
+        if (mode != RenderingMode.Fur)
+        {
+            targetMaterial.SetFloat("_Fur", 0);
+            targetMaterial.DisableKeyword("_FUR");
+        }
+
         // Set default properties based on mode
         switch (mode)
         {
@@ -3403,6 +3404,8 @@ public class NataneToonShaderGUI : ShaderGUI
 
             case RenderingMode.Fur:
                 targetMaterial.SetFloat("_ZWrite", 0);
+                targetMaterial.SetFloat("_Fur", 1);
+                targetMaterial.EnableKeyword("_FUR");
                 targetMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
                 break;
         }
