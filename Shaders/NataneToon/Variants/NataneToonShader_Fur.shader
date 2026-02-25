@@ -1085,7 +1085,7 @@ Shader "Natane/Toon Shader (Fur)"
             #pragma shader_feature_local _TESS_DISPLACEMENT
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
-            #include "Include/Core/NataneToonCore.hlsl"
+            #include "../Include/Core/NataneToonCore.hlsl"
 
             ENDCG
         }
@@ -1147,7 +1147,7 @@ Shader "Natane/Toon Shader (Fur)"
             #pragma shader_feature_local _TESS_DISPLACEMENT
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
-            #include "Include/Core/NataneToonCore.hlsl"
+            #include "../Include/Core/NataneToonCore.hlsl"
 
             ENDCG
         }
@@ -1181,12 +1181,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1216,12 +1216,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1251,12 +1251,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1286,12 +1286,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1321,12 +1321,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1356,12 +1356,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1391,12 +1391,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1426,12 +1426,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1461,12 +1461,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1496,12 +1496,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1531,12 +1531,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1566,12 +1566,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1601,12 +1601,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1636,12 +1636,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1671,12 +1671,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }
@@ -1706,12 +1706,12 @@ Shader "Natane/Toon Shader (Fur)"
             float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
             sampler2D _FurNoiseTex; sampler2D _FurMask;
             #ifdef _FUR
-            #include "Include/Rendering/NataneToonFurShell.hlsl"
+            #include "../Include/Rendering/NataneToonFurShell.hlsl"
             #else
             struct appdata_fur_stub { float4 vertex : POSITION; };
             struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,0); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { discard; return 0; }
+            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
+            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
             #endif
             ENDCG
         }

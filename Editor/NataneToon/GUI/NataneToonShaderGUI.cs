@@ -1893,6 +1893,23 @@ public class NataneToonShaderGUI : ShaderGUI
         if (GetFoldout("Fur"))
         {
             bool enableFur = DrawToggle("_FUR", "_Fur", "ファーを有効化");
+
+            // Auto shader switching: keep Fur shader ↔ base shader in sync with _FUR toggle
+            if (targetMaterial != null && targetMaterial.shader != null)
+            {
+                bool isFurShader = targetMaterial.shader.name.Contains("Fur");
+                if (enableFur && !isFurShader)
+                {
+                    // _FUR ON but not using Fur shader → switch to Fur variant
+                    SetRenderingMode(RenderingMode.Fur);
+                }
+                else if (!enableFur && isFurShader)
+                {
+                    // _FUR OFF but still using Fur shader → switch back to Opaque to avoid 16 empty draw calls
+                    SetRenderingMode(RenderingMode.Opaque);
+                }
+            }
+
             if (enableFur)
             {
                 EditorGUI.indentLevel++;
