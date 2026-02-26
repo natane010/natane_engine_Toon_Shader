@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VRC Light Volumes - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>VRC Light Volumes</h1>
+    <p class="page-subtitle">Integration with VRChat's voxel-based lighting system</p>
+
+    <p>VRC Light Volumes is a next-generation voxel-based lighting system. High-quality partial illumination is automatically applied in supported worlds. Both the world and avatar must support it; in unsupported environments, it automatically falls back to Unity's light probes.</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Light Volume Intensity</span>
+        <span class="param-prop">_LightVolumeIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of Light Volume lighting. 1 for full intensity, 0 to disable.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_LightVolumeBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Select the blending method for Light Volumes.</p>
+        <ul>
+          <li><strong>Add (0)</strong>: Integrates direct light as ambient and indirect light as rim light (default, most natural). Separates Light Volume direct and indirect light, with indirect light naturally integrated as a rim effect for a more three-dimensional appearance.</li>
+          <li><strong>Multiply (1)</strong>: Multiplied with existing lighting (darkening effect)</li>
+          <li><strong>Replace (2)</strong>: Replaced by Light Volume (full control)</li>
+        </ul>
+        <p class="param-default">Default: Add (0)</p>
+      </div>
+      <div class="param-tip">In Add mode, the Shadow Receive Mask can be used to control indirect light influence.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_LightVolumeBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The blend intensity of the Light Volume effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <h2 id="specular">Specular</h2>
+    <p>Enabling Light Volume Specular generates colored specular from Light Volumes. Keyword: _LIGHT_VOLUME_SPECULAR. The following parameters are shared with Reflection.</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Smoothness</span>
+        <span class="param-prop">_Smoothness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the surface smoothness (glossiness). A parameter shared by both Reflection and Light Volume Specular. Higher values produce sharper reflections, lower values produce blurrier reflections.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Metallic</span>
+        <span class="param-prop">_Metallic</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the metalness. A parameter shared by both Reflection and Light Volume Specular. Higher values produce metallic reflections, lower values produce non-metallic reflections.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

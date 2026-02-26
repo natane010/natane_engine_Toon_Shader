@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Water Drop Effect - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Water Drop Effect</h1>
+    <p class="page-subtitle">Animated water droplets trickling down the surface</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>The Water Drop Effect is an animation effect that adds water droplets dripping down a surface. It is suitable for expressing rain-soaked clothing or glass surfaces.</p>
+    <p>Controlled by the keyword <code>_WATER_DRIP</code>. No shader instructions are generated when disabled.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Drop Color</span>
+        <span class="param-prop">_DripColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the color of the water drops. Translucent colors produce a natural finish.</p>
+        <p class="param-default">Default: (0.7, 0.85, 1.0, 1) (pale blue-white)</p>
+      </div>
+      <div class="param-tip">For realistic water drops, use (0.7, 0.85, 1.0) pale blue-white. For blood effects, red tones like (0.8, 0.1, 0.1) can also be used.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Drop Speed</span>
+        <span class="param-prop">_DripSpeed</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the falling speed of the drops. Higher values make them fall faster.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0.1 - 5</p>
+      </div>
+      <div class="param-tip">0.3-0.5 is recommended for gentle rain, and 2-3 for heavy rain.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Drop Density</span>
+        <span class="param-prop">_DripDensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the frequency of drop appearance. Higher values display more drops.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+      <div class="param-tip">0 = sparse, 1 = dense. Low density (0.1-0.3) suits light sweat or condensation, while high density (0.7-1.0) works for heavy rain.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Drop Size</span>
+        <span class="param-prop">_DripSize</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the size of individual drops.</p>
+        <p class="param-default">Default: 0.15</p>
+        <p class="param-range">Range: 0.01 - 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Drop Trail Length</span>
+        <span class="param-prop">_DripTrailLength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the length of the water trail left by drops. Higher values produce longer trails.</p>
+        <p class="param-default">Default: 1.0</p>
+        <p class="param-range">Range: 0 - 3</p>
+      </div>
+      <div class="param-tip">Setting to 0 removes the trail, displaying only round water drops. Long trails are ideal for rain flowing down window glass.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Drop Intensity</span>
+        <span class="param-prop">_DripIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the brightness (intensity) of the effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Drop Sharpness</span>
+        <span class="param-prop">_DripSharpness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the edge clarity of the drops. Higher values produce sharper outlines, while lower values create blurred outlines.</p>
+        <p class="param-default">Default: 2</p>
+        <p class="param-range">Range: 0.5 - 5</p>
+      </div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Drop Mask</span>
+        <span class="param-prop">_DripMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls the display area of the drops. Enabled by the keyword <code>_DRIP_MASK</code>. Uses the R (red) channel to control the drop display area.</p>
+        <p class="param-default">Default: "white" (full display)</p>
+      </div>
+      <div class="param-tip">White (1.0) = fully visible, Black (0.0) = hidden, Gray = partially visible. Use a mask texture to restrict the area where drops flow.</div>
+    </div>
+
+    <h2 id="blend">Blend &amp; Blur</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_DripBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the blend method for the water drop effect.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Standard additive blending</li>
+          <li><strong>Soft (1)</strong> - Soft additive. Prevents over-brightening</li>
+          <li><strong>Screen (2)</strong> - Screen blending. Natural brightness addition</li>
+          <li><strong>Overlay (3)</strong> - Overlay blending. Enhances contrast</li>
+        </ul>
+        <p class="param-default">Default: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_DripBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity (opacity) of the water drop effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_DripBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the blur amount of the water drop effect.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <h4>Expressing Rain-Soaked Clothing or Glass Surfaces</h4>
+      <ul>
+        <li><strong>Speed</strong>: Drop falling speed</li>
+        <li><strong>Density</strong>: Drop appearance frequency (0=sparse, 1=dense)</li>
+        <li><strong>Size</strong>: Drop size</li>
+        <li><strong>Trail Length</strong>: Length of water trails left by drops</li>
+        <li><strong>Intensity</strong>: Effect brightness</li>
+        <li><strong>Sharpness</strong>: Drop edge clarity</li>
+      </ul>
+      <p>By using mask textures to restrict the flow area, you can create natural expressions such as rain dripping from shoulders or condensation forming on only part of a window.</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

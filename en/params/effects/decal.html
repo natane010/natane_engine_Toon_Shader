@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Decal - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Decal</h1>
+    <p class="page-subtitle">Apply stickers and marks in UV space</p>
+
+    <p>A decal system for applying textures onto mesh surfaces. Ideal for logos, marks, tattoos, patches, and other decorative expressions. Position, rotation, and scale can be freely adjusted in UV space.</p>
+    <p>Keyword: <code>_DECAL</code></p>
+
+    <h2 id="texture">Decal Texture</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Decal Texture</span>
+        <span class="param-prop">_DecalTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The texture to apply as a decal. By using the alpha channel, irregularly shaped decals can also be created.</p>
+        <p class="param-default">Default: "white"</p>
+      </div>
+      <div class="param-tip">Using transparent PNGs, you can cleanly apply round stickers or complex-shaped logos.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Decal Color</span>
+        <span class="param-prop">_DecalColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>A color multiplied with the decal texture. Used to adjust the color tone of the texture or create solid-colored decals.</p>
+        <p class="param-default">Default: (1, 1, 1, 1) (white, no change)</p>
+      </div>
+    </div>
+
+    <h2 id="transform">Position &amp; Transform</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Decal Position (XY)</span>
+        <span class="param-prop">_DecalPosition</span>
+        <span class="param-badge badge-vector">vector</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the position of the decal in UV space. Adjust the placement using X and Y.</p>
+        <p class="param-default">Default: (0, 0, 0, 0)</p>
+      </div>
+      <div class="param-tip">Since it uses the UV coordinate system, adjust the position while checking the mesh's UV layout.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rotation</span>
+        <span class="param-prop">_DecalRotation</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the rotation angle of the decal in degrees.</p>
+        <p class="param-default">Default: 0 (Range: 0 - 360)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Scale</span>
+        <span class="param-prop">_DecalScale</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the size of the decal. 1.0 is the base size; increasing the value enlarges the decal.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+    </div>
+
+    <h2 id="blend">Blend Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_DecalBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects how the decal is composited with the base color.</p>
+        <ul>
+          <li><strong>Add (0)</strong> - Additive blending (brighten)</li>
+          <li><strong>Multiply (1)</strong> - Multiply (darken)</li>
+          <li><strong>Overlay (2)</strong> - Overlay</li>
+          <li><strong>Replace (3)</strong> - Replace (overwrite with decal)</li>
+        </ul>
+        <p class="param-default">Default: 0 (Add)</p>
+      </div>
+      <div class="param-tip">Replace is recommended for logos and patches, while Add works well for glowing patterns.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_DecalBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the overall application amount of the decal effect.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_DecalBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Blurs the boundaries of the decal.</p>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

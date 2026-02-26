@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Refraction Quality Balancer - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Refraction Quality Balancer</h1>
+    <p class="page-subtitle">Optimally balance refraction effect quality and performance</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Optimization &gt; Refraction Balancer</span>
+      <span>Category: Optimization</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>The Refraction Quality Balancer is a dedicated tool for adjusting the balance between refraction effect quality and performance. Refraction effects add beautiful expressions to transparent and semi-transparent materials like glass, water, and gemstones, but they use GrabPass and blur sampling, making them a relatively GPU-intensive effect.</p>
+    <p>This tool automatically optimizes sample counts per platform. For PC, it maintains high-quality (9 sample) refraction blur, while for Quest, it reduces to 5 samples to minimize mobile GPU load. With quality presets, you can set the appropriate balance with a single click.</p>
+    <p>It also centrally manages parameters such as refraction strength, blur radius, and chromatic aberration, displaying performance cost estimates in real time. You can find the optimal settings while visually comparing the trade-off between performance and appearance.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+      <li><strong>Quality Presets</strong> — Four-tier presets: Low / Medium / High / Ultra. Instantly switch based on platform and use case</li>
+      <li><strong>Sample Count Adjustment</strong> — Directly specify the blur sample count. More samples produce smoother blur but increase GPU cost</li>
+      <li><strong>Per-Platform Settings</strong> — Maintain different quality settings for PC / Quest. Auto-switches based on build target</li>
+      <li><strong>Performance Comparison</strong> — Compare estimated GPU costs side by side at each quality level. See at a glance how much performance impact each setting has</li>
+      <li><strong>Real-time Preview</strong> — Quality setting changes are immediately reflected in the preview for checking blur appearance</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Select Material</strong>
+        <p>Select a Natane Toon Shader material with the refraction feature (_REFRACTION) enabled. Transparent variant materials are the target.</p>
+      </li>
+      <li>
+        <strong>Select Platform</strong>
+        <p>Choose the target platform (PC / Quest). Recommended values are automatically displayed based on the platform.</p>
+      </li>
+      <li>
+        <strong>Adjust Quality Level</strong>
+        <p>Select a quality preset (Low to Ultra) or directly adjust the sample count. Performance cost estimates update in real time.</p>
+      </li>
+      <li>
+        <strong>Apply</strong>
+        <p>Apply the adjusted settings to the material. Batch application to multiple materials is also supported.</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>Always use Low or Medium quality for Quest. High or above may cause significant frame rate drops on mobile GPUs</li>
+      <li>Even for PC, Medium quality often provides sufficient visual quality. Consider Ultra quality for photography purposes only</li>
+      <li>Lowering refraction strength makes artifacts less noticeable even with fewer samples</li>
+      <li>If an avatar has multiple refraction materials, set only the most visible one to High quality and use Medium for others for a good balance</li>
+      <li>When blur radius is small, fewer samples are needed, so Low quality is sufficient for subtle refraction effects</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

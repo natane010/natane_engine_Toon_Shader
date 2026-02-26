@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shadow Color Texture - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Shadow Color Texture</h1>
+    <p class="page-subtitle">Control shadow color with textures</p>
+
+    <p>Shadow Color Texture is an advanced feature that lets you specify shadow colors via a texture. Use it when you want different shadow colors for different areas, such as bluish shadows for clothing and reddish shadows for skin. The texture colors are used directly as shadow colors.</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Color Texture</span>
+        <span class="param-prop">_ShadowColorTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A texture that defines the shadow color. The color of each pixel in the texture is used as the shadow color for that area. Keyword: _SHADOW_COLOR_TEX</p>
+        <p class="param-default">Default: "white" (enabled via toggle)</p>
+      </div>
+      <div class="param-tip">Paint warm colors (reddish) on skin areas and cool colors (bluish) on clothing areas for natural, beautiful shadow color separation. Uses the same UV mapping as the main texture.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Application Strength</span>
+        <span class="param-prop">_ShadowColorTexStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the influence of the Shadow Color Texture. 0 to not use the texture shadow color (normal shadow color only), 1 to fully apply the texture shadow color.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Setting to 0.5-0.8 creates a natural blend between the texture shadow color and the normal shadow color.</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

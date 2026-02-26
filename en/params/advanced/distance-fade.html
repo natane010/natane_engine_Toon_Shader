@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Distance Fade - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Distance Fade</h1>
+    <p class="page-subtitle">Automatic fade based on camera distance (LOD)</p>
+
+    <h2>Overview</h2>
+    <p>Distance fade is a feature that gradually fades out objects based on their distance from the camera. It achieves a LOD (Level of Detail) effect at the shader level, reducing the rendering load of distant objects. Particularly effective for performance optimization in VRChat.</p>
+    <p>Controlled by the keyword <code>_DISTANCE_FADE</code>.</p>
+
+    <h2>Properties</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable Distance Fade</span>
+        <span class="param-prop">_DistanceFade</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Toggles the distance fade feature on/off.</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fade Start Distance</span>
+        <span class="param-prop">_DistanceFadeStart</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>The distance from the camera (in meters) at which fading begins. The object is fully visible up to this distance.</p>
+        <p class="param-default">Default: 10.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fade End Distance</span>
+        <span class="param-prop">_DistanceFadeEnd</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>The distance at which the object completely disappears. Gradually fades out from the start distance to the end distance.</p>
+        <p class="param-default">Default: 20.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fade Mode</span>
+        <span class="param-prop">_DistanceFadeMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the fading method.</p>
+        <ul>
+          <li><strong>Alpha</strong> - Fades using transparency. Results in semi-transparent rendering.</li>
+          <li><strong>Simplify</strong> - Achieves the fade effect by simplifying effects.</li>
+        </ul>
+        <p class="param-default">Default: 0 (Alpha)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fade Blend</span>
+        <span class="param-prop">_DistanceFadeBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The overall blend intensity of the distance fade effect.</p>
+        <p class="param-default">Default: 1.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fade Blur</span>
+        <span class="param-prop">_DistFadeBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The blur amount at the fade boundary. Higher values produce smoother fade transitions.</p>
+        <p class="param-default">Default: 0.0</p>
+      </div>
+    </div>
+
+    <h2>Usage Tips</h2>
+    <ul>
+      <li>Effective for performance optimization by reducing the rendering load of distant objects</li>
+      <li>Ideal for reducing the cost of distant avatars and decorations in large VRChat worlds</li>
+      <li>A larger gap between start and end distances produces smoother fade transitions</li>
+      <li>Alpha mode looks more natural but incurs semi-transparent rendering overhead</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

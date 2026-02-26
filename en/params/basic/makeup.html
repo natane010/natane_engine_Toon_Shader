@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Makeup - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Makeup</h1>
+    <p class="page-subtitle">Up to 4 layers of makeup textures with HSV color adjustment</p>
+
+    <p>You can stack up to 4 layers of transparent PNG makeup textures. Each layer supports HSV color adjustment, intensity control, blend mode selection, and additional masking. The alpha channel controls the application area, and multiple blend modes enable natural makeup expression.</p>
+
+    <h2 id="layer-2nd">2nd Texture Layer</h2>
+    <p>Use case: Highlights, eye shadow</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable 2nd Texture</span>
+        <span class="param-prop">_Use2ndTexture</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Enables the second makeup texture layer. Keyword: _2ND_TEXTURE</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">2nd Texture</span>
+        <span class="param-prop">_2ndTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The second makeup texture. Supports transparent PNG, where the alpha channel is used as the application intensity.</p>
+        <p class="param-default">Default: None</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hue Shift</span>
+        <span class="param-prop">_2ndTexHueShift</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Shifts the hue of the texture. 0 for no change; positive/negative values shift the color along the hue wheel.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: -0.5 to 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Saturation</span>
+        <span class="param-prop">_2ndTexSaturation</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the saturation of the texture. 1 for original saturation, 0 for grayscale, 2 for very vivid.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Brightness</span>
+        <span class="param-prop">_2ndTexValue</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the brightness of the texture. 1 for original brightness, 0 for completely dark, 2 for very bright.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Intensity</span>
+        <span class="param-prop">_2ndTexIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The application intensity of the makeup texture. 0 for no effect, 1 for full application.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_2ndTexBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Select the blending method for the texture.</p>
+        <ul>
+          <li><strong>Add</strong>: Additive (best for highlights)</li>
+          <li><strong>Multiply</strong>: Multiplicative (best for eye shadow)</li>
+          <li><strong>Overlay</strong>: Overlay (natural makeup)</li>
+          <li><strong>Screen</strong>: Screen (soft highlights)</li>
+        </ul>
+        <p class="param-default">Default: Add (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">2nd Tex Mask</span>
+        <span class="param-prop">_2ndTexMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>An additional mask texture. White = texture applied, Black = not applied. The mask is multiplied with the alpha channel. Keyword: _2ND_TEX_MASK</p>
+        <p class="param-default">Default: None (enabled via toggle)</p>
+      </div>
+    </div>
+
+    <h2 id="layer-3rd">3rd Texture Layer</h2>
+    <p>Use case: Blush</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable 3rd Texture</span>
+        <span class="param-prop">_Use3rdTexture</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Enables the third makeup texture layer. Keyword: _3RD_TEXTURE</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">3rd Texture</span>
+        <span class="param-prop">_3rdTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The third makeup texture. Supports transparent PNG, ideal for blush expression.</p>
+        <p class="param-default">Default: None</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hue Shift</span>
+        <span class="param-prop">_3rdTexHueShift</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Shifts the hue of the texture.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: -0.5 to 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Saturation</span>
+        <span class="param-prop">_3rdTexSaturation</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the saturation of the texture. 1 for original saturation.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Brightness</span>
+        <span class="param-prop">_3rdTexValue</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the brightness of the texture. 1 for original brightness.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Intensity</span>
+        <span class="param-prop">_3rdTexIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The application intensity of the makeup texture.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_3rdTexBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Select the blending method for the texture. Choose from Add / Multiply / Overlay / Screen. Multiply is best for blush.</p>
+        <p class="param-default">Default: Add (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">3rd Tex Mask</span>
+        <span class="param-prop">_3rdTexMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>An additional mask texture. White = texture applied, Black = not applied. Keyword: _3RD_TEX_MASK</p>
+        <p class="param-default">Default: None (enabled via toggle)</p>
+      </div>
+    </div>
+
+    <h2 id="layer-4th">4th Texture Layer</h2>
+    <p>Use case: Glitter, shadow</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable 4th Texture</span>
+        <span class="param-prop">_Use4thTexture</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Enables the fourth makeup texture layer. Keyword: _4TH_TEXTURE</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">4th Texture</span>
+        <span class="param-prop">_4thTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The fourth makeup texture. Ideal for glitter and shadow expression.</p>
+        <p class="param-default">Default: None</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hue Shift</span>
+        <span class="param-prop">_4thTexHueShift</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Shifts the hue of the texture.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: -0.5 to 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Saturation</span>
+        <span class="param-prop">_4thTexSaturation</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the saturation of the texture.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Brightness</span>
+        <span class="param-prop">_4thTexValue</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the brightness of the texture.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Intensity</span>
+        <span class="param-prop">_4thTexIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The application intensity of the makeup texture.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_4thTexBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Select the blending method for the texture. Add or Screen is best for glitter, Multiply is best for shadow.</p>
+        <p class="param-default">Default: Add (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">4th Tex Mask</span>
+        <span class="param-prop">_4thTexMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>An additional mask texture. White = texture applied, Black = not applied. Keyword: _4TH_TEX_MASK</p>
+        <p class="param-default">Default: None (enabled via toggle)</p>
+      </div>
+    </div>
+
+    <h2 id="layer-5th">5th Texture Layer</h2>
+    <p>Use case: Detail highlights, detail shadows</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable 5th Texture</span>
+        <span class="param-prop">_Use5thTexture</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Enables the fifth makeup texture layer. Keyword: _5TH_TEXTURE</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">5th Texture</span>
+        <span class="param-prop">_5thTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The fifth makeup texture. Used for detail highlights and shadow expression.</p>
+        <p class="param-default">Default: None</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hue Shift</span>
+        <span class="param-prop">_5thTexHueShift</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Shifts the hue of the texture.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: -0.5 to 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Saturation</span>
+        <span class="param-prop">_5thTexSaturation</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the saturation of the texture.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Brightness</span>
+        <span class="param-prop">_5thTexValue</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the brightness of the texture.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Intensity</span>
+        <span class="param-prop">_5thTexIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The application intensity of the makeup texture.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_5thTexBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Select the blending method for the texture. Add or Screen is best for detail highlights, Multiply is best for detail shadows.</p>
+        <p class="param-default">Default: Add (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">5th Tex Mask</span>
+        <span class="param-prop">_5thTexMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>An additional mask texture. White = texture applied, Black = not applied. Keyword: _5TH_TEX_MASK</p>
+        <p class="param-default">Default: None (enabled via toggle)</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

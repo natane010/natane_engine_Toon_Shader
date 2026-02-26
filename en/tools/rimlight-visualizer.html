@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rim Light Direction Visualizer - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Rim Light Direction Visualizer</h1>
+    <p class="page-subtitle">Visually adjust rim light direction parameters with a 3D preview</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Effects &gt; Rimlight Visualizer</span>
+      <span>Category: Effect</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>The Rim Light Direction Visualizer is a dedicated tool for visually adjusting rim light direction parameters. It allows you to interactively set the rim light direction in a 3D preview, which would otherwise only be adjustable via numeric sliders in the standard material inspector.</p>
+    <p>Rim lighting is an important effect for beautifully highlighting character outlines, but adjusting direction parameters (X, Y, Z vectors) with numbers alone is not intuitive. With this tool, you can pursue the ideal rim light expression while checking the direction and range in real time in 3D space.</p>
+    <p>It is especially useful for finding rim light settings that harmonize with stage lighting and world ambient light in VRChat avatars. Simply drag within the preview window to change the direction, and the result is reflected on the material in real time.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+      <li><strong>3D Direction Visualization</strong> — Visualizes the rim light direction vector as arrows and guides in 3D space. You can see at a glance which direction the rim light is coming from</li>
+      <li><strong>Real-time Preview</strong> — When you change the direction parameters, the rim light effect on the preview object updates instantly</li>
+      <li><strong>Direction Vector Editing</strong> — Supports intuitive direction editing via drag operations, as well as precise numerical input</li>
+      <li><strong>Direct Material Reflection</strong> — Apply adjustment results to the material with one click. Undo support ensures safe operation</li>
+      <li><strong>Rim Light Range Preview</strong> — The rim light width (Fresnel Power) can also be previewed simultaneously, allowing you to optimize both direction and range at the same time</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Select a Material</strong>
+        <p>Select a material with Natane Toon Shader applied from the Project view or Inspector. Make sure the rim light feature (_RIMLIGHT) is enabled.</p>
+      </li>
+      <li>
+        <strong>Open the Visualizer</strong>
+        <p>Open the tool window from <code>Tools &gt; Natane &gt; Effects &gt; Rimlight Visualizer</code>. The current rim light direction of the selected material is displayed in the 3D preview.</p>
+      </li>
+      <li>
+        <strong>Adjust the Direction</strong>
+        <p>Drag within the 3D preview to change the direction. Dragging up, down, left, and right updates the rim light direction vector in real time. Precise adjustments via numerical fields are also possible.</p>
+      </li>
+      <li>
+        <strong>Check in Preview</strong>
+        <p>Check the rim light effect on the preview object. Test the rim light appearance under various lighting environments by changing the light direction and intensity.</p>
+      </li>
+      <li>
+        <strong>Apply to Material</strong>
+        <p>Click the "Apply" button to reflect the settings on the material. You can Undo at any time with Ctrl+Z.</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>In VRChat worlds, light directions vary by location, so preview from multiple directions to find the most versatile setting</li>
+      <li>Setting the rim light direction to "diagonally upward" looks natural in many lighting environments</li>
+      <li>A larger Fresnel Power value creates a thinner rim; a smaller value creates a wider rim</li>
+      <li>Custom directional rim lighting is especially effective for avatars in specific worlds with fixed light sources</li>
+      <li>After adjusting in the direction visualizer, also check the avatar in Scene view for a final review</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

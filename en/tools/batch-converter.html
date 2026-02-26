@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Batch Material Converter - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Batch Material Converter</h1>
+    <p class="page-subtitle">A general-purpose tool for batch converting multiple materials to Natane Toon Shader</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Migration &gt; Batch Converter</span>
+      <span>Category: Migration</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>The Batch Material Converter is a general-purpose migration tool for batch converting materials from any shader to Natane Toon Shader. It also handles migrations from shaders that don't have a dedicated migration tool like lilToon.</p>
+    <p>This tool detects materials using the specified shader from across the entire project and displays them in a list. Properties with the same name between the source and target shaders are automatically mapped; those with different names can be manually configured. Common texture property names such as _MainTex and _BumpMap are automatically recognized.</p>
+    <p>It can be used for a wide range of purposes: unifying shaders across a large project, migrating from basic shaders like Standard Shader or Unlit Shader, or migrating from third-party shaders. The backup feature safely protects materials before conversion, and conversion results support Undo.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+      <li><strong>Multi-Material Batch Processing</strong> — Convert all selected materials at once. Streamlines migration of large projects</li>
+      <li><strong>Folder Selection</strong> — Specify a particular folder to target only materials within that folder for conversion</li>
+      <li><strong>Property Preservation</strong> — Properties with the same name between source and target are automatically carried over. Supports textures, colors, and numerical parameters</li>
+      <li><strong>Backup</strong> — Automatically creates material backups before conversion. Used for restoration if issues occur</li>
+      <li><strong>Filtering</strong> — Filter conversion targets by shader name or material name</li>
+      <li><strong>Conversion Report</strong> — Displays a detailed report of successful, failed, and skipped materials after conversion</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Select Source Shader</strong>
+        <p>Select the shader currently used by the materials you want to convert. A dropdown lists all shaders in use within the project.</p>
+      </li>
+      <li>
+        <strong>Review Material List</strong>
+        <p>A list of materials using the selected shader is displayed. Materials you don't want to convert can be excluded via checkboxes.</p>
+      </li>
+      <li>
+        <strong>Configure Settings</strong>
+        <p>Set the target variant (Opaque / Cutout / Transparent), property mapping, and backup options.</p>
+      </li>
+      <li>
+        <strong>Batch Convert</strong>
+        <p>Click "Batch Convert" to execute the conversion. A progress bar shows the progress, and a report is displayed upon completion.</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>Always keep the backup feature enabled. It allows restoration in case of unexpected conversion results</li>
+      <li>Texture mapping from Standard Shader is mostly automatic (_MainTex, _BumpMap, _MetallicGlossMap, etc.)</li>
+      <li>Always check the appearance in Scene view after conversion and add toon shader-specific settings like shadow colors and rim light as needed</li>
+      <li>When converting a large number of materials at once, proceeding folder by folder makes management easier</li>
+      <li>Materials showing "Skipped" in the conversion report may have had property incompatibilities — verify them manually</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

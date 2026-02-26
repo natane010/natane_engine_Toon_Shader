@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Final Color Blend - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Final Color Blend</h1>
+    <p class="page-subtitle">Blending to prevent highlight blowout and shadow crushing</p>
+
+    <h2 id="highlight">Highlight Blending</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Highlight Blending (Blowout Prevention)</span>
+        <span class="param-prop">_FinalHighlightBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Naturally blends overly bright areas (highlights). Uses smooth shoulder tone mapping to naturally compress bright areas above 60% luminance, preventing blowout while preserving color vibrancy.</p>
+        <p>Processing flow: (1) Tone mapping compression → (2) Highlight blending (30% desaturation) → (3) Gentle clamp (allows up to 1.05)</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Recommended: 0.3-0.5 for normal use, 0.7-0.9 for strong effect, 1.0 for maximum.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Highlight Threshold</span>
+        <span class="param-prop">_HighlightThreshold</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Additional highlight blending is applied to areas brighter than this value. Lower values apply blending to a wider range.</p>
+        <p class="param-default">Default: 0.75</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Recommended: 0.75. Set to 0.6 for a stronger effect, or 0.5 for maximum effect.</div>
+    </div>
+
+    <h2 id="shadow">Shadow Blending</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Blending (Crush Prevention)</span>
+        <span class="param-prop">_FinalShadowBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Blends overly dark areas (shadows) with their surroundings. Prevents shadow crushing and preserves detail. Softens shadow boundaries and slightly lifts shadows for a natural appearance.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Useful when detail is lost in dark worlds.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Threshold</span>
+        <span class="param-prop">_ShadowThreshold</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Shadow blending is applied to areas darker than this value. Higher values apply the effect to a wider range.</p>
+        <p class="param-default">Default: 0.25</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Recommended: 0.25. Increase to 0.3-0.4 if shadows are very deep.</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

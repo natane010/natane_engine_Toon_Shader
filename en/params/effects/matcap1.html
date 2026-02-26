@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MatCap 1 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>MatCap 1</h1>
+    <p class="page-subtitle">Realistic environment reflections using Material Capture textures</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>MatCap (Material Capture) is an effect that uses spherically captured material environment maps to render realistic reflections and textures. By sampling textures based on normal directions, it achieves high-quality environment reflections with low computational cost.</p>
+    <p>Controlled by the keyword <code>_MATCAP</code>. No shader instructions are generated when disabled.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap Texture</span>
+        <span class="param-prop">_MatCapTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the MatCap texture (spherical reflection map). Uses a square texture that captures the appearance of a material applied to a sphere.</p>
+        <p class="param-default">Default: "black" (black texture)</p>
+      </div>
+      <div class="param-tip">The MatCap texture must be a spherical reflection map. Searching for "MatCap texture" online will yield many free resources.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap Intensity</span>
+        <span class="param-prop">_MatCapIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of the MatCap effect. Values exceeding 1.0 produce HDR-like strong reflection effects.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap Blend Mode</span>
+        <span class="param-prop">_MatCapBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the blend method for the MatCap effect.</p>
+        <ul>
+          <li><strong>Add (0)</strong> - Additive blending. Adds reflection light to brighten</li>
+          <li><strong>Multiply (1)</strong> - Multiply blending. Darker areas become even darker</li>
+          <li><strong>Replace (2)</strong> - Replace. Completely overwrites with the MatCap texture</li>
+        </ul>
+        <p class="param-default">Default: Add (0)</p>
+      </div>
+      <div class="param-tip">Add is suited for metallic reflections, Multiply for dirt and scratch expressions, and Replace for special stylized looks.</div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap Mask</span>
+        <span class="param-prop">_MatCapMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls the application area of MatCap. Enabled by the keyword <code>_MATCAP_MASK</code>.</p>
+        <p class="param-default">Default: "white" (full application)</p>
+      </div>
+      <div class="param-tip">White = MatCap applied, Black = MatCap hidden. Useful for applying MatCap only to metallic parts.</div>
+    </div>
+
+    <h2 id="blend">Blend &amp; Blur</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_MatCapBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity (opacity) of the MatCap effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_MatCapBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the blur amount of the MatCap effect. Adding blur creates soft reflection expressions.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

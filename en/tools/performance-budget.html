@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Performance Budget - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Performance Budget</h1>
+    <p class="page-subtitle">Visualize material performance costs and manage within budget</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Optimization &gt; Performance Budget</span>
+      <span>Category: Optimization</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>The Performance Budget tool visualizes the performance cost of materials and helps manage them within platform-specific budgets. It displays how much GPU load each shader feature incurs using a point system and provides optimization guidelines for both PC and Quest platforms.</p>
+    <p>Natane Toon Shader offers many features, but enabling all of them simultaneously can impact performance. With this tool, you can view the cost (points) of each enabled feature in a list and compare them against recommended budgets per platform. It allows you to make data-driven decisions about which features to enable or disable.</p>
+    <p>It is particularly useful when creating Quest-compatible VRChat avatars, helping you find material settings that fit within mobile GPU constraints. The performance rating (A/B/C/D) is displayed in real time, serving as a guideline for VRChat performance rank.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+      <li><strong>Platform-Specific Budgets</strong> — Different performance budgets for PC and Quest. Evaluates based on criteria matched to each platform's GPU capabilities</li>
+      <li><strong>Feature Cost Calculation</strong> — Displays the GPU load of each shader feature (rim light, MatCap, specular, refraction, etc.) as points</li>
+      <li><strong>Real-time Tracking</strong> — Costs update in real time as you change material settings</li>
+      <li><strong>Performance Rating</strong> — Four-tier rating: A (Light: 0-3 features), B (Standard: 4-6 features), C (Heavy: 7-9 features), D (High Load: 10+ features)</li>
+      <li><strong>Optimization Suggestions</strong> — Automatically detects cost-inefficient features when over budget and suggests disabling them</li>
+      <li><strong>Multi-Material Comparison</strong> — Compare costs of all materials in an avatar at a glance to identify the most expensive materials</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Open the Tool</strong>
+        <p>Open the tool window from <code>Tools &gt; Natane &gt; Optimization &gt; Performance Budget</code>.</p>
+      </li>
+      <li>
+        <strong>Select Materials</strong>
+        <p>Select the materials you want to analyze from the Project view or drag and drop them. To analyze an entire avatar, select the avatar object in the scene.</p>
+      </li>
+      <li>
+        <strong>Select Platform</strong>
+        <p>Choose the target platform (PC / Quest). Budget limits differ by platform.</p>
+      </li>
+      <li>
+        <strong>Review Cost Analysis</strong>
+        <p>Check the cost of each feature, total points, and performance rating. Features that exceed the budget are highlighted in red.</p>
+      </li>
+      <li>
+        <strong>Perform Optimization</strong>
+        <p>Refer to the suggested optimizations and disable unnecessary features to improve performance.</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>Aim for 40 points or less for Quest avatars. This corresponds to a performance rank of B</li>
+      <li>Actively disable unused features. Natane Toon Shader uses keyword-based branching, so disabled features incur zero GPU load</li>
+      <li>Refraction and screen effects are particularly costly, so use them carefully on Quest</li>
+      <li>Analyzing all materials of an avatar simultaneously makes it easier to grasp overall performance balance</li>
+      <li>Prioritize enabling features with the greatest visual impact while maintaining a performance rating of B</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

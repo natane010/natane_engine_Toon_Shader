@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Material Validator - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Material Validator</h1>
+    <p class="page-subtitle">Automated VRChat optimization and performance checks</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Material Validator</span>
+      <span>Category: Material</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>The Material Validator automatically verifies VRChat optimization and performance for materials using Natane Toon Shader. It comprehensively checks texture sizes, the number of enabled features, performance ratings, and more, offering auto-fix suggestions when issues are found.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+      <li>VRChat optimization checks (Quest/PC compatible)</li>
+      <li>Texture size validation and recommended size suggestions</li>
+      <li>Performance rating (A/B/C/D rating)</li>
+      <li>Auto-fix suggestions and batch application</li>
+      <li>Batch validation of multiple materials</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <ol class="tool-steps">
+      <li>Drag and drop materials or click "Add Selected Materials" to add validation targets</li>
+      <li>Enable or disable validation items as needed</li>
+      <li>Click "Validate Materials" to start the validation</li>
+      <li>Review issues by severity (Error / Warning / Info)</li>
+      <li>Click "Auto Fix" to apply the suggested corrections</li>
+    </ol>
+
+    <h2>Validation Items</h2>
+    <h3>Performance</h3>
+    <ul>
+      <li>Rating based on the number of enabled features (A: 0-3, B: 4-6, C: 7-9, D: 10+)</li>
+      <li>Total texture memory usage</li>
+      <li>Shader keyword count</li>
+    </ul>
+    <h3>Textures</h3>
+    <ul>
+      <li>Maximum texture size check (VRChat recommended: 2048x2048 or less)</li>
+      <li>Compression format verification</li>
+      <li>Detection of unused texture slots</li>
+    </ul>
+    <h3>VRChat-Specific</h3>
+    <ul>
+      <li>Quest compatibility check (rating B or above recommended)</li>
+      <li>Fallback shader compatibility</li>
+    </ul>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>Run validation before uploading to VRChat</li>
+      <li>Check "VRChat Optimization" for avatar compatibility</li>
+      <li>Fix errors before warnings for the best results</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

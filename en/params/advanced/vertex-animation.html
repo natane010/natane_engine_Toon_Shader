@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vertex Animation - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Vertex Animation</h1>
+    <p class="page-subtitle">Procedural vertex deformation animation</p>
+
+    <h2>Overview</h2>
+    <p>Vertex animation is a feature that procedurally deforms vertices within the shader. It enables simple animations such as swaying, waving, and expansion/contraction without scripts. Ideal for expressing movement in vegetation, cloth, water surfaces, and similar elements.</p>
+    <p>Controlled by the keyword <code>_VERTEX_ANIMATION</code>. By using a mask texture, animation can be applied partially as well.</p>
+
+    <h2>Properties</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable Vertex Animation</span>
+        <span class="param-prop">_VertexAnimation</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Toggles the vertex animation feature on/off.</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Animation Speed</span>
+        <span class="param-prop">_VertexAnimSpeed</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The playback speed of the animation. Higher values produce faster movement.</p>
+        <p class="param-default">Default: 1.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Animation Strength</span>
+        <span class="param-prop">_VertexAnimStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The magnitude (amplitude) of vertex deformation. Higher values produce larger deformations.</p>
+        <p class="param-default">Default: 0.1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Animation Frequency</span>
+        <span class="param-prop">_VertexAnimFrequency</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The fineness of the animation wave. Higher values produce finer waves.</p>
+        <p class="param-default">Default: 1.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Animation Type</span>
+        <span class="param-prop">_VertexAnimType</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the animation pattern. Various deformation patterns are available, including swaying, waving, and expansion.</p>
+        <p class="param-default">Default: 0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Animation Mask</span>
+        <span class="param-prop">_VertexAnimMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls the animation application area. White areas receive animation, while black areas remain static. Enabled with the keyword <code>_VERTEX_ANIM_MASK</code>.</p>
+        <p class="param-default">Default: "white" (applied everywhere)</p>
+      </div>
+      <div class="param-tip">A gradient mask is effective for keeping plant roots stationary while only swaying the tips.</div>
+    </div>
+
+    <h2>Usage Tips</h2>
+    <ul>
+      <li>Ideal for natural swaying of vegetation, flags, cloth, and water surfaces</li>
+      <li>Use mask textures for partial animation (e.g., only swaying tree leaves)</li>
+      <li>Unlike VAT, it is procedural so no baked data is required</li>
+      <li>Keep the strength moderate and adjust for a natural-looking sway</li>
+      <li>Works without scripts in VRChat, making it convenient for avatar and accessory decorations</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

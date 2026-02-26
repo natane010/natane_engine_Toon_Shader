@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>lilToon Migration Tool - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>lilToon Migration Tool</h1>
+    <p class="page-subtitle">Automatic migration from lilToon shader to Natane Toon Shader</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Migration &gt; lilToon Migration</span>
+      <span>Category: Migration</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>The lilToon Migration Tool is a migration utility that automatically converts materials configured with the lilToon shader to Natane Toon Shader. It has built-in property name mapping between lilToon and Natane Toon, automatically carrying over textures, colors, and numerical parameters.</p>
+    <p>lilToon is widely used as a toon shader for VRChat, but manually reconfiguring each parameter one by one when switching to Natane Toon Shader is extremely time-consuming. This tool automatically maps and converts most basic properties (main texture, shadow color, shadow boundary, rim light, MatCap, etc.).</p>
+    <p>It also auto-detects lilToon variants (Opaque, Cutout, Transparent, with Outline, etc.) and converts them to the corresponding Natane Toon Shader variants. You can preview before conversion and Undo is supported, so you can use it with confidence. Batch conversion is also supported, allowing you to migrate all materials for an entire avatar at once.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+      <li><strong>Automatic Property Mapping</strong> — Automatically converts each lilToon property (_MainTex, _ShadowColor, _RimColor, etc.) to the corresponding Natane Toon Shader property</li>
+      <li><strong>Variant Detection</strong> — Auto-detects lilToon variants in use (Opaque / Cutout / Transparent / TwoPass, etc.) and selects the appropriate Natane Toon variant</li>
+      <li><strong>Batch Conversion</strong> — Convert lilToon materials in a folder or scene all at once. Ideal for migrating large avatar projects</li>
+      <li><strong>Preview</strong> — Preview the mapping results before conversion. Check in advance how each property will be converted</li>
+      <li><strong>Undo Support</strong> — All conversion operations can be undone. Press Ctrl+Z to revert immediately if issues arise</li>
+      <li><strong>Custom Mapping</strong> — Properties that cannot be handled by automatic mapping can be manually added or modified</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Select lilToon Materials</strong>
+        <p>Select the lilToon materials you want to convert in the Project view. If you specify a folder, lilToon materials within that folder are auto-detected.</p>
+      </li>
+      <li>
+        <strong>Review Property Mapping</strong>
+        <p>A list of auto-detected property mappings is displayed. Check the conversion target for each property and modify as needed.</p>
+      </li>
+      <li>
+        <strong>Preview</strong>
+        <p>Click "Preview" to check the converted material's appearance. It previews in real time in the Scene view.</p>
+      </li>
+      <li>
+        <strong>Execute Conversion</strong>
+        <p>Click "Execute Conversion" to convert the materials. The original material's shader switches to Natane Toon Shader, and mapped properties are automatically configured.</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>It's recommended to back up original materials before conversion. Using the Prefab Variant Converter lets you convert while preserving the original prefab</li>
+      <li>lilToon's 2nd/3rd Shadow maps to Natane Toon's multi-step shadows. Fine-tuning of color tones may be needed after conversion</li>
+      <li>MatCap and rim light intensity may need fine-tuning after conversion, as calculation methods differ between shaders</li>
+      <li>lilToon outline settings are also automatically converted, but check the width scale as it may differ</li>
+      <li>For batch conversion, it's safest to try one material first before converting the rest</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

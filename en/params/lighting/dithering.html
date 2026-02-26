@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dithering - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Dithering</h1>
+    <p class="page-subtitle">Add dither patterns to shading</p>
+
+    <p>Dithering (halftone) adds a dot pattern to shadow boundaries, creating a softer and more artistic impression. Ideal for print-style or manga-style soft shadow expression (screen tone).</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Pattern Size</span>
+        <span class="param-prop">_DitheringScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the size of the dither pattern. Smaller values for fine patterns, larger values for coarse patterns.</p>
+        <p class="param-default">Default: 10</p>
+        <p class="param-range">Range: 1 to 100</p>
+      </div>
+      <div class="param-tip">Recommended: 5-20. Use 10-20 for manga-style screen tone, 5-10 for subtle dithering.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Border Softness</span>
+        <span class="param-prop">_DitheringStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the strength of the dithering effect (border blur amount). 0 for no effect, 1 for maximum effect.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Recommended: 0.3-0.7. Too low and it's barely visible; too high and the pattern becomes overly prominent.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_DitheringBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The blend intensity of the dithering effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_DitheringBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The blur amount of the dithering effect. 0 for sharp patterns, 1 for soft patterns.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Adding blur softens the pattern edges for a more natural finish.</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

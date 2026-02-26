@@ -128,40 +128,10 @@
       <div class="param-tip">アウトラインにグラデーションやアニメーション効果を追加したい場合に使用します。</div>
     </div>
 
-    <h2 id="corner-fix">コーナーギャップ修正</h2>
-
-    <p>ハードエッジのメッシュで反転ハル方式を使用する際、角（コーナー）に隙間が発生することがあります。最善の解決策は「スムース法線」機能（SmoothNormalBaker）の使用ですが、以下のパラメータで簡易的な改善も可能です。</p>
-
-    <div class="param-card">
-      <div class="param-header">
-        <span class="param-name">コーナースムージング</span>
-        <span class="param-prop">_OutlineCornerSmooth</span>
-        <span class="param-badge badge-range">range</span>
-      </div>
-      <div class="param-body">
-        <p>スムース法線が無効な場合のフォールバック処理です。頂点法線をオブジェクト中心からの方向にブレンドし、コーナーの隙間を軽減します。スムース法線が有効な場合は使用されません。</p>
-        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
-      </div>
-      <div class="param-tip">0.3〜0.5 程度の値で多くのハードエッジモデルのギャップが改善されます。</div>
-    </div>
-
-    <div class="param-card">
-      <div class="param-header">
-        <span class="param-name">エッジ幅補正</span>
-        <span class="param-prop">_OutlineEdgeCompensation</span>
-        <span class="param-badge badge-range">range</span>
-      </div>
-      <div class="param-body">
-        <p>シャープなエッジ部分でアウトライン幅を自動的に縮小し、コーナーの飛び出しを抑制します。法線の不一致度を検出して幅を調整するため、スムース法線の ON/OFF に関わらず使用できます。</p>
-        <p class="param-default">デフォルト: 0（範囲: 0 - 1）</p>
-      </div>
-      <div class="param-tip">スムース法線と併用しても効果があります。角張ったモデルでアウトラインが不自然に太くなる部分を改善します。</div>
-    </div>
-
     <nav class="page-nav"></nav>
   </main>
 </div>
-<footer class="site-footer">&copy; 2026 Natane Toon Shader.</footer>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
 <script src="../../nav.js"></script>
 </body>
 </html>

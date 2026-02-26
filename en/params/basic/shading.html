@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shading - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Shading</h1>
+    <p class="page-subtitle">Toon shading style and shadow settings</p>
+
+    <p>Anime-style cel shading delivers clean, well-defined shadow boundaries for high-quality anime-style rendering. Choose from Toon mode, Gradient mode, or ramp textures.</p>
+
+    <h2 id="shading-mode">Shading Mode</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Mode</span>
+        <span class="param-prop">_ShadingMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Select the shading style.</p>
+        <ul>
+          <li><strong>Toon (0)</strong>: Stepped cel shading. Classic anime-style expression.</li>
+          <li><strong>Gradient (1)</strong>: Smooth gradient shading. Gives a softer impression.</li>
+        </ul>
+        <p class="param-default">Default: Toon (0)</p>
+      </div>
+      <div class="param-tip">When a ramp texture is enabled, this mode setting is ignored and shading based on the ramp texture is applied instead.</div>
+    </div>
+
+    <h2 id="gradient-settings">Gradient Settings</h2>
+    <p>Parameters displayed when Gradient mode is selected.</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Gradient Width</span>
+        <span class="param-prop">_ShadingGradientWidth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the smoothness of the shadow-to-light boundary. 0.1 for a narrow gradient (sharp boundary), 0.2-0.3 for a standard gradient, 0.5+ for a wide gradient (very soft).</p>
+        <p class="param-default">Default: 0.2</p>
+        <p class="param-range">Range: 0.001 to 1</p>
+      </div>
+      <div class="param-tip">Values of 0.2 or above are recommended for a softer impression.</div>
+    </div>
+
+    <h2 id="shadow-colors">Shadow Color Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Color (1st Level)</span>
+        <span class="param-prop">_ShadowColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>The primary shadow color. Used as the 1st level shadow color in Toon mode, and as the overall shadow color in Gradient mode.</p>
+        <p class="param-default">Default: (0.5, 0.5, 0.5, 1)</p>
+      </div>
+      <div class="param-tip">Adding a slight reddish tint to skin shadows makes them look more natural. Example: (0.55, 0.45, 0.45)</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Color (2nd Level)</span>
+        <span class="param-prop">_Shadow2ndColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>The 2nd level shadow color. Used when multi-step shadows are enabled. Set a darker color than the 1st level.</p>
+        <p class="param-default">Default: (0.35, 0.35, 0.35, 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">2nd Level Border</span>
+        <span class="param-prop">_Shadow2ndBorder</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The darkness threshold where the 2nd level shadow is applied. The 2nd shadow color applies to areas darker than this value. 0.5 for half the darker area, 0.3 for slightly dark areas (recommended), 0.1 for only the darkest areas.</p>
+        <p class="param-default">Default: 0.3</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Color (3rd Level)</span>
+        <span class="param-prop">_Shadow3rdColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>The 3rd level shadow color (darkest shadow). Used when multi-step shadows are enabled.</p>
+        <p class="param-default">Default: (0.2, 0.2, 0.2, 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">3rd Level Border</span>
+        <span class="param-prop">_Shadow3rdBorder</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The darkness threshold where the 3rd level shadow is applied. 0.15-0.2 for standard darkest areas (recommended), 0.05-0.1 for only the very darkest areas.</p>
+        <p class="param-default">Default: 0.15</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Set border values in descending order: 1st level &gt; 2nd level &gt; 3rd level.</div>
+    </div>
+
+    <h2 id="toon-settings">Toon Mode Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Steps</span>
+        <span class="param-prop">_ShadowSteps</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The number of cel shading steps. Fewer steps produce an anime look; more steps create a gradient-like effect.</p>
+        <p class="param-default">Default: 2</p>
+        <p class="param-range">Range: 1 to 10</p>
+      </div>
+      <div class="param-tip">Recommended: 2-3 (anime style). More steps produce a gradient effect.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Sharpness</span>
+        <span class="param-prop">_ShadowSharpness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the sharpness of shadow boundaries. Low values for sharp boundaries (anime style), high values for soft boundaries (illustration style).</p>
+        <p class="param-default">Default: 0.1</p>
+        <p class="param-range">Range: 0.001 to 1</p>
+      </div>
+      <div class="param-tip">Recommended for anime style: 0.05-0.15</div>
+    </div>
+
+    <h2 id="common-settings">Common Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Offset</span>
+        <span class="param-prop">_ShadowOffset</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the shadow boundary position. Positive values make shadows brighter (smaller shadow area), negative values make shadows darker (larger shadow area).</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: -1 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Lit Softness</span>
+        <span class="param-prop">_LitSoftness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Blends the lit areas with their surroundings. 0 for sharp boundaries (default), 0.3-0.5 for moderate softness, 1.0 for maximum blending.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Adjust this when lighting is too harsh or when you want a smoother gradient.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Blending (Softness)</span>
+        <span class="param-prop">_ShadowBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Blends the shadow boundaries with their surroundings for a softer impression. 0 for sharp boundaries (default), 0.3-0.5 for moderate softness (recommended), 0.7-1.0 for very soft boundaries.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Adjust this when shadow boundaries are too sharp or when you want softer, illustration-style shadows. If setting above 0.7, it is recommended to also check other softness parameters in the "Advanced Lighting" tab.</div>
+    </div>
+
+    <h2 id="ramp-texture">Ramp Texture</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Ramp Texture</span>
+        <span class="param-prop">_RampTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>Shading using a ramp texture. Set a gradient texture from dark (left) to bright (right). When enabled, shading based on the ramp texture is applied instead of Toon/Gradient mode. Keyword: _USE_RAMP</p>
+        <p class="param-default">Default: "white" (enabled via toggle)</p>
+      </div>
+      <div class="param-tip">Create custom shadow tones with custom gradients. Warm-colored gradients produce warm shadows, while cool-colored gradients produce cold-impression shadows.</div>
+    </div>
+
+    <h2 id="sdf-shadow">SDF Shadow Map</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SDF Map</span>
+        <span class="param-prop">_SDFMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>An SDF (Signed Distance Field) Shadow Map texture. An advanced feature that enables precise texture-based control over shadow placement. White = lit, Black = shadow. Keyword: _SDF_MAP</p>
+        <p class="param-default">Default: "white" (enabled via toggle)</p>
+      </div>
+      <div class="param-tip">Use this when you want fine control over face shadows or when you want shadows to always appear in specific areas.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SDF Intensity</span>
+        <span class="param-prop">_SDFIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the strength of the SDF shadow.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SDF Softness</span>
+        <span class="param-prop">_SDFSoftness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The softness of the SDF shadow boundary.</p>
+        <p class="param-default">Default: 0.1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SDF Offset</span>
+        <span class="param-prop">_SDFOffset</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Position adjustment for the SDF shadow.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: -1 to 1</p>
+      </div>
+    </div>
+
+    <h2 id="shading-grade-map">Shading Grade Map</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shading Grade Map</span>
+        <span class="param-prop">_ShadingGradeMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A texture that allows partial adjustment of shadow intensity. White = brighter (thinner shadows), Black = darker (deeper shadows), Gray = neutral. Keyword: _SHADING_GRADE_MAP</p>
+        <p class="param-default">Default: "white" (enabled via toggle)</p>
+      </div>
+      <div class="param-tip">Use this when you want different shadow intensities for different areas, such as brighter faces and darker clothing.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Grade Scale</span>
+        <span class="param-prop">_ShadingGradeScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the influence of the Shading Grade Map. -1 for darker, 0 for no change, 1 for brighter.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: -1 to 1</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

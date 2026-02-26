@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emission - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Emission</h1>
+    <p class="page-subtitle">Self-illuminating glow effect</p>
+
+    <p>An effect that makes part or all of a material self-luminous. Used for glowing signs, neon expressions, magic effects, and luminous accessories. Scroll and pulse animations are also available.</p>
+    <p>Keywords: <code>_EMISSION</code>, <code>_EMISSION_SCROLL</code>, <code>_EMISSION_PULSE</code></p>
+
+    <h2 id="basic">Basic Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Emission Color</span>
+        <span class="param-prop">_EmissionColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the emission (glow) color. Supports HDR color, and setting intensity above 1 enables strong glow when combined with bloom effects.</p>
+        <p class="param-default">Default: (0, 0, 0, 1) (black, no emission)</p>
+      </div>
+      <div class="param-tip">Increasing HDR color intensity combined with post-processing bloom produces brilliant glow effects.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Emission Map</span>
+        <span class="param-prop">_EmissionMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A texture that defines the emission glow pattern. White areas glow, while black areas do not.</p>
+        <p class="param-default">Default: "white" (entire surface glows)</p>
+      </div>
+    </div>
+
+    <h2 id="scroll">Scroll Animation</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Scroll Speed</span>
+        <span class="param-prop">_EmissionScrollSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the speed at which the emission texture scrolls. Enabled by the keyword <code>_EMISSION_SCROLL</code>.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+      <div class="param-tip">Create animated effects like flowing light or circuit-like movement.</div>
+    </div>
+
+    <h2 id="pulse">Pulse Animation</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Pulse Speed</span>
+        <span class="param-prop">_EmissionPulseSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the speed at which the emission pulses (flickers). Enabled by the keyword <code>_EMISSION_PULSE</code>.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Pulse Amplitude</span>
+        <span class="param-prop">_EmissionPulseAmplitude</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the amplitude of the pulse's brightness variation. Higher values produce greater contrast between bright and dark.</p>
+        <p class="param-default">Default: 0.5 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Emission Mask</span>
+        <span class="param-prop">_EmissionMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the application area of emission with a texture. Enabled by the keyword <code>_EMISSION_MASK</code>.</p>
+        <p class="param-default">Default: "white" (apply to all)</p>
+      </div>
+      <div class="param-tip">White = emission applied, Black = emission hidden. Provides additional mask control separate from the emission map.</div>
+    </div>
+
+    <h2 id="glow">Glow (Bloom)</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Emission Glow (Bloom)</span>
+        <span class="param-prop">_EmissionGlow</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Bleeds and brightens the glowing areas, adding a soft luminous effect.</p>
+        <ul>
+          <li>0 = No glow (sharp emission)</li>
+          <li>0.3 - 0.5 = Moderate glow (recommended)</li>
+          <li>0.7 - 1.0 = Strong glow (intense radiance)</li>
+        </ul>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+      <div class="param-tip">Combining with HDR color produces more vivid glow effects.</div>
+    </div>
+
+    <h2 id="blend">Blend Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_EmissionBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects how the emission is composited with the base color.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Normal blending</li>
+          <li><strong>Soft (1)</strong> - Soft light</li>
+          <li><strong>Screen (2)</strong> - Screen</li>
+          <li><strong>Overlay (3)</strong> - Overlay</li>
+        </ul>
+        <p class="param-default">Default: 0 (Normal)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_EmissionBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the overall application amount of the emission effect.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_EmissionBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Blurs the boundaries of the emission.</p>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

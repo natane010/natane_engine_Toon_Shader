@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shader Variant Collector - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Shader Variant Collector</h1>
+    <p class="page-subtitle">Automatically collect shader variants in the project to significantly reduce build size</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Shader &gt; Shader Variant Collector</span>
+      <span>Category: Shader</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>The Shader Variant Collector automatically scans shader variants (keyword combinations) actually in use within the project and generates a ShaderVariantCollection. This allows you to exclude unnecessary shader variants at build time, reducing build size by 50-80%.</p>
+    <p>Natane Toon Shader has many optional features, each controlled by shader_feature keywords. Including all keyword combinations (variants) in the build results in enormous size, but the combinations actually in use are limited. This tool surveys all materials in the project and collects only the keyword combinations that are actually enabled.</p>
+    <p>Collected variants are saved as a ShaderVariantCollection asset and utilized for shader stripping at build time. It is especially effective for reducing VRChat avatar upload size, and it also shortens shader compile time.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+      <li><strong>Automatic Variant Detection</strong> — Scans all Natane Toon Shader materials in the project and auto-detects active keyword combinations</li>
+      <li><strong>ShaderVariantCollection Generation</strong> — Automatically generates a ShaderVariantCollection asset from detected variants. Fully compatible with Unity's standard variant management system</li>
+      <li><strong>Build Size Analysis</strong> — Displays size comparison of all variants vs. used variants. Verify reduction rates with concrete numbers</li>
+      <li><strong>Unused Variant Removal</strong> — View unused variants in a list, with the option to manually add variants that may be needed in the future</li>
+      <li><strong>Prewarming Support</strong> — Can also be used for shader prewarming in the editor environment (editor-only processing compatible with VRChat's runtime script restrictions)</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Run Scan</strong>
+        <p>Open <code>Tools &gt; Natane &gt; Shader &gt; Shader Variant Collector</code> and click the "Scan" button to scan materials in the project. All Natane Toon Shader materials are automatically detected.</p>
+      </li>
+      <li>
+        <strong>Review Variant List</strong>
+        <p>Detected shader variants (keyword combinations) are displayed in a list. You can also see which materials use each variant.</p>
+      </li>
+      <li>
+        <strong>Exclude Unnecessary Variants</strong>
+        <p>If there are variants you don't plan to use in the future, you can manually exclude them. Normally, using the auto-detection results as-is works fine.</p>
+      </li>
+      <li>
+        <strong>Generate Collection</strong>
+        <p>Click "Generate Collection" to save the ShaderVariantCollection asset. The ShaderVariants folder is recommended as the save location.</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>After adding new materials or changing feature settings on existing materials, run the scan again to update the collection</li>
+      <li>Running this tool before uploading a VRChat avatar can significantly reduce upload size</li>
+      <li>If the variant count is extremely high, disabling unused features in materials can further reduce it</li>
+      <li>It's recommended to include the ShaderVariantCollection in version control (Git, etc.) and share it with the entire team</li>
+      <li>If shader compilation feels slow, start by checking the variant count with this tool</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

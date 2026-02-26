@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MatCap 2/3 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>MatCap 2/3</h1>
+    <p class="page-subtitle">Additional MatCap layers for complex reflection effects</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>MatCap 2 and MatCap 3 are independent MatCap layers that can be stacked on top of MatCap 1. By layering multiple MatCap textures with different blend modes, you can achieve more complex and expressive environment reflections.</p>
+    <p>Each layer is individually controlled by the keywords <code>_MATCAP_2</code> and <code>_MATCAP_3</code>. No shader instructions are generated when disabled.</p>
+
+    <div class="feature-section">
+      <h4>Multi-MatCap Usage Examples</h4>
+      <ul>
+        <li><strong>MatCap 1</strong>: Main environment reflection (Add mode)</li>
+        <li><strong>MatCap 2</strong>: Metallic highlights (Add mode, high intensity)</li>
+        <li><strong>MatCap 3</strong>: Dirt and scratch expression (Multiply mode)</li>
+      </ul>
+      <p>By using different masks, you can simultaneously express different textures such as metal, cloth, and leather within a single material.</p>
+    </div>
+
+    <!-- ==================== MatCap 2 ==================== -->
+    <h2 id="matcap2">MatCap 2</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 2 Texture</span>
+        <span class="param-prop">_MatCapTex2</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the second MatCap texture (spherical reflection map).</p>
+        <p class="param-default">Default: "black" (black texture)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 2 Intensity</span>
+        <span class="param-prop">_MatCapIntensity2</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of the MatCap 2 effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 2 Blend Mode</span>
+        <span class="param-prop">_MatCapBlendMode2</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the blend method for MatCap 2.</p>
+        <ul>
+          <li><strong>Add (0)</strong> - Additive blending</li>
+          <li><strong>Multiply (1)</strong> - Multiply blending</li>
+          <li><strong>Replace (2)</strong> - Replace</li>
+        </ul>
+        <p class="param-default">Default: Add (0)</p>
+      </div>
+    </div>
+
+    <h3 id="matcap2-mask">MatCap 2 Mask</h3>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 2 Mask</span>
+        <span class="param-prop">_MatCapMask2</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls the application area of MatCap 2. Enabled by the keyword <code>_MATCAP_MASK_2</code>.</p>
+        <p class="param-default">Default: "white" (full application)</p>
+      </div>
+      <div class="param-tip">White = MatCap applied, Black = not applied. Independent from MatCap 1's mask, allowing different MatCap applications to different parts.</div>
+    </div>
+
+    <h3 id="matcap2-blend">MatCap 2 Blend &amp; Blur</h3>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_MatCapBlend2</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity (opacity) of the MatCap 2 effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_MatCap2Blur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the blur amount of the MatCap 2 effect.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <!-- ==================== MatCap 3 ==================== -->
+    <h2 id="matcap3">MatCap 3</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 3 Texture</span>
+        <span class="param-prop">_MatCapTex3</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the third MatCap texture (spherical reflection map).</p>
+        <p class="param-default">Default: "black" (black texture)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 3 Intensity</span>
+        <span class="param-prop">_MatCapIntensity3</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of the MatCap 3 effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 3 Blend Mode</span>
+        <span class="param-prop">_MatCapBlendMode3</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the blend method for MatCap 3.</p>
+        <ul>
+          <li><strong>Add (0)</strong> - Additive blending</li>
+          <li><strong>Multiply (1)</strong> - Multiply blending</li>
+          <li><strong>Replace (2)</strong> - Replace</li>
+        </ul>
+        <p class="param-default">Default: Add (0)</p>
+      </div>
+    </div>
+
+    <h3 id="matcap3-mask">MatCap 3 Mask</h3>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 3 Mask</span>
+        <span class="param-prop">_MatCapMask3</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls the application area of MatCap 3. Enabled by the keyword <code>_MATCAP_MASK_3</code>.</p>
+        <p class="param-default">Default: "white" (full application)</p>
+      </div>
+      <div class="param-tip">White = MatCap applied, Black = not applied.</div>
+    </div>
+
+    <h3 id="matcap3-blend">MatCap 3 Blend &amp; Blur</h3>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_MatCapBlend3</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity (opacity) of the MatCap 3 effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_MatCap3Blur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the blur amount of the MatCap 3 effect.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <h2 id="performance">Performance Notes</h2>
+    <div class="feature-section">
+      <p>Shader load increases as more MatCap layers are added. For VRChat Quest environments, it is recommended to limit MatCap to 1 layer.</p>
+      <ul>
+        <li>MatCap 1 only: Minimal performance impact</li>
+        <li>MatCap 1+2: Moderate load increase</li>
+        <li>MatCap 1+2+3: Significant load increase, recommended for PC only</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

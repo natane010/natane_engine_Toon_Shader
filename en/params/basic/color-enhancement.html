@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Preservation &amp; Enhancement - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Color Preservation &amp; Enhancement</h1>
+    <p class="page-subtitle">Adjust saturation and brightness while preserving texture colors</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Texture Color Preservation</span>
+        <span class="param-prop">_AlbedoPreservation</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Preserves the original texture color while applying lighting brightness effects. Instead of "becoming white" from lighting, the result "becomes brighter while keeping its original color."</p>
+        <p>The improved version maintains the hue while solving the problem of dark colors like black turning white under light. Hue and saturation are preserved while only adjusting brightness, and specular and rim light are naturally expressed according to the color.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">
+        Recommended: 0.7 to 0.9 (strong color preservation, most natural colors). Prevents black clothing from turning gray/white under light, and red clothing from turning pink/white. Setting too high reduces the influence of light color, so if you want blue light to illuminate objects blue, set it around 0.5.
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Saturation</span>
+        <span class="param-prop">_Saturation</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the saturation (color vividness) of the final color. 0 for monochrome (grayscale), 1 for default (original saturation), 1.5 to 2.0 for vivid colors.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 2</p>
+      </div>
+      <div class="param-tip">If texture color preservation is 0.7 or higher and saturation is 1.3 or higher, colors may become overly vivid. Recommended: if color preservation &gt; 0.7, set saturation to 0.8-1.2; if saturation &gt; 1.3, set color preservation to 0.3-0.6.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Overall Brightness</span>
+        <span class="param-prop">_Brightness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Fine-tunes the final brightness. 0.5 to 0.9 for darker, 1.0 for default, 1.1 to 1.5 for brighter.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0.5 to 1.5</p>
+      </div>
+      <div class="param-tip">Useful for fine-tuning the overall brightness to match the world's lighting.</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

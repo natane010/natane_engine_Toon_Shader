@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Texture Optimizer - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Texture Optimizer</h1>
+    <p class="page-subtitle">Automatically optimize textures for performance</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Optimization &gt; Texture Optimizer</span>
+      <span>Category: Optimization</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>The Texture Optimizer analyzes textures in your project and automatically applies performance-optimal settings. It manages texture size, compression format, and mipmap settings in batch, allowing you to significantly reduce VRAM usage.</p>
+    <p>In VRChat avatars, textures often account for the majority of memory usage, and without proper optimization, VRAM is consumed unnecessarily. This tool automatically detects textures used by materials and suggests optimal sizes and compression settings based on their purpose. It can optimize according to texture type — main textures, normal maps, mask textures, and more.</p>
+    <p>Memory usage comparison before and after optimization is also displayed, allowing you to verify the expected improvement in advance. Batch processing is supported, so you can optimize all textures for an entire avatar at once.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+      <li><strong>Size Optimization</strong> — Automatically sets maximum resolution based on usage. Detects unnecessarily large textures and suggests resizing</li>
+      <li><strong>Compression Settings</strong> — Automatically selects the optimal compression format per platform (BC7, ASTC, ETC2, etc.)</li>
+      <li><strong>Mipmap Generation</strong> — Optimizes mipmap enable/disable based on usage. Saves memory by disabling for UI textures and similar cases where mipmaps are unnecessary</li>
+      <li><strong>Memory Calculation</strong> — Calculates and displays VRAM usage for each texture and total in real time. Before/after comparison available</li>
+      <li><strong>Batch Processing</strong> — Optimize textures in batch by material or by folder</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Add Textures</strong>
+        <p>Select textures from the Project view or specify a material to auto-detect related textures. You can also drag and drop a folder to add all textures within it.</p>
+      </li>
+      <li>
+        <strong>Configure Settings</strong>
+        <p>Set the maximum size (recommended: 2048 for main textures, 1024 for masks/normals), compression format, and mipmap options. Per-platform settings are also available.</p>
+      </li>
+      <li>
+        <strong>Analyze</strong>
+        <p>Click the "Analyze" button to review the current texture state. Current size, compression format, and memory usage for each texture are displayed in a list.</p>
+      </li>
+      <li>
+        <strong>Optimize</strong>
+        <p>Click "Optimize All" to apply changes. A summary showing the difference in memory usage before and after optimization is displayed.</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>2048x2048 is the recommended maximum size for VRChat avatars. Textures larger than this cause VRAM usage to spike, so keep them at 2048 or below unless there is a specific reason</li>
+      <li>Enable texture compression for performance improvement. The visual quality impact is minimal, and memory usage can be reduced by 1/4 to 1/8</li>
+      <li>Always check visual quality after optimization. Normal maps and gradient maps may show compression artifacts in some cases</li>
+      <li>Mask textures (shadow masks, emission masks, etc.) often achieve sufficient quality at 1024x1024</li>
+      <li>ASTC compression is recommended for Quest. BC7 offers the best quality/compression ratio balance for PC</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

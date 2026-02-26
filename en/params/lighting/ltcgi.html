@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LTCGI - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>LTCGI</h1>
+    <p class="page-subtitle">Realistic lighting with real-time area lights</p>
+
+    <p>LTCGI (Linearly Transformed Cosines Global Illumination) is a real-time area light system. It automatically receives illumination from screens and area lights in supported worlds. To use it, you need to install the at.pimaker.ltcgi package from VCC.</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LTCGI Intensity</span>
+        <span class="param-prop">_LTCGIIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the overall intensity of LTCGI lighting. 1 for full intensity, 0 to disable.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LTCGI Specular</span>
+        <span class="param-prop">_LTCGISpecular</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of specular (reflected light) from LTCGI. Used for area light reflections.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_LTCGIBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The blend intensity of the LTCGI effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_LTCGIBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Select the blending method for LTCGI.</p>
+        <ul>
+          <li><strong>Normal (0)</strong>: Standard blending</li>
+          <li><strong>Soft (1)</strong>: Soft blending</li>
+          <li><strong>Screen (2)</strong>: Screen (additive brightening)</li>
+          <li><strong>Overlay (3)</strong>: Overlay (contrast enhancement)</li>
+        </ul>
+        <p class="param-default">Default: Normal (0)</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

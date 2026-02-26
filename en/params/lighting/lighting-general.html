@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>General Lighting - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>General Lighting</h1>
+    <p class="page-subtitle">Control light source intensity, indirect light, and light color influence</p>
+
+    <h2 id="global-light">Global Light Control</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Light Intensity (Global)</span>
+        <span class="param-prop">_LightIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the overall lighting intensity. 0 for no light, 1 for standard, 2 for brighter.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Indirect Light Intensity</span>
+        <span class="param-prop">_IndirectLightIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of indirect illumination from ambient light and light probes.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 2</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">GI Intensity (Environment Reflection)</span>
+        <span class="param-prop">_GIIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the influence of environment reflection (Light Probes/GI). 0 to completely disable environment reflection (unaffected by ambient light), 0.5 to reduce environment reflection by 50%, 1 to apply environment reflection normally.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Use this to stabilize appearance in VRChat worlds that are too dark or have overly strong lighting.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Light Color Influence</span>
+        <span class="param-prop">_LightColorInfluence</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls how much the light's color affects the material. 0 to ignore light color (treat as white light), 0.5 for moderate (recommended), 1 to fully reflect light color.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Lower this value to stabilize the material's color in worlds with strongly colored lights.</div>
+    </div>
+
+    <h2 id="shadow-settings">Shadow Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Receive</span>
+        <span class="param-prop">_ShadowReceive</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls how much shadows from other objects affect this material. 1 for full shadow, 0 for no shadow.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Max Darkness</span>
+        <span class="param-prop">_ShadowMaxDarkness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the minimum brightness of shadows. 0 for fully dark, 1 for no darkening. Prevents shadows from becoming completely black.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">In worlds where shadows become extremely dark, setting to 0.2-0.4 improves appearance.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Receive Mask</span>
+        <span class="param-prop">_ShadowReceiveMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture for partial control of shadow receiving. White = no shadow received (kept bright, shading also disabled), Black = full shadow received (normal shadow and shading), Gray = partial shadow. Keyword: _SHADOW_RECEIVE_MASK</p>
+        <p class="param-default">Default: "white" (enabled via toggle)</p>
+      </div>
+      <div class="param-tip">If the face gets dark from hair shadows, use a mask with the face area painted white to prevent shadows from falling on the face. A commonly used technique for VRChat avatars. Also controls Light Volume indirect light (rim effects).</div>
+    </div>
+
+    <h2 id="light-range">Light Influence Range</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Light Min Influence</span>
+        <span class="param-prop">_LightMinInfluence</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the minimum lighting value. Prevents areas from becoming too dark.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Light Max Influence</span>
+        <span class="param-prop">_LightMaxInfluence</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the maximum lighting value. Prevents overexposure.</p>
+        <p class="param-default">Default: 2</p>
+        <p class="param-range">Range: 1 to 5</p>
+      </div>
+    </div>
+
+    <h2 id="light-softness">Light Softness</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Light Blending (Softness)</span>
+        <span class="param-prop">_LightBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Blends lighting transitions with surroundings for a smoother result. 0 for sharp transitions (default), 0.3-0.5 for moderate softness (recommended), 0.7-1.0 for very soft transitions.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Adjust this when light intensity changes too abruptly.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Highlight Softness</span>
+        <span class="param-prop">_HighlightSoftness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Blends bright areas (highlights) with their surroundings. 0 for sharp highlights (default), 0.3-0.5 for moderate softness (recommended), 0.7-1.0 for very soft highlights.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Adjust this when highlights are too strong or when you want a softer impression. Setting all three -- shadow blending, light blending, and highlight softness -- above 0.5 may cause shading to become very blurry. It is recommended to choose 1-2 main parameters and keep the others below 0.3.</div>
+    </div>
+
+    <h2 id="additional-light">Additional Light</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Additional Light Intensity</span>
+        <span class="param-prop">_AdditionalLightIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of additional lights (ForwardAdd pass). Lower values prevent overbright when using multiple lights. 0 for no additional lights, 1 for full intensity.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Lower values provide stability in VRChat club worlds and other environments with many lights.</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backface Texture - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Backface Texture</h1>
+    <p class="page-subtitle">Apply a different texture to polygon backfaces</p>
+
+    <h2>Overview</h2>
+    <p>The backface texture feature displays a different texture or color on the back side of polygons compared to the front. It enables different appearances for front and back faces in scenarios where both sides are visible, such as clothing linings, paper backs, and flag reverse sides.</p>
+    <p>Controlled by the keyword <code>_BACKFACE_TEXTURE</code>. To use this feature, the culling mode must be set to "Off" (double-sided rendering).</p>
+
+    <h2>Properties</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable Backface Texture</span>
+        <span class="param-prop">_BackfaceTexture</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Toggles the backface texture feature on/off.</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Backface Texture</span>
+        <span class="param-prop">_BackfaceTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The texture displayed on the backface. Can be set independently from the front face main texture.</p>
+        <p class="param-default">Default: "white"</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Backface Color</span>
+        <span class="param-prop">_BackfaceColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>A color multiplied with the backface texture. Can be used to adjust the texture color tone or create a solid-color backface without a texture.</p>
+        <p class="param-default">Default: (1, 1, 1, 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Backface Blend</span>
+        <span class="param-prop">_BackfaceBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The application intensity of the backface texture. 0 for no effect, 1 for full application.</p>
+        <p class="param-default">Default: 1.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Backface Blend Mode</span>
+        <span class="param-prop">_BackfaceBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the compositing method for the backface texture. Options include Replace, Multiply, Additive, and more.</p>
+        <p class="param-default">Default: 0 (Replace)</p>
+      </div>
+    </div>
+
+    <h2>Usage Tips</h2>
+    <ul>
+      <li>Set the culling mode to "Off" in Rendering Settings to show backfaces</li>
+      <li>Ideal for clothing linings and paper reverse side effects</li>
+      <li>Changing the blend mode adjusts how it composites with the front face texture</li>
+      <li>Backface texture resolution can often be lower than the front face without noticeable issues</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

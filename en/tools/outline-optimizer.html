@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Outline Optimizer - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Outline Optimizer</h1>
+    <p class="page-subtitle">Optimize outline rendering performance and quality</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Optimization &gt; Outline Optimizer</span>
+      <span>Category: Optimization</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>The Outline Optimizer is a tool for adjusting the balance between outline rendering performance and visual quality. Outlines are an important element of toon shading, but since they require an additional rendering pass, their performance impact cannot be ignored.</p>
+    <p>This tool integrates management of outline width, distance fade, and LOD (Level of Detail)-based adjustments. The "distance fade" feature automatically adjusts outline width based on camera distance, allowing you to thin outlines on distant objects and reduce unnecessary rendering load.</p>
+    <p>Three presets — "Balanced," "Performance," and "Quality" — are provided, allowing you to quickly apply optimal settings for your use case. In VRChat, where many avatars are displayed simultaneously, properly configuring distance fade contributes significantly to stable frame rates.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+      <li><strong>Width Optimization</strong> — Precise pixel-level control of outline width. Detects overly thick outlines and suggests appropriate values</li>
+      <li><strong>LOD-Based Adjustment</strong> — Automatic outline adjustment based on camera distance. Crisp at close range, thinner at far range</li>
+      <li><strong>Distance Fade</strong> — Gradually fades out outlines beyond a specified distance, reducing unnecessary rendering in the background</li>
+      <li><strong>Performance Presets</strong> — One-click configuration with Balanced / Performance / Quality presets</li>
+      <li><strong>Visual Quality Balance</strong> — Automatically calculates the optimal balance point between performance and appearance</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Select Target</strong>
+        <p>Select the material or scene object to optimize. You can also select multiple materials for batch optimization.</p>
+      </li>
+      <li>
+        <strong>Analyze</strong>
+        <p>The current outline settings are analyzed, showing the current state of width, color, and distance fade settings. Performance impact is also displayed.</p>
+      </li>
+      <li>
+        <strong>Select Preset</strong>
+        <p>Choose the optimization level. "Balanced" is general-purpose, "Performance" is for Quest, and "Quality" is for screenshots and video production.</p>
+      </li>
+      <li>
+        <strong>Apply</strong>
+        <p>Apply the optimized settings to the material. Undo is supported, so you can always revert to the previous state.</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>The "Balanced" preset is recommended for general use. It achieves good performance and appearance in most environments</li>
+      <li>Enable distance fade for performance improvement. In VRChat, outlines become hard to see at a certain distance from other players, so fading has minimal visual impact</li>
+      <li>Thinner outlines perform better. A range of 0.5 to 1.0 still provides sufficient outline effect</li>
+      <li>For Quest avatars, set the distance fade start distance shorter to reduce rendering cost</li>
+      <li>Setting the outline color to a dark shade close to the material's base color creates a natural impression, reducing awkwardness even with thicker outlines</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

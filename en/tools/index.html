@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor Tools - Natane Toon Shader</title>
+    <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+
+<header class="site-header"></header>
+
+<div class="page-wrapper no-sidebar">
+    <main class="main-content">
+
+        <h1>Editor Tools</h1>
+        <p class="page-subtitle">Over 27 production tools organized in 7 categories. All accessible from Unity menu <code>Tools &gt; Natane</code>.</p>
+
+        <div id="tool-categories"></div>
+
+    </main>
+</div>
+
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+
+<script src="../../nav.js"></script>
+<script>
+(function() {
+    var data = window.NataneNav;
+    if (!data) return;
+    var container = document.getElementById('tool-categories');
+    var catDesc = {
+        general:      'General tools including Dashboard and Help',
+        material:     'Material validation, editing, preview, and comparison',
+        preset:       'Preset browsing, color palette, and generation',
+        effect:       'Shadow, MatCap, Dissolve, and Rim Light adjustments',
+        optimization: 'Performance, texture, outline, and refraction optimization',
+        migration:    'lilToon migration, batch conversion, and prefab conversion',
+        shader:       'Shader variants, Light Volumes, and UV texture tools'
+    };
+    var catIcons = {
+        general: '🏠', material: '🎨', preset: '📦', effect: '✨',
+        optimization: '⚡', migration: '🔄', shader: '🔧'
+    };
+    var catOrder = ['general', 'material', 'preset', 'effect', 'optimization', 'migration', 'shader'];
+
+    catOrder.forEach(function(catKey) {
+        var catInfo = data.TOOL_CATEGORIES[catKey];
+        if (!catInfo) return;
+        var tools = data.TOOL_ORDER.filter(function(t) { return t.cat === catKey; });
+        if (tools.length === 0) return;
+
+        var section = document.createElement('section');
+        section.style.marginBottom = '32px';
+
+        var h2 = document.createElement('h2');
+        h2.textContent = (catIcons[catKey] || '') + ' ' + catInfo.label;
+        section.appendChild(h2);
+
+        var desc = document.createElement('p');
+        desc.className = 'page-subtitle';
+        desc.style.marginBottom = '16px';
+        desc.textContent = catDesc[catKey] || '';
+        section.appendChild(desc);
+
+        var grid = document.createElement('div');
+        grid.className = 'category-cards';
+        tools.forEach(function(tool) {
+            var a = document.createElement('a');
+            a.className = 'category-card';
+            a.href = tool.file;
+            a.innerHTML = '<h3>' + tool.label + '</h3>';
+            grid.appendChild(a);
+        });
+        section.appendChild(grid);
+        container.appendChild(section);
+    });
+})();
+</script>
+</body>
+</html>

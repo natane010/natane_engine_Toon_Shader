@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glitch - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Glitch</h1>
+    <p class="page-subtitle">Digital noise and RGB split distortion effect</p>
+
+    <p>An effect that recreates digital video artifacts and glitches. Combines random UV distortion with RGB color splitting to create cyberpunk-style staging and transition effects. When used together with the hologram effect, even more intense sci-fi expressions are possible.</p>
+    <p>Keyword: <code>_GLITCH</code></p>
+
+    <h2 id="settings">Glitch Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glitch Intensity</span>
+        <span class="param-prop">_GlitchIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the strength of UV distortion caused by the glitch. Higher values produce more intense screen disruption.</p>
+        <p class="param-default">Default: 0.5 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glitch Speed</span>
+        <span class="param-prop">_GlitchSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the animation speed of the glitch. Higher values switch glitch patterns more rapidly.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Block Size</span>
+        <span class="param-prop">_GlitchBlockSize</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the size of the distorted blocks in the glitch. Higher values create larger block distortions.</p>
+        <p class="param-default">Default: 0.1 (Range: 0.01 - 1)</p>
+      </div>
+      <div class="param-tip">Small values produce fine noise-like glitch, while large values create a block-collapse style glitch.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">RGB Split Intensity</span>
+        <span class="param-prop">_GlitchRGBSplitIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the strength of RGB chromatic aberration (color splitting). Offsets the red, green, and blue channels to produce a TV color-shift effect.</p>
+        <p class="param-default">Default: 0.5 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glitch Frequency</span>
+        <span class="param-prop">_GlitchFrequency</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets how frequently the glitch occurs. Higher values cause glitches to occur more often.</p>
+        <p class="param-default">Default: 0.3 (Range: 0 - 1)</p>
+      </div>
+      <div class="param-tip">0.1-0.3 produces intermittent glitches, while 0.7 or higher causes nearly constant glitching.</div>
+    </div>
+
+    <h2 id="blend">Blend Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_GlitchBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects how the glitch effect is composited with the base color.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Normal blending</li>
+          <li><strong>Soft (1)</strong> - Soft light</li>
+          <li><strong>Screen (2)</strong> - Screen</li>
+          <li><strong>Overlay (3)</strong> - Overlay</li>
+        </ul>
+        <p class="param-default">Default: 0 (Normal)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_GlitchBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the overall application amount of the glitch effect.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_GlitchBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Blurs the boundaries of the glitch effect.</p>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

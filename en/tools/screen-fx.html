@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Screen FX Setup - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Screen FX Setup</h1>
+    <p class="page-subtitle">Auto-setup fullscreen post effects on camera for VRChat</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Effects &gt; Screen FX Setup</span>
+      <span>Category: Effect</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>Screen FX Setup is a tool that automatically sets up fullscreen post effects on a camera for VRChat. Using a GrabPass-based overlay approach, it achieves screen effects such as Posterize, Edge Detection, Vignette, Chromatic Aberration, and more — all without runtime scripts.</p>
+    <p>Since VRChat restricts the use of runtime scripts, the standard post-processing stack cannot be used. This tool takes a shader-based approach: it automatically places an overlay mesh in front of the camera, captures the screen via GrabPass, and applies various effects. Settings are saved as material properties, so it works simply by building it into an avatar and uploading.</p>
+    <p>It can be used for photography, video production, VRChat event staging, and any scenario where you want to apply effects to the entire screen. Combined with Natane Toon Shader's shading expressions, you can achieve a unified visual style.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+      <li><strong>GrabPass-Based</strong> — No runtime scripts required. Works entirely through shaders, fully compatible with VRChat restrictions</li>
+      <li><strong>Automatic Camera Placement</strong> — Automatically generates and places an overlay object directly under the camera. No tedious manual setup needed</li>
+      <li><strong>Recommended Defaults</strong> — Each effect comes with recommended initial values. They function as ready-to-use presets</li>
+      <li><strong>Posterize</strong> — Limits color gradation to create retro or anime-style expressions</li>
+      <li><strong>Edge Detection</strong> — Adds outlines across the entire screen. Great for manga or illustration-style staging</li>
+      <li><strong>Vignette</strong> — Darkens screen edges to guide focus to the center for a cinematic effect</li>
+      <li><strong>Chromatic Aberration</strong> — Adds RGB color shift for a lens-like effect</li>
+      <li><strong>Scanline</strong> — CRT monitor-style scanline effect</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Select a Camera</strong>
+        <p>Select a camera object in the scene. If none is selected, the MainCamera is used automatically. For VRChat avatars, select the camera inside the Head.</p>
+      </li>
+      <li>
+        <strong>Run Setup</strong>
+        <p>Run <code>Tools &gt; Natane &gt; Effects &gt; Screen FX Setup</code>. An overlay object and material are automatically generated directly under the camera.</p>
+      </li>
+      <li>
+        <strong>Adjust the Material</strong>
+        <p>Adjust each effect in the Inspector of the generated material. Set the parameters for Posterize, Edge Detection, Vignette, and Chromatic Aberration to your preferred values.</p>
+      </li>
+      <li>
+        <strong>Check in Preview</strong>
+        <p>Verify the effect in the Game view or Scene view. Parameter changes are reflected in real time.</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>For Quest, keep Chromatic Aberration and Scanline low to minimize performance impact</li>
+      <li>Keep the Overlay directly under the camera to prevent position misalignment. Moving it manually may cause effects to display incorrectly</li>
+      <li>When utilizing Natane Toon's shading, start adjusting Edge intensity from around 0.2</li>
+      <li>Setting Posterize gradation levels to 3-5 produces an anime-style flat color look</li>
+      <li>Use Vignette modestly at around 0.3-0.5 for a natural cinematic atmosphere</li>
+      <li>When using multiple effects simultaneously, keep each intensity low to maintain overall balance</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

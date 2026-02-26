@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dissolve - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Dissolve</h1>
+    <p class="page-subtitle">Transition effect where material melts and disappears</p>
+
+    <p>The Dissolve effect creates a transition where material gradually disappears or disintegrates. Ideal for VRChat avatar appear/disappear animations. By animating the dissolve amount parameter, you can make objects appear or vanish.</p>
+    <p>Keyword: <code>_DISSOLVE</code></p>
+
+    <h2 id="settings">Dissolve Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Dissolve Amount</span>
+        <span class="param-prop">_DissolveAmount</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the dissolve progress. Operate this parameter via animation keys to achieve appear/disappear effects.</p>
+        <ul>
+          <li>0 = Fully visible (no dissolve)</li>
+          <li>0.5 = Half dissolved</li>
+          <li>1 = Fully disappeared</li>
+        </ul>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+      <div class="param-tip">In VRChat, control this parameter from the Animator Controller to create appear/disappear effects.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Dissolve Texture (Noise)</span>
+        <span class="param-prop">_DissolveTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A noise texture that defines the dissolve pattern. The dissolve progresses based on the light and dark values of the texture.</p>
+        <p class="param-default">Default: "white"</p>
+      </div>
+      <div class="param-tip">Various dissolve expressions are possible with different patterns such as Perlin noise or Voronoi noise.</div>
+    </div>
+
+    <h2 id="edge">Edge Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Edge Width</span>
+        <span class="param-prop">_DissolveEdgeWidth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the width of the glowing edge at the dissolve boundary.</p>
+        <p class="param-default">Default: 0.1 (Range: 0 - 0.5)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Edge Color</span>
+        <span class="param-prop">_DissolveEdgeColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>The color of the glowing edge displayed at the dissolve boundary. Supports HDR color; setting bright colors creates a luminous appearance.</p>
+        <p class="param-default">Default: (1, 0.5, 0, 1) (orange)</p>
+      </div>
+      <div class="param-tip">Choose colors to match your setting: flame-like orange, magical blue, digital green, etc.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Edge Intensity</span>
+        <span class="param-prop">_DissolveEdgeIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the glow intensity of the dissolve edge. Higher values make the edge glow more intensely.</p>
+        <p class="param-default">Default: 2 (Range: 0 - 10)</p>
+      </div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Dissolve Mask</span>
+        <span class="param-prop">_DissolveMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the application area of dissolve with a texture. Enabled by the keyword <code>_DISSOLVE_MASK</code>.</p>
+        <p class="param-default">Default: "white" (apply to all)</p>
+      </div>
+      <div class="param-tip">White = dissolve applied, Black = dissolve hidden. Use when you want to dissolve only specific parts.</div>
+    </div>
+
+    <h2 id="blend">Blend Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_DissolveBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects how the dissolve effect is composited.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Normal blending</li>
+          <li><strong>Soft (1)</strong> - Soft light</li>
+          <li><strong>Screen (2)</strong> - Screen</li>
+          <li><strong>Overlay (3)</strong> - Overlay</li>
+        </ul>
+        <p class="param-default">Default: 0 (Normal)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_DissolveBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the overall application amount of the dissolve effect.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_DissolveBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Blurs the boundaries of the dissolve effect.</p>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>
