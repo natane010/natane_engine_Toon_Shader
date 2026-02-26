@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSS (Subsurface Scattering) - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>SSS (Subsurface Scattering)</h1>
+    <p class="page-subtitle">Subsurface Scattering for skin-like translucency</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>SSS (Subsurface Scattering) is an effect that simulates light passing through objects. It is ideal for expressing materials where light penetrates and scatters beneath the surface, such as human skin, leaves, candles, and thin cloth.</p>
+    <p>Controlled by the keyword <code>_SSS</code>. No shader instructions are generated when disabled.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SSS Color</span>
+        <span class="param-prop">_SSSColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the color of the subsurface scattered light. For skin, reddish tones produce a natural impression.</p>
+        <p class="param-default">Default: (1, 0.5, 0.5, 1) (light red)</p>
+      </div>
+      <div class="param-tip">For skin, warm tones of (1, 0.5, 0.5) to (1, 0.7, 0.6) are recommended. For leaves, green tones like (0.5, 1, 0.3) work well.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SSS Intensity</span>
+        <span class="param-prop">_SSSIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the overall intensity of the subsurface scattering effect.</p>
+        <p class="param-default">Default: 1.5</p>
+        <p class="param-range">Range: 0 - 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SSS Power</span>
+        <span class="param-prop">_SSSPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the concentration of scattered light. Higher values concentrate scattering to a narrow area, while lower values spread it over a wider area.</p>
+        <p class="param-default">Default: 3</p>
+        <p class="param-range">Range: 0.1 - 10</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SSS Distortion</span>
+        <span class="param-prop">_SSSDistortion</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the directional distortion of scattered light. Sets how much the scattering is distorted along the normal direction, creating more natural scattering patterns.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <h2 id="thickness">Thickness Map</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Thickness Map</span>
+        <span class="param-prop">_ThicknessMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A texture that stores thickness information of the object. Enabled by the keyword <code>_THICKNESS_MAP</code>. Thinner areas allow more light to pass through.</p>
+        <p class="param-default">Default: "white" (uniform thickness)</p>
+      </div>
+      <div class="param-tip">White = thin (strong SSS), Black = thick (weak SSS). Painting thin areas like ears, nose, and fingertips as white produces effective results.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Thickness Scale</span>
+        <span class="param-prop">_ThicknessScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Scales the influence of the thickness map. Lower values reduce the variation in thickness.</p>
+        <p class="param-default">Default: 0.2</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SSS Mask</span>
+        <span class="param-prop">_SSSMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls the application area of SSS. Enabled by the keyword <code>_SSS_MASK</code>.</p>
+        <p class="param-default">Default: "white" (full application)</p>
+      </div>
+      <div class="param-tip">White = SSS applied, Black = SSS hidden. It is common to apply SSS only to skin areas while excluding clothing and metallic parts.</div>
+    </div>
+
+    <h2 id="blend">Blend &amp; Blur</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_SSSBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the blend method for the SSS effect.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Standard additive blending</li>
+          <li><strong>Soft (1)</strong> - Soft additive. Prevents over-brightening</li>
+          <li><strong>Screen (2)</strong> - Screen blending. Natural brightness addition</li>
+          <li><strong>Overlay (3)</strong> - Overlay blending. Enhances contrast</li>
+        </ul>
+        <p class="param-default">Default: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_SSSBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity (opacity) of the SSS effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_SSSBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the blur amount of the SSS effect.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

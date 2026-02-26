@@ -4,6 +4,7 @@ using NataneToon.MaterialSystem;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
     /// <summary>
     /// Utility class for Natane Toon Shader GUI operations
     /// Provides reusable UI components and helper functions
@@ -142,7 +143,7 @@ namespace NataneToon.Editor
         /// </summary>
         public static void DrawHelpButton(string toolKey)
         {
-            if (GUILayout.Button("❓ ヘルプ Help", GUILayout.Width(100), GUILayout.Height(25)))
+            if (GUILayout.Button(L("❓ ヘルプ", "❓ Help"), GUILayout.Width(100), GUILayout.Height(25)))
             {
                 UnifiedHelpSystem.ShowToolHelp(toolKey);
             }
@@ -155,7 +156,7 @@ namespace NataneToon.Editor
         public static void DrawHeaderWithHelp(string titleJP, string titleEN, string toolKey)
         {
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField($"{titleJP} {titleEN}", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L(titleJP, titleEN), EditorStyles.boldLabel);
             GUILayout.FlexibleSpace();
             DrawHelpButton(toolKey);
             EditorGUILayout.EndHorizontal();
@@ -535,8 +536,7 @@ namespace NataneToon.Editor
 
             EditorGUILayout.BeginVertical();
             GUIStyle titleStyle = new GUIStyle(EditorStyles.boldLabel) { fontSize = 14 };
-            EditorGUILayout.LabelField(titleJP, titleStyle);
-            EditorGUILayout.LabelField(titleEN, EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(L(titleJP, titleEN), titleStyle);
             EditorGUILayout.EndVertical();
 
             GUILayout.FlexibleSpace();

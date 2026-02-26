@@ -3,6 +3,7 @@ using UnityEditor;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
     /// <summary>
     /// シェーダータイプの定義と切り替えユーティリティ
     /// Shader type definitions and switching utility
@@ -23,20 +24,21 @@ namespace NataneToon.Editor
             "Natane/Toon Shader",
             "Natane/Toon Shader (Cutout)",
             "Natane/Toon Shader (Transparent)",
-            "Natane/Toon Shader (Fur)"
+            "Natane/Toon Shader (Fur)",
+            "Natane/Toon Shader (Background)"
         };
 
         private const string EyeShaderName = "Natane/Eye";
         private const string WirelightShaderName = "Natane/Toon Shader Wirelight";
         private const string ScreenFXShaderName = "Natane/Screen FX Overlay";
 
-        // 表示名（日本語）
-        private static readonly string[] ShaderTypeLabels = new string[]
+        // Display names (bilingual)
+        private static string[] ShaderTypeLabels => new string[]
         {
-            "Toon (トゥーン)",
-            "Eye (目)",
-            "Wirelight (ワイヤーライト)",
-            "Screen FX (スクリーンエフェクト)"
+            L("Toon (トゥーン)", "Toon"),
+            L("Eye (目)", "Eye"),
+            L("Wirelight (ワイヤーライト)", "Wirelight"),
+            L("Screen FX (スクリーンエフェクト)", "Screen FX")
         };
 
         /// <summary>
@@ -86,10 +88,15 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// シェーダータイプを切り替える（Undo対応）
+        /// Returns true on success, false on failure (with error dialog shown).
         /// </summary>
-        public static void SetShaderType(Material material, ShaderType type, MaterialEditor editor)
+        public static bool SetShaderType(Material material, ShaderType type, MaterialEditor editor)
         {
-            if (material == null) return;
+            if (material == null)
+            {
+                NataneToonErrorDialog.ShowNullMaterialError(L("シェーダータイプの変更", "Change Shader Type"));
+                return false;
+            }
 
             string newShaderName = GetDefaultShaderName(type);
             Shader newShader = Shader.Find(newShaderName);
@@ -97,10 +104,11 @@ namespace NataneToon.Editor
             if (newShader == null)
             {
                 Debug.LogError($"[NataneToonShaderTypeSwitcher] Shader not found: {newShaderName}");
-                return;
+                NataneToonErrorDialog.ShowShaderNotFoundError(newShaderName);
+                return false;
             }
 
-            if (material.shader == newShader) return;
+            if (material.shader == newShader) return true;
 
             Undo.RecordObject(material, "Change Shader Type");
             material.shader = newShader;
@@ -110,6 +118,8 @@ namespace NataneToon.Editor
             {
                 editor.Repaint();
             }
+
+            return true;
         }
 
         /// <summary>
@@ -123,19 +133,24 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space(5);
             EditorGUI.BeginChangeCheck();
-            ShaderType newType = (ShaderType)EditorGUILayout.EnumPopup("シェーダータイプ", currentType);
+            ShaderType newType = (ShaderType)EditorGUILayout.EnumPopup(L("シェーダータイプ", "Shader Type"), currentType);
 
             if (EditorGUI.EndChangeCheck() && newType != currentType)
             {
                 if (EditorUtility.DisplayDialog(
-                    "シェーダータイプ変更",
-                    "シェーダータイプを変更すると、現在の設定の一部が失われる可能性があります。\n続行しますか？",
-                    "変更する",
-                    "キャンセル"))
+                    L("シェーダータイプ変更", "Change Shader Type"),
+                    L("シェーダータイプを変更すると、現在の設定の一部が失われる可能性があります。\n続行しますか？",
+                      "Changing the shader type may cause some current settings to be lost.\nContinue?"),
+                    L("変更する", "Change"),
+                    L("キャンセル", "Cancel")))
                 {
-                    SetShaderType(material, newType, editor);
-                    shouldReturn = true;
-                    return true;
+                    bool success = SetShaderType(material, newType, editor);
+                    if (success)
+                    {
+                        shouldReturn = true;
+                        return true;
+                    }
+                    // 失敗時: ダイアログは SetShaderType 内で表示済み。UIは現在の状態を維持。
                 }
             }
 

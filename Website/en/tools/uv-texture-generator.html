@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UV Texture Generator - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>UV Texture Generator</h1>
+    <p class="page-subtitle">Generate noise and mask textures from mesh UV islands</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Shader &gt; UV Texture Generator</span>
+      <span>Category: Shader</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>The UV Texture Generator analyzes a mesh's UV layout and automatically generates noise and mask textures. It supports 5 noise types (Perlin, Voronoi, Cellular, FBM, Value) and features advanced texture generation capabilities including per-UV-island mask generation and combined noise + mask modes.</p>
+    <p>Toon shaders require mask textures for various purposes, including dissolve effects, emission masks, shadow masks, and more. With this tool, you can generate the necessary textures within the Unity editor without opening external paint software. Accurate UV island detection using the Union-Find algorithm allows you to assign different mask values to different parts of the mesh.</p>
+    <p>Generated textures can be saved as PNG and also directly assigned to material properties. It can be used in various scenarios such as creating dissolve noise textures, part-specific mask textures, and specifying emission areas.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+      <li><strong>5 Noise Types</strong> — Supports 5 procedural noise types: Perlin (smooth), Voronoi (cell-like), Cellular (organic), FBM (fractal), and Value (granular)</li>
+      <li><strong>UV Island Detection via Union-Find</strong> — Automatically detects islands (groups of connected faces) from mesh UV coordinates. Accurate detection based on vertex connectivity</li>
+      <li><strong>Per-Island Mask Generation</strong> — Assign different mask values to each UV island. Automatically generates part-specific masks for head, body, clothing, etc.</li>
+      <li><strong>Erosion-Based Boundary Gradients</strong> — Generates smooth gradients at UV island boundaries. Used for natural transition effects</li>
+      <li><strong>Noise + Mask Combined Mode</strong> — Combine noise and mask textures to generate island-specific noise patterns</li>
+      <li><strong>Direct Assignment to Material Properties</strong> — Assign generated textures to any material texture slot with one click</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Select Tab</strong>
+        <p>Choose the appropriate mode from the three tabs: "Noise," "UV Mask," or "Combined Mode." Use Noise for dissolve effects, UV Mask for per-part control, and Combined Mode to combine both.</p>
+      </li>
+      <li>
+        <strong>Configure Parameters</strong>
+        <p>In Noise mode, set the noise type and scale. In UV Mask mode, set the mesh source and UV channel. You can also specify the texture resolution (128 to 2048).</p>
+      </li>
+      <li>
+        <strong>Generate Preview</strong>
+        <p>Click "Generate Texture" to check the preview. Adjust the noise scale and mask boundary settings to pursue the ideal result.</p>
+      </li>
+      <li>
+        <strong>Save & Assign</strong>
+        <p>Save to the project as PNG and, if needed, directly assign to a material's texture property. Can be set to any slot such as dissolve map, emission mask, etc.</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>FBM (Fractal Brownian Motion) noise is ideal for natural dissolve patterns. It generates fractal patterns by layering multiple octaves</li>
+      <li>Voronoi noise is perfect for cellular masks (crack and crystal patterns). Using it for dissolve effects creates a glass-shattering look</li>
+      <li>Combined mode lets you create island-specific noise, enabling advanced effects like different dissolve speeds for each body part</li>
+      <li>512x512 resolution is sufficient for most mask textures. Avoid unnecessarily large sizes to keep memory usage low</li>
+      <li>UV Mask mode assumes the mesh has proper UV unwrapping. Channels other than UV1 can also be used, so choose based on your needs</li>
+      <li>When creating emission masks, assigning white (1.0) to UV islands you want to glow and black (0.0) to others is effective</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

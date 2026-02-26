@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using static NataneToon.Editor.NataneToonLocalization;
 
 namespace NataneToon.Editor
 {
@@ -51,7 +52,8 @@ namespace NataneToon.Editor
             FindPropertyDelegate findProperty)
         {
             drawHelpToggle("ShadingSection",
-                "アニメ調セルシェーディング - クリーンで明瞭な陰影境界を実現します。",
+                L("アニメ調セルシェーディング - クリーンで明瞭な陰影境界を実現します。",
+                  "Anime-style cel shading - Achieves clean and clear shadow boundaries."),
                 MessageType.None);
 
             EditorGUILayout.Space(5);
@@ -68,7 +70,7 @@ namespace NataneToon.Editor
 
             // AO・ディザリング設定は「ライト&影」タブに移動
             EditorGUILayout.Space(5);
-            EditorGUILayout.HelpBox("AO・ディザリング設定は「ライト&影」タブに移動しました。", MessageType.None);
+            EditorGUILayout.HelpBox(L("AO・ディザリング設定は「ライト&影」タブに移動しました。", "AO and dithering settings have been moved to the \"Light & Shadow\" tab."), MessageType.None);
             EditorGUILayout.Space(5);
 
             // SDF Shadow Map
@@ -98,33 +100,42 @@ namespace NataneToon.Editor
         {
             // Shadow softness guide (shown when help mode is active)
             drawHelpToggle("ShadowSoftnessGuide",
-                "🎨 影をソフトにしたい場合:\n" +
-                "① まず「影のなじませ」を 0.3〜0.5 に設定\n" +
-                "② 全体を柔らかくしたい場合は「ライト部分のソフトネス」を調整\n" +
-                "③ 高度な調整は「高度なライティング」タブへ",
+                L("🎨 影をソフトにしたい場合:\n" +
+                  "① まず「影のなじませ」を 0.3〜0.5 に設定\n" +
+                  "② 全体を柔らかくしたい場合は「ライト部分のソフトネス」を調整\n" +
+                  "③ 高度な調整は「高度なライティング」タブへ",
+                  "🎨 To soften shadows:\n" +
+                  "① First set \"Shadow Blend\" to 0.3-0.5\n" +
+                  "② To soften overall, adjust \"Lit Softness\"\n" +
+                  "③ For advanced adjustments, go to the \"Advanced Lighting\" tab"),
                 MessageType.None);
 
-            bool useRamp = drawToggle("_USE_RAMP", "_UseRamp", "ランプテクスチャを使用");
+            bool useRamp = drawToggle("_USE_RAMP", "_UseRamp", L("ランプテクスチャを使用", "Use Ramp Texture"));
 
             if (useRamp)
             {
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("ランプテクスチャ設定", EditorStyles.boldLabel);
-                drawProperty("_RampTex", "ランプテクスチャ");
+                EditorGUILayout.LabelField(L("ランプテクスチャ設定", "Ramp Texture Settings"), EditorStyles.boldLabel);
+                drawProperty("_RampTex", L("ランプテクスチャ", "Ramp Texture"));
                 drawHelpToggle("RampTexture",
-                    "ランプテクスチャは暗い色（左）から明るい色（右）へのグラデーションにしてください。\n" +
-                    "カスタムグラデーションで独自の影の色合いを作成できます。",
+                    L("ランプテクスチャは暗い色（左）から明るい色（右）へのグラデーションにしてください。\n" +
+                      "カスタムグラデーションで独自の影の色合いを作成できます。",
+                      "The ramp texture should be a gradient from dark (left) to bright (right).\n" +
+                      "You can create custom shadow tones using a custom gradient."),
                     MessageType.Info);
             }
             else
             {
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("シェーディングモード", EditorStyles.boldLabel);
-                drawProperty("_ShadingMode", "モード");
+                EditorGUILayout.LabelField(L("シェーディングモード", "Shading Mode"), EditorStyles.boldLabel);
+                drawProperty("_ShadingMode", L("モード", "Mode"));
                 drawHelpToggle("ShadingMode",
-                    "🎨 シェーディングモード:\n" +
-                    "• Toon: 階段状のセルシェーディング（クラシックなアニメ調）\n" +
-                    "• Gradient: 滑らかなグラデーションシェーディング（柔らかい印象）",
+                    L("🎨 シェーディングモード:\n" +
+                      "• Toon: 階段状のセルシェーディング（クラシックなアニメ調）\n" +
+                      "• Gradient: 滑らかなグラデーションシェーディング（柔らかい印象）",
+                      "🎨 Shading Mode:\n" +
+                      "• Toon: Stepped cel shading (classic anime style)\n" +
+                      "• Gradient: Smooth gradient shading (soft impression)"),
                     MessageType.None);
 
                 EditorGUILayout.Space(5);
@@ -145,36 +156,53 @@ namespace NataneToon.Editor
 
             // Common controls for all shading modes
             EditorGUILayout.Space(5);
-            drawProperty("_ShadowOffset", "影のオフセット");
+            drawProperty("_ShadowOffset", L("影のオフセット", "Shadow Offset"));
             drawHelpToggle("ShadowOffset",
-                "影の境界を調整します。正の値で影を明るく、負の値で影を暗くします。",
+                L("影の境界を調整します。正の値で影を明るく、負の値で影を暗くします。",
+                  "Adjusts the shadow boundary. Positive values brighten shadows, negative values darken them."),
                 MessageType.Info);
 
             EditorGUILayout.Space(5);
-            drawProperty("_LitSoftness", "ライト部分のソフトネス");
+            drawProperty("_LitSoftness", L("ライト部分のソフトネス", "Lit Softness"));
             drawHelpToggle("LitSoftness",
-                "✨ ライト部分のなじませ調整:\n" +
-                "光の当たっている部分を周囲となじませます。\n" +
-                "• 0 = シャープな境界（デフォルト）\n" +
-                "• 0.3-0.5 = 適度な柔らかさ\n" +
-                "• 1.0 = 最大のなじませ効果\n\n" +
-                "💡 使い方: 光の当たり方が強すぎる場合や、\n" +
-                "より滑らかなグラデーションが欲しい場合に調整してください。",
+                L("✨ ライト部分のなじませ調整:\n" +
+                  "光の当たっている部分を周囲となじませます。\n" +
+                  "• 0 = シャープな境界（デフォルト）\n" +
+                  "• 0.3-0.5 = 適度な柔らかさ\n" +
+                  "• 1.0 = 最大のなじませ効果\n\n" +
+                  "💡 使い方: 光の当たり方が強すぎる場合や、\n" +
+                  "より滑らかなグラデーションが欲しい場合に調整してください。",
+                  "✨ Lit Softness Adjustment:\n" +
+                  "Blends the lit areas with their surroundings.\n" +
+                  "• 0 = Sharp boundary (default)\n" +
+                  "• 0.3-0.5 = Moderate softness\n" +
+                  "• 1.0 = Maximum blending\n\n" +
+                  "💡 Usage: Adjust when lighting is too harsh or\n" +
+                  "when you want a smoother gradient."),
                 MessageType.Info);
 
             EditorGUILayout.Space(5);
             DrawBlendParameter(
                 "_ShadowBlend",
-                "影のなじませ（柔らかさ）",
-                "✨ 影のなじませ調整:\n" +
-                "影の境界（特に多段階影の境目）を周囲となじませて、\n" +
-                "より柔らかく美しい印象にします。\n\n" +
-                "• 0 = シャープな境界（デフォルト）\n" +
-                "• 0.2-0.4 = 適度な柔らかさ（推奨）\n" +
-                "• 0.5-0.7 = かなり柔らかい境界\n" +
-                "• 0.8-1.0 = 非常に広いフェード（水彩風）\n\n" +
-                "💡 多段階影の境目がパっきり出る場合:\n" +
-                "この値を0.3〜0.5に設定すると自然になじみます。",
+                L("影のなじませ（柔らかさ）", "Shadow Blend (Softness)"),
+                L("✨ 影のなじませ調整:\n" +
+                  "影の境界（特に多段階影の境目）を周囲となじませて、\n" +
+                  "より柔らかく美しい印象にします。\n\n" +
+                  "• 0 = シャープな境界（デフォルト）\n" +
+                  "• 0.2-0.4 = 適度な柔らかさ（推奨）\n" +
+                  "• 0.5-0.7 = かなり柔らかい境界\n" +
+                  "• 0.8-1.0 = 非常に広いフェード（水彩風）\n\n" +
+                  "💡 多段階影の境目がパっきり出る場合:\n" +
+                  "この値を0.3〜0.5に設定すると自然になじみます。",
+                  "✨ Shadow Blend Adjustment:\n" +
+                  "Blends shadow boundaries (especially multi-tone shadow edges)\n" +
+                  "with their surroundings for a softer, more beautiful look.\n\n" +
+                  "• 0 = Sharp boundary (default)\n" +
+                  "• 0.2-0.4 = Moderate softness (recommended)\n" +
+                  "• 0.5-0.7 = Fairly soft boundary\n" +
+                  "• 0.8-1.0 = Very wide fade (watercolor style)\n\n" +
+                  "💡 If multi-tone shadow edges appear too sharp:\n" +
+                  "Set this value to 0.3-0.5 for a natural blend."),
                 drawProperty);
 
             // Show warning when shadow blend is very high
@@ -182,7 +210,8 @@ namespace NataneToon.Editor
             if (shadowBlendProp != null && shadowBlendProp.floatValue > 0.7f)
             {
                 EditorGUILayout.HelpBox(
-                    "影のなじませが高い値に設定されています。必要に応じて「高度なライティング」タブの他のソフトネスパラメーターも調整してください。",
+                    L("影のなじませが高い値に設定されています。必要に応じて「高度なライティング」タブの他のソフトネスパラメーターも調整してください。",
+                      "Shadow blend is set to a high value. Consider adjusting other softness parameters in the \"Advanced Lighting\" tab as needed."),
                     MessageType.Info);
             }
         }
@@ -207,16 +236,22 @@ namespace NataneToon.Editor
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            EditorGUILayout.LabelField("グラデーション設定", EditorStyles.boldLabel);
-            drawProperty("_ShadowColor", "影の色");
-            drawProperty("_ShadingGradientWidth", "グラデーション幅");
+            EditorGUILayout.LabelField(L("グラデーション設定", "Gradient Settings"), EditorStyles.boldLabel);
+            drawProperty("_ShadowColor", L("影の色", "Shadow Color"));
+            drawProperty("_ShadingGradientWidth", L("グラデーション幅", "Gradient Width"));
             drawHelpToggle("ShadingGradientWidth",
-                "✨ グラデーション幅:\n" +
-                "影と光の境界の滑らかさを調整します。\n" +
-                "• 0.1 = 狭いグラデーション（シャープな境界）\n" +
-                "• 0.2-0.3 = 標準的なグラデーション（推奨）\n" +
-                "• 0.5+ = 広いグラデーション（非常に柔らかい）\n\n" +
-                "💡 柔らかい印象を与えるために、0.2以上の値がおすすめです。",
+                L("✨ グラデーション幅:\n" +
+                  "影と光の境界の滑らかさを調整します。\n" +
+                  "• 0.1 = 狭いグラデーション（シャープな境界）\n" +
+                  "• 0.2-0.3 = 標準的なグラデーション（推奨）\n" +
+                  "• 0.5+ = 広いグラデーション（非常に柔らかい）\n\n" +
+                  "💡 柔らかい印象を与えるために、0.2以上の値がおすすめです。",
+                  "✨ Gradient Width:\n" +
+                  "Adjusts the smoothness of the shadow-light boundary.\n" +
+                  "• 0.1 = Narrow gradient (sharp boundary)\n" +
+                  "• 0.2-0.3 = Standard gradient (recommended)\n" +
+                  "• 0.5+ = Wide gradient (very soft)\n\n" +
+                  "💡 Values of 0.2 or higher are recommended for a soft impression."),
                 MessageType.Info);
         }
 
@@ -228,43 +263,58 @@ namespace NataneToon.Editor
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool useMultiShadow = drawToggle("_USE_MULTI_SHADOW", "_UseMultiShadow", "多段階影を使用");
+            bool useMultiShadow = drawToggle("_USE_MULTI_SHADOW", "_UseMultiShadow", L("多段階影を使用", "Use Multi-Tone Shadow"));
             if (useMultiShadow)
             {
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("多段階影設定", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField(L("多段階影設定", "Multi-Tone Shadow Settings"), EditorStyles.boldLabel);
 
                 // 2nd shadow level
-                drawProperty("_Shadow2ndColor", "影の色 (2段目)");
-                drawProperty("_Shadow2ndBorder", "2段目の境界");
+                drawProperty("_Shadow2ndColor", L("影の色 (2段目)", "Shadow Color (2nd)"));
+                drawProperty("_Shadow2ndBorder", L("2段目の境界", "2nd Border"));
                 drawHelpToggle("Shadow2ndBorder",
-                    "💡 2段目の境界:\n" +
-                    "この値より暗い部分に2段目の影色が適用されます。\n" +
-                    "• 0.5 = 半分より暗い部分\n" +
-                    "• 0.3 = やや暗い部分（推奨）\n" +
-                    "• 0.1 = 最も暗い部分のみ",
+                    L("💡 2段目の境界:\n" +
+                      "この値より暗い部分に2段目の影色が適用されます。\n" +
+                      "• 0.5 = 半分より暗い部分\n" +
+                      "• 0.3 = やや暗い部分（推奨）\n" +
+                      "• 0.1 = 最も暗い部分のみ",
+                      "💡 2nd Border:\n" +
+                      "The 2nd shadow color is applied to areas darker than this value.\n" +
+                      "• 0.5 = Darker than half\n" +
+                      "• 0.3 = Slightly dark areas (recommended)\n" +
+                      "• 0.1 = Darkest areas only"),
                     MessageType.None);
 
                 EditorGUILayout.Space();
 
                 // 3rd shadow level
-                drawProperty("_Shadow3rdColor", "影の色 (3段目)");
-                drawProperty("_Shadow3rdBorder", "3段目の境界");
+                drawProperty("_Shadow3rdColor", L("影の色 (3段目)", "Shadow Color (3rd)"));
+                drawProperty("_Shadow3rdBorder", L("3段目の境界", "3rd Border"));
                 drawHelpToggle("Shadow3rdBorder",
-                    "💡 3段目の境界:\n" +
-                    "この値より暗い部分に3段目の影色（最も濃い影）が適用されます。\n" +
-                    "• 0.15-0.2 = 標準的な最暗部（推奨）\n" +
-                    "• 0.05-0.1 = 非常に暗い部分のみ",
+                    L("💡 3段目の境界:\n" +
+                      "この値より暗い部分に3段目の影色（最も濃い影）が適用されます。\n" +
+                      "• 0.15-0.2 = 標準的な最暗部（推奨）\n" +
+                      "• 0.05-0.1 = 非常に暗い部分のみ",
+                      "💡 3rd Border:\n" +
+                      "The 3rd shadow color (deepest shadow) is applied to areas darker than this value.\n" +
+                      "• 0.15-0.2 = Standard darkest areas (recommended)\n" +
+                      "• 0.05-0.1 = Very dark areas only"),
                     MessageType.None);
 
                 EditorGUILayout.Space();
                 drawHelpToggle("MultiShadowUsage",
-                    "🎨 多段階影の使い方:\n" +
-                    "より細かな諧調表現が可能になります。\n" +
-                    "• 1段目: メインの影色（明るい影）\n" +
-                    "• 2段目: 中間の影色\n" +
-                    "• 3段目: 最も濃い影色（深い影）\n\n" +
-                    "境界値は 1段目 > 2段目 > 3段目 の順に設定してください。",
+                    L("🎨 多段階影の使い方:\n" +
+                      "より細かな諧調表現が可能になります。\n" +
+                      "• 1段目: メインの影色（明るい影）\n" +
+                      "• 2段目: 中間の影色\n" +
+                      "• 3段目: 最も濃い影色（深い影）\n\n" +
+                      "境界値は 1段目 > 2段目 > 3段目 の順に設定してください。",
+                      "🎨 How to use multi-tone shadows:\n" +
+                      "Enables finer tonal expression.\n" +
+                      "• 1st: Main shadow color (light shadow)\n" +
+                      "• 2nd: Mid-tone shadow color\n" +
+                      "• 3rd: Deepest shadow color\n\n" +
+                      "Set border values in order: 1st > 2nd > 3rd."),
                     MessageType.Info);
             }
         }
@@ -277,36 +327,48 @@ namespace NataneToon.Editor
             DrawHelpToggleDelegate drawHelpToggle,
             DrawToggleDelegate drawToggle)
         {
-            EditorGUILayout.LabelField("セルシェーディング設定", EditorStyles.boldLabel);
-            drawProperty("_ShadowColor", "影の色 (1段目)");
+            EditorGUILayout.LabelField(L("セルシェーディング設定", "Cel Shading Settings"), EditorStyles.boldLabel);
+            drawProperty("_ShadowColor", L("影の色 (1段目)", "Shadow Color (1st)"));
 
             // Multi-tone shadow colors
             EditorGUILayout.Space();
             DrawMultiToneShadowSettings(drawToggle, drawProperty, drawHelpToggle);
 
             EditorGUILayout.Space();
-            drawProperty("_ShadowSteps", "影のステップ数");
+            drawProperty("_ShadowSteps", L("影のステップ数", "Shadow Steps"));
             drawHelpToggle("ShadowSteps",
-                "推奨値: 2-3（アニメ調）、より多いステップでグラデーション効果",
+                L("推奨値: 2-3（アニメ調）、より多いステップでグラデーション効果",
+                  "Recommended: 2-3 (anime style), more steps for gradient effect"),
                 MessageType.Info);
 
-            drawProperty("_ShadowSharpness", "影のシャープネス");
+            drawProperty("_ShadowSharpness", L("影のシャープネス", "Shadow Sharpness"));
             drawHelpToggle("ShadowSharpness",
-                "低い値: シャープな境界（アニメ調）\n" +
-                "高い値: 柔らかい境界（イラスト調）\n" +
-                "アニメ調推奨: 0.05-0.15",
+                L("低い値: シャープな境界（アニメ調）\n" +
+                  "高い値: 柔らかい境界（イラスト調）\n" +
+                  "アニメ調推奨: 0.05-0.15",
+                  "Low values: Sharp boundary (anime style)\n" +
+                  "High values: Soft boundary (illustration style)\n" +
+                  "Anime recommended: 0.05-0.15"),
                 MessageType.Info);
 
-            drawProperty("_StepBorderSmooth", "段階境界のなじみ");
+            drawProperty("_StepBorderSmooth", L("段階境界のなじみ", "Step Border Smoothing"));
             drawHelpToggle("StepBorderSmooth",
-                "🎨 段階境界のなじみ:\n" +
-                "多段階影のステップ間の境界をなじませます。\n\n" +
-                "• 0 = シャープな境界（デフォルト）\n" +
-                "• 0.1-0.3 = 軽いなじみ（推奨）\n" +
-                "• 0.4-0.7 = 柔らかい境界\n" +
-                "• 0.8-1.0 = ほぼグラデーション\n\n" +
-                "💡 「影のシャープネス」とは独立して動作します。\n" +
-                "多段階影の色の遷移にも適用されます。",
+                L("🎨 段階境界のなじみ:\n" +
+                  "多段階影のステップ間の境界をなじませます。\n\n" +
+                  "• 0 = シャープな境界（デフォルト）\n" +
+                  "• 0.1-0.3 = 軽いなじみ（推奨）\n" +
+                  "• 0.4-0.7 = 柔らかい境界\n" +
+                  "• 0.8-1.0 = ほぼグラデーション\n\n" +
+                  "💡 「影のシャープネス」とは独立して動作します。\n" +
+                  "多段階影の色の遷移にも適用されます。",
+                  "🎨 Step Border Smoothing:\n" +
+                  "Smooths the boundaries between multi-tone shadow steps.\n\n" +
+                  "• 0 = Sharp boundary (default)\n" +
+                  "• 0.1-0.3 = Light smoothing (recommended)\n" +
+                  "• 0.4-0.7 = Soft boundary\n" +
+                  "• 0.8-1.0 = Nearly gradient\n\n" +
+                  "💡 Works independently from \"Shadow Sharpness\".\n" +
+                  "Also applies to multi-tone shadow color transitions."),
                 MessageType.Info);
         }
 
@@ -318,24 +380,34 @@ namespace NataneToon.Editor
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool useShadowReceiveMask = drawToggle("_SHADOW_RECEIVE_MASK", "_UseShadowReceiveMask", "シャドー受け取りマスクを使用");
+            bool useShadowReceiveMask = drawToggle("_SHADOW_RECEIVE_MASK", "_UseShadowReceiveMask", L("シャドー受け取りマスクを使用", "Use Shadow Receive Mask"));
 
             if (useShadowReceiveMask)
             {
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("シャドー受け取りマスク設定", EditorStyles.boldLabel);
-                drawProperty("_ShadowReceiveMask", "シャドー受け取りマスク");
+                EditorGUILayout.LabelField(L("シャドー受け取りマスク設定", "Shadow Receive Mask Settings"), EditorStyles.boldLabel);
+                drawProperty("_ShadowReceiveMask", L("シャドー受け取りマスク", "Shadow Receive Mask"));
                 drawHelpToggle("ShadowReceiveMask",
-                    "🎭 シャドー受け取りマスク（髪の影問題解決）:\n" +
-                    "• 白 = 影を受けない（明るく保つ、シェーディングも無効化）\n" +
-                    "• 黒 = 影を完全に受ける（通常の影とシェーディング）\n" +
-                    "• グレー = 影を部分的に受ける\n\n" +
-                    "💡 使い方：\n" +
-                    "顔が髪の影で暗くなる場合、顔部分を白く塗ったマスクを使用することで\n" +
-                    "顔に影がかからないようにできます。VRChatアバターでよく使われるテクニックです。\n\n" +
-                    "🌟 Light Volumeとの統合：\n" +
-                    "マスクはLight Volumeの間接光（リム効果）も制御します。\n" +
-                    "白い部分は暗いワールドでも明るく保たれます。",
+                    L("🎭 シャドー受け取りマスク（髪の影問題解決）:\n" +
+                      "• 白 = 影を受けない（明るく保つ、シェーディングも無効化）\n" +
+                      "• 黒 = 影を完全に受ける（通常の影とシェーディング）\n" +
+                      "• グレー = 影を部分的に受ける\n\n" +
+                      "💡 使い方：\n" +
+                      "顔が髪の影で暗くなる場合、顔部分を白く塗ったマスクを使用することで\n" +
+                      "顔に影がかからないようにできます。VRChatアバターでよく使われるテクニックです。\n\n" +
+                      "🌟 Light Volumeとの統合：\n" +
+                      "マスクはLight Volumeの間接光（リム効果）も制御します。\n" +
+                      "白い部分は暗いワールドでも明るく保たれます。",
+                      "🎭 Shadow Receive Mask (solves hair shadow issue):\n" +
+                      "• White = Does not receive shadows (stays bright, disables shading)\n" +
+                      "• Black = Fully receives shadows (normal shadows and shading)\n" +
+                      "• Gray = Partially receives shadows\n\n" +
+                      "💡 Usage:\n" +
+                      "When the face gets darkened by hair shadows, use a mask with white painted on the face area\n" +
+                      "to prevent shadows from falling on the face. A common technique for VRChat avatars.\n\n" +
+                      "🌟 Light Volume Integration:\n" +
+                      "The mask also controls Light Volume indirect light (rim effect).\n" +
+                      "White areas stay bright even in dark worlds."),
                     MessageType.Info);
             }
         }
@@ -348,24 +420,33 @@ namespace NataneToon.Editor
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool useAO = drawToggle("_USE_AO", "_UseAO", "アンビエントオクルージョン（AO）を使用");
+            bool useAO = drawToggle("_USE_AO", "_UseAO", L("アンビエントオクルージョン（AO）を使用", "Use Ambient Occlusion (AO)"));
 
             if (useAO)
             {
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("AO設定", EditorStyles.boldLabel);
-                drawProperty("_AOMap", "AOマップ");
-                drawProperty("_AOIntensity", "AO強度");
+                EditorGUILayout.LabelField(L("AO設定", "AO Settings"), EditorStyles.boldLabel);
+                drawProperty("_AOMap", L("AOマップ", "AO Map"));
+                drawProperty("_AOIntensity", L("AO強度", "AO Intensity"));
                 drawHelpToggle("AmbientOcclusion",
-                    "🌑 アンビエントオクルージョン（AO）:\n" +
-                    "隙間や窪みなど、環境光が届きにくい部分を暗くして\n" +
-                    "より立体的で柔らかい印象を与えます。\n\n" +
-                    "• AOマップ: 白 = 明るい、黒 = 暗い\n" +
-                    "• AO強度: 0 = 効果なし、1 = 最大効果\n\n" +
-                    "💡 使い方:\n" +
-                    "衣服の折り目、髪の毛の重なり、耳の内側など\n" +
-                    "自然な陰影を加えたい部分にAOマップで指定します。\n" +
-                    "推奨強度: 0.5-0.8",
+                    L("🌑 アンビエントオクルージョン（AO）:\n" +
+                      "隙間や窪みなど、環境光が届きにくい部分を暗くして\n" +
+                      "より立体的で柔らかい印象を与えます。\n\n" +
+                      "• AOマップ: 白 = 明るい、黒 = 暗い\n" +
+                      "• AO強度: 0 = 効果なし、1 = 最大効果\n\n" +
+                      "💡 使い方:\n" +
+                      "衣服の折り目、髪の毛の重なり、耳の内側など\n" +
+                      "自然な陰影を加えたい部分にAOマップで指定します。\n" +
+                      "推奨強度: 0.5-0.8",
+                      "🌑 Ambient Occlusion (AO):\n" +
+                      "Darkens areas where ambient light is hard to reach, such as gaps and crevices,\n" +
+                      "giving a more three-dimensional and soft impression.\n\n" +
+                      "• AO Map: White = bright, Black = dark\n" +
+                      "• AO Intensity: 0 = no effect, 1 = maximum effect\n\n" +
+                      "💡 Usage:\n" +
+                      "Use the AO map to add natural shading to areas like\n" +
+                      "clothing folds, hair overlaps, and inner ears.\n" +
+                      "Recommended intensity: 0.5-0.8"),
                     MessageType.Info);
             }
         }
@@ -378,25 +459,35 @@ namespace NataneToon.Editor
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool useDithering = drawToggle("_USE_DITHERING", "_UseDithering", "ディザリング（ハーフトーン）を使用");
+            bool useDithering = drawToggle("_USE_DITHERING", "_UseDithering", L("ディザリング（ハーフトーン）を使用", "Use Dithering (Halftone)"));
 
             if (useDithering)
             {
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("ディザリング設定", EditorStyles.boldLabel);
-                drawProperty("_DitheringScale", "ディザリングスケール");
-                drawProperty("_DitheringStrength", "ディザリング強度");
+                EditorGUILayout.LabelField(L("ディザリング設定", "Dithering Settings"), EditorStyles.boldLabel);
+                drawProperty("_DitheringScale", L("ディザリングスケール", "Dithering Scale"));
+                drawProperty("_DitheringStrength", L("ディザリング強度", "Dithering Strength"));
                 drawHelpToggle("Dithering",
-                    "🎨 ディザリング（ハーフトーン）:\n" +
-                    "影の境界にドットパターンを追加して、\n" +
-                    "より柔らかく芸術的な印象を与えます。\n\n" +
-                    "• スケール: パターンの細かさ（推奨: 5-20）\n" +
-                    "  　小さい値 = 細かいパターン\n" +
-                    "  　大きい値 = 粗いパターン\n" +
-                    "• 強度: 効果の強さ（推奨: 0.3-0.7）\n" +
-                    "  　0 = 効果なし、1 = 最大効果\n\n" +
-                    "💡 使い方:\n" +
-                    "印刷物やマンガ風の柔らかい影の表現に最適です。",
+                    L("🎨 ディザリング（ハーフトーン）:\n" +
+                      "影の境界にドットパターンを追加して、\n" +
+                      "より柔らかく芸術的な印象を与えます。\n\n" +
+                      "• スケール: パターンの細かさ（推奨: 5-20）\n" +
+                      "  　小さい値 = 細かいパターン\n" +
+                      "  　大きい値 = 粗いパターン\n" +
+                      "• 強度: 効果の強さ（推奨: 0.3-0.7）\n" +
+                      "  　0 = 効果なし、1 = 最大効果\n\n" +
+                      "💡 使い方:\n" +
+                      "印刷物やマンガ風の柔らかい影の表現に最適です。",
+                      "🎨 Dithering (Halftone):\n" +
+                      "Adds a dot pattern to shadow boundaries\n" +
+                      "for a softer, more artistic impression.\n\n" +
+                      "• Scale: Pattern fineness (recommended: 5-20)\n" +
+                      "   Small values = Fine pattern\n" +
+                      "   Large values = Coarse pattern\n" +
+                      "• Strength: Effect intensity (recommended: 0.3-0.7)\n" +
+                      "   0 = No effect, 1 = Maximum effect\n\n" +
+                      "💡 Usage:\n" +
+                      "Ideal for print-style or manga-style soft shadow expressions."),
                     MessageType.Info);
             }
         }
@@ -409,45 +500,62 @@ namespace NataneToon.Editor
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool useSDFMap = drawToggle("_SDF_MAP", "_UseSDFMap", "SDF Shadow Mapを使用");
+            bool useSDFMap = drawToggle("_SDF_MAP", "_UseSDFMap", L("SDF Shadow Mapを使用", "Use SDF Shadow Map"));
 
             if (useSDFMap)
             {
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("SDF Shadow Map設定", EditorStyles.boldLabel);
-                drawProperty("_SDFMap", "SDFマップ");
-                drawProperty("_SDFIntensity", "SDF強度");
-                drawProperty("_SDFSoftness", "SDFソフトネス");
-                drawProperty("_SDFOffset", "SDFオフセット");
+                EditorGUILayout.LabelField(L("SDF Shadow Map設定", "SDF Shadow Map Settings"), EditorStyles.boldLabel);
+                drawProperty("_SDFMap", L("SDFマップ", "SDF Map"));
+                drawProperty("_SDFIntensity", L("SDF強度", "SDF Intensity"));
+                drawProperty("_SDFSoftness", L("SDFソフトネス", "SDF Softness"));
+                drawProperty("_SDFOffset", L("SDFオフセット", "SDF Offset"));
                 drawHelpToggle("SDFShadowMap",
-                    "📍 SDF Shadow Map（距離場シャドウマップ）:\n" +
-                    "テクスチャベースで影の位置を正確にコントロールできる高度な機能です。\n\n" +
-                    "• SDFマップ: 白 = 明るい、黒 = 影\n" +
-                    "• 強度: 影の強さ（0-1）\n" +
-                    "• ソフトネス: 影の境界の柔らかさ\n" +
-                    "• オフセット: 影の位置調整\n\n" +
-                    "💡 使い方:\n" +
-                    "顔の影を細かく制御したい場合や、特定の場所に常に影を落としたい場合に使用します。",
+                    L("📍 SDF Shadow Map（距離場シャドウマップ）:\n" +
+                      "テクスチャベースで影の位置を正確にコントロールできる高度な機能です。\n\n" +
+                      "• SDFマップ: 白 = 明るい、黒 = 影\n" +
+                      "• 強度: 影の強さ（0-1）\n" +
+                      "• ソフトネス: 影の境界の柔らかさ\n" +
+                      "• オフセット: 影の位置調整\n\n" +
+                      "💡 使い方:\n" +
+                      "顔の影を細かく制御したい場合や、特定の場所に常に影を落としたい場合に使用します。",
+                      "📍 SDF Shadow Map (Signed Distance Field Shadow Map):\n" +
+                      "An advanced feature for precise texture-based shadow position control.\n\n" +
+                      "• SDF Map: White = bright, Black = shadow\n" +
+                      "• Intensity: Shadow strength (0-1)\n" +
+                      "• Softness: Shadow boundary softness\n" +
+                      "• Offset: Shadow position adjustment\n\n" +
+                      "💡 Usage:\n" +
+                      "Use when you need fine control over face shadows or want shadows in specific locations."),
                     MessageType.Info);
             }
 
             // Face SDF Rotation (Genshin/AK:EF style)
-            bool faceSDFRotation = drawToggle("_FACE_SDF_ROTATION", "_FaceSDFRotation", "Face SDF回転追従を有効化");
+            bool faceSDFRotation = drawToggle("_FACE_SDF_ROTATION", "_FaceSDFRotation", L("Face SDF回転追従を有効化", "Enable Face SDF Rotation Tracking"));
             if (faceSDFRotation)
             {
                 EditorGUI.indentLevel++;
-                drawProperty("_FaceForwardDirection", "顔の正面方向");
-                drawProperty("_FaceRightDirection", "顔の右方向");
+                drawProperty("_FaceForwardDirection", L("顔の正面方向", "Face Forward Direction"));
+                drawProperty("_FaceRightDirection", L("顔の右方向", "Face Right Direction"));
                 drawHelpToggle("FaceSDFRotation",
-                    "🔄 Face SDF回転追従:\n" +
-                    "SDF影がライトの方向に追従して回転します。\n" +
-                    "Genshin Impact / アークナイツ：エンドフィールド スタイルの\n" +
-                    "顔影表現を実現します。\n\n" +
-                    "• 正面方向: キャラの顔が向いている方向（オブジェクト空間）\n" +
-                    "• 右方向: キャラの顔の右側の方向（オブジェクト空間）\n\n" +
-                    "💡 使い方:\n" +
-                    "顔のSDF影がライトの方向に応じて自動的に回転し、\n" +
-                    "どの角度からでも自然な影表現を維持します。",
+                    L("🔄 Face SDF回転追従:\n" +
+                      "SDF影がライトの方向に追従して回転します。\n" +
+                      "Genshin Impact / アークナイツ：エンドフィールド スタイルの\n" +
+                      "顔影表現を実現します。\n\n" +
+                      "• 正面方向: キャラの顔が向いている方向（オブジェクト空間）\n" +
+                      "• 右方向: キャラの顔の右側の方向（オブジェクト空間）\n\n" +
+                      "💡 使い方:\n" +
+                      "顔のSDF影がライトの方向に応じて自動的に回転し、\n" +
+                      "どの角度からでも自然な影表現を維持します。",
+                      "🔄 Face SDF Rotation Tracking:\n" +
+                      "SDF shadows rotate to follow the light direction.\n" +
+                      "Achieves Genshin Impact / Arknights: Endfield style\n" +
+                      "face shadow expressions.\n\n" +
+                      "• Forward Direction: Direction the character's face is facing (object space)\n" +
+                      "• Right Direction: Right side direction of the character's face (object space)\n\n" +
+                      "💡 Usage:\n" +
+                      "Face SDF shadows automatically rotate based on light direction,\n" +
+                      "maintaining natural shadow expression from any angle."),
                     MessageType.Info);
                 EditorGUI.indentLevel--;
             }
@@ -461,23 +569,31 @@ namespace NataneToon.Editor
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool useShadingGradeMap = drawToggle("_SHADING_GRADE_MAP", "_UseGradeMap", "Shading Grade Mapを使用");
+            bool useShadingGradeMap = drawToggle("_SHADING_GRADE_MAP", "_UseGradeMap", L("Shading Grade Mapを使用", "Use Shading Grade Map"));
 
             if (useShadingGradeMap)
             {
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("Shading Grade Map設定", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField(L("Shading Grade Map設定", "Shading Grade Map Settings"), EditorStyles.boldLabel);
                 drawProperty("_ShadingGradeMap", "Shading Grade Map");
-                drawProperty("_ShadingGradeScale", "グレードスケール");
+                drawProperty("_ShadingGradeScale", L("グレードスケール", "Grade Scale"));
                 drawHelpToggle("ShadingGradeMap",
-                    "🎭 Shading Grade Map:\n" +
-                    "影の濃さを部分的に調整できる機能です。\n\n" +
-                    "• 白 = 明るく（影が薄くなる）\n" +
-                    "• 黒 = 暗く（影が濃くなる）\n" +
-                    "• グレー = 中間\n" +
-                    "• スケール: -1（暗く）～ 0（変化なし）～ 1（明るく）\n\n" +
-                    "💡 使い方:\n" +
-                    "顔は明るく、服は暗くなど、部位ごとに影の濃さを変えたい場合に使用します。",
+                    L("🎭 Shading Grade Map:\n" +
+                      "影の濃さを部分的に調整できる機能です。\n\n" +
+                      "• 白 = 明るく（影が薄くなる）\n" +
+                      "• 黒 = 暗く（影が濃くなる）\n" +
+                      "• グレー = 中間\n" +
+                      "• スケール: -1（暗く）～ 0（変化なし）～ 1（明るく）\n\n" +
+                      "💡 使い方:\n" +
+                      "顔は明るく、服は暗くなど、部位ごとに影の濃さを変えたい場合に使用します。",
+                      "🎭 Shading Grade Map:\n" +
+                      "A feature to partially adjust shadow intensity.\n\n" +
+                      "• White = Brighter (lighter shadows)\n" +
+                      "• Black = Darker (deeper shadows)\n" +
+                      "• Gray = Intermediate\n" +
+                      "• Scale: -1 (darker) to 0 (no change) to 1 (brighter)\n\n" +
+                      "💡 Usage:\n" +
+                      "Use when you want different shadow intensities per area, e.g., bright face, dark clothing."),
                     MessageType.Info);
             }
         }
@@ -490,22 +606,29 @@ namespace NataneToon.Editor
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool useShadowColorTex = drawToggle("_SHADOW_COLOR_TEX", "_UseShadowColorTex", "影色テクスチャを使用");
+            bool useShadowColorTex = drawToggle("_SHADOW_COLOR_TEX", "_UseShadowColorTex", L("影色テクスチャを使用", "Use Shadow Color Texture"));
 
             if (useShadowColorTex)
             {
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("Shadow Color Texture設定", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField(L("Shadow Color Texture設定", "Shadow Color Texture Settings"), EditorStyles.boldLabel);
                 drawProperty("_ShadowColorTex", "Shadow Color Texture");
-                drawProperty("_ShadowColorTexStrength", "適用強度");
+                drawProperty("_ShadowColorTexStrength", L("適用強度", "Apply Strength"));
                 drawHelpToggle("ShadowColorTexture",
-                    "🌈 Shadow Color Texture:\n" +
-                    "影の色をテクスチャで指定できる高度な機能です。\n\n" +
-                    "• テクスチャの色が影色として使用されます\n" +
-                    "• 強度: テクスチャの影響度（0 = 使わない、1 = フル適用）\n\n" +
-                    "💡 使い方:\n" +
-                    "服の影を青っぽく、肌の影を赤っぽくなど、\n" +
-                    "部位ごとに異なる影色を設定したい場合に使用します。",
+                    L("🌈 Shadow Color Texture:\n" +
+                      "影の色をテクスチャで指定できる高度な機能です。\n\n" +
+                      "• テクスチャの色が影色として使用されます\n" +
+                      "• 強度: テクスチャの影響度（0 = 使わない、1 = フル適用）\n\n" +
+                      "💡 使い方:\n" +
+                      "服の影を青っぽく、肌の影を赤っぽくなど、\n" +
+                      "部位ごとに異なる影色を設定したい場合に使用します。",
+                      "🌈 Shadow Color Texture:\n" +
+                      "An advanced feature to specify shadow colors using a texture.\n\n" +
+                      "• The texture colors are used as shadow colors\n" +
+                      "• Strength: Texture influence (0 = not used, 1 = fully applied)\n\n" +
+                      "💡 Usage:\n" +
+                      "Use when you want different shadow colors per area,\n" +
+                      "e.g., bluish shadows for clothing, reddish shadows for skin."),
                     MessageType.Info);
             }
         }

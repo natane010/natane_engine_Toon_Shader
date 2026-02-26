@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Texture - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Video Texture</h1>
+    <p class="page-subtitle">Blend control for video textures</p>
+
+    <h2>Overview</h2>
+    <p>The video texture feature displays video content on materials using a RenderTexture. Used for displaying video content on VRChat screens, monitor representations, in-game TV screens, and similar scenarios.</p>
+    <p>Controlled by the keyword <code>_VIDEO_TEXTURE</code>.</p>
+
+    <h2>Properties</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable Video Texture</span>
+        <span class="param-prop">_VideoTexture</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Toggles the video texture feature on/off.</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Video Render Texture</span>
+        <span class="param-prop">_VideoTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The RenderTexture for the video content. Uses RenderTextures output from VRChat's AVPro video player or Unity's Video Player.</p>
+        <p class="param-default">Default: "black"</p>
+      </div>
+      <div class="param-tip">In VRChat, assigning the AVPro Video Player's RenderTexture allows displaying in-world video content.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Video Emission Intensity</span>
+        <span class="param-prop">_VideoEmission</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The emission intensity of the video texture. Controls the glowing screen effect. Can be adjusted so the video is visible even in dark environments.</p>
+        <p class="param-default">Default: 1.0</p>
+      </div>
+      <div class="param-tip">Increasing the emission value makes the screen appear brightly lit even in dark areas.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Video Blend</span>
+        <span class="param-prop">_VideoBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The application intensity of the video texture. 0 for hidden, 1 for fully visible.</p>
+        <p class="param-default">Default: 1.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Video Blend Mode</span>
+        <span class="param-prop">_VideoBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>The compositing method for the video texture. Choose Replace to completely replace the base texture, or other modes to blend.</p>
+        <p class="param-default">Default: 0 (Replace)</p>
+      </div>
+    </div>
+
+    <h2>Usage Tips</h2>
+    <ul>
+      <li>Ideal for VRChat screens and monitor representations</li>
+      <li>Adjust emission intensity to match the screen appearance to the environment brightness</li>
+      <li>When no video is playing, the base texture is displayed</li>
+      <li>The RenderTexture resolution directly affects video quality</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

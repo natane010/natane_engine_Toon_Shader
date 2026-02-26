@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glitter - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Glitter</h1>
+    <p class="page-subtitle">Sparkling glitter highlight effect</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Glitter is an effect that adds sparkling highlight effects. Use it to add glamour to costumes and accessories. Noise-based animation achieves realistic sparkling expressions.</p>
+    <p>Controlled by the keyword <code>_GLITTER</code>. No shader instructions are generated when disabled.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glitter Color</span>
+        <span class="param-prop">_GlitterColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the color of the glitter sparkle. Alpha channel is also available.</p>
+        <p class="param-default">Default: (1, 1, 1, 1) (white)</p>
+      </div>
+      <div class="param-tip">For gold glitter, use (1, 0.85, 0.5). For rainbow effects, combining with emission is also effective.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glitter Size</span>
+        <span class="param-prop">_GlitterSize</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the particle size of the glitter. Larger values produce larger particles.</p>
+        <p class="param-default">Default: 0.1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glitter Density</span>
+        <span class="param-prop">_GlitterDensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the frequency of glitter appearance. Higher values display more glitter.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+      <div class="param-tip">0 = sparse, 1 = dense. High density (0.7-1.0) suits gem-like effects, while low density (0.2-0.4) works for subtle sparkle.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glitter Speed</span>
+        <span class="param-prop">_GlitterSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the blinking speed of the glitter. Higher values produce faster blinking.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+      <div class="param-tip">Setting to 0 stops the animation, creating static glitter.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glitter Intensity</span>
+        <span class="param-prop">_GlitterIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the brightness of the glitter. Values exceeding 1.0 produce HDR-like strong sparkle effects.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 2</p>
+      </div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glitter Mask</span>
+        <span class="param-prop">_GlitterMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls the display area of the glitter. Enabled by the keyword <code>_GLITTER_MASK</code>. Uses the R (red) channel to control the glitter display area.</p>
+        <p class="param-default">Default: "white" (full display)</p>
+      </div>
+      <div class="param-tip">White (1.0) = fully visible, Black (0.0) = hidden, Gray = partially visible. Use to apply glitter only to decorative parts of accessories or clothing.</div>
+    </div>
+
+    <h2 id="blend">Blend &amp; Blur</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_GlitterBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the blend method for the glitter effect.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Standard additive blending</li>
+          <li><strong>Soft (1)</strong> - Soft additive. Prevents over-brightening</li>
+          <li><strong>Screen (2)</strong> - Screen blending. Natural brightness addition</li>
+          <li><strong>Overlay (3)</strong> - Overlay blending. Enhances contrast</li>
+        </ul>
+        <p class="param-default">Default: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_GlitterBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity (opacity) of the glitter effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_GlitterBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the blur amount of the glitter effect.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <h4>Adding Glamour to Costumes and Accessories</h4>
+      <ul>
+        <li><strong>Size</strong>: Glitter particle size</li>
+        <li><strong>Density</strong>: Glitter appearance frequency (0=sparse, 1=dense)</li>
+        <li><strong>Speed</strong>: Glitter blinking speed</li>
+        <li><strong>Intensity</strong>: Glitter brightness</li>
+      </ul>
+      <p>It is recommended to use mask textures to apply glitter only to specific decorative parts, like gems or sequins.</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

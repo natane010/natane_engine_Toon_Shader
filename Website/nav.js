@@ -1,13 +1,16 @@
 /* ============================================================
    Natane Toon Shader - Documentation Site Navigation
-   natanetoon.com  v2 - Individual page navigation
+   natanetoon.com  v3 - Bilingual (JA/EN) navigation
    ============================================================ */
 
 (function () {
   'use strict';
 
-  /* ---------- Site Map Data ---------- */
-  var CATEGORIES = {
+  /* ---------- Language Detection ---------- */
+  var IS_EN = location.pathname.indexOf('/en/') !== -1;
+
+  /* ---------- Site Map Data (JA) ---------- */
+  var CATEGORIES_JA = {
     basic:       { label: '基本',           icon: '🎨' },
     lighting:    { label: 'ライティング',   icon: '💡' },
     effects:     { label: 'エフェクト',     icon: '✨' },
@@ -15,7 +18,15 @@
     advanced:    { label: '詳細',           icon: '⚙️' }
   };
 
-  var TOOL_CATEGORIES = {
+  var CATEGORIES_EN = {
+    basic:       { label: 'Basic',         icon: '🎨' },
+    lighting:    { label: 'Lighting',      icon: '💡' },
+    effects:     { label: 'Effects',       icon: '✨' },
+    environment: { label: 'Environment',   icon: '🌐' },
+    advanced:    { label: 'Advanced',      icon: '⚙️' }
+  };
+
+  var TOOL_CATEGORIES_JA = {
     general:      { label: '全般' },
     material:     { label: 'マテリアル' },
     preset:       { label: 'プリセット' },
@@ -25,8 +36,18 @@
     shader:       { label: 'シェーダー' }
   };
 
+  var TOOL_CATEGORIES_EN = {
+    general:      { label: 'General' },
+    material:     { label: 'Material' },
+    preset:       { label: 'Preset' },
+    effect:       { label: 'Effect' },
+    optimization: { label: 'Optimization' },
+    migration:    { label: 'Migration' },
+    shader:       { label: 'Shader' }
+  };
+
   /* Page order within each category */
-  var PAGE_ORDER = {
+  var PAGE_ORDER_JA = {
     basic: [
       { file: 'main-texture.html',      label: 'メインテクスチャ' },
       { file: 'color-enhancement.html',  label: 'カラー保持・強化' },
@@ -83,7 +104,64 @@
     ]
   };
 
-  var TOOL_ORDER = [
+  var PAGE_ORDER_EN = {
+    basic: [
+      { file: 'main-texture.html',      label: 'Main Texture' },
+      { file: 'color-enhancement.html',  label: 'Color Enhancement' },
+      { file: 'final-blend.html',        label: 'Final Color Blend' },
+      { file: 'surface-finish.html',     label: 'Surface Finish' },
+      { file: 'makeup.html',             label: 'Makeup' },
+      { file: 'shading.html',            label: 'Shading' }
+    ],
+    lighting: [
+      { file: 'lighting-general.html',   label: 'Lighting General' },
+      { file: 'soft-lighting.html',      label: 'Soft Lighting' },
+      { file: 'backlight.html',          label: 'Backlight' },
+      { file: 'light-volumes.html',      label: 'VRC Light Volumes' },
+      { file: 'ltcgi.html',              label: 'LTCGI' },
+      { file: 'ao.html',                 label: 'Ambient Occlusion' },
+      { file: 'dithering.html',          label: 'Dithering' },
+      { file: 'shadow-color.html',       label: 'Shadow Color Texture' }
+    ],
+    effects: [
+      { file: 'specular.html',           label: 'Specular' },
+      { file: 'rimlight1.html',          label: 'Rim Light 1' },
+      { file: 'rimlight2.html',          label: 'Rim Light 2' },
+      { file: 'rim-direction.html',      label: 'Rim Light Direction' },
+      { file: 'sss.html',               label: 'SSS' },
+      { file: 'matcap1.html',            label: 'MatCap 1' },
+      { file: 'matcap23.html',           label: 'MatCap 2/3' },
+      { file: 'glitter.html',            label: 'Glitter' },
+      { file: 'waterdrip.html',          label: 'Water Drop Effect' },
+      { file: 'hologram.html',           label: 'Hologram' },
+      { file: 'glitch.html',             label: 'Glitch' },
+      { file: 'decal.html',              label: 'Decal' },
+      { file: 'outline.html',            label: 'Outline' },
+      { file: 'emission.html',           label: 'Emission' },
+      { file: 'dissolve.html',           label: 'Dissolve' },
+      { file: 'alpha-mask.html',         label: 'Alpha Mask' },
+      { file: 'hue-shift.html',          label: 'Hue Shift' },
+      { file: 'audiolink.html',          label: 'AudioLink' }
+    ],
+    environment: [
+      { file: 'reflection.html',         label: 'Reflection' },
+      { file: 'iridescence.html',        label: 'Iridescence' },
+      { file: 'env-rim.html',            label: 'Environmental Rim' },
+      { file: 'refraction.html',         label: 'Refraction' }
+    ],
+    advanced: [
+      { file: 'normal-map.html',         label: 'Normal Map' },
+      { file: 'parallax.html',           label: 'Parallax' },
+      { file: 'vat.html',               label: 'VAT' },
+      { file: 'backface.html',           label: 'Backface Texture' },
+      { file: 'video-texture.html',      label: 'Video Texture' },
+      { file: 'distance-fade.html',      label: 'Distance Fade' },
+      { file: 'vertex-animation.html',   label: 'Vertex Animation' },
+      { file: 'rendering.html',          label: 'Rendering Settings' }
+    ]
+  };
+
+  var TOOL_ORDER_JA = [
     { file: 'dashboard.html',             label: 'ダッシュボード',               cat: 'general' },
     { file: 'help.html',                  label: 'ヘルプ',                       cat: 'general' },
     { file: 'material-validator.html',    label: 'マテリアル検証',               cat: 'material' },
@@ -112,8 +190,37 @@
     { file: 'uv-texture-generator.html',  label: 'UVテクスチャ生成',             cat: 'shader' }
   ];
 
+  var TOOL_ORDER_EN = [
+    { file: 'dashboard.html',             label: 'Dashboard',                    cat: 'general' },
+    { file: 'help.html',                  label: 'Help',                         cat: 'general' },
+    { file: 'material-validator.html',    label: 'Material Validator',           cat: 'material' },
+    { file: 'material-editor.html',       label: 'Material Editor',              cat: 'material' },
+    { file: 'material-preview.html',      label: 'Material Preview',             cat: 'material' },
+    { file: 'material-comparison.html',   label: 'Material Comparison',          cat: 'material' },
+    { file: 'makeup-layer-manager.html',  label: 'Makeup Layer Manager',         cat: 'material' },
+    { file: 'preset-browser.html',        label: 'Preset Browser',               cat: 'preset' },
+    { file: 'color-palette.html',         label: 'Color Palette',                cat: 'preset' },
+    { file: 'preset-generator.html',      label: 'Default Preset Generator',     cat: 'preset' },
+    { file: 'preset-regenerator.html',    label: 'Regenerate All Presets',        cat: 'preset' },
+    { file: 'shadow-wizard.html',         label: 'Shadow Adjustment Wizard',     cat: 'effect' },
+    { file: 'matcap-composer.html',       label: 'MatCap Composer',              cat: 'effect' },
+    { file: 'dissolve-generator.html',    label: 'Dissolve Pattern Generator',   cat: 'effect' },
+    { file: 'rimlight-visualizer.html',   label: 'Rim Light Direction Visualizer', cat: 'effect' },
+    { file: 'screen-fx.html',             label: 'Screen Effect Settings',       cat: 'effect' },
+    { file: 'performance-budget.html',    label: 'Performance Budget',           cat: 'optimization' },
+    { file: 'texture-optimizer.html',     label: 'Texture Optimizer',            cat: 'optimization' },
+    { file: 'outline-optimizer.html',     label: 'Outline Optimizer',            cat: 'optimization' },
+    { file: 'refraction-balancer.html',   label: 'Refraction Quality Balancer',  cat: 'optimization' },
+    { file: 'liltoon-migration.html',     label: 'lilToon Migration',            cat: 'migration' },
+    { file: 'batch-converter.html',       label: 'Batch Material Converter',     cat: 'migration' },
+    { file: 'prefab-converter.html',      label: 'Prefab Variant Converter',     cat: 'migration' },
+    { file: 'shader-variant-collector.html', label: 'Shader Variant Collector',  cat: 'shader' },
+    { file: 'light-volumes-helper.html',  label: 'Light Volumes Helper',         cat: 'shader' },
+    { file: 'uv-texture-generator.html',  label: 'UV Texture Generator',         cat: 'shader' }
+  ];
+
   /* ---------- Header Nav Data ---------- */
-  var NAV = [
+  var NAV_JA = [
     { label: 'ホーム', href: '{root}index.html' },
     {
       label: 'パラメータ',
@@ -140,37 +247,94 @@
     }
   ];
 
+  var NAV_EN = [
+    { label: 'Home', href: '{root}index.html' },
+    {
+      label: 'Parameters',
+      children: [
+        { label: 'Basic',         href: '{root}params/basic/main-texture.html' },
+        { label: 'Lighting',      href: '{root}params/lighting/lighting-general.html' },
+        { label: 'Effects',       href: '{root}params/effects/specular.html' },
+        { label: 'Environment',   href: '{root}params/environment/reflection.html' },
+        { label: 'Advanced',      href: '{root}params/advanced/normal-map.html' },
+        { label: '── All',        href: '{root}params/index.html' }
+      ]
+    },
+    {
+      label: 'Tools',
+      children: [
+        { label: 'Material',      href: '{root}tools/material-validator.html' },
+        { label: 'Preset',        href: '{root}tools/preset-browser.html' },
+        { label: 'Effect',        href: '{root}tools/shadow-wizard.html' },
+        { label: 'Optimization',  href: '{root}tools/performance-budget.html' },
+        { label: 'Migration',     href: '{root}tools/liltoon-migration.html' },
+        { label: 'Shader',        href: '{root}tools/shader-variant-collector.html' },
+        { label: '── All',        href: '{root}tools/index.html' }
+      ]
+    }
+  ];
+
+  /* ---------- Select language data ---------- */
+  var CATEGORIES      = IS_EN ? CATEGORIES_EN      : CATEGORIES_JA;
+  var TOOL_CATEGORIES = IS_EN ? TOOL_CATEGORIES_EN  : TOOL_CATEGORIES_JA;
+  var PAGE_ORDER      = IS_EN ? PAGE_ORDER_EN       : PAGE_ORDER_JA;
+  var TOOL_ORDER      = IS_EN ? TOOL_ORDER_EN       : TOOL_ORDER_JA;
+  var NAV             = IS_EN ? NAV_EN              : NAV_JA;
+
+  /* ---------- Localized strings ---------- */
+  var L = IS_EN ? {
+    home: 'Home', params: 'Parameters', tools: 'Tools',
+    toc: 'Contents', menu: 'Menu', openToc: 'Open table of contents',
+    pages: ' pages'
+  } : {
+    home: 'ホーム', params: 'パラメータ', tools: 'ツール',
+    toc: '目次', menu: 'メニュー', openToc: '目次を開く',
+    pages: ' ページ'
+  };
+
   /* ---------- Utilities ---------- */
   function getRoot() {
     var path = location.pathname;
-    /* count depth from Website root */
+    var depth = 0;
+
+    /* add 1 for /en/ prefix */
+    if (IS_EN) depth++;
+
     if (path.indexOf('/params/') !== -1 || path.indexOf('/tools/') !== -1) {
-      /* e.g. /params/basic/foo.html => depth 2 from website root */
       var parts = path.split('/');
       var idx = -1;
       for (var i = 0; i < parts.length; i++) {
         if (parts[i] === 'params' || parts[i] === 'tools') { idx = i; break; }
       }
       if (idx !== -1) {
-        var depth = parts.length - 1 - idx; /* segments after params/tools dir */
-        if (depth === 1) return '../';       /* params/index.html or tools/index.html */
-        if (depth === 2) return '../../';    /* params/basic/foo.html */
+        depth += parts.length - 1 - idx;
       }
     }
-    return '';
+
+    if (depth === 0) return '';
+    var result = '';
+    for (var i = 0; i < depth; i++) result += '../';
+    return result;
   }
 
   var ROOT = getRoot();
 
+  /* Build a path that includes /en/ prefix when on EN pages */
+  function makePath(relPath) {
+    return ROOT + (IS_EN ? 'en/' : '') + relPath;
+  }
+
   function resolveHref(href) {
+    if (IS_EN) {
+      return href.replace('{root}', ROOT + 'en/');
+    }
     return href.replace('{root}', ROOT);
   }
 
-  /* current file path relative to Website root */
+  /* current file path relative to Website root (without /en/) */
   function getCurrentRelPath() {
     var path = location.pathname;
     var parts = path.split('/');
-    /* find index of params or tools */
     for (var i = 0; i < parts.length; i++) {
       if (parts[i] === 'params') return parts.slice(i).join('/');
       if (parts[i] === 'tools')  return parts.slice(i).join('/');
@@ -182,14 +346,12 @@
 
   function isActive(href) {
     var resolved = resolveHref(href);
-    /* strip leading ../ for comparison */
-    var base = resolved.replace(/^(\.\.\/)+/, '');
+    var base = resolved.replace(/^(\.\.\/)+/, '').replace(/^en\//, '');
     return CURRENT_REL.indexOf(base) !== -1 || CURRENT_REL === base;
   }
 
   /* ---------- Detect page context ---------- */
   function getPageContext() {
-    /* returns { section: 'params'|'tools', category: 'basic'|..., file: 'main-texture.html' } or null */
     var parts = CURRENT_REL.split('/');
     if (parts[0] === 'params' && parts.length === 3) {
       return { section: 'params', category: parts[1], file: parts[2] };
@@ -198,6 +360,17 @@
       return { section: 'tools', category: null, file: parts[1] };
     }
     return null;
+  }
+
+  /* ---------- Language toggle URL ---------- */
+  function getLangToggleHref() {
+    if (IS_EN) {
+      /* EN → JP: strip /en/ prefix, go to website root + relPath */
+      return ROOT + CURRENT_REL;
+    } else {
+      /* JP → EN: go to website root + en/ + relPath */
+      return ROOT + 'en/' + CURRENT_REL;
+    }
   }
 
   /* ---------- Build header ---------- */
@@ -210,7 +383,7 @@
 
     var logo = document.createElement('div');
     logo.className = 'site-logo';
-    logo.innerHTML = '<a href="' + ROOT + 'index.html">Natane Toon Shader</a>';
+    logo.innerHTML = '<a href="' + makePath('index.html') + '">Natane Toon Shader</a>';
 
     var nav = document.createElement('nav');
     nav.className = 'nav-links';
@@ -247,10 +420,17 @@
       }
     });
 
+    /* Language toggle */
+    var langLink = document.createElement('a');
+    langLink.className = 'lang-toggle';
+    langLink.textContent = IS_EN ? '日本語' : 'English';
+    langLink.href = getLangToggleHref();
+    nav.appendChild(langLink);
+
     /* Hamburger */
     var hamburger = document.createElement('button');
     hamburger.className = 'hamburger';
-    hamburger.setAttribute('aria-label', 'メニュー');
+    hamburger.setAttribute('aria-label', L.menu);
     hamburger.innerHTML = '<span></span><span></span><span></span>';
     hamburger.addEventListener('click', function () {
       hamburger.classList.toggle('open');
@@ -271,17 +451,16 @@
     var ctx = getPageContext();
     if (!ctx) return;
 
-    var crumbs = [{ label: 'ホーム', href: ROOT + 'index.html' }];
+    var crumbs = [{ label: L.home, href: makePath('index.html') }];
 
     if (ctx.section === 'params') {
-      crumbs.push({ label: 'パラメータ', href: ROOT + 'params/index.html' });
+      crumbs.push({ label: L.params, href: makePath('params/index.html') });
       if (ctx.category && CATEGORIES[ctx.category]) {
         crumbs.push({
           label: CATEGORIES[ctx.category].label,
-          href: ROOT + 'params/' + ctx.category + '/' + PAGE_ORDER[ctx.category][0].file
+          href: makePath('params/' + ctx.category + '/' + PAGE_ORDER[ctx.category][0].file)
         });
       }
-      /* current page */
       var pages = PAGE_ORDER[ctx.category] || [];
       for (var i = 0; i < pages.length; i++) {
         if (pages[i].file === ctx.file) {
@@ -290,7 +469,7 @@
         }
       }
     } else if (ctx.section === 'tools') {
-      crumbs.push({ label: 'ツール', href: ROOT + 'tools/index.html' });
+      crumbs.push({ label: L.tools, href: makePath('tools/index.html') });
       for (var j = 0; j < TOOL_ORDER.length; j++) {
         if (TOOL_ORDER[j].file === ctx.file) {
           crumbs.push({ label: TOOL_ORDER[j].label, href: null });
@@ -327,7 +506,6 @@
 
     var ctx = getPageContext();
     if (!ctx) {
-      /* fallback to TOC for non-individual pages */
       buildTOC();
       return;
     }
@@ -340,18 +518,16 @@
       catLabel = CATEGORIES[ctx.category] ? CATEGORIES[ctx.category].label : '';
     } else if (ctx.section === 'tools') {
       pages = TOOL_ORDER;
-      catLabel = 'ツール';
+      catLabel = L.tools;
     }
 
     if (!pages) { buildTOC(); return; }
 
-    /* Category title */
     var title = document.createElement('div');
     title.className = 'sidebar-title';
     title.textContent = catLabel;
     sidebar.appendChild(title);
 
-    /* Page list */
     var ul = document.createElement('ul');
     ul.className = 'category-nav';
 
@@ -359,9 +535,9 @@
       var li = document.createElement('li');
       var a = document.createElement('a');
       if (ctx.section === 'params') {
-        a.href = ROOT + 'params/' + ctx.category + '/' + p.file;
+        a.href = makePath('params/' + ctx.category + '/' + p.file);
       } else {
-        a.href = ROOT + 'tools/' + p.file;
+        a.href = makePath('tools/' + p.file);
       }
       a.textContent = p.label;
       if (p.file === ctx.file) a.classList.add('active');
@@ -383,10 +559,10 @@
     var pages, basePath;
     if (ctx.section === 'params' && ctx.category) {
       pages = PAGE_ORDER[ctx.category];
-      basePath = ROOT + 'params/' + ctx.category + '/';
+      basePath = makePath('params/' + ctx.category + '/');
     } else if (ctx.section === 'tools') {
       pages = TOOL_ORDER;
-      basePath = ROOT + 'tools/';
+      basePath = makePath('tools/');
     } else {
       return;
     }
@@ -434,7 +610,7 @@
 
     var title = document.createElement('div');
     title.className = 'sidebar-title';
-    title.textContent = '目次';
+    title.textContent = L.toc;
     sidebar.appendChild(title);
 
     var ul = document.createElement('ul');
@@ -452,7 +628,6 @@
     });
     sidebar.appendChild(ul);
 
-    /* Scroll spy */
     if ('IntersectionObserver' in window) {
       var links = ul.querySelectorAll('a');
       var observer = new IntersectionObserver(
@@ -478,7 +653,7 @@
 
     var btn = document.createElement('button');
     btn.className = 'sidebar-toggle';
-    btn.setAttribute('aria-label', '目次を開く');
+    btn.setAttribute('aria-label', L.openToc);
     btn.textContent = '☰';
     btn.addEventListener('click', function () {
       sidebar.classList.toggle('open');
@@ -493,7 +668,10 @@
     CATEGORIES: CATEGORIES,
     TOOL_ORDER: TOOL_ORDER,
     TOOL_CATEGORIES: TOOL_CATEGORIES,
-    ROOT: ROOT
+    ROOT: ROOT,
+    IS_EN: IS_EN,
+    makePath: makePath,
+    L: L
   };
 
   /* ---------- Init ---------- */

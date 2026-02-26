@@ -385,7 +385,17 @@ half4 frag(v2f i) : SV_Target
         half3 indirectResult = half3(0, 0, 0);
         float3 ambient = float3(0, 0, 0);
 
-        #ifdef _USE_LIGHT_VOLUME
+        #if defined(_BACKGROUND_MODE) && defined(LIGHTMAP_ON)
+            // Background: ライトマップから間接光を取得
+            half3 lmColor = SampleNataneLightmap(i.lightmapUV, worldNormal) * _LightmapIntensity;
+            indirectResult = lmColor;
+            ambient = float3(0, 0, 0);
+            // ライトマップ輝度でトゥーンシェーディング結果を調整
+            half lmLum = saturate(CALC_LUMINANCE(lmColor));
+            shadingValue = lerp(shadingValue, lmLum, _LightmapToonInfluence);
+            // Recompute lighting with updated shadingValue
+            lighting = lerp(shadowColor, half3(1, 1, 1), shadingValue);
+        #elif defined(_USE_LIGHT_VOLUME)
             half3 preLightVolume = lighting;
             // Sample Light Volume SH coefficients
             float3 L0, L1r, L1g, L1b;
@@ -483,6 +493,35 @@ half4 frag(v2f i) : SV_Target
                 1.0 - _Smoothness, float2(0, 0),
                 ltcgiDiffuse, ltcgiSpecular);
             additionalResult += ltcgiDiffuse * _LTCGIIntensity * _LTCGIBlend;
+        #endif
+
+        // ========== PBR Direct + Indirect Specular (Background only) ==========
+        #ifdef _PBR
+        {
+            half2 metallicGloss = tex2D(_PBR_MetallicGlossMap, uv).ra;
+            half metallic = metallicGloss.x * _PBR_Metallic;
+            half smoothness = metallicGloss.y * _PBR_Smoothness;
+            half roughness = max(0.04, 1.0 - smoothness);
+
+            // F0: non-metal=0.04, metal=albedo color
+            half3 F0 = lerp(half3(0.04, 0.04, 0.04), col.rgb, metallic);
+
+            // Energy conservation: metals reduce diffuse
+            directResult *= (1.0 - metallic);
+
+            // GGX direct specular
+            half3 pbrSpec = NatanePBRSpecular(worldNormal, viewDir, lightDir,
+                roughness, F0, effectiveLightColor, atten);
+            additionalResult += pbrSpec;
+
+            // Indirect specular (reflection probes)
+            half3 indirectSpec = NatanePBRIndirectSpecular(worldNormal, viewDir, i.worldPos,
+                roughness, F0);
+            half pbrOcclusion = tex2D(_PBR_OcclusionMap, uv).r;
+            pbrOcclusion = lerp(1.0, pbrOcclusion, _PBR_OcclusionStrength);
+            indirectSpec *= pbrOcclusion * _PBR_ReflectionIntensity;
+            additionalResult += indirectSpec;
+        }
         #endif
 
         // ========== STEP 5: Final Composition ==========

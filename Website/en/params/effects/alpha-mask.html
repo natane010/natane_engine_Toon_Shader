@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alpha Mask - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Alpha Mask</h1>
+    <p class="page-subtitle">Partially control transparency using a texture</p>
+
+    <p>Alpha Mask uses the R (red) channel of a texture to partially control the transparency of a material. It enables complex transparency control such as making only part of glass transparent, creating see-through sections in clothing, or fading out with gradients.</p>
+    <p>Keyword: <code>_ALPHA_MASK</code></p>
+
+    <h2 id="settings">Alpha Mask Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Alpha Mask</span>
+        <span class="param-prop">_AlphaMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that partially controls the material's transparency using the R channel.</p>
+        <ul>
+          <li>White (1.0) = Fully opaque</li>
+          <li>Gray (0.5) = Semi-transparent</li>
+          <li>Black (0.0) = Fully transparent</li>
+        </ul>
+        <p class="param-default">Default: "white" (fully opaque)</p>
+      </div>
+      <div class="param-tip">To use semi-transparency effects, set the rendering mode to "Transparent." Alpha mask does not function in Opaque mode.</div>
+    </div>
+
+    <h2 id="usage">Primary Uses</h2>
+
+    <div class="feature-section">
+      <h4>Glass Expression</h4>
+      <p>Make only part of glass transparent to express frosted glass or patterned glass.</p>
+    </div>
+
+    <div class="feature-section">
+      <h4>See-Through Effect</h4>
+      <p>Make parts of clothing or veils semi-transparent to express see-through materials.</p>
+    </div>
+
+    <div class="feature-section">
+      <h4>Fade Out</h4>
+      <p>Use gradient textures to create fade-out effects that make edges transparent.</p>
+    </div>
+
+    <div class="feature-section">
+      <h4>Complex Shape Transparency Control</h4>
+      <p>Control the transparency of complex patterns like lace or mesh materials with a single mask texture.</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

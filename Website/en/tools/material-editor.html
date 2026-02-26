@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Material Editor - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Material Editor</h1>
+    <p class="page-subtitle">Batch processing for multiple materials</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Batch Material Processor</span>
+      <span>Category: Material</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>The Batch Material Processor is a powerful batch processing tool that can execute parameter adjustments, color changes, texture replacements, feature toggles, and more across multiple materials at once. It significantly improves workflow efficiency for projects dealing with a large number of materials.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+      <li>Batch parameter adjustment (Set / Multiply / Add modes)</li>
+      <li>Batch color changes</li>
+      <li>Batch texture replacement</li>
+      <li>Batch shader feature toggling (ON/OFF)</li>
+      <li>Batch shader variant conversion (Opaque/Cutout/Transparent)</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <ol class="tool-steps">
+      <li>Add target materials from the material list</li>
+      <li>Select an operation tab: Parameter / Color / Texture / Feature / Variant</li>
+      <li>Set the values for the selected operation</li>
+      <li>Click "Preview" to review changes before applying</li>
+      <li>Click "Apply to All" to batch process all materials</li>
+    </ol>
+
+    <h2>Operation Modes</h2>
+    <h3>Parameter Adjustment</h3>
+    <ul>
+      <li><strong>Set</strong> - Directly sets the specified value</li>
+      <li><strong>Multiply</strong> - Multiplies the current value by a factor (useful for relative adjustments)</li>
+      <li><strong>Add</strong> - Adds a value to the current value</li>
+    </ul>
+    <h3>Texture Replacement</h3>
+    <ul>
+      <li>Batch replace textures for specific property slots</li>
+      <li>Texture tiling and offset can also be set in batch</li>
+    </ul>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>Use "Set" mode to apply exact values</li>
+      <li>Use "Multiply" for relative adjustments (e.g., scale all materials' outline width by 1.5x)</li>
+      <li>Always create a backup before batch operations (Undo is supported, but just in case)</li>
+      <li>Use the preview feature to prevent unintended changes</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

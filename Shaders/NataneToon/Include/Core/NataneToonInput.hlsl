@@ -679,6 +679,20 @@ CBUFFER_START(UnityPerMaterial)
     float _FurLODMinLayers;
     float4 _FurNoiseTex_ST;
     #endif
+
+    // ===== 12. Background Mode (背景モード) =====
+    #if defined(_BACKGROUND_MODE)
+        float _LightmapToonInfluence;
+        float _LightmapIntensity;
+    #endif
+
+    // ===== 13. PBR Mode (物理ベースレンダリング) =====
+    #if defined(_PBR)
+        float _PBR_Metallic;
+        float _PBR_Smoothness;
+        float _PBR_OcclusionStrength;
+        float _PBR_ReflectionIntensity;
+    #endif
 CBUFFER_END
 
 // Texture samplers (must be outside CBUFFER per HLSL specification)
@@ -855,6 +869,12 @@ sampler2D _FurNoiseTex;
 sampler2D _FurMask;
 #endif
 
+// PBR
+#if defined(_PBR)
+sampler2D _PBR_MetallicGlossMap;
+sampler2D _PBR_OcclusionMap;
+#endif
+
 // Smooth Normal Texture (for Mode 2: Baked Normal Texture)
 #if defined(_SMOOTH_NORMAL)
 sampler2D _SmoothNormalTex;
@@ -907,6 +927,9 @@ struct appdata
     float3 normal : NORMAL;
     float4 tangent : TANGENT;
     float2 uv : TEXCOORD0;
+    #ifdef _BACKGROUND_MODE
+        float2 uv1 : TEXCOORD1;  // Lightmap UV
+    #endif
     #ifdef _SMOOTH_NORMAL
         float4 color : COLOR;
     #endif
@@ -935,6 +958,9 @@ struct v2f
     #endif
     #ifdef _SMEAR
         float smearStretchFactor : TEXCOORD10;
+    #endif
+    #ifdef _BACKGROUND_MODE
+        float2 lightmapUV : TEXCOORD11;
     #endif
     UNITY_VERTEX_OUTPUT_STEREO
 };

@@ -178,6 +178,11 @@ v2f vert(appdata v)
         o.screenPos = ComputeScreenPos(o.pos);
     #endif
 
+    // Lightmap UV (Background mode only)
+    #ifdef _BACKGROUND_MODE
+        o.lightmapUV = v.uv1 * unity_LightmapST.xy + unity_LightmapST.zw;
+    #endif
+
     // Transfer fog and shadow coordinates
     UNITY_TRANSFER_FOG(o, o.pos);
     TRANSFER_SHADOW(o);

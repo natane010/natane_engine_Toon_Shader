@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rim Light Direction Control - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Rim Light Direction Control</h1>
+    <p class="page-subtitle">Restrict rim light direction for enhanced staging effects</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Rim Light Direction Control is a feature that restricts rim light, which normally applies evenly to all edges, to a specific direction. By specifying a direction such as light from above or from the side, you can achieve more realistic and dramatic rim light expressions.</p>
+    <p>Controlled by the keyword <code>_RIM_DIRECTION_CONTROL</code>. This setting applies commonly to both Rim Light 1 and Rim Light 2.</p>
+
+    <div class="feature-section">
+      <h4>Scope of This Setting</h4>
+      <p>When Rim Light Direction Control is enabled, the same directional restriction is applied to both Rim Light 1 and Rim Light 2. Individual direction control is not available.</p>
+    </div>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rim Light Direction</span>
+        <span class="param-prop">_RimLightDirection</span>
+        <span class="param-badge badge-vector">vector</span>
+      </div>
+      <div class="param-body">
+        <p>Specifies the direction to apply rim light as a world-space vector. Rim light is only applied to normals facing the specified direction.</p>
+        <p class="param-default">Default: (0, 1, 0, 0) (upward)</p>
+      </div>
+      <div class="param-tip">The vector is automatically normalized. (0,1,0) = from above, (1,0,0) = from the right, (0,0,1) = from the front.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Direction Range</span>
+        <span class="param-prop">_RimDirectionRange</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the looseness of the directional restriction. Higher values apply rim light to areas further from the specified direction, while lower values strictly limit it to areas aligned with the direction.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+      <div class="param-tip">Values close to 0 produce rim in a very narrow range only. Around 0.5 is a well-balanced setting.</div>
+    </div>
+
+    <h2 id="presets">Direction Presets</h2>
+    <p>Use <code>Tools &gt; Natane &gt; Effects &gt; Rim Light Direction Visualizer</code> to visually adjust the direction. The following preset directions can be set with one click:</p>
+
+    <div class="feature-section">
+      <ul>
+        <li><strong>Top</strong>: (0, 1, 0) - Rim from above. Ideal for backlight staging</li>
+        <li><strong>Bottom</strong>: (0, -1, 0) - Rim from below. For eerie staging</li>
+        <li><strong>Left</strong>: (-1, 0, 0) - Rim from the left</li>
+        <li><strong>Right</strong>: (1, 0, 0) - Rim from the right</li>
+        <li><strong>Front</strong>: (0, 0, 1) - Rim from the front</li>
+        <li><strong>Back</strong>: (0, 0, -1) - Rim from behind</li>
+      </ul>
+      <p>Fine angle adjustments are also possible using the Azimuth and Elevation sliders.</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

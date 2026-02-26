@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Main Texture - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Main Texture</h1>
+    <p class="page-subtitle">Basic settings for the main texture and color</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Main Texture</span>
+        <span class="param-prop">_MainTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The primary texture of the material. Used as the albedo (diffuse reflectance color) map, defining the surface color of the object.</p>
+        <p class="param-default">Default: "white" (white texture)</p>
+      </div>
+      <div class="param-tip">You can adjust the tiling and offset of the UV to change the texture's repetition and position.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Color</span>
+        <span class="param-prop">_Color</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>A color multiplied with the main texture. Use it to adjust the overall color tone of the texture, or to create a solid-color material without a texture.</p>
+        <p class="param-default">Default: (1, 1, 1, 1) (white, fully opaque)</p>
+      </div>
+      <div class="param-tip">To adjust only the brightness without changing the texture's color, change the RGB values uniformly.</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Surface Finish - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Surface Finish</h1>
+    <p class="page-subtitle">Control surface quality through glossiness and matte effects</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glossiness</span>
+        <span class="param-prop">_Glossiness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the intensity of all reflection-based effects such as specular, reflection, and rim light at once. 0 for no gloss (fully matte), 0.5 for moderate gloss, 1.0 for maximum gloss (default).</p>
+        <p>Affected effects: Specular highlight, Rim Light (1 &amp; 2), Environment Rim, MatCap, Cubemap Reflection, Light Volume Specular. Does not affect Emission.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Set 0.3-0.5 for materials that don't need gloss like cloth or skin, and 0.8-1.0 for metal or leather.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Matte Effect (Additional Gloss Reduction)</span>
+        <span class="param-prop">_MatteEffect</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>An additional parameter to further reduce gloss on top of the glossiness setting. 0 for glossiness-only control, 0.5 to reduce glossiness by 50%, 1.0 for fully matte (zero gloss).</p>
+        <p>Combined with glossiness for finer control. Example: Glossiness 0.8 x Matte Effect 0.3 = effective 56% gloss.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Convenient when you want to add a matte feel without lowering the glossiness. Can be combined with a texture mask to apply matte effects partially.</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

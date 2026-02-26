@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iridescence - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Iridescence</h1>
+    <p class="page-subtitle">Rainbow-like iridescent sheen effect</p>
+
+    <p>Adds an iridescence effect where colors shift depending on viewing angle. Reproduces rainbow-like effects caused by light interference, enabling expression of beautiful color changes found in nature such as soap bubbles, oil slicks, insect wings, and fish scales.</p>
+    <p>Keyword: <code>_IRIDESCENCE</code></p>
+
+    <h2 id="settings">Iridescence Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Iridescence Color</span>
+        <span class="param-prop">_IridescenceColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the base color tone for the iridescence effect. This serves as the reference color for the rainbow color shifts.</p>
+        <p class="param-default">Default: (1, 1, 1, 1) (white)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Intensity</span>
+        <span class="param-prop">_IridescenceIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the brightness (intensity) of the iridescence effect. Higher values produce a stronger rainbow effect.</p>
+        <p class="param-default">Default: 0.5 (Range: 0 - 2)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hue Shift</span>
+        <span class="param-prop">_IridescenceHueShift</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Offsets the starting position of color changes on the hue wheel. Shifts the overall rainbow color tones.</p>
+        <p class="param-default">Default: 0.5 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Size (Frequency)</span>
+        <span class="param-prop">_IridescenceSize</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the frequency (fineness) of color changes. Higher values cause colors to shift more rapidly with changes in viewing angle.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 10)</p>
+      </div>
+      <div class="param-tip">Low values produce delicate changes like soap bubbles; high values create dynamic shifts like oil slicks.</div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Iridescence Mask</span>
+        <span class="param-prop">_IridescenceMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the iridescence display area using the R (red) channel. Enabled with the keyword <code>_IRIDESCENCE_MASK</code>.</p>
+        <ul>
+          <li>White (1.0): Fully displays iridescence</li>
+          <li>Black (0.0): Hides iridescence</li>
+          <li>Gray: Partially displays</li>
+        </ul>
+        <p class="param-default">Default: "white" (applied everywhere)</p>
+      </div>
+    </div>
+
+    <h2 id="blend">Blend Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_IridescenceBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects how iridescence is composited with the base color.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Normal blending</li>
+          <li><strong>Soft (1)</strong> - Soft Light</li>
+          <li><strong>Screen (2)</strong> - Screen</li>
+          <li><strong>Overlay (3)</strong> - Overlay</li>
+        </ul>
+        <p class="param-default">Default: 0 (Normal)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_IridescenceBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the overall application intensity of the iridescence effect.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_IridescenceBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Blurs the boundaries of the iridescence effect.</p>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

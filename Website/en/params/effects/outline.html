@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Outline - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Outline</h1>
+    <p class="page-subtitle">Draw outlines around objects</p>
+
+    <p>An outline effect that draws lines along the contours of objects. As a fundamental feature of toon shaders, it adds anime-style outlines to characters and props. Includes automatic compensation based on camera distance.</p>
+    <p>Keyword: <code>_OUTLINE</code></p>
+
+    <h2 id="settings">Outline Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rendering Method</span>
+        <span class="param-prop">_OutlineMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the outline rendering method.</p>
+        <ul>
+          <li><strong>Inverted Hull (0)</strong> - Draws outlines by extruding vertices along normals. Generally produces stable results with automatic camera distance adjustment. May show artifacts on low-poly models or hard edges.</li>
+          <li><strong>Back Face (1)</strong> - Draws outlines by scaling the mesh and rendering back faces. Produces smooth outlines suited for high-poly models. Internal structures may become visible.</li>
+        </ul>
+        <p class="param-default">Default: 0 (Inverted Hull)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Outline Width</span>
+        <span class="param-prop">_OutlineWidth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the thickness of the outline. Automatic camera distance compensation is applied, maintaining consistent thickness at all distances.</p>
+        <p class="param-default">Default: 0.1 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Outline Color</span>
+        <span class="param-prop">_OutlineColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the color of the outline.</p>
+        <p class="param-default">Default: (0, 0, 0, 1) (black)</p>
+      </div>
+      <div class="param-tip">For characters, slightly brown or dark navy tones blend better in anime style than pure black.</div>
+    </div>
+
+    <h2 id="mask">Outline Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Outline Mask (R)</span>
+        <span class="param-prop">_OutlineMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>Uses the R (red) channel to control outline visibility. Enabled by the keyword <code>_OUTLINE_MASK</code>.</p>
+        <ul>
+          <li>White (1.0): Outline fully visible</li>
+          <li>Black (0.0): Outline hidden</li>
+          <li>Gray: Partially visible</li>
+        </ul>
+        <p class="param-default">Default: "white" (visible everywhere)</p>
+      </div>
+      <div class="param-tip">Useful for hiding outlines around the eyes and mouth on the face.</div>
+    </div>
+
+    <h2 id="width-map">Outline Width Map</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Outline Width Map (R)</span>
+        <span class="param-prop">_OutlineWidthMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>Uses the R (red) channel to control outline width per body part. Enabled by the keyword <code>_OUTLINE_WIDTH_MAP</code>.</p>
+        <ul>
+          <li>White (1.0): Normal width</li>
+          <li>Black (0.0): Zero width (outline hidden)</li>
+          <li>Gray: Partial width</li>
+        </ul>
+        <p class="param-default">Default: "white" (uniform width)</p>
+      </div>
+      <div class="param-tip">You can adjust outline thickness per body part, such as thin on the face and thick on the body.</div>
+    </div>
+
+    <h2 id="multi-color">Multi-Color Outline</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Outline Color 2</span>
+        <span class="param-prop">_OutlineColor2</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>The second color for a two-color gradient outline. Enabled by the keyword <code>_OUTLINE_MULTI_COLOR</code>.</p>
+        <p class="param-default">Default: (0.5, 0, 0, 1) (dark red)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Color Mix</span>
+        <span class="param-prop">_OutlineColorMix</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the mix ratio between Outline Color 1 and Color 2. 0 uses only Color 1, and 1 uses only Color 2.</p>
+        <p class="param-default">Default: 0.5 (Range: 0 - 1)</p>
+      </div>
+      <div class="param-tip">Use this to add gradient or animation effects to the outline.</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

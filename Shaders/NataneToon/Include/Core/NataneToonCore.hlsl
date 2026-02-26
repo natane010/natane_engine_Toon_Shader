@@ -21,6 +21,8 @@
 #include "NataneToonInput.hlsl"
 #include "../Utils/NataneToonUtils.hlsl"
 #include "../Lighting/NataneToonLighting.hlsl"
+#include "../Lighting/NataneToonLightmap.hlsl"
+#include "../Lighting/NataneToonPBR.hlsl"
 #include "NataneToonVertex.hlsl"
 #include "NataneToonTessellation.hlsl"
 #include "../Rendering/NataneToonFragment.hlsl"

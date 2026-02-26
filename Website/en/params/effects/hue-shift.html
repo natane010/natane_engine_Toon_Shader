@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hue Shift - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Hue Shift</h1>
+    <p class="page-subtitle">Real-time hue variation color effect</p>
+
+    <p>An effect that changes the hue of the entire material in real time. Ideal for color-changing effects in VRChat. By controlling the parameter from an Animator Controller, you can switch the color of costumes and accessories in real time.</p>
+    <p>Keyword: <code>_HUE_SHIFT</code></p>
+
+    <h2 id="settings">Hue Shift Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hue Shift</span>
+        <span class="param-prop">_HueShift</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Changes the hue of the entire material. The color rotates along the hue wheel.</p>
+        <ul>
+          <li>0 = No change (original color)</li>
+          <li>0.25 = 90 degree rotation</li>
+          <li>0.5 = Complementary color (180 degree rotation)</li>
+          <li>0.75 = 270 degree rotation</li>
+          <li>1 = Full rotation (returns to original color)</li>
+        </ul>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+      <div class="param-tip">Ideal for linking with VRChat's Expression Menu to change costume colors in real time during play.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_HueShiftBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the overall application amount of the hue shift effect. 0 keeps the original color, 1 fully applies the hue shift.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_HueShiftBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Blurs the boundaries of the hue shift.</p>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

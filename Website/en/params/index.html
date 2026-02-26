@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parameter List - Natane Toon Shader</title>
+    <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+
+<header class="site-header"></header>
+
+<div class="page-wrapper no-sidebar">
+    <main class="main-content">
+
+        <h1>Parameter List</h1>
+        <p class="page-subtitle">All parameter groups of Natane Toon Shader are organized into five categories.</p>
+
+        <div id="param-categories" class="category-cards"></div>
+
+    </main>
+</div>
+
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+
+<script src="../../nav.js"></script>
+<script>
+(function() {
+    var data = window.NataneNav;
+    if (!data) return;
+    var container = document.getElementById('param-categories');
+    var catOrder = ['basic', 'lighting', 'effects', 'environment', 'advanced'];
+    var catDesc = {
+        basic:       'Main texture, color, makeup, and shading basics',
+        lighting:    'Light control, backlight, VRC Light Volumes, AO, and other lighting settings',
+        effects:     'Specular, rim light, MatCap, hologram, outline, and other effects',
+        environment: 'Reflection, iridescence, environment rim, and refraction settings',
+        advanced:    'Normal map, parallax, VAT, rendering settings, and other advanced options'
+    };
+    catOrder.forEach(function(key) {
+        var cat = data.CATEGORIES[key];
+        var pages = data.PAGE_ORDER[key];
+        if (!cat || !pages) return;
+        var a = document.createElement('a');
+        a.className = 'category-card';
+        a.href = key + '/' + pages[0].file;
+        a.innerHTML =
+            '<div class="card-icon">' + cat.icon + '</div>' +
+            '<h3>' + cat.label + '</h3>' +
+            '<p>' + (catDesc[key] || '') + '</p>' +
+            '<span class="page-count">' + pages.length + ' pages</span>';
+        container.appendChild(a);
+    });
+})();
+</script>
+</body>
+</html>

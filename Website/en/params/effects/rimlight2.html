@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rim Light 2 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Rim Light 2</h1>
+    <p class="page-subtitle">A second rim light layer with different color and intensity</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Rim Light 2 is a second rim light layer independent from Rim Light 1. By layering two rim light layers, you can achieve more complex and three-dimensional rim light expressions.</p>
+    <p>Controlled by the keyword <code>_RIM_LIGHT_2</code>. No shader instructions are generated when disabled.</p>
+
+    <h3 id="multi-rim">Recommended Multi-Layer Rim Light Settings</h3>
+    <div class="feature-section">
+      <p>Tips for effectively using two rim light layers:</p>
+      <ul>
+        <li><strong>Rim Light 1</strong>: Bright color, low power (inner contour)</li>
+        <li><strong>Rim Light 2</strong>: Pale color, high power (outer contour)</li>
+      </ul>
+      <p>By combining different blend modes and colors, you can create rainbow contours or gradient effects.</p>
+    </div>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rim Light 2 Color</span>
+        <span class="param-prop">_RimColor2</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the color of the second rim light. Setting a different color from Rim Light 1 creates a gradient effect.</p>
+        <p class="param-default">Default: (0.5, 0.8, 1, 1) (light blue)</p>
+      </div>
+      <div class="param-tip">Using complementary colors with Rim Light 1 creates a dreamy impression.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rim Light 2 Power</span>
+        <span class="param-prop">_RimPower2</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the sharpness of the second rim light. Setting a different power value from Rim Light 1 produces different contour effects for inner and outer areas.</p>
+        <p class="param-default">Default: 5</p>
+        <p class="param-range">Range: 0.1 - 10</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rim Light 2 Intensity</span>
+        <span class="param-prop">_RimIntensity2</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the brightness (intensity) of the second rim light.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rim Spread 2 (Glow)</span>
+        <span class="param-prop">_RimSpread2</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Bleeds and spreads Rim Light 2.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rim Mask 2</span>
+        <span class="param-prop">_RimMask2</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls the display area of Rim Light 2. Enabled by the keyword <code>_RIM_MASK_2</code>. Independent from Rim Light 1's mask.</p>
+        <p class="param-default">Default: "white" (full display)</p>
+      </div>
+      <div class="param-tip">White = rim light visible, Black = rim light hidden. Since a separate mask from Rim Light 1 can be used, different rim light settings per part are possible.</div>
+    </div>
+
+    <h2 id="blend">Blend &amp; Blur</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_RimBlendMode2</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the blend method for Rim Light 2.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Standard additive blending</li>
+          <li><strong>Soft (1)</strong> - Soft additive. Prevents over-brightening</li>
+          <li><strong>Screen (2)</strong> - Screen blending. Natural brightness addition</li>
+          <li><strong>Overlay (3)</strong> - Overlay blending. Enhances contrast</li>
+        </ul>
+        <p class="param-default">Default: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_RimBlend2</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity (opacity) of the Rim Light 2 effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_Rim2Blur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the blur amount of the Rim Light 2 effect.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

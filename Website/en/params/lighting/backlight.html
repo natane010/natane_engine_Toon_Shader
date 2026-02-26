@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backlight - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Backlight</h1>
+    <p class="page-subtitle">Edge glow and dramatic lighting from backlighting</p>
+
+    <p>Backlight adds illumination when light is behind the object, creating a rim-light-like edge glow effect. Ideal for dramatic backlighting scenes.</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Backlight Intensity</span>
+        <span class="param-prop">_BacklightIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of the backlight effect. 0 to disable; higher values produce a stronger backlight effect.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 2</p>
+      </div>
+      <div class="param-tip">Setting a value greater than 0 reveals the detailed backlight settings below.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Backlight Color</span>
+        <span class="param-prop">_BacklightColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>The color of the backlight. White for natural backlighting, warm tones for sunset style, cool tones for moonlight style.</p>
+        <p class="param-default">Default: (1, 1, 1, 1) (white)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_BacklightBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The blend intensity of the backlight effect. Controls how much the effect is mixed into the base color.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_BacklightBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Select the blending method for the backlight.</p>
+        <ul>
+          <li><strong>Normal (0)</strong>: Standard blending</li>
+          <li><strong>Soft (1)</strong>: Soft blending</li>
+          <li><strong>Screen (2)</strong>: Screen (additive brightening)</li>
+          <li><strong>Overlay (3)</strong>: Overlay (contrast enhancement)</li>
+        </ul>
+        <p class="param-default">Default: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_BacklightBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The blur amount of the backlight effect. 0 for sharp, 1 for maximum blur.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Adding blur creates a softer, more natural-looking backlight edge.</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

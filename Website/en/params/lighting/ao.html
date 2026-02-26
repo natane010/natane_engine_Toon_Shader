@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ambient Occlusion - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Ambient Occlusion</h1>
+    <p class="page-subtitle">Enhance contact shadows for realistic shading</p>
+
+    <p>Ambient Occlusion (AO) darkens areas where ambient light has difficulty reaching, such as crevices and cavities, creating a more three-dimensional and soft impression. Ideal for expressing natural shadows in clothing folds, overlapping hair, inner ears, and similar areas.</p>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">AO Map</span>
+        <span class="param-prop">_AOMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The ambient occlusion map texture. White = no shadow (bright), Black = full shadow (dark). Keyword: _USE_AO</p>
+        <p class="param-default">Default: "white" (enabled via toggle)</p>
+      </div>
+      <div class="param-tip">Ideal for shadow expression in areas like armpits and necklines. AO maps can be baked from 3D modeling software or painted manually.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">AO Intensity</span>
+        <span class="param-prop">_AOIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the strength of the AO effect. 0 for no effect, 1 for maximum effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Recommended intensity: 0.5-0.8. Too strong can make shadows look unnatural.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_AOBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The blend intensity of the AO effect. Controls how much the effect is mixed into the base color.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_AOBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Select the blending method for AO.</p>
+        <ul>
+          <li><strong>Normal (0)</strong>: Standard blending</li>
+          <li><strong>Soft (1)</strong>: Soft blending</li>
+          <li><strong>Screen (2)</strong>: Screen</li>
+          <li><strong>Overlay (3)</strong>: Overlay</li>
+        </ul>
+        <p class="param-default">Default: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_AOBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The blur amount of the AO effect. 0 for sharp, 1 for maximum blur.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Adding blur creates softer, more natural AO boundaries. Also effective when texture resolution is low.</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

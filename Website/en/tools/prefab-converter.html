@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prefab Variant Converter - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Prefab Variant Converter</h1>
+    <p class="page-subtitle">Generate prefab variants and batch convert lilToon materials to NataneToon</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Migration &gt; Prefab Variant Converter</span>
+      <span>Category: Migration</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>The Prefab Variant Converter creates a variant from an existing prefab (such as an avatar) and batch converts the lilToon materials within that variant to Natane Toon Shader. The original prefab and materials are preserved, allowing you to safely try the shader migration.</p>
+    <p>In VRChat avatar production, directly modifying purchased body or accessory prefabs can cause issues during updates. This tool leverages Unity's prefab variant feature to replace only the materials with Natane Toon Shader versions while maintaining references to the original prefab. This way, when the original prefab is updated, basic changes are automatically reflected.</p>
+    <p>Material naming conventions can be customized (prefix/suffix settings), and you can preview before conversion, making it easier to organize materials within your project. While specialized for lilToon migration, the converted materials function fully as Natane Toon Shader materials, giving you access to all Natane Toon features.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+      <li><strong>Automatic Prefab Variant Generation</strong> — Automatically creates a variant without modifying the original prefab. Can follow updates to the original prefab</li>
+      <li><strong>Batch Material Conversion</strong> — Detects lilToon materials within the variant and batch converts them to Natane Toon Shader</li>
+      <li><strong>lilToon to NataneToon Migration</strong> — Dedicated automatic property mapping for lilToon, carrying over textures, colors, and parameters automatically</li>
+      <li><strong>Material Name Customization</strong> — Add prefixes or suffixes to converted material names. Example: set naming rules like "Natane_Body"</li>
+      <li><strong>Pre-execution Preview</strong> — Preview the list of detected lilToon materials and post-conversion material names. Individual conversion targets can be selected</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Select Prefab</strong>
+        <p>Select the avatar prefab in the Scene view or Project view. If an instance exists in the Hierarchy, you can select that instead.</p>
+      </li>
+      <li>
+        <strong>Configure Settings</strong>
+        <p>Set the material prefix/suffix and save location. Setting the prefix to "Natane_" results in converted material names like "Natane_Body" and "Natane_Hair".</p>
+      </li>
+      <li>
+        <strong>Preview Materials</strong>
+        <p>Review the list of detected lilToon materials and select which ones to convert. Uncheck any specific materials you don't want to convert.</p>
+      </li>
+      <li>
+        <strong>Execute Conversion</strong>
+        <p>Click "Generate Variant & Execute Conversion" to create the prefab variant and convert the selected materials to Natane Toon Shader.</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>The original prefab and materials are not modified at all. You can always revert to the original state, so feel free to experiment</li>
+      <li>Using a consistent prefix makes organization in the Project view easier. Recommended: "Natane_" or "NT_"</li>
+      <li>You can verify exact material names before conversion in the preview screen, so check for naming duplicates</li>
+      <li>Multiple materials can be batch converted, completing an entire avatar migration in a single operation</li>
+      <li>After conversion, add Natane Toon Shader-exclusive features (custom rim light, MatCap, dissolve, etc.) to further enhance expressiveness</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

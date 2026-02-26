@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parallax - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Parallax</h1>
+    <p class="page-subtitle">Pseudo-depth with parallax mapping</p>
+
+    <h2>Overview</h2>
+    <p>Parallax (parallax mapping) is a technique that creates the illusion of depth on a surface using a height map. By offsetting texture coordinates based on the camera's viewing angle, it adds a sense of three-dimensional depth to cobblestones, brick walls, tiles, and similar surfaces without deforming the actual geometry.</p>
+    <p>Controlled by the keyword <code>_PARALLAX</code>.</p>
+
+    <h2>Properties</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable Parallax Mapping</span>
+        <span class="param-prop">_Parallax</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Toggles the parallax mapping feature on/off. Branches at compile time using the keyword <code>_PARALLAX</code>.</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Height Map</span>
+        <span class="param-prop">_ParallaxMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A grayscale texture containing surface height information. White areas are raised, and black areas are lowered.</p>
+        <p class="param-default">Default: "black"</p>
+      </div>
+      <div class="param-tip">Height maps are most effective when used together with normal maps.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Parallax Scale</span>
+        <span class="param-prop">_ParallaxScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the strength of the parallax effect. Increasing the value provides a deeper sense of depth, but values too high may cause unnatural artifacts.</p>
+        <p class="param-default">Default: 0.02</p>
+      </div>
+      <div class="param-tip">Adjusting within the 0.01-0.05 range is recommended.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Minimum Samples</span>
+        <span class="param-prop">_ParallaxMinSamples</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The number of ray marching samples when viewing from the front. Fewer samples reduce processing load but decrease quality.</p>
+        <p class="param-default">Default: 4</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Maximum Samples</span>
+        <span class="param-prop">_ParallaxMaxSamples</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The maximum number of ray marching samples when viewing at steep angles. More samples are needed at steep angles, so this value balances quality and performance.</p>
+        <p class="param-default">Default: 16</p>
+      </div>
+      <div class="param-tip">For VRChat Quest, keeping the maximum sample count to 8-12 can reduce performance impact.</div>
+    </div>
+
+    <h2>Usage Tips</h2>
+    <ul>
+      <li>Best suited for hard surfaces like stone and walls</li>
+      <li>Combining normal maps with height maps produces the most realistic results</li>
+      <li>Keep the scale value modest to prevent visual artifacts</li>
+      <li>Increasing sample count improves quality but also increases GPU load</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

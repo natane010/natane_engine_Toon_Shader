@@ -426,6 +426,23 @@ pre code { background: none; padding: 0; }
 .category-card p { color: var(--text-dim); font-size: .85rem; margin: 0 0 12px; }
 .category-card .page-count { font-size: .78rem; color: var(--text-muted); }
 
+/* ---------- Language Toggle ---------- */
+.lang-toggle {
+  padding: 4px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--text) !important;
+  text-decoration: none !important;
+  margin-left: 8px;
+  transition: background var(--transition), color var(--transition);
+  white-space: nowrap;
+}
+.lang-toggle:hover {
+  background: var(--accent);
+  color: #fff !important;
+}
+
 /* ---------- Utility ---------- */
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reflection - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Reflection</h1>
+    <p class="page-subtitle">Environment reflection using cubemaps</p>
+
+    <p>An effect that simulates environment reflections using cubemaps. Ideal for expressing reflective materials such as metal, glass, and glossy plastic. Fresnel settings allow natural reflections that vary based on viewing angle.</p>
+    <p>Keyword: <code>_REFLECTION</code></p>
+
+    <h2 id="basic">Basic Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Reflection Cubemap</span>
+        <span class="param-prop">_ReflectionCube</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The cubemap texture used for environment reflection. Displays surrounding scenery as reflections on the surface.</p>
+        <p class="param-default">Default: "black" (no reflection)</p>
+      </div>
+      <div class="param-tip">You can generate a cubemap from the Skybox or use a custom HDRI for realistic reflections.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Reflection Color</span>
+        <span class="param-prop">_ReflectionColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the color tint of reflections. White preserves the original cubemap colors; a tinted color adds color to the reflections.</p>
+        <p class="param-default">Default: (1, 1, 1, 1) (white, no change)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Reflection Intensity</span>
+        <span class="param-prop">_ReflectionIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the intensity of environment reflection. Higher values produce stronger reflections.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 2)</p>
+      </div>
+    </div>
+
+    <h2 id="surface">Surface Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Smoothness (Glossiness)</span>
+        <span class="param-prop">_Smoothness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the surface smoothness (glossiness). Higher values produce mirror-like reflections, while lower values create blurred reflections.</p>
+        <p class="param-default">Default: 0.5 (Range: 0 - 1)</p>
+      </div>
+      <div class="param-tip">Metal: 0.7-1.0, Plastic: 0.3-0.6, Matte materials: 0-0.2 as a guideline.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Metallic</span>
+        <span class="param-prop">_Metallic</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the metalness of the material. Metallic materials have stronger reflections, while non-metallic materials emphasize the Fresnel effect.</p>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <h2 id="fresnel">Fresnel Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fresnel Power</span>
+        <span class="param-prop">_FresnelPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the strength of the Fresnel effect. Higher values limit reflections to edge areas (viewed at oblique angles).</p>
+        <p class="param-default">Default: 5 (Range: 0 - 10)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fresnel Softness</span>
+        <span class="param-prop">_FresnelSoftness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Softens the reflection boundary for more natural and artistic reflections.</p>
+        <ul>
+          <li>0 = Sharp boundary (realistic)</li>
+          <li>0.5 - 0.7 = Soft boundary (recommended)</li>
+          <li>1.0 = Very soft boundary (artistic)</li>
+        </ul>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <h2 id="blend">Blend Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_ReflectionBlendMode</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets how the reflection is composited with the base color.</p>
+        <ul>
+          <li>0 = Additive (brightens)</li>
+          <li>1 = Overlay (natural integration)</li>
+        </ul>
+        <p class="param-default">Default: 0 (Additive)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_ReflectionBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the overall application intensity of the reflection effect.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Reflection Mask</span>
+        <span class="param-prop">_ReflectionMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the reflection application area using a texture. Enabled with the keyword <code>_REFLECTION_MASK</code>.</p>
+        <p class="param-default">Default: "white" (applied everywhere)</p>
+      </div>
+      <div class="param-tip">White = reflection visible, Black = no reflection. Useful for applying reflections only to metallic parts.</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

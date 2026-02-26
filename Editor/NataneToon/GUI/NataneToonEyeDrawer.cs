@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using static NataneToon.Editor.NataneToonLocalization;
 
 namespace NataneToon.Editor
 {
@@ -97,8 +98,10 @@ namespace NataneToon.Editor
 
             // ヘルプボックス
             EditorGUILayout.HelpBox(
-                "右上/左上など部分UV: Eye Select Mode を 'Nearest Center' に設定。\n" +
-                "左右対称UV: Eye Center Mode を 'Symmetry From Center1' にし、Symmetry Pivot X を調整。",
+                L("右上/左上など部分UV: Eye Select Mode を 'Nearest Center' に設定。\n" +
+                  "左右対称UV: Eye Center Mode を 'Symmetry From Center1' にし、Symmetry Pivot X を調整。",
+                  "Partial UV (top-right/top-left etc.): Set Eye Select Mode to 'Nearest Center'.\n" +
+                  "Symmetrical UV: Set Eye Center Mode to 'Symmetry From Center1' and adjust Symmetry Pivot X."),
                 MessageType.Info);
             EditorGUILayout.Space(5);
 
@@ -140,7 +143,7 @@ namespace NataneToon.Editor
             };
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("ナタネトゥーン 目シェーダー", headerStyle);
+            EditorGUILayout.LabelField(L("ナタネトゥーン 目シェーダー", "Natane Toon Eye Shader"), headerStyle);
             EditorGUILayout.EndVertical();
         }
 
@@ -157,262 +160,265 @@ namespace NataneToon.Editor
 
         private void DrawEyeStateSection()
         {
-            if (!DrawFoldout(ref showEyeState, "瞳の状態 (Eye State)")) return;
+            if (!DrawFoldout(ref showEyeState, L("瞳の状態 (Eye State)", "Eye State"))) return;
             EditorGUI.indentLevel++;
-            DrawProperty("_EyeState", "目の状態 (Normal/Star/Heart/Dead/Nervous)");
+            DrawProperty("_EyeState", L("目の状態 (Normal/Star/Heart/Dead/Nervous)", "Eye State (Normal/Star/Heart/Dead/Nervous)"));
             EditorGUILayout.HelpBox(
-                "Normal=通常 / Star=星目 / Heart=ハート / Dead=死んだ目 / Nervous=緊張",
+                L("Normal=通常 / Star=星目 / Heart=ハート / Dead=死んだ目 / Nervous=緊張",
+                  "Normal / Star / Heart / Dead / Nervous"),
                 MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawMainSettingsSection()
         {
-            if (!DrawFoldout(ref showMainSettings, "メイン設定")) return;
+            if (!DrawFoldout(ref showMainSettings, L("メイン設定", "Main Settings"))) return;
             EditorGUI.indentLevel++;
             MaterialProperty mainTexProp = FindProperty("_MainTex", properties, false);
-            if (mainTexProp != null) materialEditor.TextureProperty(mainTexProp, "ベーステクスチャ");
-            DrawToggle("_USE_TEXTURE", "_UseTexture", "テクスチャを使用");
-            DrawProperty("_TextureBlend", "テクスチャブレンド");
-            DrawProperty("_BlendMode", "ブレンドモード");
-            DrawProperty("_MainParallax", "パララックス強度");
-            DrawProperty("_MainColor", "グレアカラー (HDR)");
-            DrawProperty("_BackgroundColor", "背景色 (HDR)");
-            DrawProperty("_PupilSize", "瞳孔サイズ");
-            DrawProperty("_PupilAspect", "瞳孔アスペクト XY (1,1=円)");
+            if (mainTexProp != null) materialEditor.TextureProperty(mainTexProp, L("ベーステクスチャ", "Base Texture"));
+            DrawToggle("_USE_TEXTURE", "_UseTexture", L("テクスチャを使用", "Use Texture"));
+            DrawProperty("_TextureBlend", L("テクスチャブレンド", "Texture Blend"));
+            DrawProperty("_BlendMode", L("ブレンドモード", "Blend Mode"));
+            DrawProperty("_MainParallax", L("パララックス強度", "Parallax Intensity"));
+            DrawProperty("_MainColor", L("グレアカラー (HDR)", "Glare Color (HDR)"));
+            DrawProperty("_BackgroundColor", L("背景色 (HDR)", "Background Color (HDR)"));
+            DrawProperty("_PupilSize", L("瞳孔サイズ", "Pupil Size"));
+            DrawProperty("_PupilAspect", L("瞳孔アスペクト XY (1,1=円)", "Pupil Aspect XY (1,1=Circle)"));
             EditorGUI.indentLevel--;
         }
 
         private void DrawDualCenterSection()
         {
-            if (!DrawFoldout(ref showDualCenter, "デュアルアイセンター")) return;
+            if (!DrawFoldout(ref showDualCenter, L("デュアルアイセンター", "Dual Eye Center"))) return;
             EditorGUI.indentLevel++;
-            DrawProperty("_EyeCenter1", "アイセンター 1 (UV)");
-            DrawProperty("_EyeCenter2", "アイセンター 2 (UV)");
-            DrawProperty("_EyeSeparationX", "左右分離Xしきい値");
-            DrawProperty("_EyeSelectMode", "目の選択モード");
-            DrawProperty("_EyeCenterMode", "アイセンターモード");
-            DrawProperty("_EyeSymmetryPivotX", "対称ピボット X");
-            DrawProperty("_MirrorRightEyeUV", "右目UVミラー");
+            DrawProperty("_EyeCenter1", L("アイセンター 1 (UV)", "Eye Center 1 (UV)"));
+            DrawProperty("_EyeCenter2", L("アイセンター 2 (UV)", "Eye Center 2 (UV)"));
+            DrawProperty("_EyeSeparationX", L("左右分離Xしきい値", "Left/Right Separation X Threshold"));
+            DrawProperty("_EyeSelectMode", L("目の選択モード", "Eye Select Mode"));
+            DrawProperty("_EyeCenterMode", L("アイセンターモード", "Eye Center Mode"));
+            DrawProperty("_EyeSymmetryPivotX", L("対称ピボット X", "Symmetry Pivot X"));
+            DrawProperty("_MirrorRightEyeUV", L("右目UVミラー", "Mirror Right Eye UV"));
             EditorGUILayout.HelpBox(
-                "Nearest Center: UV座標に最も近い中心を選択。\n" +
-                "Symmetry From Center1: Center1を基準に左右対称化。",
+                L("Nearest Center: UV座標に最も近い中心を選択。\n" +
+                  "Symmetry From Center1: Center1を基準に左右対称化。",
+                  "Nearest Center: Selects the center closest to the UV coordinate.\n" +
+                  "Symmetry From Center1: Symmetrizes based on Center1."),
                 MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawRegionMaskSection()
         {
-            if (!DrawFoldout(ref showRegionMask, "瞳リージョンマスク")) return;
+            if (!DrawFoldout(ref showRegionMask, L("瞳リージョンマスク", "Eye Region Mask"))) return;
             EditorGUI.indentLevel++;
-            DrawProperty("_UseEyeRegionMask", "リージョンマスクを使用");
+            DrawProperty("_UseEyeRegionMask", L("リージョンマスクを使用", "Use Region Mask"));
             MaterialProperty maskProp = FindProperty("_EyeRegionMask", properties, false);
-            if (maskProp != null) materialEditor.TextureProperty(maskProp, "マスクテクスチャ");
-            DrawProperty("_EyeMaskChannel", "マスクチャンネル");
-            DrawProperty("_EyeMaskThreshold", "マスクしきい値");
-            DrawProperty("_EyeMaskSoftness", "マスク柔らかさ");
-            DrawProperty("_EyeMaskInvert", "マスク反転");
-            EditorGUILayout.HelpBox("顔と目が同一マテリアルの場合に使用。目の領域をマスクで指定します。", MessageType.None);
+            if (maskProp != null) materialEditor.TextureProperty(maskProp, L("マスクテクスチャ", "Mask Texture"));
+            DrawProperty("_EyeMaskChannel", L("マスクチャンネル", "Mask Channel"));
+            DrawProperty("_EyeMaskThreshold", L("マスクしきい値", "Mask Threshold"));
+            DrawProperty("_EyeMaskSoftness", L("マスク柔らかさ", "Mask Softness"));
+            DrawProperty("_EyeMaskInvert", L("マスク反転", "Invert Mask"));
+            EditorGUILayout.HelpBox(L("顔と目が同一マテリアルの場合に使用。目の領域をマスクで指定します。", "Use when the face and eyes share the same material. Specify the eye region with a mask."), MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawStateNormalSection()
         {
-            if (!DrawFoldout(ref showStateNormal, "通常状態 (Normal)")) return;
+            if (!DrawFoldout(ref showStateNormal, L("通常状態 (Normal)", "Normal State"))) return;
             EditorGUI.indentLevel++;
             MaterialProperty texProp = FindProperty("_NormalStateTex", properties, false);
-            if (texProp != null) materialEditor.TextureProperty(texProp, "通常状態テクスチャ");
-            DrawProperty("_NormalPupilColor", "瞳孔カラー (HDR)");
-            DrawProperty("_DetailBrightness", "ディテール明るさ");
+            if (texProp != null) materialEditor.TextureProperty(texProp, L("通常状態テクスチャ", "Normal State Texture"));
+            DrawProperty("_NormalPupilColor", L("瞳孔カラー (HDR)", "Pupil Color (HDR)"));
+            DrawProperty("_DetailBrightness", L("ディテール明るさ", "Detail Brightness"));
             EditorGUI.indentLevel--;
         }
 
         private void DrawStateStarSection()
         {
-            if (!DrawFoldout(ref showStateStar, "星目状態 (Star)")) return;
+            if (!DrawFoldout(ref showStateStar, L("星目状態 (Star)", "Star State"))) return;
             EditorGUI.indentLevel++;
             MaterialProperty texProp = FindProperty("_StarStateTex", properties, false);
-            if (texProp != null) materialEditor.TextureProperty(texProp, "星目テクスチャ");
-            DrawProperty("_StarColor", "星カラー (HDR)");
-            DrawProperty("_StarRockSharpness", "揺れ鋭さ");
-            DrawProperty("_StarRockAngle", "揺れ角度");
-            DrawProperty("_StarRockSpeed", "揺れ速度");
+            if (texProp != null) materialEditor.TextureProperty(texProp, L("星目テクスチャ", "Star Texture"));
+            DrawProperty("_StarColor", L("星カラー (HDR)", "Star Color (HDR)"));
+            DrawProperty("_StarRockSharpness", L("揺れ鋭さ", "Rock Sharpness"));
+            DrawProperty("_StarRockAngle", L("揺れ角度", "Rock Angle"));
+            DrawProperty("_StarRockSpeed", L("揺れ速度", "Rock Speed"));
             EditorGUI.indentLevel--;
         }
 
         private void DrawStateHeartSection()
         {
-            if (!DrawFoldout(ref showStateHeart, "ハート状態 (Heart)")) return;
+            if (!DrawFoldout(ref showStateHeart, L("ハート状態 (Heart)", "Heart State"))) return;
             EditorGUI.indentLevel++;
             MaterialProperty texProp = FindProperty("_HeartStateTex", properties, false);
-            if (texProp != null) materialEditor.TextureProperty(texProp, "ハートテクスチャ");
-            DrawProperty("_HeartPupilColor", "ハートカラー (HDR)");
-            DrawProperty("_HeartPulseSpeed", "パルス速度");
-            DrawProperty("_HeartPulsePower", "パルス強度");
+            if (texProp != null) materialEditor.TextureProperty(texProp, L("ハートテクスチャ", "Heart Texture"));
+            DrawProperty("_HeartPupilColor", L("ハートカラー (HDR)", "Heart Color (HDR)"));
+            DrawProperty("_HeartPulseSpeed", L("パルス速度", "Pulse Speed"));
+            DrawProperty("_HeartPulsePower", L("パルス強度", "Pulse Power"));
             EditorGUI.indentLevel--;
         }
 
         private void DrawStateDeadSection()
         {
-            if (!DrawFoldout(ref showStateDead, "死んだ目状態 (Dead)")) return;
+            if (!DrawFoldout(ref showStateDead, L("死んだ目状態 (Dead)", "Dead State"))) return;
             EditorGUI.indentLevel++;
             MaterialProperty texProp = FindProperty("_DeadStateTex", properties, false);
-            if (texProp != null) materialEditor.TextureProperty(texProp, "死んだ目テクスチャ");
-            DrawProperty("_DeadGradientOffset", "グラデーションオフセット");
-            DrawProperty("_DeadTopColor", "上部カラー");
-            DrawProperty("_DeadBottomColor", "下部カラー");
+            if (texProp != null) materialEditor.TextureProperty(texProp, L("死んだ目テクスチャ", "Dead Eye Texture"));
+            DrawProperty("_DeadGradientOffset", L("グラデーションオフセット", "Gradient Offset"));
+            DrawProperty("_DeadTopColor", L("上部カラー", "Top Color"));
+            DrawProperty("_DeadBottomColor", L("下部カラー", "Bottom Color"));
             EditorGUI.indentLevel--;
         }
 
         private void DrawStateNervousSection()
         {
-            if (!DrawFoldout(ref showStateNervous, "緊張状態 (Nervous)")) return;
+            if (!DrawFoldout(ref showStateNervous, L("緊張状態 (Nervous)", "Nervous State"))) return;
             EditorGUI.indentLevel++;
             MaterialProperty texProp = FindProperty("_NervousStateTex", properties, false);
-            if (texProp != null) materialEditor.TextureProperty(texProp, "緊張テクスチャ");
-            DrawProperty("_NervousBackgroundColor", "背景色 (HDR)");
-            DrawProperty("_NervousLinesColor", "線カラー (HDR)");
-            DrawProperty("_NervousLinesRandSeed", "ランダムシード");
-            DrawProperty("_NervousLinesRandOffs", "線のオフセット");
-            DrawProperty("_NervousLinesSize", "線のサイズ");
-            DrawProperty("_NervousLinesThickness", "線の太さ");
-            DrawProperty("_NervousCenterFill", "中心塗りつぶし");
+            if (texProp != null) materialEditor.TextureProperty(texProp, L("緊張テクスチャ", "Nervous Texture"));
+            DrawProperty("_NervousBackgroundColor", L("背景色 (HDR)", "Background Color (HDR)"));
+            DrawProperty("_NervousLinesColor", L("線カラー (HDR)", "Lines Color (HDR)"));
+            DrawProperty("_NervousLinesRandSeed", L("ランダムシード", "Random Seed"));
+            DrawProperty("_NervousLinesRandOffs", L("線のオフセット", "Lines Offset"));
+            DrawProperty("_NervousLinesSize", L("線のサイズ", "Lines Size"));
+            DrawProperty("_NervousLinesThickness", L("線の太さ", "Lines Thickness"));
+            DrawProperty("_NervousCenterFill", L("中心塗りつぶし", "Center Fill"));
             EditorGUI.indentLevel--;
         }
 
         private void DrawHueColorSection()
         {
-            if (!DrawFoldout(ref showHueColor, "色調調整 (Hue & Color)")) return;
+            if (!DrawFoldout(ref showHueColor, L("色調調整 (Hue & Color)", "Hue & Color"))) return;
             EditorGUI.indentLevel++;
-            DrawProperty("_Contrast", "コントラスト");
-            DrawProperty("_MainSaturation", "彩度");
-            DrawProperty("_MainHueShift", "色相オフセット");
-            DrawProperty("_MainHueSpeed", "色相アニメ速度");
+            DrawProperty("_Contrast", L("コントラスト", "Contrast"));
+            DrawProperty("_MainSaturation", L("彩度", "Saturation"));
+            DrawProperty("_MainHueShift", L("色相オフセット", "Hue Offset"));
+            DrawProperty("_MainHueSpeed", L("色相アニメ速度", "Hue Animation Speed"));
             EditorGUI.indentLevel--;
         }
 
         private void DrawBubbleSection()
         {
-            if (!DrawFoldout(ref showBubble, "バブルエフェクト")) return;
+            if (!DrawFoldout(ref showBubble, L("バブルエフェクト", "Bubble Effect"))) return;
             EditorGUI.indentLevel++;
-            DrawProperty("_BubbleSize", "バブルサイズ");
-            DrawProperty("_BubbleBrightness", "バブル明るさ");
-            DrawProperty("_BubbleWobbleSpeed", "揺れ速度");
-            DrawProperty("_BubbleWobbleStrength", "揺れ強度");
-            EditorGUILayout.HelpBox("瞳のハイライト粒子エフェクト。キラキラした輝きを追加します。", MessageType.None);
+            DrawProperty("_BubbleSize", L("バブルサイズ", "Bubble Size"));
+            DrawProperty("_BubbleBrightness", L("バブル明るさ", "Bubble Brightness"));
+            DrawProperty("_BubbleWobbleSpeed", L("揺れ速度", "Wobble Speed"));
+            DrawProperty("_BubbleWobbleStrength", L("揺れ強度", "Wobble Strength"));
+            EditorGUILayout.HelpBox(L("瞳のハイライト粒子エフェクト。キラキラした輝きを追加します。", "Iris highlight particle effect. Adds sparkling shine."), MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawIrisCausticsSection()
         {
-            if (!DrawFoldout(ref showIrisCaustics, "虹彩コースティクス")) return;
+            if (!DrawFoldout(ref showIrisCaustics, L("虹彩コースティクス", "Iris Caustics"))) return;
             EditorGUI.indentLevel++;
-            DrawProperty("_UseIrisCaustics", "コースティクスを有効化");
-            DrawProperty("_IrisCausticsColor", "コースティクスカラー (HDR)");
-            DrawProperty("_IrisCausticsIntensity", "強度");
-            DrawProperty("_IrisCausticsScale", "スケール");
-            DrawProperty("_IrisCausticsSpeed", "速度");
-            DrawProperty("_IrisCausticsParallax", "パララックス");
-            DrawProperty("_IrisCausticsTwist", "ツイスト");
-            DrawProperty("_IrisCausticsBlendMode", "ブレンドモード");
+            DrawProperty("_UseIrisCaustics", L("コースティクスを有効化", "Enable Caustics"));
+            DrawProperty("_IrisCausticsColor", L("コースティクスカラー (HDR)", "Caustics Color (HDR)"));
+            DrawProperty("_IrisCausticsIntensity", L("強度", "Intensity"));
+            DrawProperty("_IrisCausticsScale", L("スケール", "Scale"));
+            DrawProperty("_IrisCausticsSpeed", L("速度", "Speed"));
+            DrawProperty("_IrisCausticsParallax", L("パララックス", "Parallax"));
+            DrawProperty("_IrisCausticsTwist", L("ツイスト", "Twist"));
+            DrawProperty("_IrisCausticsBlendMode", L("ブレンドモード", "Blend Mode"));
             EditorGUI.indentLevel--;
         }
 
         private void DrawIrisRingPulseSection()
         {
-            if (!DrawFoldout(ref showIrisRingPulse, "虹彩リングパルス")) return;
+            if (!DrawFoldout(ref showIrisRingPulse, L("虹彩リングパルス", "Iris Ring Pulse"))) return;
             EditorGUI.indentLevel++;
-            DrawProperty("_UseIrisRingPulse", "リングパルスを有効化");
-            DrawProperty("_IrisRingColor", "リングカラー (HDR)");
-            DrawProperty("_IrisRingRadius", "リング半径");
-            DrawProperty("_IrisRingWidth", "リング幅");
-            DrawProperty("_IrisRingPulseSpeed", "パルス速度");
-            DrawProperty("_IrisRingPulseAmount", "パルス量");
-            DrawProperty("_IrisRingParallax", "パララックス");
-            DrawProperty("_IrisRingIntensity", "強度");
-            DrawProperty("_IrisRingBlendMode", "ブレンドモード");
+            DrawProperty("_UseIrisRingPulse", L("リングパルスを有効化", "Enable Ring Pulse"));
+            DrawProperty("_IrisRingColor", L("リングカラー (HDR)", "Ring Color (HDR)"));
+            DrawProperty("_IrisRingRadius", L("リング半径", "Ring Radius"));
+            DrawProperty("_IrisRingWidth", L("リング幅", "Ring Width"));
+            DrawProperty("_IrisRingPulseSpeed", L("パルス速度", "Pulse Speed"));
+            DrawProperty("_IrisRingPulseAmount", L("パルス量", "Pulse Amount"));
+            DrawProperty("_IrisRingParallax", L("パララックス", "Parallax"));
+            DrawProperty("_IrisRingIntensity", L("強度", "Intensity"));
+            DrawProperty("_IrisRingBlendMode", L("ブレンドモード", "Blend Mode"));
             EditorGUI.indentLevel--;
         }
 
         private void DrawTexturePolishSection()
         {
-            if (!DrawFoldout(ref showTexturePolish, "テクスチャポリッシュ")) return;
+            if (!DrawFoldout(ref showTexturePolish, L("テクスチャポリッシュ", "Texture Polish"))) return;
             EditorGUI.indentLevel++;
-            DrawProperty("_UseTexturePolish", "テクスチャポリッシュを有効化");
-            DrawProperty("_TexturePolishBlendMode", "ブレンドモード");
-            DrawProperty("_TexturePolishStrength", "強度");
-            DrawProperty("_TexturePolishContrast", "コントラスト");
-            DrawProperty("_TexturePolishSaturation", "彩度");
-            DrawProperty("_TexturePolishIrisFocus", "虹彩フォーカス");
-            DrawProperty("_TexturePolishTint", "ティントカラー (HDR)");
+            DrawProperty("_UseTexturePolish", L("テクスチャポリッシュを有効化", "Enable Texture Polish"));
+            DrawProperty("_TexturePolishBlendMode", L("ブレンドモード", "Blend Mode"));
+            DrawProperty("_TexturePolishStrength", L("強度", "Strength"));
+            DrawProperty("_TexturePolishContrast", L("コントラスト", "Contrast"));
+            DrawProperty("_TexturePolishSaturation", L("彩度", "Saturation"));
+            DrawProperty("_TexturePolishIrisFocus", L("虹彩フォーカス", "Iris Focus"));
+            DrawProperty("_TexturePolishTint", L("ティントカラー (HDR)", "Tint Color (HDR)"));
             EditorGUI.indentLevel--;
         }
 
         private void DrawExpressionSection()
         {
-            if (!DrawFoldout(ref showExpression, "表情オーバーレイ")) return;
+            if (!DrawFoldout(ref showExpression, L("表情オーバーレイ", "Expression Overlay"))) return;
             EditorGUI.indentLevel++;
-            DrawProperty("_ExpressionPreset", "表情プリセット");
-            DrawProperty("_ExpressionMode", "表情モード (Off/Spiral/Tearful/Shock)");
-            DrawProperty("_ExpressionColor", "表情カラー (HDR)");
-            DrawProperty("_ExpressionIntensity", "強度");
-            DrawProperty("_ExpressionScale", "スケール");
-            DrawProperty("_ExpressionSpeed", "速度");
-            DrawProperty("_ExpressionParallax", "パララックス");
-            DrawProperty("_ExpressionDetail", "ディテール");
+            DrawProperty("_ExpressionPreset", L("表情プリセット", "Expression Preset"));
+            DrawProperty("_ExpressionMode", L("表情モード (Off/Spiral/Tearful/Shock)", "Expression Mode (Off/Spiral/Tearful/Shock)"));
+            DrawProperty("_ExpressionColor", L("表情カラー (HDR)", "Expression Color (HDR)"));
+            DrawProperty("_ExpressionIntensity", L("強度", "Intensity"));
+            DrawProperty("_ExpressionScale", L("スケール", "Scale"));
+            DrawProperty("_ExpressionSpeed", L("速度", "Speed"));
+            DrawProperty("_ExpressionParallax", L("パララックス", "Parallax"));
+            DrawProperty("_ExpressionDetail", L("ディテール", "Detail"));
 
             EditorGUILayout.Space(3);
-            EditorGUILayout.LabelField("スパイラル設定", EditorStyles.miniBoldLabel);
-            DrawProperty("_SpiralTightness", "スパイラル巻き");
-            DrawProperty("_SpiralLineWidth", "スパイラル線幅");
+            EditorGUILayout.LabelField(L("スパイラル設定", "Spiral Settings"), EditorStyles.miniBoldLabel);
+            DrawProperty("_SpiralTightness", L("スパイラル巻き", "Spiral Tightness"));
+            DrawProperty("_SpiralLineWidth", L("スパイラル線幅", "Spiral Line Width"));
 
             EditorGUILayout.Space(3);
-            EditorGUILayout.LabelField("涙設定", EditorStyles.miniBoldLabel);
-            DrawProperty("_TearFlow", "涙の流れ");
-            DrawProperty("_TearRim", "涙のリムハイライト");
+            EditorGUILayout.LabelField(L("涙設定", "Tear Settings"), EditorStyles.miniBoldLabel);
+            DrawProperty("_TearFlow", L("涙の流れ", "Tear Flow"));
+            DrawProperty("_TearRim", L("涙のリムハイライト", "Tear Rim Highlight"));
 
             EditorGUILayout.Space(3);
-            EditorGUILayout.LabelField("ショックリング設定", EditorStyles.miniBoldLabel);
-            DrawProperty("_ShockRingCount", "リング数");
-            DrawProperty("_ShockRingWidth", "リング幅");
-            DrawProperty("_ExpressionBlendMode", "ブレンドモード");
+            EditorGUILayout.LabelField(L("ショックリング設定", "Shock Ring Settings"), EditorStyles.miniBoldLabel);
+            DrawProperty("_ShockRingCount", L("リング数", "Ring Count"));
+            DrawProperty("_ShockRingWidth", L("リング幅", "Ring Width"));
+            DrawProperty("_ExpressionBlendMode", L("ブレンドモード", "Blend Mode"));
             EditorGUI.indentLevel--;
         }
 
         private void DrawInnerMeshPrioritySection()
         {
-            if (!DrawFoldout(ref showInnerMeshPriority, "内部メッシュ優先度 (BlendShape)")) return;
+            if (!DrawFoldout(ref showInnerMeshPriority, L("内部メッシュ優先度 (BlendShape)", "Inner Mesh Priority (BlendShape)"))) return;
             EditorGUI.indentLevel++;
-            DrawProperty("_UseInnerMeshPriority", "内部メッシュ優先を有効化");
+            DrawProperty("_UseInnerMeshPriority", L("内部メッシュ優先を有効化", "Enable Inner Mesh Priority"));
             MaterialProperty maskProp = FindProperty("_InnerMeshPriorityMask", properties, false);
-            if (maskProp != null) materialEditor.TextureProperty(maskProp, "優先度マスク");
-            DrawProperty("_InnerMeshPriorityChannel", "マスクチャンネル");
-            DrawProperty("_InnerMeshPriorityThreshold", "しきい値");
-            DrawProperty("_InnerMeshPrioritySoftness", "柔らかさ");
-            DrawProperty("_InnerMeshPriorityInvert", "反転");
-            DrawProperty("_InnerMeshPriorityMode", "優先度モード");
-            DrawProperty("_InnerMeshPriorityStrength", "強度");
-            EditorGUILayout.HelpBox("BlendShape使用時の内部メッシュ描画優先度を制御します。", MessageType.None);
+            if (maskProp != null) materialEditor.TextureProperty(maskProp, L("優先度マスク", "Priority Mask"));
+            DrawProperty("_InnerMeshPriorityChannel", L("マスクチャンネル", "Mask Channel"));
+            DrawProperty("_InnerMeshPriorityThreshold", L("しきい値", "Threshold"));
+            DrawProperty("_InnerMeshPrioritySoftness", L("柔らかさ", "Softness"));
+            DrawProperty("_InnerMeshPriorityInvert", L("反転", "Invert"));
+            DrawProperty("_InnerMeshPriorityMode", L("優先度モード", "Priority Mode"));
+            DrawProperty("_InnerMeshPriorityStrength", L("強度", "Strength"));
+            EditorGUILayout.HelpBox(L("BlendShape使用時の内部メッシュ描画優先度を制御します。", "Controls inner mesh draw priority when using BlendShapes."), MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawPerformanceSection()
         {
-            if (!DrawFoldout(ref showPerformance, "パフォーマンス")) return;
+            if (!DrawFoldout(ref showPerformance, L("パフォーマンス", "Performance"))) return;
             EditorGUI.indentLevel++;
-            DrawProperty("_PerformanceTier", "パフォーマンスティア (Quality/Balanced/Lite)");
-            EditorGUILayout.HelpBox("Lite: 軽量化のため一部エフェクトを無効化。Quest対応時はLite推奨。", MessageType.None);
+            DrawProperty("_PerformanceTier", L("パフォーマンスティア (Quality/Balanced/Lite)", "Performance Tier (Quality/Balanced/Lite)"));
+            EditorGUILayout.HelpBox(L("Lite: 軽量化のため一部エフェクトを無効化。Quest対応時はLite推奨。", "Lite: Disables some effects for optimization. Recommended for Quest."), MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawVignetteSection()
         {
-            if (!DrawFoldout(ref showVignette, "ビネットエフェクト")) return;
+            if (!DrawFoldout(ref showVignette, L("ビネットエフェクト", "Vignette Effect"))) return;
             EditorGUI.indentLevel++;
-            DrawProperty("_VignetteTransparency", "透過を有効化");
-            DrawProperty("_VignetteDitherScale", "ディザースケール");
-            DrawProperty("_VignetteThickness", "太さ");
-            DrawProperty("_VignetteFalloff", "フォールオフ");
+            DrawProperty("_VignetteTransparency", L("透過を有効化", "Enable Transparency"));
+            DrawProperty("_VignetteDitherScale", L("ディザースケール", "Dither Scale"));
+            DrawProperty("_VignetteThickness", L("太さ", "Thickness"));
+            DrawProperty("_VignetteFalloff", L("フォールオフ", "Falloff"));
             EditorGUI.indentLevel--;
         }
 
@@ -420,45 +426,45 @@ namespace NataneToon.Editor
         {
             if (!DrawFoldout(ref showAudioLink, "Audio Link")) return;
             EditorGUI.indentLevel++;
-            DrawProperty("_BandSelection", "周波数帯域");
-            DrawProperty("_Intensity", "強度");
-            DrawProperty("_MinValue", "最小明るさ");
-            EditorGUILayout.HelpBox("VRChatワールドにAudioLinkが設置されている場合に音楽連動します。", MessageType.None);
+            DrawProperty("_BandSelection", L("周波数帯域", "Frequency Band"));
+            DrawProperty("_Intensity", L("強度", "Intensity"));
+            DrawProperty("_MinValue", L("最小明るさ", "Minimum Brightness"));
+            EditorGUILayout.HelpBox(L("VRChatワールドにAudioLinkが設置されている場合に音楽連動します。", "Syncs with music when AudioLink is installed in the VRChat world."), MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawRenderingSection()
         {
-            if (!DrawFoldout(ref showRendering, "レンダリング設定")) return;
+            if (!DrawFoldout(ref showRendering, L("レンダリング設定", "Rendering Settings"))) return;
             EditorGUI.indentLevel++;
 
-            EditorGUILayout.LabelField("ステンシル", EditorStyles.miniBoldLabel);
-            DrawProperty("_StencilRef", "参照値");
-            DrawProperty("_StencilComp", "比較関数");
-            DrawProperty("_StencilPass", "パス操作");
-            DrawProperty("_StencilFail", "失敗操作");
-            DrawProperty("_StencilZFail", "Z失敗操作");
-            DrawProperty("_StencilReadMask", "リードマスク");
-            DrawProperty("_StencilWriteMask", "ライトマスク");
+            EditorGUILayout.LabelField(L("ステンシル", "Stencil"), EditorStyles.miniBoldLabel);
+            DrawProperty("_StencilRef", L("参照値", "Reference Value"));
+            DrawProperty("_StencilComp", L("比較関数", "Comparison Function"));
+            DrawProperty("_StencilPass", L("パス操作", "Pass Operation"));
+            DrawProperty("_StencilFail", L("失敗操作", "Fail Operation"));
+            DrawProperty("_StencilZFail", L("Z失敗操作", "Z Fail Operation"));
+            DrawProperty("_StencilReadMask", L("リードマスク", "Read Mask"));
+            DrawProperty("_StencilWriteMask", L("ライトマスク", "Write Mask"));
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("ブレンド & 透明", EditorStyles.miniBoldLabel);
-            DrawProperty("_SrcBlend", "ソースブレンド");
-            DrawProperty("_DstBlend", "宛先ブレンド");
-            DrawProperty("_BlendOp", "ブレンド操作");
-            DrawProperty("_TransparencyResolveMode", "透過解決モード");
-            DrawProperty("_TransparencyDitherScale", "透過ディザースケール");
-            DrawProperty("_GlobalOpacity", "全体透過率");
+            EditorGUILayout.LabelField(L("ブレンド & 透明", "Blend & Transparency"), EditorStyles.miniBoldLabel);
+            DrawProperty("_SrcBlend", L("ソースブレンド", "Source Blend"));
+            DrawProperty("_DstBlend", L("宛先ブレンド", "Destination Blend"));
+            DrawProperty("_BlendOp", L("ブレンド操作", "Blend Operation"));
+            DrawProperty("_TransparencyResolveMode", L("透過解決モード", "Transparency Resolve Mode"));
+            DrawProperty("_TransparencyDitherScale", L("透過ディザースケール", "Transparency Dither Scale"));
+            DrawProperty("_GlobalOpacity", L("全体透過率", "Global Opacity"));
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("深度 & カリング", EditorStyles.miniBoldLabel);
-            DrawProperty("_ZTest", "Zテスト");
-            DrawProperty("_ZWrite", "Z書き込み");
-            DrawProperty("_OffsetFactor", "オフセットファクター");
-            DrawProperty("_OffsetUnits", "オフセットユニット");
-            DrawProperty("_AlphaClipThreshold", "アルファクリップしきい値");
-            DrawProperty("_Cull", "カリングモード");
-            DrawProperty("_ColorMask", "カラーマスク");
+            EditorGUILayout.LabelField(L("深度 & カリング", "Depth & Culling"), EditorStyles.miniBoldLabel);
+            DrawProperty("_ZTest", L("Zテスト", "Z Test"));
+            DrawProperty("_ZWrite", L("Z書き込み", "Z Write"));
+            DrawProperty("_OffsetFactor", L("オフセットファクター", "Offset Factor"));
+            DrawProperty("_OffsetUnits", L("オフセットユニット", "Offset Units"));
+            DrawProperty("_AlphaClipThreshold", L("アルファクリップしきい値", "Alpha Clip Threshold"));
+            DrawProperty("_Cull", L("カリングモード", "Culling Mode"));
+            DrawProperty("_ColorMask", L("カラーマスク", "Color Mask"));
             EditorGUI.indentLevel--;
         }
 
@@ -470,8 +476,8 @@ namespace NataneToon.Editor
                 alignment = TextAnchor.MiddleCenter,
                 wordWrap = true
             };
-            EditorGUILayout.LabelField("ナタネ 目シェーダー v1.1", footerStyle);
-            EditorGUILayout.LabelField("5つの瞳状態 + 表情オーバーレイ対応", footerStyle);
+            EditorGUILayout.LabelField(L("ナタネ 目シェーダー v1.1", "Natane Eye Shader v1.1"), footerStyle);
+            EditorGUILayout.LabelField(L("5つの瞳状態 + 表情オーバーレイ対応", "5 Eye States + Expression Overlay Support"), footerStyle);
             EditorGUILayout.EndVertical();
         }
     }

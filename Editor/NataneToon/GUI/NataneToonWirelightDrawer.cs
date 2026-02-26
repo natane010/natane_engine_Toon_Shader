@@ -4,6 +4,7 @@ using System;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
     /// <summary>
     /// Wirelight シェーダー用のDrawer
     /// NataneToonShaderGUIから委譲される
@@ -163,32 +164,32 @@ namespace NataneToon.Editor
             // Main toggle
             MaterialProperty wirelightProp = FindProperty("_Wirelight", properties, false);
             if (wirelightProp == null) return;
-            materialEditor.ShaderProperty(wirelightProp, new GUIContent("Wirelightを有効化", "ワイヤーフレームエフェクトを有効化"));
+            materialEditor.ShaderProperty(wirelightProp, new GUIContent(L("Wirelightを有効化", "Enable Wirelight"), L("ワイヤーフレームエフェクトを有効化", "Enable wireframe effect")));
 
             if (wirelightProp.floatValue > 0.5f)
             {
                 EditorGUILayout.Space(10);
 
-                DrawFoldoutSection("クイックヒント", ref showQuickTips, DrawQuickTips);
+                DrawFoldoutSection(L("クイックヒント", "Quick Tips"), ref showQuickTips, DrawQuickTips);
                 EditorGUILayout.Space(5);
                 DrawPresetButtons();
                 EditorGUILayout.Space(10);
 
-                DrawFoldoutSection("ケージ & 頂点丸め込み", ref showCageSettings, DrawCageSettings);
-                DrawFoldoutSection("三角形の可視化", ref showTriangleSettings, DrawTriangleSettings);
-                DrawFoldoutSection("ディザリングパターン", ref showDitherSettings, DrawDitherSettings);
-                DrawFoldoutSection("ノイズアニメーション", ref showNoiseSettings, DrawNoiseSettings);
-                DrawFoldoutSection("デュアルカラーシステム", ref showColorSettings, DrawColorSettings);
-                DrawFoldoutSection("サイバーワイヤー拡張", ref showCyberSettings, DrawCyberSettings);
-                DrawFoldoutSection("テクスチャ", ref showTextureSettings, DrawTextureSettings);
+                DrawFoldoutSection(L("ケージ & 頂点丸め込み", "Cage & Vertex Rounding"), ref showCageSettings, DrawCageSettings);
+                DrawFoldoutSection(L("三角形の可視化", "Triangle Visualization"), ref showTriangleSettings, DrawTriangleSettings);
+                DrawFoldoutSection(L("ディザリングパターン", "Dithering Pattern"), ref showDitherSettings, DrawDitherSettings);
+                DrawFoldoutSection(L("ノイズアニメーション", "Noise Animation"), ref showNoiseSettings, DrawNoiseSettings);
+                DrawFoldoutSection(L("デュアルカラーシステム", "Dual Color System"), ref showColorSettings, DrawColorSettings);
+                DrawFoldoutSection(L("サイバーワイヤー拡張", "Cyber Wire Extension"), ref showCyberSettings, DrawCyberSettings);
+                DrawFoldoutSection(L("テクスチャ", "Texture"), ref showTextureSettings, DrawTextureSettings);
                 DrawFoldoutSection("AudioLink (VRChat)", ref showAudioLinkSettings, DrawAudioLinkSettings);
-                DrawFoldoutSection("VRC最適化", ref showVRCOptimizationSettings, DrawVRCOptimizationSettings);
-                DrawFoldoutSection("レンダリング設定", ref showRenderingSettings, DrawRenderingSettings);
-                DrawFoldoutSection("ステンシル設定", ref showStencilSettings, DrawStencilSettings);
+                DrawFoldoutSection(L("VRC最適化", "VRC Optimization"), ref showVRCOptimizationSettings, DrawVRCOptimizationSettings);
+                DrawFoldoutSection(L("レンダリング設定", "Rendering Settings"), ref showRenderingSettings, DrawRenderingSettings);
+                DrawFoldoutSection(L("ステンシル設定", "Stencil Settings"), ref showStencilSettings, DrawStencilSettings);
             }
             else
             {
-                EditorGUILayout.HelpBox("Wirelightを有効化すると設定が表示されます。", MessageType.Info);
+                EditorGUILayout.HelpBox(L("Wirelightを有効化すると設定が表示されます。", "Enable Wirelight to show settings."), MessageType.Info);
             }
 
             EditorGUILayout.Space(10);
@@ -207,7 +208,7 @@ namespace NataneToon.Editor
             };
 
             EditorGUILayout.BeginVertical(HeaderBox);
-            EditorGUILayout.LabelField("ナタネトゥーン ワイヤーライト", headerStyle);
+            EditorGUILayout.LabelField(L("ナタネトゥーン ワイヤーライト", "Natane Toon Wirelight"), headerStyle);
             EditorGUILayout.EndVertical();
         }
 
@@ -259,72 +260,72 @@ namespace NataneToon.Editor
         private void DrawQuickTips()
         {
             EditorGUILayout.BeginVertical(TipBox);
-            EditorGUILayout.LabelField("初めて使う方へ", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("  まずはプリセットボタンを試してみましょう", EditorStyles.wordWrappedMiniLabel);
-            EditorGUILayout.LabelField("  各セクションの設定値で微調整できます", EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.LabelField(L("初めて使う方へ", "Getting Started"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("  まずはプリセットボタンを試してみましょう", "  Try the preset buttons first"), EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.LabelField(L("  各セクションの設定値で微調整できます", "  Fine-tune with each section's settings"), EditorStyles.wordWrappedMiniLabel);
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("パフォーマンスヒント", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("  Cage値: 低い = 重い, 高い = 軽い (30-150推奨)", EditorStyles.wordWrappedMiniLabel);
-            EditorGUILayout.LabelField("  Noise Scale: 低い = 重い, 高い = 軽い (5-20推奨)", EditorStyles.wordWrappedMiniLabel);
-            EditorGUILayout.LabelField("  VRC最適化: Performance ModeをLiteにすると軽量化", EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.LabelField(L("パフォーマンスヒント", "Performance Tips"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("  Cage値: 低い = 重い, 高い = 軽い (30-150推奨)", "  Cage: low = heavy, high = light (30-150 recommended)"), EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.LabelField(L("  Noise Scale: 低い = 重い, 高い = 軽い (5-20推奨)", "  Noise Scale: low = heavy, high = light (5-20 recommended)"), EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.LabelField(L("  VRC最適化: Performance ModeをLiteにすると軽量化", "  VRC Optimization: Set Performance Mode to Lite for lighter load"), EditorStyles.wordWrappedMiniLabel);
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("よくある設定", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("  エッジを太く: Triangle Edge Width を増やす", EditorStyles.wordWrappedMiniLabel);
-            EditorGUILayout.LabelField("  動きを速く: Movement の W (速度) を増やす", EditorStyles.wordWrappedMiniLabel);
-            EditorGUILayout.LabelField("  発光を強く: HDRカラーの Intensity を 2-5 に", EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.LabelField(L("よくある設定", "Common Settings"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("  エッジを太く: Triangle Edge Width を増やす", "  Thicker edges: Increase Triangle Edge Width"), EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.LabelField(L("  動きを速く: Movement の W (速度) を増やす", "  Faster motion: Increase Movement W (speed)"), EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.LabelField(L("  発光を強く: HDRカラーの Intensity を 2-5 に", "  Stronger glow: Set HDR Color Intensity to 2-5"), EditorStyles.wordWrappedMiniLabel);
             EditorGUILayout.EndVertical();
         }
 
         private void DrawPresetButtons()
         {
-            EditorGUILayout.LabelField("クイックプリセット", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("クイックプリセット", "Quick Presets"), EditorStyles.boldLabel);
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("サイバーパンクネオン", PresetButton)) ApplyCyberpunkPreset();
-            if (GUILayout.Button("ローポリグリッド", PresetButton)) ApplyLowPolyPreset();
+            if (GUILayout.Button(L("サイバーパンクネオン", "Cyberpunk Neon"), PresetButton)) ApplyCyberpunkPreset();
+            if (GUILayout.Button(L("ローポリグリッド", "Low Poly Grid"), PresetButton)) ApplyLowPolyPreset();
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("オーガニックフロー", PresetButton)) ApplyOrganicPreset();
-            if (GUILayout.Button("エネルギーシールド", PresetButton)) ApplyEnergyShieldPreset();
+            if (GUILayout.Button(L("オーガニックフロー", "Organic Flow"), PresetButton)) ApplyOrganicPreset();
+            if (GUILayout.Button(L("エネルギーシールド", "Energy Shield"), PresetButton)) ApplyEnergyShieldPreset();
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("AudioLinkクラブ", PresetButton)) ApplyAudioLinkPreset();
-            if (GUILayout.Button("ホログラムグリッド", PresetButton)) ApplyHologramPreset();
+            if (GUILayout.Button(L("AudioLinkクラブ", "AudioLink Club"), PresetButton)) ApplyAudioLinkPreset();
+            if (GUILayout.Button(L("ホログラムグリッド", "Hologram Grid"), PresetButton)) ApplyHologramPreset();
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("サイバーワイヤー(AL)", PresetButton)) ApplyCyberWirePreset();
-            if (GUILayout.Button("データストーム", PresetButton)) ApplyDataStormPreset();
+            if (GUILayout.Button(L("サイバーワイヤー(AL)", "Cyber Wire (AL)"), PresetButton)) ApplyCyberWirePreset();
+            if (GUILayout.Button(L("データストーム", "Data Storm"), PresetButton)) ApplyDataStormPreset();
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("VRC軽量(PC)", PresetButton)) ApplyVRCLitePreset();
+            if (GUILayout.Button(L("VRC軽量(PC)", "VRC Lite (PC)"), PresetButton)) ApplyVRCLitePreset();
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndHorizontal();
         }
 
         private void DrawCageSettings()
         {
-            EditorGUILayout.LabelField("ケージ 1", EditorStyles.miniBoldLabel);
-            DrawSliderWithValue(FindProperty("_Cage", properties, false), "丸め係数");
-            DrawSliderWithValue(FindProperty("_Extrude", properties, false), "押し出し量");
+            EditorGUILayout.LabelField(L("ケージ 1", "Cage 1"), EditorStyles.miniBoldLabel);
+            DrawSliderWithValue(FindProperty("_Cage", properties, false), L("丸め係数", "Rounding Factor"));
+            DrawSliderWithValue(FindProperty("_Extrude", properties, false), L("押し出し量", "Extrude Amount"));
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("ケージ 2 (ノイズブレンド)", EditorStyles.miniBoldLabel);
-            DrawSliderWithValue(FindProperty("_Cage2", properties, false), "丸め係数 2");
-            DrawSliderWithValue(FindProperty("_Extrude2", properties, false), "押し出し量 2");
+            EditorGUILayout.LabelField(L("ケージ 2 (ノイズブレンド)", "Cage 2 (Noise Blend)"), EditorStyles.miniBoldLabel);
+            DrawSliderWithValue(FindProperty("_Cage2", properties, false), L("丸め係数 2", "Rounding Factor 2"));
+            DrawSliderWithValue(FindProperty("_Extrude2", properties, false), L("押し出し量 2", "Extrude Amount 2"));
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("ブレンド設定", EditorStyles.miniBoldLabel);
-            DrawSliderWithValue(FindProperty("_RoundingFudge", properties, false), "丸めブレンドオフセット");
-            DrawSliderWithValue(FindProperty("_RoundingPow", properties, false), "丸めブレンド累乗");
-            DrawSliderWithValue(FindProperty("_ExtrudeFudge", properties, false), "押し出しブレンドオフセット");
-            DrawSliderWithValue(FindProperty("_ExtrudePow", properties, false), "押し出しブレンド累乗");
+            EditorGUILayout.LabelField(L("ブレンド設定", "Blend Settings"), EditorStyles.miniBoldLabel);
+            DrawSliderWithValue(FindProperty("_RoundingFudge", properties, false), L("丸めブレンドオフセット", "Rounding Blend Offset"));
+            DrawSliderWithValue(FindProperty("_RoundingPow", properties, false), L("丸めブレンド累乗", "Rounding Blend Power"));
+            DrawSliderWithValue(FindProperty("_ExtrudeFudge", properties, false), L("押し出しブレンドオフセット", "Extrude Blend Offset"));
+            DrawSliderWithValue(FindProperty("_ExtrudePow", properties, false), L("押し出しブレンド累乗", "Extrude Blend Power"));
 
             EditorGUILayout.Space(3);
-            EditorGUILayout.HelpBox("ヒント: 丸め係数を下げる = 粗いグリッド (ローポリ風)", MessageType.None);
+            EditorGUILayout.HelpBox(L("ヒント: 丸め係数を下げる = 粗いグリッド (ローポリ風)", "Tip: Lower rounding = coarser grid (low-poly style)"), MessageType.None);
         }
 
         private void DrawTriangleSettings()
@@ -332,149 +333,149 @@ namespace NataneToon.Editor
             MaterialProperty shapeProp = FindProperty("_TriangleShape", properties, false);
             if (shapeProp != null)
             {
-                DrawSliderWithValue(shapeProp, "丸み (0=シャープ, 1=ラウンド)");
-                string shapeIcon = shapeProp.floatValue < 0.3f ? "辺モード" :
-                                   shapeProp.floatValue > 0.7f ? "頂点モード" : "混合モード";
+                DrawSliderWithValue(shapeProp, L("丸み (0=シャープ, 1=ラウンド)", "Roundness (0=Sharp, 1=Round)"));
+                string shapeIcon = shapeProp.floatValue < 0.3f ? L("辺モード", "Edge Mode") :
+                                   shapeProp.floatValue > 0.7f ? L("頂点モード", "Vertex Mode") : L("混合モード", "Mixed Mode");
                 EditorGUILayout.LabelField(shapeIcon, EditorStyles.centeredGreyMiniLabel);
             }
 
             EditorGUILayout.Space(3);
-            DrawSliderWithValue(FindProperty("_TriangleNumerator", properties, false), "エッジ幅");
-            DrawSliderWithValue(FindProperty("_TrianglePower", properties, false), "エッジ鋭さ");
-            DrawSliderWithValue(FindProperty("_TriangleRoundnessBreakout", properties, false), "追加の丸み");
+            DrawSliderWithValue(FindProperty("_TriangleNumerator", properties, false), L("エッジ幅", "Edge Width"));
+            DrawSliderWithValue(FindProperty("_TrianglePower", properties, false), L("エッジ鋭さ", "Edge Sharpness"));
+            DrawSliderWithValue(FindProperty("_TriangleRoundnessBreakout", properties, false), L("追加の丸み", "Extra Roundness"));
 
             EditorGUILayout.Space(3);
-            EditorGUILayout.HelpBox("ヒント: 丸み 0 = 辺を強調 | 丸み 1 = 頂点を強調", MessageType.None);
+            EditorGUILayout.HelpBox(L("ヒント: 丸み 0 = 辺を強調 | 丸み 1 = 頂点を強調", "Tip: Roundness 0 = emphasize edges | Roundness 1 = emphasize vertices"), MessageType.None);
         }
 
         private void DrawDitherSettings()
         {
-            DrawSliderWithValue(FindProperty("_DitherMultiple", properties, false), "面のディザー密度");
-            DrawSliderWithValue(FindProperty("_LineMultiple", properties, false), "辺のディザー密度");
-            DrawSliderWithValue(FindProperty("_DitherFudge", properties, false), "ディザー閾値");
+            DrawSliderWithValue(FindProperty("_DitherMultiple", properties, false), L("面のディザー密度", "Face Dither Density"));
+            DrawSliderWithValue(FindProperty("_LineMultiple", properties, false), L("辺のディザー密度", "Edge Dither Density"));
+            DrawSliderWithValue(FindProperty("_DitherFudge", properties, false), L("ディザー閾値", "Dither Threshold"));
 
             EditorGUILayout.Space(3);
-            EditorGUILayout.HelpBox("ヒント: 密度を上げる = ドットが細かく", MessageType.None);
+            EditorGUILayout.HelpBox(L("ヒント: 密度を上げる = ドットが細かく", "Tip: Higher density = finer dots"), MessageType.None);
         }
 
         private void DrawNoiseSettings()
         {
-            DrawVectorWithValue(FindProperty("_NoiseSettings", properties, false), "スケール & 回転 (XYZW)");
-            EditorGUILayout.LabelField("X: スケール | Y,Z,W: 回転", EditorStyles.centeredGreyMiniLabel);
+            DrawVectorWithValue(FindProperty("_NoiseSettings", properties, false), L("スケール & 回転 (XYZW)", "Scale & Rotation (XYZW)"));
+            EditorGUILayout.LabelField(L("X: スケール | Y,Z,W: 回転", "X: Scale | Y,Z,W: Rotation"), EditorStyles.centeredGreyMiniLabel);
 
             EditorGUILayout.Space(3);
             MaterialProperty moveProp = FindProperty("_NoiseMovementDirection", properties, false);
             if (moveProp != null)
             {
-                DrawVectorWithValue(moveProp, "移動 (XYZ=方向, W=速度)");
+                DrawVectorWithValue(moveProp, L("移動 (XYZ=方向, W=速度)", "Movement (XYZ=Direction, W=Speed)"));
                 Vector4 move = moveProp.vectorValue;
                 float speed = move.w;
-                string moveStatus = speed < 0.01f ? "静止" :
-                                    speed < 0.5f ? "ゆっくり" :
-                                    speed < 1.5f ? "普通" : "速い";
+                string moveStatus = speed < 0.01f ? L("静止", "Still") :
+                                    speed < 0.5f ? L("ゆっくり", "Slow") :
+                                    speed < 1.5f ? L("普通", "Normal") : L("速い", "Fast");
                 EditorGUILayout.LabelField(moveStatus, EditorStyles.centeredGreyMiniLabel);
             }
 
             EditorGUILayout.Space(3);
-            DrawVectorWithValue(FindProperty("_NoiseSmoothstep", properties, false), "ノイズ範囲 (最小, 最大)");
-            DrawSliderWithValue(FindProperty("_NoiseSubtract", properties, false), "ノイズオフセット");
-            DrawSliderWithValue(FindProperty("_NoiseMultiple", properties, false), "ノイズ強度");
+            DrawVectorWithValue(FindProperty("_NoiseSmoothstep", properties, false), L("ノイズ範囲 (最小, 最大)", "Noise Range (Min, Max)"));
+            DrawSliderWithValue(FindProperty("_NoiseSubtract", properties, false), L("ノイズオフセット", "Noise Offset"));
+            DrawSliderWithValue(FindProperty("_NoiseMultiple", properties, false), L("ノイズ強度", "Noise Intensity"));
 
             EditorGUILayout.Space(3);
             MaterialProperty spaceSelectorProp = FindProperty("_SpaceSelector", properties, false);
             if (spaceSelectorProp != null)
             {
-                materialEditor.ShaderProperty(spaceSelectorProp, "頂点カラー位置を使用");
+                materialEditor.ShaderProperty(spaceSelectorProp, L("頂点カラー位置を使用", "Use Vertex Color Position"));
 
                 if (spaceSelectorProp.floatValue > 0.5f)
                 {
-                    EditorGUILayout.HelpBox("頂点カラーが位置として使用されます。安定したアニメーションのため、頂点位置を頂点カラーにベイクしてください。", MessageType.Warning);
+                    EditorGUILayout.HelpBox(L("頂点カラーが位置として使用されます。安定したアニメーションのため、頂点位置を頂点カラーにベイクしてください。", "Vertex colors are used as position. Bake vertex positions to vertex colors for stable animation."), MessageType.Warning);
                 }
                 else
                 {
-                    EditorGUILayout.HelpBox("ヒント: アニメーションでパターンが崩れる場合は「頂点カラー位置」を有効化", MessageType.None);
+                    EditorGUILayout.HelpBox(L("ヒント: アニメーションでパターンが崩れる場合は「頂点カラー位置」を有効化", "Tip: Enable 'Vertex Color Position' if patterns break during animation"), MessageType.None);
                 }
             }
         }
 
         private void DrawColorSettings()
         {
-            EditorGUILayout.LabelField("カラー 1", EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(L("カラー 1", "Color 1"), EditorStyles.miniBoldLabel);
             MaterialProperty col1 = FindProperty("_Col", properties, false);
             if (col1 != null)
             {
-                materialEditor.ShaderProperty(col1, "HDRカラー 1");
+                materialEditor.ShaderProperty(col1, L("HDRカラー 1", "HDR Color 1"));
                 Color c1 = col1.colorValue;
                 float intensity1 = Mathf.Max(c1.r, c1.g, c1.b);
-                string intensityIcon1 = intensity1 > 2f ? "強い発光" :
-                                        intensity1 > 1f ? "発光" : "通常";
+                string intensityIcon1 = intensity1 > 2f ? L("強い発光", "Strong Glow") :
+                                        intensity1 > 1f ? L("発光", "Glow") : L("通常", "Normal");
                 EditorGUILayout.LabelField(intensityIcon1, EditorStyles.centeredGreyMiniLabel);
             }
 
-            DrawSliderWithValue(FindProperty("_ColHueShift", properties, false), "色相シフト");
+            DrawSliderWithValue(FindProperty("_ColHueShift", properties, false), L("色相シフト", "Hue Shift"));
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("カラー 2", EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(L("カラー 2", "Color 2"), EditorStyles.miniBoldLabel);
             MaterialProperty col2 = FindProperty("_Col2", properties, false);
             if (col2 != null)
             {
-                materialEditor.ShaderProperty(col2, "HDRカラー 2");
+                materialEditor.ShaderProperty(col2, L("HDRカラー 2", "HDR Color 2"));
                 Color c2 = col2.colorValue;
                 float intensity2 = Mathf.Max(c2.r, c2.g, c2.b);
-                string intensityIcon2 = intensity2 > 2f ? "強い発光" :
-                                        intensity2 > 1f ? "発光" : "通常";
+                string intensityIcon2 = intensity2 > 2f ? L("強い発光", "Strong Glow") :
+                                        intensity2 > 1f ? L("発光", "Glow") : L("通常", "Normal");
                 EditorGUILayout.LabelField(intensityIcon2, EditorStyles.centeredGreyMiniLabel);
             }
 
-            DrawSliderWithValue(FindProperty("_Col2HueShift", properties, false), "色相シフト");
+            DrawSliderWithValue(FindProperty("_Col2HueShift", properties, false), L("色相シフト", "Hue Shift"));
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("アニメーション & ブレンド", EditorStyles.miniBoldLabel);
-            DrawVectorWithValue(FindProperty("_AutoHueShift", properties, false), "自動色相シフト (C1, C2)");
-            DrawSliderWithValue(FindProperty("_ColorRange", properties, false), "遷移幅");
+            EditorGUILayout.LabelField(L("アニメーション & ブレンド", "Animation & Blend"), EditorStyles.miniBoldLabel);
+            DrawVectorWithValue(FindProperty("_AutoHueShift", properties, false), L("自動色相シフト (C1, C2)", "Auto Hue Shift (C1, C2)"));
+            DrawSliderWithValue(FindProperty("_ColorRange", properties, false), L("遷移幅", "Transition Width"));
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("ポストプロセス", EditorStyles.miniBoldLabel);
-            DrawSliderWithValue(FindProperty("_ColorBrightness", properties, false), "明るさ");
-            DrawSliderWithValue(FindProperty("_ColorPower", properties, false), "ガンマ累乗");
-            DrawSliderWithValue(FindProperty("_MultAlphaAndColor", properties, false), "アルファを色に乗算");
+            EditorGUILayout.LabelField(L("ポストプロセス", "Post Process"), EditorStyles.miniBoldLabel);
+            DrawSliderWithValue(FindProperty("_ColorBrightness", properties, false), L("明るさ", "Brightness"));
+            DrawSliderWithValue(FindProperty("_ColorPower", properties, false), L("ガンマ累乗", "Gamma Power"));
+            DrawSliderWithValue(FindProperty("_MultAlphaAndColor", properties, false), L("アルファを色に乗算", "Multiply Alpha to Color"));
 
             EditorGUILayout.Space(3);
-            EditorGUILayout.HelpBox("ヒント: 発光エフェクトはIntensity 2-5 を設定!", MessageType.None);
+            EditorGUILayout.HelpBox(L("ヒント: 発光エフェクトはIntensity 2-5 を設定!", "Tip: Set Intensity to 2-5 for glow effects!"), MessageType.None);
         }
 
         private void DrawCyberSettings()
         {
             MaterialProperty styleModeProp = FindProperty("_WireStyleMode", properties, false);
             if (styleModeProp == null) return;
-            materialEditor.ShaderProperty(styleModeProp, "ワイヤースタイル");
+            materialEditor.ShaderProperty(styleModeProp, L("ワイヤースタイル", "Wire Style"));
 
             if (styleModeProp.floatValue < 0.5f)
             {
-                EditorGUILayout.HelpBox("Defaultモードでは従来のWirelight描画です。Cyber Wireに切り替えると追加演出が有効になります。", MessageType.None);
+                EditorGUILayout.HelpBox(L("Defaultモードでは従来のWirelight描画です。Cyber Wireに切り替えると追加演出が有効になります。", "Default mode uses standard Wirelight rendering. Switch to Cyber Wire for additional effects."), MessageType.None);
                 return;
             }
 
             EditorGUILayout.Space(5);
             EditorGUILayout.LabelField("Cyber Core", EditorStyles.miniBoldLabel);
-            DrawProperty("_CyberNeonColor", "ネオンカラー");
-            DrawSliderWithValue(FindProperty("_CyberEdgeBoost", properties, false), "エッジブースト");
-            DrawSliderWithValue(FindProperty("_CyberPulseSpeed", properties, false), "パルス速度");
-            DrawSliderWithValue(FindProperty("_CyberPulseIntensity", properties, false), "パルス強度");
+            DrawProperty("_CyberNeonColor", L("ネオンカラー", "Neon Color"));
+            DrawSliderWithValue(FindProperty("_CyberEdgeBoost", properties, false), L("エッジブースト", "Edge Boost"));
+            DrawSliderWithValue(FindProperty("_CyberPulseSpeed", properties, false), L("パルス速度", "Pulse Speed"));
+            DrawSliderWithValue(FindProperty("_CyberPulseIntensity", properties, false), L("パルス強度", "Pulse Intensity"));
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("おすすめ特殊表現 (On/Off)", EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(L("おすすめ特殊表現 (On/Off)", "Recommended Effects (On/Off)"), EditorStyles.miniBoldLabel);
 
             // Scanline
             MaterialProperty scanlineToggle = FindProperty("_CyberScanline", properties, false);
             if (scanlineToggle != null)
             {
-                materialEditor.ShaderProperty(scanlineToggle, "スキャンライン");
+                materialEditor.ShaderProperty(scanlineToggle, L("スキャンライン", "Scanline"));
                 if (scanlineToggle.floatValue > 0.5f)
                 {
-                    DrawSliderWithValue(FindProperty("_CyberScanlineDensity", properties, false), "密度");
-                    DrawSliderWithValue(FindProperty("_CyberScanlineSpeed", properties, false), "速度");
-                    DrawSliderWithValue(FindProperty("_CyberScanlineStrength", properties, false), "強度");
+                    DrawSliderWithValue(FindProperty("_CyberScanlineDensity", properties, false), L("密度", "Density"));
+                    DrawSliderWithValue(FindProperty("_CyberScanlineSpeed", properties, false), L("速度", "Speed"));
+                    DrawSliderWithValue(FindProperty("_CyberScanlineStrength", properties, false), L("強度", "Strength"));
                 }
             }
 
@@ -482,10 +483,10 @@ namespace NataneToon.Editor
             MaterialProperty chromaToggle = FindProperty("_CyberChromaShift", properties, false);
             if (chromaToggle != null)
             {
-                materialEditor.ShaderProperty(chromaToggle, "クロマシフト");
+                materialEditor.ShaderProperty(chromaToggle, L("クロマシフト", "Chroma Shift"));
                 if (chromaToggle.floatValue > 0.5f)
                 {
-                    DrawSliderWithValue(FindProperty("_CyberChromaAmount", properties, false), "量");
+                    DrawSliderWithValue(FindProperty("_CyberChromaAmount", properties, false), L("量", "Amount"));
                 }
             }
 
@@ -493,11 +494,11 @@ namespace NataneToon.Editor
             MaterialProperty glitchToggle = FindProperty("_CyberGlitch", properties, false);
             if (glitchToggle != null)
             {
-                materialEditor.ShaderProperty(glitchToggle, "グリッチフリッカー");
+                materialEditor.ShaderProperty(glitchToggle, L("グリッチフリッカー", "Glitch Flicker"));
                 if (glitchToggle.floatValue > 0.5f)
                 {
-                    DrawSliderWithValue(FindProperty("_CyberGlitchStrength", properties, false), "強度");
-                    DrawSliderWithValue(FindProperty("_CyberGlitchSpeed", properties, false), "速度");
+                    DrawSliderWithValue(FindProperty("_CyberGlitchStrength", properties, false), L("強度", "Strength"));
+                    DrawSliderWithValue(FindProperty("_CyberGlitchSpeed", properties, false), L("速度", "Speed"));
                 }
             }
 
@@ -505,135 +506,135 @@ namespace NataneToon.Editor
             MaterialProperty dataToggle = FindProperty("_CyberDataStream", properties, false);
             if (dataToggle != null)
             {
-                materialEditor.ShaderProperty(dataToggle, "データストリーム");
+                materialEditor.ShaderProperty(dataToggle, L("データストリーム", "Data Stream"));
                 if (dataToggle.floatValue > 0.5f)
                 {
-                    DrawSliderWithValue(FindProperty("_CyberDataDensity", properties, false), "密度");
-                    DrawSliderWithValue(FindProperty("_CyberDataSpeed", properties, false), "速度");
-                    DrawSliderWithValue(FindProperty("_CyberDataStrength", properties, false), "強度");
-                    DrawSliderWithValue(FindProperty("_CyberDataJitter", properties, false), "ジッター");
+                    DrawSliderWithValue(FindProperty("_CyberDataDensity", properties, false), L("密度", "Density"));
+                    DrawSliderWithValue(FindProperty("_CyberDataSpeed", properties, false), L("速度", "Speed"));
+                    DrawSliderWithValue(FindProperty("_CyberDataStrength", properties, false), L("強度", "Strength"));
+                    DrawSliderWithValue(FindProperty("_CyberDataJitter", properties, false), L("ジッター", "Jitter"));
                 }
             }
 
             EditorGUILayout.Space(3);
-            EditorGUILayout.HelpBox("推奨: Scanline + Chromaを弱めにON。Data Streamは情報走査風、Glitchは必要時だけON。", MessageType.None);
+            EditorGUILayout.HelpBox(L("推奨: Scanline + Chromaを弱めにON。Data Streamは情報走査風、Glitchは必要時だけON。", "Recommended: Turn on Scanline + Chroma at low intensity. Data Stream for data-scan look, Glitch only when needed."), MessageType.None);
         }
 
         private void DrawTextureSettings()
         {
             MaterialProperty colorTexProp = FindProperty("_ColorTexture", properties, false);
-            if (colorTexProp != null) materialEditor.TextureProperty(colorTexProp, "カラーテクスチャ");
+            if (colorTexProp != null) materialEditor.TextureProperty(colorTexProp, L("カラーテクスチャ", "Color Texture"));
             MaterialProperty maskTexProp = FindProperty("_MaskTexture", properties, false);
-            if (maskTexProp != null) materialEditor.TextureProperty(maskTexProp, "マスクテクスチャ");
+            if (maskTexProp != null) materialEditor.TextureProperty(maskTexProp, L("マスクテクスチャ", "Mask Texture"));
         }
 
         private void DrawAudioLinkSettings()
         {
             MaterialProperty audioLinkProp = FindProperty("_AudioLink", properties, false);
             if (audioLinkProp == null) return;
-            materialEditor.ShaderProperty(audioLinkProp, "AudioLinkを有効化");
+            materialEditor.ShaderProperty(audioLinkProp, L("AudioLinkを有効化", "Enable AudioLink"));
 
             if (audioLinkProp.floatValue > 0.5f)
             {
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("押し出し変調", EditorStyles.miniBoldLabel);
-                DrawProperty("_ExtrudeAudiolink", "強度");
-                DrawProperty("_ExtrudeBand", "周波数帯域");
+                EditorGUILayout.LabelField(L("押し出し変調", "Extrude Modulation"), EditorStyles.miniBoldLabel);
+                DrawProperty("_ExtrudeAudiolink", L("強度", "Intensity"));
+                DrawProperty("_ExtrudeBand", L("周波数帯域", "Frequency Band"));
 
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("カラー変調", EditorStyles.miniBoldLabel);
-                DrawProperty("_ColorFudgeAudiolink", "強度");
-                DrawProperty("_ColorFudgeBand", "周波数帯域");
+                EditorGUILayout.LabelField(L("カラー変調", "Color Modulation"), EditorStyles.miniBoldLabel);
+                DrawProperty("_ColorFudgeAudiolink", L("強度", "Intensity"));
+                DrawProperty("_ColorFudgeBand", L("周波数帯域", "Frequency Band"));
 
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("Chronotensity (タイミング制御)", EditorStyles.miniBoldLabel);
-                DrawProperty("_NoiseMovementChronoAudiolink", "強度");
-                DrawProperty("_NoiseMovementChronoMode", "モード");
-                DrawProperty("_NoiseMovementChronoBand", "周波数帯域");
+                EditorGUILayout.LabelField(L("Chronotensity (タイミング制御)", "Chronotensity (Timing Control)"), EditorStyles.miniBoldLabel);
+                DrawProperty("_NoiseMovementChronoAudiolink", L("強度", "Intensity"));
+                DrawProperty("_NoiseMovementChronoMode", L("モード", "Mode"));
+                DrawProperty("_NoiseMovementChronoBand", L("周波数帯域", "Frequency Band"));
 
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("テーマカラー", EditorStyles.miniBoldLabel);
-                DrawProperty("_ColorOneTheme", "カラー1テーマ");
-                DrawProperty("_ColorTwoTheme", "カラー2テーマ");
-                DrawProperty("_InvertCol", "テーマカラーを反転");
+                EditorGUILayout.LabelField(L("テーマカラー", "Theme Color"), EditorStyles.miniBoldLabel);
+                DrawProperty("_ColorOneTheme", L("カラー1テーマ", "Color 1 Theme"));
+                DrawProperty("_ColorTwoTheme", L("カラー2テーマ", "Color 2 Theme"));
+                DrawProperty("_InvertCol", L("テーマカラーを反転", "Invert Theme Color"));
 
                 // Cyber sync (only if Cyber mode enabled)
                 MaterialProperty wireStyleProp = FindProperty("_WireStyleMode", properties, false);
                 if (wireStyleProp != null && wireStyleProp.floatValue > 0.5f)
                 {
                     EditorGUILayout.Space(5);
-                    EditorGUILayout.LabelField("Cyber連動", EditorStyles.miniBoldLabel);
-                    DrawProperty("_CyberAudioPulse", "パルス連動強度");
-                    DrawProperty("_CyberAudioPulseBand", "パルス帯域");
-                    DrawProperty("_CyberAudioGlitch", "グリッチ連動強度");
-                    DrawProperty("_CyberAudioGlitchBand", "グリッチ帯域");
-                    DrawProperty("_CyberAudioData", "データストリーム連動強度");
-                    DrawProperty("_CyberAudioDataBand", "データストリーム帯域");
+                    EditorGUILayout.LabelField(L("Cyber連動", "Cyber Sync"), EditorStyles.miniBoldLabel);
+                    DrawProperty("_CyberAudioPulse", L("パルス連動強度", "Pulse Sync Intensity"));
+                    DrawProperty("_CyberAudioPulseBand", L("パルス帯域", "Pulse Band"));
+                    DrawProperty("_CyberAudioGlitch", L("グリッチ連動強度", "Glitch Sync Intensity"));
+                    DrawProperty("_CyberAudioGlitchBand", L("グリッチ帯域", "Glitch Band"));
+                    DrawProperty("_CyberAudioData", L("データストリーム連動強度", "Data Stream Sync Intensity"));
+                    DrawProperty("_CyberAudioDataBand", L("データストリーム帯域", "Data Stream Band"));
                 }
 
-                EditorGUILayout.HelpBox("これらの機能を使用するには、VRChatワールドにAudioLinkがセットアップされている必要があります。", MessageType.Info);
+                EditorGUILayout.HelpBox(L("これらの機能を使用するには、VRChatワールドにAudioLinkがセットアップされている必要があります。", "AudioLink must be set up in the VRChat world to use these features."), MessageType.Info);
             }
         }
 
         private void DrawVRCOptimizationSettings()
         {
-            EditorGUILayout.LabelField("品質モード", EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(L("品質モード", "Quality Mode"), EditorStyles.miniBoldLabel);
             DrawProperty("_VRCPerfMode", "Performance Mode");
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("遠距離フェード", EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(L("遠距離フェード", "Distance Fade"), EditorStyles.miniBoldLabel);
             MaterialProperty distanceFadeToggle = FindProperty("_UseWLDistanceFade", properties, false);
             if (distanceFadeToggle != null)
             {
-                materialEditor.ShaderProperty(distanceFadeToggle, "Distance Fadeを有効化");
+                materialEditor.ShaderProperty(distanceFadeToggle, L("Distance Fadeを有効化", "Enable Distance Fade"));
                 if (distanceFadeToggle.floatValue > 0.5f)
                 {
-                    DrawSliderWithValue(FindProperty("_WLDistanceFadeStart", properties, false), "開始距離");
-                    DrawSliderWithValue(FindProperty("_WLDistanceFadeEnd", properties, false), "終了距離");
-                    DrawSliderWithValue(FindProperty("_WLDistanceFadePower", properties, false), "フェードカーブ");
+                    DrawSliderWithValue(FindProperty("_WLDistanceFadeStart", properties, false), L("開始距離", "Start Distance"));
+                    DrawSliderWithValue(FindProperty("_WLDistanceFadeEnd", properties, false), L("終了距離", "End Distance"));
+                    DrawSliderWithValue(FindProperty("_WLDistanceFadePower", properties, false), L("フェードカーブ", "Fade Curve"));
                 }
             }
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("透明オーバードロー対策", EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(L("透明オーバードロー対策", "Transparent Overdraw Prevention"), EditorStyles.miniBoldLabel);
             MaterialProperty alphaClipToggle = FindProperty("_UseWLAlphaClip", properties, false);
             if (alphaClipToggle != null)
             {
-                materialEditor.ShaderProperty(alphaClipToggle, "Alpha Clipを有効化");
+                materialEditor.ShaderProperty(alphaClipToggle, L("Alpha Clipを有効化", "Enable Alpha Clip"));
                 if (alphaClipToggle.floatValue > 0.5f)
                 {
-                    DrawSliderWithValue(FindProperty("_WLAlphaClipThreshold", properties, false), "しきい値");
+                    DrawSliderWithValue(FindProperty("_WLAlphaClipThreshold", properties, false), L("しきい値", "Threshold"));
                 }
             }
 
             EditorGUILayout.Space(3);
-            EditorGUILayout.HelpBox("Lite + Distance Fade + Alpha Clipは、VRCワールドでの重なり負荷を抑える設定です。", MessageType.None);
+            EditorGUILayout.HelpBox(L("Lite + Distance Fade + Alpha Clipは、VRCワールドでの重なり負荷を抑える設定です。", "Lite + Distance Fade + Alpha Clip reduces overdraw load in VRC worlds."), MessageType.None);
         }
 
         private void DrawRenderingSettings()
         {
-            EditorGUILayout.LabelField("ブレンディング", EditorStyles.miniBoldLabel);
-            DrawProperty("_SrcBlendAlphaWL", "ソースブレンド");
-            DrawProperty("_DstBlendAlphaWL", "デストブレンド");
+            EditorGUILayout.LabelField(L("ブレンディング", "Blending"), EditorStyles.miniBoldLabel);
+            DrawProperty("_SrcBlendAlphaWL", L("ソースブレンド", "Source Blend"));
+            DrawProperty("_DstBlendAlphaWL", L("デストブレンド", "Destination Blend"));
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("深度", EditorStyles.miniBoldLabel);
-            DrawProperty("_ZWriteWL", "Z書き込み");
-            DrawProperty("_ZTestWL", "Zテスト");
+            EditorGUILayout.LabelField(L("深度", "Depth"), EditorStyles.miniBoldLabel);
+            DrawProperty("_ZWriteWL", L("Z書き込み", "Z Write"));
+            DrawProperty("_ZTestWL", L("Zテスト", "Z Test"));
 
             EditorGUILayout.Space(5);
-            DrawProperty("_RenderQueue", "レンダーキューオーバーライド");
+            DrawProperty("_RenderQueue", L("レンダーキューオーバーライド", "Render Queue Override"));
 
-            EditorGUILayout.HelpBox("加算合成: Src=One, Dst=One\n標準アルファ: Src=SrcAlpha, Dst=OneMinusSrcAlpha", MessageType.Info);
+            EditorGUILayout.HelpBox(L("加算合成: Src=One, Dst=One\n標準アルファ: Src=SrcAlpha, Dst=OneMinusSrcAlpha", "Additive: Src=One, Dst=One\nStandard Alpha: Src=SrcAlpha, Dst=OneMinusSrcAlpha"), MessageType.Info);
         }
 
         private void DrawStencilSettings()
         {
-            DrawProperty("_StencilRef", "参照値");
-            DrawProperty("_StencilCompareFunctionWL", "比較関数");
-            DrawProperty("_StencilPassOpWL", "パス操作");
-            DrawProperty("_StencilFailOpWL", "失敗操作");
-            DrawProperty("_StencilZFailOpWL", "Z失敗操作");
+            DrawProperty("_StencilRef", L("参照値", "Reference Value"));
+            DrawProperty("_StencilCompareFunctionWL", L("比較関数", "Compare Function"));
+            DrawProperty("_StencilPassOpWL", L("パス操作", "Pass Operation"));
+            DrawProperty("_StencilFailOpWL", L("失敗操作", "Fail Operation"));
+            DrawProperty("_StencilZFailOpWL", L("Z失敗操作", "Z Fail Operation"));
         }
 
         private void DrawWirelightFooter()
@@ -644,8 +645,8 @@ namespace NataneToon.Editor
                 alignment = TextAnchor.MiddleCenter,
                 wordWrap = true
             };
-            EditorGUILayout.LabelField("ナタネトゥーン ワイヤーライトシェーダー v1.1", footerStyle);
-            EditorGUILayout.LabelField("PC版VRChatのみ対応 (Quest非対応)", footerStyle);
+            EditorGUILayout.LabelField(L("ナタネトゥーン ワイヤーライトシェーダー v1.1", "Natane Toon Wirelight Shader v1.1"), footerStyle);
+            EditorGUILayout.LabelField(L("PC版VRChatのみ対応 (Quest非対応)", "PC VRChat only (Quest not supported)"), footerStyle);
             EditorGUILayout.EndVertical();
         }
 

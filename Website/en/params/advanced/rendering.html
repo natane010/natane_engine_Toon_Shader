@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rendering Settings - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Rendering Settings</h1>
+    <p class="page-subtitle">Rendering mode, culling, stencil, and other draw controls</p>
+
+    <h2>Overview</h2>
+    <p>Rendering Settings is the section that controls the fundamental drawing behavior of materials. It includes core shader settings such as opaque/cutout/transparent mode selection, polygon front/back face rendering control, depth buffer writing, and blend modes.</p>
+
+    <h2>Rendering Mode</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rendering Type</span>
+        <span class="param-prop">RenderingMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the material's rendering mode. The shader internally switches to the appropriate variant based on the mode. All properties are preserved.</p>
+        <ul>
+          <li><strong>Opaque</strong> - Standard opaque objects. Used for skin, clothes, and solid objects. The fastest and recommended mode.</li>
+          <li><strong>Cutout</strong> - Alpha threshold transparency. Used for hair, leaves, and fences. Each pixel is either fully transparent or fully opaque.</li>
+          <li><strong>Transparent</strong> - Smooth transparency. Used for glass, water, smoke, and effects. Provides gradual transparency based on alpha value, but is the most expensive mode.</li>
+        </ul>
+        <p class="param-default">Default: Opaque</p>
+      </div>
+      <div class="param-tip">In terms of performance, efficiency ranks as Opaque > Cutout > Transparent. Use Opaque whenever possible.</div>
+    </div>
+
+    <h2>Cutout-Specific Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Alpha Cutoff</span>
+        <span class="param-prop">_Cutoff</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The alpha threshold for Cutout mode. Pixels with texture transparency at or below this value are hidden.</p>
+        <ul>
+          <li>Lowering the value: More pixels become visible</li>
+          <li>Raising the value: More pixels become hidden</li>
+        </ul>
+        <p class="param-default">Default: 0.5 (recommended)</p>
+      </div>
+    </div>
+
+    <h2>Advanced Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Culling Mode</span>
+        <span class="param-prop">_Cull</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Controls which side of polygons is rendered.</p>
+        <ul>
+          <li><strong>Back (2)</strong> - Hides backfaces (default; the most common setting)</li>
+          <li><strong>Front (1)</strong> - Hides front faces (for special use cases)</li>
+          <li><strong>Off (0)</strong> - Double-sided rendering (set when using the backface texture feature)</li>
+        </ul>
+        <p class="param-default">Default: Back (2)</p>
+      </div>
+      <div class="param-tip">Double-sided rendering (Off) doubles the drawing cost. Use only when necessary.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Z Write</span>
+        <span class="param-prop">_ZWrite</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Controls writing to the depth buffer. Normally keep this ON.</p>
+        <ul>
+          <li><strong>On (1)</strong> - Writes to depth buffer (standard for opaque objects)</li>
+          <li><strong>Off (0)</strong> - Does not write to depth buffer (for transparent objects and effects)</li>
+        </ul>
+        <p class="param-default">Default: On (1)</p>
+      </div>
+    </div>
+
+    <h2>Transparent-Specific Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Source Blend</span>
+        <span class="param-prop">_SrcBlend</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>The blend factor for the source (foreground) during transparent rendering.</p>
+        <p class="param-default">Default: SrcAlpha (5)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Destination Blend</span>
+        <span class="param-prop">_DstBlend</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>The blend factor for the destination (background) during transparent rendering.</p>
+        <p class="param-default">Default: OneMinusSrcAlpha (10)</p>
+      </div>
+      <div class="param-tip">Blend modes typically do not need to be changed. The default settings provide proper alpha blending.</div>
+    </div>
+
+    <h2>Usage Tips</h2>
+    <ul>
+      <li>Opaque is best for most VRChat avatar parts (skin, clothes, shoes)</li>
+      <li>Cutout mode is suitable for hair and eyebrows</li>
+      <li>Use Transparent for see-through materials like glass and gemstones</li>
+      <li>Culling Off is required when using backface textures, but be mindful of the performance cost</li>
+      <li>Changing rendering mode involves switching shader variants, but all properties are preserved</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

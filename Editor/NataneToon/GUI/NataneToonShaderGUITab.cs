@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using static NataneToon.Editor.NataneToonLocalization;
 
 namespace NataneToon.Editor
 {
@@ -149,7 +150,7 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
 
-            string buttonLabel = showHelp ? "ヘルプを非表示 Hide Help" : "ヘルプを表示 Show Help";
+            string buttonLabel = showHelp ? L("ヘルプを非表示", "Hide Help") : L("ヘルプを表示", "Show Help");
             if (GUILayout.Button(buttonLabel, EditorStyles.miniButton, GUILayout.Width(140)))
             {
                 showHelp = !showHelp;
@@ -204,7 +205,7 @@ namespace NataneToon.Editor
             }
             catch (System.Exception e)
             {
-                EditorGUILayout.HelpBox($"{sectionName}セクションの描画中にエラーが発生しました: {e.Message}", MessageType.Warning);
+                EditorGUILayout.HelpBox(L($"{sectionName}セクションの描画中にエラーが発生しました: {e.Message}", $"Error drawing {sectionName} section: {e.Message}"), MessageType.Warning);
                 UnityEngine.Debug.LogWarning($"[NataneToonShaderGUI] Error drawing {sectionName} section: {e.Message}");
             }
         }

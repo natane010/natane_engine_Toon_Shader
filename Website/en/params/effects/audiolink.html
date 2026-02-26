@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AudioLink - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>AudioLink</h1>
+    <p class="page-subtitle">Music-reactive effects with VRChat AudioLink</p>
+
+    <p>In VRChat AudioLink-enabled worlds, shader effects change in real time in sync with the beat and rhythm of music. Emission, rim light, hue shift, dissolve, and outline effects can each be individually linked to music. An ideal effect for clubs and live events.</p>
+    <p>Keyword: <code>_AUDIOLINK</code></p>
+
+    <h2 id="bands">About Frequency Bands</h2>
+
+    <div class="feature-section">
+      <h4>AudioLink Frequency Bands</h4>
+      <p>You can select the frequency band used by each effect.</p>
+      <ul>
+        <li><strong>Bass (0)</strong> - Bass range. Responds to kick drums and bass lines.</li>
+        <li><strong>Low Mid (1)</strong> - Low-mid range. Responds to snare drums and guitar lows.</li>
+        <li><strong>High Mid (2)</strong> - High-mid range. Responds to vocals and melodies.</li>
+        <li><strong>Treble (3)</strong> - Treble range. Responds to hi-hats and cymbals.</li>
+      </ul>
+    </div>
+
+    <h2 id="emission">Emission Link</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Frequency Band</span>
+        <span class="param-prop">_AudioLinkEmissionBand</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the frequency band that emission (glow) responds to. Enabled by the keyword <code>_AUDIOLINK_EMISSION</code>.</p>
+        <p class="param-default">Default: 0 (Bass)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Emission Intensity</span>
+        <span class="param-prop">_AudioLinkEmissionIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the glow intensity of music-linked emission.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 5)</p>
+      </div>
+    </div>
+
+    <h2 id="rim">Rim Light Link</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Frequency Band</span>
+        <span class="param-prop">_AudioLinkRimBand</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the frequency band that rim light responds to. Enabled by the keyword <code>_AUDIOLINK_RIM</code>.</p>
+        <p class="param-default">Default: 0 (Bass)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rim Light Intensity</span>
+        <span class="param-prop">_AudioLinkRimIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the intensity of music-linked rim light.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 5)</p>
+      </div>
+    </div>
+
+    <h2 id="hue">Hue Shift Link</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Frequency Band</span>
+        <span class="param-prop">_AudioLinkHueBand</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the frequency band that hue shift responds to. Enabled by the keyword <code>_AUDIOLINK_HUE_SHIFT</code>.</p>
+        <p class="param-default">Default: 0 (Bass)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hue Shift Intensity</span>
+        <span class="param-prop">_AudioLinkHueShiftIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the intensity of music-linked hue shift.</p>
+        <p class="param-default">Default: 0.5 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <h2 id="dissolve">Dissolve Link</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Frequency Band</span>
+        <span class="param-prop">_AudioLinkDissolveBand</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the frequency band that dissolve responds to. Enabled by the keyword <code>_AUDIOLINK_DISSOLVE</code>.</p>
+        <p class="param-default">Default: 0 (Bass)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Dissolve Intensity</span>
+        <span class="param-prop">_AudioLinkDissolveIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the intensity of music-linked dissolve.</p>
+        <p class="param-default">Default: 0.5 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <h2 id="outline">Outline Link</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Frequency Band</span>
+        <span class="param-prop">_AudioLinkOutlineBand</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the frequency band that outline responds to. Enabled by the keyword <code>_AUDIOLINK_OUTLINE</code>.</p>
+        <p class="param-default">Default: 0 (Bass)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Outline Intensity</span>
+        <span class="param-prop">_AudioLinkOutlineIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the intensity of music-linked outline.</p>
+        <p class="param-default">Default: 0.5 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <h2 id="blend">Blend Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_AudioLinkBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the compositing method for the overall AudioLink effect.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Normal blending</li>
+          <li><strong>Soft (1)</strong> - Soft light</li>
+          <li><strong>Screen (2)</strong> - Screen</li>
+          <li><strong>Overlay (3)</strong> - Overlay</li>
+        </ul>
+        <p class="param-default">Default: 0 (Normal)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_AudioLinkBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the overall application amount of the AudioLink effect.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

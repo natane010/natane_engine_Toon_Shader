@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Environmental Rim - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Environmental Rim</h1>
+    <p class="page-subtitle">Rim light effect using environment maps</p>
+
+    <p>Creates a rim light effect based on the environment using a cubemap. Unlike standard rim lighting which uses a single color, environmental rim uses color information from a cubemap, enabling natural rim lighting that reflects the surrounding environment colors.</p>
+    <p>Keyword: <code>_ENV_RIM</code></p>
+
+    <h2 id="settings">Environmental Rim Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Environment Cubemap</span>
+        <span class="param-prop">_EnvRimCube</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The cubemap texture used for the environmental rim. The rim light color varies based on the environment.</p>
+        <p class="param-default">Default: "black" (no reflection)</p>
+      </div>
+      <div class="param-tip">Using the same cubemap as for Reflection creates a unified environmental appearance.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Environmental Rim Color</span>
+        <span class="param-prop">_EnvRimColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the color tint of the environmental rim. Multiplied with the cubemap colors.</p>
+        <p class="param-default">Default: (1, 1, 1, 1) (white, no change)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Environmental Rim Power</span>
+        <span class="param-prop">_EnvRimPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the Fresnel effect strength for the environmental rim. Higher values concentrate the rim at edges, while lower values spread it wider.</p>
+        <p class="param-default">Default: 3 (Range: 0.1 - 10)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Environmental Rim Intensity</span>
+        <span class="param-prop">_EnvRimIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the overall brightness of the environmental rim.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 5)</p>
+      </div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Environmental Rim Mask</span>
+        <span class="param-prop">_EnvRimMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the environmental rim application area using a texture. Enabled with the keyword <code>_ENV_RIM_MASK</code>.</p>
+        <p class="param-default">Default: "white" (applied everywhere)</p>
+      </div>
+      <div class="param-tip">White = environmental rim visible, Black = no environmental rim. Useful for masking areas like the face where environmental rim is not desired.</div>
+    </div>
+
+    <h2 id="blend">Blend Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_EnvRimBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects how the environmental rim is composited with the base color.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Normal blending</li>
+          <li><strong>Soft (1)</strong> - Soft Light</li>
+          <li><strong>Screen (2)</strong> - Screen</li>
+          <li><strong>Overlay (3)</strong> - Overlay</li>
+        </ul>
+        <p class="param-default">Default: 0 (Normal)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_EnvRimBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the overall application intensity of the environmental rim effect.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_EnvRimBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Blurs the boundaries of the environmental rim effect.</p>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VRC Light Volumes Helper - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>VRC Light Volumes Helper</h1>
+    <p class="page-subtitle">Support tool for easily configuring VRC Light Volumes integration</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Shader &gt; Light Volumes Helper</span>
+      <span>Category: Shader</span>
+    </div>
+
+    <h2>Overview</h2>
+    <p>The VRC Light Volumes Helper is a support tool for configuring integration with VRChat's Light Volumes (voxel-based lighting system). VRC Light Volumes is an advanced lighting system available since VRChat v1.0.1 that stores world lighting information as voxel data, providing more accurate and beautiful lighting for avatars.</p>
+    <p>Natane Toon Shader supports VRC Light Volumes and can receive a world's voxel lighting data to reflect it in toon shading. However, several parameters need to be properly configured for quality and performance tuning. This tool makes those settings easy with quality presets.</p>
+    <p>In Light Volumes-enabled worlds, avatar appearance improves dramatically, but performance cost also increases. Using this tool's quality presets, you can easily find the right balance from high-quality PC settings to lightweight Quest settings.</p>
+
+    <h2>Key Features</h2>
+    <ul>
+      <li><strong>Quality Presets</strong> — Three-tier presets: Low / Medium / High. Set the balance between Light Volumes quality and performance with one click</li>
+      <li><strong>Automatic Configuration</strong> — Automatically configures Light Volumes-related keywords and parameters on materials. No manual shader keyword management needed</li>
+      <li><strong>Performance Optimization</strong> — Visually compare and adjust the trade-off between sampling accuracy and performance</li>
+      <li><strong>Compatibility Check</strong> — Verify whether the current scene or world supports Light Volumes</li>
+      <li><strong>Batch Application</strong> — Batch apply the same Light Volumes settings to all Natane Toon Shader materials in an avatar</li>
+    </ul>
+
+    <h2>How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Open the Tool</strong>
+        <p>Open the tool window from <code>Tools &gt; Natane &gt; Shader &gt; Light Volumes Helper</code>.</p>
+      </li>
+      <li>
+        <strong>Select Materials</strong>
+        <p>Select the Natane Toon Shader materials to apply Light Volumes settings to. Selecting the avatar's root object auto-detects all materials underneath.</p>
+      </li>
+      <li>
+        <strong>Select Quality Preset</strong>
+        <p>Choose a quality level from Low / Medium / High. The estimated performance cost for each preset is displayed, so choose according to your target platform.</p>
+      </li>
+      <li>
+        <strong>Apply Settings</strong>
+        <p>Click "Apply" to reflect the Light Volumes settings on the selected materials. Undo is supported.</p>
+      </li>
+    </ol>
+
+    <h2>Tips</h2>
+    <ul class="tool-tips">
+      <li>Enable Light Volumes for the best lighting quality in VRChat worlds. The lighting quality improvement is dramatic in supported worlds</li>
+      <li>Medium quality provides sufficient visual quality in most cases. Consider High for photography or showcases</li>
+      <li>In worlds that don't support Light Volumes, automatic fallback processing occurs, so there is no downside to keeping it enabled</li>
+      <li>Low quality is recommended for Quest avatars. Light Volumes sampling on mobile GPUs tends to be expensive</li>
+      <li>Testing in a Light Volumes-compatible world is the most reliable way to verify the effect. The full effect may be difficult to confirm in the editor</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

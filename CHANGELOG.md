@@ -5,6 +5,19 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-02-27
+
+### Added
+- **Inspector 日英切り替え**: EN/JP ボタンによるインスペクター言語のワンクリック切り替え
+  - 全 1,214 箇所のローカライゼーション対応
+  - デフォルト言語: 日本語（EditorPrefs で永続化）
+- **バイリンガル ドキュメントサイト**: natanetoon.com に英語版を追加
+  - /en/ パス以下に全 74+ ページの英語版
+  - ヘッダーの言語トグルで即座に切り替え
+  - nav.js による動的ナビゲーションの完全日英対応
+
+---
+
 ## [1.2.17] - 2026-02-25
 
 ### Added

@@ -3,6 +3,7 @@ using UnityEditor;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
     /// <summary>
     /// Screen FX Overlay シェーダー用のDrawer
     /// NataneToonShaderGUIから委譲される
@@ -65,25 +66,25 @@ namespace NataneToon.Editor
             };
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("ナタネ スクリーンFXオーバーレイ", headerStyle);
+            EditorGUILayout.LabelField(L("ナタネ スクリーンFXオーバーレイ", "Natane Screen FX Overlay"), headerStyle);
             EditorGUILayout.EndVertical();
         }
 
         private void DrawBlendSection()
         {
             EditorGUI.BeginChangeCheck();
-            showBlend = EditorGUILayout.Foldout(showBlend, "ブレンド / エフェクト基本", true, EditorStyles.foldoutHeader);
+            showBlend = EditorGUILayout.Foldout(showBlend, L("ブレンド / エフェクト基本", "Blend / Effect Basics"), true, EditorStyles.foldoutHeader);
             if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
 
             if (showBlend)
             {
                 EditorGUI.indentLevel++;
-                DrawProperty("_Intensity", "エフェクト強度");
-                DrawProperty("_TintColor", "ティントカラー");
-                DrawProperty("_Contrast", "コントラスト");
-                DrawProperty("_Saturation", "彩度");
+                DrawProperty("_Intensity", L("エフェクト強度", "Effect Intensity"));
+                DrawProperty("_TintColor", L("ティントカラー", "Tint Color"));
+                DrawProperty("_Contrast", L("コントラスト", "Contrast"));
+                DrawProperty("_Saturation", L("彩度", "Saturation"));
                 EditorGUILayout.Space(3);
-                EditorGUILayout.HelpBox("Intensityで全体のエフェクト適用率を調整できます。0=オフ、1=フル適用。", MessageType.None);
+                EditorGUILayout.HelpBox(L("Intensityで全体のエフェクト適用率を調整できます。0=オフ、1=フル適用。", "Adjust the overall effect application rate with Intensity. 0=Off, 1=Full."), MessageType.None);
                 EditorGUI.indentLevel--;
             }
         }
@@ -91,18 +92,18 @@ namespace NataneToon.Editor
         private void DrawToonizeSection()
         {
             EditorGUI.BeginChangeCheck();
-            showToonize = EditorGUILayout.Foldout(showToonize, "トゥーン化 / ポスタリゼーション", true, EditorStyles.foldoutHeader);
+            showToonize = EditorGUILayout.Foldout(showToonize, L("トゥーン化 / ポスタリゼーション", "Toonize / Posterization"), true, EditorStyles.foldoutHeader);
             if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
 
             if (showToonize)
             {
                 EditorGUI.indentLevel++;
-                DrawProperty("_PosterizeStrength", "ポスタリゼーション強度");
-                DrawProperty("_PosterizeSteps", "ポスタリゼーション段数");
-                DrawProperty("_EdgeStrength", "エッジ暗化強度");
-                DrawProperty("_EdgeThreshold", "エッジしきい値");
+                DrawProperty("_PosterizeStrength", L("ポスタリゼーション強度", "Posterization Strength"));
+                DrawProperty("_PosterizeSteps", L("ポスタリゼーション段数", "Posterization Steps"));
+                DrawProperty("_EdgeStrength", L("エッジ暗化強度", "Edge Darkening Strength"));
+                DrawProperty("_EdgeThreshold", L("エッジしきい値", "Edge Threshold"));
                 EditorGUILayout.Space(3);
-                EditorGUILayout.HelpBox("ポスタリゼーションで画面全体をトゥーン調にします。Steps数が少ないほど強い効果。", MessageType.None);
+                EditorGUILayout.HelpBox(L("ポスタリゼーションで画面全体をトゥーン調にします。Steps数が少ないほど強い効果。", "Posterization applies a toon look to the entire screen. Fewer steps = stronger effect."), MessageType.None);
                 EditorGUI.indentLevel--;
             }
         }
@@ -110,16 +111,16 @@ namespace NataneToon.Editor
         private void DrawDistortionSection()
         {
             EditorGUI.BeginChangeCheck();
-            showDistortion = EditorGUILayout.Foldout(showDistortion, "画面歪み / 色収差", true, EditorStyles.foldoutHeader);
+            showDistortion = EditorGUILayout.Foldout(showDistortion, L("画面歪み / 色収差", "Screen Distortion / Chromatic Aberration"), true, EditorStyles.foldoutHeader);
             if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
 
             if (showDistortion)
             {
                 EditorGUI.indentLevel++;
-                DrawProperty("_ChromaticAberration", "色収差");
-                DrawProperty("_AberrationScale", "収差スケール");
+                DrawProperty("_ChromaticAberration", L("色収差", "Chromatic Aberration"));
+                DrawProperty("_AberrationScale", L("収差スケール", "Aberration Scale"));
                 EditorGUILayout.Space(3);
-                EditorGUILayout.HelpBox("色収差でRGBの分離エフェクトを適用します。値を大きくするほど強い歪み。", MessageType.None);
+                EditorGUILayout.HelpBox(L("色収差でRGBの分離エフェクトを適用します。値を大きくするほど強い歪み。", "Applies RGB separation effect with chromatic aberration. Higher values = stronger distortion."), MessageType.None);
                 EditorGUI.indentLevel--;
             }
         }
@@ -127,31 +128,31 @@ namespace NataneToon.Editor
         private void DrawCinematicSection()
         {
             EditorGUI.BeginChangeCheck();
-            showCinematic = EditorGUILayout.Foldout(showCinematic, "シネマティック", true, EditorStyles.foldoutHeader);
+            showCinematic = EditorGUILayout.Foldout(showCinematic, L("シネマティック", "Cinematic"), true, EditorStyles.foldoutHeader);
             if (EditorGUI.EndChangeCheck()) SaveFoldoutStates();
 
             if (showCinematic)
             {
                 EditorGUI.indentLevel++;
 
-                EditorGUILayout.LabelField("ビネット", EditorStyles.miniBoldLabel);
-                DrawProperty("_Vignette", "ビネット強度");
-                DrawProperty("_VignetteSoftness", "ビネット柔らかさ");
+                EditorGUILayout.LabelField(L("ビネット", "Vignette"), EditorStyles.miniBoldLabel);
+                DrawProperty("_Vignette", L("ビネット強度", "Vignette Strength"));
+                DrawProperty("_VignetteSoftness", L("ビネット柔らかさ", "Vignette Softness"));
 
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("スキャンライン", EditorStyles.miniBoldLabel);
-                DrawProperty("_ScanlineStrength", "スキャンライン強度");
-                DrawProperty("_ScanlineDensity", "スキャンライン密度");
-                DrawProperty("_ScanlineSpeed", "スキャンライン速度");
+                EditorGUILayout.LabelField(L("スキャンライン", "Scanline"), EditorStyles.miniBoldLabel);
+                DrawProperty("_ScanlineStrength", L("スキャンライン強度", "Scanline Strength"));
+                DrawProperty("_ScanlineDensity", L("スキャンライン密度", "Scanline Density"));
+                DrawProperty("_ScanlineSpeed", L("スキャンライン速度", "Scanline Speed"));
 
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("フィルムグレイン", EditorStyles.miniBoldLabel);
-                DrawProperty("_GrainStrength", "グレイン強度");
-                DrawProperty("_GrainScale", "グレインスケール");
-                DrawProperty("_GrainSpeed", "グレイン速度");
+                EditorGUILayout.LabelField(L("フィルムグレイン", "Film Grain"), EditorStyles.miniBoldLabel);
+                DrawProperty("_GrainStrength", L("グレイン強度", "Grain Strength"));
+                DrawProperty("_GrainScale", L("グレインスケール", "Grain Scale"));
+                DrawProperty("_GrainSpeed", L("グレイン速度", "Grain Speed"));
 
                 EditorGUILayout.Space(3);
-                EditorGUILayout.HelpBox("ビネット=画面端の暗化、スキャンライン=CRTモニター風、グレイン=フィルムノイズ", MessageType.None);
+                EditorGUILayout.HelpBox(L("ビネット=画面端の暗化、スキャンライン=CRTモニター風、グレイン=フィルムノイズ", "Vignette=edge darkening, Scanline=CRT monitor style, Grain=film noise"), MessageType.None);
                 EditorGUI.indentLevel--;
             }
         }
@@ -164,8 +165,8 @@ namespace NataneToon.Editor
                 alignment = TextAnchor.MiddleCenter,
                 wordWrap = true
             };
-            EditorGUILayout.LabelField("ナタネ スクリーンFXオーバーレイ v1.1", footerStyle);
-            EditorGUILayout.LabelField("GrabPassを使用 - パフォーマンスに注意", footerStyle);
+            EditorGUILayout.LabelField(L("ナタネ スクリーンFXオーバーレイ v1.1", "Natane Screen FX Overlay v1.1"), footerStyle);
+            EditorGUILayout.LabelField(L("GrabPassを使用 - パフォーマンスに注意", "Uses GrabPass - watch performance"), footerStyle);
             EditorGUILayout.EndVertical();
         }
     }

@@ -1,0 +1,959 @@
+// ===== NataneToon Shader - Background Variant =====
+// Render Type: Opaque
+// Queue: Geometry
+// 特徴: 背景・ワールド用バリアント。ライトマップ対応、PBRオプション、Meta パス付き。
+//       アバター専用機能（Hair Specular, SSS, Parallax, Refraction 等）は除外。
+Shader "Natane/Toon Shader (Background)"
+{
+    Properties
+    {
+        // ===== Base Settings (基本設定) =====
+        [Header(Main Texture)]
+        _MainTex ("Main Texture", 2D) = "white" {}
+        _Color ("Color", Color) = (1,1,1,1)
+        [Space(10)]
+        [Toggle(_MAIN_TEX_ANIMATION)] _MainTexAnimation ("Main Tex Animation", Float) = 0
+        _MainTexScrollSpeed ("Scroll Speed XY", Vector) = (0,0,0,0)
+        _MainTexRotateSpeed ("Rotate Speed", Float) = 0
+
+        [Header(Color Preservation)]
+        _AlbedoPreservation ("Texture Color Preservation", Range(0, 1)) = 0
+        _Saturation ("Saturation", Range(0, 2)) = 1
+        _Brightness ("Overall Brightness", Range(0.5, 1.5)) = 1
+
+        [Header(Surface Finish)]
+        _Glossiness ("Glossiness Overall Gloss", Range(0, 1)) = 1
+        _MatteEffect ("Matte Effect Reduce Gloss", Range(0, 1)) = 0
+
+        [Header(Final Color Blending)]
+        _FinalHighlightBlend ("Highlight Compression Prevent White Blowout", Range(0, 1)) = 0
+        _HighlightThreshold ("Highlight Threshold Start Point", Range(0, 1)) = 0.75
+        _FinalShadowBlend ("Shadow Lift Prevent Black Crush", Range(0, 1)) = 0
+        _ShadowThreshold ("Shadow Threshold Start Point", Range(0, 1)) = 0.25
+
+        [Header(Makeup Textures)]
+        [Toggle(_2ND_TEXTURE)] _Use2ndTexture ("Enable 2nd Texture", Float) = 0
+        _2ndTex ("Texture Makeup", 2D) = "white" {}
+        _2ndTexHueShift ("Hue Shift", Range(-0.5, 0.5)) = 0
+        _2ndTexSaturation ("Saturation", Range(0, 2)) = 1
+        _2ndTexValue ("Brightness", Range(0, 2)) = 1
+        _2ndTexIntensity ("2nd Tex Intensity", Range(0, 2)) = 1
+        [Enum(Add,0,Multiply,1,Overlay,2,Screen,3)] _2ndTexBlendMode ("2nd Tex Blend Mode", Float) = 0
+        [Toggle(_2ND_TEX_MASK)] _Use2ndTexMask ("Use 2nd Tex Mask", Float) = 0
+        _2ndTexMask ("2nd Tex Mask", 2D) = "white" {}
+        _2ndTexScrollSpeed ("2nd Tex Scroll Speed XY", Vector) = (0,0,0,0)
+        _2ndTexRotateSpeed ("2nd Tex Rotate Speed", Float) = 0
+        [Space(10)]
+        [Toggle(_3RD_TEXTURE)] _Use3rdTexture ("Enable 3rd Texture", Float) = 0
+        _3rdTex ("Texture Makeup", 2D) = "white" {}
+        _3rdTexHueShift ("Hue Shift", Range(-0.5, 0.5)) = 0
+        _3rdTexSaturation ("Saturation", Range(0, 2)) = 1
+        _3rdTexValue ("Brightness", Range(0, 2)) = 1
+        _3rdTexIntensity ("3rd Tex Intensity", Range(0, 2)) = 1
+        [Enum(Add,0,Multiply,1,Overlay,2,Screen,3)] _3rdTexBlendMode ("3rd Tex Blend Mode", Float) = 0
+        [Toggle(_3RD_TEX_MASK)] _Use3rdTexMask ("Use 3rd Tex Mask", Float) = 0
+        _3rdTexMask ("3rd Tex Mask", 2D) = "white" {}
+        _3rdTexScrollSpeed ("3rd Tex Scroll Speed XY", Vector) = (0,0,0,0)
+        _3rdTexRotateSpeed ("3rd Tex Rotate Speed", Float) = 0
+        [Space(10)]
+        [Toggle(_4TH_TEXTURE)] _Use4thTexture ("Enable 4th Texture", Float) = 0
+        _4thTex ("Texture Makeup", 2D) = "white" {}
+        _4thTexHueShift ("Hue Shift", Range(-0.5, 0.5)) = 0
+        _4thTexSaturation ("Saturation", Range(0, 2)) = 1
+        _4thTexValue ("Brightness", Range(0, 2)) = 1
+        _4thTexIntensity ("4th Tex Intensity", Range(0, 2)) = 1
+        [Enum(Add,0,Multiply,1,Overlay,2,Screen,3)] _4thTexBlendMode ("4th Tex Blend Mode", Float) = 0
+        [Toggle(_4TH_TEX_MASK)] _Use4thTexMask ("Use 4th Tex Mask", Float) = 0
+        _4thTexMask ("4th Tex Mask", 2D) = "white" {}
+        _4thTexScrollSpeed ("4th Tex Scroll Speed XY", Vector) = (0,0,0,0)
+        _4thTexRotateSpeed ("4th Tex Rotate Speed", Float) = 0
+        [Space(10)]
+        [Toggle(_5TH_TEXTURE)] _Use5thTexture ("Enable 5th Texture", Float) = 0
+        _5thTex ("Texture Makeup", 2D) = "white" {}
+        _5thTexHueShift ("Hue Shift", Range(-0.5, 0.5)) = 0
+        _5thTexSaturation ("Saturation", Range(0, 2)) = 1
+        _5thTexValue ("Brightness", Range(0, 2)) = 1
+        _5thTexIntensity ("5th Tex Intensity", Range(0, 2)) = 1
+        [Enum(Add,0,Multiply,1,Overlay,2,Screen,3)] _5thTexBlendMode ("5th Tex Blend Mode", Float) = 0
+        [Toggle(_5TH_TEX_MASK)] _Use5thTexMask ("Use 5th Tex Mask", Float) = 0
+        _5thTexMask ("5th Tex Mask", 2D) = "white" {}
+        _5thTexScrollSpeed ("5th Tex Scroll Speed XY", Vector) = (0,0,0,0)
+        _5thTexRotateSpeed ("5th Tex Rotate Speed", Float) = 0
+
+        // ===== Screen-Tone Overlay =====
+        [Header(Screen Tone)]
+        [Toggle(_SCREEN_TONE)] _ScreenTone ("Enable Screen-Tone", Float) = 0
+        _ScreenToneColor ("Screen-Tone Color", Color) = (0,0,0,1)
+        _ScreenToneMask ("Screen-Tone Mask", 2D) = "white" {}
+        _ScreenToneScale ("Pattern Scale", Range(1, 200)) = 10
+        _ScreenToneThreshold ("Dot Density", Range(0, 1)) = 0.5
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _ScreenToneBlendMode ("Blend Mode", Float) = 0
+        _ScreenToneBlend ("Blend", Range(0, 1)) = 1
+        _ScreenToneBlur ("Mask Blur", Range(0, 1)) = 0
+
+        // ===== Gradient Base Color (グラデーションベースカラー) =====
+        [Header(Gradient Base Color)]
+        [Toggle(_GRADIENT_BASE_COLOR)] _GradientBaseColor ("Enable Gradient Base Color", Float) = 0
+        _GradientTopColor ("Top Color", Color) = (1, 1, 1, 1)
+        _GradientBottomColor ("Bottom Color", Color) = (0.5, 0.5, 0.5, 1)
+        [Enum(X,0,Y,1,Z,2)] _GradientAxis ("Gradient Axis", Float) = 1
+        [Enum(Local,0,World,1)] _GradientSpace ("Coordinate Space", Float) = 0
+        _GradientStart ("Gradient Start", Float) = 0
+        _GradientEnd ("Gradient End", Float) = 1
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _GradientBlendMode ("Blend Mode", Float) = 0
+        _GradientBlend ("Blend", Range(0, 1)) = 1
+
+        // ===== Shading (シェーディング) =====
+        [Header(Shading)]
+        [Enum(Toon,0,Gradient,1)] _ShadingMode ("Shading Mode", Float) = 0
+        _ShadingGradientWidth ("Gradient Width", Range(0.001, 1)) = 0.2
+        [Toggle(_USE_RAMP)] _UseRamp ("Use Ramp Texture", Float) = 0
+        _RampTex ("Ramp Texture", 2D) = "white" {}
+        _ShadowColor ("Shadow Color 1st", Color) = (0.5, 0.5, 0.5, 1)
+        [Toggle(_USE_MULTI_SHADOW)] _UseMultiShadow ("Use Multi-tone Shadow", Float) = 0
+        _Shadow2ndColor ("Shadow Color 2nd", Color) = (0.35, 0.35, 0.35, 1)
+        _Shadow2ndBorder ("2nd Shadow Border", Range(0, 1)) = 0.3
+        _Shadow3rdColor ("Shadow Color 3rd", Color) = (0.2, 0.2, 0.2, 1)
+        _Shadow3rdBorder ("3rd Shadow Border", Range(0, 1)) = 0.15
+        _ShadowSteps ("Shadow Steps", Range(1, 10)) = 2
+        _ShadowSharpness ("Shadow Sharpness", Range(0.001, 1)) = 0.1
+        _StepBorderSmooth ("Step Border Smooth", Range(0, 1)) = 0
+        _ShadowOffset ("Shadow Offset", Range(-1, 1)) = 0
+        _LitSoftness ("Lit Area Softness Global Smoothstep", Range(0, 1)) = 0
+        _ShadowBlend ("Shadow Blend Softness", Range(0, 1)) = 0
+        [Toggle(_SHADOW_RECEIVE_MASK)] _UseShadowReceiveMask ("Use Shadow Receive Mask", Float) = 0
+        _ShadowReceiveMask ("Shadow Receive Mask", 2D) = "white" {}
+        [Space(10)]
+        [Toggle(_SHADING_GRADE_MAP)] _UseGradeMap ("Use Shading Grade Map", Float) = 0
+        _ShadingGradeMap ("Shading Grade Map", 2D) = "white" {}
+        _ShadingGradeScale ("Shading Grade Scale", Range(-1, 1)) = 0
+        [Toggle(_USE_AO)] _UseAO ("Use Ambient Occlusion", Float) = 0
+        _AOMap ("AO Map", 2D) = "white" {}
+        _AOIntensity ("AO Intensity", Range(0, 1)) = 1
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _AOBlendMode ("AO Blend Mode", Float) = 0
+        _AOBlend ("AO Blend", Range(0, 1)) = 1
+        _AOBlur ("AO Blur", Range(0, 1)) = 0
+        [Toggle(_USE_DITHERING)] _UseDithering ("Use Dithering Shadow Edge Only", Float) = 0
+        _DitheringScale ("Dithering Scale Pattern Size", Range(1, 100)) = 10
+        _DitheringStrength ("Dithering Strength Boundary Softness", Range(0, 1)) = 0.5
+        _DitheringBlend ("Dithering Blend", Range(0, 1)) = 1
+        _DitheringBlur ("Dithering Blur", Range(0, 1)) = 0
+        [Space(10)]
+        [Toggle(_SHADOW_COLOR_TEX)] _UseShadowColorTex ("Use Shadow Color Texture", Float) = 0
+        _ShadowColorTex ("Shadow Color Texture", 2D) = "white" {}
+        _ShadowColorTexStrength ("Shadow Color Tex Strength", Range(0, 1)) = 1
+
+        [Header(Advanced Lighting)]
+        [Toggle(_SOFT_LIGHTING_MODE)] _SoftLightingMode ("Soft Lighting Mode Global", Float) = 0
+        _SoftLightingIntensity ("Soft Lighting Intensity", Range(0, 1)) = 0.5
+        _LightIntensity ("Light Intensity Global", Range(0, 2)) = 1
+        _IndirectLightIntensity ("Indirect Light Intensity", Range(0, 2)) = 1
+        [Header(Environment Reflection Control)]
+        _GIIntensity ("GI Intensity", Range(0, 1)) = 0.5
+        _LightColorInfluence ("Light Color Influence", Range(0, 1)) = 1
+        _ShadowReceive ("Shadow Receive", Range(0, 1)) = 1
+        _ShadowSmoothing ("Shadow Map Smoothing", Range(0, 1)) = 0
+        _ShadowMaxDarkness ("Shadow Max Darkness", Range(0, 1)) = 0
+        _LightMinInfluence ("Light Min Influence", Range(0, 1)) = 0
+        _LightMaxInfluence ("Light Max Influence", Range(1, 5)) = 2
+        _LightBlend ("Light Blend Softness", Range(0, 1)) = 0
+        _HighlightSoftness ("Highlight Softness", Range(0, 1)) = 0
+        _BacklightIntensity ("Backlight Intensity", Range(0, 2)) = 0
+        _BacklightColor ("Backlight Color", Color) = (1, 1, 1, 1)
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _BacklightBlendMode ("Backlight Blend Mode", Float) = 0
+        _BacklightBlend ("Backlight Blend", Range(0, 1)) = 1
+        _BacklightBlur ("Backlight Blur", Range(0, 1)) = 0
+        _AdditionalLightIntensity ("Additional Light Intensity", Range(0, 1)) = 0.5
+        _IndirectLightMinColor ("Indirect Light Min Color", Color) = (0.1, 0.1, 0.1, 1)
+        _ShadowEnvStrength ("Shadow Env Strength", Range(0, 1)) = 0
+        [Toggle(_PIXEL_VERTEX_LIGHTS)] _UsePixelVertexLights("Pixel Vertex Lights", Float) = 0
+
+        [Header(VRC Light Volumes)]
+        [Toggle(_USE_LIGHT_VOLUME)] _UseLightVolume ("Use Light Volume", Float) = 0
+        _LightVolumeIntensity ("Light Volume Intensity", Range(0, 1)) = 1
+        [Enum(Add,0,Multiply,1,Replace,2,Natural,3)] _LightVolumeBlendMode ("Light Volume Blend Mode", Float) = 3
+        [Toggle(_LIGHT_VOLUME_SPECULAR)] _LightVolumeSpecular ("Light Volume Specular", Float) = 0
+        _LightVolumeBlend ("Light Volume Blend", Range(0, 1)) = 1
+
+        // ===== Effects (エフェクト) =====
+        [Header(Specular)]
+        [Toggle(_SPECULAR)] _Specular ("Enable Specular", Float) = 0
+        _SpecularColor ("Specular Color", Color) = (1,1,1,1)
+        _SpecularSize ("Specular Size", Range(0, 1)) = 0.1
+        _SpecularSoftness ("Specular Softness", Range(0.001, 1)) = 0.05
+        [Toggle(_SPECULAR_MASK)] _UseSpecularMask ("Use Specular Mask", Float) = 0
+        _SpecularMask ("Specular Mask", 2D) = "white" {}
+        _SpecularMaskScrollSpeed ("Specular Mask Scroll Speed XY", Vector) = (0,0,0,0)
+        _SpecularMaskRotateSpeed ("Specular Mask Rotate Speed", Float) = 0
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _SpecularBlendMode ("Specular Blend Mode", Float) = 0
+        _SpecularBlend ("Specular Blend", Range(0, 1)) = 1
+        _SpecularBlur ("Specular Blur", Range(0, 1)) = 0
+
+        [Header(Rim Light)]
+        [Toggle(_RIM_LIGHT)] _RimLight ("Enable Rim Light", Float) = 0
+        _RimColor ("Rim Color", Color) = (1,1,1,1)
+        _RimPower ("Rim Power", Range(0.1, 10)) = 3
+        _RimIntensity ("Rim Intensity", Range(0, 5)) = 1
+        _RimSpread ("Rim Spread Glow", Range(0, 1)) = 0
+        [Toggle(_RIM_MASK)] _UseRimMask ("Use Rim Mask", Float) = 0
+        _RimMask ("Rim Mask", 2D) = "white" {}
+        _RimMaskScrollSpeed ("Rim Mask Scroll Speed XY", Vector) = (0,0,0,0)
+        _RimMaskRotateSpeed ("Rim Mask Rotate Speed", Float) = 0
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _RimBlendMode ("Rim Blend Mode", Float) = 0
+        _RimBlend ("Rim Blend", Range(0, 1)) = 1
+        _RimBlur ("Rim Blur", Range(0, 1)) = 0
+        [Toggle(_RIM_LIGHT_2)] _RimLight2 ("Enable Rim Light 2", Float) = 0
+        _RimColor2 ("Rim Color 2", Color) = (0.5,0.8,1,1)
+        _RimPower2 ("Rim Power 2", Range(0.1, 10)) = 5
+        _RimIntensity2 ("Rim Intensity 2", Range(0, 5)) = 0.5
+        _RimSpread2 ("Rim Spread Glow", Range(0, 1)) = 0
+        [Toggle(_RIM_MASK_2)] _UseRimMask2 ("Use Rim Mask 2", Float) = 0
+        _RimMask2 ("Rim Mask 2", 2D) = "white" {}
+        _RimMask2ScrollSpeed ("Rim Mask 2 Scroll Speed XY", Vector) = (0,0,0,0)
+        _RimMask2RotateSpeed ("Rim Mask 2 Rotate Speed", Float) = 0
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _RimBlendMode2 ("Rim 2 Blend Mode", Float) = 0
+        _RimBlend2 ("Rim 2 Blend", Range(0, 1)) = 1
+        _Rim2Blur ("Rim 2 Blur", Range(0, 1)) = 0
+        [Toggle(_OFFSET_RIM_LIGHT)] _OffsetRimLight ("Enable Offset Rim Light", Float) = 0
+        _OffsetRimColor ("Offset Rim Color", Color) = (0.8,0.9,1,1)
+        _OffsetRimPower ("Offset Rim Power", Range(0.01, 10)) = 3
+        _OffsetRimIntensity ("Offset Rim Intensity", Range(0, 10)) = 1
+        _OffsetRimOffsetX ("Offset Rim X", Range(-5, 5)) = 0.3
+        _OffsetRimOffsetY ("Offset Rim Y", Range(-5, 5)) = 0.1
+        [Toggle] _OffsetRimUseLightDir ("Use Light Direction", Float) = 0
+        _OffsetRimLightDirStrength ("Light Dir Strength", Range(0, 1)) = 0.5
+        _OffsetRimSharpness ("Offset Rim Sharpness", Range(0, 1)) = 0.5
+        _OffsetRimShadowMask ("Shadow Mask", Range(0, 1)) = 0.5
+        _OffsetRimMask ("Offset Rim Mask", 2D) = "white" {}
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _OffsetRimBlendMode ("Offset Rim Blend Mode", Float) = 0
+        _OffsetRimBlend ("Offset Rim Blend", Range(0, 1)) = 1
+        _OffsetRimBlur ("Offset Rim Blur", Range(0, 1)) = 0
+        [Space(10)]
+        [Toggle(_RIM_DIRECTION_CONTROL)] _RimDirectionControl ("Rim Direction Control", Float) = 0
+        _RimLightDirection ("Rim Light Direction", Vector) = (0,1,0,0)
+        _RimDirectionRange ("Direction Range", Range(0, 1)) = 0.5
+        _RimDirStrength ("Light Direction Strength", Range(0, 1)) = 0
+        _RimShadowMask ("Shadow Mask", Range(0, 1)) = 0
+
+        [Header(MatCap)]
+        [Toggle(_MATCAP)] _MatCap ("Enable MatCap", Float) = 0
+        _MatCapTex ("MatCap Texture", 2D) = "black" {}
+        _MatCapIntensity ("MatCap Intensity", Range(0, 2)) = 1
+        [Enum(Add,0,Multiply,1,Replace,2)] _MatCapBlendMode ("MatCap Blend Mode", Float) = 0
+        [Toggle(_MATCAP_MASK)] _UseMatCapMask ("Use MatCap Mask", Float) = 0
+        _MatCapMask ("MatCap Mask", 2D) = "white" {}
+        _MatCapBlend ("MatCap Blend", Range(0, 1)) = 1
+        _MatCapBlur ("MatCap Blur", Range(0, 1)) = 0
+        [Space(10)]
+        [Toggle(_MATCAP_2)] _MatCap2 ("Enable MatCap 2", Float) = 0
+        _MatCapTex2 ("MatCap Texture 2", 2D) = "black" {}
+        _MatCapIntensity2 ("MatCap 2 Intensity", Range(0, 2)) = 1
+        [Enum(Add,0,Multiply,1,Replace,2)] _MatCapBlendMode2 ("MatCap 2 Blend Mode", Float) = 0
+        [Toggle(_MATCAP_MASK_2)] _UseMatCapMask2 ("Use MatCap 2 Mask", Float) = 0
+        _MatCapMask2 ("MatCap 2 Mask", 2D) = "white" {}
+        _MatCapBlend2 ("MatCap 2 Blend", Range(0, 1)) = 1
+        _MatCap2Blur ("MatCap 2 Blur", Range(0, 1)) = 0
+        [Space(10)]
+        [Toggle(_MATCAP_3)] _MatCap3 ("Enable MatCap 3", Float) = 0
+        _MatCapTex3 ("MatCap Texture 3", 2D) = "black" {}
+        _MatCapIntensity3 ("MatCap 3 Intensity", Range(0, 2)) = 1
+        [Enum(Add,0,Multiply,1,Replace,2)] _MatCapBlendMode3 ("MatCap 3 Blend Mode", Float) = 0
+        [Toggle(_MATCAP_MASK_3)] _UseMatCapMask3 ("Use MatCap 3 Mask", Float) = 0
+        _MatCapMask3 ("MatCap 3 Mask", 2D) = "white" {}
+        _MatCapBlend3 ("MatCap 3 Blend", Range(0, 1)) = 1
+        _MatCap3Blur ("MatCap 3 Blur", Range(0, 1)) = 0
+
+        // ===== Outline (アウトライン) =====
+        [Header(Outline)]
+        [Toggle(_OUTLINE)] _Outline ("Enable Outline", Float) = 0
+        [Enum(Inverted Hull,0,Back Face,1)] _OutlineMode ("Outline Mode", Float) = 0
+        _OutlineWidth ("Outline Width", Range(0, 1)) = 0.1
+        _OutlineColor ("Outline Color", Color) = (0,0,0,1)
+        [Toggle(_OUTLINE_MASK)] _UseOutlineMask ("Use Outline Mask", Float) = 0
+        _OutlineMask ("Outline Mask", 2D) = "white" {}
+        [Toggle(_OUTLINE_WIDTH_MAP)] _UseOutlineWidthMap ("Use Outline Width Map", Float) = 0
+        _OutlineWidthMap ("Outline Width Map", 2D) = "white" {}
+        [Space(10)]
+        [Toggle(_OUTLINE_MULTI_COLOR)] _OutlineMultiColor ("Multi-Color Outline", Float) = 0
+        _OutlineColor2 ("Outline Color 2", Color) = (0.5,0,0,1)
+        _OutlineColorMix ("Color Mix", Range(0, 1)) = 0.5
+        [Space(10)]
+        [Toggle(_OUTLINE_TEXTURE_COLOR)] _OutlineTextureColor ("Texture-linked Color", Float) = 0
+        _OutlineTexColorBlend ("Tex Color Blend", Range(0, 1)) = 0.8
+        _OutlineTexColorDarken ("Tex Color Darken", Range(0, 1)) = 0.5
+        [Space(10)]
+        [Toggle(_SMOOTH_NORMAL)] _SmoothNormal ("Smooth Normal", Float) = 0
+        [Enum(Vertex Color ObjectSpace,0,Vertex Color TangentSpace,1,Baked Normal Texture,2)] _SmoothNormalMode ("Smooth Normal Mode", Float) = 0
+        _SmoothNormalTex ("Smooth Normal Texture", 2D) = "bump" {}
+        _SmoothNormalShadingBlend ("Smooth Normal Shading Blend", Range(0, 1)) = 0
+        [Header(Outline Corner Fix)]
+        _OutlineCornerSmooth ("Corner Smooth Fallback", Range(0, 1)) = 0
+        _OutlineEdgeCompensation ("Edge Width Compensation", Range(0, 1)) = 0
+
+        [Header(Emission)]
+        [Toggle(_EMISSION)] _Emission ("Enable Emission", Float) = 0
+        [HDR] _EmissionColor ("Emission Color", Color) = (0,0,0,1)
+        _EmissionMap ("Emission Map", 2D) = "white" {}
+        [Toggle(_EMISSION_SCROLL)] _EmissionScroll ("Emission Scroll", Float) = 0
+        _EmissionScrollSpeed ("Emission Scroll Speed", Float) = 1
+        _EmissionScrollSpeedY ("Emission Scroll Speed Y", Float) = 0
+        _EmissionRotateSpeed ("Emission Rotate Speed", Float) = 0
+        [Toggle(_EMISSION_PULSE)] _EmissionPulse ("Emission Pulse", Float) = 0
+        _EmissionPulseSpeed ("Emission Pulse Speed", Float) = 1
+        _EmissionPulseAmplitude ("Emission Pulse Amplitude", Range(0, 1)) = 0.5
+        [Toggle(_EMISSION_MASK)] _UseEmissionMask ("Use Emission Mask", Float) = 0
+        _EmissionMask ("Emission Mask", 2D) = "white" {}
+        _EmissionMaskScrollSpeed ("Emission Mask Scroll Speed XY", Vector) = (0,0,0,0)
+        _EmissionMaskRotateSpeed ("Emission Mask Rotate Speed", Float) = 0
+        _EmissionGlow ("Emission Glow Bloom", Range(0, 1)) = 0
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _EmissionBlendMode ("Emission Blend Mode", Float) = 0
+        _EmissionBlend ("Emission Blend", Range(0, 1)) = 1
+        _EmissionBlur ("Emission Blur", Range(0, 1)) = 0
+
+        [Header(Virtual Expression)]
+        [Toggle(_DISSOLVE)] _Dissolve ("Enable Dissolve", Float) = 0
+        _DissolveAmount ("Dissolve Amount", Range(0, 1)) = 0
+        _DissolveTex ("Dissolve Texture Noise", 2D) = "white" {}
+        _DissolveTexScrollSpeed ("Dissolve Tex Scroll Speed XY", Vector) = (0,0,0,0)
+        _DissolveTexRotateSpeed ("Dissolve Tex Rotate Speed", Float) = 0
+        _DissolveEdgeWidth ("Dissolve Edge Width", Range(0, 0.5)) = 0.1
+        [HDR] _DissolveEdgeColor ("Dissolve Edge Color", Color) = (1, 0.5, 0, 1)
+        _DissolveEdgeIntensity ("Dissolve Edge Intensity", Range(0, 10)) = 2
+        [Toggle(_DISSOLVE_MASK)] _UseDissolveMask ("Use Dissolve Mask", Float) = 0
+        _DissolveMask ("Dissolve Mask", 2D) = "white" {}
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _DissolveBlendMode ("Dissolve Blend Mode", Float) = 0
+        _DissolveBlend ("Dissolve Blend", Range(0, 1)) = 1
+        _DissolveBlur ("Dissolve Blur", Range(0, 1)) = 0
+        [Enum(UV,0,World,1,Local,2)] _DissolveCoordMode ("Dissolve Coordinate Mode", Float) = 0
+        [Enum(X,0,Y,1,Z,2)] _DissolveWorldAxis ("Dissolve Axis", Float) = 1
+        _DissolveWorldMin ("World Min", Float) = 0
+        _DissolveWorldMax ("World Max", Float) = 1
+        _DissolveNoiseBlend ("Noise Texture Blend", Range(0, 1)) = 0
+        [Space(10)]
+        [Toggle(_ALPHA_MASK)] _UseAlphaMask ("Use Alpha Mask", Float) = 0
+        _AlphaMask ("Alpha Mask", 2D) = "white" {}
+        [Space(10)]
+        [Toggle(_HUE_SHIFT)] _HueShiftEnable ("Enable Hue Shift", Float) = 0
+        _HueShift ("Hue Shift", Range(0, 1)) = 0
+        _HueShiftBlend ("Hue Shift Blend", Range(0, 1)) = 1
+        _HueShiftBlur ("Hue Shift Blur", Range(0, 1)) = 0
+
+        // ===== Normal Map (法線マップ) =====
+        [Header(Normal Map)]
+        [Toggle(_NORMALMAP)] _UseNormalMap ("Use Normal Map", Float) = 0
+        _BumpMap ("Normal Map", 2D) = "bump" {}
+        _BumpScale ("Normal Scale", Range(0, 2)) = 1
+        _BumpMapScrollSpeed ("Normal Map Scroll Speed XY", Vector) = (0,0,0,0)
+        _BumpMapRotateSpeed ("Normal Map Rotate Speed", Float) = 0
+
+        [Header(Cubemap Reflection)]
+        [Toggle(_REFLECTION)] _Reflection ("Enable Reflection", Float) = 0
+        _ReflectionCube ("Reflection Cubemap", CUBE) = "black" {}
+        _ReflectionColor ("Reflection Color", Color) = (1, 1, 1, 1)
+        _ReflectionIntensity ("Reflection Intensity", Range(0, 2)) = 1
+        _Smoothness ("Smoothness Glossiness", Range(0, 1)) = 0.5
+        _Metallic ("Metallic", Range(0, 1)) = 0
+        _FresnelPower ("Fresnel Power", Range(0, 10)) = 5
+        _FresnelSoftness ("Fresnel Softness", Range(0, 1)) = 0
+        _ReflectionBlendMode ("Reflection Blend Mode", Range(0, 1)) = 0
+        [Toggle(_REFLECTION_MASK)] _UseReflectionMask ("Use Reflection Mask", Float) = 0
+        _ReflectionMask ("Reflection Mask", 2D) = "white" {}
+        _ReflectionBlend ("Reflection Blend", Range(0, 1)) = 1
+
+        [Header(Iridescence)]
+        [Toggle(_IRIDESCENCE)] _Iridescence ("Enable Iridescence", Float) = 0
+        _IridescenceColor ("Iridescence Color", Color) = (1, 1, 1, 1)
+        _IridescenceIntensity ("Intensity", Range(0, 2)) = 0.5
+        _IridescenceHueShift ("Hue Shift", Range(0, 1)) = 0.5
+        _IridescenceSize ("Size Frequency", Range(0, 10)) = 1
+        [Toggle(_IRIDESCENCE_MASK)] _UseIridescenceMask ("Use Iridescence Mask", Float) = 0
+        _IridescenceMask ("Iridescence Mask", 2D) = "white" {}
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _IridescenceBlendMode ("Iridescence Blend Mode", Float) = 0
+        _IridescenceBlend ("Iridescence Blend", Range(0, 1)) = 1
+        _IridescenceBlur ("Iridescence Blur", Range(0, 1)) = 0
+
+        [Header(Environmental Rim)]
+        [Toggle(_ENV_RIM)] _EnvRim ("Enable Environmental Rim", Float) = 0
+        _EnvRimCube ("Environment Cubemap", CUBE) = "black" {}
+        _EnvRimColor ("Env Rim Color", Color) = (1, 1, 1, 1)
+        _EnvRimPower ("Env Rim Power", Range(0.1, 10)) = 3
+        _EnvRimIntensity ("Env Rim Intensity", Range(0, 5)) = 1
+        [Toggle(_ENV_RIM_MASK)] _UseEnvRimMask ("Use Env Rim Mask", Float) = 0
+        _EnvRimMask ("Env Rim Mask", 2D) = "white" {}
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _EnvRimBlendMode ("Env Rim Blend Mode", Float) = 0
+        _EnvRimBlend ("Env Rim Blend", Range(0, 1)) = 1
+        _EnvRimBlur ("Env Rim Blur", Range(0, 1)) = 0
+
+        [Header(LTCGI Realtime GI Support)]
+        [Toggle(_LTCGI)] _LTCGI ("Enable LTCGI", Float) = 0
+        _LTCGIIntensity ("LTCGI Intensity", Range(0, 2)) = 1
+        _LTCGISpecular ("LTCGI Specular", Range(0, 1)) = 0.5
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _LTCGIBlendMode ("LTCGI Blend Mode", Float) = 0
+        _LTCGIBlend ("LTCGI Blend", Range(0, 1)) = 1
+
+        // ===== Height Fade (高さフェード) =====
+        [Header(Height Fade)]
+        [Toggle(_HEIGHT_FADE)] _HeightFade ("Enable Height Fade", Float) = 0
+        _HeightFadeStart ("Fade Start Height", Float) = 0
+        _HeightFadeEnd ("Fade End Height", Float) = 1
+        [Enum(X,0,Y,1,Z,2)] _HeightFadeAxis ("Fade Axis", Float) = 1
+        [Enum(Local,0,World,1)] _HeightFadeSpace ("Coordinate Space", Float) = 0
+        [Toggle] _HeightFadeInvert ("Invert Direction", Float) = 0
+        [Enum(Alpha,0,Clip,1,Dithering,2)] _HeightFadeMode ("Fade Mode", Float) = 0
+        _HeightFadeBlend ("Height Fade Blend", Range(0, 1)) = 1
+        _HeightFadeDitherScale ("Dither Scale", Range(1, 200)) = 4
+        _HeightFadeEdgeWidth ("Edge Glow Width", Range(0, 0.5)) = 0
+        [HDR] _HeightFadeEdgeColor ("Edge Glow Color", Color) = (1, 0.5, 0, 1)
+
+        // ===== Distance Fade (距離フェード) =====
+        [Header(Distance Fade)]
+        [Toggle(_DISTANCE_FADE)] _DistanceFade ("Enable Distance Fade", Float) = 0
+        _DistanceFadeStart ("Fade Start Distance", Float) = 10
+        _DistanceFadeEnd ("Fade End Distance", Float) = 20
+        [Enum(Alpha,0,Simplify,1,Dithering,2)] _DistanceFadeMode ("Fade Mode", Float) = 0
+        _DistanceFadeBlend ("Distance Fade Blend", Range(0, 1)) = 1
+        _DistFadeBlur ("Distance Fade Blur", Range(0, 1)) = 0
+        _NearFadeStart ("Near Fade Start", Float) = 0
+        _NearFadeEnd ("Near Fade End", Float) = 0
+        _DistFadeDitherScale ("Distance Fade Dither Scale", Range(1, 100)) = 10
+        _SpecularDistFade ("Specular Distance Fade", Range(0, 1)) = 0
+        _RimDistFade ("Rim Light Distance Fade", Range(0, 1)) = 0
+        _Rim2DistFade ("Rim Light 2 Distance Fade", Range(0, 1)) = 0
+        _OffsetRimDistFade ("Offset Rim Distance Fade", Range(0, 1)) = 0
+        _EnvRimDistFade ("Env Rim Distance Fade", Range(0, 1)) = 0
+        _MatCapDistFade ("MatCap Distance Fade", Range(0, 1)) = 0
+        _MatCap2DistFade ("MatCap 2 Distance Fade", Range(0, 1)) = 0
+        _MatCap3DistFade ("MatCap 3 Distance Fade", Range(0, 1)) = 0
+        _ReflectionDistFade ("Reflection Distance Fade", Range(0, 1)) = 0
+        _EmissionDistFade ("Emission Distance Fade", Range(0, 1)) = 0
+        _IridescenceDistFade ("Iridescence Distance Fade", Range(0, 1)) = 0
+        _BacklightDistFade ("Backlight Distance Fade", Range(0, 1)) = 0
+
+        [Header(Vertex Offset Animation Wind Breathing)]
+        [Toggle(_VERTEX_ANIMATION)] _VertexAnimation ("Enable Vertex Animation", Float) = 0
+        _VertexAnimSpeed ("Animation Speed", Float) = 1
+        _VertexAnimStrength ("Animation Strength", Range(0, 1)) = 0.1
+        _VertexAnimFrequency ("Animation Frequency", Range(0, 10)) = 1
+        [Enum(Wave,0,Breath,1,Wind,2,Pulse,3)] _VertexAnimType ("Animation Type", Float) = 2
+        [Toggle(_VERTEX_ANIM_MASK)] _UseVertexAnimMask ("Use Vertex Anim Mask", Float) = 0
+        _VertexAnimMask ("Vertex Anim Mask", 2D) = "white" {}
+
+        // ===== Background Lightmap (背景ライトマップ) =====
+        [Header(Background Lightmap)]
+        _LightmapToonInfluence ("Lightmap Toon Influence", Range(0, 1)) = 0.5
+        _LightmapIntensity ("Lightmap Intensity", Range(0, 2)) = 1.0
+
+        // ===== PBR Material (物理ベースマテリアル) =====
+        [Header(PBR Material)]
+        [Toggle(_PBR)] _EnablePBR ("Enable PBR Lighting", Float) = 0
+        _PBR_MetallicGlossMap ("Metallic Gloss Map", 2D) = "white" {}
+        _PBR_Metallic ("Metallic", Range(0, 1)) = 0
+        _PBR_Smoothness ("Smoothness", Range(0, 1)) = 0.5
+        _PBR_OcclusionMap ("Occlusion Map", 2D) = "white" {}
+        _PBR_OcclusionStrength ("Occlusion Strength", Range(0, 1)) = 1
+        _PBR_ReflectionIntensity ("Reflection Intensity", Range(0, 2)) = 1
+
+        // ===== Advanced (詳細設定) =====
+        [Header(Rendering)]
+        [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull Mode", Float) = 2
+        [Enum(Off,0,On,1)] _ZWrite ("Z Write", Float) = 1
+
+        // ===== Stencil =====
+        [Header(Stencil)]
+        _StencilRef ("Stencil Reference", Range(0, 255)) = 0
+        [Enum(UnityEngine.Rendering.CompareFunction)] _StencilComp ("Stencil Comparison", Float) = 8
+        [Enum(UnityEngine.Rendering.StencilOp)] _StencilOp ("Stencil Pass Operation", Float) = 0
+        [Enum(UnityEngine.Rendering.StencilOp)] _StencilFail ("Stencil Fail Operation", Float) = 0
+        [Enum(UnityEngine.Rendering.StencilOp)] _StencilZFail ("Stencil ZFail Operation", Float) = 0
+        _StencilReadMask ("Read Mask", Range(0, 255)) = 255
+        _StencilWriteMask ("Write Mask", Range(0, 255)) = 255
+    }
+
+    SubShader
+    {
+        Tags
+        {
+            "RenderType"="Opaque"
+            "Queue"="Geometry"
+            "DisableBatching"="False"
+        }
+
+        Stencil
+        {
+            Ref [_StencilRef]
+            Comp [_StencilComp]
+            Pass [_StencilOp]
+            Fail [_StencilFail]
+            ZFail [_StencilZFail]
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
+        }
+
+        // Outline Pass
+        Pass
+        {
+            Name "OUTLINE"
+            Tags { "LightMode" = "ForwardBase" }
+            Cull Front
+            ZWrite [_ZWrite]
+
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma shader_feature_local _OUTLINE
+            #pragma shader_feature_local _OUTLINE_TEXTURE_COLOR
+            #pragma shader_feature_local _OUTLINE_WIDTH_MAP
+            #pragma shader_feature_local _OUTLINE_MULTI_COLOR
+            #pragma shader_feature_local _OUTLINE_MASK
+            #pragma shader_feature_local _SMOOTH_NORMAL
+            #pragma shader_feature_local _HEIGHT_FADE
+            #pragma multi_compile_fog
+            #pragma multi_compile_instancing
+
+            #include "UnityCG.cginc"
+
+            struct appdata
+            {
+                float4 vertex : POSITION;
+                float3 normal : NORMAL;
+                float4 tangent : TANGENT;
+                float4 color : COLOR;
+                float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct v2f
+            {
+                float4 pos : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                UNITY_FOG_COORDS(1)
+                #ifdef _HEIGHT_FADE
+                float3 worldPos : TEXCOORD2;
+                #endif
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            float _OutlineWidth;
+            float4 _OutlineColor;
+            float4 _OutlineColor2;
+            float _OutlineColorMix;
+            float _Outline;
+            float _OutlineMode;
+            float _OutlineCornerSmooth;
+            float _OutlineEdgeCompensation;
+            sampler2D _OutlineMask;
+            sampler2D _OutlineWidthMap;
+            #ifdef _OUTLINE_TEXTURE_COLOR
+                sampler2D _MainTex;
+                float4 _MainTex_ST;
+                float _OutlineTexColorBlend;
+                float _OutlineTexColorDarken;
+            #endif
+            #ifdef _SMOOTH_NORMAL
+                float _SmoothNormalMode;
+                sampler2D _SmoothNormalTex;
+            #endif
+            #ifdef _HEIGHT_FADE
+                float _HeightFadeStart;
+                float _HeightFadeEnd;
+                float _HeightFadeAxis;
+                float _HeightFadeSpace;
+                float _HeightFadeInvert;
+                float _HeightFadeMode;
+                float _HeightFadeBlend;
+                float _HeightFadeDitherScale;
+            #endif
+
+            v2f vert(appdata v)
+            {
+                v2f o;
+                UNITY_SETUP_INSTANCE_ID(v);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+                o.uv = v.uv;
+
+                #ifdef _OUTLINE
+                    float3 worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+                    float distanceToCamera = distance(worldPos, _WorldSpaceCameraPos);
+                    float distanceFactor = distanceToCamera * 0.1;
+
+                    float widthMultiplier = 1.0;
+                    #ifdef _OUTLINE_WIDTH_MAP
+                        widthMultiplier = tex2Dlod(_OutlineWidthMap, float4(v.uv, 0, 0)).r;
+                    #endif
+
+                    float3 outlineNormal = v.normal;
+                    #ifdef _SMOOTH_NORMAL
+                        if (_SmoothNormalMode < 0.5)
+                        {
+                            outlineNormal = v.color.rgb * 2.0 - 1.0;
+                        }
+                        else if (_SmoothNormalMode < 1.5)
+                        {
+                            float3 smoothTS = v.color.rgb * 2.0 - 1.0;
+                            float3 binormal = cross(v.normal, v.tangent.xyz) * v.tangent.w;
+                            float3x3 tbnOS = float3x3(v.tangent.xyz, binormal, v.normal);
+                            outlineNormal = mul(smoothTS, tbnOS);
+                        }
+                        else
+                        {
+                            float3 bakedNormal = tex2Dlod(_SmoothNormalTex, float4(v.uv, 0, 0)).rgb * 2.0 - 1.0;
+                            float3 binormal = cross(v.normal, v.tangent.xyz) * v.tangent.w;
+                            float3x3 tbnOS = float3x3(v.tangent.xyz, binormal, v.normal);
+                            outlineNormal = mul(bakedNormal, tbnOS);
+                        }
+                        outlineNormal = normalize(outlineNormal);
+                    #else
+                        if (_OutlineCornerSmooth > 0.001)
+                        {
+                            float3 posNormal = normalize(v.vertex.xyz);
+                            outlineNormal = normalize(lerp(v.normal, posNormal, _OutlineCornerSmooth));
+                        }
+                    #endif
+
+                    if (_OutlineMode < 0.5)
+                    {
+                        float3 norm = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, outlineNormal));
+                        float2 offset = TransformViewToProjection(norm.xy);
+                        o.pos = UnityObjectToClipPos(v.vertex);
+                        float outlineWidth = _OutlineWidth * 0.1 * (1.0 + distanceFactor) * widthMultiplier;
+                        if (_OutlineEdgeCompensation > 0.001)
+                        {
+                            float normalConsistency = saturate(dot(normalize(v.normal), outlineNormal));
+                            float edgeComp = lerp(1.0, lerp(0.3, 1.0, normalConsistency), _OutlineEdgeCompensation);
+                            outlineWidth *= edgeComp;
+                        }
+                        o.pos.xy += offset * o.pos.z * outlineWidth;
+                    }
+                    else
+                    {
+                        float outlineWidth = _OutlineWidth * 0.1 * (1.0 + distanceFactor * 0.5) * widthMultiplier;
+                        if (_OutlineEdgeCompensation > 0.001)
+                        {
+                            float normalConsistency = saturate(dot(normalize(v.normal), outlineNormal));
+                            float edgeComp = lerp(1.0, lerp(0.3, 1.0, normalConsistency), _OutlineEdgeCompensation);
+                            outlineWidth *= edgeComp;
+                        }
+                        float3 scaledPos = v.vertex.xyz + normalize(outlineNormal) * outlineWidth;
+                        o.pos = UnityObjectToClipPos(float4(scaledPos, 1.0));
+                    }
+
+                    #ifdef _HEIGHT_FADE
+                    o.worldPos = worldPos;
+                    #endif
+                #else
+                    o.pos = float4(0, 0, 0, 0);
+                #endif
+
+                UNITY_TRANSFER_FOG(o, o.pos);
+                return o;
+            }
+
+            fixed4 frag(v2f i) : SV_Target
+            {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+
+                #ifdef _OUTLINE
+                    fixed4 col = _OutlineColor;
+
+                    #ifdef _OUTLINE_TEXTURE_COLOR
+                        fixed4 texColor = tex2D(_MainTex, TRANSFORM_TEX(i.uv, _MainTex));
+                        fixed3 darkenedTexColor = texColor.rgb * (1.0 - _OutlineTexColorDarken);
+                        col.rgb = lerp(col.rgb, darkenedTexColor, _OutlineTexColorBlend);
+                    #endif
+
+                    #ifdef _OUTLINE_MULTI_COLOR
+                        float mixFactor = frac(i.uv.y * 5.0 + _Time.y * 0.5);
+                        col.rgb = lerp(_OutlineColor.rgb, _OutlineColor2.rgb, mixFactor * _OutlineColorMix);
+                    #endif
+
+                    #ifdef _OUTLINE_MASK
+                        float outlineMask = tex2D(_OutlineMask, i.uv).r;
+                        col.a *= outlineMask;
+                        clip(col.a - 0.01);
+                    #endif
+
+                    #ifdef _HEIGHT_FADE
+                    {
+                        float height;
+                        if (_HeightFadeSpace < 0.5)
+                        {
+                            float3 localPos = mul(unity_WorldToObject, float4(i.worldPos, 1.0)).xyz;
+                            height = _HeightFadeAxis < 0.5 ? localPos.x : (_HeightFadeAxis < 1.5 ? localPos.y : localPos.z);
+                        }
+                        else
+                        {
+                            height = _HeightFadeAxis < 0.5 ? i.worldPos.x : (_HeightFadeAxis < 1.5 ? i.worldPos.y : i.worldPos.z);
+                        }
+                        float heightFade = saturate((height - _HeightFadeStart) / max(_HeightFadeEnd - _HeightFadeStart, 0.001));
+                        heightFade = _HeightFadeInvert > 0.5 ? 1.0 - heightFade : heightFade;
+
+                        if (_HeightFadeMode < 0.5)
+                        {
+                            col.a *= heightFade;
+                            clip(col.a - 0.001);
+                        }
+                        else if (_HeightFadeMode < 1.5)
+                        {
+                            clip(heightFade - 0.001);
+                        }
+                        else
+                        {
+                            float2 spos = i.pos.xy * max(_HeightFadeDitherScale, 1.0) * 0.1;
+                            float ditherThreshold = frac(dot(floor(spos), float2(0.067, 0.258)) * 43.0);
+                            clip(heightFade - ditherThreshold);
+                        }
+                    }
+                    #endif
+
+                    UNITY_APPLY_FOG(i.fogCoord, col);
+                    return col;
+                #else
+                    discard;
+                    return fixed4(0, 0, 0, 0);
+                #endif
+            }
+            ENDCG
+        }
+
+        // Base Forward Pass
+        Pass
+        {
+            Name "FORWARD_BASE"
+            Tags { "LightMode" = "ForwardBase" }
+            Cull [_Cull]
+            ZWrite [_ZWrite]
+
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_fwdbase
+            #pragma multi_compile_fog
+            #pragma multi_compile_instancing
+            // Background mode: ライトマップバリアントを有効化
+            #define _BACKGROUND_MODE 1
+            #pragma shader_feature_local _MAIN_TEX_ANIMATION
+            #pragma shader_feature_local _2ND_TEXTURE
+            #pragma shader_feature_local _3RD_TEXTURE
+            #pragma shader_feature_local _4TH_TEXTURE
+            #pragma shader_feature_local _5TH_TEXTURE
+            #pragma shader_feature_local _SCREEN_TONE
+            #pragma shader_feature_local _GRADIENT_BASE_COLOR
+            #pragma shader_feature_local _USE_RAMP
+            #pragma shader_feature_local _USE_MULTI_SHADOW
+            #pragma shader_feature_local _SHADOW_RECEIVE_MASK
+            #pragma shader_feature_local _SHADING_GRADE_MAP
+            #pragma shader_feature_local _USE_AO
+            #pragma shader_feature_local _USE_DITHERING
+            #pragma shader_feature_local _SOFT_LIGHTING_MODE
+            #pragma shader_feature_local _USE_LIGHT_VOLUME
+            #pragma shader_feature_local _LIGHT_VOLUME_SPECULAR
+            #pragma shader_feature_local _SPECULAR
+            #pragma shader_feature_local _RIM_LIGHT
+            #pragma shader_feature_local _RIM_LIGHT_2
+            #pragma shader_feature_local _OFFSET_RIM_LIGHT
+            #pragma shader_feature_local _MATCAP
+            #pragma shader_feature_local _EMISSION
+            #pragma shader_feature_local _NORMALMAP
+            #pragma shader_feature_local _DISSOLVE
+            #pragma shader_feature_local _ALPHA_MASK
+            #pragma shader_feature_local _HUE_SHIFT
+            #pragma shader_feature_local _REFLECTION
+            #pragma shader_feature_local _IRIDESCENCE
+            #pragma shader_feature_local _ENV_RIM
+            #pragma shader_feature_local _MATCAP_2
+            #pragma shader_feature_local _MATCAP_3
+            #pragma shader_feature_local _HEIGHT_FADE
+            #pragma shader_feature_local _DISTANCE_FADE
+            #pragma shader_feature_local _VERTEX_ANIMATION
+            #pragma shader_feature_local _LTCGI
+            #pragma shader_feature_local _PIXEL_VERTEX_LIGHTS
+            #pragma shader_feature_local _SMOOTH_NORMAL
+            #pragma shader_feature_local _PBR
+
+            #include "../Include/Core/NataneToonCore.hlsl"
+
+            ENDCG
+        }
+
+        // Additional Forward Pass for multiple lights
+        Pass
+        {
+            Name "FORWARD_ADD"
+            Tags { "LightMode" = "ForwardAdd" }
+            Blend One One
+            ZWrite Off
+            Cull [_Cull]
+
+            CGPROGRAM
+            #pragma target 3.0
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_fwdadd
+            #pragma multi_compile_fog
+            #pragma multi_compile_instancing
+            #define _BACKGROUND_MODE 1
+            #pragma shader_feature_local _MAIN_TEX_ANIMATION
+            #pragma shader_feature_local _2ND_TEXTURE
+            #pragma shader_feature_local _3RD_TEXTURE
+            #pragma shader_feature_local _4TH_TEXTURE
+            #pragma shader_feature_local _5TH_TEXTURE
+            #pragma shader_feature_local _SCREEN_TONE
+            #pragma shader_feature_local _GRADIENT_BASE_COLOR
+            #pragma shader_feature_local _USE_RAMP
+            #pragma shader_feature_local _USE_MULTI_SHADOW
+            #pragma shader_feature_local _SHADOW_RECEIVE_MASK
+            #pragma shader_feature_local _SHADING_GRADE_MAP
+            #pragma shader_feature_local _USE_AO
+            #pragma shader_feature_local _USE_DITHERING
+            #pragma shader_feature_local _SOFT_LIGHTING_MODE
+            #pragma shader_feature_local _SPECULAR
+            #pragma shader_feature_local _RIM_LIGHT
+            #pragma shader_feature_local _RIM_LIGHT_2
+            #pragma shader_feature_local _OFFSET_RIM_LIGHT
+            #pragma shader_feature_local _ENV_RIM
+            #pragma shader_feature_local _NORMALMAP
+            #pragma shader_feature_local _DISSOLVE
+            #pragma shader_feature_local _ALPHA_MASK
+            #pragma shader_feature_local _HEIGHT_FADE
+            #pragma shader_feature_local _DISTANCE_FADE
+            #pragma shader_feature_local _SMOOTH_NORMAL
+            #pragma shader_feature_local _PBR
+            #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
+
+            #include "../Include/Core/NataneToonCore.hlsl"
+
+            ENDCG
+        }
+
+        // Shadow Caster Pass
+        Pass
+        {
+            Name "SHADOW_CASTER"
+            Tags { "LightMode" = "ShadowCaster" }
+
+            CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_shadowcaster
+            #pragma multi_compile_instancing
+            #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
+
+            #include "UnityCG.cginc"
+
+            struct appdata
+            {
+                float4 vertex : POSITION;
+                float3 normal : NORMAL;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct v2f
+            {
+                V2F_SHADOW_CASTER;
+                UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            v2f vert(appdata v)
+            {
+                v2f o;
+                UNITY_SETUP_INSTANCE_ID(v);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+                UNITY_TRANSFER_INSTANCE_ID(v, o);
+                TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
+                return o;
+            }
+
+            float4 frag(v2f i) : SV_Target
+            {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+                SHADOW_CASTER_FRAGMENT(i)
+            }
+            ENDCG
+        }
+
+        // Meta Pass for lightmap baking
+        Pass
+        {
+            Name "META"
+            Tags { "LightMode" = "Meta" }
+            Cull Off
+
+            CGPROGRAM
+            #pragma vertex vert_meta
+            #pragma fragment frag_meta
+            #pragma shader_feature_local _EMISSION
+            #pragma shader_feature_local _PBR
+
+            #include "UnityCG.cginc"
+            #include "UnityMetaPass.cginc"
+
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
+            half4 _Color;
+
+            #if defined(_EMISSION)
+            sampler2D _EmissionMap;
+            half4 _EmissionColor;
+            #endif
+
+            #if defined(_PBR)
+            sampler2D _PBR_MetallicGlossMap;
+            float _PBR_Metallic;
+            float _PBR_Smoothness;
+            #endif
+
+            struct appdata_meta
+            {
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+                float2 uv1 : TEXCOORD1;
+                float2 uv2 : TEXCOORD2;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+
+            struct v2f_meta
+            {
+                float4 pos : SV_POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            v2f_meta vert_meta(appdata_meta v)
+            {
+                v2f_meta o;
+                UNITY_SETUP_INSTANCE_ID(v);
+                o.pos = UnityMetaVertexPosition(v.vertex, v.uv1.xy, v.uv2.xy, unity_LightmapST, unity_DynamicLightmapST);
+                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                return o;
+            }
+
+            half4 frag_meta(v2f_meta i) : SV_Target
+            {
+                UnityMetaInput metaIN;
+                UNITY_INITIALIZE_OUTPUT(UnityMetaInput, metaIN);
+
+                half4 albedo = tex2D(_MainTex, i.uv) * _Color;
+                metaIN.Albedo = albedo.rgb;
+
+                #if defined(_EMISSION)
+                    metaIN.Emission = tex2D(_EmissionMap, i.uv).rgb * _EmissionColor.rgb;
+                #else
+                    metaIN.Emission = 0;
+                #endif
+
+                #if defined(_PBR)
+                    half2 metallicGloss = tex2D(_PBR_MetallicGlossMap, i.uv).ra;
+                    metaIN.SpecularColor = lerp(half3(0.04, 0.04, 0.04), albedo.rgb, metallicGloss.x * _PBR_Metallic);
+                #else
+                    metaIN.SpecularColor = half3(0.04, 0.04, 0.04);
+                #endif
+
+                return UnityMetaFragment(metaIN);
+            }
+            ENDCG
+        }
+    }
+
+    CustomEditor "NataneToonShaderGUI"
+    FallBack "Diffuse"
+}

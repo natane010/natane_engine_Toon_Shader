@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hologram - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Hologram</h1>
+    <p class="page-subtitle">Sci-fi style hologram effect</p>
+
+    <p>An effect that recreates cyberpunk and sci-fi holographic projections. Combine scanlines, edge glow, flicker, and noise distortion to create realistic hologram expressions.</p>
+    <p>Keyword: <code>_HOLOGRAM</code></p>
+
+    <h2 id="basic">Hologram Basic Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hologram Color</span>
+        <span class="param-prop">_HologramColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the overall color of the hologram effect. Affects all hologram elements including scanlines and edge glow.</p>
+        <p class="param-default">Default: (0, 1, 1, 1) (cyan)</p>
+      </div>
+      <div class="param-tip">Sci-fi cyan or green is recommended, but you can freely change it to match your character.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Monochrome</span>
+        <span class="param-prop">_HologramMonochrome</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Unifies the original texture color to the hologram color. Increasing the value causes the texture's color to be lost, creating a monochrome expression in the hologram color.</p>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+      <div class="param-tip">Setting to 1.0 creates a fully monochrome hologram, enhancing the sci-fi atmosphere.</div>
+    </div>
+
+    <h2 id="scanline">Scanlines</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Scanline Speed</span>
+        <span class="param-prop">_HologramScanlineSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the speed at which scanlines move vertically. A 3-layer scanline effect animates.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Scanline Intensity</span>
+        <span class="param-prop">_HologramScanlineIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the contrast of scanline light and dark. Higher values make the scanlines more clearly visible.</p>
+        <p class="param-default">Default: 0.5 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Scanline Density</span>
+        <span class="param-prop">_HologramScanlineDensity</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the number (density) of scanlines. Higher values display finer, more densely packed scanlines.</p>
+        <p class="param-default">Default: 100</p>
+      </div>
+      <div class="param-tip">Values around 50-200 are typical. Very large values may cause moire patterns.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Scanline Width</span>
+        <span class="param-prop">_HologramScanlineWidth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the thickness of each scanline. Higher values produce thicker scanlines.</p>
+        <p class="param-default">Default: 0.5 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <h2 id="edge-glow">Edge Glow (Fresnel)</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Edge Glow Range</span>
+        <span class="param-prop">_HologramEdgeGlowPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the range of the Fresnel-based edge glow effect. Lower values spread the glow wider, while higher values concentrate it on edges only.</p>
+        <p class="param-default">Default: 3 (Range: 0.1 - 10)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Edge Glow Intensity</span>
+        <span class="param-prop">_HologramEdgeGlowIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the brightness of the edge glow. Higher values make the edges glow more intensely.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 5)</p>
+      </div>
+    </div>
+
+    <h2 id="alpha-flicker">Transparency &amp; Flicker</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hologram Alpha</span>
+        <span class="param-prop">_HologramAlpha</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Automatically controls the overall transparency of the hologram linked to Fresnel. Increasing the value makes the hologram semi-transparent.</p>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+      <div class="param-tip">Combining with the Transparent variant achieves more realistic holographic projections.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Flicker Speed</span>
+        <span class="param-prop">_HologramFlickerSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the speed at which the hologram flickers.</p>
+        <p class="param-default">Default: 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Flicker Amount</span>
+        <span class="param-prop">_HologramFlickerAmount</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the amplitude of the flicker. Higher values produce more intense flickering.</p>
+        <p class="param-default">Default: 0.3 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <h2 id="noise">Noise Distortion</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Noise Intensity</span>
+        <span class="param-prop">_HologramNoiseIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the strength of noise distortion applied to the hologram.</p>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Noise Speed</span>
+        <span class="param-prop">_HologramNoiseSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the animation speed of the noise distortion.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+    </div>
+
+    <h2 id="mask-texture">Mask &amp; Texture</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hologram Mask</span>
+        <span class="param-prop">_HologramMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the application area of the hologram effect with a texture. Enabled by the keyword <code>_HOLOGRAM_MASK</code>.</p>
+        <p class="param-default">Default: "white" (apply to all)</p>
+      </div>
+      <div class="param-tip">White = hologram applied, Black = hologram hidden. You can control the presence of hologram per body part.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Noise Texture</span>
+        <span class="param-prop">_HologramNoiseTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>Uses a custom noise texture to control the hologram distortion pattern. Enabled by the keyword <code>_HOLOGRAM_NOISE</code>.</p>
+        <p class="param-default">Default: "white"</p>
+      </div>
+    </div>
+
+    <h2 id="blend">Blend Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_HologramBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects how the hologram effect is composited with the base color.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Normal blending</li>
+          <li><strong>Soft (1)</strong> - Soft light</li>
+          <li><strong>Screen (2)</strong> - Screen (brighten)</li>
+          <li><strong>Overlay (3)</strong> - Overlay</li>
+        </ul>
+        <p class="param-default">Default: 0 (Normal)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_HologramBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the overall application amount of the hologram effect. 0 disables it, 1 applies fully.</p>
+        <p class="param-default">Default: 1 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_HologramBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Blurs the boundaries of the hologram effect. Higher values produce softer compositing.</p>
+        <p class="param-default">Default: 0 (Range: 0 - 1)</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rim Light 1 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Rim Light 1</h1>
+    <p class="page-subtitle">Add light to object edges to enhance depth</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Rim Light is an effect that adds light to areas where the view direction and the object's normals are nearly perpendicular (edges). It enhances the three-dimensional appearance of characters and makes them stand out from the background.</p>
+    <p>Controlled by the keyword <code>_RIM_LIGHT</code>. No shader instructions are generated when disabled.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rim Light Color</span>
+        <span class="param-prop">_RimColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the color of the rim light. You can choose a color that matches the ambient light or the character's atmosphere.</p>
+        <p class="param-default">Default: (1, 1, 1, 1) (white)</p>
+      </div>
+      <div class="param-tip">Orange tones are recommended for sunset scenes, and blue tones for underwater scenes.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rim Light Power</span>
+        <span class="param-prop">_RimPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the sharpness of the rim light. Higher values concentrate the effect on thin edge areas, while lower values spread it over a wider area.</p>
+        <p class="param-default">Default: 3</p>
+        <p class="param-range">Range: 0.1 - 10</p>
+      </div>
+      <div class="param-tip">Values of 5-8 are recommended for delicate contour-line effects, and 1-2 for a soft aura-like effect.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rim Light Intensity</span>
+        <span class="param-prop">_RimIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the brightness (intensity) of the rim light. Values exceeding 1.0 produce HDR-like glow effects.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rim Spread (Glow)</span>
+        <span class="param-prop">_RimSpread</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Bleeds and spreads the rim light, adding a soft glowing appearance.</p>
+        <ul>
+          <li><strong>0</strong> - No spread (sharp rim)</li>
+          <li><strong>0.3-0.5</strong> - Moderate spread (recommended)</li>
+          <li><strong>0.7-1.0</strong> - Large spread (strong glow)</li>
+        </ul>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+      <div class="param-tip">The glow effect works best when combined with low power values for a dreamy, ethereal look.</div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rim Mask</span>
+        <span class="param-prop">_RimMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls the display area of the rim light. Enabled by the keyword <code>_RIM_MASK</code>.</p>
+        <p class="param-default">Default: "white" (full display)</p>
+      </div>
+      <div class="param-tip">White = rim light visible, Black = rim light hidden. Useful for concentrating rim light on the face or excluding parts of the clothing.</div>
+    </div>
+
+    <h2 id="blend">Blend &amp; Blur</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_RimBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the blend method for the rim light effect.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Standard additive blending</li>
+          <li><strong>Soft (1)</strong> - Soft additive. Prevents over-brightening</li>
+          <li><strong>Screen (2)</strong> - Screen blending. Natural brightness addition</li>
+          <li><strong>Overlay (3)</strong> - Overlay blending. Enhances contrast</li>
+        </ul>
+        <p class="param-default">Default: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_RimBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity (opacity) of the rim light effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_RimBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the blur amount of the rim light effect.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>
