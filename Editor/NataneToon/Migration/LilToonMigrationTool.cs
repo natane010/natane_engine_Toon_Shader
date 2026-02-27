@@ -695,17 +695,21 @@ namespace NataneToon.Editor
             //
             // lilToon: NdotL = dot(L,N) * 0.5 + 0.5  (Half-Lambert, 範囲[0,1])
             //   toon = saturate((NdotL - (border-blur/2)) / blur)  ... 線形ランプ
-            //   影の境界(raw ndotl空間) = 2*border - 1
             //
-            // Natane: ndotl = saturate(raw_ndotl + offset)
-            //   ToonShading(ndotl, steps=1, sharpness):
-            //     smoothstep(0.5-sr, 0.5+sr, ndotl)  where sr = sharpness * 0.5
-            //   影の境界(raw ndotl空間) = 0.5 - offset
+            // Natane: lightTerm = saturate(raw_ndotl)  ← ApplyLightBlendで[0,1]にクリップ
+            //   ToonShading: ndotl = saturate(lightTerm + offset)
+            //     steps=1: smoothstep(0.5-sr, 0.5+sr, ndotl)  where sr = sharpness * 0.5
+            //
+            // 重要な制約:
+            //   ApplyLightBlendのsaturate()で負のndotlが0にクリップされるため、
+            //   offsetが大きすぎるとtoonの最小値が0にならず、完全な影が出ない。
+            //   toonが0に到達する条件: offset < 0.5 - sharpness * 0.5
             //
             // 変換式:
-            //   offset = 1.5 - 2*border  (Half-Lambert→raw ndotl空間の補正)
-            //   sharpness = 2*blur       (HL空間→raw ndotl空間の幅補正)
-            //   steps = 1                (lilToonは2トーン = 明暗1境界)
+            //   idealOffset = 1.5 - 2*border  (Half-Lambert→raw ndotl空間の変換)
+            //   sharpness = 2*blur            (HL空間→raw ndotl空間の幅補正)
+            //   offset = min(idealOffset, 0.5 - sharpness*0.5 - 0.05)  ← toon=0到達保証
+            //   steps = 1                     (lilToonは2トーン = 明暗1境界)
             // =============================================
             if (sourceProps.ContainsKey("_ShadowBorder"))
             {
@@ -715,33 +719,40 @@ namespace NataneToon.Editor
                 // Steps=1: lilToonの基本2トーン（明暗1境界）に対応
                 targetMaterial.SetFloat("_ShadowSteps", 1);
 
-                // ShadowOffset: Half-Lambert空間からraw ndotl空間への変換
-                // lilToon border=0.5 → 垂直面が境界 → offset=0.5
-                float shadowOffset = 1.5f - 2.0f * border;
-                shadowOffset = Mathf.Clamp(shadowOffset, -0.5f, 1.0f);
-                targetMaterial.SetFloat("_ShadowOffset", shadowOffset);
-
                 // ShadowSharpness: lilToonのblur幅をNataneのsmoothstep幅に変換
-                // Half-Lambert空間のblur → raw ndotl空間では2倍の幅
-                float sharpness = Mathf.Clamp(blur * 2.0f, 0.0f, 1.0f);
+                float sharpness = Mathf.Clamp(blur * 2.0f, 0.01f, 1.0f);
                 targetMaterial.SetFloat("_ShadowSharpness", sharpness);
+
+                // ShadowOffset: Half-Lambert空間からraw ndotl空間への変換
+                // idealOffset: lilToonの影境界位置を再現する理想値
+                // maxOffset: toonが0に到達できる上限値（これを超えると影が出ない）
+                float idealOffset = 1.5f - 2.0f * border;
+                float maxOffset = 0.5f - sharpness * 0.5f - 0.05f;
+                float shadowOffset = Mathf.Min(idealOffset, maxOffset);
+                shadowOffset = Mathf.Clamp(shadowOffset, -0.5f, 0.95f);
+                targetMaterial.SetFloat("_ShadowOffset", shadowOffset);
 
                 // ShadowBlend=0, StepBorderSmooth=0: sharpnessだけで幅を制御（二重適用防止）
                 targetMaterial.SetFloat("_ShadowBlend", 0);
                 targetMaterial.SetFloat("_StepBorderSmooth", 0);
 
-                report.infos.Add($"Shadow: Border={border:F2}→Offset={shadowOffset:F2}, Blur={blur:F2}→Sharpness={sharpness:F3}, Steps=1");
+                report.infos.Add($"Shadow: Border={border:F2}→Offset={shadowOffset:F2} (ideal={idealOffset:F2}, max={maxOffset:F2}), Blur={blur:F2}→Sharpness={sharpness:F3}, Steps=1");
             }
             else
             {
                 // デフォルト設定
                 targetMaterial.SetFloat("_ShadowSteps", 1);
                 targetMaterial.SetFloat("_ShadowSharpness", 0.2f);
-                targetMaterial.SetFloat("_ShadowOffset", 0.5f);
+                targetMaterial.SetFloat("_ShadowOffset", 0.35f);
             }
 
-            // マルチシャドウレイヤー変換
-            MapMultiShadowLayers(sourceProps, targetMaterial, report);
+            // マルチシャドウレイヤー変換（_UseShadowが有効な場合のみ）
+            // lilToonではマテリアルにデフォルトで_Shadow2ndColorが存在するが、
+            // _UseShadow=0の場合は使用されていない
+            if (useShadow)
+            {
+                MapMultiShadowLayers(sourceProps, targetMaterial, report);
+            }
 
             // === Normal Map ===
             SetTextureIfExists(sourceProps, "_BumpMap", targetMaterial, "_BumpMap");
@@ -938,6 +949,22 @@ namespace NataneToon.Editor
                 targetMaterial.SetFloat("_Cutoff", cutoff);
                 report.infos.Add($"Alpha Cutoff: {cutoff:F2}");
             }
+
+            // === Brightness Compensation ===
+            // Natane's lighting pipeline has a normalize+luminance reconstruction step
+            // (Fragment.hlsl:521-524) that darkens output by ~1/√3 ≈ 0.577 for gray values.
+            // lilToon does NOT have this step, so migrated materials appear much too dark.
+            //
+            // Compensation strategy:
+            //   _Brightness = 1.5 (max allowed by Range)
+            //   _LightIntensity = √3 / 1.5 ≈ 1.155 (compensates the remaining gap)
+            //   Combined: 0.577 × 1.155 × 1.5 ≈ 1.0 (fully compensates for lit areas)
+            //   For shadow areas (~0.55 factor): 0.55 × 1.155 × 1.5 ≈ 0.953 (~95% match)
+            //
+            // This does NOT change the shader — only material parameters within their valid ranges.
+            targetMaterial.SetFloat("_Brightness", 1.5f);
+            targetMaterial.SetFloat("_LightIntensity", 1.15f);
+            report.infos.Add("Brightness補正: _Brightness=1.5, _LightIntensity=1.15 (normalize暗化補正)");
         }
 
         /// <summary>
@@ -1042,10 +1069,35 @@ namespace NataneToon.Editor
 
             if (!has2nd && !has3rd) return;
 
+            // Check if 2nd shadow is actually meaningful (not just default values)
+            // lilToon always has _Shadow2ndColor as a property, but it may be unused
+            bool meaningful2nd = false;
+            if (has2nd)
+            {
+                Color shadow2nd = (Color)sourceProps["_Shadow2ndColor"];
+                // Consider meaningful if alpha > 0 and color isn't pure white (default/unused)
+                meaningful2nd = shadow2nd.a > 0.01f &&
+                    (shadow2nd.r < 0.99f || shadow2nd.g < 0.99f || shadow2nd.b < 0.99f);
+            }
+
+            bool meaningful3rd = false;
+            if (has3rd)
+            {
+                Color shadow3rd = (Color)sourceProps["_Shadow3rdColor"];
+                meaningful3rd = shadow3rd.a > 0.01f &&
+                    (shadow3rd.r < 0.99f || shadow3rd.g < 0.99f || shadow3rd.b < 0.99f);
+            }
+
+            if (!meaningful2nd && !meaningful3rd)
+            {
+                report.infos.Add("Multi-shadow: 2nd/3rdシャドウはデフォルト値のためスキップ");
+                return;
+            }
+
             // Enable multi-shadow keyword
             targetMaterial.EnableKeyword("_USE_MULTI_SHADOW");
 
-            if (has2nd)
+            if (meaningful2nd)
             {
                 Color shadow2nd = (Color)sourceProps["_Shadow2ndColor"];
                 targetMaterial.SetColor("_Shadow2ndColor", shadow2nd);
@@ -1054,17 +1106,13 @@ namespace NataneToon.Editor
                 report.infos.Add($"2nd Shadow: Color={shadow2nd}, Border={border2nd:F2}");
             }
 
-            if (has3rd)
+            if (meaningful3rd)
             {
                 Color shadow3rd = (Color)sourceProps["_Shadow3rdColor"];
-                // lilToon 3rdColorデフォルトは(0,0,0,0)=透明=無効
-                if (shadow3rd.a > 0.01f)
-                {
-                    targetMaterial.SetColor("_Shadow3rdColor", shadow3rd);
-                    float border3rd = GetFloatOr(sourceProps, "_Shadow3rdBorder", 0.25f);
-                    targetMaterial.SetFloat("_Shadow3rdBorder", border3rd);
-                    report.infos.Add($"3rd Shadow: Color={shadow3rd}, Border={border3rd:F2}");
-                }
+                targetMaterial.SetColor("_Shadow3rdColor", shadow3rd);
+                float border3rd = GetFloatOr(sourceProps, "_Shadow3rdBorder", 0.25f);
+                targetMaterial.SetFloat("_Shadow3rdBorder", border3rd);
+                report.infos.Add($"3rd Shadow: Color={shadow3rd}, Border={border3rd:F2}");
             }
         }
 
