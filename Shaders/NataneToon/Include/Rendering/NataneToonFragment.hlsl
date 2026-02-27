@@ -582,6 +582,15 @@ half4 frag(v2f i) : SV_Target
 
             // LV使用時はUnityのAmbient Colorを使用しない（LVが環境光を提供するため）
             ambient = float3(0, 0, 0);
+
+            // StandardToon: LV直接光をstLightColorに統合
+            // stLightColorはディレクショナルライト+SHから計算されるが、
+            // LVが主光源の場合はstLightColorが不足して真っ黒になる。
+            // LV直接光をmax合成して、stDirectCol/stIndirectColのブースト倍率を算出。
+            #ifdef _STANDARD_TOON
+                half3 stLVEffective = max(stLightColor, directLightLV);
+                half3 stLVBoost = stLVEffective / max(stLightColor, half3(0.001, 0.001, 0.001));
+            #endif
         #else
             // Fallback: Unity Light Probes
             // L0 (uniform ambient) for indirect
@@ -694,13 +703,15 @@ half4 frag(v2f i) : SV_Target
         // ========== STEP 5: Final Composition ==========
         #ifdef _USE_LIGHT_VOLUME
             #ifdef _STANDARD_TOON
-            // StandardToon + LV: lilToon互換合成を行い、LV を環境光として追加
+            // StandardToon + LV: lilToon互換合成 + LVライトブースト
+            // stDirectCol/stIndirectCol は stLightColor に比例しているため、
+            // stLVBoost (= max(stLightColor, directLightLV) / stLightColor) を
+            // 掛けることで LV 光源の明るさを正しく反映する。
             {
                 half3 stResult = lerp(stIndirectCol, stDirectCol, shadingValue);
+                stResult *= stLVBoost;
                 stResult += additionalResult * col.rgb;
-                // LV 環境光をアルベドに掛けて合成（StandardToon の lighting はアルベド込み）
-                half3 lvEnv = max(directLightLV, float3(0, 0, 0)) * col.rgb;
-                lighting = max(stResult, lvEnv);
+                lighting = stResult;
             }
             #else
             if (_LightVolumeBlendMode < 0.5) // Add (Legacy)
