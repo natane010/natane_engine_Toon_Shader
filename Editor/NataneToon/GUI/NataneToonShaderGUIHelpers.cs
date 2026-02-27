@@ -127,25 +127,35 @@ namespace NataneToon.Editor
             else
             {
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField(L("シェーディングモード", "Shading Mode"), EditorStyles.boldLabel);
-                drawProperty("_ShadingMode", L("モード", "Mode"));
-                drawHelpToggle("ShadingMode",
-                    L("🎨 シェーディングモード:\n" +
-                      "• Toon: 階段状のセルシェーディング（クラシックなアニメ調）\n" +
-                      "• Gradient: 滑らかなグラデーションシェーディング（柔らかい印象）\n" +
-                      "• StandardToon: lilToon互換のシェーディング（移行時に使用）",
-                      "🎨 Shading Mode:\n" +
-                      "• Toon: Stepped cel shading (classic anime style)\n" +
-                      "• Gradient: Smooth gradient shading (soft impression)\n" +
-                      "• StandardToon: lilToon-compatible shading (for migration)"),
-                    MessageType.None);
 
-                EditorGUILayout.Space(5);
-
-                // Get current shading mode value
+                // Get current shading mode value (before drawing UI)
                 MaterialProperty shadingModeProp = findProperty("_ShadingMode", properties, false);
                 float shadingModeValue = shadingModeProp != null ? shadingModeProp.floatValue : 0f;
                 bool isStandardToon = shadingModeValue >= 1.5f;
+
+                // ShaderType が StandardToon の場合、モード選択は不要（常に StandardToon 固定）
+                // Toon ShaderType 選択時のみモードドロップダウンを表示
+                if (!isStandardToon)
+                {
+                    EditorGUILayout.LabelField(L("シェーディングモード", "Shading Mode"), EditorStyles.boldLabel);
+                    drawProperty("_ShadingMode", L("モード", "Mode"));
+                    drawHelpToggle("ShadingMode",
+                        L("🎨 シェーディングモード:\n" +
+                          "• Toon: 階段状のセルシェーディング（クラシックなアニメ調）\n" +
+                          "• Gradient: 滑らかなグラデーションシェーディング（柔らかい印象）\n" +
+                          "• StandardToon: lilToon互換のシェーディング（移行時に使用）",
+                          "🎨 Shading Mode:\n" +
+                          "• Toon: Stepped cel shading (classic anime style)\n" +
+                          "• Gradient: Smooth gradient shading (soft impression)\n" +
+                          "• StandardToon: lilToon-compatible shading (for migration)"),
+                        MessageType.None);
+                }
+                else
+                {
+                    EditorGUILayout.LabelField(L("StandardToon モード (lilToon互換)", "StandardToon Mode (lilToon Compatible)"), EditorStyles.boldLabel);
+                }
+
+                EditorGUILayout.Space(5);
                 bool isGradientMode = !isStandardToon && shadingModeValue >= FLOAT_COMPARISON_THRESHOLD;
 
                 if (isStandardToon)

@@ -252,6 +252,8 @@ half4 frag(v2f i) : SV_Target
             stLightColor = effectiveLightColor + stSHToon;
             // Re-apply clamping (lilToon clamps after SH addition)
             stLightColor = clamp(stLightColor, _LightColorMin, _LightColorMax);
+            // 最低保証: ライトカラーがゼロにならないようにする
+            stLightColor = max(stLightColor, half3(0.001, 0.001, 0.001));
             half stGray = CALC_LUMINANCE(stLightColor);
             stLightColor = lerp(stLightColor, half3(stGray, stGray, stGray), _MonochromeLighting);
             // AsUnlit: applied to lightColor directly (lilToon behavior)
@@ -439,9 +441,12 @@ half4 frag(v2f i) : SV_Target
         // ---- Shadow color computation (lilToon model: multiplicative with albedo) ----
         half3 stAlbedo = col.rgb;
 
-        // 1st shadow: indirectCol = albedo * _ShadowColor.rgb (with shadow color texture)
-        half4 stShadowColorTex = tex2D(_ShadowColorTex, uv);
-        half3 stIndirectCol = lerp(stAlbedo, stShadowColorTex.rgb, stShadowColorTex.a) * _ShadowColor.rgb;
+        // Shadow color texture: lilToon style (multiplicative tinting)
+        // _ShadowColorTexStrength で制御（既存Natane方式との互換）
+        // デフォルト白テクスチャ + Strength=0 → stIndirectCol = stAlbedo * _ShadowColor.rgb（正常動作）
+        half3 stShadowColorTexSample = tex2D(_ShadowColorTex, uv).rgb;
+        half3 stTintedAlbedo = lerp(stAlbedo, stAlbedo * stShadowColorTexSample, _ShadowColorTexStrength);
+        half3 stIndirectCol = stTintedAlbedo * _ShadowColor.rgb;
 
         // Multi-shadow (lilToon sequential lerp with alpha)
         #ifdef _USE_MULTI_SHADOW
@@ -473,7 +478,8 @@ half4 frag(v2f i) : SV_Target
 
         // Store for later composition
         shadowColor = _ShadowColor.rgb;
-        lighting = lerp(stIndirectCol / max(stAlbedo * stLightColor, 0.001), half3(1, 1, 1), shadingValue);
+        // lighting は STEP 5 で計算される（LV パス用に初期値を設定）
+        lighting = lerp(shadowColor, half3(1, 1, 1), shadingValue);
     #else
         // Choose between Toon and Gradient shading modes - Optimized: no branching
         // Calculate both modes and blend based on _ShadingMode

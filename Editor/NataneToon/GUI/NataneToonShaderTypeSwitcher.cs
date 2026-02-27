@@ -13,7 +13,8 @@ namespace NataneToon.Editor
         Toon = 0,
         Eye = 1,
         Wirelight = 2,
-        ScreenFX = 3
+        ScreenFX = 3,
+        StandardToon = 4
     }
 
     public static class NataneToonShaderTypeSwitcher
@@ -38,7 +39,8 @@ namespace NataneToon.Editor
             L("Toon (トゥーン)", "Toon"),
             L("Eye (目)", "Eye"),
             L("Wirelight (ワイヤーライト)", "Wirelight"),
-            L("Screen FX (スクリーンエフェクト)", "Screen FX")
+            L("Screen FX (スクリーンエフェクト)", "Screen FX"),
+            L("StandardToon (lilToon互換)", "StandardToon (lilToon)")
         };
 
         /// <summary>
@@ -51,11 +53,16 @@ namespace NataneToon.Editor
 
             string shaderName = material.shader.name;
 
-            // Toon variants
+            // Toon variants (check for StandardToon mode first)
             for (int i = 0; i < ToonShaderNames.Length; i++)
             {
                 if (shaderName == ToonShaderNames[i])
+                {
+                    // StandardToon uses same shader but with _ShadingMode >= 2
+                    if (material.HasProperty("_ShadingMode") && material.GetFloat("_ShadingMode") >= 1.5f)
+                        return ShaderType.StandardToon;
                     return ShaderType.Toon;
+                }
             }
 
             if (shaderName == EyeShaderName)
@@ -82,6 +89,7 @@ namespace NataneToon.Editor
                 case ShaderType.Eye: return EyeShaderName;
                 case ShaderType.Wirelight: return WirelightShaderName;
                 case ShaderType.ScreenFX: return ScreenFXShaderName;
+                case ShaderType.StandardToon: return ToonShaderNames[0]; // same shader as Toon
                 default: return ToonShaderNames[0];
             }
         }
@@ -98,20 +106,50 @@ namespace NataneToon.Editor
                 return false;
             }
 
-            string newShaderName = GetDefaultShaderName(type);
-            Shader newShader = Shader.Find(newShaderName);
+            Undo.RecordObject(material, "Change Shader Type");
 
-            if (newShader == null)
+            if (type == ShaderType.StandardToon)
             {
-                Debug.LogError($"[NataneToonShaderTypeSwitcher] Shader not found: {newShaderName}");
-                NataneToonErrorDialog.ShowShaderNotFoundError(newShaderName);
-                return false;
+                // StandardToon uses the same Toon shader but with _ShadingMode = 2
+                string newShaderName = ToonShaderNames[0];
+                Shader newShader = Shader.Find(newShaderName);
+                if (newShader == null)
+                {
+                    Debug.LogError($"[NataneToonShaderTypeSwitcher] Shader not found: {newShaderName}");
+                    NataneToonErrorDialog.ShowShaderNotFoundError(newShaderName);
+                    return false;
+                }
+                material.shader = newShader;
+                material.SetFloat("_ShadingMode", 2.0f);
+                material.EnableKeyword("_STANDARD_TOON");
+            }
+            else
+            {
+                string newShaderName = GetDefaultShaderName(type);
+                Shader newShader = Shader.Find(newShaderName);
+
+                if (newShader == null)
+                {
+                    Debug.LogError($"[NataneToonShaderTypeSwitcher] Shader not found: {newShaderName}");
+                    NataneToonErrorDialog.ShowShaderNotFoundError(newShaderName);
+                    return false;
+                }
+
+                if (material.shader == newShader && type != ShaderType.Toon) return true;
+
+                material.shader = newShader;
+
+                // Toon type: reset _ShadingMode if was StandardToon
+                if (type == ShaderType.Toon && material.HasProperty("_ShadingMode"))
+                {
+                    if (material.GetFloat("_ShadingMode") >= 1.5f)
+                    {
+                        material.SetFloat("_ShadingMode", 0.0f);
+                        material.DisableKeyword("_STANDARD_TOON");
+                    }
+                }
             }
 
-            if (material.shader == newShader) return true;
-
-            Undo.RecordObject(material, "Change Shader Type");
-            material.shader = newShader;
             EditorUtility.SetDirty(material);
 
             if (editor != null)
@@ -154,7 +192,7 @@ namespace NataneToon.Editor
                 }
             }
 
-            return currentType != ShaderType.Toon;
+            return currentType != ShaderType.Toon && currentType != ShaderType.StandardToon;
         }
     }
 }
