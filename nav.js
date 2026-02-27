@@ -64,9 +64,7 @@
       { file: 'ltcgi.html',              label: 'LTCGI' },
       { file: 'ao.html',                 label: 'アンビエントオクルージョン' },
       { file: 'dithering.html',          label: 'ディザリング' },
-      { file: 'shadow-color.html',       label: 'シャドウカラーテクスチャ' },
-      { file: 'sdf-shadow.html',         label: 'SDFシャドウマップ' },
-      { file: 'shading-grade-map.html',  label: 'シェーディンググレードマップ' }
+      { file: 'shadow-color.html',       label: 'シャドウカラーテクスチャ' }
     ],
     effects: [
       { file: 'specular.html',           label: 'スペキュラー' },
@@ -86,18 +84,13 @@
       { file: 'dissolve.html',           label: '溶解' },
       { file: 'alpha-mask.html',         label: 'アルファマスク' },
       { file: 'hue-shift.html',          label: '色相シフト' },
-      { file: 'audiolink.html',          label: 'AudioLink' },
-      { file: 'screen-tone.html',        label: 'スクリーントーン' },
-      { file: 'smear.html',              label: 'スメアエフェクト' },
-      { file: 'hair-specular.html',      label: 'ヘアスペキュラー' },
-      { file: 'fur.html',                label: 'ファー' }
+      { file: 'audiolink.html',          label: 'AudioLink' }
     ],
     environment: [
       { file: 'reflection.html',         label: 'リフレクション' },
       { file: 'iridescence.html',        label: 'イリデッセンス' },
       { file: 'env-rim.html',            label: '環境リム' },
-      { file: 'refraction.html',         label: '屈折' },
-      { file: 'height-fog.html',         label: 'ハイトフォグ' }
+      { file: 'refraction.html',         label: '屈折' }
     ],
     advanced: [
       { file: 'normal-map.html',         label: 'ノーマルマップ' },
@@ -107,16 +100,7 @@
       { file: 'video-texture.html',      label: 'ビデオテクスチャ' },
       { file: 'distance-fade.html',      label: '距離フェード' },
       { file: 'vertex-animation.html',   label: '頂点アニメーション' },
-      { file: 'rendering.html',          label: 'レンダリング設定' },
-      { file: 'tessellation.html',       label: 'テッセレーション' },
-      { file: 'gradient-base-color.html', label: 'グラデーションベースカラー' },
-      { file: 'height-fade.html',        label: 'ハイトフェード' },
-      { file: 'intersection-fade.html',  label: 'インターセクションフェード' },
-      { file: 'detail-map.html',         label: 'ディテールマップ' },
-      { file: 'triplanar.html',          label: 'トライプレーナー' },
-      { file: 'surface-cover.html',      label: 'サーフェスカバー' },
-      { file: 'mirror-control.html',     label: 'ミラーコントロール' },
-      { file: 'quest-lite.html',         label: 'Quest軽量モード' }
+      { file: 'rendering.html',          label: 'レンダリング設定' }
     ]
   };
 
@@ -137,9 +121,7 @@
       { file: 'ltcgi.html',              label: 'LTCGI' },
       { file: 'ao.html',                 label: 'Ambient Occlusion' },
       { file: 'dithering.html',          label: 'Dithering' },
-      { file: 'shadow-color.html',       label: 'Shadow Color Texture' },
-      { file: 'sdf-shadow.html',         label: 'SDF Shadow Map' },
-      { file: 'shading-grade-map.html',  label: 'Shading Grade Map' }
+      { file: 'shadow-color.html',       label: 'Shadow Color Texture' }
     ],
     effects: [
       { file: 'specular.html',           label: 'Specular' },
@@ -159,18 +141,13 @@
       { file: 'dissolve.html',           label: 'Dissolve' },
       { file: 'alpha-mask.html',         label: 'Alpha Mask' },
       { file: 'hue-shift.html',          label: 'Hue Shift' },
-      { file: 'audiolink.html',          label: 'AudioLink' },
-      { file: 'screen-tone.html',        label: 'Screen Tone' },
-      { file: 'smear.html',              label: 'Smear Effect' },
-      { file: 'hair-specular.html',      label: 'Hair Specular' },
-      { file: 'fur.html',                label: 'Fur Rendering' }
+      { file: 'audiolink.html',          label: 'AudioLink' }
     ],
     environment: [
       { file: 'reflection.html',         label: 'Reflection' },
       { file: 'iridescence.html',        label: 'Iridescence' },
       { file: 'env-rim.html',            label: 'Environmental Rim' },
-      { file: 'refraction.html',         label: 'Refraction' },
-      { file: 'height-fog.html',         label: 'Height Fog' }
+      { file: 'refraction.html',         label: 'Refraction' }
     ],
     advanced: [
       { file: 'normal-map.html',         label: 'Normal Map' },
@@ -180,16 +157,7 @@
       { file: 'video-texture.html',      label: 'Video Texture' },
       { file: 'distance-fade.html',      label: 'Distance Fade' },
       { file: 'vertex-animation.html',   label: 'Vertex Animation' },
-      { file: 'rendering.html',          label: 'Rendering Settings' },
-      { file: 'tessellation.html',       label: 'Tessellation' },
-      { file: 'gradient-base-color.html', label: 'Gradient Base Color' },
-      { file: 'height-fade.html',        label: 'Height Fade' },
-      { file: 'intersection-fade.html',  label: 'Intersection Fade' },
-      { file: 'detail-map.html',         label: 'Detail Map' },
-      { file: 'triplanar.html',          label: 'Triplanar Mapping' },
-      { file: 'surface-cover.html',      label: 'Surface Cover' },
-      { file: 'mirror-control.html',     label: 'Mirror Control' },
-      { file: 'quest-lite.html',         label: 'Quest Lite Mode' }
+      { file: 'rendering.html',          label: 'Rendering Settings' }
     ]
   };
 
