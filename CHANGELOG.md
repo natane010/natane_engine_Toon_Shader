@@ -5,6 +5,38 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-02-27
+
+### Added
+- **Background Shader 機能拡張**: 背景シェーダーに12の新機能を追加
+  - **Phase 1 - 既存機能の有効化** (6機能):
+    - デカール (`_DECAL`): 汚れ・看板・ステッカー
+    - グリッター (`_GLITTER`): キラキラ・結晶・水粒
+    - 水滴 (`_WATER_DRIP`): 雨・露滴の環境演出
+    - インターセクションフェード (`_INTERSECTION_FADE`): オブジェクト交差部の透明化
+    - AudioLink (`_AUDIOLINK`): 音楽連動環境エフェクト
+    - ビデオテクスチャ (`_VIDEO_TEXTURE`): モニター・スクリーン背景
+  - **Phase 2 - 新規機能** (3機能):
+    - ディテールマップ (`_DETAIL_MAP`): セカンダリUV対応、近距離テクスチャ解像感向上
+    - トライプレーナーマッピング (`_TRIPLANAR`): UV展開不要の3軸テクスチャ投影（岩・洞窟・地形に最適）
+    - ハイトフォグ (`_HEIGHT_FOG`): マテリアルベースの高さフォグ（Linear/Exponential）、VRChatポストプロセス不可環境向け
+  - **Phase 3 - 高度な追加機能** (3機能):
+    - サーフェスカバー (`_SURFACE_COVER`): 雪/砂堆積表現、ワールド空間法線ベースのカバーブレンド、法線マップ対応
+    - ミラー対応 (`_MIRROR_CONTROL`): VRChatミラー内の表示制御（両方/ミラーのみ/ミラー以外）、ミラー内エミッション倍率
+    - Quest軽量パス (`_QUEST_LITE`): MatCap 2/3・グリッター・水滴・ホログラム・グリッチ・インターセクションフェードを自動スキップ、モバイルGPU 30-50%改善
+- **GUI**: 6つの新セクション追加（ディテールマップ・トライプレーナー・ハイトフォグ・サーフェスカバー・ミラー対応・Quest軽量パス）
+  - 全セクション日英バイリンガル対応
+  - 検索機能対応、タブ配置（Effects/Environment/Advanced）
+
+### Fixed
+- **v2f 構造体 `uv1` 欠如修正**: Detail Map 使用時のコンパイルエラーを防止（TEXCOORD12 追加）
+- **Surface Cover 法線空間修正**: UnpackNormal のタンジェント空間→ワールド空間変換を修正（xz投影用リマップ）
+- **Detail Map 法線空間修正**: tangentToWorld 行列によるワールド空間変換を適用
+- **CoverDirection ゼロベクトル安全策**: normalize() の NaN 防止にエプシロン加算
+- **MirrorEmissionMultiplier 実装**: エミッションセクションでミラー内エミッション倍率を適用
+
+---
+
 ## [1.3.0] - 2026-02-27
 
 ### Added

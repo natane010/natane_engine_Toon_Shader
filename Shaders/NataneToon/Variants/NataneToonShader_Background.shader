@@ -453,6 +453,142 @@ Shader "Natane/Toon Shader (Background)"
         _PBR_OcclusionStrength ("Occlusion Strength", Range(0, 1)) = 1
         _PBR_ReflectionIntensity ("Reflection Intensity", Range(0, 2)) = 1
 
+        // ===== Glitter (グリッター) =====
+        [Header(Glitter)]
+        [Toggle(_GLITTER)] _Glitter ("Enable Glitter", Float) = 0
+        _GlitterColor ("Glitter Color", Color) = (1,1,1,1)
+        _GlitterSize ("Glitter Size", Range(0, 1)) = 0.1
+        _GlitterDensity ("Glitter Density", Range(0, 1)) = 0.5
+        _GlitterSpeed ("Glitter Speed", Float) = 1
+        _GlitterIntensity ("Glitter Intensity", Range(0, 2)) = 1
+        [Toggle(_GLITTER_MASK)] _UseGlitterMask ("Use Glitter Mask", Float) = 0
+        _GlitterMask ("Glitter Mask", 2D) = "white" {}
+        _GlitterMaskScrollSpeed ("Glitter Mask Scroll Speed XY", Vector) = (0,0,0,0)
+        _GlitterMaskRotateSpeed ("Glitter Mask Rotate Speed", Float) = 0
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _GlitterBlendMode ("Glitter Blend Mode", Float) = 0
+        _GlitterBlend ("Glitter Blend", Range(0, 1)) = 1
+        _GlitterBlur ("Glitter Blur", Range(0, 1)) = 0
+
+        // ===== Water Drip (水滴エフェクト) =====
+        [Header(Water Drip Effect)]
+        [Toggle(_WATER_DRIP)] _WaterDrip ("Enable Water Drip", Float) = 0
+        _DripColor ("Drip Color", Color) = (0.7, 0.85, 1.0, 1)
+        _DripSpeed ("Drip Speed", Range(0.1, 5)) = 1
+        _DripDensity ("Drip Density", Range(0, 1)) = 0.5
+        _DripSize ("Drip Size", Range(0.01, 0.5)) = 0.15
+        _DripTrailLength ("Drip Trail Length", Range(0, 3)) = 1.0
+        _DripIntensity ("Drip Intensity", Range(0, 2)) = 1
+        _DripSharpness ("Drip Sharpness", Range(0.5, 5)) = 2
+        [Toggle(_DRIP_MASK)] _UseDripMask ("Use Drip Mask", Float) = 0
+        _DripMask ("Drip Mask", 2D) = "white" {}
+        _DripMaskScrollSpeed ("Drip Mask Scroll Speed XY", Vector) = (0,0,0,0)
+        _DripMaskRotateSpeed ("Drip Mask Rotate Speed", Float) = 0
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _DripBlendMode ("Drip Blend Mode", Float) = 0
+        _DripBlend ("Drip Blend", Range(0, 1)) = 1
+        _DripBlur ("Drip Blur", Range(0, 1)) = 0
+
+        // ===== Decal System (デカール) =====
+        [Header(Decal System Stickers)]
+        [Toggle(_DECAL)] _Decal ("Enable Decal", Float) = 0
+        _DecalTex ("Decal Texture", 2D) = "white" {}
+        _DecalColor ("Decal Color", Color) = (1,1,1,1)
+        _DecalPosition ("Decal Position XY", Vector) = (0,0,0,0)
+        _DecalRotation ("Decal Rotation", Range(0, 360)) = 0
+        _DecalScale ("Decal Scale", Float) = 1
+        [Enum(Add,0,Multiply,1,Overlay,2,Replace,3)] _DecalBlendMode ("Decal Blend Mode", Float) = 0
+        _DecalBlend ("Decal Blend", Range(0, 1)) = 1
+        _DecalBlur ("Decal Blur", Range(0, 1)) = 0
+
+        // ===== Intersection Fade (交差フェード) =====
+        [Header(Intersection Fade)]
+        [Toggle(_INTERSECTION_FADE)] _IntersectionFade ("Enable Intersection Fade", Float) = 0
+        _IntersectionFadeDistance ("Fade Distance", Float) = 0.5
+        [Enum(Alpha,0,Clip,1,Dithering,2)] _IntersectionFadeMode ("Fade Mode", Float) = 0
+        _IntersectionFadeBlend ("Blend", Range(0, 1)) = 1
+        _IntersectionFadeDitherScale ("Dither Scale", Range(1, 200)) = 4
+        _IntersectionFadeEdgeWidth ("Edge Width", Float) = 0
+        [HDR] _IntersectionFadeEdgeColor ("Edge Color", Color) = (0, 0.8, 1, 1)
+
+        // ===== AudioLink (音楽連動) =====
+        [Header(AudioLink VRChat Club Events)]
+        [Toggle(_AUDIOLINK)] _AudioLink ("Enable AudioLink", Float) = 0
+        [Toggle(_AUDIOLINK_EMISSION)] _AudioLinkEmission ("AudioLink Emission", Float) = 0
+        [Enum(Bass,0,Low Mid,1,High Mid,2,Treble,3)] _AudioLinkEmissionBand ("Emission Band", Float) = 0
+        _AudioLinkEmissionIntensity ("Emission Intensity", Range(0, 5)) = 1
+        [Toggle(_AUDIOLINK_RIM)] _AudioLinkRim ("AudioLink Rim Light", Float) = 0
+        [Enum(Bass,0,Low Mid,1,High Mid,2,Treble,3)] _AudioLinkRimBand ("Rim Band", Float) = 0
+        _AudioLinkRimIntensity ("Rim Intensity", Range(0, 5)) = 1
+        [Toggle(_AUDIOLINK_HUE_SHIFT)] _AudioLinkHueShift ("AudioLink Hue Shift", Float) = 0
+        [Enum(Bass,0,Low Mid,1,High Mid,2,Treble,3)] _AudioLinkHueBand ("Hue Band", Float) = 0
+        _AudioLinkHueShiftIntensity ("Hue Shift Intensity", Range(0, 1)) = 0.5
+        [Toggle(_AUDIOLINK_DISSOLVE)] _AudioLinkDissolve ("AudioLink Dissolve", Float) = 0
+        [Enum(Bass,0,Low Mid,1,High Mid,2,Treble,3)] _AudioLinkDissolveBand ("Dissolve Band", Float) = 0
+        _AudioLinkDissolveIntensity ("Dissolve Intensity", Range(0, 1)) = 0.5
+        [Toggle(_AUDIOLINK_OUTLINE)] _AudioLinkOutline ("AudioLink Outline", Float) = 0
+        [Enum(Bass,0,Low Mid,1,High Mid,2,Treble,3)] _AudioLinkOutlineBand ("Outline Band", Float) = 0
+        _AudioLinkOutlineIntensity ("Outline Intensity", Range(0, 1)) = 0.5
+        [Toggle(_AUDIOLINK_CHRONOTENSITY)] _AudioLinkChronotensity ("Use Chronotensity", Float) = 0
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _AudioLinkBlendMode ("AudioLink Blend Mode", Float) = 0
+        _AudioLinkBlend ("AudioLink Blend", Range(0, 1)) = 1
+
+        // ===== Video Texture (ビデオテクスチャ) =====
+        [Header(Video Render Texture Screen Display)]
+        [Toggle(_VIDEO_TEXTURE)] _VideoTexture ("Enable Video Texture", Float) = 0
+        _VideoTex ("Video Render Texture", 2D) = "black" {}
+        _VideoEmission ("Video Emission", Range(0, 5)) = 1
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _VideoBlendMode ("Video Blend Mode", Float) = 0
+        _VideoBlend ("Video Blend", Range(0, 1)) = 1
+
+        // ===== Detail Map (ディテールマップ) =====
+        [Header(Detail Map Secondary UV)]
+        [Toggle(_DETAIL_MAP)] _DetailMap ("Enable Detail Map", Float) = 0
+        _DetailAlbedoMap ("Detail Albedo Map", 2D) = "white" {}
+        _DetailNormalMap ("Detail Normal Map", 2D) = "bump" {}
+        _DetailNormalScale ("Detail Normal Scale", Range(0, 2)) = 1
+        _DetailAlbedoScale ("Detail Albedo Scale", Range(0, 1)) = 0.5
+        [Enum(UV0,0,UV1,1)] _DetailUVSet ("Detail UV Set", Float) = 0
+        _DetailTiling ("Detail Tiling", Float) = 1
+
+        // ===== Triplanar Mapping (トライプレーナー) =====
+        [Header(Triplanar Mapping)]
+        [Toggle(_TRIPLANAR)] _Triplanar ("Enable Triplanar", Float) = 0
+        _TriplanarScale ("Triplanar Scale", Float) = 1
+        _TriplanarBlendSharpness ("Blend Sharpness", Range(1, 8)) = 2
+        _TriplanarOffsetX ("Offset X", Float) = 0
+        _TriplanarOffsetY ("Offset Y", Float) = 0
+        _TriplanarOffsetZ ("Offset Z", Float) = 0
+
+        // ===== Height Fog (ハイトフォグ) =====
+        [Header(Height Fog Material Based)]
+        [Toggle(_HEIGHT_FOG)] _HeightFog ("Enable Height Fog", Float) = 0
+        _HeightFogColor ("Fog Color", Color) = (0.7, 0.8, 0.9, 1)
+        _HeightFogStart ("Fog Start Height Y", Float) = 0
+        _HeightFogEnd ("Fog End Height Y", Float) = 10
+        _HeightFogDensity ("Fog Density", Range(0, 1)) = 0.5
+        [Enum(Linear,0,Exponential,1)] _HeightFogMode ("Fog Mode", Float) = 0
+
+        // ===== Surface Cover (雪/砂堆積) =====
+        [Header(Surface Cover Snow Sand)]
+        [Toggle(_SURFACE_COVER)] _SurfaceCover ("Enable Surface Cover", Float) = 0
+        _CoverTex ("Cover Texture", 2D) = "white" {}
+        _CoverColor ("Cover Color", Color) = (1, 1, 1, 1)
+        _CoverNormalMap ("Cover Normal Map", 2D) = "bump" {}
+        _CoverAmount ("Cover Amount", Range(0, 1)) = 0.5
+        _CoverThreshold ("Cover Threshold", Range(0, 1)) = 0.5
+        _CoverBlendSharpness ("Blend Sharpness", Range(1, 10)) = 3
+        _CoverTiling ("Cover Tiling", Float) = 1
+        _CoverDirection ("Cover Direction", Vector) = (0, 1, 0, 0)
+
+        // ===== Mirror Control (ミラー対応) =====
+        [Header(Mirror Control VRChat)]
+        [Toggle(_MIRROR_CONTROL)] _MirrorControl ("Enable Mirror Control", Float) = 0
+        [Enum(Both,0,Mirror Only,1,Non Mirror Only,2)] _MirrorMode ("Mirror Mode", Float) = 0
+        _MirrorEmissionMultiplier ("Mirror Emission Multiplier", Range(0, 2)) = 1
+
+        // ===== Quest Lite (Quest軽量パス) =====
+        [Header(Quest Lite Mobile Optimization)]
+        [Toggle(_QUEST_LITE)] _QuestLite ("Enable Quest Lite", Float) = 0
+
         // ===== Advanced (詳細設定) =====
         [Header(Rendering)]
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull Mode", Float) = 2
@@ -770,6 +906,18 @@ Shader "Natane/Toon Shader (Background)"
             #pragma shader_feature_local _PIXEL_VERTEX_LIGHTS
             #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma shader_feature_local _PBR
+            #pragma shader_feature_local _DECAL
+            #pragma shader_feature_local _GLITTER
+            #pragma shader_feature_local _WATER_DRIP
+            #pragma shader_feature_local _INTERSECTION_FADE
+            #pragma shader_feature_local _AUDIOLINK
+            #pragma shader_feature_local _VIDEO_TEXTURE
+            #pragma shader_feature_local _DETAIL_MAP
+            #pragma shader_feature_local _TRIPLANAR
+            #pragma shader_feature_local _HEIGHT_FOG
+            #pragma shader_feature_local _SURFACE_COVER
+            #pragma shader_feature_local _MIRROR_CONTROL
+            #pragma shader_feature_local _QUEST_LITE
 
             #include "../Include/Core/NataneToonCore.hlsl"
 

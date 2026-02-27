@@ -183,6 +183,11 @@ v2f vert(appdata v)
         o.lightmapUV = v.uv1 * unity_LightmapST.xy + unity_LightmapST.zw;
     #endif
 
+    // Detail Map UV1 pass-through
+    #ifdef _DETAIL_MAP
+        o.uv1 = v.uv1;
+    #endif
+
     // Transfer fog and shadow coordinates
     UNITY_TRANSFER_FOG(o, o.pos);
     TRANSFER_SHADOW(o);

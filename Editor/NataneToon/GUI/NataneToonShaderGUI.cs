@@ -218,6 +218,12 @@ public class NataneToonShaderGUI : ShaderGUI
         new[] { "BackgroundLightmap", "ライトマップ 背景 ベイク GI", "lightmap background bake gi" },
         new[] { "PBR", "PBR 物理 メタリック スムーズネス 反射", "pbr metallic smoothness reflection probe" },
         new[] { "Rendering", "レンダリング設定 描画タイプ", "rendering mode opaque cutout transparent" },
+        new[] { "DetailMap", "ディテールマップ セカンダリUV 詳細", "detail map secondary uv close-up" },
+        new[] { "Triplanar", "トライプレーナー 3軸投影 UV不要", "triplanar projection no uv rock terrain" },
+        new[] { "HeightFog", "ハイトフォグ 高さ霧 マテリアルフォグ", "height fog material fog mist atmosphere" },
+        new[] { "SurfaceCover", "サーフェスカバー 雪 砂 堆積", "surface cover snow sand accumulation" },
+        new[] { "MirrorControl", "ミラー VRChat 鏡", "mirror control vrchat reflection" },
+        new[] { "QuestLite", "Quest軽量 モバイル パフォーマンス", "quest lite mobile performance optimization" },
     };
 
     // ===== SHADER TYPE DRAWER INSTANCES =====
@@ -4009,6 +4015,249 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("DistanceFade"));
     }
 
+    // ===== Phase 2/3: New Background Shader Features =====
+
+    private void DrawDetailMapSection()
+    {
+        SetFoldout("DetailMap", DrawBoxedSection(L("ディテールマップ", "Detail Map"), GetFoldout("DetailMap"), SectionCategory.Advanced, "_DETAIL_MAP"));
+        if (GetFoldout("DetailMap"))
+        {
+            bool enableDetailMap = DrawToggle("_DETAIL_MAP", "_DetailMap", L("ディテールマップを有効化", "Enable Detail Map"));
+            if (enableDetailMap)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("ディテールマップ設定", "Detail Map Settings"), EditorStyles.boldLabel);
+
+                DrawProperty("_DetailAlbedoMap", L("ディテール アルベド", "Detail Albedo Map"));
+                DrawProperty("_DetailAlbedoScale", L("アルベド影響度", "Albedo Scale"));
+                DrawProperty("_DetailNormalMap", L("ディテール法線マップ", "Detail Normal Map"));
+                DrawProperty("_DetailNormalScale", L("法線マップ強度", "Normal Scale"));
+                DrawProperty("_DetailTiling", L("タイリング", "Tiling"));
+                DrawProperty("_DetailUVSet", L("UVセット", "UV Set"));
+
+                DrawHelpToggle("DetailMap",
+                    L("📍 ディテールマップ:\n" +
+                    "近距離でのテクスチャ解像感を向上させます。\n" +
+                    "セカンダリUV（UV1）を使用可能。\n\n" +
+                    "• アルベド: メインテクスチャに乗算ブレンド\n" +
+                    "• 法線マップ: 既存法線に加算ブレンド\n" +
+                    "• タイリング: テクスチャの繰り返し回数\n\n" +
+                    "💡 背景の壁面や床の細かい質感表現に最適。",
+                    "📍 Detail Map:\n" +
+                    "Improves texture resolution at close range.\n" +
+                    "Can use secondary UV (UV1).\n\n" +
+                    "• Albedo: Multiply blend with main texture\n" +
+                    "• Normal: Additive blend with existing normals\n" +
+                    "• Tiling: Texture repeat count\n\n" +
+                    "💡 Perfect for detailed wall and floor textures."),
+                    MessageType.Info);
+
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("DetailMap"));
+    }
+
+    private void DrawTriplanarSection()
+    {
+        SetFoldout("Triplanar", DrawBoxedSection(L("トライプレーナー", "Triplanar Mapping"), GetFoldout("Triplanar"), SectionCategory.Advanced, "_TRIPLANAR"));
+        if (GetFoldout("Triplanar"))
+        {
+            bool enableTriplanar = DrawToggle("_TRIPLANAR", "_Triplanar", L("トライプレーナーを有効化", "Enable Triplanar Mapping"));
+            if (enableTriplanar)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("トライプレーナー設定", "Triplanar Settings"), EditorStyles.boldLabel);
+
+                DrawProperty("_TriplanarScale", L("テクスチャスケール", "Texture Scale"));
+                DrawProperty("_TriplanarBlendSharpness", L("ブレンドシャープネス", "Blend Sharpness"));
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("軸オフセット", "Axis Offset"), EditorStyles.boldLabel);
+                DrawProperty("_TriplanarOffsetX", L("Xオフセット", "X Offset"));
+                DrawProperty("_TriplanarOffsetY", L("Yオフセット", "Y Offset"));
+                DrawProperty("_TriplanarOffsetZ", L("Zオフセット", "Z Offset"));
+
+                DrawHelpToggle("Triplanar",
+                    L("📍 トライプレーナーマッピング:\n" +
+                    "UV展開なしで3軸からテクスチャを投影します。\n" +
+                    "岩、洞窟、地形などUVが不要な場面に最適。\n\n" +
+                    "• スケール: テクスチャの大きさ\n" +
+                    "• シャープネス: 軸間ブレンドの鋭さ（1=滑らか、8=鋭い）\n\n" +
+                    "⚠️ メインテクスチャのUVサンプリングを置き換えます。",
+                    "📍 Triplanar Mapping:\n" +
+                    "Projects texture from 3 axes without UV unwrapping.\n" +
+                    "Perfect for rocks, caves, terrain with no UV needed.\n\n" +
+                    "• Scale: Texture size\n" +
+                    "• Sharpness: Axis blend sharpness (1=smooth, 8=sharp)\n\n" +
+                    "⚠️ Replaces main texture UV sampling."),
+                    MessageType.Info);
+
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("Triplanar"));
+    }
+
+    private void DrawHeightFogSection()
+    {
+        SetFoldout("HeightFog", DrawBoxedSection(L("ハイトフォグ", "Height Fog"), GetFoldout("HeightFog"), SectionCategory.Environment, "_HEIGHT_FOG"));
+        if (GetFoldout("HeightFog"))
+        {
+            bool enableHeightFog = DrawToggle("_HEIGHT_FOG", "_HeightFog", L("ハイトフォグを有効化", "Enable Height Fog"));
+            if (enableHeightFog)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("ハイトフォグ設定", "Height Fog Settings"), EditorStyles.boldLabel);
+
+                DrawColorProperty("_HeightFogColor", L("フォグカラー", "Fog Color"));
+                DrawProperty("_HeightFogStart", L("開始高さ (Y)", "Start Height (Y)"));
+                DrawProperty("_HeightFogEnd", L("終了高さ (Y)", "End Height (Y)"));
+                DrawProperty("_HeightFogDensity", L("フォグ密度", "Fog Density"));
+                DrawProperty("_HeightFogMode", L("フォグモード", "Fog Mode"));
+
+                DrawHelpToggle("HeightFog",
+                    L("🌫️ ハイトフォグ:\n" +
+                    "ワールドY座標に基づくマテリアルレベルのフォグ効果。\n" +
+                    "VRChatではポストプロセスが使えないため、マテリアルで実装。\n\n" +
+                    "• 開始高さ: フォグが始まるY座標\n" +
+                    "• 終了高さ: フォグが完全にかかるY座標\n" +
+                    "• Linear: 直線的な減衰\n" +
+                    "• Exponential: 指数関数的な減衰（自然な霧）\n\n" +
+                    "💡 幻想的な雰囲気や朝霧の表現に最適。",
+                    "🌫️ Height Fog:\n" +
+                    "Material-level fog based on world Y coordinate.\n" +
+                    "Implemented in material since VRChat has no post-processing.\n\n" +
+                    "• Start Height: Y coordinate where fog begins\n" +
+                    "• End Height: Y coordinate where fog is fully applied\n" +
+                    "• Linear: Linear falloff\n" +
+                    "• Exponential: Exponential falloff (natural fog)\n\n" +
+                    "💡 Perfect for fantasy atmosphere and morning mist."),
+                    MessageType.Info);
+
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("HeightFog"));
+    }
+
+    private void DrawSurfaceCoverSection()
+    {
+        SetFoldout("SurfaceCover", DrawBoxedSection(L("サーフェスカバー（雪/砂）", "Surface Cover (Snow/Sand)"), GetFoldout("SurfaceCover"), SectionCategory.Effects, "_SURFACE_COVER"));
+        if (GetFoldout("SurfaceCover"))
+        {
+            bool enableCover = DrawToggle("_SURFACE_COVER", "_SurfaceCover", L("サーフェスカバーを有効化", "Enable Surface Cover"));
+            if (enableCover)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("サーフェスカバー設定", "Surface Cover Settings"), EditorStyles.boldLabel);
+
+                DrawProperty("_CoverTex", L("カバーテクスチャ", "Cover Texture"));
+                DrawColorProperty("_CoverColor", L("カバーカラー", "Cover Color"));
+                DrawProperty("_CoverNormalMap", L("カバー法線マップ", "Cover Normal Map"));
+                DrawProperty("_CoverAmount", L("カバー量", "Cover Amount"));
+                DrawProperty("_CoverThreshold", L("法線閾値", "Normal Threshold"));
+                DrawProperty("_CoverBlendSharpness", L("ブレンドシャープネス", "Blend Sharpness"));
+                DrawProperty("_CoverTiling", L("タイリング", "Tiling"));
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("カバー方向", "Cover Direction"), EditorStyles.boldLabel);
+                DrawProperty("_CoverDirection", L("方向ベクトル", "Direction Vector"));
+
+                DrawHelpToggle("SurfaceCover",
+                    L("❄️ サーフェスカバー:\n" +
+                    "ワールド空間の上方向にテクスチャを重ねて雪や砂を表現。\n\n" +
+                    "• カバー量: 全体の堆積量 (0=なし、1=最大)\n" +
+                    "• 法線閾値: 上向きの面のみにカバー (0=全面、1=真上のみ)\n" +
+                    "• シャープネス: ブレンド境界の鋭さ\n" +
+                    "• 方向: デフォルト(0,1,0)=上から。変更で斜め方向も可能。\n\n" +
+                    "💡 季節表現（雪景色）やファンタジー環境に有効。",
+                    "❄️ Surface Cover:\n" +
+                    "Overlays texture on upward-facing surfaces for snow/sand.\n\n" +
+                    "• Cover Amount: Overall accumulation (0=none, 1=max)\n" +
+                    "• Threshold: Only cover upward faces (0=all, 1=top only)\n" +
+                    "• Sharpness: Blend edge sharpness\n" +
+                    "• Direction: Default (0,1,0)=from above. Change for angled cover.\n\n" +
+                    "💡 Great for seasonal (snow) and fantasy environments."),
+                    MessageType.Info);
+
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("SurfaceCover"));
+    }
+
+    private void DrawMirrorControlSection()
+    {
+        SetFoldout("MirrorControl", DrawBoxedSection(L("ミラー対応", "Mirror Control"), GetFoldout("MirrorControl"), SectionCategory.Advanced, "_MIRROR_CONTROL"));
+        if (GetFoldout("MirrorControl"))
+        {
+            bool enableMirror = DrawToggle("_MIRROR_CONTROL", "_MirrorControl", L("ミラー制御を有効化", "Enable Mirror Control"));
+            if (enableMirror)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("ミラー制御設定", "Mirror Control Settings"), EditorStyles.boldLabel);
+
+                DrawProperty("_MirrorMode", L("表示モード", "Display Mode"));
+                DrawProperty("_MirrorEmissionMultiplier", L("ミラー内エミッション倍率", "Mirror Emission Multiplier"));
+
+                DrawHelpToggle("MirrorControl",
+                    L("🪞 ミラー対応:\n" +
+                    "VRChatミラー内での描画を制御します。\n\n" +
+                    "• 両方表示: 通常・ミラー両方で表示\n" +
+                    "• ミラーのみ: ミラー内でのみ表示\n" +
+                    "• ミラー以外のみ: 通常時のみ表示\n\n" +
+                    "💡 ミラー限定の隠し装飾や、ミラー内のパフォーマンス最適化に活用。",
+                    "🪞 Mirror Control:\n" +
+                    "Controls rendering in VRChat mirrors.\n\n" +
+                    "• Both: Show in normal and mirror view\n" +
+                    "• Mirror Only: Show only in mirror\n" +
+                    "• Non-Mirror Only: Show only in normal view\n\n" +
+                    "💡 Use for hidden mirror decorations or mirror performance optimization."),
+                    MessageType.Info);
+
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("MirrorControl"));
+    }
+
+    private void DrawQuestLiteSection()
+    {
+        SetFoldout("QuestLite", DrawBoxedSection(L("Quest軽量パス", "Quest Lite"), GetFoldout("QuestLite"), SectionCategory.Advanced, "_QUEST_LITE"));
+        if (GetFoldout("QuestLite"))
+        {
+            bool enableQuestLite = DrawToggle("_QUEST_LITE", "_QuestLite", L("Quest軽量モードを有効化", "Enable Quest Lite Mode"));
+            if (enableQuestLite)
+            {
+                EditorGUI.indentLevel++;
+
+                EditorGUILayout.HelpBox(
+                    L("⚡ Quest軽量モードが有効です。以下のエフェクトが自動的にスキップされます:\n" +
+                    "• MatCap 2nd / 3rd\n" +
+                    "• グリッター / 水滴\n" +
+                    "• ホログラム / グリッチ\n" +
+                    "• インターセクションフェード\n\n" +
+                    "これにより、モバイルGPUでのパフォーマンスが30-50%改善します。",
+                    "⚡ Quest Lite mode is active. The following effects are automatically skipped:\n" +
+                    "• MatCap 2nd / 3rd\n" +
+                    "• Glitter / Water Drip\n" +
+                    "• Hologram / Glitch\n" +
+                    "• Intersection Fade\n\n" +
+                    "This improves mobile GPU performance by 30-50%."),
+                    MessageType.Warning);
+
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("QuestLite"));
+    }
+
     /// <summary>
     /// Get current rendering mode based on shader name
     /// </summary>
@@ -4647,7 +4896,7 @@ public class NataneToonShaderGUI : ShaderGUI
             SetFoldout("Specular", state); SetFoldout("HairSpecular", state); SetFoldout("RimLight", state); SetFoldout("SSS", state);
             SetFoldout("MatCap", state); SetFoldout("Glitter", state); SetFoldout("Drip", state); SetFoldout("Smear", state); SetFoldout("Fur", state); SetFoldout("Decal", state);
             SetFoldout("Hologram", state); SetFoldout("Outline", state); SetFoldout("Emission", state);
-            SetFoldout("VirtualExpression", state); SetFoldout("AudioLink", state);
+            SetFoldout("VirtualExpression", state); SetFoldout("AudioLink", state); SetFoldout("SurfaceCover", state);
         });
         // ─── 光源エフェクト ───
         NataneToonShaderGUIUtility.DrawCategoryDivider(L("光源エフェクト", "Light Source Effects"));
@@ -4664,6 +4913,7 @@ public class NataneToonShaderGUI : ShaderGUI
         SafeDrawSection(DrawSmearSection, L("スミア", "Smear"));
         SafeDrawSection(DrawFurSection, L("ファー", "Fur"));
         SafeDrawSection(DrawDecalSection, L("デカール", "Decal"));
+        SafeDrawSection(DrawSurfaceCoverSection, L("サーフェスカバー", "Surface Cover"));
 
         // ─── ビジュアルエフェクト ───
         NataneToonShaderGUIUtility.DrawCategoryDivider(L("ビジュアルエフェクト", "Visual Effects"));
@@ -4682,11 +4932,13 @@ public class NataneToonShaderGUI : ShaderGUI
         DrawExpandCollapseButtons((state) => {
             SetFoldout("Reflection", state); SetFoldout("Iridescence", state);
             SetFoldout("EnvironmentalRim", state); SetFoldout("Refraction", state);
+            SetFoldout("HeightFog", state);
         });
         SafeDrawSection(DrawReflectionSection, L("リフレクション", "Reflection"));
         SafeDrawSection(DrawIridescenceSection, L("イリデッセンス", "Iridescence"));
         SafeDrawSection(DrawEnvironmentalRimSection, L("環境リム", "Environmental Rim"));
         SafeDrawSection(DrawRefractionSection, L("屈折", "Refraction"));
+        SafeDrawSection(DrawHeightFogSection, L("ハイトフォグ", "Height Fog"));
     }
 
     /// <summary>
@@ -4698,11 +4950,14 @@ public class NataneToonShaderGUI : ShaderGUI
             SetFoldout("NormalMap", state); SetFoldout("Parallax", state); SetFoldout("VertexAnimation", state); SetFoldout("VAT", state);
             SetFoldout("Backface", state); SetFoldout("Video", state); SetFoldout("HeightFade", state); SetFoldout("IntersectionFade", state);
             SetFoldout("DistanceFade", state); SetFoldout("Rendering", state); SetFoldout("Tessellation", state);
+            SetFoldout("DetailMap", state); SetFoldout("Triplanar", state); SetFoldout("MirrorControl", state); SetFoldout("QuestLite", state);
         });
         // ─── マッピング ───
         NataneToonShaderGUIUtility.DrawCategoryDivider(L("マッピング", "Mapping"));
         SafeDrawSection(DrawNormalMapSection, L("ノーマルマップ", "Normal Map"));
         SafeDrawSection(DrawParallaxSection, L("視差マッピング", "Parallax Mapping"));
+        SafeDrawSection(DrawDetailMapSection, L("ディテールマップ", "Detail Map"));
+        SafeDrawSection(DrawTriplanarSection, L("トライプレーナー", "Triplanar Mapping"));
 
         // ─── アニメーション＆特殊 ───
         NataneToonShaderGUIUtility.DrawCategoryDivider(L("アニメーション＆特殊", "Animation & Special"));
@@ -4714,6 +4969,11 @@ public class NataneToonShaderGUI : ShaderGUI
         SafeDrawSection(DrawHeightFadeSection, L("高さフェード", "Height Fade"));
         SafeDrawSection(DrawIntersectionFadeSection, L("オブジェクト交差フェード", "Intersection Fade"));
         SafeDrawSection(DrawDistanceFadeSection, L("距離フェード", "Distance Fade"));
+
+        // ─── VRChat＆パフォーマンス ───
+        NataneToonShaderGUIUtility.DrawCategoryDivider(L("VRChat＆パフォーマンス", "VRChat & Performance"));
+        SafeDrawSection(DrawMirrorControlSection, L("ミラー対応", "Mirror Control"));
+        SafeDrawSection(DrawQuestLiteSection, L("Quest軽量パス", "Quest Lite"));
 
         // ─── レンダリング ───
         NataneToonShaderGUIUtility.DrawCategoryDivider(L("レンダリング", "Rendering"));
@@ -4802,6 +5062,12 @@ public class NataneToonShaderGUI : ShaderGUI
             case "IntersectionFade": return DrawIntersectionFadeSection;
             case "DistanceFade": return DrawDistanceFadeSection;
             case "Rendering": return DrawRenderingSection;
+            case "DetailMap": return DrawDetailMapSection;
+            case "Triplanar": return DrawTriplanarSection;
+            case "HeightFog": return DrawHeightFogSection;
+            case "SurfaceCover": return DrawSurfaceCoverSection;
+            case "MirrorControl": return DrawMirrorControlSection;
+            case "QuestLite": return DrawQuestLiteSection;
             default: return null;
         }
     }

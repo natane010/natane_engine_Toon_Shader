@@ -19,6 +19,17 @@ half4 frag(v2f i) : SV_Target
 {
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
 
+    // ===== Mirror Control (VRChat) =====
+    #ifdef _MIRROR_CONTROL
+    {
+        // _MirrorMode: 0=Both, 1=Mirror Only, 2=Non-Mirror Only
+        if (_MirrorMode > 0.5 && _MirrorMode < 1.5 && _VRChatMirrorMode < 0.5)
+            discard; // Mirror-only mode: discard in normal view
+        if (_MirrorMode > 1.5 && _VRChatMirrorMode > 0.5)
+            discard; // Non-mirror mode: discard in mirror view
+    }
+    #endif
+
     // ===== Parallax Mapping (UV Adjustment) =====
     // このセクションの処理:
     // 視差マッピングによりテクスチャ座標を視線方向に基づいてオフセットし、
@@ -37,7 +48,11 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== Texture Sampling =====
-    half4 mainTex = tex2D(_MainTex, mainUV);
+    #ifdef _TRIPLANAR
+        half4 mainTex = TriplanarSample(_MainTex, i.worldPos, i.worldNormal, _TriplanarScale, _TriplanarBlendSharpness);
+    #else
+        half4 mainTex = tex2D(_MainTex, mainUV);
+    #endif
     half4 col = mainTex * _Color;
 
     // ===== Gradient Base Color =====
@@ -101,6 +116,17 @@ half4 frag(v2f i) : SV_Target
     }
     #endif
 
+    // ===== Surface Cover (Snow/Sand Accumulation) =====
+    #ifdef _SURFACE_COVER
+    {
+        float3 safeCoverDirA = normalize(_CoverDirection.xyz + float3(0, 0.0001, 0));
+        float coverDot = dot(i.worldNormal, safeCoverDirA);
+        float coverFactor = saturate((coverDot - _CoverThreshold) * _CoverBlendSharpness) * _CoverAmount;
+        half4 coverSample = tex2D(_CoverTex, i.worldPos.xz * _CoverTiling) * _CoverColor;
+        col.rgb = lerp(col.rgb, coverSample.rgb, coverFactor);
+    }
+    #endif
+
     // ===== Screen-Tone Overlay =====
     #ifdef _SCREEN_TONE
     {
@@ -121,6 +147,37 @@ half4 frag(v2f i) : SV_Target
         half3 worldNormal = normalize(mul(normalMap, tangentToWorld));
     #else
         half3 worldNormal = i.worldNormal; // Already normalized in vertex shader
+    #endif
+
+    // ===== Detail Map (Secondary UV) =====
+    #ifdef _DETAIL_MAP
+    {
+        float2 detailUV = (_DetailUVSet > 0.5) ? i.uv1 : uv;
+        detailUV *= _DetailTiling;
+        half4 detailAlbedo = tex2D(_DetailAlbedoMap, detailUV);
+        col.rgb = lerp(col.rgb, col.rgb * detailAlbedo.rgb * 2.0, _DetailAlbedoScale * detailAlbedo.a);
+        #ifdef _NORMALMAP
+            half3 detailNormalTS = UnpackScaleNormal(tex2D(_DetailNormalMap, detailUV), _DetailNormalScale);
+            // Transform detail normal from tangent space to world space using TBN matrix
+            half3 detailNormalWS = normalize(mul(detailNormalTS, tangentToWorld));
+            worldNormal = normalize(lerp(worldNormal, detailNormalWS, _DetailAlbedoScale));
+        #endif
+    }
+    #endif
+
+    // ===== Surface Cover Normal Blending =====
+    #ifdef _SURFACE_COVER
+    #ifdef _NORMALMAP
+    {
+        float3 safeCoverDir = normalize(_CoverDirection.xyz + float3(0, 0.0001, 0));
+        float coverDotN = dot(worldNormal, safeCoverDir);
+        float coverFactorN = saturate((coverDotN - _CoverThreshold) * _CoverBlendSharpness) * _CoverAmount;
+        half3 coverNormTS = UnpackNormal(tex2D(_CoverNormalMap, i.worldPos.xz * _CoverTiling));
+        // Remap from tangent space (xz projection: tangent=X, bitangent=Z, normal=Y)
+        half3 coverNormWS = half3(coverNormTS.x, coverNormTS.z, coverNormTS.y);
+        worldNormal = normalize(lerp(worldNormal, coverNormWS, coverFactorN));
+    }
+    #endif
     #endif
 
     // ===== Shadow Receive Mask Setup =====
@@ -965,6 +1022,7 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== MatCap 2 (ForwardBase only) =====
+    #ifndef _QUEST_LITE
     #if defined(_MATCAP_2) && defined(UNITY_PASS_FORWARDBASE)
         float2 matcapUV2 = CalculateMatCapUV(worldNormal, viewDir);
         half3 matcap2 = SampleTex2DBlur3(_MatCapTex2, matcapUV2, _MatCap2Blur) * _MatCapIntensity2;
@@ -991,8 +1049,10 @@ half4 frag(v2f i) : SV_Target
         #endif
         col.rgb = lerp(preMatCap2, col.rgb, matCap2BlendFaded);
     #endif
+    #endif // !_QUEST_LITE
 
     // ===== MatCap 3 (ForwardBase only) =====
+    #ifndef _QUEST_LITE
     #if defined(_MATCAP_3) && defined(UNITY_PASS_FORWARDBASE)
         float2 matcapUV3 = CalculateMatCapUV(worldNormal, viewDir);
         half3 matcap3 = SampleTex2DBlur3(_MatCapTex3, matcapUV3, _MatCap3Blur) * _MatCapIntensity3;
@@ -1019,6 +1079,7 @@ half4 frag(v2f i) : SV_Target
         #endif
         col.rgb = lerp(preMatCap3, col.rgb, matCap3BlendFaded);
     #endif
+    #endif // !_QUEST_LITE
 
     // ===== Cubemap Reflection (ForwardBase only) =====
     #if defined(_REFLECTION) && defined(UNITY_PASS_FORWARDBASE)
@@ -1104,6 +1165,11 @@ half4 frag(v2f i) : SV_Target
         emissionMask = ApplySoftMask(emissionMask); // Smooth mask transitions
         emission *= emissionMask;
 
+        // Mirror emission multiplier (VRChat)
+        #ifdef _MIRROR_CONTROL
+            emission *= lerp(1.0, _MirrorEmissionMultiplier, step(0.5, _VRChatMirrorMode));
+        #endif
+
         // Apply Glow/Bloom effect - Optimized: removed branching, use cached luminance
         half emissionLum = CALC_LUMINANCE(emission);
         half3 glow = emission * emissionLum * _EmissionGlow * 2.0;
@@ -1180,6 +1246,7 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== Glitter Effect =====
+    #ifndef _QUEST_LITE
     #if defined(_GLITTER) && defined(UNITY_PASS_FORWARDBASE)
         float2 glitterMaskUV = AnimateUVIfNeeded(uv, _GlitterMaskScrollSpeed.xy, _GlitterMaskRotateSpeed);
         half3 glitter = GlitterEffect(glitterMaskUV, i.worldPos, viewDir, worldNormal, _GlitterBlur);
@@ -1191,6 +1258,7 @@ half4 frag(v2f i) : SV_Target
         #endif
         col.rgb = ApplyEffectBlendPost(preGlitter, col.rgb, glitterBlendFaded, _GlitterBlendMode);
     #endif
+    #endif // !_QUEST_LITE
 
     // ===== Iridescence Effect =====
     #if defined(_IRIDESCENCE) && defined(UNITY_PASS_FORWARDBASE)
@@ -1257,6 +1325,7 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== Water Drip Effect (ForwardBase only) =====
+    #ifndef _QUEST_LITE
     #if defined(_WATER_DRIP) && defined(UNITY_PASS_FORWARDBASE)
     {
         float2 dripMaskUV = AnimateUVIfNeeded(uv, _DripMaskScrollSpeed.xy, _DripMaskRotateSpeed);
@@ -1279,8 +1348,10 @@ half4 frag(v2f i) : SV_Target
         col.rgb = ApplyEffectBlendPost(preDrip, col.rgb, dripBlendFaded, _DripBlendMode);
     }
     #endif
+    #endif // !_QUEST_LITE
 
     // ===== Hologram Effect (ForwardBase only) =====
+    #ifndef _QUEST_LITE
     #if defined(_HOLOGRAM) && defined(UNITY_PASS_FORWARDBASE)
     {
         half3 preHolo = col.rgb;
@@ -1332,8 +1403,10 @@ half4 frag(v2f i) : SV_Target
         col.a = ApplyEffectBlendPostAlpha(preHoloAlpha, col.a, hologramBlendFaded);
     }
     #endif
+    #endif // !_QUEST_LITE
 
     // ===== Glitch Effect (ForwardBase only) =====
+    #ifndef _QUEST_LITE
     #if defined(_GLITCH) && defined(UNITY_PASS_FORWARDBASE)
     {
         half3 preGlitch = col.rgb;
@@ -1361,6 +1434,7 @@ half4 frag(v2f i) : SV_Target
         col.rgb = ApplyEffectBlendPost(preGlitch, col.rgb, glitchBlendFaded, _GlitchBlendMode);
     }
     #endif
+    #endif // !_QUEST_LITE
 
     // ===== Decal System (ForwardBase only) =====
     #if defined(_DECAL) && defined(UNITY_PASS_FORWARDBASE)
@@ -1479,6 +1553,7 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== Intersection Fade (Object Intersection Transparency) =====
+    #ifndef _QUEST_LITE
     #ifdef _INTERSECTION_FADE
     {
         float2 intersectScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
@@ -1511,6 +1586,7 @@ half4 frag(v2f i) : SV_Target
         }
     }
     #endif
+    #endif // !_QUEST_LITE
 
     // ===== Distance Fade (Global Alpha) =====
     // このセクションの処理:
@@ -1538,6 +1614,18 @@ half4 frag(v2f i) : SV_Target
             float ditherThreshold = DitheringPattern(i.pos.xy, max(_DistFadeDitherScale, 1.0));
             clip(distanceFade - ditherThreshold);
         }
+    #endif
+
+    // ===== Height Fog (Material-Based Fog) =====
+    #ifdef _HEIGHT_FOG
+    {
+        float worldY = i.worldPos.y;
+        float heightFactor = saturate((worldY - _HeightFogStart) / (_HeightFogEnd - _HeightFogStart + 0.001));
+        if (_HeightFogMode > 0.5)
+            heightFactor = 1.0 - exp(-heightFactor * 3.0);
+        float fogAmount = (1.0 - heightFactor) * _HeightFogDensity;
+        col.rgb = lerp(col.rgb, _HeightFogColor.rgb, fogAmount);
+    }
     #endif
 
     // ===== Final Color Blending (Highlight & Shadow Smoothing) =====

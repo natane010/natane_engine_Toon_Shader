@@ -693,7 +693,57 @@ CBUFFER_START(UnityPerMaterial)
         float _PBR_OcclusionStrength;
         float _PBR_ReflectionIntensity;
     #endif
+
+    // ===== 14. Detail Map (ディテールマップ) =====
+    #if defined(_DETAIL_MAP)
+        float _DetailNormalScale;
+        float _DetailAlbedoScale;
+        float _DetailUVSet;
+        float _DetailTiling;
+    #endif
+
+    // ===== 15. Triplanar Mapping (トライプレーナー) =====
+    #if defined(_TRIPLANAR)
+        float _TriplanarScale;
+        float _TriplanarBlendSharpness;
+        float _TriplanarOffsetX;
+        float _TriplanarOffsetY;
+        float _TriplanarOffsetZ;
+    #endif
+
+    // ===== 16. Height Fog (ハイトフォグ) =====
+    #if defined(_HEIGHT_FOG)
+        half4 _HeightFogColor;
+        float _HeightFogStart;
+        float _HeightFogEnd;
+        float _HeightFogDensity;
+        float _HeightFogMode;
+    #endif
+
+    // ===== 17. Surface Cover (雪/砂堆積) =====
+    #if defined(_SURFACE_COVER)
+        half4 _CoverColor;
+        float _CoverAmount;
+        float _CoverThreshold;
+        float _CoverBlendSharpness;
+        float _CoverTiling;
+        float4 _CoverDirection;
+    #endif
+
+    // ===== 18. Mirror Control (ミラー対応) =====
+    #if defined(_MIRROR_CONTROL)
+        float _MirrorMode;
+        float _MirrorEmissionMultiplier;
+    #endif
+
+    // ===== 19. Quest Lite (Quest軽量パス) =====
+    // No CBUFFER properties needed - keyword only
 CBUFFER_END
+
+// VRChat Mirror Mode global variable (set by VRChat runtime)
+#if defined(_MIRROR_CONTROL)
+float _VRChatMirrorMode; // 0=Normal view, 1=Inside mirror
+#endif
 
 // Texture samplers (must be outside CBUFFER per HLSL specification)
 // Main
@@ -899,6 +949,18 @@ sampler2D _VATNormalMap;
 sampler2D _TessDispMap;
 #endif
 
+// Detail Map
+#if defined(_DETAIL_MAP)
+sampler2D _DetailAlbedoMap;
+sampler2D _DetailNormalMap;
+#endif
+
+// Surface Cover
+#if defined(_SURFACE_COVER)
+sampler2D _CoverTex;
+sampler2D _CoverNormalMap;
+#endif
+
 // Cubemap samplers (outside CBUFFER)
 #if defined(_REFLECTION)
 samplerCUBE _ReflectionCube;
@@ -927,8 +989,8 @@ struct appdata
     float3 normal : NORMAL;
     float4 tangent : TANGENT;
     float2 uv : TEXCOORD0;
-    #ifdef _BACKGROUND_MODE
-        float2 uv1 : TEXCOORD1;  // Lightmap UV
+    #if defined(_BACKGROUND_MODE) || defined(_DETAIL_MAP)
+        float2 uv1 : TEXCOORD1;  // Lightmap UV / Detail UV
     #endif
     #ifdef _SMOOTH_NORMAL
         float4 color : COLOR;
@@ -961,6 +1023,9 @@ struct v2f
     #endif
     #ifdef _BACKGROUND_MODE
         float2 lightmapUV : TEXCOORD11;
+    #endif
+    #ifdef _DETAIL_MAP
+        float2 uv1 : TEXCOORD12;
     #endif
     UNITY_VERTEX_OUTPUT_STEREO
 };

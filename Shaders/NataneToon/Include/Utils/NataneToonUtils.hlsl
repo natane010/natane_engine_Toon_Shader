@@ -1203,4 +1203,22 @@ half3 CalculateSmearGlow(float3 worldNormal, float3 viewDir, float3 smearDir, fl
     return glow;
 }
 
+// ===== Triplanar Mapping Functions =====
+#if defined(_TRIPLANAR)
+
+// Sample texture using triplanar projection (world-space, no UV required)
+half4 TriplanarSample(sampler2D tex, float3 worldPos, float3 worldNormal, float scale, float sharpness)
+{
+    float3 blend = pow(abs(worldNormal), sharpness);
+    blend /= (blend.x + blend.y + blend.z + 0.001);
+
+    float3 scaledPos = worldPos * scale + float3(_TriplanarOffsetX, _TriplanarOffsetY, _TriplanarOffsetZ);
+    half4 xProj = tex2D(tex, scaledPos.yz);
+    half4 yProj = tex2D(tex, scaledPos.xz);
+    half4 zProj = tex2D(tex, scaledPos.xy);
+    return xProj * blend.x + yProj * blend.y + zProj * blend.z;
+}
+
+#endif // _TRIPLANAR
+
 #endif // NATANE_TOON_UTILS_INCLUDED
