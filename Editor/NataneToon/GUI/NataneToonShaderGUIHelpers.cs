@@ -153,6 +153,12 @@ namespace NataneToon.Editor
                 else
                 {
                     EditorGUILayout.LabelField(L("StandardToon モード (lilToon互換)", "StandardToon Mode (lilToon Compatible)"), EditorStyles.boldLabel);
+                    EditorGUILayout.HelpBox(
+                        L("⚠️ lilToonから移行したマテリアルです。\n" +
+                          "Toon/Gradientモードに変更するには、上部の「シェーダータイプ」を「Toon」に切り替えてください。",
+                          "⚠️ This material was migrated from lilToon.\n" +
+                          "To switch to Toon/Gradient mode, change the \"Shader Type\" dropdown above to \"Toon\"."),
+                        MessageType.Warning);
                 }
 
                 EditorGUILayout.Space(5);

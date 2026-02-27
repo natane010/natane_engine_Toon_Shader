@@ -742,6 +742,10 @@ half4 frag(v2f i) : SV_Target
                 // lilToon's final composition: lerp(indirectCol, directCol, toon)
                 half3 stResult = lerp(stIndirectCol, stDirectCol, shadingValue);
 
+                // Indirect light minimum guarantee (prevents black in dark environments)
+                // indirectResult には _IndirectLightMinColor による最低保証が含まれている
+                stResult = max(stResult, indirectResult * col.rgb);
+
                 // Add additional lights (vertex lights, backlight, LTCGI) scaled by albedo
                 lighting = stResult + additionalResult * col.rgb;
                 // Note: 'lighting' here already includes albedo for StandardToon
