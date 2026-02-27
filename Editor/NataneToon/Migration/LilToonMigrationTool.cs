@@ -1022,10 +1022,16 @@ namespace NataneToon.Editor
             //   directResult = (1,1,1) × √3 = (√3,√3,√3)
             //   luminance = √3, normalize = (1/√3,1/√3,1/√3)
             //   result = (1/√3) × √3 = (1,1,1) ✓ — perfect match
+            // Nataneのnormalize+luminanceステップ + パイプライン全体の差異を補償。
+            // 実機テストにより、lilToonとの見た目一致には以下が最適:
+            //   _Brightness = 2.0  (normalize暗化 + パイプライン差の総合補正)
+            //   _Saturation = 1.5  (normalizeによる彩度低下の補正)
+            //   _LightIntensity = √3 ≈ 1.732 (ForwardBase normalize暗化の正確な補正)
             float sqrtThree = Mathf.Sqrt(3.0f); // √3 ≈ 1.732
             targetMaterial.SetFloat("_LightIntensity", sqrtThree);
-            targetMaterial.SetFloat("_Brightness", 1.0f);
-            report.infos.Add($"Brightness補正: _LightIntensity={sqrtThree:F3} (√3), _Brightness=1.0 (normalize暗化の正確な補正)");
+            targetMaterial.SetFloat("_Brightness", 2.0f);
+            targetMaterial.SetFloat("_Saturation", 1.5f);
+            report.infos.Add($"色調補正: _Brightness=2.0, _Saturation=1.5, _LightIntensity={sqrtThree:F3} (√3)");
 
             // === Shadow Floor Compensation ===
             // lilToonのHalf-Lambertでは裏面でもhalfLambert=0.0で、
