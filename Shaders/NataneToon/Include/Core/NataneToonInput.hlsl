@@ -148,6 +148,9 @@ CBUFFER_START(UnityPerMaterial)
     float _ShadowMaxDarkness;
     float _SmoothNormalShadingBlend;
     float _SmoothNormalMode;
+    float _LightColorMin;
+    float _LightColorMax;
+    float _MonochromeLighting;
     float _LightMinInfluence;
     float _LightMaxInfluence;
     float _LightBlend;

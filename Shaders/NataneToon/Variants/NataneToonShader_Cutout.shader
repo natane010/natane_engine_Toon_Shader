@@ -163,6 +163,9 @@ Shader "Natane/Toon Shader (Cutout)"
         _ShadowReceive ("Shadow Receive", Range(0, 1)) = 1
         _ShadowSmoothing ("Shadow Map Smoothing", Range(0, 1)) = 0
         _ShadowMaxDarkness ("Shadow Max Darkness", Range(0, 1)) = 0
+        _LightColorMin ("Light Color Min (ライト色下限)", Range(0, 1)) = 0
+        _LightColorMax ("Light Color Max (ライト色上限)", Range(0, 10)) = 1
+        _MonochromeLighting ("Monochrome Lighting (モノクロライト)", Range(0, 1)) = 0
         _LightMinInfluence ("Light Min Influence", Range(0, 1)) = 0
         _LightMaxInfluence ("Light Max Influence", Range(1, 5)) = 2
         _LightBlend ("Light Blend Softness", Range(0, 1)) = 0

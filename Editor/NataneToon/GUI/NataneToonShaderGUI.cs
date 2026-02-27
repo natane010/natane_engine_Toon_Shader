@@ -1140,10 +1140,38 @@ public class NataneToonShaderGUI : ShaderGUI
             DrawHelpToggle("ShadowMaxDarkness", L("影の最小明るさです。0 = 完全に暗い、1 = 暗くならない。影が真っ黒になりすぎるのを防ぎます。", "Minimum shadow brightness. 0 = Fully dark, 1 = No darkening. Prevents shadows from becoming too black."), MessageType.Info);
 
             EditorGUILayout.Space(10);
+            EditorGUILayout.LabelField(L("ライトカラー制限", "Light Color Limits"), EditorStyles.boldLabel);
+            DrawProperty("_LightColorMin", L("ライト色の下限", "Light Color Min"));
+            DrawProperty("_LightColorMax", L("ライト色の上限", "Light Color Max"));
+            DrawHelpToggle("LightColorLimits", L(
+                "ライトカラーの値域をクランプします（lilToonの_LightMinLimit/_LightMaxLimitに相当）。\n" +
+                "• 下限 (default=0): 暗いワールドでもキャラが最低限見える保証\n" +
+                "  - 0.05 = VRChat推奨（真っ暗を防止）\n" +
+                "• 上限 (default=1): 強いライトでテクスチャが白飛びするのを防止\n" +
+                "  - 1.0 = ライト色がそのまま（標準）\n" +
+                "  - 0.8 = やや抑えめ（白飛び防止）",
+                "Clamps effective light color (equivalent to lilToon's _LightMinLimit/_LightMaxLimit).\n" +
+                "• Min (default=0): Guarantees minimum visibility in dark worlds\n" +
+                "  - 0.05 = VRChat recommended (prevents total darkness)\n" +
+                "• Max (default=1): Prevents texture white-out under bright lights\n" +
+                "  - 1.0 = Light color as-is (standard)\n" +
+                "  - 0.8 = Slightly reduced (prevents blowout)"), MessageType.Info);
+            DrawProperty("_MonochromeLighting", L("モノクロライティング", "Monochrome Lighting"));
+            DrawHelpToggle("MonochromeLighting", L(
+                "ライトカラーの色味を除去してグレースケール化します（lilToonの_MonochromeLightingに相当）。\n" +
+                "• 0 = ライトの色をそのまま適用\n" +
+                "• 1 = ライトの明るさのみ（色なし）\n" +
+                "色付きライトでテクスチャの色味が変わりすぎる場合に使用します。",
+                "Removes color tint from light and converts to grayscale (equivalent to lilToon's _MonochromeLighting).\n" +
+                "• 0 = Apply light color as-is\n" +
+                "• 1 = Light brightness only (no color)\n" +
+                "Use when colored lights distort texture colors too much."), MessageType.Info);
+
+            EditorGUILayout.Space(10);
             EditorGUILayout.LabelField(L("ライト影響範囲", "Light Influence Range"), EditorStyles.boldLabel);
             DrawProperty("_LightMinInfluence", L("ライトの最小影響", "Light Min Influence"));
             DrawProperty("_LightMaxInfluence", L("ライトの最大影響", "Light Max Influence"));
-            DrawHelpToggle("LightInfluenceRange", L("最小/最大で明るさの範囲を制御します。最小値は暗くなりすぎを防ぎ、最大値は露出オーバーを防ぎます。", "Controls brightness range with min/max. Min prevents excessive darkness, max prevents overexposure."), MessageType.Info);
+            DrawHelpToggle("LightInfluenceRange", L("normalize後の輝度値の最小/最大を制御します。最小値は暗くなりすぎを防ぎ、最大値は露出オーバーを防ぎます。", "Controls min/max of luminance after normalize step. Min prevents excessive darkness, max prevents overexposure."), MessageType.Info);
 
             EditorGUILayout.Space();
             DrawBlendParameter(

@@ -672,6 +672,12 @@ namespace NataneToon.Editor
             CaptureFloat(material, "_SpecularBorder", properties);
             CaptureFloat(material, "_SpecularBlur", properties);
 
+            // === Light Color Limits (lilToon固有) ===
+            CaptureFloat(material, "_LightMinLimit", properties);
+            CaptureFloat(material, "_LightMaxLimit", properties);
+            CaptureFloat(material, "_MonochromeLighting", properties);
+            CaptureFloat(material, "_AsUnlit", properties);
+
             return properties;
         }
 
@@ -1125,6 +1131,35 @@ namespace NataneToon.Editor
             // 移行時はlilToonに合わせて1.0に設定する。
             targetMaterial.SetFloat("_GIIntensity", 1.0f);
             report.infos.Add("GI補正: _GIIntensity=1.0 (lilToonと同等の環境光強度)");
+
+            // === Light Color Limits (lilToon互換) ===
+            // lilToon: lightColor = clamp(lightColor, _LightMinLimit, _LightMaxLimit)
+            //   _LightMinLimit (default=0.05): 暗いワールドでの最低保証
+            //   _LightMaxLimit (default=1.0): 強いライトの上限
+            //   _MonochromeLighting (default=0): ライト色のグレースケール化
+            //
+            // Natane: effectiveLightColor = clamp(effectiveLightColor, _LightColorMin, _LightColorMax)
+            //   _LightColorMin → lilToon _LightMinLimit
+            //   _LightColorMax → lilToon _LightMaxLimit
+            //   _MonochromeLighting → lilToon _MonochromeLighting
+            float lightMinLimit = GetFloatOr(sourceProps, "_LightMinLimit", 0.05f);
+            float lightMaxLimit = GetFloatOr(sourceProps, "_LightMaxLimit", 1.0f);
+            float monochromeLighting = GetFloatOr(sourceProps, "_MonochromeLighting", 0.0f);
+            targetMaterial.SetFloat("_LightColorMin", lightMinLimit);
+            targetMaterial.SetFloat("_LightColorMax", lightMaxLimit);
+            targetMaterial.SetFloat("_MonochromeLighting", monochromeLighting);
+            report.infos.Add($"ライト制限: ColorMin={lightMinLimit:F2}, ColorMax={lightMaxLimit:F2}, Monochrome={monochromeLighting:F2}");
+
+            // _AsUnlit → _LightIntensity/brightness への反映
+            // lilToon _AsUnlit: 0=通常ライティング, 1=完全アンライト
+            // → _AsUnlit > 0 の場合、_LightColorMin を上げてアンライト効果を近似する
+            float asUnlit = GetFloatOr(sourceProps, "_AsUnlit", 0.0f);
+            if (asUnlit > 0.01f)
+            {
+                float unlitMin = Mathf.Lerp(lightMinLimit, 1.0f, asUnlit);
+                targetMaterial.SetFloat("_LightColorMin", unlitMin);
+                report.infos.Add($"AsUnlit={asUnlit:F2} → LightColorMin={unlitMin:F2} (アンライト近似)");
+            }
         }
 
         /// <summary>

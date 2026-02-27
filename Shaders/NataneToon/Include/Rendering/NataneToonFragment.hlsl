@@ -232,6 +232,15 @@ half4 frag(v2f i) : SV_Target
         effectiveLightColor = _LightColor0.rgb;
     #endif
 
+    // ===== Light Color Correction (lilToon互換: LightMinLimit/LightMaxLimit相当) =====
+    // ライトカラーの値域をクランプし、過度な明暗を防止する。
+    // _LightColorMin (default=0): 暗いワールドでもキャラが見える最低保証
+    // _LightColorMax (default=1): 強いライトでもテクスチャが白飛びしない上限
+    // _MonochromeLighting (default=0): ライトカラーの色味を除去（グレースケール化）
+    effectiveLightColor = clamp(effectiveLightColor, _LightColorMin, _LightColorMax);
+    half lightGray = CALC_LUMINANCE(effectiveLightColor);
+    effectiveLightColor = lerp(effectiveLightColor, half3(lightGray, lightGray, lightGray), _MonochromeLighting);
+
     UNITY_LIGHT_ATTENUATION(atten, i, i.worldPos);
 
     // ===== Per-Effect Distance Fade (early calculation) =====
