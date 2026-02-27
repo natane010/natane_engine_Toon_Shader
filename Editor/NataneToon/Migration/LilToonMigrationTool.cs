@@ -822,6 +822,30 @@ namespace NataneToon.Editor
                 MapMultiShadowLayers(sourceProps, targetMaterial, report);
             }
 
+            // === Shadow Color Texture ===
+            // lilToon: _ShadowColorTex → カスタム影色テクスチャ
+            // Natane: _ShadowColorTex + _ShadowColorTexStrength
+            if (sourceProps.ContainsKey("_ShadowColorTex") && sourceProps["_ShadowColorTex"] != null)
+            {
+                targetMaterial.SetTexture("_ShadowColorTex", (Texture)sourceProps["_ShadowColorTex"]);
+                targetMaterial.SetFloat("_ShadowColorTexStrength", 1.0f);
+                report.infos.Add("Shadow Color Texture: マッピング完了");
+            }
+
+            // === Shadow Normal Strength → BumpScale 調整 ===
+            // lilToon: _ShadowNormalStrength (0-1) → 法線マップがシャドウに与える影響度
+            // Nataneでは _BumpScale で法線強度を直接制御する
+            // _ShadowNormalStrength < 1.0 の場合、影へのノーマルの影響を弱めたい意図
+            // → _BumpScale を ShadowNormalStrength で調整（元のBumpScaleとの乗算）
+            float shadowNormalStrength = GetFloatOr(sourceProps, "_ShadowNormalStrength", 1.0f);
+            if (shadowNormalStrength < 0.99f)
+            {
+                float currentBumpScale = GetFloatOr(sourceProps, "_BumpScale", 1.0f);
+                float adjustedBumpScale = currentBumpScale * shadowNormalStrength;
+                targetMaterial.SetFloat("_BumpScale", adjustedBumpScale);
+                report.infos.Add($"Shadow Normal: Strength={shadowNormalStrength:F2} × BumpScale={currentBumpScale:F2} → {adjustedBumpScale:F2}");
+            }
+
             // === Normal Map ===
             SetTextureIfExists(sourceProps, "_BumpMap", targetMaterial, "_BumpMap");
             SetFloatIfExists(sourceProps, "_BumpScale", targetMaterial, "_BumpScale");
@@ -1139,24 +1163,32 @@ namespace NataneToon.Editor
             //   _MonochromeLighting (default=0): ライト色のグレースケール化
             //
             // Natane: effectiveLightColor = clamp(effectiveLightColor, _LightColorMin, _LightColorMax)
-            //   _LightColorMin → lilToon _LightMinLimit
-            //   _LightColorMax → lilToon _LightMaxLimit
-            //   _MonochromeLighting → lilToon _MonochromeLighting
+            //
+            // ★重要: _LightIntensity=2√3 の増幅を考慮した変換が必要
+            // lilToonではlightColor=1.0で最終ライティング≈1.0（増幅なし）
+            // Nataneではlight=1.0 → _LightIntensity=2√3で増幅 → normalize後 ≈2.0
+            // → lilToonの_LightMaxLimit=1.0と同等にするには、_LightColorMax = 0.5
+            //
+            // 一般式: _LightColorMax = lilToon_LightMaxLimit × √3 / _LightIntensity
+            //        = lilToon_LightMaxLimit × √3 / (2√3) = lilToon_LightMaxLimit / 2
             float lightMinLimit = GetFloatOr(sourceProps, "_LightMinLimit", 0.05f);
             float lightMaxLimit = GetFloatOr(sourceProps, "_LightMaxLimit", 1.0f);
             float monochromeLighting = GetFloatOr(sourceProps, "_MonochromeLighting", 0.0f);
-            targetMaterial.SetFloat("_LightColorMin", lightMinLimit);
-            targetMaterial.SetFloat("_LightColorMax", lightMaxLimit);
-            targetMaterial.SetFloat("_MonochromeLighting", monochromeLighting);
-            report.infos.Add($"ライト制限: ColorMin={lightMinLimit:F2}, ColorMax={lightMaxLimit:F2}, Monochrome={monochromeLighting:F2}");
 
-            // _AsUnlit → _LightIntensity/brightness への反映
+            // _LightIntensity=2√3 の増幅を逆算してLightColorMaxを設定
+            float nataneLightColorMax = lightMaxLimit * 0.5f;
+            targetMaterial.SetFloat("_LightColorMin", lightMinLimit);
+            targetMaterial.SetFloat("_LightColorMax", nataneLightColorMax);
+            targetMaterial.SetFloat("_MonochromeLighting", monochromeLighting);
+            report.infos.Add($"ライト制限: lilToon MaxLimit={lightMaxLimit:F2} → Natane ColorMax={nataneLightColorMax:F2} (÷2補正), ColorMin={lightMinLimit:F2}, Monochrome={monochromeLighting:F2}");
+
+            // _AsUnlit → _LightColorMin への反映
             // lilToon _AsUnlit: 0=通常ライティング, 1=完全アンライト
             // → _AsUnlit > 0 の場合、_LightColorMin を上げてアンライト効果を近似する
             float asUnlit = GetFloatOr(sourceProps, "_AsUnlit", 0.0f);
             if (asUnlit > 0.01f)
             {
-                float unlitMin = Mathf.Lerp(lightMinLimit, 1.0f, asUnlit);
+                float unlitMin = Mathf.Lerp(lightMinLimit, nataneLightColorMax, asUnlit);
                 targetMaterial.SetFloat("_LightColorMin", unlitMin);
                 report.infos.Add($"AsUnlit={asUnlit:F2} → LightColorMin={unlitMin:F2} (アンライト近似)");
             }
