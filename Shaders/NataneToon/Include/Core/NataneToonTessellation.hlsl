@@ -45,7 +45,7 @@ TessellationControlPoint tessVert(appdata v)
 }
 
 // ===== Phong Tessellation Helpers =====
-float3 ProjectPointOnPlane(float3 pt, float3 planeOrigin, float3 planeNml)
+float3 ProjectOntoPlane(float3 pt, float3 planeOrigin, float3 planeNml)
 {
     return pt - dot(pt - planeOrigin, planeNml) * planeNml;
 }
@@ -53,9 +53,9 @@ float3 ProjectPointOnPlane(float3 pt, float3 planeOrigin, float3 planeNml)
 float3 PhongSmoothing(float3 posOS, float3 p0, float3 p1, float3 p2,
                        float3 n0, float3 n1, float3 n2, float3 bary, float strength)
 {
-    float3 c0 = ProjectPointOnPlane(posOS, p0, n0);
-    float3 c1 = ProjectPointOnPlane(posOS, p1, n1);
-    float3 c2 = ProjectPointOnPlane(posOS, p2, n2);
+    float3 c0 = ProjectOntoPlane(posOS, p0, n0);
+    float3 c1 = ProjectOntoPlane(posOS, p1, n1);
+    float3 c2 = ProjectOntoPlane(posOS, p2, n2);
     float3 phongPos = bary.x * c0 + bary.y * c1 + bary.z * c2;
     return lerp(posOS, phongPos, strength);
 }

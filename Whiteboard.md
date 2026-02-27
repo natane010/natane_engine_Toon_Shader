@@ -993,6 +993,415 @@ Natane:  matcap = matCapTex * _MatCapIntensity
 
 ---
 
+## StandardToon + LV 黒レンダリングバグ調査 (2026-02-27)
+
+### 問題
+- lilToon から移行した 1.mat が真っ黒になる（本来白くなるはず）
+- `_USE_LIGHT_VOLUME` と `_STANDARD_TOON` が両方有効
+- `_GIIntensity = 0` に設定済み
+
+### チーム
+- mat-analyzer: 1.mat のプロパティ値抽出
+- shader-tracer: Fragment shader パストレース
+- team-lead: 統合・修正実装
+
+### 1.mat プロパティ値
+
+#### キーワード（m_ValidKeywords）
+| キーワード | 有無 |
+|---|---|
+| `_STANDARD_TOON` | ✅ 有効 |
+| `_USE_LIGHT_VOLUME` | ✅ 有効 |
+| `_MATCAP` | ✅ 有効 |
+| `_OUTLINE` | ✅ 有効 |
+| `_RIM_LIGHT` | ✅ 有効 |
+
+#### Light Volume / GI パラメータ
+| プロパティ | 値 | 備考 |
+|---|---|---|
+| `_UseLightVolume` | 1 | Light Volume 有効化 |
+| `_LightVolumeBlend` | 1 | ブレンド強度 100% |
+| `_LightVolumeBlendMode` | 3 | Multiply（乗算） |
+| `_LightVolumeIntensity` | 1 | LV強度 |
+| `_LightVolumeSpecular` | 0 | LVスペキュラなし |
+| `_GIIntensity` | 0 | ★★★ GI完全無効化 |
+| `_IndirectLightIntensity` | 1 | 間接光強度 |
+| `_IndirectLightMinColor` | (0, 0, 0, 1) | 黒（最小保証なし） |
+
+#### ライティング基本パラメータ
+| プロパティ | 値 | 説明 |
+|---|---|---|
+| `_ShadingMode` | 2 | StandardToon モード |
+| `_Brightness` | 1 | 全体明るさ（デフォルト） |
+| `_Saturation` | 1 | 彩度（デフォルト） |
+| `_LightIntensity` | 1.25 | ライト強度 |
+| `_LightColorInfluence` | 1 | ライトカラー影響 100% |
+| `_LightColorMin` | 0.05 | ライト色最小クランプ |
+| `_LightColorMax` | 1 | ライト色最大クランプ |
+| `_LightMinInfluence` | 0.05 | normalize後の luminance 下限 |
+| `_LightMaxInfluence` | 2 | normalize後の luminance 上限 |
+| `_AdditionalLightIntensity` | 0.5 | 追加ライト強度 |
+
+#### シャドウパラメータ（StandardToon）
+| プロパティ | 値 | 説明 |
+|---|---|---|
+| `_STShadowBorder` | 0.423 | StandardToonシャドウ境界 |
+| `_STShadowBlur` | 0.444 | StandardToonシャドウぼかし |
+| `_STShadowStrength` | 1 | シャドウ強度 |
+| `_STShadowEnvStrength` | 0 | 影への環境色反映なし |
+| `_STAsUnlit` | 0 | アンライト無効 |
+| `_ShadowColorTexStrength` | 1 | シャドウカラーテクスチャ適用 |
+| `_ShadowColor` | (0.8745, 0.8784, 0.9294, 1) | 薄紫色シャドウ |
+| `_Shadow2ndColor` | (0.9090, 0.9355, 0.9569, 0.324) | 2nd影色（薄い） |
+| `_Shadow3rdColor` | (0, 0, 0, 0) | 3rd影色（無効） |
+| `_ShadowReceive` | 1 | シャドウ受信有効 |
+| `_ShadowMaxDarkness` | 0.15 | 最大暗さ制限（15%） |
+
+#### MatCap パラメータ
+| プロパティ | 値 | テクスチャ | 説明 |
+|---|---|---|---|
+| `_MatCap` | 1 | 有効 | _MatCapTex: guid: f0ac2a0... |
+| `_MatCapIntensity` | 1 | - | MatCap強度 |
+| `_MatCapBlendMode` | 1 | - | Multiply（乗算） |
+| `_MatCapBlend` | 1 | - | ブレンド100% |
+| `_MatCapColor` | (1, 1, 1, 0.35) | - | 白（α=0.35） |
+
+#### テクスチャ
+| テクスチャ | 設定状態 |
+|---|---|
+| `_MainTex` | ✅ guid: 9b1c52c... |
+| `_BumpMap` | ✅ guid: d37e90c... |
+| `_ShadowColorTex` | ❌ 未設定 |
+
+#### リムライト パラメータ
+| プロパティ | 値 | 説明 |
+|---|---|---|
+| `_RimLight` | 1 | リムライト有効 |
+| `_RimIntensity` | 1 | リム強度 |
+| `_RimColor` | (0.92, 0.9257, 1, 0.116) | 淡いシアン色 |
+| `_RimPower` | 1 | Fresnel指数（広いリム） |
+
+#### その他パラメータ
+| プロパティ | 値 | 説明 |
+|---|---|---|
+| `_MonochromeLighting` | 0 | グレースケール化なし |
+| `_AlbedoPreservation` | 0 | 色保存機能なし |
+
+### レンダリングパストレース
+**解析者**: shader-tracer / **完了日**: 2026-02-27
+
+#### シーン条件の仮定
+- ディレクショナルライトなし (`_LightColor0.rgb` ≈ 0)
+- SH弱い（またはゼロ）
+- `_USE_LIGHT_VOLUME` キーワード有効
+- `_GIIntensity = 0`（GI完全無効化）
+- `_IndirectLightMinColor = (0, 0, 0)`（最小保証なし）
+- `_STAsUnlit = 0`
+
+---
+
+#### STEP 1: stLightColor の計算 (line ~244-268)
+
+```
+# ディレクショナルライトなし → SHフォールバック
+dirLightLum = CALC_LUMINANCE(0, 0, 0) = 0 → フォールバック
+頂点ライトもなし → SHフォールバック
+effectiveLightColor = GetSHFallbackLightColor() ≈ (弱いSH値)
+
+# SHが非常に弱い場合 (例: SH≈0):
+effectiveLightColor = clamp(SH_fallback, 0.05, 1.0) = (0.05, 0.05, 0.05)  ← _LightColorMin=0.05 が下限
+
+# StandardToon SHToon計算:
+stSHToon = max(0, ShadeSH9(lightDir * 0.666666)) ≈ (0, 0, 0)  ← SH≈0の場合
+
+stLightColor = effectiveLightColor + stSHToon
+             = (0.05 + 0, ...) = (0.05, 0.05, 0.05)
+stLightColor = clamp((0.05), 0.05, 1.0) = (0.05, 0.05, 0.05)
+stLightColor = max(stLightColor, 0.001) = (0.05, 0.05, 0.05)
+stLightColor = lerp(stLightColor, half3(1,1,1), _STAsUnlit=0) = (0.05, 0.05, 0.05)
+
+★★★ stLightColor = (0.05, 0.05, 0.05) — 最小保証値のみ ★★★
+stIndLightColor = saturate(ShadeSH9(-lightDir * 0.666666)) ≈ (0, 0, 0)
+```
+
+---
+
+#### STEP 2: StandardToon shading branch (line ~423-482)
+
+```
+stAlbedo = col.rgb ≈ (1, 1, 1)  (白マテリアル)
+
+# ShadowColorTex 未設定 → Unityデフォルト白 (1,1,1)
+stShadowColorTexSample = (1, 1, 1)
+stTintedAlbedo = lerp(stAlbedo, stAlbedo * (1,1,1), _ShadowColorTexStrength=1.0)
+               = stAlbedo = (1, 1, 1)
+
+stIndirectCol = stTintedAlbedo * _ShadowColor.rgb
+              = (1,1,1) * (0.8745, 0.8784, 0.9294)
+              = (0.8745, 0.8784, 0.9294)
+
+stDirectCol = stAlbedo * stLightColor
+            = (1, 1, 1) * (0.05, 0.05, 0.05)
+            = (0.05, 0.05, 0.05)   ← ★★★ 非常に暗い！ ★★★
+
+# stIndirectCol にライトカラー乗算 (line 468):
+stIndirectCol *= stLightColor
+stIndirectCol = (0.8745, 0.8784, 0.9294) * (0.05, 0.05, 0.05)
+              = (0.0437, 0.0439, 0.0465)
+
+# Shadow Environment Strength: _STShadowEnvStrength=0 なので変化なし
+
+# Safety clamp (line 477):
+stIndirectCol = min(stIndirectCol, stDirectCol)
+              = min((0.0437, 0.0439, 0.0465), (0.05, 0.05, 0.05))
+              = (0.0437, 0.0439, 0.0465)
+
+# shadingValue計算:
+# ndotl = dot(shadingNormal, lightDir) → Half-Lambert: saturate(ndotl * 0.5 + 0.5)
+# 前面の場合: ndotl ≈ 0.5〜1.0 → halfLambert ≈ 0.75〜1.0
+# stToon = LilToonShading(halfLambert=0.75, border=0.423, blur=0.444)
+# = saturate((0.75 - (0.423 - 0.444*0.5)) / 0.444)
+# = saturate((0.75 - 0.201) / 0.444) = saturate(1.237) = 1.0
+# stToon *= atten=1.0 (ディレクショナルライトなしのForwardBaseでatten=1)
+# stToon = lerp(1.0, stToon, _STShadowStrength=1.0) = 1.0
+shadingValue = stToon ≈ 1.0  (lit状態)
+
+# lighting の初期値 (line 482 — _USE_LIGHT_VOLUME パス用):
+lighting = lerp(shadowColor, (1,1,1), shadingValue=1.0) = (1, 1, 1)
+
+★ preLightVolume = lighting = (1, 1, 1)  (line 560で保存)
+```
+
+---
+
+#### STEP 3: STEP 1 - Indirect Light (line ~545-602)
+
+```
+# _USE_LIGHT_VOLUME パス:
+preLightVolume = lighting = (1, 1, 1)  ← ★アルベド込みではない！lighting = (1,1,1)の意味は
+                                          shadingValue=1のときのtoon値。アルベドは未乗算。
+
+LightVolumeSH(worldPos, L0, L1r, L1g, L1b)
+  → _UdonLightVolumeEnabled == 0 の場合（エディター）:
+     LV_SampleLightProbeDering → Unityライトプローブ（ゼロ or 弱い値）
+  → LV有効の場合: LV_LightVolumeSH → LVデータから実際の照明
+
+directLightLV = LightVolumeEvaluate(worldNormal, L0, L1r, L1g, L1b)
+              ≈ SHが0ならば (0, 0, 0) / SH有りなら正の値
+
+indirectLightLV = LightVolumeEvaluate(-worldNormal, ...)
+                ≈ 同様
+
+directLightLV *= _LightVolumeIntensity = 1.0  → 変化なし
+indirectLightLV *= _LightVolumeIntensity = 1.0 → 変化なし
+indirectLightLV *= lvInfluence = 1.0 - shadowReceiveMask = 1.0 → 変化なし
+
+indirectResult = indirectLightLV  ← LVからのindirect
+
+# ★★★ 致命的な問題 (line 599-600) ★★★
+indirectResult = max(indirectResult, _IndirectLightMinColor=(0,0,0))
+               = indirectLightLV  ← 最小保証が効かない（黒に設定されているため）
+
+indirectResult *= _IndirectLightIntensity=1.0 * _GIIntensity=0
+               = indirectLightLV * 0
+               = (0, 0, 0)   ← ★★★ GIIntensity=0 で indirectResult が完全消去！ ★★★
+
+# AO適用 (効果なし: indirectResult はゼロ):
+indirectResult *= aoForIndirect = (0, 0, 0)
+```
+
+**重要**: `_GIIntensity = 0` は `indirectResult`（= `indirectLightLV`）を完全にゼロにするが、
+`directLightLV`（LVからの直接光）には影響しない。
+
+---
+
+#### STEP 4: STEP 5 - Final Composition (line ~694-749)
+
+```
+# _USE_LIGHT_VOLUME + _STANDARD_TOON ブランチ (line 696-704):
+
+stResult = lerp(stIndirectCol, stDirectCol, shadingValue)
+         = lerp((0.0437, 0.0439, 0.0465), (0.05, 0.05, 0.05), 1.0)
+         = stDirectCol = (0.05, 0.05, 0.05)   ← ★ 非常に暗い
+
+stResult += additionalResult * col.rgb
+          = (0.05, 0.05, 0.05) + 0 * (1,1,1)
+          = (0.05, 0.05, 0.05)
+
+# LV 環境光 (line 702):
+lvEnv = max(directLightLV, 0) * col.rgb
+      = directLightLV * (1, 1, 1)
+      = directLightLV   ← ★ SHが弱い/ゼロなら ≈ (0, 0, 0)
+
+lighting = max(stResult, lvEnv)
+         = max((0.05, 0.05, 0.05), directLightLV)
+
+# ケース1: SH=0 (LV未設定エディター環境)
+# directLightLV = (0, 0, 0) → lvEnv = (0, 0, 0)
+# lighting = max((0.05), (0)) = (0.05, 0.05, 0.05)   ← 非常に暗い
+
+# ケース2: LV有効、directLightLV = (0.8, 0.8, 0.8) 程度
+# lvEnv = (0.8, 0.8, 0.8)
+# lighting = max((0.05), (0.8)) = (0.8, 0.8, 0.8)   ← 正常
+
+# line 749: LightVolumeBlend=1.0 なので:
+lighting = lerp(preLightVolume=(1,1,1), lighting, _LightVolumeBlend=1.0)
+         = lighting  ← preLightVolumeは無視される
+```
+
+---
+
+#### STEP 5: Final Output (line ~811-816)
+
+```
+# _STANDARD_TOON ブランチ (line 811-816):
+col.rgb = lighting   ← lighting にアルベドが含まれていない！！！
+
+# ★★★ 致命的なバグ発見 ★★★
+# StandardToon + LV パスでは:
+# stResult = lerp(stIndirectCol, stDirectCol, shadingValue)
+#          = アルベド込みの値 (stDirectCol = albedo * stLightColor)
+# lvEnv = directLightLV * col.rgb = アルベド込み
+# lighting = max(stResult, lvEnv) = アルベド込み → ✅ OK
+
+# 一方 preLightVolume = lighting = lerp(shadowColor, (1,1,1), shadingValue)
+#                                = (1, 1, 1)  ← アルベド未込み！
+# preLightVolume との lerp で _LightVolumeBlend=1.0 なので影響なし → ✅ OK
+
+col.rgb = lighting * _Brightness=1.0 = lighting
+```
+
+---
+
+#### 根本原因の特定
+
+**原因1 (PRIMARY): stLightColor が _LightColorMin=0.05 の最小値のみ**
+
+シーンにディレクショナルライトもSHもない場合:
+- `stLightColor = (0.05, 0.05, 0.05)` のみ
+- `stDirectCol = albedo * 0.05 ≈ (0.05, 0.05, 0.05)` — 明るさ5%
+- `stResult ≈ (0.05, 0.05, 0.05)` — 出力が極めて暗い
+
+**原因2 (SECONDARY): `_GIIntensity = 0` による `indirectResult` の完全消去**
+
+- `indirectResult = indirectLightLV * 0 = (0, 0, 0)`
+- LVのindirect光（影への環境光）が完全にゼロになる
+- これは意図的（ユーザーがGI=0に設定）だが、LV indirect光まで消えるのは誤解を招く
+
+**原因3 (CONDITIONAL): directLightLV がゼロの場合 (LV未設定)**
+
+- エディター環境でVRC Light Volumeが設定されていない場合
+- `LightVolumeSH` → `LV_SampleLightProbeDering` → ライトプローブが設定されていなければゼロ
+- `directLightLV = (0, 0, 0)` → `lvEnv = (0, 0, 0)`
+- `lighting = max((0.05), (0)) = (0.05, 0.05, 0.05)` → ほぼ黒
+
+**原因4 (CONTRIBUTING): `_IndirectLightMinColor = (0, 0, 0)`**
+
+- 通常のデフォルト値は `(0.1, 0.1, 0.1)` だが、1.matでは `(0, 0, 0)` に設定
+- 暗いシーンでの最低保証色がゼロのため、黒になりやすい
+
+---
+
+#### 変数値サマリー（SH≈0, LV未設定エディター環境）
+
+| 変数 | 値 | 備考 |
+|------|-----|------|
+| effectiveLightColor | (0.05, 0.05, 0.05) | _LightColorMin=0.05 がクランプ下限 |
+| stSHToon | (0, 0, 0) | SH≈0 |
+| stLightColor | (0.05, 0.05, 0.05) | SH弱いため最小値 |
+| stAlbedo | (1, 1, 1) | 白テクスチャ仮定 |
+| stDirectCol | (0.05, 0.05, 0.05) | albedo * stLightColor |
+| stIndirectCol | (0.0437, 0.0439, 0.0465) | albedo * shadowColor * stLightColor |
+| shadingValue | ≈ 1.0 | Half-Lambert, 前面, shading=lit |
+| preLightVolume | (1, 1, 1) | lerp(shadowColor, (1,1,1), 1.0) |
+| directLightLV | ≈ (0, 0, 0) | LV/SH未設定エディター |
+| indirectLightLV | ≈ (0, 0, 0) | LV/SH未設定エディター |
+| indirectResult | (0, 0, 0) | indirectLightLV * GIIntensity=0 |
+| stResult | (0.05, 0.05, 0.05) | lerp(stIndirectCol, stDirectCol, 1.0) |
+| lvEnv | (0, 0, 0) | directLightLV * albedo = 0 |
+| lighting | (0.05, 0.05, 0.05) | max(stResult, lvEnv) |
+| col.rgb (final) | **(0.05, 0.05, 0.05)** | **≈ 真っ黒！** |
+
+### 根本原因
+
+**StandardToon + Light Volume パスが黒になる根本原因は複合的なのです：**
+
+1. **`stLightColor` 依存の問題**: StandardToon の `stDirectCol = albedo * stLightColor` は
+   ディレクショナルライトもSHもない環境で `_LightColorMin = 0.05` のみになる。
+   LVシーンでは main light が存在しないことが多く、stDirectCol が 0.05 程度になる。
+
+2. **`_GIIntensity = 0` が LV indirect光も消す**: `indirectResult *= _GIIntensity` は
+   `indirectLightLV`（LV由来の間接光）も消してしまう。
+   LVシーンでは `directLightLV` が主光源なので indirect消去は想定内だが、
+   ユーザーが混乱しやすい。
+
+3. **LV + StandardToon の合成ロジックの問題**: line 699-703:
+   `stResult = lerp(stIndirectCol, stDirectCol, shadingValue)` → albedo×stLightColor依存
+   `lvEnv = directLightLV * col.rgb` → LV直接光
+   `lighting = max(stResult, lvEnv)`
+
+   **実際のVRC LVシーンでは `lvEnv` が正しく機能して明るくなるはず。**
+   しかし `_USE_LIGHT_VOLUME` キーワードを有効にしたまま実際にLV Udon Behaviourが
+   動いていない環境（VRChat実行前、Unity Editorプレビュー）では
+   `directLightLV ≈ 0` のためブラック化する。
+
+4. **`_IndirectLightMinColor = (0,0,0)` + `_GIIntensity = 0`**:
+   最小保証色もゼロ × GI完全無効 → indirectResult が完全に (0,0,0)。
+
+**結論**: 実際のVRChatワールドでLV Behaviourが動いていれば `directLightLV` が正の値になり
+`lvEnv = directLightLV * albedo` が lighting を支配して正常に描画されると思われる。
+Unityエディターでのプレビューでは LV データが存在せず黒になる。
+また、シーンのライトプローブ・ディレクショナルライトが弱い場合は `stLightColor` が
+0.05 程度となり、`stDirectCol` が極めて暗くなる。
+
+### 修正方針
+
+#### 修正A: `indirectResult` に `_GIIntensity` を掛けない（LV使用時）
+
+```hlsl
+// 現在 (line 600) - LV indirect光も消える:
+indirectResult *= _IndirectLightIntensity * _GIIntensity;
+
+// 修正案: _USE_LIGHT_VOLUME 時は _GIIntensity を除外
+#ifdef _USE_LIGHT_VOLUME
+    indirectResult *= _IndirectLightIntensity;  // GIIntensityはLV非使用時のみ
+#else
+    indirectResult *= _IndirectLightIntensity * _GIIntensity;
+#endif
+```
+
+#### 修正B: StandardToon + LV の合成で stLightColor の代わりに LV を直接使用
+
+```hlsl
+// 現在: stDirectCol = albedo * stLightColor  (SHに依存)
+// 修正: LVシーンでは directLightLV を stLightColor として使用する
+
+#ifdef _USE_LIGHT_VOLUME
+    half3 lvLightColor = directLightLV;
+    half3 stDirectColLV = stAlbedo * clamp(lvLightColor, _LightColorMin, _LightColorMax);
+    half3 stIndirectColLV = stTintedAlbedo * _ShadowColor.rgb * clamp(lvLightColor, _LightColorMin, _LightColorMax);
+    stIndirectColLV = min(stIndirectColLV, stDirectColLV);
+    stResult = lerp(stIndirectColLV, stDirectColLV, shadingValue);
+#endif
+```
+
+#### 修正C: エディタープレビュー用のフォールバック明度保証
+
+```hlsl
+// _USE_LIGHT_VOLUME 時かつ LV データがない場合:
+// directLightLV がゼロなら _IndirectLightMinColor のデフォルトを (0.1, 0.1, 0.1) にする
+// または _GIIntensity の UI 説明に「LV使用時は0にしないこと」を追記
+```
+
+#### 即効性の高い修正（マテリアル設定変更のみ）
+
+1.mat の値を以下に変更:
+- `_GIIntensity = 0` → `_GIIntensity = 1.0` (LVシーンではGIが主光源)
+- `_IndirectLightMinColor = (0, 0, 0)` → `(0.1, 0.1, 0.1)` (最小保証)
+- `_LightColorMin = 0.05` はそのまま
+
+---
+
 ## 過去の調査記録
 
 <details>
