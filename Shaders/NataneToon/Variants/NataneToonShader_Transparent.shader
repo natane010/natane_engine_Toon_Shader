@@ -104,7 +104,12 @@ Shader "Natane/Toon Shader (Transparent)"
 
         // ===== Shading (シェーディング) =====
         [Header(Shading)]
-        [Enum(Toon,0,Gradient,1)] _ShadingMode ("Shading Mode", Float) = 0
+        [Enum(Toon,0,Gradient,1,StandardToon,2)] _ShadingMode ("Shading Mode", Float) = 0
+        // StandardToon Properties (lilToon互換)
+        _STShadowBorder ("ST Shadow Border", Range(0, 1)) = 0.5
+        _STShadowBlur ("ST Shadow Blur", Range(0, 1)) = 0.1
+        _STShadowStrength ("ST Shadow Strength", Range(0, 1)) = 1.0
+        _STAsUnlit ("ST As Unlit", Range(0, 1)) = 0
         _ShadingGradientWidth ("Gradient Width", Range(0.001, 1)) = 0.2
         [Toggle(_USE_RAMP)] _UseRamp ("Use Ramp Texture", Float) = 0
         _RampTex ("Ramp Texture", 2D) = "white" {}
@@ -1055,6 +1060,7 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _SCREEN_TONE
             #pragma shader_feature_local _GRADIENT_BASE_COLOR
             #pragma shader_feature_local _USE_RAMP
+            #pragma shader_feature_local _STANDARD_TOON
             #pragma shader_feature_local _USE_MULTI_SHADOW
             #pragma shader_feature_local _SHADOW_RECEIVE_MASK
             #pragma shader_feature_local _SDF_MAP
@@ -1140,6 +1146,7 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _SCREEN_TONE
             #pragma shader_feature_local _GRADIENT_BASE_COLOR
             #pragma shader_feature_local _USE_RAMP
+            #pragma shader_feature_local _STANDARD_TOON
             #pragma shader_feature_local _SHADOW_RECEIVE_MASK
             #pragma shader_feature_local _USE_MULTI_SHADOW
             #pragma shader_feature_local _SOFT_LIGHTING_MODE

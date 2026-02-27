@@ -317,6 +317,12 @@ half4 frag(v2f i) : SV_Target
     // Apply SDF shadow to ndotl before lighting calculations
     ndotl = ApplySDFShadow(uv, ndotl, lightDir, i.worldPos);
 
+    // ===== StandardToon: Half-Lambert =====
+    #ifdef _STANDARD_TOON
+        // Half-Lambert: maps [-1,1] → [0,1], front faces always ≥ 0.5
+        ndotl = saturate(ndotl * 0.5 + 0.5);
+    #endif
+
     // ===== Backlight Calculation =====
     // Calculate light coming from behind the object (rim-like effect)
     half backlight = 0.0;
@@ -339,25 +345,28 @@ half4 frag(v2f i) : SV_Target
     // これにより、ndotlの影響を受けずにシェーディングを無効化できる
     lightTerm = lerp(lightTerm, 1.0, shadowReceiveMask);
 
-    // Apply lit area softness - Optimized: removed branching
-    // Softness calculation always executes (branch removal for better GPU performance)
-    half smoothedLight = smoothstep(0.0, 1.0, lightTerm);
-    lightTerm = lerp(lightTerm, smoothedLight, _LitSoftness);
+    #ifndef _STANDARD_TOON
+        // Apply lit area softness - Optimized: removed branching
+        // Softness calculation always executes (branch removal for better GPU performance)
+        half smoothedLight = smoothstep(0.0, 1.0, lightTerm);
+        lightTerm = lerp(lightTerm, smoothedLight, _LitSoftness);
 
-    // Apply dithering to soften shadow boundaries
-    #ifdef _USE_DITHERING
-        half ditherPattern = DitheringPattern(i.pos.xy, _DitheringScale);
-        // Apply dithering to shadow boundary area (around 0.4-0.6 range)
-        half ditherRange = saturate(1.0 - abs(lightTerm - 0.5) * 2.0);
-        float ditherStrengthBlurred = saturate(_DitheringStrength + _DitheringBlur * 0.5);
-        half ditherEffect = (ditherPattern - 0.5) * ditherStrengthBlurred * ditherRange;
-        half preDitherLightTerm = lightTerm;
-        lightTerm = saturate(lightTerm + ditherEffect);
-        lightTerm = lerp(preDitherLightTerm, lightTerm, _DitheringBlend);
+        // Apply dithering to soften shadow boundaries
+        #ifdef _USE_DITHERING
+            half ditherPattern = DitheringPattern(i.pos.xy, _DitheringScale);
+            // Apply dithering to shadow boundary area (around 0.4-0.6 range)
+            half ditherRange = saturate(1.0 - abs(lightTerm - 0.5) * 2.0);
+            float ditherStrengthBlurred = saturate(_DitheringStrength + _DitheringBlur * 0.5);
+            half ditherEffect = (ditherPattern - 0.5) * ditherStrengthBlurred * ditherRange;
+            half preDitherLightTerm = lightTerm;
+            lightTerm = saturate(lightTerm + ditherEffect);
+            lightTerm = lerp(preDitherLightTerm, lightTerm, _DitheringBlend);
+        #endif
+
+        // Apply unified lighting softness controls (Light Blend / Highlight Softness).
+        lightTerm = ApplyLightBlend(lightTerm);
     #endif
-
-    // Apply unified lighting softness controls (Light Blend / Highlight Softness).
-    lightTerm = ApplyLightBlend(lightTerm);
+    // StandardToon: lightTerm をそのまま使用（lilToon互換）
 
     // ===== Toon/Ramp Shading =====
     half3 lighting;
@@ -385,6 +394,41 @@ half4 frag(v2f i) : SV_Target
         lighting = RampShading(rampInput);
         shadingValue = saturate(rampInput + clamp(_ShadowOffset, -1.0, 1.0));
         shadowColor = lighting;
+    #elif defined(_STANDARD_TOON)
+        // ===== StandardToon: lilToon互換シェーディング =====
+        // lilToon-compatible: LilToonShading + ShadowStrength + Multi-shadow
+        half stToon = LilToonShading(lightTerm, _STShadowBorder, _STShadowBlur);
+        stToon = lerp(1.0, stToon, _STShadowStrength);
+        shadingValue = stToon;
+
+        // AO適用
+        #ifdef _USE_AO
+            half preST_AO = shadingValue;
+            shadingValue *= aoEffect;
+            shadingValue = lerp(preST_AO, shadingValue, _AOBlend);
+        #endif
+
+        // Shadow Attenuation
+        shadingValue *= atten;
+
+        // lilToon Multi-shadow model (sequential lerp with alpha)
+        half3 stShadowColor = _ShadowColor.rgb;
+        #ifdef _USE_MULTI_SHADOW
+            half toon2 = LilToonShading(lightTerm, _Shadow2ndBorder, _STShadowBlur);
+            half alpha2 = _Shadow2ndColor.a * (1.0 - toon2);
+            stShadowColor = lerp(stShadowColor, _Shadow2ndColor.rgb, alpha2);
+
+            half toon3 = LilToonShading(lightTerm, _Shadow3rdBorder, _STShadowBlur);
+            half alpha3 = _Shadow3rdColor.a * (1.0 - toon3);
+            stShadowColor = lerp(stShadowColor, _Shadow3rdColor.rgb, alpha3);
+        #endif
+
+        // Shadow color texture
+        half3 stShadowColorTex = tex2D(_ShadowColorTex, uv).rgb;
+        stShadowColor = lerp(stShadowColor, stShadowColor * stShadowColorTex, saturate(_ShadowColorTexStrength));
+
+        shadowColor = stShadowColor;
+        lighting = lerp(shadowColor, half3(1, 1, 1), shadingValue);
     #else
         // Choose between Toon and Gradient shading modes - Optimized: no branching
         // Calculate both modes and blend based on _ShadingMode
@@ -513,12 +557,20 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         // ========== STEP 3: Direct Light ==========
-        #ifdef _USE_RAMP
+        #ifdef _STANDARD_TOON
+            // lilToon-style: simple light color multiplication (no normalize+luminance)
+            half3 directResult = lighting;
+            directResult *= effectiveLightColor;
+            // AsUnlit: lerp towards unlit (lightColor=1)
+            half3 unlitDirect = lighting;
+            directResult = lerp(directResult, unlitDirect, _STAsUnlit);
+        #elif defined(_USE_RAMP)
             half3 directResult = lighting; // Ramp already provides colored shadow-to-lit
         #else
             half3 directResult = lerp(shadowColor, half3(1, 1, 1), shadingValue);
         #endif
 
+        #ifndef _STANDARD_TOON
         // Light color application (with LightColorInfluence preservation)
         half lightColorLum = CALC_LUMINANCE(effectiveLightColor);
         half3 colorMultiplied = directResult * saturate(effectiveLightColor);
@@ -531,6 +583,7 @@ half4 frag(v2f i) : SV_Target
         directLum = clamp(directLum, _LightMinInfluence, _LightMaxInfluence);
         half3 directDir = normalize(max(directResult, 0.01));
         directResult = directDir * directLum;
+        #endif
 
         // ========== STEP 4: Additional Light ==========
         half3 additionalResult = half3(0, 0, 0);
@@ -636,9 +689,15 @@ half4 frag(v2f i) : SV_Target
 
             lighting = lerp(preLightVolume, lighting, _LightVolumeBlend);
         #else
-            // Non-LV: max() composition + directional ambient
-            lighting = max(indirectResult, directResult + additionalResult);
-            lighting += ambient;
+            #ifdef _STANDARD_TOON
+                // lilToon-style: direct + indirect + additional (simple additive)
+                lighting = directResult + additionalResult + indirectResult;
+                lighting += ambient;
+            #else
+                // Non-LV: max() composition + directional ambient
+                lighting = max(indirectResult, directResult + additionalResult);
+                lighting += ambient;
+            #endif
         #endif
 
         // LTCGI Specular (additive on col after lighting composition)
@@ -678,46 +737,54 @@ half4 frag(v2f i) : SV_Target
             col.rgb += originalAlbedo * backlight * _BacklightColor.rgb * _LightColor0.rgb * atten * _AdditionalLightIntensity * backlightBlendFaded_add;
         }
     #else
-        // Optimized: Cache original luminance (used multiple times)
-        half originalLum = CALC_LUMINANCE(originalAlbedo);
+        #ifdef _STANDARD_TOON
+            // lilToon-style: simple multiply (no AlbedoPreservation)
+            col.rgb = originalAlbedo * lighting;
+            half gray = CALC_LUMINANCE(col.rgb);
+            col.rgb = lerp(gray, col.rgb, _Saturation);
+            col.rgb *= _Brightness;
+        #else
+            // Optimized: Cache original luminance (used multiple times)
+            half originalLum = CALC_LUMINANCE(originalAlbedo);
 
-        // ===== Improved Color Preservation Lighting =====
-        // Instead of directly multiplying, preserve color hue and saturation
-        // while applying lighting brightness
+            // ===== Improved Color Preservation Lighting =====
+            // Instead of directly multiplying, preserve color hue and saturation
+            // while applying lighting brightness
 
-        // Cache lighting luminance (already calculated as lightLum above - reuse if possible)
-        half lightingLum = CALC_LUMINANCE(lighting);
+            // Cache lighting luminance (already calculated as lightLum above - reuse if possible)
+            half lightingLum = CALC_LUMINANCE(lighting);
 
-        // Method 1: Preserve color by applying only luminance change
-        // Extract color direction (hue/saturation) from original albedo
-        half3 albedoDir = originalAlbedo / max(originalLum, 0.01);
+            // Method 1: Preserve color by applying only luminance change
+            // Extract color direction (hue/saturation) from original albedo
+            half3 albedoDir = originalAlbedo / max(originalLum, 0.01);
 
-        // Apply lighting luminance to color direction
-        // This keeps the original color while adjusting brightness
-        half3 preservedLitColor = albedoDir * originalLum * lightingLum;
+            // Apply lighting luminance to color direction
+            // This keeps the original color while adjusting brightness
+            half3 preservedLitColor = albedoDir * originalLum * lightingLum;
 
-        // Method 2: Traditional lighting (for blending)
-        half3 traditionalLitColor = originalAlbedo * lighting;
+            // Method 2: Traditional lighting (for blending)
+            half3 traditionalLitColor = originalAlbedo * lighting;
 
-        // Blend between preserved color and traditional lighting based on AlbedoPreservation
-        // When AlbedoPreservation = 1.0, use fully preserved color (no white-washing)
-        // When AlbedoPreservation = 0.0, use traditional lighting
-        col.rgb = lerp(traditionalLitColor, preservedLitColor, _AlbedoPreservation);
+            // Blend between preserved color and traditional lighting based on AlbedoPreservation
+            // When AlbedoPreservation = 1.0, use fully preserved color (no white-washing)
+            // When AlbedoPreservation = 0.0, use traditional lighting
+            col.rgb = lerp(traditionalLitColor, preservedLitColor, _AlbedoPreservation);
 
-        // Additional color preservation: prevent color shift in dark areas - Optimized: no branching
-        // Dark colors (like black) should stay dark, not become gray
-        half darkColorFactor = step(originalLum, 0.1) * step(HALF_VALUE, _AlbedoPreservation);
-        half3 darkPreservedColor = min(col.rgb, originalAlbedo * (lightingLum * 1.2));
-        col.rgb = lerp(col.rgb, darkPreservedColor, darkColorFactor);
+            // Additional color preservation: prevent color shift in dark areas - Optimized: no branching
+            // Dark colors (like black) should stay dark, not become gray
+            half darkColorFactor = step(originalLum, 0.1) * step(HALF_VALUE, _AlbedoPreservation);
+            half3 darkPreservedColor = min(col.rgb, originalAlbedo * (lightingLum * 1.2));
+            col.rgb = lerp(col.rgb, darkPreservedColor, darkColorFactor);
 
-        // 2. Saturation Adjustment - Optimized: removed branching
-        // Enhance or reduce color saturation (lerp handles _Saturation=1.0 case efficiently)
-        half gray = CALC_LUMINANCE(col.rgb);
-        col.rgb = lerp(gray, col.rgb, _Saturation);
+            // 2. Saturation Adjustment - Optimized: removed branching
+            // Enhance or reduce color saturation (lerp handles _Saturation=1.0 case efficiently)
+            half gray = CALC_LUMINANCE(col.rgb);
+            col.rgb = lerp(gray, col.rgb, _Saturation);
 
-        // 3. Overall Brightness Adjustment
-        // Final brightness control (applied before effects so they show properly)
-        col.rgb *= _Brightness;
+            // 3. Overall Brightness Adjustment
+            // Final brightness control (applied before effects so they show properly)
+            col.rgb *= _Brightness;
+        #endif
     #endif
 
     // ===== Post-Lighting Effects =====

@@ -132,19 +132,27 @@ namespace NataneToon.Editor
                 drawHelpToggle("ShadingMode",
                     L("🎨 シェーディングモード:\n" +
                       "• Toon: 階段状のセルシェーディング（クラシックなアニメ調）\n" +
-                      "• Gradient: 滑らかなグラデーションシェーディング（柔らかい印象）",
+                      "• Gradient: 滑らかなグラデーションシェーディング（柔らかい印象）\n" +
+                      "• StandardToon: lilToon互換のシェーディング（移行時に使用）",
                       "🎨 Shading Mode:\n" +
                       "• Toon: Stepped cel shading (classic anime style)\n" +
-                      "• Gradient: Smooth gradient shading (soft impression)"),
+                      "• Gradient: Smooth gradient shading (soft impression)\n" +
+                      "• StandardToon: lilToon-compatible shading (for migration)"),
                     MessageType.None);
 
                 EditorGUILayout.Space(5);
 
                 // Get current shading mode value
                 MaterialProperty shadingModeProp = findProperty("_ShadingMode", properties, false);
-                bool isGradientMode = shadingModeProp != null && shadingModeProp.floatValue >= FLOAT_COMPARISON_THRESHOLD;
+                float shadingModeValue = shadingModeProp != null ? shadingModeProp.floatValue : 0f;
+                bool isStandardToon = shadingModeValue >= 1.5f;
+                bool isGradientMode = !isStandardToon && shadingModeValue >= FLOAT_COMPARISON_THRESHOLD;
 
-                if (isGradientMode)
+                if (isStandardToon)
+                {
+                    DrawStandardToonSettings(drawProperty, drawHelpToggle, drawToggle);
+                }
+                else if (isGradientMode)
                 {
                     DrawGradientModeSettings(drawProperty, drawHelpToggle);
                 }
@@ -253,6 +261,45 @@ namespace NataneToon.Editor
                   "• 0.5+ = Wide gradient (very soft)\n\n" +
                   "💡 Values of 0.2 or higher are recommended for a soft impression."),
                 MessageType.Info);
+        }
+
+        /// <summary>
+        /// Draw StandardToon mode specific settings (lilToon-compatible)
+        /// </summary>
+        public static void DrawStandardToonSettings(
+            DrawPropertyDelegate drawProperty,
+            DrawHelpToggleDelegate drawHelpToggle,
+            DrawToggleDelegate drawToggle)
+        {
+            EditorGUILayout.LabelField(L("StandardToon設定 (lilToon互換)", "StandardToon Settings (lilToon Compatible)"), EditorStyles.boldLabel);
+            drawProperty("_STShadowBorder", L("影の境界", "Shadow Border"));
+            drawProperty("_STShadowBlur", L("影のぼかし", "Shadow Blur"));
+            drawProperty("_STShadowStrength", L("影の強さ", "Shadow Strength"));
+            drawProperty("_ShadowColor", L("影の色 (1段目)", "Shadow Color (1st)"));
+
+            // Multi-tone shadow colors (shared with Toon mode)
+            EditorGUILayout.Space();
+            DrawMultiToneShadowSettings(drawToggle, drawProperty, drawHelpToggle);
+
+            EditorGUILayout.Space();
+            drawProperty("_STAsUnlit", L("アンライト度", "As Unlit"));
+
+            drawHelpToggle("StandardToon",
+                L("🎨 StandardToonモード:\n" +
+                  "lilToon と同じ計算式を使用し、シェーダー切り替え時の見た目の一致を実現します。\n\n" +
+                  "• Half-Lambert NdotL（影の位置がlilToonと一致）\n" +
+                  "• リニア補間（smoothstepではなく線形補間）\n" +
+                  "• ShadowStrength 制御（影の強さを調整可能）\n" +
+                  "• 簡易ライトカラー乗算（normalize+luminance分離なし）\n\n" +
+                  "💡 lilToonからの移行時に自動で選択されます。",
+                  "🎨 StandardToon Mode:\n" +
+                  "Uses the same calculations as lilToon for visual parity when switching shaders.\n\n" +
+                  "• Half-Lambert NdotL (shadow position matches lilToon)\n" +
+                  "• Linear interpolation (not smoothstep)\n" +
+                  "• ShadowStrength control\n" +
+                  "• Simple light color multiply (no normalize+luminance)\n\n" +
+                  "💡 Automatically selected when migrating from lilToon."),
+                MessageType.None);
         }
 
         /// <summary>

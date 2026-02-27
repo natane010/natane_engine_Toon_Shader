@@ -5485,6 +5485,21 @@ public class NataneToonShaderGUI : ShaderGUI
             }
         }
 
+        // StandardToon keyword sync (derived from _ShadingMode, not a simple toggle)
+        if (targetMaterial.HasProperty("_ShadingMode"))
+        {
+            bool shouldBeStandardToon = targetMaterial.GetFloat("_ShadingMode") >= 1.5f;
+            bool isStandardToon = targetMaterial.IsKeywordEnabled("_STANDARD_TOON");
+            if (shouldBeStandardToon != isStandardToon)
+            {
+                if (shouldBeStandardToon)
+                    targetMaterial.EnableKeyword("_STANDARD_TOON");
+                else
+                    targetMaterial.DisableKeyword("_STANDARD_TOON");
+                anyChanges = true;
+            }
+        }
+
         // Mark material as dirty if changes were made
         if (anyChanges)
         {

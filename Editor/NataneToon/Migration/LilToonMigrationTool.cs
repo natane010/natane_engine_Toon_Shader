@@ -753,65 +753,30 @@ namespace NataneToon.Editor
                 }
             }
 
-            // Shadow Border & Blur → Natane Shadow パラメータ
             // =============================================
-            // lilToonとNataneのシャドウモデルの違い:
+            // StandardToon モード自動選択 (lilToon互換シェーディング)
             //
-            // lilToon: NdotL = dot(L,N) * 0.5 + 0.5  (Half-Lambert, 範囲[0.5,1.0]前面)
-            //   toon = smoothstep(border-blur, border+blur, halfLambert_ndotl)
-            //
-            // Natane: lightTerm = saturate(raw_ndotl)  ← ApplyLightBlendで[0,1]にクリップ
-            //   ToonShading: adjusted = saturate(lightTerm + offset)
-            //     steps=1: smoothstep(0.5-sr, 0.5+sr, adjusted)  where sr = sharpness * 0.5
-            //
-            // Half-Lambert の重要な特性:
-            //   前面(ndotl≥0): halfLambert ∈ [0.5, 1.0]
-            //   border=0.5の場合: ndotl=0（直角面）で halfLambert=0.5 → toon≈0.5（半分明るい）
-            //   → lilToonでは前面が完全な影にならない！
-            //
-            // Nataneで同じ挙動を再現するため:
-            //   offset = 0.5 の場合: ndotl=0 → adjusted=0.5 → toon≈0.5 ← lilToonと一致！
-            //   ※ maxOffset クランプを除去（lilToonと同様に前面は完全な影にならなくてOK）
-            //
-            // 変換式:
-            //   offset = 1.5 - 2*border  (Half-Lambert→raw ndotl空間の変換)
-            //   sharpness = 2*blur       (HL空間→raw ndotl空間の幅補正)
-            //   steps = 1                (lilToonは2トーン = 明暗1境界)
+            // lilToonの計算パイプラインを忠実に再現するStandardToonモードを使用。
+            // Half-Lambert NdotL、リニア補間、ShadowStrength、簡易ライト乗算を内蔵し、
+            // パラメータ空間の変換が不要。lilToonのパラメータをそのまま直接マッピングする。
             // =============================================
-            if (sourceProps.ContainsKey("_ShadowBorder"))
+            targetMaterial.SetFloat("_ShadingMode", 2.0f); // StandardToon
+            targetMaterial.EnableKeyword("_STANDARD_TOON");
+
+            // lilToon パラメータを直接マッピング（空間変換不要）
             {
-                float border = (float)sourceProps["_ShadowBorder"];
+                float border = GetFloatOr(sourceProps, "_ShadowBorder", 0.5f);
                 float blur = GetFloatOr(sourceProps, "_ShadowBlur", 0.1f);
+                float strength = GetFloatOr(sourceProps, "_ShadowStrength", 1.0f);
 
-                // Steps=1: lilToonの基本2トーン（明暗1境界）に対応
-                targetMaterial.SetFloat("_ShadowSteps", 1);
+                targetMaterial.SetFloat("_STShadowBorder", border);
+                targetMaterial.SetFloat("_STShadowBlur", blur);
+                targetMaterial.SetFloat("_STShadowStrength", strength);
 
-                // ShadowSharpness: lilToonのblur幅をNataneのsmoothstep幅に変換
-                float sharpness = Mathf.Clamp(blur * 2.0f, 0.01f, 1.0f);
-                targetMaterial.SetFloat("_ShadowSharpness", sharpness);
+                // ShadowOffset=0: StandardToonではHalf-Lambert内蔵のため不要
+                targetMaterial.SetFloat("_ShadowOffset", 0);
 
-                // ShadowOffset: Half-Lambert空間からraw ndotl空間への変換
-                // lilToonのHalf-Lambert (ndotl*0.5+0.5) で border=B の場合:
-                //   影境界はraw ndotl = 2*B - 1 で発生
-                //   Nataneではoffset = 0.5 + (1-2*B)*0.5 = 1.0 - B に相当
-                //   ただし直角面（ndotl=0）で ~50% lit になるのがlilToonの特徴
-                //   offset = 0.5 でこれを正確に再現できる
-                float shadowOffset = 1.0f - border;
-                shadowOffset = Mathf.Clamp(shadowOffset, -0.5f, 0.95f);
-                targetMaterial.SetFloat("_ShadowOffset", shadowOffset);
-
-                // ShadowBlend=0, StepBorderSmooth=0: sharpnessだけで幅を制御（二重適用防止）
-                targetMaterial.SetFloat("_ShadowBlend", 0);
-                targetMaterial.SetFloat("_StepBorderSmooth", 0);
-
-                report.infos.Add($"Shadow: Border={border:F2}→Offset={shadowOffset:F2}, Blur={blur:F2}→Sharpness={sharpness:F3}, Steps=1");
-            }
-            else
-            {
-                // デフォルト設定
-                targetMaterial.SetFloat("_ShadowSteps", 1);
-                targetMaterial.SetFloat("_ShadowSharpness", 0.2f);
-                targetMaterial.SetFloat("_ShadowOffset", 0.5f);
+                report.infos.Add($"StandardToon: Border={border:F2}, Blur={blur:F2}, Strength={strength:F2} (lilToon直接マッピング)");
             }
 
             // マルチシャドウレイヤー変換（_UseShadowが有効な場合のみ）
@@ -1119,23 +1084,13 @@ namespace NataneToon.Editor
             //   directLum = a*LI, directDir = (1/√3, 1/√3, 1/√3)
             //   result = a*LI/√3 per channel
             //
-            // LI=2√3 の場合: result = a*2√3/√3 = 2a → lilToonの2倍明るさに一致
-            //
-            // _LightIntensity に明るさ補正を集約することで:
-            //   - _Brightness=1.0, _Saturation=1.0 のまま自然なインスペクター表示を維持
-            //   - ライティングパス内で補正が完結（エフェクトには影響しない）
-            //   - ForwardAddにはnormalize+luminanceがないため、ForwardAdd側は
-            //     _LightIntensityの増加分がそのまま適用されるが、追加ライトは
-            //     _AdditionalLightIntensity(default=0.5)で制御されるため実用上問題ない
-            //
-            // _LightMaxInfluence: デフォルト2.0ではdirectLum=3.464がクランプされるため、
-            //   4.0に拡張してクランプを防止する。
-            float lightIntensity = Mathf.Sqrt(3.0f) * 2.0f; // 2√3 ≈ 3.464
-            targetMaterial.SetFloat("_LightIntensity", lightIntensity);
-            targetMaterial.SetFloat("_LightMaxInfluence", 4.0f);
+            // StandardToonモードでは normalize+luminance パイプラインを使用しないため、
+            // _LightIntensity の増幅は不要。lilToonと同じ直接乗算を使用する。
+            targetMaterial.SetFloat("_LightIntensity", 1.0f);
+            targetMaterial.SetFloat("_LightMaxInfluence", 2.0f);
             targetMaterial.SetFloat("_Brightness", 1.0f);
             targetMaterial.SetFloat("_Saturation", 1.0f);
-            report.infos.Add($"色調補正: _LightIntensity={lightIntensity:F3} (2√3), _LightMaxInfluence=4.0, _Brightness=1.0, _Saturation=1.0");
+            report.infos.Add("色調補正: StandardToon直接乗算のため _LightIntensity=1.0 (増幅なし)");
 
             // === Shadow Floor Compensation ===
             // lilToonのHalf-Lambertでは裏面でもhalfLambert=0.0で、
@@ -1157,40 +1112,24 @@ namespace NataneToon.Editor
             report.infos.Add("GI補正: _GIIntensity=1.0 (lilToonと同等の環境光強度)");
 
             // === Light Color Limits (lilToon互換) ===
-            // lilToon: lightColor = clamp(lightColor, _LightMinLimit, _LightMaxLimit)
-            //   _LightMinLimit (default=0.05): 暗いワールドでの最低保証
-            //   _LightMaxLimit (default=1.0): 強いライトの上限
-            //   _MonochromeLighting (default=0): ライト色のグレースケール化
-            //
-            // Natane: effectiveLightColor = clamp(effectiveLightColor, _LightColorMin, _LightColorMax)
-            //
-            // ★重要: _LightIntensity=2√3 の増幅を考慮した変換が必要
-            // lilToonではlightColor=1.0で最終ライティング≈1.0（増幅なし）
-            // Nataneではlight=1.0 → _LightIntensity=2√3で増幅 → normalize後 ≈2.0
-            // → lilToonの_LightMaxLimit=1.0と同等にするには、_LightColorMax = 0.5
-            //
-            // 一般式: _LightColorMax = lilToon_LightMaxLimit × √3 / _LightIntensity
-            //        = lilToon_LightMaxLimit × √3 / (2√3) = lilToon_LightMaxLimit / 2
+            // StandardToonモードでは直接乗算のため、÷2補正は不要。
+            // lilToonのパラメータをそのまま使用する。
             float lightMinLimit = GetFloatOr(sourceProps, "_LightMinLimit", 0.05f);
             float lightMaxLimit = GetFloatOr(sourceProps, "_LightMaxLimit", 1.0f);
             float monochromeLighting = GetFloatOr(sourceProps, "_MonochromeLighting", 0.0f);
 
-            // _LightIntensity=2√3 の増幅を逆算してLightColorMaxを設定
-            float nataneLightColorMax = lightMaxLimit * 0.5f;
             targetMaterial.SetFloat("_LightColorMin", lightMinLimit);
-            targetMaterial.SetFloat("_LightColorMax", nataneLightColorMax);
+            targetMaterial.SetFloat("_LightColorMax", lightMaxLimit);
             targetMaterial.SetFloat("_MonochromeLighting", monochromeLighting);
-            report.infos.Add($"ライト制限: lilToon MaxLimit={lightMaxLimit:F2} → Natane ColorMax={nataneLightColorMax:F2} (÷2補正), ColorMin={lightMinLimit:F2}, Monochrome={monochromeLighting:F2}");
+            report.infos.Add($"ライト制限: StandardToon直接マッピング ColorMax={lightMaxLimit:F2}, ColorMin={lightMinLimit:F2}, Monochrome={monochromeLighting:F2}");
 
-            // _AsUnlit → _LightColorMin への反映
-            // lilToon _AsUnlit: 0=通常ライティング, 1=完全アンライト
-            // → _AsUnlit > 0 の場合、_LightColorMin を上げてアンライト効果を近似する
+            // _AsUnlit → _STAsUnlit に直接マッピング
+            // StandardToonモードではシェーダー内で lerp(directResult, unlitDirect, _STAsUnlit) を実行
             float asUnlit = GetFloatOr(sourceProps, "_AsUnlit", 0.0f);
+            targetMaterial.SetFloat("_STAsUnlit", asUnlit);
             if (asUnlit > 0.01f)
             {
-                float unlitMin = Mathf.Lerp(lightMinLimit, nataneLightColorMax, asUnlit);
-                targetMaterial.SetFloat("_LightColorMin", unlitMin);
-                report.infos.Add($"AsUnlit={asUnlit:F2} → LightColorMin={unlitMin:F2} (アンライト近似)");
+                report.infos.Add($"AsUnlit={asUnlit:F2} → _STAsUnlit={asUnlit:F2} (StandardToon直接マッピング)");
             }
         }
 

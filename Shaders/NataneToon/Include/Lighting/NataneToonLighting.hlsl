@@ -52,6 +52,18 @@
 
 // Lighting Calculation Functions
 
+// lilToon-compatible toon shading (linear interpolation, NOT smoothstep)
+// lilTooningScale: saturate((value - borderMin) / (borderMax - borderMin))
+// Used by StandardToon mode (_ShadingMode = 2) for exact lilToon parity
+#ifdef _STANDARD_TOON
+float LilToonShading(float value, float border, float blur)
+{
+    float borderMin = saturate(border - blur * 0.5);
+    float borderMax = saturate(border + blur * 0.5);
+    return saturate((value - borderMin) / max(borderMax - borderMin, 0.001));
+}
+#endif
+
 // Toon Shading with adjustable steps and sharpness
 // Creates cel-shaded stepped lighting effect
 float ToonShading(float ndotl, float steps, float sharpness)
