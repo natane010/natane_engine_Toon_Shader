@@ -38,6 +38,8 @@ namespace NataneToon.Editor
         private List<PrefabMaterialInfo> prefabMaterials = new List<PrefabMaterialInfo>();
         private Vector2 prefabScrollPosition;
         private bool updatePrefabReferences = true;
+        private bool duplicateInHierarchy = false;
+        private GameObject lastDuplicatedObject = null;
 
         // プレハブ内マテリアル情報
         private class PrefabMaterialInfo
@@ -237,11 +239,37 @@ namespace NataneToon.Editor
 
             // セクション2: プレハブ設定
             EditorGUILayout.LabelField(L("プレハブ設定", "Prefab Settings"), EditorStyles.boldLabel);
-            updatePrefabReferences = EditorGUILayout.Toggle(
-                L("参照を自動更新", "Auto-update References"),
-                updatePrefabReferences
+
+            // 複製モード（元のプレハブを維持）
+            duplicateInHierarchy = EditorGUILayout.Toggle(
+                L("ヒエラルキーに複製を作成", "Create Duplicate in Hierarchy"),
+                duplicateInHierarchy
             );
-            if (updatePrefabReferences && !replaceOriginal)
+            if (duplicateInHierarchy)
+            {
+                EditorGUILayout.HelpBox(
+                    L("元のプレハブを維持したまま、変換済みマテリアルを適用した複製をヒエラルキーに作成します。\n" +
+                    "元のアバターと並べて見比べることができます。",
+                    "Creates a duplicate in the hierarchy with converted materials, keeping the original prefab untouched.\n" +
+                    "You can compare the original and converted avatars side by side."),
+                    MessageType.Info
+                );
+            }
+
+            // 複製モードでない場合のみ、既存の参照更新/置換オプションを表示
+            using (new EditorGUI.DisabledScope(duplicateInHierarchy))
+            {
+                updatePrefabReferences = EditorGUILayout.Toggle(
+                    L("参照を自動更新", "Auto-update References"),
+                    updatePrefabReferences
+                );
+            }
+
+            if (duplicateInHierarchy)
+            {
+                // 複製モードの説明（他のオプションは無関係）
+            }
+            else if (updatePrefabReferences && !replaceOriginal)
             {
                 EditorGUILayout.HelpBox(
                     L("変換後、プレハブ内のRenderer参照を新しいマテリアルに自動的に差し替えます。",
@@ -356,11 +384,28 @@ namespace NataneToon.Editor
             }
 
             GUI.enabled = convertCount > 0;
-            if (GUILayout.Button(L($"選択したマテリアルを一括変換 ({convertCount})", $"Convert Selected ({convertCount})"), GUILayout.Height(40)))
+            string buttonLabel = duplicateInHierarchy
+                ? L($"複製を作成して変換 ({convertCount})", $"Duplicate & Convert ({convertCount})")
+                : L($"選択したマテリアルを一括変換 ({convertCount})", $"Convert Selected ({convertCount})");
+            if (GUILayout.Button(buttonLabel, GUILayout.Height(40)))
             {
                 ConvertPrefabMaterials();
             }
             GUI.enabled = true;
+
+            // 前回の複製オブジェクトへの参照
+            if (lastDuplicatedObject != null)
+            {
+                EditorGUILayout.Space(5);
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(L("前回の複製:", "Last Duplicate:"), GUILayout.Width(100));
+                EditorGUILayout.ObjectField(lastDuplicatedObject, typeof(GameObject), true);
+                if (GUILayout.Button(L("選択", "Select"), GUILayout.Width(60)))
+                {
+                    Selection.activeGameObject = lastDuplicatedObject;
+                }
+                EditorGUILayout.EndHorizontal();
+            }
         }
 
         private void ScanForLilToonMaterials()
@@ -1255,10 +1300,15 @@ namespace NataneToon.Editor
 
             if (materialsToConvert.Count == 0) return;
 
+            string dialogMessage = duplicateInHierarchy
+                ? L($"'{targetPrefab.name}' の複製を作成し、{materialsToConvert.Count} 個のマテリアルを変換しますか？\n元のプレハブは変更されません。",
+                    $"Create a duplicate of '{targetPrefab.name}' and convert {materialsToConvert.Count} materials?\nThe original prefab will not be modified.")
+                : L($"'{targetPrefab.name}' 内の {materialsToConvert.Count} 個のマテリアルを変換してもよろしいですか？",
+                    $"Are you sure you want to convert {materialsToConvert.Count} materials in '{targetPrefab.name}'?");
+
             if (!EditorUtility.DisplayDialog(
                 L("プレハブマテリアル変換", "Convert Prefab Materials"),
-                L($"'{targetPrefab.name}' 内の {materialsToConvert.Count} 個のマテリアルを変換してもよろしいですか？",
-                $"Are you sure you want to convert {materialsToConvert.Count} materials in '{targetPrefab.name}'?"),
+                dialogMessage,
                 L("はい", "Yes"), L("キャンセル", "Cancel")))
             {
                 return;
@@ -1289,10 +1339,9 @@ namespace NataneToon.Editor
                 {
                     successCount++;
 
-                    // materialMappingを構築
-                    if (!replaceOriginal)
+                    // materialMappingを構築（複製モードでは常に新規マテリアルを使用）
+                    if (!replaceOriginal || duplicateInHierarchy)
                     {
-                        // 新しいマテリアルのパスを取得
                         string sourcePath = AssetDatabase.GetAssetPath(sourceMat);
                         string newPath = sourcePath.Replace(".mat", "_NataneToon.mat");
                         Material newMat = AssetDatabase.LoadAssetAtPath<Material>(newPath);
@@ -1306,9 +1355,14 @@ namespace NataneToon.Editor
 
             EditorUtility.ClearProgressBar();
 
-            // プレハブ参照を更新
-            if (updatePrefabReferences && !replaceOriginal && materialMapping.Count > 0)
+            if (duplicateInHierarchy && materialMapping.Count > 0)
             {
+                // 複製モード: ヒエラルキーに複製を作成し、複製のみマテリアルを差し替え
+                DuplicateAndApplyMaterials(materialMapping);
+            }
+            else if (updatePrefabReferences && !replaceOriginal && materialMapping.Count > 0)
+            {
+                // 通常モード: 元のプレハブの参照を更新
                 UpdatePrefabReferences(materialMapping);
             }
 
@@ -1335,16 +1389,22 @@ namespace NataneToon.Editor
 
             if (report.success)
             {
-                // プレハブ参照の更新
-                if (updatePrefabReferences && !replaceOriginal)
-                {
-                    string sourcePath = AssetDatabase.GetAssetPath(sourceMaterial);
-                    string newPath = sourcePath.Replace(".mat", "_NataneToon.mat");
-                    Material newMat = AssetDatabase.LoadAssetAtPath<Material>(newPath);
+                string sourcePath = AssetDatabase.GetAssetPath(sourceMaterial);
+                string newPath = sourcePath.Replace(".mat", "_NataneToon.mat");
+                Material newMat = AssetDatabase.LoadAssetAtPath<Material>(newPath);
 
-                    if (newMat != null)
+                if (newMat != null)
+                {
+                    var mapping = new Dictionary<Material, Material> { { sourceMaterial, newMat } };
+
+                    if (duplicateInHierarchy)
                     {
-                        var mapping = new Dictionary<Material, Material> { { sourceMaterial, newMat } };
+                        // 複製モード: 複製を作成してマテリアルを差し替え
+                        DuplicateAndApplyMaterials(mapping);
+                    }
+                    else if (updatePrefabReferences && !replaceOriginal)
+                    {
+                        // 通常モード: 元のプレハブの参照を更新
                         UpdatePrefabReferences(mapping);
                     }
                 }
@@ -1450,6 +1510,105 @@ namespace NataneToon.Editor
 
                 Debug.Log($"シーン上のインスタンス '{targetPrefab.name}' のマテリアル参照を更新しました。");
             }
+        }
+
+        /// <summary>
+        /// プレハブを複製してヒエラルキーに追加し、複製のみマテリアルを差し替える。
+        /// 元のプレハブ/インスタンスは一切変更されない。
+        /// </summary>
+        private void DuplicateAndApplyMaterials(Dictionary<Material, Material> materialMapping)
+        {
+            if (targetPrefab == null || materialMapping.Count == 0) return;
+
+            // ---- 1. 複製を作成 ----
+            GameObject duplicate;
+            string prefabAssetPath = AssetDatabase.GetAssetPath(targetPrefab);
+            bool isProjectAsset = !string.IsNullOrEmpty(prefabAssetPath) && !targetPrefab.scene.IsValid();
+
+            if (isProjectAsset)
+            {
+                // プロジェクトウィンドウのプレハブアセット → シーンにインスタンス化
+                duplicate = (GameObject)PrefabUtility.InstantiatePrefab(targetPrefab);
+            }
+            else
+            {
+                // シーン上のインスタンス → Instantiateで複製
+                duplicate = Object.Instantiate(targetPrefab);
+                // 元と同じ親・同じ階層に配置
+                duplicate.transform.SetParent(targetPrefab.transform.parent, false);
+            }
+
+            // 名前を設定
+            duplicate.name = targetPrefab.name + "_NataneToon";
+            Undo.RegisterCreatedObjectUndo(duplicate, $"Duplicate {targetPrefab.name} for NataneToon Migration");
+
+            // 元と並べて比較しやすいようにオフセット配置
+            if (isProjectAsset)
+            {
+                // プレハブアセットからの新規配置はデフォルト位置でOK
+            }
+            else
+            {
+                // シーンインスタンスの複製は横に少しずらす
+                Vector3 offset = duplicate.transform.right * GetBoundsWidth(duplicate);
+                if (offset.magnitude < 0.1f) offset = Vector3.right * 1.0f;
+                duplicate.transform.position = targetPrefab.transform.position + offset;
+            }
+
+            // ---- 2. 複製のRendererのマテリアルを差し替え ----
+            Renderer[] renderers = duplicate.GetComponentsInChildren<Renderer>(true);
+            int replacedCount = 0;
+
+            foreach (var renderer in renderers)
+            {
+                Material[] materials = renderer.sharedMaterials;
+                bool rendererChanged = false;
+
+                for (int i = 0; i < materials.Length; i++)
+                {
+                    if (materials[i] != null && materialMapping.ContainsKey(materials[i]))
+                    {
+                        materials[i] = materialMapping[materials[i]];
+                        rendererChanged = true;
+                        replacedCount++;
+                    }
+                }
+
+                if (rendererChanged)
+                {
+                    renderer.sharedMaterials = materials;
+                }
+            }
+
+            // ---- 3. プレハブリンクを解除（独立したオブジェクトにする） ----
+            if (PrefabUtility.IsPartOfPrefabInstance(duplicate))
+            {
+                PrefabUtility.UnpackPrefabInstance(duplicate, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            }
+
+            // ---- 4. 結果を記録 ----
+            lastDuplicatedObject = duplicate;
+            Selection.activeGameObject = duplicate;
+
+            Debug.Log(L(
+                $"'{targetPrefab.name}' の複製 '{duplicate.name}' をヒエラルキーに作成しました（{replacedCount}個のマテリアルスロットを差し替え）。",
+                $"Created duplicate '{duplicate.name}' of '{targetPrefab.name}' in hierarchy ({replacedCount} material slots replaced)."));
+        }
+
+        /// <summary>
+        /// GameObjectのバウンディングボックス幅を取得（複製配置のオフセット計算用）
+        /// </summary>
+        private float GetBoundsWidth(GameObject obj)
+        {
+            Renderer[] renderers = obj.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0) return 1.0f;
+
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+            {
+                bounds.Encapsulate(renderers[i].bounds);
+            }
+            return Mathf.Max(bounds.size.x, 0.5f);
         }
 
         /// <summary>
