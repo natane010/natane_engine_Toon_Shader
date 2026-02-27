@@ -699,15 +699,17 @@ public class NataneToonShaderGUI : ShaderGUI
             DrawProperty("_Brightness", L("全体明度", "Overall Brightness"));
             DrawHelpToggle("Brightness",
                 L("💡 全体明度調整:\n" +
-                "最終的な明るさを微調整します。\n" +
+                "最終的な明るさを調整します。\n" +
                 "• 0.5-0.9 = 暗めに\n" +
                 "• 1.0 = デフォルト\n" +
-                "• 1.1-1.5 = 明るめに",
+                "• 1.1-2.0 = 明るめに\n" +
+                "• 2.0-5.0 = 大幅に明るく（移行マテリアル補正用）",
                 "💡 Overall Brightness:\n" +
-                "Fine-tunes the final brightness.\n" +
+                "Adjusts the final brightness.\n" +
                 "• 0.5-0.9 = Darker\n" +
                 "• 1.0 = Default\n" +
-                "• 1.1-1.5 = Brighter"),
+                "• 1.1-2.0 = Brighter\n" +
+                "• 2.0-5.0 = Much brighter (for migration material correction)"),
                 MessageType.Info);
 
             // 3.1 Parameter Interaction Warning: Color Preservation System
@@ -1079,7 +1081,7 @@ public class NataneToonShaderGUI : ShaderGUI
             // Global Light Controls
             EditorGUILayout.LabelField(L("グローバルライト制御", "Global Light Controls"), EditorStyles.boldLabel);
             DrawProperty("_LightIntensity", L("ライト強度（グローバル）", "Light Intensity (Global)"));
-            DrawHelpToggle("LightIntensity", L("全体的なライティングの強さを制御します。0 = ライトなし、1 = 標準、2 = 明るい", "Controls overall lighting strength. 0 = No light, 1 = Standard, 2 = Bright"), MessageType.Info);
+            DrawHelpToggle("LightIntensity", L("全体的なライティングの強さを制御します。0 = ライトなし、1 = 標準、1.73 = 移行補正値、5 = 最大", "Controls overall lighting strength. 0 = No light, 1 = Standard, 1.73 = Migration correction, 5 = Maximum"), MessageType.Info);
 
             DrawProperty("_IndirectLightIntensity", L("間接光の強度", "Indirect Light Intensity"));
             DrawHelpToggle("IndirectLightIntensity", L("環境光やライトプローブからの間接照明の強さを制御します。", "Controls the intensity of indirect illumination from ambient light and light probes."), MessageType.Info);

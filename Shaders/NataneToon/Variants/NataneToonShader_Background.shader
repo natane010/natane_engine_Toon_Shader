@@ -19,7 +19,7 @@ Shader "Natane/Toon Shader (Background)"
         [Header(Color Preservation)]
         _AlbedoPreservation ("Texture Color Preservation", Range(0, 1)) = 0
         _Saturation ("Saturation", Range(0, 2)) = 1
-        _Brightness ("Overall Brightness", Range(0.5, 1.5)) = 1
+        _Brightness ("Overall Brightness", Range(0.5, 5.0)) = 1
 
         [Header(Surface Finish)]
         _Glossiness ("Glossiness Overall Gloss", Range(0, 1)) = 1
@@ -146,7 +146,7 @@ Shader "Natane/Toon Shader (Background)"
         [Header(Advanced Lighting)]
         [Toggle(_SOFT_LIGHTING_MODE)] _SoftLightingMode ("Soft Lighting Mode Global", Float) = 0
         _SoftLightingIntensity ("Soft Lighting Intensity", Range(0, 1)) = 0.5
-        _LightIntensity ("Light Intensity Global", Range(0, 2)) = 1
+        _LightIntensity ("Light Intensity Global", Range(0, 5)) = 1
         _IndirectLightIntensity ("Indirect Light Intensity", Range(0, 2)) = 1
         [Header(Environment Reflection Control)]
         _GIIntensity ("GI Intensity", Range(0, 1)) = 0.5

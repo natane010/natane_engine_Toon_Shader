@@ -871,16 +871,18 @@ namespace NataneToon.Editor
                 float originalWidth = (float)sourceProps["_OutlineWidth"];
                 if (originalWidth > 0)
                 {
-                    // lilToon OutlineWidth (Range 0-1, デフォルト0.08) → Natane OutlineWidth (0-1, デフォルト0.1)
-                    // lilToonとNataneでスケールが近いが微調整
-                    float convertedWidth = originalWidth;
+                    // lilToon: outlineWidth *= 0.01 (内部で1/100スケール)
+                    // Natane:  outlineWidth = _OutlineWidth * 0.1 (内部で1/10スケール)
+                    // → lilToonの値をNataneに変換するには 0.01/0.1 = 1/10 にスケール
+                    float convertedWidth = originalWidth * 0.1f;
+                    convertedWidth = Mathf.Clamp(convertedWidth, 0.001f, 1.0f);
                     targetMaterial.SetFloat("_OutlineWidth", convertedWidth);
                     hasOutline = true;
 
                     report.outlineWidthAdjusted = true;
                     report.originalOutlineWidth = originalWidth;
                     report.convertedOutlineWidth = convertedWidth;
-                    report.infos.Add($"Outline Width: {originalWidth:F4}");
+                    report.infos.Add($"Outline Width: lilToon {originalWidth:F4} → Natane {convertedWidth:F4} (×0.1 scale)");
                 }
             }
 
@@ -997,19 +999,29 @@ namespace NataneToon.Editor
 
             // === Brightness Compensation ===
             // Natane's lighting pipeline has a normalize+luminance reconstruction step
-            // (Fragment.hlsl:521-524) that darkens output by ~1/√3 ≈ 0.577 for gray values.
-            // lilToon does NOT have this step, so migrated materials appear much too dark.
+            // (Fragment.hlsl:521-524) that darkens the final output.
+            //
+            // For uniform colors: directResult = normalize(v) × luminance(v) = v/√3
+            // → darkening factor = 1/√3 ≈ 0.577 (42% darker)
+            //
+            // For colored values: factor = luminance(v)/magnitude(v) ≤ 1/√3
+            // → colored shadows can be darkened even more (up to 50-55%)
+            //
+            // lilToon does NOT have this step, so migrated materials appear too dark.
             //
             // Compensation strategy:
-            //   _Brightness = 1.5 (max allowed by Range)
-            //   _LightIntensity = √3 / 1.5 ≈ 1.155 (compensates the remaining gap)
-            //   Combined: 0.577 × 1.155 × 1.5 ≈ 1.0 (fully compensates for lit areas)
-            //   For shadow areas (~0.55 factor): 0.55 × 1.155 × 1.5 ≈ 0.953 (~95% match)
+            //   _LightIntensity = √3 ≈ 1.732  (applied before normalize, exactly cancels the
+            //                                    darkening for uniform colors in ForwardBase)
+            //   _Brightness = 1.0              (neutral — user can manually adjust up to 5.0)
             //
-            // This does NOT change the shader — only material parameters within their valid ranges.
-            targetMaterial.SetFloat("_Brightness", 1.5f);
-            targetMaterial.SetFloat("_LightIntensity", 1.15f);
-            report.infos.Add("Brightness補正: _Brightness=1.5, _LightIntensity=1.15 (normalize暗化補正)");
+            // Math proof for lit areas:
+            //   directResult = (1,1,1) × √3 = (√3,√3,√3)
+            //   luminance = √3, normalize = (1/√3,1/√3,1/√3)
+            //   result = (1/√3) × √3 = (1,1,1) ✓ — perfect match
+            float sqrtThree = Mathf.Sqrt(3.0f); // √3 ≈ 1.732
+            targetMaterial.SetFloat("_LightIntensity", sqrtThree);
+            targetMaterial.SetFloat("_Brightness", 1.0f);
+            report.infos.Add($"Brightness補正: _LightIntensity={sqrtThree:F3} (√3), _Brightness=1.0 (normalize暗化の正確な補正)");
         }
 
         /// <summary>
