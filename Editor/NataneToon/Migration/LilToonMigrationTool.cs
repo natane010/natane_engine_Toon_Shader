@@ -738,23 +738,26 @@ namespace NataneToon.Editor
             // =============================================
             // lilToonとNataneのシャドウモデルの違い:
             //
-            // lilToon: NdotL = dot(L,N) * 0.5 + 0.5  (Half-Lambert, 範囲[0,1])
-            //   toon = saturate((NdotL - (border-blur/2)) / blur)  ... 線形ランプ
+            // lilToon: NdotL = dot(L,N) * 0.5 + 0.5  (Half-Lambert, 範囲[0.5,1.0]前面)
+            //   toon = smoothstep(border-blur, border+blur, halfLambert_ndotl)
             //
             // Natane: lightTerm = saturate(raw_ndotl)  ← ApplyLightBlendで[0,1]にクリップ
-            //   ToonShading: ndotl = saturate(lightTerm + offset)
-            //     steps=1: smoothstep(0.5-sr, 0.5+sr, ndotl)  where sr = sharpness * 0.5
+            //   ToonShading: adjusted = saturate(lightTerm + offset)
+            //     steps=1: smoothstep(0.5-sr, 0.5+sr, adjusted)  where sr = sharpness * 0.5
             //
-            // 重要な制約:
-            //   ApplyLightBlendのsaturate()で負のndotlが0にクリップされるため、
-            //   offsetが大きすぎるとtoonの最小値が0にならず、完全な影が出ない。
-            //   toonが0に到達する条件: offset < 0.5 - sharpness * 0.5
+            // Half-Lambert の重要な特性:
+            //   前面(ndotl≥0): halfLambert ∈ [0.5, 1.0]
+            //   border=0.5の場合: ndotl=0（直角面）で halfLambert=0.5 → toon≈0.5（半分明るい）
+            //   → lilToonでは前面が完全な影にならない！
+            //
+            // Nataneで同じ挙動を再現するため:
+            //   offset = 0.5 の場合: ndotl=0 → adjusted=0.5 → toon≈0.5 ← lilToonと一致！
+            //   ※ maxOffset クランプを除去（lilToonと同様に前面は完全な影にならなくてOK）
             //
             // 変換式:
-            //   idealOffset = 1.5 - 2*border  (Half-Lambert→raw ndotl空間の変換)
-            //   sharpness = 2*blur            (HL空間→raw ndotl空間の幅補正)
-            //   offset = min(idealOffset, 0.5 - sharpness*0.5 - 0.05)  ← toon=0到達保証
-            //   steps = 1                     (lilToonは2トーン = 明暗1境界)
+            //   offset = 1.5 - 2*border  (Half-Lambert→raw ndotl空間の変換)
+            //   sharpness = 2*blur       (HL空間→raw ndotl空間の幅補正)
+            //   steps = 1                (lilToonは2トーン = 明暗1境界)
             // =============================================
             if (sourceProps.ContainsKey("_ShadowBorder"))
             {
@@ -769,11 +772,12 @@ namespace NataneToon.Editor
                 targetMaterial.SetFloat("_ShadowSharpness", sharpness);
 
                 // ShadowOffset: Half-Lambert空間からraw ndotl空間への変換
-                // idealOffset: lilToonの影境界位置を再現する理想値
-                // maxOffset: toonが0に到達できる上限値（これを超えると影が出ない）
-                float idealOffset = 1.5f - 2.0f * border;
-                float maxOffset = 0.5f - sharpness * 0.5f - 0.05f;
-                float shadowOffset = Mathf.Min(idealOffset, maxOffset);
+                // lilToonのHalf-Lambert (ndotl*0.5+0.5) で border=B の場合:
+                //   影境界はraw ndotl = 2*B - 1 で発生
+                //   Nataneではoffset = 0.5 + (1-2*B)*0.5 = 1.0 - B に相当
+                //   ただし直角面（ndotl=0）で ~50% lit になるのがlilToonの特徴
+                //   offset = 0.5 でこれを正確に再現できる
+                float shadowOffset = 1.0f - border;
                 shadowOffset = Mathf.Clamp(shadowOffset, -0.5f, 0.95f);
                 targetMaterial.SetFloat("_ShadowOffset", shadowOffset);
 
@@ -781,14 +785,14 @@ namespace NataneToon.Editor
                 targetMaterial.SetFloat("_ShadowBlend", 0);
                 targetMaterial.SetFloat("_StepBorderSmooth", 0);
 
-                report.infos.Add($"Shadow: Border={border:F2}→Offset={shadowOffset:F2} (ideal={idealOffset:F2}, max={maxOffset:F2}), Blur={blur:F2}→Sharpness={sharpness:F3}, Steps=1");
+                report.infos.Add($"Shadow: Border={border:F2}→Offset={shadowOffset:F2}, Blur={blur:F2}→Sharpness={sharpness:F3}, Steps=1");
             }
             else
             {
                 // デフォルト設定
                 targetMaterial.SetFloat("_ShadowSteps", 1);
                 targetMaterial.SetFloat("_ShadowSharpness", 0.2f);
-                targetMaterial.SetFloat("_ShadowOffset", 0.35f);
+                targetMaterial.SetFloat("_ShadowOffset", 0.5f);
             }
 
             // マルチシャドウレイヤー変換（_UseShadowが有効な場合のみ）
@@ -1022,6 +1026,18 @@ namespace NataneToon.Editor
             targetMaterial.SetFloat("_LightIntensity", sqrtThree);
             targetMaterial.SetFloat("_Brightness", 1.0f);
             report.infos.Add($"Brightness補正: _LightIntensity={sqrtThree:F3} (√3), _Brightness=1.0 (normalize暗化の正確な補正)");
+
+            // === Shadow Floor Compensation ===
+            // lilToonのHalf-Lambertでは裏面でもhalfLambert=0.0で、
+            // shadowColor自体が最低明度を保持する。
+            // Nataneの_ShadowMaxDarknessで影の最低明度を底上げし、
+            // 彩度の高いシャドウカラーのnormalize暗化を補償する。
+            //
+            // また _LightMinInfluence を設定して、
+            // ライティング計算結果の最低明度を保証する（lilToonの_LightMinLimitに相当）。
+            targetMaterial.SetFloat("_ShadowMaxDarkness", 0.15f);
+            targetMaterial.SetFloat("_LightMinInfluence", 0.05f);
+            report.infos.Add("Shadow Floor補正: _ShadowMaxDarkness=0.15, _LightMinInfluence=0.05");
         }
 
         /// <summary>
