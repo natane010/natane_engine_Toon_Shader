@@ -952,19 +952,15 @@ namespace NataneToon.Editor
                 targetMaterial.SetFloat("_MatCap", 1.0f);
                 targetMaterial.EnableKeyword("_MATCAP");
 
-                // MatCap パラメータの正しいマッピング:
+                // MatCap パラメータのマッピング:
+                // lilToonとNataneではMatCapのブレンド方式が異なるため、
+                // 移行時はブレンド強度を控えめ (0.1) に設定する。
+                // ユーザーが目視で確認・調整することを前提とする。
+                //
                 // lilToon: result = lilBlendColor(base, matCapTex * _MatCapColor, _MatCapBlend * matcap.a, mode)
-                //   _MatCapBlend (0-1): 全体ブレンド量 (srcA に乗算)
-                //   _MatCapColor: MatCapテクスチャに乗算するカラー
-                //
-                // Natane: matcap = matCapTex * _MatCapIntensity
-                //         result = lerp(preMatCap, blended, _MatCapBlend)
-                //   _MatCapIntensity (0-2): テクスチャの明度スケール
-                //   _MatCapBlend (0-1): 全体ブレンド量
-                //
-                // → _MatCapIntensity=1.0 (テクスチャ強度は変えない)
-                // → _MatCapBlend = lilToon _MatCapBlend (全体ブレンド量を維持)
-                float matCapBlend = GetFloatOr(sourceProps, "_MatCapBlend", 1.0f);
+                // Natane:  result = lerp(preMatCap, blended, _MatCapBlend)
+                float matCapBlendOriginal = GetFloatOr(sourceProps, "_MatCapBlend", 1.0f);
+                float matCapBlend = 0.1f; // 移行時は控えめに設定（見た目が大きく変わるため）
                 targetMaterial.SetFloat("_MatCapIntensity", 1.0f);
                 targetMaterial.SetFloat("_MatCapBlend", matCapBlend);
 
@@ -997,7 +993,11 @@ namespace NataneToon.Editor
                 string[] nataneModeNames = {"Add", "Multiply", "Replace"};
                 string lilName = lilBlendMode >= 0 && lilBlendMode < 4 ? lilModeNames[lilBlendMode] : $"Unknown({lilBlendMode})";
                 string nataneName = nataneBlendMode >= 0 && nataneBlendMode < 3 ? nataneModeNames[nataneBlendMode] : $"Unknown({nataneBlendMode})";
-                report.infos.Add($"MatCap有効化: Blend={matCapBlend:F2}, Intensity=1.0, BlendMode: {lilName}→{nataneName}");
+                report.infos.Add($"MatCap有効化: Blend={matCapBlend:F2} (元値:{matCapBlendOriginal:F2}→0.1に低減), Intensity=1.0, BlendMode: {lilName}→{nataneName}");
+                report.warnings.Add(
+                    "MatCapの見た目はlilToonと異なる場合があります。" +
+                    $"ブレンド強度を元の値({matCapBlendOriginal:F2})から0.1に低減しています。" +
+                    "移行後にインスペクターで_MatCapBlendの値を目視で調整してください。");
 
                 // MatCap マスクテクスチャ移行: lilToon _MatCapBlendMask → Natane _MatCapMask
                 SetTextureIfExists(sourceProps, "_MatCapBlendMask", targetMaterial, "_MatCapMask");
@@ -1017,7 +1017,8 @@ namespace NataneToon.Editor
                 targetMaterial.SetFloat("_MatCap2", 1.0f);
                 targetMaterial.EnableKeyword("_MATCAP_2");
 
-                float matCap2ndBlend = GetFloatOr(sourceProps, "_MatCap2ndBlend", 1.0f);
+                float matCap2ndBlendOriginal = GetFloatOr(sourceProps, "_MatCap2ndBlend", 1.0f);
+                float matCap2ndBlend = 0.1f; // 移行時は控えめに設定
                 targetMaterial.SetFloat("_MatCapIntensity2", 1.0f);
                 targetMaterial.SetFloat("_MatCapBlend2", matCap2ndBlend);
 
@@ -1033,7 +1034,11 @@ namespace NataneToon.Editor
                 // MatCap 2nd マスクテクスチャ移行
                 SetTextureIfExists(sourceProps, "_MatCap2ndBlendMask", targetMaterial, "_MatCapMask2");
 
-                report.infos.Add($"MatCap 2nd有効化: Blend={matCap2ndBlend:F2}, Intensity=1.0");
+                report.infos.Add($"MatCap 2nd有効化: Blend={matCap2ndBlend:F2} (元値:{matCap2ndBlendOriginal:F2}→0.1に低減), Intensity=1.0");
+                report.warnings.Add(
+                    "MatCap 2ndの見た目はlilToonと異なる場合があります。" +
+                    $"ブレンド強度を元の値({matCap2ndBlendOriginal:F2})から0.1に低減しています。" +
+                    "移行後にインスペクターで_MatCapBlend2の値を目視で調整してください。");
                 if (sourceProps.ContainsKey("_MatCap2ndBlendMask") && sourceProps["_MatCap2ndBlendMask"] != null)
                 {
                     report.infos.Add("MatCap 2ndマスクテクスチャを移行しました");
