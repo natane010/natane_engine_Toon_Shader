@@ -6,6 +6,8 @@ using System.Text;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// lilToon から Natane Toon Shader への自動移行ツール
     /// </summary>
@@ -18,10 +20,18 @@ namespace NataneToon.Editor
         private bool showPreview = false;
         private Material previewMaterial = null;
 
+        // 変換モード: VisualMatch（見た目一致）vs MinimalSafe（最小限・旧動作）
+        private enum ConversionMode { VisualMatch, MinimalSafe }
+        private ConversionMode conversionMode = ConversionMode.VisualMatch;
+        private string[] conversionModeNames => new[] {
+            L("見た目一致 (推奨)", "Visual Match (Recommended)"),
+            L("最小限（旧動作）", "Minimal Safe (Legacy)")
+        };
+
         // モード切替
         private enum MigrationMode { Project, Prefab }
         private MigrationMode currentMode = MigrationMode.Project;
-        private string[] modeNames = new[] { "全プロジェクト Project", "アバター/プレハブ Avatar/Prefab" };
+        private string[] modeNames => new[] { L("全プロジェクト", "Project"), L("アバター/プレハブ", "Avatar/Prefab") };
 
         // プレハブモード用フィールド
         private GameObject targetPrefab = null;
@@ -56,7 +66,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/移行 Migration/lilToon移行ツール lilToon Migration Tool", false, 51)]
         public static void ShowWindow()
         {
-            var window = GetWindow<LilToonMigrationTool>("lilToon移行ツール lilToon Migration");
+            var window = GetWindow<LilToonMigrationTool>(L("lilToon移行ツール", "lilToon Migration"));
             window.minSize = new Vector2(500, 400);
             window.Show();
         }
@@ -68,35 +78,60 @@ namespace NataneToon.Editor
 
         private void OnGUI()
         {
-            EditorGUILayout.LabelField("lilToon to Natane Toon Shader Migration Tool", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("lilToon から Natane Toon Shader への移行ツール", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(L("lilToon から Natane Toon Shader への移行ツール", "lilToon to Natane Toon Shader Migration Tool"), EditorStyles.boldLabel);
             EditorGUILayout.Space();
 
             EditorGUILayout.HelpBox(
-                "このツールはlilToonマテリアルを自動的にNatane Toon Shaderに変換します。\n" +
-                "基本設定（テクスチャ・カラー・シャドウ）のみを有効にし、その他の機能はオフの状態で移行します。\n" +
-                "プロパティ値は保持されるため、移行後にインスペクターから必要な機能を個別に有効化できます。\n\n" +
+                L("このツールはlilToonマテリアルを自動的にNatane Toon Shaderに変換します。\n" +
+                "「見た目一致」モード: lilToonで有効な機能（リムライト・アウトライン・エミッション等）をすべて変換・有効化します。\n" +
+                "「最小限」モード: 基本設定のみ有効。プロパティ値は保持されるため、移行後に個別に有効化できます。",
                 "This tool automatically converts lilToon materials to Natane Toon Shader.\n" +
-                "Only basic settings (texture, color, shadow) are enabled. All other features are disabled.\n" +
-                "Property values are preserved, so you can enable features individually after migration.",
+                "Visual Match mode: Converts and enables all active lilToon features (rim light, outline, emission, etc.).\n" +
+                "Minimal Safe mode: Only basic settings enabled. Property values are preserved for manual activation."),
                 MessageType.Info
             );
 
             EditorGUILayout.Space();
 
             // Options
-            EditorGUILayout.LabelField("オプション Options", EditorStyles.boldLabel);
-            createBackup = EditorGUILayout.Toggle("バックアップを作成 Create Backup", createBackup);
-            replaceOriginal = EditorGUILayout.Toggle("元を置換（破壊的） Replace Original (Destructive)", replaceOriginal);
-            showPreview = EditorGUILayout.Toggle("変換後プレビュー表示 Show Preview After Conversion", showPreview);
+            EditorGUILayout.LabelField(L("オプション", "Options"), EditorStyles.boldLabel);
+            createBackup = EditorGUILayout.Toggle(L("バックアップを作成", "Create Backup"), createBackup);
+            replaceOriginal = EditorGUILayout.Toggle(L("元を置換（破壊的）", "Replace Original (Destructive)"), replaceOriginal);
+            showPreview = EditorGUILayout.Toggle(L("変換後プレビュー表示", "Show Preview After Conversion"), showPreview);
+
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField(L("変換モード", "Conversion Mode"), EditorStyles.boldLabel);
+            conversionMode = (ConversionMode)GUILayout.Toolbar((int)conversionMode, conversionModeNames);
+            if (conversionMode == ConversionMode.VisualMatch)
+            {
+                EditorGUILayout.HelpBox(
+                    L("lilToonで有効な機能（リムライト・アウトライン・エミッション・MatCap・スペキュラ等）をすべて変換・有効化します。\n" +
+                    "変換直後から見た目が近い状態になります。",
+                    "All active lilToon features (rim light, outline, emission, MatCap, specular, etc.) will be converted and enabled.\n" +
+                    "The result will visually match the original material immediately after conversion."),
+                    MessageType.Info
+                );
+            }
+            else
+            {
+                EditorGUILayout.HelpBox(
+                    L("基本設定（テクスチャ・カラー・シャドウ）のみ有効化します。他の機能はOFF状態で移行されます。\n" +
+                    "プロパティ値は保持されるため、移行後にインスペクターから個別に有効化できます。",
+                    "Only basic settings (texture, color, shadow) are enabled. Other features are migrated in OFF state.\n" +
+                    "Property values are preserved, so you can enable features individually after migration."),
+                    MessageType.Info
+                );
+            }
+
+            EditorGUILayout.Space(5);
 
             if (replaceOriginal)
             {
                 EditorGUILayout.HelpBox(
-                    "警告: この操作は元のマテリアルを永久に変更します！\n" +
-                    "プロジェクトのバックアップがあることを確認してください。\n\n" +
-                    "WARNING: This will permanently modify your original materials! " +
-                    "Make sure you have a backup of your project.",
+                    L("警告: この操作は元のマテリアルを永久に変更します！\n" +
+                    "プロジェクトのバックアップがあることを確認してください。",
+                    "WARNING: This will permanently modify your original materials!\n" +
+                    "Make sure you have a backup of your project."),
                     MessageType.Warning
                 );
             }
@@ -124,7 +159,7 @@ namespace NataneToon.Editor
         private void DrawProjectMode()
         {
             // Scan button
-            if (GUILayout.Button("lilToonマテリアルをスキャン Scan for lilToon Materials", GUILayout.Height(30)))
+            if (GUILayout.Button(L("lilToonマテリアルをスキャン", "Scan for lilToon Materials"), GUILayout.Height(30)))
             {
                 ScanForLilToonMaterials();
             }
@@ -132,7 +167,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space();
 
             // Materials list
-            EditorGUILayout.LabelField($"見つかったマテリアル Found {lilToonMaterials.Count} lilToon Materials", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L($"見つかったマテリアル: {lilToonMaterials.Count}個", $"Found {lilToonMaterials.Count} lilToon Materials"), EditorStyles.boldLabel);
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Height(200));
 
@@ -141,7 +176,7 @@ namespace NataneToon.Editor
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.ObjectField(material, typeof(Material), false);
 
-                if (GUILayout.Button("変換 Convert", GUILayout.Width(80)))
+                if (GUILayout.Button(L("変換", "Convert"), GUILayout.Width(80)))
                 {
                     var report = ConvertMaterialWithReport(material);
                     if (report.success)
@@ -160,7 +195,7 @@ namespace NataneToon.Editor
 
             // Convert all button
             GUI.enabled = lilToonMaterials.Count > 0;
-            if (GUILayout.Button("すべて変換 Convert All Materials", GUILayout.Height(40)))
+            if (GUILayout.Button(L("すべて変換", "Convert All Materials"), GUILayout.Height(40)))
             {
                 ConvertAllMaterials();
             }
@@ -173,11 +208,11 @@ namespace NataneToon.Editor
         private void DrawPrefabMode()
         {
             // セクション1: プレハブ選択
-            EditorGUILayout.LabelField("プレハブ選択 Prefab Selection", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("プレハブ選択", "Prefab Selection"), EditorStyles.boldLabel);
             EditorGUILayout.BeginHorizontal();
             EditorGUI.BeginChangeCheck();
             targetPrefab = (GameObject)EditorGUILayout.ObjectField(
-                "対象プレハブ Target Prefab",
+                L("対象プレハブ", "Target Prefab"),
                 targetPrefab,
                 typeof(GameObject),
                 true // allowSceneObjects - シーン上のインスタンスもD&D可能
@@ -191,8 +226,8 @@ namespace NataneToon.Editor
             if (targetPrefab == null)
             {
                 EditorGUILayout.HelpBox(
-                    "変換するプレハブまたはシーン上のアバターをここにドラッグ＆ドロップしてください。\n\n" +
-                    "Drag & drop a prefab or scene avatar here to scan for lilToon materials.",
+                    L("変換するプレハブまたはシーン上のアバターをここにドラッグ＆ドロップしてください。",
+                    "Drag & drop a prefab or scene avatar here to scan for lilToon materials."),
                     MessageType.Info
                 );
                 return;
@@ -201,24 +236,24 @@ namespace NataneToon.Editor
             EditorGUILayout.Space();
 
             // セクション2: プレハブ設定
-            EditorGUILayout.LabelField("プレハブ設定 Prefab Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("プレハブ設定", "Prefab Settings"), EditorStyles.boldLabel);
             updatePrefabReferences = EditorGUILayout.Toggle(
-                "参照を自動更新 Auto-update References",
+                L("参照を自動更新", "Auto-update References"),
                 updatePrefabReferences
             );
             if (updatePrefabReferences && !replaceOriginal)
             {
                 EditorGUILayout.HelpBox(
-                    "変換後、プレハブ内のRenderer参照を新しいマテリアルに自動的に差し替えます。\n\n" +
-                    "After conversion, Renderer references in the prefab will be automatically updated to new materials.",
+                    L("変換後、プレハブ内のRenderer参照を新しいマテリアルに自動的に差し替えます。",
+                    "After conversion, Renderer references in the prefab will be automatically updated to new materials."),
                     MessageType.Info
                 );
             }
             else if (replaceOriginal)
             {
                 EditorGUILayout.HelpBox(
-                    "「元を置換」モードでは元のマテリアル自体が変更されるため、参照の更新は不要です。\n\n" +
-                    "In 'Replace Original' mode, the original material is modified in-place, so reference updates are unnecessary.",
+                    L("「元を置換」モードでは元のマテリアル自体が変更されるため、参照の更新は不要です。",
+                    "In 'Replace Original' mode, the original material is modified in-place, so reference updates are unnecessary."),
                     MessageType.Info
                 );
             }
@@ -226,7 +261,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space();
 
             // スキャンボタン
-            if (GUILayout.Button("マテリアルを再スキャン Rescan Materials", GUILayout.Height(25)))
+            if (GUILayout.Button(L("マテリアルを再スキャン", "Rescan Materials"), GUILayout.Height(25)))
             {
                 ScanPrefabMaterials();
             }
@@ -237,15 +272,16 @@ namespace NataneToon.Editor
             if (prefabMaterials.Count == 0)
             {
                 EditorGUILayout.HelpBox(
-                    "このプレハブにはlilToonマテリアルが見つかりませんでした。\n\n" +
-                    "No lilToon materials found in this prefab.",
+                    L("このプレハブにはlilToonマテリアルが見つかりませんでした。",
+                    "No lilToon materials found in this prefab."),
                     MessageType.Warning
                 );
                 return;
             }
 
             EditorGUILayout.LabelField(
-                $"検出されたlilToonマテリアル Found {prefabMaterials.Select(m => m.original).Distinct().Count()} lilToon Materials",
+                L($"検出されたlilToonマテリアル: {prefabMaterials.Select(m => m.original).Distinct().Count()}個",
+                $"Found {prefabMaterials.Select(m => m.original).Distinct().Count()} lilToon Materials"),
                 EditorStyles.boldLabel
             );
 
@@ -280,7 +316,7 @@ namespace NataneToon.Editor
                     EditorGUILayout.ObjectField(entries[0].converted, typeof(Material), false);
                 }
 
-                if (GUILayout.Button("個別変換 Convert", GUILayout.Width(100)))
+                if (GUILayout.Button(L("個別変換", "Convert"), GUILayout.Width(100)))
                 {
                     ConvertSinglePrefabMaterial(mat);
                 }
@@ -292,7 +328,8 @@ namespace NataneToon.Editor
                 foreach (var entry in entries)
                 {
                     EditorGUILayout.LabelField(
-                        $"使用箇所: {entry.rendererPath} [スロット {entry.materialIndex}]",
+                        L($"使用箇所: {entry.rendererPath} [スロット {entry.materialIndex}]",
+                        $"Used by: {entry.rendererPath} [Slot {entry.materialIndex}]"),
                         EditorStyles.miniLabel
                     );
                 }
@@ -312,13 +349,14 @@ namespace NataneToon.Editor
             if (convertCount > 0)
             {
                 EditorGUILayout.LabelField(
-                    $"変換対象: {convertCount}個のマテリアル Target: {convertCount} materials",
+                    L($"変換対象: {convertCount}個のマテリアル",
+                    $"Target: {convertCount} materials"),
                     EditorStyles.boldLabel
                 );
             }
 
             GUI.enabled = convertCount > 0;
-            if (GUILayout.Button($"選択したマテリアルを一括変換 Convert Selected ({convertCount})", GUILayout.Height(40)))
+            if (GUILayout.Button(L($"選択したマテリアルを一括変換 ({convertCount})", $"Convert Selected ({convertCount})"), GUILayout.Height(40)))
             {
                 ConvertPrefabMaterials();
             }
@@ -354,9 +392,10 @@ namespace NataneToon.Editor
         private void ConvertAllMaterials()
         {
             if (!EditorUtility.DisplayDialog(
-                "すべて変換 Convert All Materials",
-                $"{lilToonMaterials.Count}個のマテリアルを変換してもよろしいですか？\nAre you sure you want to convert {lilToonMaterials.Count} materials?",
-                "はい Yes", "キャンセル Cancel"))
+                L("すべて変換", "Convert All Materials"),
+                L($"{lilToonMaterials.Count}個のマテリアルを変換してもよろしいですか？",
+                $"Are you sure you want to convert {lilToonMaterials.Count} materials?"),
+                L("はい", "Yes"), L("キャンセル", "Cancel")))
             {
                 return;
             }
@@ -428,8 +467,14 @@ namespace NataneToon.Editor
                     report.infos.Add($"新しいマテリアルを作成しました: {newPath}");
                 }
 
-                // Find Natane Toon Shader
-                Shader nataneToonShader = Shader.Find("Natane/Toon Shader");
+                // Store original properties before changing shader
+                var originalProperties = CaptureProperties(sourceMaterial);
+
+                // 複数シャドウレイヤーの検出
+                DetectMultipleShadowLayers(originalProperties, report);
+
+                // Find Natane Toon Shader (バリアント自動検出)
+                Shader nataneToonShader = DetectNataneShaderVariant(sourceMaterial);
                 if (nataneToonShader == null)
                 {
                     Debug.LogError("Natane Toon Shader not found! Please make sure it's in your project.");
@@ -437,12 +482,7 @@ namespace NataneToon.Editor
                     report.warnings.Add("Natane Toon Shaderが見つかりませんでした。");
                     return report;
                 }
-
-                // Store original properties before changing shader
-                var originalProperties = CaptureProperties(sourceMaterial);
-
-                // 複数シャドウレイヤーの検出
-                DetectMultipleShadowLayers(originalProperties, report);
+                report.infos.Add($"シェーダーバリアント: {nataneToonShader.name}");
 
                 // Change shader
                 targetMaterial.shader = nataneToonShader;
@@ -450,9 +490,17 @@ namespace NataneToon.Editor
                 // Map properties
                 MapPropertiesWithReport(originalProperties, targetMaterial, report);
 
-                // 基本タブ以外の機能をすべてオフにする
-                // プロパティ値は保持されるため、移行後にユーザーが必要な機能を個別に有効化できる
-                DisableNonBasicFeatures(targetMaterial, report);
+                // ConversionModeに応じて機能の有効化/無効化を制御
+                if (conversionMode == ConversionMode.MinimalSafe)
+                {
+                    // 旧動作: 基本タブ以外の機能をすべてオフにする
+                    DisableNonBasicFeatures(targetMaterial, report);
+                }
+                else
+                {
+                    // VisualMatchモード: MapPropertiesWithReportで有効化した機能をそのまま保持
+                    report.infos.Add("VisualMatchモード: 変換されたエフェクトを有効状態で保持");
+                }
 
                 // プレビュー機能
                 if (showPreview)
@@ -489,7 +537,7 @@ namespace NataneToon.Editor
             {
                 report.hasMultipleShadowLayers = true;
                 string layerInfo = has3rdShadow ? "3層" : "2層";
-                report.warnings.Add($"複数のシャドウレイヤー（{layerInfo}）が検出されました。Natane Toon Shaderでは最初のシャドウレイヤーのみが変換されます。");
+                report.infos.Add($"複数シャドウレイヤー（{layerInfo}）を検出。マルチシャドウとして変換します。");
             }
         }
 
@@ -525,14 +573,31 @@ namespace NataneToon.Editor
             CaptureColor(material, "_lilShadow2ndColor", properties);
             CaptureColor(material, "_lilShadow3rdColor", properties);
 
+            // Shadow extended
+            CaptureFloat(material, "_ShadowStrength", properties);
+            CaptureFloat(material, "_ShadowNormalStrength", properties);
+            CaptureFloat(material, "_Shadow2ndBorder", properties);
+            CaptureFloat(material, "_Shadow3rdBorder", properties);
+            CaptureFloat(material, "_lilShadow2ndBorder", properties);
+            CaptureFloat(material, "_lilShadow3rdBorder", properties);
+
             // Rim light
             CaptureColor(material, "_RimColor", properties);
             CaptureFloat(material, "_RimPower", properties);
             CaptureFloat(material, "_RimFresnelPower", properties);
 
+            // Rim extended
+            CaptureFloat(material, "_RimMainStrength", properties);
+            CaptureFloat(material, "_RimEnableLighting", properties);
+            CaptureFloat(material, "_RimBlendMode", properties);
+
             // Outline
             CaptureFloat(material, "_OutlineWidth", properties);
             CaptureColor(material, "_OutlineColor", properties);
+
+            // Outline extended
+            CaptureFloat(material, "_OutlineFixWidth", properties);
+            CaptureFloat(material, "_OutlineEnableLighting", properties);
 
             // Emission
             CaptureTexture(material, "_EmissionMap", properties);
@@ -542,6 +607,7 @@ namespace NataneToon.Editor
             CaptureFloat(material, "_MatCapBlend", properties);
             CaptureFloat(material, "_MatCapMainStrength", properties);
             CaptureFloat(material, "_MatCapBlendMode", properties);
+            CaptureColor(material, "_MatCapColor", properties);
 
             // Specular / Surface properties
             CaptureFloat(material, "_Smoothness", properties);
@@ -549,6 +615,8 @@ namespace NataneToon.Editor
             CaptureFloat(material, "_Reflectance", properties);
             CaptureFloat(material, "_SpecularBorder", properties);
             CaptureFloat(material, "_SpecularBlur", properties);
+            CaptureFloat(material, "_SpecularToon", properties);
+            CaptureFloat(material, "_ApplySpecular", properties);
 
             // Rim Light properties (拡張)
             CaptureFloat(material, "_RimBorder", properties);
@@ -600,29 +668,62 @@ namespace NataneToon.Editor
             // Shadow Color
             if (sourceProps.ContainsKey("_lilShadowColor"))
             {
-                targetMaterial.SetColor("_ShadowColor", (Color)sourceProps["_lilShadowColor"]);
+                Color shadowColor = (Color)sourceProps["_lilShadowColor"];
+
+                // ShadowStrength → ShadowColorのアルファで近似
+                if (sourceProps.ContainsKey("_ShadowStrength"))
+                {
+                    float strength = (float)sourceProps["_ShadowStrength"];
+                    shadowColor = Color.Lerp(Color.white, shadowColor, strength);
+                    report.infos.Add($"ShadowStrength: {strength:F2} → ShadowColorに適用");
+                }
+
+                targetMaterial.SetColor("_ShadowColor", shadowColor);
                 targetMaterial.EnableKeyword("_USE_RAMP");
             }
-            else
+            else if (sourceProps.ContainsKey("_ShadowColor"))
             {
-                SetColorIfExists(sourceProps, "_ShadowColor", targetMaterial, "_ShadowColor");
+                Color shadowColor = (Color)sourceProps["_ShadowColor"];
+
+                // ShadowStrength → ShadowColorのアルファで近似
+                if (sourceProps.ContainsKey("_ShadowStrength"))
+                {
+                    float strength = (float)sourceProps["_ShadowStrength"];
+                    shadowColor = Color.Lerp(Color.white, shadowColor, strength);
+                    report.infos.Add($"ShadowStrength: {strength:F2} → ShadowColorに適用");
+                }
+
+                targetMaterial.SetColor("_ShadowColor", shadowColor);
             }
 
-            // Shadow Settings - 改善された自動最適化
+            // Shadow Settings - 改善された変換 (Step 4)
             if (sourceProps.ContainsKey("_lilShadowBorder"))
             {
                 float border = (float)sourceProps["_lilShadowBorder"];
-                targetMaterial.SetFloat("_ShadowOffset", Mathf.Lerp(-0.5f, 0.5f, border));
-                report.infos.Add($"Shadow Border: {border:F3} → Shadow Offset: {Mathf.Lerp(-0.5f, 0.5f, border):F3}");
-            }
+                float blur = sourceProps.ContainsKey("_lilShadowBlur") ? (float)sourceProps["_lilShadowBlur"] : 0.2f;
 
-            if (sourceProps.ContainsKey("_lilShadowBlur"))
-            {
-                float blur = (float)sourceProps["_lilShadowBlur"];
-                // 改善されたShadow Sharpness変換（非線形カーブで自然な見た目に）
-                float sharpness = OptimizeShadowSharpness(blur);
+                // ShadowSteps: lilToonは基本2トーン（明暗1境界）
+                targetMaterial.SetFloat("_ShadowSteps", 2);
+
+                // ShadowOffset: border 0.5 = 中央、0→暗い側、1→明るい側
+                float shadowOffset = border - 0.5f;
+                targetMaterial.SetFloat("_ShadowOffset", shadowOffset);
+                report.infos.Add($"Shadow Border: {border:F3} → Shadow Offset: {shadowOffset:F3}");
+
+                // ShadowBlend: lilToonのblurをNataneのblendに変換
+                // blur=0 → 鋭い境界(blend=0), blur=1 → 柔らかい(blend=0.8)
+                float blend = Mathf.Clamp01(blur * 0.8f);
+                targetMaterial.SetFloat("_ShadowBlend", blend);
+
+                // ShadowSharpness: blurの逆数系
+                // blur小 → sharpness大 (鋭い境界)
+                float sharpness = Mathf.Lerp(0.3f, 0.02f, blur);
                 targetMaterial.SetFloat("_ShadowSharpness", sharpness);
-                report.infos.Add($"Shadow Blur: {blur:F3} → Shadow Sharpness: {sharpness:F3} (最適化済み)");
+
+                // StepBorderSmooth: blurに比例
+                targetMaterial.SetFloat("_StepBorderSmooth", blur * 0.3f);
+
+                report.infos.Add($"Shadow Blur: {blur:F3} → Blend: {blend:F3}, Sharpness: {sharpness:F3}, StepBorderSmooth: {blur * 0.3f:F3}");
 
                 // 極端な値の警告
                 if (blur < 0.05f)
@@ -634,6 +735,15 @@ namespace NataneToon.Editor
                     report.warnings.Add("Shadow Blurが非常に大きい値です。シャドウが不明瞭になる可能性があります。");
                 }
             }
+            else
+            {
+                // Default settings for good toon shading
+                targetMaterial.SetFloat("_ShadowSteps", 2);
+                targetMaterial.SetFloat("_ShadowSharpness", 0.1f);
+            }
+
+            // マルチシャドウレイヤー変換 (Step 5)
+            MapMultiShadowLayers(sourceProps, targetMaterial, report);
 
             // Normal Map
             SetTextureIfExists(sourceProps, "_BumpMap", targetMaterial, "_BumpMap");
@@ -645,7 +755,7 @@ namespace NataneToon.Editor
                 targetMaterial.EnableKeyword("_NORMALMAP");
             }
 
-            // Rim Light - デフォルト値設定とIntensity調整
+            // Rim Light - 改善された変換 (Step 6)
             bool hasRim = false;
             float rimIntensity = 1.0f;
 
@@ -659,8 +769,16 @@ namespace NataneToon.Editor
 
                     // Rim Intensityのデフォルト値を設定
                     rimIntensity = Mathf.Max(rimColor.maxColorComponent, 0.5f);
-                    report.infos.Add($"Rim Light有効化。Intensity: {rimIntensity:F2} (自動設定)");
                 }
+            }
+
+            // RimMainStrength → RimIntensity（最重要！）
+            if (sourceProps.ContainsKey("_RimMainStrength"))
+            {
+                float strength = (float)sourceProps["_RimMainStrength"];
+                rimIntensity = strength;
+                hasRim = hasRim || strength > 0.01f;
+                report.infos.Add($"RimMainStrength: {strength:F2} → RimIntensity");
             }
 
             if (sourceProps.ContainsKey("_RimFresnelPower"))
@@ -681,43 +799,60 @@ namespace NataneToon.Editor
                 targetMaterial.SetFloat("_RimLight", 1.0f);
                 targetMaterial.EnableKeyword("_RIM_LIGHT");
 
-                // Rim Intensityが未設定の場合はデフォルト値を設定
+                // Rim Intensity設定
                 if (targetMaterial.HasProperty("_RimIntensity"))
                 {
                     targetMaterial.SetFloat("_RimIntensity", rimIntensity);
                 }
+                report.infos.Add($"Rim Light有効化。Intensity: {rimIntensity:F2}");
 
                 // Rim Spread設定（_RimBorderから計算）
                 if (sourceProps.ContainsKey("_RimBorder"))
                 {
                     float border = (float)sourceProps["_RimBorder"];
                     // borderが小さい→広がりが大きい（逆相関）
-                    // border: 0 → spread: 3.0 (広い), border: 1 → spread: 0.5 (狭い)
                     float spread = Mathf.Lerp(3.0f, 0.5f, border);
                     targetMaterial.SetFloat("_RimSpread", spread);
                     report.infos.Add($"Rim Border: {border:F2} → Rim Spread: {spread:F2}");
                 }
                 else
                 {
-                    // デフォルト値
                     targetMaterial.SetFloat("_RimSpread", 2.0f);
                 }
 
-                // Rim Blur処理（_RimBlurがある場合）
+                // Rim Blur処理
                 if (sourceProps.ContainsKey("_RimBlur"))
                 {
                     float blur = (float)sourceProps["_RimBlur"];
-                    // lilToonのRimBlurは通常0-1の範囲
-                    // Nataneでは_RimPowerでエッジの鋭さを制御
-                    // blurが大きい→powerを小さくして柔らかく
                     if (blur > 0.01f)
                     {
                         float currentPower = targetMaterial.GetFloat("_RimPower");
-                        float adjustedPower = currentPower * (1.0f - blur * 0.3f); // blurの影響を30%に制限
+                        // blurの影響を50%に（旧30%から改善）
+                        float adjustedPower = currentPower * (1.0f - blur * 0.5f);
                         targetMaterial.SetFloat("_RimPower", Mathf.Max(adjustedPower, 0.1f));
                         report.infos.Add($"Rim Blur: {blur:F2} → Rim Power調整: {adjustedPower:F2}");
                     }
                 }
+
+                // RimEnableLighting → RimDirStrength
+                if (sourceProps.ContainsKey("_RimEnableLighting"))
+                {
+                    float enableLighting = (float)sourceProps["_RimEnableLighting"];
+                    targetMaterial.SetFloat("_RimDirStrength", enableLighting);
+                    report.infos.Add($"RimEnableLighting: {enableLighting:F2} → RimDirStrength");
+                }
+
+                // RimBlendMode マッピング
+                if (sourceProps.ContainsKey("_RimBlendMode"))
+                {
+                    int lilMode = (int)(float)sourceProps["_RimBlendMode"];
+                    int nataneMode = ConvertRimBlendMode(lilMode);
+                    targetMaterial.SetFloat("_RimBlendMode", nataneMode);
+                    report.infos.Add($"Rim Blend Mode: {lilMode} → {nataneMode} ({GetRimBlendModeName(nataneMode)})");
+                }
+
+                // RimShadowMask: 影部分ではリムを少し抑える
+                targetMaterial.SetFloat("_RimShadowMask", 0.3f);
             }
 
             // Outline - 変換後の確認ダイアログ
@@ -756,6 +891,16 @@ namespace NataneToon.Editor
             {
                 targetMaterial.SetFloat("_Outline", 1.0f);
                 targetMaterial.EnableKeyword("_OUTLINE");
+
+                // OutlineFixWidth情報をレポートに記録
+                if (sourceProps.ContainsKey("_OutlineFixWidth"))
+                {
+                    float fixWidth = (float)sourceProps["_OutlineFixWidth"];
+                    if (fixWidth > 0.5f)
+                    {
+                        report.infos.Add("Outline FixWidth: 有効（距離に依存しない固定幅）");
+                    }
+                }
             }
 
             // Emission
@@ -788,9 +933,9 @@ namespace NataneToon.Editor
                 // MatCap Intensity変換
                 if (sourceProps.ContainsKey("_MatCapBlend"))
                 {
-                    float blend = (float)sourceProps["_MatCapBlend"];
-                    targetMaterial.SetFloat("_MatCapIntensity", blend);
-                    report.infos.Add($"MatCap Intensity: {blend:F2}");
+                    float matCapBlend = (float)sourceProps["_MatCapBlend"];
+                    targetMaterial.SetFloat("_MatCapIntensity", matCapBlend);
+                    report.infos.Add($"MatCap Intensity: {matCapBlend:F2}");
                 }
                 else if (sourceProps.ContainsKey("_MatCapMainStrength"))
                 {
@@ -800,7 +945,6 @@ namespace NataneToon.Editor
                 }
                 else
                 {
-                    // デフォルト値: lilToonのデフォルトは通常1.0なので、やや控えめに設定
                     targetMaterial.SetFloat("_MatCapIntensity", 0.8f);
                     report.infos.Add("MatCap Intensity: 0.8 (デフォルト値)");
                 }
@@ -815,26 +959,55 @@ namespace NataneToon.Editor
                 }
                 else
                 {
-                    // デフォルト値: Add (0)
                     targetMaterial.SetFloat("_MatCapBlendMode", 0);
+                }
+
+                // MatCapColor情報をレポートに記録
+                if (sourceProps.ContainsKey("_MatCapColor"))
+                {
+                    Color matCapColor = (Color)sourceProps["_MatCapColor"];
+                    if (matCapColor != Color.white)
+                    {
+                        report.infos.Add($"MatCapColor: {matCapColor}（テクスチャに事前乗算されていない場合は手動調整が必要）");
+                    }
                 }
             }
 
-            // Specular - 新規追加
+            // Specular - 改善された変換 (Step 7)
             bool hasSpecular = false;
             float specularIntensity = 0f;
+
+            // lilToon SpecularToon=1の場合、NataneのAnime-style smoothstepに近い
+            if (sourceProps.ContainsKey("_SpecularToon"))
+            {
+                float specToon = (float)sourceProps["_SpecularToon"];
+                if (specToon > 0.5f && sourceProps.ContainsKey("_SpecularBorder"))
+                {
+                    float specBorder = (float)sourceProps["_SpecularBorder"];
+                    // lilToon Toon Specular: smoothstep(border, border+blur, ndoth)
+                    // Natane: smoothstep(1-size-softness, 1-size+softness, ndoth)
+                    // → size = 1 - border
+                    float size = Mathf.Clamp01(1.0f - specBorder);
+                    targetMaterial.SetFloat("_SpecularSize", size);
+                    hasSpecular = true;
+                    specularIntensity = 1.0f;
+                    report.infos.Add($"SpecularToon: border={specBorder:F2} → SpecularSize: {size:F3}");
+                }
+            }
 
             if (sourceProps.ContainsKey("_Smoothness"))
             {
                 float smoothness = (float)sourceProps["_Smoothness"];
                 if (smoothness > 0.01f)
                 {
-                    // SmoothnessをSpecularSizeに変換（非線形カーブ）
-                    float specularSize = OptimizeSpecularSize(smoothness);
-                    targetMaterial.SetFloat("_SpecularSize", specularSize);
+                    if (!hasSpecular) // SpecularToonで既に設定済みでない場合
+                    {
+                        float specularSize = OptimizeSpecularSize(smoothness);
+                        targetMaterial.SetFloat("_SpecularSize", specularSize);
+                        report.infos.Add($"Smoothness: {smoothness:F2} → Specular Size: {specularSize:F3}");
+                    }
                     hasSpecular = true;
-                    specularIntensity = smoothness; // Intensityの計算に使用
-                    report.infos.Add($"Smoothness: {smoothness:F2} → Specular Size: {specularSize:F3}");
+                    specularIntensity = Mathf.Max(specularIntensity, smoothness);
                 }
             }
 
@@ -843,7 +1016,6 @@ namespace NataneToon.Editor
                 float metallic = (float)sourceProps["_Metallic"];
                 if (metallic > 0.01f)
                 {
-                    // Metallicは通常スペキュラーの強度に影響する
                     specularIntensity = Mathf.Max(specularIntensity, metallic);
                     hasSpecular = true;
                     report.infos.Add($"Metallic: {metallic:F2} (スペキュラー強度に反映)");
@@ -855,7 +1027,6 @@ namespace NataneToon.Editor
                 float reflectance = (float)sourceProps["_Reflectance"];
                 if (reflectance > 0.01f)
                 {
-                    // Reflectanceもスペキュラー強度に影響
                     specularIntensity = Mathf.Max(specularIntensity, reflectance * 0.8f);
                     hasSpecular = true;
                     report.infos.Add($"Reflectance: {reflectance:F2} (スペキュラー強度に反映)");
@@ -864,12 +1035,11 @@ namespace NataneToon.Editor
 
             if (sourceProps.ContainsKey("_SpecularBlur"))
             {
-                float blur = (float)sourceProps["_SpecularBlur"];
-                // SpecularBlurをSpecularSoftnessに変換
-                float softness = Mathf.Clamp01(blur);
+                float specBlur = (float)sourceProps["_SpecularBlur"];
+                float softness = Mathf.Clamp01(specBlur);
                 targetMaterial.SetFloat("_SpecularSoftness", softness);
                 hasSpecular = true;
-                report.infos.Add($"Specular Blur: {blur:F2} → Specular Softness: {softness:F2}");
+                report.infos.Add($"Specular Blur: {specBlur:F2} → Specular Softness: {softness:F2}");
             }
 
             if (hasSpecular)
@@ -877,13 +1047,10 @@ namespace NataneToon.Editor
                 targetMaterial.SetFloat("_Specular", 1.0f);
                 targetMaterial.EnableKeyword("_SPECULAR");
 
-                // Specular Colorのデフォルト値
                 if (!sourceProps.ContainsKey("_SpecularColor"))
                 {
                     targetMaterial.SetColor("_SpecularColor", new Color(1, 1, 1, 1));
                 }
-
-                // Specular Softnessのデフォルト値
                 if (!sourceProps.ContainsKey("_SpecularBlur"))
                 {
                     targetMaterial.SetFloat("_SpecularSoftness", 0.3f);
@@ -898,18 +1065,18 @@ namespace NataneToon.Editor
                 float smoothness = (float)sourceProps["_Smoothness"];
                 targetMaterial.SetFloat("_Glossiness", smoothness);
 
-                // 逆のマット効果も設定
                 float matteEffect = 1.0f - smoothness;
                 targetMaterial.SetFloat("_MatteEffect", matteEffect);
 
                 report.infos.Add($"Surface Finish: Glossiness={smoothness:F2}, Matte={matteEffect:F2}");
             }
 
-            // Default settings for good toon shading
-            if (!sourceProps.ContainsKey("_lilShadowBorder"))
+            // Alpha Cutoff (Step 8) - Cutoutバリアントで重要
+            if (sourceProps.ContainsKey("_Cutoff"))
             {
-                targetMaterial.SetFloat("_ShadowSteps", 2);
-                targetMaterial.SetFloat("_ShadowSharpness", 0.1f);
+                float cutoff = (float)sourceProps["_Cutoff"];
+                targetMaterial.SetFloat("_Cutoff", cutoff);
+                report.infos.Add($"Alpha Cutoff: {cutoff:F2}");
             }
         }
 
@@ -1007,6 +1174,124 @@ namespace NataneToon.Editor
                 case 3: return "Overlay";
                 default: return "Unknown";
             }
+        }
+
+        /// <summary>
+        /// lilToonのシェーダー名からNatane Toon Shaderのバリアントを自動検出
+        /// </summary>
+        private Shader DetectNataneShaderVariant(Material sourceMaterial)
+        {
+            string shaderName = sourceMaterial.shader.name.ToLower();
+
+            if (shaderName.Contains("transparent") || shaderName.Contains("fade"))
+            {
+                Shader transparentShader = Shader.Find("Natane/Toon Shader Transparent");
+                if (transparentShader != null) return transparentShader;
+            }
+            else if (shaderName.Contains("cutout"))
+            {
+                Shader cutoutShader = Shader.Find("Natane/Toon Shader Cutout");
+                if (cutoutShader != null) return cutoutShader;
+            }
+
+            // デフォルト: Opaqueバリアント（フォールバック含む）
+            return Shader.Find("Natane/Toon Shader");
+        }
+
+        /// <summary>
+        /// マルチシャドウレイヤー変換（2nd/3rd Shadow）
+        /// </summary>
+        private void MapMultiShadowLayers(Dictionary<string, object> sourceProps, Material targetMaterial, ConversionReport report)
+        {
+            bool has2nd = TryGetColor(sourceProps, "_Shadow2ndColor", "_lilShadow2ndColor", out Color shadow2nd);
+            bool has3rd = TryGetColor(sourceProps, "_Shadow3rdColor", "_lilShadow3rdColor", out Color shadow3rd);
+
+            if (!has2nd && !has3rd) return;
+
+            // Enable multi-shadow keyword
+            targetMaterial.EnableKeyword("_USE_MULTI_SHADOW");
+
+            if (has2nd)
+            {
+                targetMaterial.SetColor("_Shadow2ndColor", shadow2nd);
+                float border2nd = TryGetFloat(sourceProps, "_Shadow2ndBorder", "_lilShadow2ndBorder", 0.5f);
+                targetMaterial.SetFloat("_Shadow2ndBorder", border2nd);
+                report.infos.Add($"2nd Shadow: Color={shadow2nd}, Border={border2nd:F2}");
+            }
+
+            if (has3rd)
+            {
+                targetMaterial.SetColor("_Shadow3rdColor", shadow3rd);
+                float border3rd = TryGetFloat(sourceProps, "_Shadow3rdBorder", "_lilShadow3rdBorder", 0.3f);
+                targetMaterial.SetFloat("_Shadow3rdBorder", border3rd);
+                report.infos.Add($"3rd Shadow: Color={shadow3rd}, Border={border3rd:F2}");
+            }
+        }
+
+        /// <summary>
+        /// lilToonのRimBlendModeをNatane Toon ShaderのRimBlendModeに変換
+        /// lilToon: 0=Add, 1=Screen, 2=Multiply
+        /// Natane:  0=Add, 1=Multiply, 2=Screen, 3=Overlay
+        /// </summary>
+        private int ConvertRimBlendMode(int lilMode)
+        {
+            switch (lilMode)
+            {
+                case 0: return 0; // Add → Add
+                case 1: return 2; // Screen → Screen
+                case 2: return 1; // Multiply → Multiply
+                default: return 0; // Default to Add
+            }
+        }
+
+        /// <summary>
+        /// Rim Blend Modeの名前を取得（レポート用）
+        /// </summary>
+        private string GetRimBlendModeName(int blendMode)
+        {
+            switch (blendMode)
+            {
+                case 0: return "Add";
+                case 1: return "Multiply";
+                case 2: return "Screen";
+                case 3: return "Overlay";
+                default: return "Unknown";
+            }
+        }
+
+        /// <summary>
+        /// 2つのプロパティ名候補からColorを取得（lilプレフィックス/非プレフィックス両対応）
+        /// </summary>
+        private bool TryGetColor(Dictionary<string, object> props, string key1, string key2, out Color color)
+        {
+            if (props.ContainsKey(key1) && props[key1] is Color c1)
+            {
+                color = c1;
+                return true;
+            }
+            if (props.ContainsKey(key2) && props[key2] is Color c2)
+            {
+                color = c2;
+                return true;
+            }
+            color = Color.white;
+            return false;
+        }
+
+        /// <summary>
+        /// 2つのプロパティ名候補からfloatを取得（lilプレフィックス/非プレフィックス両対応）
+        /// </summary>
+        private float TryGetFloat(Dictionary<string, object> props, string key1, string key2, float defaultValue)
+        {
+            if (props.ContainsKey(key1))
+            {
+                return (float)props[key1];
+            }
+            if (props.ContainsKey(key2))
+            {
+                return (float)props[key2];
+            }
+            return defaultValue;
         }
 
         /// <summary>
@@ -1149,10 +1434,10 @@ namespace NataneToon.Editor
             if (materialsToConvert.Count == 0) return;
 
             if (!EditorUtility.DisplayDialog(
-                "プレハブマテリアル変換 Convert Prefab Materials",
-                $"'{targetPrefab.name}' 内の {materialsToConvert.Count} 個のマテリアルを変換してもよろしいですか？\n" +
-                $"Are you sure you want to convert {materialsToConvert.Count} materials in '{targetPrefab.name}'?",
-                "はい Yes", "キャンセル Cancel"))
+                L("プレハブマテリアル変換", "Convert Prefab Materials"),
+                L($"'{targetPrefab.name}' 内の {materialsToConvert.Count} 個のマテリアルを変換してもよろしいですか？",
+                $"Are you sure you want to convert {materialsToConvert.Count} materials in '{targetPrefab.name}'?"),
+                L("はい", "Yes"), L("キャンセル", "Cancel")))
             {
                 return;
             }
@@ -1351,8 +1636,8 @@ namespace NataneToon.Editor
         private void ShowConversionReport(List<ConversionReport> reports, int successCount)
         {
             StringBuilder reportText = new StringBuilder();
-            reportText.AppendLine($"変換完了: {successCount}/{reports.Count}個のマテリアルを正常に変換しました。");
-            reportText.AppendLine($"Conversion Complete: Successfully converted {successCount}/{reports.Count} materials.");
+            reportText.AppendLine(L($"変換完了: {successCount}/{reports.Count}個のマテリアルを正常に変換しました。",
+                $"Conversion Complete: Successfully converted {successCount}/{reports.Count} materials."));
             reportText.AppendLine();
 
             int warningCount = 0;
@@ -1361,7 +1646,7 @@ namespace NataneToon.Editor
             {
                 if (!report.success)
                 {
-                    reportText.AppendLine($"x {report.materialName}: 失敗");
+                    reportText.AppendLine($"x {report.materialName}: {L("失敗", "Failed")}");
                     foreach (var warning in report.warnings)
                     {
                         reportText.AppendLine($"   ! {warning}");
@@ -1387,20 +1672,22 @@ namespace NataneToon.Editor
                 // 重要な情報のみ表示（Outline調整など）
                 if (report.outlineWidthAdjusted)
                 {
-                    reportText.AppendLine($"   > Outline Width調整: {report.originalOutlineWidth:F2} → {report.convertedOutlineWidth:F4}");
+                    reportText.AppendLine(L($"   > Outline Width調整: {report.originalOutlineWidth:F2} → {report.convertedOutlineWidth:F4}",
+                        $"   > Outline Width Adjusted: {report.originalOutlineWidth:F2} -> {report.convertedOutlineWidth:F4}"));
                 }
                 if (report.hasMultipleShadowLayers)
                 {
-                    reportText.AppendLine($"   i 複数シャドウレイヤーを検出（最初のレイヤーのみ変換）");
+                    reportText.AppendLine(L($"   i 複数シャドウレイヤーを検出（マルチシャドウとして変換）",
+                        $"   i Multiple shadow layers detected (converted as multi-shadow)"));
                 }
 
                 reportText.AppendLine();
             }
 
-            reportText.AppendLine("=== サマリー Summary ===");
-            reportText.AppendLine($"成功: {successCount}個");
-            reportText.AppendLine($"失敗: {reports.Count - successCount}個");
-            reportText.AppendLine($"警告: {warningCount}個");
+            reportText.AppendLine(L("=== サマリー ===", "=== Summary ==="));
+            reportText.AppendLine(L($"成功: {successCount}個", $"Success: {successCount}"));
+            reportText.AppendLine(L($"失敗: {reports.Count - successCount}個", $"Failed: {reports.Count - successCount}"));
+            reportText.AppendLine(L($"警告: {warningCount}個", $"Warnings: {warningCount}"));
 
             // ログに詳細を出力
             Debug.Log("=== 詳細な変換レポート Detailed Conversion Report ===");
@@ -1417,7 +1704,7 @@ namespace NataneToon.Editor
             }
 
             EditorUtility.DisplayDialog(
-                "変換レポート Conversion Report",
+                L("変換レポート", "Conversion Report"),
                 reportText.ToString(),
                 "OK"
             );
@@ -1426,10 +1713,11 @@ namespace NataneToon.Editor
             if (warningCount > 0)
             {
                 bool openConsole = EditorUtility.DisplayDialog(
-                    "警告があります Warnings Detected",
-                    $"{warningCount}個の警告が検出されました。\n詳細はコンソールログを確認してください。\n\nコンソールを開きますか？\n\n{warningCount} warnings detected.\nCheck the console log for details.\n\nOpen Console?",
-                    "コンソールを開く Open Console",
-                    "閉じる Close"
+                    L("警告があります", "Warnings Detected"),
+                    L($"{warningCount}個の警告が検出されました。\n詳細はコンソールログを確認してください。\n\nコンソールを開きますか？",
+                    $"{warningCount} warnings detected.\nCheck the console log for details.\n\nOpen Console?"),
+                    L("コンソールを開く", "Open Console"),
+                    L("閉じる", "Close")
                 );
 
                 if (openConsole)
