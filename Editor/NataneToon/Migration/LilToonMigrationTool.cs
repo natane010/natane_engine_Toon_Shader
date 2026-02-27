@@ -703,15 +703,17 @@ namespace NataneToon.Editor
                 targetMaterial.SetFloat("_ShadowOffset", shadowOffset);
 
                 // ShadowBlend: lilToonのblurをNataneのblendに変換
-                float blend = Mathf.Clamp01(blur * 0.8f);
+                // lilToon blur=0.1(デフォルト) → Natane blend は柔らかめに
+                float blend = Mathf.Clamp01(blur);
                 targetMaterial.SetFloat("_ShadowBlend", blend);
 
-                // ShadowSharpness: blur小→鋭い, blur大→柔らかい
-                float sharpness = Mathf.Lerp(0.3f, 0.02f, blur);
+                // ShadowSharpness: Nataneデフォルト0.1を基準に
+                // blur小→やや鋭い(0.15), blur大→柔らかい(0.02)
+                float sharpness = Mathf.Lerp(0.15f, 0.02f, blur);
                 targetMaterial.SetFloat("_ShadowSharpness", sharpness);
 
-                // StepBorderSmooth: blurに比例
-                targetMaterial.SetFloat("_StepBorderSmooth", blur * 0.3f);
+                // StepBorderSmooth: blurに比例して境界を滑らかに
+                targetMaterial.SetFloat("_StepBorderSmooth", blur * 0.5f);
 
                 report.infos.Add($"Shadow: Border={border:F2}→Offset={shadowOffset:F2}, Blur={blur:F2}→Blend={blend:F2}/Sharpness={sharpness:F3}");
             }
@@ -866,53 +868,51 @@ namespace NataneToon.Editor
             }
 
             // === Specular ===
-            // lilToonではSmoothnessとSpecularToonで制御
-            bool hasSpecular = false;
-
-            if (sourceProps.ContainsKey("_SpecularToon"))
+            // lilToonのスペキュラはPBRベースで、_SpecularToon=1/_SpecularBorder=0.5はデフォルト値。
+            // ほとんどのトゥーンマテリアルではスペキュラは目立たないため、
+            // _Metallic > 0 の場合のみNataneのトゥーンスペキュラを有効化する。
+            float metallic = GetFloatOr(sourceProps, "_Metallic", 0);
+            if (metallic > 0.01f)
             {
-                float specToon = (float)sourceProps["_SpecularToon"];
-                if (specToon > 0.5f && sourceProps.ContainsKey("_SpecularBorder"))
-                {
-                    float specBorder = (float)sourceProps["_SpecularBorder"];
-                    float specBlur = GetFloatOr(sourceProps, "_SpecularBlur", 0.0f);
+                bool hasSpecular = false;
 
-                    // lilToon: smoothstep(border, border+blur, ndoth)
-                    // Natane: smoothstep(1-size-softness, 1-size+softness, ndoth)
-                    float size = Mathf.Clamp01(1.0f - specBorder);
-                    float softness = Mathf.Clamp01(specBlur);
-                    targetMaterial.SetFloat("_SpecularSize", size);
-                    targetMaterial.SetFloat("_SpecularSoftness", Mathf.Max(softness, 0.05f));
-                    hasSpecular = true;
-                    report.infos.Add($"Specular(Toon): Border={specBorder:F2}→Size={size:F2}, Blur={specBlur:F2}→Softness={softness:F2}");
+                if (sourceProps.ContainsKey("_SpecularToon"))
+                {
+                    float specToon = (float)sourceProps["_SpecularToon"];
+                    if (specToon > 0.5f && sourceProps.ContainsKey("_SpecularBorder"))
+                    {
+                        float specBorder = (float)sourceProps["_SpecularBorder"];
+                        float specBlur = GetFloatOr(sourceProps, "_SpecularBlur", 0.0f);
+
+                        float size = Mathf.Clamp01(1.0f - specBorder);
+                        float softness = Mathf.Clamp01(specBlur);
+                        targetMaterial.SetFloat("_SpecularSize", size);
+                        targetMaterial.SetFloat("_SpecularSoftness", Mathf.Max(softness, 0.05f));
+                        hasSpecular = true;
+                        report.infos.Add($"Specular(Toon): Border={specBorder:F2}→Size={size:F2}, Metallic={metallic:F2}");
+                    }
                 }
-            }
 
-            if (!hasSpecular && sourceProps.ContainsKey("_Smoothness"))
-            {
-                float smoothness = (float)sourceProps["_Smoothness"];
-                if (smoothness > 0.01f)
+                if (!hasSpecular && sourceProps.ContainsKey("_Smoothness"))
                 {
+                    float smoothness = (float)sourceProps["_Smoothness"];
                     float specularSize = OptimizeSpecularSize(smoothness);
                     targetMaterial.SetFloat("_SpecularSize", specularSize);
                     hasSpecular = true;
                     report.infos.Add($"Specular(PBR): Smoothness={smoothness:F2}→Size={specularSize:F3}");
                 }
-            }
 
-            if (hasSpecular)
-            {
-                targetMaterial.SetFloat("_Specular", 1.0f);
-                targetMaterial.EnableKeyword("_SPECULAR");
-                targetMaterial.SetColor("_SpecularColor", new Color(1, 1, 1, 1));
-                report.infos.Add("Specular有効化");
+                if (hasSpecular)
+                {
+                    targetMaterial.SetFloat("_Specular", 1.0f);
+                    targetMaterial.EnableKeyword("_SPECULAR");
+                    targetMaterial.SetColor("_SpecularColor", new Color(1, 1, 1, 1));
+                    report.infos.Add("Specular有効化 (Metallic素材)");
+                }
             }
-
-            // === Surface Properties ===
-            if (sourceProps.ContainsKey("_Smoothness"))
+            else
             {
-                float smoothness = (float)sourceProps["_Smoothness"];
-                targetMaterial.SetFloat("_Glossiness", smoothness);
+                report.infos.Add($"Specularスキップ: Metallic={metallic:F2} (非金属のため無効)");
             }
 
             // === Alpha Cutoff ===
