@@ -6,25 +6,189 @@
   "packages": {
     "com.natane.toonshader": {
       "versions": {
+        "1.3.2": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.3.2",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.3.2/com.natane.toonshader-1.3.2.zip",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
+        "1.3.1": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.3.1",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.3.1/com.natane.toonshader-1.3.1.zip",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
+        "1.3.0": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.3.0",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.3.0/com.natane.toonshader-1.3.0.zip",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
+        "1.2.17": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.2.17",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.17/com.natane.toonshader-1.2.17.zip",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
+        "1.2.16": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.2.16",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.16/com.natane.toonshader-1.2.16.zip",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
+        "1.2.15": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.2.15",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.15/com.natane.toonshader-1.2.15.zip",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
+        "1.2.14": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.2.14",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.14/com.natane.toonshader-1.2.14.zip",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
+        "1.2.13": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.2.13",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.13/com.natane.toonshader-1.2.13.zip",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
+        "1.2.12": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.2.12",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.12/com.natane.toonshader-1.2.12.zip",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
+        "1.2.11": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.2.11",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.11/com.natane.toonshader-1.2.11.zip",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
         "1.2.10": {
           "name": "com.natane.toonshader",
           "displayName": "Natane Toon Shader",
           "version": "1.2.10",
           "unity": "2019.4",
-          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline.",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.10/com.natane.toonshader-1.2.10.zip",
           "author": {
             "name": "Natane",
             "url": "https://github.com/natane010"
           },
-          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.10/com.natane.toonshader-1.2.10.zip",
           "license": "MIT",
-          "keywords": [
-            "shader",
-            "toon",
-            "cel-shading",
-            "npr",
-            "vrchat"
-          ],
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
           "vpmDependencies": {},
           "legacyFolders": {},
           "legacyFiles": {}
@@ -34,20 +198,82 @@
           "displayName": "Natane Toon Shader",
           "version": "1.2.9",
           "unity": "2019.4",
-          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline.",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.9/com.natane.toonshader-1.2.9.zip",
           "author": {
             "name": "Natane",
             "url": "https://github.com/natane010"
           },
-          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.9/com.natane.toonshader-1.2.9.zip",
           "license": "MIT",
-          "keywords": [
-            "shader",
-            "toon",
-            "cel-shading",
-            "npr",
-            "vrchat"
-          ],
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
+        "1.2.8": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.2.8",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.8/com.natane.toonshader-1.2.8.zip",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
+        "1.2.7": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.2.7",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.7/com.natane.toonshader-1.2.7.zip",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
+        "1.2.6": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.2.6",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.6/com.natane.toonshader-1.2.6.zip",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
+          "vpmDependencies": {},
+          "legacyFolders": {},
+          "legacyFiles": {}
+        },
+        "1.2.5": {
+          "name": "com.natane.toonshader",
+          "displayName": "Natane Toon Shader",
+          "version": "1.2.5",
+          "unity": "2019.4",
+          "description": "A comprehensive cel-shading/NPR toon shader for Unity Built-in Render Pipeline with material preset system, editor tools, VRChat optimization, and Japanese UI localization.",
+          "url": "https://github.com/natane010/natane_toon_shader/releases/download/v1.2.5/com.natane.toonshader-1.2.5.zip",
+          "author": {
+            "name": "Natane",
+            "url": "https://github.com/natane010"
+          },
+          "license": "MIT",
+          "keywords": ["shader", "toon", "cel-shading", "npr", "vrchat", "avatar", "lighting"],
           "vpmDependencies": {},
           "legacyFolders": {},
           "legacyFiles": {}
