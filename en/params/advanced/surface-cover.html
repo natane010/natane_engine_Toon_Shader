@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Surface Cover - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Surface Cover</h1>
+    <p class="page-subtitle">Snow, sand, and dust accumulation on surfaces</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Surface Cover simulates material accumulation — such as snow, sand, or dust — on surfaces based on world-space normals. Upward-facing (or any direction you specify) surfaces receive a cover layer with its own albedo texture, normal map, and color. The coverage amount, angle threshold, and blend sharpness are all configurable.</p>
+    <p>This feature works entirely within the shader, requiring no additional geometry or particle effects. It is especially effective for environment art in VRChat worlds.</p>
+    <p>Controlled by the keyword <code>_SURFACE_COVER</code>. This feature is available in the Background shader variant.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Cover Color</span>
+        <span class="param-prop">_CoverColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>The base color of the cover material. This is multiplied with the cover texture if one is assigned.</p>
+        <p class="param-default">Default: (1, 1, 1, 1) (white — ideal for snow)</p>
+      </div>
+      <div class="param-tip">White for snow, tan/beige for sand, dark green for moss, gray for dust.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Cover Amount</span>
+        <span class="param-prop">_CoverAmount</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls how much of the surface is covered. At 0, no cover is applied; at 1, eligible surfaces are fully covered.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Cover Threshold</span>
+        <span class="param-prop">_CoverThreshold</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The normal angle threshold that determines which surfaces receive cover. Surfaces whose normals align with the cover direction beyond this threshold will be covered.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+      <div class="param-tip">Lower values cover more of the surface (including steeper slopes). Higher values restrict cover to only the most directly-facing surfaces.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Sharpness</span>
+        <span class="param-prop">_CoverBlendSharpness</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Controls how sharply the cover transitions at its edges. Low values produce soft, gradual blending; high values create hard, crisp boundaries.</p>
+        <p class="param-default">Default: 4.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Cover Tiling</span>
+        <span class="param-prop">_CoverTiling</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the texture tiling scale for the cover material. Adjust this to match the scale of your cover texture to the object size.</p>
+        <p class="param-default">Default: 1.0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Cover Direction</span>
+        <span class="param-prop">_CoverDirection</span>
+        <span class="param-badge badge-vector">vector</span>
+      </div>
+      <div class="param-body">
+        <p>The world-space direction from which cover accumulates. The default (0, 1, 0) simulates top-down accumulation like falling snow. Change this to create cover from other directions.</p>
+        <p class="param-default">Default: (0, 1, 0) (upward)</p>
+      </div>
+      <div class="param-tip">Use (0, 1, 0) for snow/rain. Use (0, 0, 1) for front-facing moss on walls. Use (-1, 0, 0) for wind-blown sand from the east.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Cover Texture</span>
+        <span class="param-prop">_CoverTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The albedo texture for the cover material. If no texture is assigned, the Cover Color is used as a flat color.</p>
+        <p class="param-default">Default: "white"</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Cover Normal Map</span>
+        <span class="param-prop">_CoverNormalMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A normal map for the cover material, adding surface detail such as snow grain, sand ripples, or moss texture to the cover layer.</p>
+        <p class="param-default">Default: "bump" (flat normal)</p>
+      </div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <ul>
+      <li><strong>Snow</strong>: Use white CoverColor, Direction (0, 1, 0) for top-down accumulation, and a snow grain normal map.</li>
+      <li><strong>Sand</strong>: Use tan/beige CoverColor, Direction (0, 1, 0), and a sand ripple texture for desert environments.</li>
+      <li><strong>Wall moss</strong>: Use green CoverColor with Direction (0, 0, 1) for front-facing surfaces. Lower the threshold to extend coverage to angled surfaces.</li>
+      <li>Combine with Triplanar Mapping for UV-free environments that also feature surface cover — both features work together seamlessly.</li>
+      <li>CoverThreshold controls how steep a surface must be to receive cover. Experiment with values between 0.3 and 0.7 for natural-looking results.</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

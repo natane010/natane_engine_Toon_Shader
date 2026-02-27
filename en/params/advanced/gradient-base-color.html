@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gradient Base Color - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Gradient Base Color</h1>
+    <p class="page-subtitle">Vertical or horizontal gradient overlay on the base color</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Gradient Base Color applies a two-color gradient across the model surface along a chosen axis. This allows you to create subtle color transitions — such as darker tones at the feet gradually shifting to lighter tones at the head — without requiring additional textures or complex UV painting.</p>
+    <p>The gradient can operate in local or world coordinate space and supports multiple blend modes for flexible integration with existing textures.</p>
+    <p>Controlled by the keyword <code>_GRADIENT_BASE_COLOR</code>.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Top Color</span>
+        <span class="param-prop">_GradientTopColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>The gradient end color applied at the top (Y axis), right (X axis), or front (Z axis) of the model, depending on the selected axis.</p>
+        <p class="param-default">Default: (1, 1, 1, 1) — White</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Bottom Color</span>
+        <span class="param-prop">_GradientBottomColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>The gradient start color applied at the bottom (Y axis), left (X axis), or back (Z axis) of the model, depending on the selected axis.</p>
+        <p class="param-default">Default: (0.5, 0.5, 0.5, 1) — Mid Gray</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Gradient Axis</span>
+        <span class="param-prop">_GradientAxis</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Determines the direction of the gradient. Y produces a vertical gradient (bottom to top), X produces a horizontal gradient (left to right), and Z produces a front-to-back gradient.</p>
+        <p class="param-default">Default: Y (Vertical)</p>
+      </div>
+      <div class="param-tip">Y axis (vertical) is the most commonly used option for natural character coloring.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Coordinate Space</span>
+        <span class="param-prop">_GradientSpace</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects whether the gradient is calculated in local object space or world space. Local space moves with the object, while world space remains fixed relative to the scene.</p>
+        <p class="param-default">Default: Local</p>
+      </div>
+      <div class="param-tip">Use World space for consistent gradients across multiple objects at different positions. Local space is better for individual character coloring.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Gradient Start</span>
+        <span class="param-prop">_GradientStart</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>The position along the selected axis where the gradient begins (Bottom Color). Adjusting this value shifts where the gradient transition starts.</p>
+        <p class="param-default">Default: 0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Gradient End</span>
+        <span class="param-prop">_GradientEnd</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>The position along the selected axis where the gradient ends (Top Color). The distance between Start and End controls the gradient sharpness — a narrow range creates a hard transition.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_GradientBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Controls how the gradient is composited with the base texture. Normal directly mixes, Soft applies a soft light blend, Screen lightens, and Overlay combines multiply and screen for contrast-preserving results.</p>
+        <p class="param-default">Default: Normal (0)</p>
+      </div>
+      <div class="param-tip">Overlay blend mode is excellent for subtle color shifts that preserve underlying texture detail.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Strength</span>
+        <span class="param-prop">_GradientBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the overall intensity of the gradient effect. At 0, the gradient has no visible effect. At 1, the gradient is applied at full strength.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <ul>
+      <li>For natural character coloring, use the Y axis (vertical) with World space. A gradient from white to a slightly warm tone simulates natural sunlight illumination from above.</li>
+      <li>Combine with Overlay blend mode for subtle color shifts that enhance without overpowering existing textures.</li>
+      <li>Narrow the Start/End range (e.g., 0.4 to 0.6) to create a sharp band of color transition, useful for stylized effects.</li>
+      <li>This feature is very lightweight — it adds minimal GPU cost since it only performs a simple interpolation and blend per pixel.</li>
+      <li>Try using complementary colors (e.g., warm orange bottom, cool blue top) for atmospheric environmental storytelling.</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

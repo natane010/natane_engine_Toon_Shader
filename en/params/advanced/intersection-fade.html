@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intersection Fade - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Intersection Fade</h1>
+    <p class="page-subtitle">Fade out geometry at intersection with other surfaces</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Intersection Fade automatically fades out the material where it intersects with other geometry, creating a soft blending effect at contact points. This is achieved by comparing the fragment's depth against the scene depth buffer to detect proximity to other surfaces.</p>
+    <p>Common use cases include preventing ugly clipping on skirts touching the ground, hair passing through clothing, particle effects meeting surfaces, or water edges along shorelines.</p>
+    <p>Like Height Fade, this feature supports Alpha, Clip, and Dithering fade modes, plus an optional glowing edge effect at the intersection boundary.</p>
+    <p>Controlled by the keyword <code>_INTERSECTION_FADE</code>.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fade Distance</span>
+        <span class="param-prop">_IntersectionFadeDistance</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>The distance in world units from the intersection point over which the fade occurs. Larger values create a wider, more gradual fade zone. Smaller values produce a tighter transition.</p>
+        <p class="param-default">Default: 0.5</p>
+      </div>
+      <div class="param-tip">Use 0.1-0.3 for subtle contact blending on clothing. Use 0.5-1.0 for dramatic fade effects on particles or environmental objects.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fade Mode</span>
+        <span class="param-prop">_IntersectionFadeMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the fading method. <strong>Alpha</strong> provides smooth transparency blending. <strong>Clip</strong> uses a hard cutoff for fully visible or invisible pixels. <strong>Dithering</strong> uses an ordered dithering pattern that works on opaque materials.</p>
+        <p class="param-default">Default: Alpha</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fade Strength</span>
+        <span class="param-prop">_IntersectionFadeBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the overall intensity of the intersection fade. At 0, the fade has no effect. At 1, the fade is at full strength.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Dither Scale</span>
+        <span class="param-prop">_IntersectionFadeDitherScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the scale of the dithering pattern when using Dithering mode. Lower values produce a coarser pattern, higher values produce a finer pattern.</p>
+        <p class="param-default">Default: 4</p>
+        <p class="param-range">Range: 1 - 200</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Edge Glow Width</span>
+        <span class="param-prop">_IntersectionFadeEdgeWidth</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>The width of the glowing edge effect rendered at the intersection boundary. Set to 0 to disable the edge glow.</p>
+        <p class="param-default">Default: 0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Edge Glow Color</span>
+        <span class="param-prop">_IntersectionFadeEdgeColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>The HDR color of the glowing edge at the intersection boundary. HDR values with intensity greater than 1 produce bloom-compatible glow.</p>
+        <p class="param-default">Default: (0, 0.8, 1, 1) — Cyan</p>
+      </div>
+      <div class="param-tip">A cyan or blue edge glow creates an energy shield or force field aesthetic.</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <ul>
+      <li>Ideal for preventing ugly geometry clipping on long skirts, capes, or coattails that touch the floor.</li>
+      <li>Use Dithering mode on opaque materials for better performance and to avoid transparency sorting artifacts.</li>
+      <li>Small FadeDistance values (0.1-0.3) work best for subtle clothing blending where you just want to hide clipping.</li>
+      <li>Larger FadeDistance values (0.5-1.0) combined with edge glow create dramatic energy shield or hologram effects.</li>
+      <li>This feature requires access to the depth buffer (<code>_CameraDepthTexture</code>). It works automatically in most scenarios but may not function in certain VRChat mirror configurations.</li>
+      <li>Combine with the Hologram effect for a complete sci-fi force field material.</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

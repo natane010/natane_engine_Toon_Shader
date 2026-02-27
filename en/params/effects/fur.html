@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fur Rendering - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Fur Rendering</h1>
+    <p class="page-subtitle">Shell-based fur/hair rendering system</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>High-quality shell-based fur rendering using 16 shell passes. Creates realistic fur, wool, and hair effects. This feature is available only in the "Fur" rendering type variant. Default OFF due to high GPU cost &mdash; requires manual activation.</p>
+    <p>Controlled by the keyword <code>_FUR</code> (Fur shader variant only). When the <code>_FUR</code> keyword is OFF, all fur passes are discarded with zero GPU cost.</p>
+
+    <h2 id="basic">Basic Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fur Length</span>
+        <span class="param-prop">_FurLength</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the length of the fur strands. Higher values produce longer fur.</p>
+      </div>
+      <div class="param-tip">Start with small values (0.01-0.05) and increase gradually. Very long fur may cause visual artifacts at extreme angles.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fur Density</span>
+        <span class="param-prop">_FurDensity</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the density of fur strands. Higher values produce thicker, more packed fur.</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Alpha Cutoff</span>
+        <span class="param-prop">_FurAlphaCutoff</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the alpha cutoff threshold for fur strand tips. Controls how sharp or tapered the strand ends appear.</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Gravity</span>
+        <span class="param-prop">_FurGravity</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>Applies a gravity drooping effect to fur strands using quadratic falloff. Higher values make the fur droop more towards the ground.</p>
+      </div>
+    </div>
+
+    <h2 id="color">Color Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Root Color</span>
+        <span class="param-prop">_FurRootColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the color at the base (root) of fur strands.</p>
+      </div>
+      <div class="param-tip">Darker root colors with lighter tips create a natural fur gradient. Match with the base material color for seamless blending at the surface.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Tip Color</span>
+        <span class="param-prop">_FurTipColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the color at the tip of fur strands.</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Color Blend</span>
+        <span class="param-prop">_FurColorBlend</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the blend factor between root and tip colors along the fur strand length.</p>
+      </div>
+    </div>
+
+    <h2 id="shading">Shading</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Ambient Occlusion</span>
+        <span class="param-prop">_FurAO</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the self-occlusion ambient darkening effect. Fur near the base appears darker, simulating light absorption within the fur volume.</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Strength</span>
+        <span class="param-prop">_FurShadowStrength</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of shadows cast on the fur surface.</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Specular</span>
+        <span class="param-prop">_FurSpecular</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the specular highlight intensity on fur strands.</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rim Light</span>
+        <span class="param-prop">_FurRimLight</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the rim lighting intensity on fur. Creates a backlit halo effect around the fur silhouette.</p>
+      </div>
+    </div>
+
+    <h2 id="wind">Wind Animation</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Wind Direction</span>
+        <span class="param-prop">_FurWindDirection</span>
+        <span class="param-badge badge-color">vector</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the direction of the wind force applied to fur strands.</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Wind Speed</span>
+        <span class="param-prop">_FurWindSpeed</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the animation speed of the wind effect on fur.</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Wind Strength</span>
+        <span class="param-prop">_FurWindStrength</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the force strength of the wind animation.</p>
+      </div>
+    </div>
+
+    <h2 id="lod">LOD &amp; Performance</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LOD Distance</span>
+        <span class="param-prop">_FurLODDistance</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the distance at which LOD (Level of Detail) begins reducing shell layers. Beyond this distance, the number of shell passes decreases to save GPU performance.</p>
+      </div>
+      <div class="param-tip">Enable LOD for VRChat optimization. Set to a reasonable distance (5-10m) to maintain quality up close while saving performance at a distance.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LOD Minimum Layers</span>
+        <span class="param-prop">_FurLODMinLayers</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the minimum number of shell layers used at the LOD distance. The layer count interpolates between 16 (full quality) and this minimum based on camera distance.</p>
+      </div>
+    </div>
+
+    <h2 id="textures">Textures</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Noise Texture</span>
+        <span class="param-prop">_FurNoiseTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A noise texture that defines the fur strand pattern. Controls the shape and distribution of individual fur strands across shells.</p>
+      </div>
+      <div class="param-tip">Use high-contrast noise for distinct fur strands, or soft noise for a woolly/plush appearance.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fur Mask</span>
+        <span class="param-prop">_FurMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls where fur is rendered. White areas produce fur, black areas remain fur-free.</p>
+      </div>
+      <div class="param-tip">Performance warning &mdash; 16 shell passes multiply draw calls significantly. Use _FurMask to restrict fur to specific areas (collar, tail, ears) to reduce rendering cost.</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>
