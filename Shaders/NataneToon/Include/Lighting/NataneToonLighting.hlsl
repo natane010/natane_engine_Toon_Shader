@@ -55,12 +55,28 @@
 // lilToon-compatible toon shading (linear interpolation, NOT smoothstep)
 // lilTooningScale: saturate((value - borderMin) / (borderMax - borderMin))
 // Used by StandardToon mode (_ShadingMode = 2) for exact lilToon parity
+// v2: fwidth-based anti-aliasing added (lilToon LIL_ANTIALIAS_MODE != 0)
 #ifdef _STANDARD_TOON
 float LilToonShading(float value, float border, float blur)
 {
     float borderMin = saturate(border - blur * 0.5);
     float borderMax = saturate(border + blur * 0.5);
-    return saturate((value - borderMin) / max(borderMax - borderMin, 0.001));
+    // fwidth-based AA for smoother shadow boundary (matches lilToon's antialias mode)
+    float aa = fwidth(value) * 0.5;
+    return saturate((value - borderMin) / max(borderMax - borderMin + aa, 0.0001));
+}
+
+// lilToon-compatible color blend function
+// Supports 4 blend modes: 0=Normal(Replace), 1=Add, 2=Screen, 3=Multiply
+half3 LilBlendColor(half3 dstCol, half3 srcCol, half srcA, uint blendMode)
+{
+    half3 ad = dstCol + srcCol;
+    half3 mu = dstCol * srcCol;
+    half3 outCol = srcCol;                                              // 0: Normal (Replace)
+    outCol = (blendMode == 1) ? ad : outCol;                           // 1: Add
+    outCol = (blendMode == 2) ? max(ad - mu, dstCol) : outCol;        // 2: Screen
+    outCol = (blendMode == 3) ? mu : outCol;                           // 3: Multiply
+    return lerp(dstCol, outCol, srcA);
 }
 #endif
 

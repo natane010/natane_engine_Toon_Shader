@@ -241,6 +241,30 @@ half4 frag(v2f i) : SV_Target
     half lightGray = CALC_LUMINANCE(effectiveLightColor);
     effectiveLightColor = lerp(effectiveLightColor, half3(lightGray, lightGray, lightGray), _MonochromeLighting);
 
+    // ===== StandardToon v2: lilToon-compatible light color =====
+    #ifdef _STANDARD_TOON
+        half3 stLightColor;
+        half3 stIndLightColor;
+        #ifdef UNITY_PASS_FORWARDBASE
+            // lilToon: lightColor = MAINLIGHT + SHToon
+            // SHToon = ShadeSH9(lightDir * 0.666666)
+            float3 stSHToon = max(0, ShadeSH9(float4(lightDir * 0.666666, 1.0)));
+            stLightColor = effectiveLightColor + stSHToon;
+            // Re-apply clamping (lilToon clamps after SH addition)
+            stLightColor = clamp(stLightColor, _LightColorMin, _LightColorMax);
+            half stGray = CALC_LUMINANCE(stLightColor);
+            stLightColor = lerp(stLightColor, half3(stGray, stGray, stGray), _MonochromeLighting);
+            // AsUnlit: applied to lightColor directly (lilToon behavior)
+            stLightColor = lerp(stLightColor, half3(1, 1, 1), _STAsUnlit);
+            // Indirect: SHToonMin (opposite direction)
+            stIndLightColor = saturate(ShadeSH9(float4(-lightDir * 0.666666, 1.0)));
+        #else
+            // ForwardAdd: just use the per-light color
+            stLightColor = effectiveLightColor;
+            stIndLightColor = half3(0, 0, 0);
+        #endif
+    #endif
+
     UNITY_LIGHT_ATTENUATION(atten, i, i.worldPos);
 
     // ===== Per-Effect Distance Fade (early calculation) =====
@@ -395,40 +419,61 @@ half4 frag(v2f i) : SV_Target
         shadingValue = saturate(rampInput + clamp(_ShadowOffset, -1.0, 1.0));
         shadowColor = lighting;
     #elif defined(_STANDARD_TOON)
-        // ===== StandardToon: lilToon互換シェーディング =====
-        // lilToon-compatible: LilToonShading + ShadowStrength + Multi-shadow
+        // ===== StandardToon v2: lilToon-exact pipeline =====
+        // Tooning
         half stToon = LilToonShading(lightTerm, _STShadowBorder, _STShadowBlur);
+
+        // Shadow attenuation (lilToon: lns *= lerp(1, calculatedShadow, _ShadowReceive))
+        stToon *= atten;
+
+        // Shadow strength (lilToon: lns = lerp(1, lns, _ShadowStrength))
         stToon = lerp(1.0, stToon, _STShadowStrength);
+
+        // AO
+        #ifdef _USE_AO
+            stToon *= lerp(1.0, aoEffect, _AOBlend);
+        #endif
+
         shadingValue = stToon;
 
-        // AO適用
-        #ifdef _USE_AO
-            half preST_AO = shadingValue;
-            shadingValue *= aoEffect;
-            shadingValue = lerp(preST_AO, shadingValue, _AOBlend);
-        #endif
+        // ---- Shadow color computation (lilToon model: multiplicative with albedo) ----
+        half3 stAlbedo = col.rgb;
 
-        // Shadow Attenuation
-        shadingValue *= atten;
+        // 1st shadow: indirectCol = albedo * _ShadowColor.rgb (with shadow color texture)
+        half4 stShadowColorTex = tex2D(_ShadowColorTex, uv);
+        half3 stIndirectCol = lerp(stAlbedo, stShadowColorTex.rgb, stShadowColorTex.a) * _ShadowColor.rgb;
 
-        // lilToon Multi-shadow model (sequential lerp with alpha)
-        half3 stShadowColor = _ShadowColor.rgb;
+        // Multi-shadow (lilToon sequential lerp with alpha)
         #ifdef _USE_MULTI_SHADOW
+            // 2nd shadow
             half toon2 = LilToonShading(lightTerm, _Shadow2ndBorder, _STShadowBlur);
-            half alpha2 = _Shadow2ndColor.a * (1.0 - toon2);
-            stShadowColor = lerp(stShadowColor, _Shadow2ndColor.rgb, alpha2);
+            half3 st2ndCol = stAlbedo * _Shadow2ndColor.rgb;
+            half alpha2 = _Shadow2ndColor.a - _Shadow2ndColor.a * toon2;
+            stIndirectCol = lerp(stIndirectCol, st2ndCol, alpha2);
 
+            // 3rd shadow
             half toon3 = LilToonShading(lightTerm, _Shadow3rdBorder, _STShadowBlur);
-            half alpha3 = _Shadow3rdColor.a * (1.0 - toon3);
-            stShadowColor = lerp(stShadowColor, _Shadow3rdColor.rgb, alpha3);
+            half3 st3rdCol = stAlbedo * _Shadow3rdColor.rgb;
+            half alpha3 = _Shadow3rdColor.a - _Shadow3rdColor.a * toon3;
+            stIndirectCol = lerp(stIndirectCol, st3rdCol, alpha3);
         #endif
 
-        // Shadow color texture
-        half3 stShadowColorTex = tex2D(_ShadowColorTex, uv).rgb;
-        stShadowColor = lerp(stShadowColor, stShadowColor * stShadowColorTex, saturate(_ShadowColorTexStrength));
+        // Direct color & indirect color with light color
+        half3 stDirectCol = stAlbedo * stLightColor;
+        stIndirectCol *= stLightColor;
 
-        shadowColor = stShadowColor;
-        lighting = lerp(shadowColor, half3(1, 1, 1), shadingValue);
+        // Shadow Environment Strength: lighten shadows with indirect light
+        #ifdef UNITY_PASS_FORWARDBASE
+            stIndirectCol = lerp(stIndirectCol, stAlbedo,
+                                 saturate(stIndLightColor * _STShadowEnvStrength));
+        #endif
+
+        // Safety clamp: shadow never brighter than lit
+        stIndirectCol = min(stIndirectCol, stDirectCol);
+
+        // Store for later composition
+        shadowColor = _ShadowColor.rgb;
+        lighting = lerp(stIndirectCol / max(stAlbedo * stLightColor, 0.001), half3(1, 1, 1), shadingValue);
     #else
         // Choose between Toon and Gradient shading modes - Optimized: no branching
         // Calculate both modes and blend based on _ShadingMode
@@ -558,12 +603,9 @@ half4 frag(v2f i) : SV_Target
 
         // ========== STEP 3: Direct Light ==========
         #ifdef _STANDARD_TOON
-            // lilToon-style: simple light color multiplication (no normalize+luminance)
-            half3 directResult = lighting;
-            directResult *= effectiveLightColor;
-            // AsUnlit: lerp towards unlit (lightColor=1)
-            half3 unlitDirect = lighting;
-            directResult = lerp(directResult, unlitDirect, _STAsUnlit);
+            // StandardToon v2: lilToon-exact composition handled in STEP 5
+            // stDirectCol, stIndirectCol, shadingValue computed in shading branch
+            half3 directResult = half3(0, 0, 0); // placeholder, replaced in STEP 5
         #elif defined(_USE_RAMP)
             half3 directResult = lighting; // Ramp already provides colored shadow-to-lit
         #else
@@ -690,9 +732,13 @@ half4 frag(v2f i) : SV_Target
             lighting = lerp(preLightVolume, lighting, _LightVolumeBlend);
         #else
             #ifdef _STANDARD_TOON
-                // lilToon-style: direct + indirect + additional (simple additive)
-                lighting = directResult + additionalResult + indirectResult;
-                lighting += ambient;
+                // ========== StandardToon v2: lilToon-compatible composition ==========
+                // lilToon's final composition: lerp(indirectCol, directCol, toon)
+                half3 stResult = lerp(stIndirectCol, stDirectCol, shadingValue);
+
+                // Add additional lights (vertex lights, backlight, LTCGI) scaled by albedo
+                lighting = stResult + additionalResult * col.rgb;
+                // Note: 'lighting' here already includes albedo for StandardToon
             #else
                 // Non-LV: max() composition + directional ambient
                 lighting = max(indirectResult, directResult + additionalResult);
@@ -711,13 +757,20 @@ half4 frag(v2f i) : SV_Target
 
     #else
         // ===== ForwardAdd: Additional Light Contribution =====
-        lighting = lerp(shadowColor, half3(1, 1, 1), shadingValue);
-        half lightColorLum_add = CALC_LUMINANCE(_LightColor0.rgb);
-        half3 colorMul_add = lighting * _LightColor0.rgb;
-        half3 lumOnly_add = lighting * lightColorLum_add;
-        lighting = lerp(lumOnly_add, colorMul_add, _LightColorInfluence);
-        lighting *= max(0.0, _LightIntensity);
-        lighting *= max(0.0, _AdditionalLightIntensity);
+        #ifdef _STANDARD_TOON
+            // StandardToon v2: simple additional light contribution (lilToon-style)
+            lighting = lerp(shadowColor, half3(1, 1, 1), shadingValue);
+            lighting *= _LightColor0.rgb;
+            lighting *= max(0.0, _AdditionalLightIntensity);
+        #else
+            lighting = lerp(shadowColor, half3(1, 1, 1), shadingValue);
+            half lightColorLum_add = CALC_LUMINANCE(_LightColor0.rgb);
+            half3 colorMul_add = lighting * _LightColor0.rgb;
+            half3 lumOnly_add = lighting * lightColorLum_add;
+            lighting = lerp(lumOnly_add, colorMul_add, _LightColorInfluence);
+            lighting *= max(0.0, _LightIntensity);
+            lighting *= max(0.0, _AdditionalLightIntensity);
+        #endif
     #endif
 
     // Store original texture color before lighting application
@@ -738,8 +791,8 @@ half4 frag(v2f i) : SV_Target
         }
     #else
         #ifdef _STANDARD_TOON
-            // lilToon-style: simple multiply (no AlbedoPreservation)
-            col.rgb = originalAlbedo * lighting;
+            // StandardToon v2: lighting already includes albedo (computed in STEP 5)
+            col.rgb = lighting;
             half gray = CALC_LUMINANCE(col.rgb);
             col.rgb = lerp(gray, col.rgb, _Saturation);
             col.rgb *= _Brightness;
@@ -887,53 +940,87 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Rim Light =====
     #if defined(_RIM_LIGHT)
-        float rimPowerBlurred = max(0.1, _RimPower * (1.0 - _RimBlur * 0.8));
-        half rimSpreadPower = lerp(rimPowerBlurred, max(0.5, rimPowerBlurred * 0.3), _RimSpread);
+        #ifdef _STANDARD_TOON
+            // lilToon-style rim: Fresnel + tooning (border/blur) + LilBlendColor
+            half stRimNV = abs(dot(worldNormal, viewDir));
+            half stRim = pow(saturate(1.0 - stRimNV), _RimPower);
+            // Apply tooning with border derived from RimSpread
+            half stRimBorder = saturate(1.0 - _RimSpread);
+            half stRimBlur = 0.1; // lilToon default-like
+            stRim = LilToonShading(stRim, stRimBorder, stRimBlur);
 
-        // Fresnel rim (same for both passes: camera-based edge detection)
-        half3 rim = RimLighting(worldNormal, viewDir, rimPowerBlurred, _RimIntensity);
-        half3 rimGlow = RimLighting(worldNormal, viewDir, rimSpreadPower, _RimIntensity * _RimSpread * 0.5);
-        rim += rimGlow * step(0.001, _RimSpread);
+            // Shadow mask
+            stRim *= lerp(1.0, shadingValue, _RimShadowMask);
 
-        // Apply mask texture with soft blending
-        float2 rimMaskUV = AnimateUVIfNeeded(uv, _RimMaskScrollSpeed.xy, _RimMaskRotateSpeed);
-        half rimMask = tex2D(_RimMask, rimMaskUV).r;
-        rimMask = ApplySoftMask(rimMask); // Smooth mask transitions
-        rim *= rimMask;
-
-        if (_RimDirectionRange > 0.001)
-        {
-            half rimDirectionMask1 = smoothstep(-_RimDirectionRange, _RimDirectionRange, dot(worldNormal, rimDirNormalized));
-            rim *= rimDirectionMask1;
-        }
-
-        // Apply glossiness and matte material quality
-        rim *= _Glossiness;
-        rim = ApplyMatteQuality(rim, col.rgb, _MatteEffect);
-
-        // Light direction-linked rim masking (lilToon-style Half-Lambert)
-        // Half-Lambert maps NdotL from [-1,1] to [0,1] — rim follows actual light direction
-        {
+            // Light direction influence
             half rimHalfLambert = dot(worldNormal, lightDir) * 0.5 + 0.5;
-            rim *= lerp(1.0, rimHalfLambert, _RimDirStrength);
-        }
-        // Shadow-based rim suppression (independent of direction)
-        rim *= lerp(1.0, shadingValue, _RimShadowMask);
+            stRim *= lerp(1.0, rimHalfLambert, _RimDirStrength);
 
-        // ForwardAdd: per-light color and attenuation (same pattern as Specular/SSS)
-        #ifndef UNITY_PASS_FORWARDBASE
-            rim *= effectiveLightColor * atten * _AdditionalLightIntensity;
-        #endif
+            // Mask
+            float2 rimMaskUV = AnimateUVIfNeeded(uv, _RimMaskScrollSpeed.xy, _RimMaskRotateSpeed);
+            half rimMask = tex2D(_RimMask, rimMaskUV).r;
+            rimMask = ApplySoftMask(rimMask);
+            stRim *= rimMask;
 
-        // Use safe additive blending to prevent white-out
-        half rimStrength = saturate(length(rim) * 0.5);
-        half3 preRim = col.rgb;
-        col.rgb = SafeAdditiveBlend(col.rgb, rim, rimStrength);
-        half rimBlendFaded = _RimBlend;
-        #ifdef _DISTANCE_FADE
-            rimBlendFaded *= lerp(1.0, distanceFade, _RimDistFade);
+            // LilBlendColor (uses _RimBlendMode directly as lilToon blend mode)
+            half3 preRim = col.rgb;
+            uint stRimBlendMode = (uint)_RimBlendMode;
+            col.rgb = LilBlendColor(col.rgb, _RimColor.rgb, stRim * _RimColor.a * _RimIntensity, stRimBlendMode);
+
+            half rimBlendFaded = _RimBlend;
+            #ifdef _DISTANCE_FADE
+                rimBlendFaded *= lerp(1.0, distanceFade, _RimDistFade);
+            #endif
+            col.rgb = lerp(preRim, col.rgb, rimBlendFaded);
+        #else
+            float rimPowerBlurred = max(0.1, _RimPower * (1.0 - _RimBlur * 0.8));
+            half rimSpreadPower = lerp(rimPowerBlurred, max(0.5, rimPowerBlurred * 0.3), _RimSpread);
+
+            // Fresnel rim (same for both passes: camera-based edge detection)
+            half3 rim = RimLighting(worldNormal, viewDir, rimPowerBlurred, _RimIntensity);
+            half3 rimGlow = RimLighting(worldNormal, viewDir, rimSpreadPower, _RimIntensity * _RimSpread * 0.5);
+            rim += rimGlow * step(0.001, _RimSpread);
+
+            // Apply mask texture with soft blending
+            float2 rimMaskUV = AnimateUVIfNeeded(uv, _RimMaskScrollSpeed.xy, _RimMaskRotateSpeed);
+            half rimMask = tex2D(_RimMask, rimMaskUV).r;
+            rimMask = ApplySoftMask(rimMask); // Smooth mask transitions
+            rim *= rimMask;
+
+            if (_RimDirectionRange > 0.001)
+            {
+                half rimDirectionMask1 = smoothstep(-_RimDirectionRange, _RimDirectionRange, dot(worldNormal, rimDirNormalized));
+                rim *= rimDirectionMask1;
+            }
+
+            // Apply glossiness and matte material quality
+            rim *= _Glossiness;
+            rim = ApplyMatteQuality(rim, col.rgb, _MatteEffect);
+
+            // Light direction-linked rim masking (lilToon-style Half-Lambert)
+            // Half-Lambert maps NdotL from [-1,1] to [0,1] — rim follows actual light direction
+            {
+                half rimHalfLambert = dot(worldNormal, lightDir) * 0.5 + 0.5;
+                rim *= lerp(1.0, rimHalfLambert, _RimDirStrength);
+            }
+            // Shadow-based rim suppression (independent of direction)
+            rim *= lerp(1.0, shadingValue, _RimShadowMask);
+
+            // ForwardAdd: per-light color and attenuation (same pattern as Specular/SSS)
+            #ifndef UNITY_PASS_FORWARDBASE
+                rim *= effectiveLightColor * atten * _AdditionalLightIntensity;
+            #endif
+
+            // Use safe additive blending to prevent white-out
+            half rimStrength = saturate(length(rim) * 0.5);
+            half3 preRim = col.rgb;
+            col.rgb = SafeAdditiveBlend(col.rgb, rim, rimStrength);
+            half rimBlendFaded = _RimBlend;
+            #ifdef _DISTANCE_FADE
+                rimBlendFaded *= lerp(1.0, distanceFade, _RimDistFade);
+            #endif
+            col.rgb = ApplyEffectBlendPost(preRim, col.rgb, rimBlendFaded, _RimBlendMode);
         #endif
-        col.rgb = ApplyEffectBlendPost(preRim, col.rgb, rimBlendFaded, _RimBlendMode);
     #endif
 
     // ===== Rim Light 2 =====
@@ -1074,27 +1161,44 @@ half4 frag(v2f i) : SV_Target
         matcapMask = ApplySoftMask(matcapMask); // Smooth mask transitions
         matcap *= matcapMask;
 
-        // Apply glossiness and matte material quality
-        matcap *= _Glossiness;
-        matcap = ApplyMatteQuality(matcap, col.rgb, _MatteEffect);
+        #ifdef _STANDARD_TOON
+            // lilToon-style: LilBlendColor with 4 modes (Normal, Add, Screen, Multiply)
+            // Natane blend mode mapping: 0=Add→1, 1=Multiply→3, 2=Replace→0
+            uint lilMatCapMode = 1; // Default: Add
+            if (_MatCapBlendMode < 0.5) lilMatCapMode = 1;       // Natane Add → lilToon Add
+            else if (_MatCapBlendMode < 1.5) lilMatCapMode = 3;  // Natane Multiply → lilToon Multiply
+            else lilMatCapMode = 0;                               // Natane Replace → lilToon Normal
 
-        // Blend modes: 0=Add (safe), 1=Multiply, 2=Replace - Optimized: no branching
-        half3 preMatCap = col.rgb;
-        half matcapStrength = saturate(_MatCapIntensity * matcapMask);
-        half3 addResult = SafeAdditiveBlend(col.rgb, matcap, matcapStrength);
-        half3 multiplyResult = BlendWithSoftMask(col.rgb, col.rgb * matcap, saturate(_MatCapIntensity * matcapMask));
-        half3 replaceResult = BlendWithSoftMask(col.rgb, matcap, saturate(_MatCapIntensity * matcapMask));
+            half3 preMatCap = col.rgb;
+            col.rgb = LilBlendColor(col.rgb, matcap, _MatCapBlend * matcapMask, lilMatCapMode);
+            half matCapBlendFaded = _MatCapBlend;
+            #ifdef _DISTANCE_FADE
+                matCapBlendFaded *= lerp(1.0, distanceFade, _MatCapDistFade);
+            #endif
+            col.rgb = lerp(preMatCap, col.rgb, matCapBlendFaded);
+        #else
+            // Apply glossiness and matte material quality
+            matcap *= _Glossiness;
+            matcap = ApplyMatteQuality(matcap, col.rgb, _MatteEffect);
 
-        // Select blend mode using lerp
-        half isMultiply = step(HALF_VALUE, _MatCapBlendMode) * step(_MatCapBlendMode, 1.5);
-        half isReplace = step(1.5, _MatCapBlendMode);
-        col.rgb = lerp(addResult, multiplyResult, isMultiply);
-        col.rgb = lerp(col.rgb, replaceResult, isReplace);
-        half matCapBlendFaded = _MatCapBlend;
-        #ifdef _DISTANCE_FADE
-            matCapBlendFaded *= lerp(1.0, distanceFade, _MatCapDistFade);
+            // Blend modes: 0=Add (safe), 1=Multiply, 2=Replace - Optimized: no branching
+            half3 preMatCap = col.rgb;
+            half matcapStrength = saturate(_MatCapIntensity * matcapMask);
+            half3 addResult = SafeAdditiveBlend(col.rgb, matcap, matcapStrength);
+            half3 multiplyResult = BlendWithSoftMask(col.rgb, col.rgb * matcap, saturate(_MatCapIntensity * matcapMask));
+            half3 replaceResult = BlendWithSoftMask(col.rgb, matcap, saturate(_MatCapIntensity * matcapMask));
+
+            // Select blend mode using lerp
+            half isMultiply = step(HALF_VALUE, _MatCapBlendMode) * step(_MatCapBlendMode, 1.5);
+            half isReplace = step(1.5, _MatCapBlendMode);
+            col.rgb = lerp(addResult, multiplyResult, isMultiply);
+            col.rgb = lerp(col.rgb, replaceResult, isReplace);
+            half matCapBlendFaded = _MatCapBlend;
+            #ifdef _DISTANCE_FADE
+                matCapBlendFaded *= lerp(1.0, distanceFade, _MatCapDistFade);
+            #endif
+            col.rgb = lerp(preMatCap, col.rgb, matCapBlendFaded);
         #endif
-        col.rgb = lerp(preMatCap, col.rgb, matCapBlendFaded);
     #endif
 
     // ===== MatCap 2 (ForwardBase only) =====

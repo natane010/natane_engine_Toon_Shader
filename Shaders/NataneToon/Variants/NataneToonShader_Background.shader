@@ -111,6 +111,7 @@ Shader "Natane/Toon Shader (Background)"
         _STShadowBlur ("ST Shadow Blur", Range(0, 1)) = 0.1
         _STShadowStrength ("ST Shadow Strength", Range(0, 1)) = 1.0
         _STAsUnlit ("ST As Unlit", Range(0, 1)) = 0
+        _STShadowEnvStrength ("ST Shadow Env Strength", Range(0, 1)) = 1
         _ShadingGradientWidth ("Gradient Width", Range(0.001, 1)) = 0.2
         [Toggle(_USE_RAMP)] _UseRamp ("Use Ramp Texture", Float) = 0
         _RampTex ("Ramp Texture", 2D) = "white" {}

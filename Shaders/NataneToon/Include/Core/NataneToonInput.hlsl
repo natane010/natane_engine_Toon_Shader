@@ -115,10 +115,11 @@ CBUFFER_START(UnityPerMaterial)
 
     // StandardToon (lilToon互換)
     #if defined(_STANDARD_TOON)
-    float _STShadowBorder;    // lilToon _ShadowBorder (影境界, default 0.5)
-    float _STShadowBlur;      // lilToon _ShadowBlur (影ぼかし, default 0.1)
-    float _STShadowStrength;  // lilToon _ShadowStrength (影の強さ, default 1.0)
-    float _STAsUnlit;         // lilToon _AsUnlit (アンライト度, default 0.0)
+    float _STShadowBorder;        // lilToon _ShadowBorder (影境界, default 0.5)
+    float _STShadowBlur;          // lilToon _ShadowBlur (影ぼかし, default 0.1)
+    float _STShadowStrength;      // lilToon _ShadowStrength (影の強さ, default 1.0)
+    float _STAsUnlit;             // lilToon _AsUnlit (アンライト度, default 0.0)
+    float _STShadowEnvStrength;   // lilToon _ShadowEnvStrength (間接光による影持ち上げ, default 1.0)
     #endif
 
     // SDF Shadow Map

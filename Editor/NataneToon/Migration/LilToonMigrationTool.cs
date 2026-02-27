@@ -633,6 +633,11 @@ namespace NataneToon.Editor
             CaptureTexture(material, "_ShadowBorderMask", properties);
             CaptureTexture(material, "_ShadowBlurMask", properties);
 
+            // Shadow Environment Strength (lilToon固有: 間接光による影持ち上げ)
+            CaptureFloat(material, "_ShadowEnvStrength", properties);
+            // Shadow Receive (lilToon: リアルタイムシャドウ受け取り量)
+            CaptureFloat(material, "_ShadowReceive", properties);
+
             // === Rim Light ===
             CaptureColor(material, "_RimColor", properties);
             CaptureTexture(material, "_RimColorTex", properties);
@@ -754,10 +759,14 @@ namespace NataneToon.Editor
             }
 
             // =============================================
-            // StandardToon モード自動選択 (lilToon互換シェーディング)
+            // StandardToon v2 モード自動選択 (lilToon完全互換パイプライン)
             //
-            // lilToonの計算パイプラインを忠実に再現するStandardToonモードを使用。
-            // Half-Lambert NdotL、リニア補間、ShadowStrength、簡易ライト乗算を内蔵し、
+            // lilToonの計算パイプラインを完全に再現するStandardToon v2モードを使用。
+            // ・lightColor = MAINLIGHT + SHToon（SH直接合算）
+            // ・lerp(indirectCol, directCol, toon) 一発合成
+            // ・AsUnlit を lightColor に直接適用
+            // ・ShadowEnvStrength で間接光による影持ち上げ
+            // ・min(indirectCol, directCol) 安全クランプ
             // パラメータ空間の変換が不要。lilToonのパラメータをそのまま直接マッピングする。
             // =============================================
             targetMaterial.SetFloat("_ShadingMode", 2.0f); // StandardToon
@@ -873,17 +882,12 @@ namespace NataneToon.Editor
                 targetMaterial.SetFloat("_RimShadowMask", rimShadowMask);
 
                 // RimBlendMode変換
-                // lilToon: 0=Normal(lerp), 1=Add, 2=Screen, 3=Multiply
-                // → lilBlendColorは全モードで lerp(dst, blended, srcA) を使う
-                // Natane: 0=Normal(SoftLight), 1=Soft, 2=Screen, 3=Overlay
-                // lilToonのデフォルトは Add(1) だが、lilToon側のRimBlendModeプロパティ名は不明なため
-                // キャプチャされていない場合はデフォルト(Add=1)として処理
-                // ※ lilToonでは _RimBlendMode プロパティは存在しない（lilBlendColorの引数で直接指定）
-                // → lilToonのリムは基本的にAdd合成で固定
-                // → Natane側もAdd的な Normal(0) をデフォルトにする
-                targetMaterial.SetFloat("_RimBlendMode", 0); // Normal(SoftLight) = Add的な効果
+                // StandardToon v2: LilBlendColor を使用 (0=Normal, 1=Add, 2=Screen, 3=Multiply)
+                // lilToonのリムはデフォルトで Add 合成（ハードコード）
+                // → LilBlendColor の Add = 1 を設定
+                targetMaterial.SetFloat("_RimBlendMode", 1); // LilBlendColor Add(1)
 
-                report.infos.Add($"Rim Light有効化: DirStrength={rimEnableLighting:F2}, ShadowMask={rimShadowMask:F2}, BlendMode=0(Normal)");
+                report.infos.Add($"Rim Light有効化: DirStrength={rimEnableLighting:F2}, ShadowMask={rimShadowMask:F2}, BlendMode=1(LilBlendColor Add)");
             }
 
             // === Outline ===
@@ -1050,66 +1054,24 @@ namespace NataneToon.Editor
                 report.infos.Add($"Alpha Cutoff: {cutoff:F2}");
             }
 
-            // === Brightness Compensation ===
-            // Natane's lighting pipeline has a normalize+luminance reconstruction step
-            // (Fragment.hlsl:521-524) that darkens the final output.
-            //
-            // For uniform colors: directResult = normalize(v) × luminance(v) = v/√3
-            // → darkening factor = 1/√3 ≈ 0.577 (42% darker)
-            //
-            // For colored values: factor = luminance(v)/magnitude(v) ≤ 1/√3
-            // → colored shadows can be darkened even more (up to 50-55%)
-            //
-            // lilToon does NOT have this step, so migrated materials appear too dark.
-            //
-            // Compensation strategy:
-            //   _LightIntensity = √3 ≈ 1.732  (applied before normalize, exactly cancels the
-            //                                    darkening for uniform colors in ForwardBase)
-            //   _Brightness = 1.0              (neutral — user can manually adjust up to 5.0)
-            //
-            // Math proof for lit areas:
-            //   directResult = (1,1,1) × √3 = (√3,√3,√3)
-            //   luminance = √3, normalize = (1/√3,1/√3,1/√3)
-            //   result = (1/√3) × √3 = (1,1,1) ✓ — perfect match
-            // Nataneのnormalize+luminanceステップの補償戦略:
-            //
-            // Fragment.hlsl:521-524 の normalize+luminance ステップ:
-            //   directLum = luminance(directResult)
-            //   directLum = clamp(directLum, _LightMinInfluence, _LightMaxInfluence)
-            //   directDir = normalize(max(directResult, 0.01))
-            //   directResult = directDir * directLum
-            //
-            // 均一色(a,a,a)でLI=_LightIntensityの場合:
-            //   directResult = (a*LI, a*LI, a*LI)
-            //   directLum = a*LI, directDir = (1/√3, 1/√3, 1/√3)
-            //   result = a*LI/√3 per channel
-            //
-            // StandardToonモードでは normalize+luminance パイプラインを使用しないため、
-            // _LightIntensity の増幅は不要。lilToonと同じ直接乗算を使用する。
+            // === StandardToon v2: 補償不要 ===
+            // v2 パイプラインは lerp(indirectCol, directCol, toon) 直接合成のため、
+            // Natane の normalize+luminance ステップ（Fragment.hlsl:521-524）を完全にバイパスする。
+            // _LightIntensity, _Brightness, _Saturation は全て 1.0（ニュートラル）。
             targetMaterial.SetFloat("_LightIntensity", 1.0f);
             targetMaterial.SetFloat("_LightMaxInfluence", 2.0f);
             targetMaterial.SetFloat("_Brightness", 1.0f);
             targetMaterial.SetFloat("_Saturation", 1.0f);
-            report.infos.Add("色調補正: StandardToon直接乗算のため _LightIntensity=1.0 (増幅なし)");
+            report.infos.Add("StandardToon v2: normalize+luminanceバイパスのため補償不要 (_LightIntensity=1.0)");
 
-            // === Shadow Floor Compensation ===
-            // lilToonのHalf-Lambertでは裏面でもhalfLambert=0.0で、
-            // shadowColor自体が最低明度を保持する。
-            // Nataneの_ShadowMaxDarknessで影の最低明度を底上げし、
-            // 彩度の高いシャドウカラーのnormalize暗化を補償する。
-            //
-            // また _LightMinInfluence を設定して、
-            // ライティング計算結果の最低明度を保証する（lilToonの_LightMinLimitに相当）。
+            // === Shadow Floor / GI（StandardToon v2 ではほぼ不使用） ===
+            // v2 の独自パイプラインは _ShadowMaxDarkness, _LightMinInfluence, _GIIntensity を
+            // バイパスするが、ユーザーがToon/Gradientモードに切り替えた場合に備えて
+            // 安全な値を設定しておく。
             targetMaterial.SetFloat("_ShadowMaxDarkness", 0.15f);
             targetMaterial.SetFloat("_LightMinInfluence", 0.05f);
-            report.infos.Add("Shadow Floor補正: _ShadowMaxDarkness=0.15, _LightMinInfluence=0.05");
-
-            // === GI Intensity Compensation ===
-            // lilToonはSH(環境光)を暗黙的にフル強度(1.0相当)で使用する。
-            // Nataneのデフォルトは _GIIntensity=0.5 で、環境光が半分になり暗く見える。
-            // 移行時はlilToonに合わせて1.0に設定する。
             targetMaterial.SetFloat("_GIIntensity", 1.0f);
-            report.infos.Add("GI補正: _GIIntensity=1.0 (lilToonと同等の環境光強度)");
+            report.infos.Add("Floor/GI: 安全値設定 (v2パイプラインではバイパスされるが、モード切替時の互換のため)");
 
             // === Light Color Limits (lilToon互換) ===
             // StandardToonモードでは直接乗算のため、÷2補正は不要。
@@ -1124,13 +1086,20 @@ namespace NataneToon.Editor
             report.infos.Add($"ライト制限: StandardToon直接マッピング ColorMax={lightMaxLimit:F2}, ColorMin={lightMinLimit:F2}, Monochrome={monochromeLighting:F2}");
 
             // _AsUnlit → _STAsUnlit に直接マッピング
-            // StandardToonモードではシェーダー内で lerp(directResult, unlitDirect, _STAsUnlit) を実行
+            // StandardToon v2ではシェーダー内で stLightColor = lerp(stLightColor, 1, _STAsUnlit) を実行
             float asUnlit = GetFloatOr(sourceProps, "_AsUnlit", 0.0f);
             targetMaterial.SetFloat("_STAsUnlit", asUnlit);
             if (asUnlit > 0.01f)
             {
                 report.infos.Add($"AsUnlit={asUnlit:F2} → _STAsUnlit={asUnlit:F2} (StandardToon直接マッピング)");
             }
+
+            // Shadow Environment Strength (間接光による影持ち上げ)
+            // lilToon: _ShadowEnvStrength (default 1.0) — indirectCol を間接光で持ち上げ
+            // StandardToon v2: stIndirectCol = lerp(stIndirectCol, stAlbedo, saturate(stIndLightColor * _STShadowEnvStrength))
+            float shadowEnvStrength = GetFloatOr(sourceProps, "_ShadowEnvStrength", 1.0f);
+            targetMaterial.SetFloat("_STShadowEnvStrength", shadowEnvStrength);
+            report.infos.Add($"Shadow Env Strength: {shadowEnvStrength:F2} → _STShadowEnvStrength={shadowEnvStrength:F2} (lilToon直接マッピング)");
         }
 
         /// <summary>

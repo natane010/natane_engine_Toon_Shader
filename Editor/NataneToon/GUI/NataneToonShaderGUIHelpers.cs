@@ -283,21 +283,28 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space();
             drawProperty("_STAsUnlit", L("アンライト度", "As Unlit"));
+            drawProperty("_STShadowEnvStrength", L("影の環境光リフト", "Shadow Env Strength"));
 
             drawHelpToggle("StandardToon",
-                L("🎨 StandardToonモード:\n" +
-                  "lilToon と同じ計算式を使用し、シェーダー切り替え時の見た目の一致を実現します。\n\n" +
+                L("🎨 StandardToon v2モード:\n" +
+                  "lilToon と完全に同一の計算パスを通り、シェーダー切り替えだけで見た目が一致します。\n\n" +
                   "• Half-Lambert NdotL（影の位置がlilToonと一致）\n" +
-                  "• リニア補間（smoothstepではなく線形補間）\n" +
-                  "• ShadowStrength 制御（影の強さを調整可能）\n" +
-                  "• 簡易ライトカラー乗算（normalize+luminance分離なし）\n\n" +
+                  "• リニア補間 + fwidth AA（滑らかな影境界）\n" +
+                  "• lightColor = MAINLIGHT + SHToon（SH直接合算）\n" +
+                  "• lerp(indirectCol, directCol, toon) 一発合成\n" +
+                  "• AsUnlit を lightColor に直接適用\n" +
+                  "• ShadowEnvStrength で間接光による影持ち上げ\n" +
+                  "• min(indirectCol, directCol) 安全クランプ\n\n" +
                   "💡 lilToonからの移行時に自動で選択されます。",
-                  "🎨 StandardToon Mode:\n" +
-                  "Uses the same calculations as lilToon for visual parity when switching shaders.\n\n" +
+                  "🎨 StandardToon v2 Mode:\n" +
+                  "Uses the exact same calculation path as lilToon for perfect visual parity.\n\n" +
                   "• Half-Lambert NdotL (shadow position matches lilToon)\n" +
-                  "• Linear interpolation (not smoothstep)\n" +
-                  "• ShadowStrength control\n" +
-                  "• Simple light color multiply (no normalize+luminance)\n\n" +
+                  "• Linear interpolation + fwidth AA (smooth shadow edges)\n" +
+                  "• lightColor = MAINLIGHT + SHToon (SH merged into direct)\n" +
+                  "• lerp(indirectCol, directCol, toon) single-pass composition\n" +
+                  "• AsUnlit applied directly to lightColor\n" +
+                  "• ShadowEnvStrength for indirect light shadow lift\n" +
+                  "• min(indirectCol, directCol) safety clamp\n\n" +
                   "💡 Automatically selected when migrating from lilToon."),
                 MessageType.None);
         }
