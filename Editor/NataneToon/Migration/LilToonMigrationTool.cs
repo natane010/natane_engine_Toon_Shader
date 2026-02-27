@@ -732,6 +732,19 @@ namespace NataneToon.Editor
                 }
 
                 targetMaterial.SetColor("_ShadowColor", shadowColor);
+
+                // シャドウカラーモデルの差異をレポートに記載
+                // lilToon: indirectCol = albedo * _ShadowColor (乗算方式)
+                //   → ShadowColorは各チャネルの減衰率として機能
+                // Natane: directResult = lerp(_ShadowColor, (1,1,1), shadingValue)
+                //   → ShadowColor自体が影の色（albedoとは後で乗算）
+                // この方式の違いにより、特にアルベドが彩度の高い色の場合に影色が異なる場合がある
+                if (shadowColor.r < 0.95f || shadowColor.g < 0.95f || shadowColor.b < 0.95f)
+                {
+                    report.infos.Add(
+                        $"Shadow Color: ({shadowColor.r:F2},{shadowColor.g:F2},{shadowColor.b:F2})" +
+                        " ※lilToon=乗算方式/Natane=lerp方式のため影色が完全一致しない場合があります");
+                }
             }
 
             // Shadow Border & Blur → Natane Shadow パラメータ
@@ -864,7 +877,18 @@ namespace NataneToon.Editor
                 float rimShadowMask = GetFloatOr(sourceProps, "_RimShadowMask", 0.5f);
                 targetMaterial.SetFloat("_RimShadowMask", rimShadowMask);
 
-                report.infos.Add($"Rim Light有効化: DirStrength={rimEnableLighting:F2}, ShadowMask={rimShadowMask:F2}");
+                // RimBlendMode変換
+                // lilToon: 0=Normal(lerp), 1=Add, 2=Screen, 3=Multiply
+                // → lilBlendColorは全モードで lerp(dst, blended, srcA) を使う
+                // Natane: 0=Normal(SoftLight), 1=Soft, 2=Screen, 3=Overlay
+                // lilToonのデフォルトは Add(1) だが、lilToon側のRimBlendModeプロパティ名は不明なため
+                // キャプチャされていない場合はデフォルト(Add=1)として処理
+                // ※ lilToonでは _RimBlendMode プロパティは存在しない（lilBlendColorの引数で直接指定）
+                // → lilToonのリムは基本的にAdd合成で固定
+                // → Natane側もAdd的な Normal(0) をデフォルトにする
+                targetMaterial.SetFloat("_RimBlendMode", 0); // Normal(SoftLight) = Add的な効果
+
+                report.infos.Add($"Rim Light有効化: DirStrength={rimEnableLighting:F2}, ShadowMask={rimShadowMask:F2}, BlendMode=0(Normal)");
             }
 
             // === Outline ===
@@ -927,22 +951,52 @@ namespace NataneToon.Editor
                 targetMaterial.SetFloat("_MatCap", 1.0f);
                 targetMaterial.EnableKeyword("_MATCAP");
 
-                // MatCap Intensity (from _MatCapBlend)
+                // MatCap パラメータの正しいマッピング:
+                // lilToon: result = lilBlendColor(base, matCapTex * _MatCapColor, _MatCapBlend * matcap.a, mode)
+                //   _MatCapBlend (0-1): 全体ブレンド量 (srcA に乗算)
+                //   _MatCapColor: MatCapテクスチャに乗算するカラー
+                //
+                // Natane: matcap = matCapTex * _MatCapIntensity
+                //         result = lerp(preMatCap, blended, _MatCapBlend)
+                //   _MatCapIntensity (0-2): テクスチャの明度スケール
+                //   _MatCapBlend (0-1): 全体ブレンド量
+                //
+                // → _MatCapIntensity=1.0 (テクスチャ強度は変えない)
+                // → _MatCapBlend = lilToon _MatCapBlend (全体ブレンド量を維持)
                 float matCapBlend = GetFloatOr(sourceProps, "_MatCapBlend", 1.0f);
-                targetMaterial.SetFloat("_MatCapIntensity", matCapBlend);
+                targetMaterial.SetFloat("_MatCapIntensity", 1.0f);
+                targetMaterial.SetFloat("_MatCapBlend", matCapBlend);
 
-                // MatCap Blend Mode変換
-                // lilToon: 0=Normal, 1=Add, 2=Screen, 3=Multiply
-                // Natane:  0=Add, 1=Multiply, 2=Replace
-                if (sourceProps.ContainsKey("_MatCapBlendMode"))
+                // _MatCapColor が白(1,1,1)でない場合は情報をレポートに記載
+                if (sourceProps.ContainsKey("_MatCapColor"))
                 {
-                    int lilBlendMode = (int)(float)sourceProps["_MatCapBlendMode"];
-                    int nataneBlendMode = ConvertMatCapBlendMode(lilBlendMode);
-                    targetMaterial.SetFloat("_MatCapBlendMode", nataneBlendMode);
-                    report.infos.Add($"MatCap: Blend={matCapBlend:F2}, BlendMode={lilBlendMode}→{nataneBlendMode}");
+                    Color matCapColor = (Color)sourceProps["_MatCapColor"];
+                    if (matCapColor.r < 0.95f || matCapColor.g < 0.95f || matCapColor.b < 0.95f)
+                    {
+                        report.warnings.Add(
+                            $"MatCap Color ({matCapColor.r:F2},{matCapColor.g:F2},{matCapColor.b:F2}) が白ではありません。" +
+                            "lilToonではMatCapテクスチャにカラーを乗算しますが、Nataneでは_MatCapIntensityのみで制御します。" +
+                            "必要に応じてMatCapテクスチャ自体を調整してください。");
+                    }
                 }
 
-                report.infos.Add($"MatCap有効化: Intensity={matCapBlend:F2}");
+                // MatCap Blend Mode変換
+                // lilToon: 0=Normal(lerp), 1=Add, 2=Screen, 3=Multiply
+                // Natane:  0=Add, 1=Multiply, 2=Replace
+                // ★ Normal(0) → Replace(2) が白飛び防止の鍵！
+                int lilBlendMode = 1; // lilToonのデフォルトはAdd(1)
+                if (sourceProps.ContainsKey("_MatCapBlendMode"))
+                {
+                    lilBlendMode = (int)(float)sourceProps["_MatCapBlendMode"];
+                }
+                int nataneBlendMode = ConvertMatCapBlendMode(lilBlendMode);
+                targetMaterial.SetFloat("_MatCapBlendMode", nataneBlendMode);
+
+                string[] lilModeNames = {"Normal(lerp)", "Add", "Screen", "Multiply"};
+                string[] nataneModeNames = {"Add", "Multiply", "Replace"};
+                string lilName = lilBlendMode >= 0 && lilBlendMode < 4 ? lilModeNames[lilBlendMode] : $"Unknown({lilBlendMode})";
+                string nataneName = nataneBlendMode >= 0 && nataneBlendMode < 3 ? nataneModeNames[nataneBlendMode] : $"Unknown({nataneBlendMode})";
+                report.infos.Add($"MatCap有効化: Blend={matCapBlend:F2}, Intensity=1.0, BlendMode: {lilName}→{nataneName}");
             }
 
             // === Specular ===
@@ -1022,16 +1076,36 @@ namespace NataneToon.Editor
             //   directResult = (1,1,1) × √3 = (√3,√3,√3)
             //   luminance = √3, normalize = (1/√3,1/√3,1/√3)
             //   result = (1/√3) × √3 = (1,1,1) ✓ — perfect match
-            // Nataneのnormalize+luminanceステップ + パイプライン全体の差異を補償。
-            // 実機テストにより、lilToonとの見た目一致には以下が最適:
-            //   _Brightness = 2.0  (normalize暗化 + パイプライン差の総合補正)
-            //   _Saturation = 1.5  (normalizeによる彩度低下の補正)
-            //   _LightIntensity = √3 ≈ 1.732 (ForwardBase normalize暗化の正確な補正)
-            float sqrtThree = Mathf.Sqrt(3.0f); // √3 ≈ 1.732
-            targetMaterial.SetFloat("_LightIntensity", sqrtThree);
-            targetMaterial.SetFloat("_Brightness", 2.0f);
-            targetMaterial.SetFloat("_Saturation", 1.5f);
-            report.infos.Add($"色調補正: _Brightness=2.0, _Saturation=1.5, _LightIntensity={sqrtThree:F3} (√3)");
+            // Nataneのnormalize+luminanceステップの補償戦略:
+            //
+            // Fragment.hlsl:521-524 の normalize+luminance ステップ:
+            //   directLum = luminance(directResult)
+            //   directLum = clamp(directLum, _LightMinInfluence, _LightMaxInfluence)
+            //   directDir = normalize(max(directResult, 0.01))
+            //   directResult = directDir * directLum
+            //
+            // 均一色(a,a,a)でLI=_LightIntensityの場合:
+            //   directResult = (a*LI, a*LI, a*LI)
+            //   directLum = a*LI, directDir = (1/√3, 1/√3, 1/√3)
+            //   result = a*LI/√3 per channel
+            //
+            // LI=2√3 の場合: result = a*2√3/√3 = 2a → lilToonの2倍明るさに一致
+            //
+            // _LightIntensity に明るさ補正を集約することで:
+            //   - _Brightness=1.0, _Saturation=1.0 のまま自然なインスペクター表示を維持
+            //   - ライティングパス内で補正が完結（エフェクトには影響しない）
+            //   - ForwardAddにはnormalize+luminanceがないため、ForwardAdd側は
+            //     _LightIntensityの増加分がそのまま適用されるが、追加ライトは
+            //     _AdditionalLightIntensity(default=0.5)で制御されるため実用上問題ない
+            //
+            // _LightMaxInfluence: デフォルト2.0ではdirectLum=3.464がクランプされるため、
+            //   4.0に拡張してクランプを防止する。
+            float lightIntensity = Mathf.Sqrt(3.0f) * 2.0f; // 2√3 ≈ 3.464
+            targetMaterial.SetFloat("_LightIntensity", lightIntensity);
+            targetMaterial.SetFloat("_LightMaxInfluence", 4.0f);
+            targetMaterial.SetFloat("_Brightness", 1.0f);
+            targetMaterial.SetFloat("_Saturation", 1.0f);
+            report.infos.Add($"色調補正: _LightIntensity={lightIntensity:F3} (2√3), _LightMaxInfluence=4.0, _Brightness=1.0, _Saturation=1.0");
 
             // === Shadow Floor Compensation ===
             // lilToonのHalf-Lambertでは裏面でもhalfLambert=0.0で、
@@ -1044,6 +1118,13 @@ namespace NataneToon.Editor
             targetMaterial.SetFloat("_ShadowMaxDarkness", 0.15f);
             targetMaterial.SetFloat("_LightMinInfluence", 0.05f);
             report.infos.Add("Shadow Floor補正: _ShadowMaxDarkness=0.15, _LightMinInfluence=0.05");
+
+            // === GI Intensity Compensation ===
+            // lilToonはSH(環境光)を暗黙的にフル強度(1.0相当)で使用する。
+            // Nataneのデフォルトは _GIIntensity=0.5 で、環境光が半分になり暗く見える。
+            // 移行時はlilToonに合わせて1.0に設定する。
+            targetMaterial.SetFloat("_GIIntensity", 1.0f);
+            report.infos.Add("GI補正: _GIIntensity=1.0 (lilToonと同等の環境光強度)");
         }
 
         /// <summary>
@@ -1099,17 +1180,38 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// lilToonのMatCapBlendModeをNatane Toon ShaderのBlendModeに変換
-        /// lilToon: 0=Normal, 1=Add, 2=Screen, 3=Multiply
+        /// lilToon: 0=Normal(lerp), 1=Add, 2=Screen, 3=Multiply
         /// Natane:  0=Add, 1=Multiply, 2=Replace
+        ///
+        /// ★重要: lilToon Normal(0) = lerp(dst, src, srcA) = アルファブレンド
+        ///   → Natane Add(0)にマッピングすると白飛びする！
+        ///   → Replace(2) = lerp(base, matcap, blend) が最も近い
         /// </summary>
         private int ConvertMatCapBlendMode(int lilBlendMode)
         {
             switch (lilBlendMode)
             {
-                case 0: return 0; // Normal → Add (最も近い)
+                case 0: return 2; // Normal(lerp) → Replace (★白飛び修正: Add→Replace)
                 case 1: return 0; // Add → Add
-                case 2: return 0; // Screen → Add (近似)
+                case 2: return 0; // Screen → Add (近似、NataneにScreen未対応)
                 case 3: return 1; // Multiply → Multiply
+                default: return 2; // 不明 → Replace (安全)
+            }
+        }
+
+        /// <summary>
+        /// lilToonのRimBlendModeをNatane Toon ShaderのRimBlendModeに変換
+        /// lilToon: 0=Normal(lerp), 1=Add, 2=Screen, 3=Multiply
+        /// Natane:  0=Normal(SoftLight), 1=Soft, 2=Screen, 3=Overlay
+        /// </summary>
+        private int ConvertRimBlendMode(int lilBlendMode)
+        {
+            switch (lilBlendMode)
+            {
+                case 0: return 2; // Normal(lerp) → Screen (lerpの近似でScreenが最も自然)
+                case 1: return 0; // Add → Normal(SoftLight) (加算的効果)
+                case 2: return 2; // Screen → Screen
+                case 3: return 3; // Multiply → Overlay (減衰系の近似)
                 default: return 0;
             }
         }
