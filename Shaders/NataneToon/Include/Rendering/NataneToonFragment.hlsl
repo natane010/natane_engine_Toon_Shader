@@ -819,17 +819,6 @@ half4 frag(v2f i) : SV_Target
             half gray = CALC_LUMINANCE(col.rgb);
             col.rgb = lerp(gray, col.rgb, _Saturation);
             col.rgb *= _Brightness;
-
-            // ★★★ DEBUG: StandardToon 黒レンダリング診断 ★★★
-            // 赤=ライティングパス到達、緑=stDirectCol正常、青=stLightColor正常
-            // テスト後にこのブロックを削除してください
-            half3 _dbgColor = half3(0, 0, 0);
-            _dbgColor.r = saturate(CALC_LUMINANCE(lighting));     // lighting の明るさ
-            _dbgColor.g = saturate(CALC_LUMINANCE(stDirectCol));  // stDirectCol の明るさ
-            _dbgColor.b = saturate(CALC_LUMINANCE(stLightColor)); // stLightColor の明るさ
-            col.rgb = _dbgColor;
-            col.a = 1.0;
-            return col;
         #else
             // Optimized: Cache original luminance (used multiple times)
             half originalLum = CALC_LUMINANCE(originalAlbedo);
@@ -974,39 +963,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Rim Light =====
     #if defined(_RIM_LIGHT)
-        #ifdef _STANDARD_TOON
-            // lilToon-style rim: Fresnel + tooning (border/blur) + LilBlendColor
-            half stRimNV = abs(dot(worldNormal, viewDir));
-            half stRim = pow(saturate(1.0 - stRimNV), _RimPower);
-            // Apply tooning with border derived from RimSpread
-            half stRimBorder = saturate(1.0 - _RimSpread);
-            half stRimBlur = 0.1; // lilToon default-like
-            stRim = LilToonShading(stRim, stRimBorder, stRimBlur);
-
-            // Shadow mask
-            stRim *= lerp(1.0, shadingValue, _RimShadowMask);
-
-            // Light direction influence
-            half rimHalfLambert = dot(worldNormal, lightDir) * 0.5 + 0.5;
-            stRim *= lerp(1.0, rimHalfLambert, _RimDirStrength);
-
-            // Mask
-            float2 rimMaskUV = AnimateUVIfNeeded(uv, _RimMaskScrollSpeed.xy, _RimMaskRotateSpeed);
-            half rimMask = tex2D(_RimMask, rimMaskUV).r;
-            rimMask = ApplySoftMask(rimMask);
-            stRim *= rimMask;
-
-            // LilBlendColor (uses _RimBlendMode directly as lilToon blend mode)
-            half3 preRim = col.rgb;
-            uint stRimBlendMode = (uint)_RimBlendMode;
-            col.rgb = LilBlendColor(col.rgb, _RimColor.rgb, stRim * _RimColor.a * _RimIntensity, stRimBlendMode);
-
-            half rimBlendFaded = _RimBlend;
-            #ifdef _DISTANCE_FADE
-                rimBlendFaded *= lerp(1.0, distanceFade, _RimDistFade);
-            #endif
-            col.rgb = lerp(preRim, col.rgb, rimBlendFaded);
-        #else
+        {
             float rimPowerBlurred = max(0.1, _RimPower * (1.0 - _RimBlur * 0.8));
             half rimSpreadPower = lerp(rimPowerBlurred, max(0.5, rimPowerBlurred * 0.3), _RimSpread);
 
@@ -1054,7 +1011,7 @@ half4 frag(v2f i) : SV_Target
                 rimBlendFaded *= lerp(1.0, distanceFade, _RimDistFade);
             #endif
             col.rgb = ApplyEffectBlendPost(preRim, col.rgb, rimBlendFaded, _RimBlendMode);
-        #endif
+        }
     #endif
 
     // ===== Rim Light 2 =====
@@ -1196,15 +1153,10 @@ half4 frag(v2f i) : SV_Target
         matcap *= matcapMask;
 
         #ifdef _STANDARD_TOON
-            // lilToon-style: LilBlendColor with 4 modes (Normal, Add, Screen, Multiply)
-            // Natane blend mode mapping: 0=Add→1, 1=Multiply→3, 2=Replace→0
-            uint lilMatCapMode = 1; // Default: Add
-            if (_MatCapBlendMode < 0.5) lilMatCapMode = 1;       // Natane Add → lilToon Add
-            else if (_MatCapBlendMode < 1.5) lilMatCapMode = 3;  // Natane Multiply → lilToon Multiply
-            else lilMatCapMode = 0;                               // Natane Replace → lilToon Normal
-
+            // StandardToon: MatCap は常に Add モード（Multiply/Replace は黒レンダリングの原因になるため）
             half3 preMatCap = col.rgb;
-            col.rgb = LilBlendColor(col.rgb, matcap, _MatCapBlend * matcapMask, lilMatCapMode);
+            half matcapStrength = saturate(_MatCapIntensity * matcapMask);
+            col.rgb = SafeAdditiveBlend(col.rgb, matcap, matcapStrength);
             half matCapBlendFaded = _MatCapBlend;
             #ifdef _DISTANCE_FADE
                 matCapBlendFaded *= lerp(1.0, distanceFade, _MatCapDistFade);
