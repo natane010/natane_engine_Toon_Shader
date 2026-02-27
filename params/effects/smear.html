@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スメアエフェクト - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>スメアエフェクト</h1>
+    <p class="page-subtitle">モーションスメア・残像トレイルエフェクト</p>
+
+    <h2 id="overview">概要</h2>
+    <p>スメアエフェクトは、動的な動きの表現のためにモーションブラー/スメアトレイルを作成します。手動の方向制御と自動モーション検出に対応しており、アニメ風のスピードエフェクトやダンスアニメーションに最適です。</p>
+    <p>キーワード <code>_SMEAR</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+
+    <h2 id="stretch">ストレッチ設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スメアストレッチ</span>
+        <span class="param-prop">_SmearStretch</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スメアエフェクトのストレッチ量を制御します。値が高いほど顕著な引き伸ばしになります。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 3</p>
+      </div>
+      <div class="param-tip">控えめな動きの示唆には低い値（0.3〜0.5）から始めてください。1.5以上でドラマチックなアニメ風スピード線になります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スメア方向</span>
+        <span class="param-prop">_SmearDirection</span>
+        <span class="param-badge badge-color">vector</span>
+      </div>
+      <div class="param-body">
+        <p>スメアの方向ベクトルを手動で設定します。スメアの向きを正確に制御したい場合に使用します。</p>
+        <p class="param-default">デフォルト: (0, 0, 0, 0)</p>
+      </div>
+      <div class="param-tip">水平方向のモーションには(1, 0, 0, 0)、垂直方向には(0, 1, 0, 0)を使用します。VRChatパラメータ経由でアニメーションさせて方向制御が可能です。</div>
+    </div>
+
+    <h2 id="noise">ノイズ設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ノイズスケール</span>
+        <span class="param-prop">_SmearNoiseScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スメアに適用されるノイズパターンのスケールを制御します。エフェクトに変化とオーガニックな質感を加えます。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ノイズ強度</span>
+        <span class="param-prop">_SmearNoiseStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スメアトレイルに適用されるノイズの歪み強度を設定します。</p>
+        <p class="param-default">デフォルト: 0.3</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <h2 id="motion">モーション検出</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">自動マグニチュード</span>
+        <span class="param-prop">_SmearAutoMagnitude</span>
+        <span class="param-badge badge-enum">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>自動モーション検出を有効にします。有効時、スメアがオブジェクトの動きに自動で反応します。</p>
+        <p class="param-default">デフォルト: 0（オフ）</p>
+      </div>
+      <div class="param-tip">VRChatのダンスアニメーションでこれを有効にすると、手動のアニメーション設定なしで自動的にモーション反応型スメアが得られます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">モーション感度</span>
+        <span class="param-prop">_SmearMotionSensitivity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>自動モーション検出の感度を調整します。値が高いほど小さな動きにも反応します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0.1 〜 10</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">VATベロシティ</span>
+        <span class="param-prop">_SmearVATVelocity</span>
+        <span class="param-badge badge-enum">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>頂点アニメーションテクスチャ（VAT）のベロシティデータをスメアソースとして使用します。VATベースのアニメーション使用時に有効にします。</p>
+        <p class="param-default">デフォルト: 0（オフ）</p>
+      </div>
+    </div>
+
+    <h2 id="trail">トレイル設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">トレイル長さ</span>
+        <span class="param-prop">_SmearTrailLength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スメアの後ろに続く残像トレイルの長さを設定します。</p>
+        <p class="param-default">デフォルト: 0.1</p>
+        <p class="param-range">範囲: 0 〜 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">トレイルフェード</span>
+        <span class="param-prop">_SmearTrailFade</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>トレイルのフェードアウト速度を制御します。値が高いほどトレイルが素早く消えます。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <h2 id="glow">グロー＆エミッション</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グロー色</span>
+        <span class="param-prop">_SmearGlowColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>スメアトレイルに適用されるグローの色を設定します。</p>
+        <p class="param-default">デフォルト: (1, 1, 1, 1)（白）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グロー強度</span>
+        <span class="param-prop">_SmearGlowIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スメアのグローエフェクトの強度を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 3</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グローパワー</span>
+        <span class="param-prop">_SmearGlowPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>グローの減衰パワーを制御します。値が高いほどグローがよりタイトに集中します。</p>
+        <p class="param-default">デフォルト: 3</p>
+        <p class="param-range">範囲: 0.5 〜 10</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エミッション</span>
+        <span class="param-prop">_SmearEmission</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スメアエフェクトのエミッション強度を設定します。自己発光する外観を作り出します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 3</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エミッション色</span>
+        <span class="param-prop">_SmearEmissionColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>スメアトレイルのエミッション色を設定します。</p>
+        <p class="param-default">デフォルト: (1, 0.5, 0, 1)（オレンジ）</p>
+      </div>
+      <div class="param-tip">オレンジで炎のようなトレイル、青でエネルギー/魔法エフェクト、白でクリーンなスピードラインの外観になります。</div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スメアマスク</span>
+        <span class="param-prop">_SmearMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>スメアエフェクトの表示領域を制御するマスクテクスチャです。</p>
+        <p class="param-default">デフォルト: "white"（全面表示）</p>
+      </div>
+      <div class="param-tip">白 = スメアあり、黒 = スメアなし。特定の手足や部位にスメアを制限する場合に使用します。</div>
+    </div>
+
+    <h2 id="blend">ブレンド＆ブラー</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_SmearBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>スメアエフェクトのブレンド方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常の合成</li>
+          <li><strong>Soft (1)</strong> - ソフト合成。明るくなりすぎを防ぐ</li>
+          <li><strong>Screen (2)</strong> - スクリーン合成。自然な明るさ加算</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ合成。コントラスト強調</li>
+        </ul>
+        <p class="param-default">デフォルト: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_SmearBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スメアエフェクトの強度（不透明度）を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_SmearBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スメアエフェクトのぼかし量を調整します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">距離フェード</span>
+        <span class="param-prop">_SmearDistFade</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>カメラ距離に基づいてスメアエフェクトをフェードさせます。値が高いほど近い距離でエフェクトがフェードアウトします。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">VRChatの最適化のために距離フェードを使用すると、アバターがカメラから遠い時の視覚的ノイズを軽減できます。</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

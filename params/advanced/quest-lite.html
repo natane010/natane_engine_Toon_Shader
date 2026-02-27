@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quest軽量モード - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Quest軽量モード</h1>
+    <p class="page-subtitle">モバイルGPU最適化のための自動機能ストリッピング</p>
+
+    <h2 id="overview">概要</h2>
+    <p>Quest軽量モードは、Meta QuestなどのモバイルGPUをターゲットとする際に、GPU負荷の高い機能をシェーダーから自動的にストリッピング（除去）するコンパイル時の最適化スイッチです。<code>_QUEST_LITE</code>キーワードが有効な場合、以下の高負荷機能がシェーダーコンパイル段階で無効化され、GPUインストラクションが一切生成されません:</p>
+    <ul>
+      <li>MatCap 2nd &amp; 3rd（<code>_MATCAP_2</code>、<code>_MATCAP_3</code>）</li>
+      <li>グリッター（<code>_GLITTER</code>）</li>
+      <li>ウォータードリップ（<code>_WATER_DRIP</code>）</li>
+      <li>ホログラム（<code>_HOLOGRAM</code>）</li>
+      <li>グリッチ（<code>_GLITCH</code>）</li>
+      <li>インターセクションフェード（<code>_INTERSECTION_FADE</code>）</li>
+    </ul>
+    <p>フル機能シェーダーと比較して、モバイルGPUで30〜50%のパフォーマンス向上が期待できます。PCユーザーはQuest軽量モードを無効のまま、フルビジュアルクオリティを楽しめます。</p>
+    <p>キーワード <code>_QUEST_LITE</code> で制御されます。この機能はBackgroundシェーダーバリアントで使用可能です。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Quest軽量モード</span>
+        <span class="param-prop">_QUEST_LITE</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Quest軽量モードの有効/無効を切り替えます。追加のfloatやテクスチャプロパティを持たないシェーダーキーワードで、純粋にコンパイル時のスイッチとして機能します。</p>
+        <p>有効にすると、リストされたGPU高負荷機能がシェーダーコンパイルから完全に除外され、それらの機能のインストラクション数とテクスチャサンプリングオーバーヘッドがゼロになります。</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+      <div class="param-tip">このキーワードはコンパイル時ストリッピングを制御します。切り替えるとシェーダーの再コンパイルが発生します。</div>
+    </div>
+
+    <h2 id="stripped">ストリッピングされる機能の詳細</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 2nd &amp; 3rd</span>
+        <span class="param-prop">_MATCAP_2, _MATCAP_3</span>
+        <span class="param-badge badge-toggle">stripped</span>
+      </div>
+      <div class="param-body">
+        <p>2番目と3番目のMatCapレイヤーが無効化されます。プライマリMatCap（<code>_MATCAP</code>）は引き続き利用可能です。MatCapはテクスチャルックアップとブレンド処理を必要とし、モバイルでは高負荷です。</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グリッター</span>
+        <span class="param-prop">_GLITTER</span>
+        <span class="param-badge badge-toggle">stripped</span>
+      </div>
+      <div class="param-body">
+        <p>スパークル/グリッターエフェクトが無効化されます。グリッターはランダムサンプリングとピクセルごとのノイズ生成を伴い、モバイルハードウェアではGPU負荷が高くなります。</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ウォータードリップ</span>
+        <span class="param-prop">_WATER_DRIP</span>
+        <span class="param-badge badge-toggle">stripped</span>
+      </div>
+      <div class="param-body">
+        <p>アニメーション付き水滴エフェクトが無効化されます。このエフェクトは複数のテクスチャサンプルと時間ベースのアニメーションを使用し、モバイルのパフォーマンスに影響します。</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ホログラム</span>
+        <span class="param-prop">_HOLOGRAM</span>
+        <span class="param-badge badge-toggle">stripped</span>
+      </div>
+      <div class="param-body">
+        <p>ホログラムスキャンラインエフェクトが無効化されます。ホログラムレンダリングはスクリーンスペース計算とアルファ操作を伴います。</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">グリッチ</span>
+        <span class="param-prop">_GLITCH</span>
+        <span class="param-badge badge-toggle">stripped</span>
+      </div>
+      <div class="param-body">
+        <p>デジタルグリッチエフェクトが無効化されます。グリッチエフェクトはノイズ関数とUVディストーションを使用し、計算オーバーヘッドが追加されます。</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">インターセクションフェード</span>
+        <span class="param-prop">_INTERSECTION_FADE</span>
+        <span class="param-badge badge-toggle">stripped</span>
+      </div>
+      <div class="param-body">
+        <p>デプスベースのインターセクションフェードエフェクトが無効化されます。この機能はデプステクスチャサンプリングを必要とし、モバイルGPUでは特に高負荷です。</p>
+      </div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <ul>
+      <li>VRChat Questワールドで使用するマテリアルには必ずQuest軽量モードを有効にしましょう。コンパイル時ストリッピングのためランタイムオーバーヘッドはゼロです。無効化された機能はコンパイル済みシェーダーに存在しません。</li>
+      <li>PCユーザーはQuest軽量モードを無効のままにして、すべてのエフェクトを含むフルビジュアルクオリティを楽しめます。</li>
+      <li>プライマリMatCap（1st）はストリッピング<strong>されません</strong>。2ndと3rdのMatCapレイヤーのみが除去されます。Quest上でも1つのMatCapでマテリアル表現が可能です。</li>
+      <li>マテリアルバリデーターツール（<code>Tools &gt; Natane &gt; Material Validator</code>）と組み合わせて、マテリアルがQuestパフォーマンスガイドラインを満たしているか確認しましょう。</li>
+      <li>クロスプラットフォームコンテンツを作成する場合、Quest軽量モード有効（Quest用）と無効（PC用）の2つのマテリアルバリアントの使用を検討してください。</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

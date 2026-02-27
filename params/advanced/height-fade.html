@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ハイトフェード - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ハイトフェード</h1>
+    <p class="page-subtitle">高さベースの透明フェードで段階的な出現・消失表現</p>
+
+    <h2 id="overview">概要</h2>
+    <p>ハイトフェードは、ワールドまたはローカルの高さ位置に基づいてマテリアルを段階的にフェードさせる機能です。オブジェクトが地面から出現したり、霧の境界や空間的なしきい値に溶け込んでいくような効果を作成できます。</p>
+    <p>3つのフェードモードが利用可能です。スムーズな透明度のAlphaブレンド、硬いバイナリカットオフのClip、そして不透明シェーダーでも透過ソーティングの問題なく動作するオーダードディザリングパターンのDitheringです。</p>
+    <p>オプションのグロウエッジカラーにより、フェード境界に明るいディゾルブ風のボーダーを追加して、ドラマチックな視覚効果を得ることができます。</p>
+    <p>キーワード <code>_HEIGHT_FADE</code> で制御されます。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フェード開始位置</span>
+        <span class="param-prop">_HeightFadeStart</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>フェードが始まる高さ位置です。この高さより下（反転時は上）では、マテリアルは完全に透明になります。</p>
+        <p class="param-default">デフォルト: 0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フェード終了位置</span>
+        <span class="param-prop">_HeightFadeEnd</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>フェードが終わる高さ位置です。この高さより上では、マテリアルは完全に不透明になります。StartとEndの間が遷移ゾーンです。</p>
+        <p class="param-default">デフォルト: 1</p>
+      </div>
+      <div class="param-tip">この値を時間経過でアニメーションさせると、テレポートやスポーンエフェクトが作れます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フェード軸</span>
+        <span class="param-prop">_HeightFadeAxis</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>ハイトフェードが動作する軸を選択します。Yが最も一般的（縦方向フェード）で、XとZは横方向や奥行きベースの効果に使用できます。</p>
+        <p class="param-default">デフォルト: Y</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">座標空間</span>
+        <span class="param-prop">_HeightFadeSpace</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>高さをローカルオブジェクト空間で測定するか、ワールド空間で測定するかを決定します。ローカル空間はオブジェクトとともに移動し、ワールド空間はシーン内で固定されます。</p>
+        <p class="param-default">デフォルト: Local</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フェード反転</span>
+        <span class="param-prop">_HeightFadeInvert</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>フェード方向を反転します。有効にすると、しきい値より下ではなく上でマテリアルがフェードアウトします。</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フェードモード</span>
+        <span class="param-prop">_HeightFadeMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>フェード方法を選択します。<strong>Alpha</strong>はスムーズな透明度ブレンド、<strong>Clip</strong>は硬いバイナリカットオフ（完全に表示または完全に不可視）、<strong>Dithering</strong>は不透明シェーダーで透過をシミュレートするオーダードディザリングパターンを使用します。</p>
+        <p class="param-default">デフォルト: Alpha</p>
+      </div>
+      <div class="param-tip">Ditheringモードは透過ソーティングのアーティファクトを回避し、不透明シェーダーバリアントで動作します。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フェード強度</span>
+        <span class="param-prop">_HeightFadeBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>フェード効果の全体的な強度を制御します。0ではハイトフェードの効果がなく、1ではフル強度で適用されます。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ディザスケール</span>
+        <span class="param-prop">_HeightFadeDitherScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Ditheringモード使用時のディザリングパターンのスケールを制御します。低い値は粗く目立つパターン、高い値は細かく目立ちにくいパターンになります。</p>
+        <p class="param-default">デフォルト: 4</p>
+        <p class="param-range">範囲: 1 - 200</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エッジ幅</span>
+        <span class="param-prop">_HeightFadeEdgeWidth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>フェード境界でのグロウエッジ効果の幅です。0に設定するとエッジグロウが完全に無効化されます。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 - 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エッジカラー</span>
+        <span class="param-prop">_HeightFadeEdgeColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>フェード境界でのグロウエッジのHDRカラーです。HDR値（強度 > 1）を使用すると、ブルーム対応のグロウ効果が得られます。</p>
+        <p class="param-default">デフォルト: (1, 0.5, 0, 1) — オレンジ</p>
+      </div>
+      <div class="param-tip">明るいHDRカラー（強度2〜5）とポストプロセッシングブルームを組み合わせると、印象的なSF風ディゾルブ表現が作れます。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <ul>
+      <li>テレポートやスポーンエフェクトには、アニメーションクリップやスクリプトでHeightFadeEndの値を時間経過でアニメーションさせてください。</li>
+      <li>不透明シェーダーバリアントにはDitheringモードが推奨です。VRChatワールドで視覚的な不具合を引き起こす透過ソーティングの問題を回避できます。</li>
+      <li>エッジグロウは、明るいHDRカラーとポストプロセッシングブルームを組み合わせることで、SF風ディゾルブの外観を作り出します。</li>
+      <li>シーン内のすべてのオブジェクトで一貫した地面レベルのフェードには、Y軸のWorld空間を使用してください。</li>
+      <li>ディゾルブエフェクトと組み合わせて、レイヤー状の消失アニメーションを作成できます — ハイトフェードで全体の方向を、ディゾルブでテクスチャベースのディテールを制御します。</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

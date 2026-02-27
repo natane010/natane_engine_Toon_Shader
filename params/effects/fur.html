@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ファーレンダリング - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ファーレンダリング</h1>
+    <p class="page-subtitle">シェルベースのファー・毛皮レンダリングシステム</p>
+
+    <h2 id="overview">概要</h2>
+    <p>16シェルパスを使用した高品質なシェルベースファーレンダリングです。リアルな毛皮、ウール、毛髪のエフェクトを作成します。この機能は「Fur」レンダリングタイプバリアントでのみ使用可能です。高いGPUコストのためデフォルトOFF &mdash; 手動でのアクティベーションが必要です。</p>
+    <p>キーワード <code>_FUR</code>（Furシェーダーバリアント専用）で制御されます。<code>_FUR</code> キーワードがOFFの場合、すべてのファーパスが破棄されGPUコストはゼロになります。</p>
+
+    <h2 id="basic">基本設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ファーの長さ</span>
+        <span class="param-prop">_FurLength</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>ファーストランドの長さを制御します。値が高いほど長いファーになります。</p>
+      </div>
+      <div class="param-tip">小さい値（0.01〜0.05）から始めて徐々に増やしてください。非常に長いファーは極端な角度でビジュアルアーティファクトが発生する場合があります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ファーの密度</span>
+        <span class="param-prop">_FurDensity</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>ファーストランドの密度を制御します。値が高いほど太く密集したファーになります。</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">アルファカットオフ</span>
+        <span class="param-prop">_FurAlphaCutoff</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>ファーストランド先端のアルファカットオフ閾値を設定します。ストランドの先端がどれほどシャープまたはテーパーに見えるかを制御します。</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">重力</span>
+        <span class="param-prop">_FurGravity</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>二次関数の減衰を使ったファーストランドへの重力垂れ下がりエフェクトを適用します。値が高いほどファーが地面方向に垂れ下がります。</p>
+      </div>
+    </div>
+
+    <h2 id="color">カラー設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">根元の色</span>
+        <span class="param-prop">_FurRootColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>ファーストランドの根元（ルート）の色を設定します。</p>
+      </div>
+      <div class="param-tip">暗い根元色と明るい先端色の組み合わせで自然なファーグラデーションが生まれます。サーフェスでのシームレスなブレンドのため、ベースマテリアルの色に合わせてください。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">先端の色</span>
+        <span class="param-prop">_FurTipColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>ファーストランドの先端の色を設定します。</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">カラーブレンド</span>
+        <span class="param-prop">_FurColorBlend</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>ファーストランドの長さに沿った根元色と先端色のブレンド係数を制御します。</p>
+      </div>
+    </div>
+
+    <h2 id="shading">シェーディング</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">アンビエントオクルージョン</span>
+        <span class="param-prop">_FurAO</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>自己遮蔽によるアンビエント暗化エフェクトを制御します。根元近くのファーが暗く表示され、ファーボリューム内での光の吸収をシミュレートします。</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">シャドウ強度</span>
+        <span class="param-prop">_FurShadowStrength</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>ファーサーフェスに投影される影の強度を制御します。</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スペキュラー</span>
+        <span class="param-prop">_FurSpecular</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>ファーストランドのスペキュラーハイライト強度を制御します。</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">リムライト</span>
+        <span class="param-prop">_FurRimLight</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>ファーのリムライティング強度を制御します。ファーのシルエット周りにバックライトのハロー効果を生み出します。</p>
+      </div>
+    </div>
+
+    <h2 id="wind">風アニメーション</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">風の方向</span>
+        <span class="param-prop">_FurWindDirection</span>
+        <span class="param-badge badge-color">vector</span>
+      </div>
+      <div class="param-body">
+        <p>ファーストランドに適用される風力の方向を設定します。</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">風の速度</span>
+        <span class="param-prop">_FurWindSpeed</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>ファーへの風エフェクトのアニメーション速度を制御します。</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">風の強さ</span>
+        <span class="param-prop">_FurWindStrength</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>風アニメーションの力の強さを設定します。</p>
+      </div>
+    </div>
+
+    <h2 id="lod">LOD＆パフォーマンス</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LOD距離</span>
+        <span class="param-prop">_FurLODDistance</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>LOD（Level of Detail）がシェルレイヤーの削減を開始する距離を設定します。この距離を超えると、GPUパフォーマンスを節約するためにシェルパス数が減少します。</p>
+      </div>
+      <div class="param-tip">VRChat最適化のためにLODを有効にしてください。妥当な距離（5〜10m）に設定することで、近距離での品質を維持しつつ遠距離でのパフォーマンスを節約できます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LOD最小レイヤー数</span>
+        <span class="param-prop">_FurLODMinLayers</span>
+        <span class="param-badge badge-range">float</span>
+      </div>
+      <div class="param-body">
+        <p>LOD距離で使用されるシェルレイヤーの最小数を設定します。レイヤー数はカメラ距離に基づいて16（フル品質）からこの最小値の間で補間されます。</p>
+      </div>
+    </div>
+
+    <h2 id="textures">テクスチャ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ノイズテクスチャ</span>
+        <span class="param-prop">_FurNoiseTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>ファーストランドのパターンを定義するノイズテクスチャです。シェル間の個々のファーストランドの形状と分布を制御します。</p>
+      </div>
+      <div class="param-tip">ハイコントラストなノイズで個別のファーストランドを際立たせ、ソフトなノイズでウールやぬいぐるみのような外観にできます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ファーマスク</span>
+        <span class="param-prop">_FurMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>ファーがレンダリングされる場所を制御するマスクテクスチャです。白い領域にファーが生成され、黒い領域はファーなしになります。</p>
+      </div>
+      <div class="param-tip">パフォーマンス警告 &mdash; 16シェルパスがドローコールを大幅に増加させます。_FurMaskを使用して特定の領域（襟、尻尾、耳）にファーを制限し、レンダリングコストを削減してください。</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

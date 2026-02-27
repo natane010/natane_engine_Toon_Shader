@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Screen Tone Effect - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Screen Tone Effect</h1>
+    <p class="page-subtitle">Halftone/screentone overlay pattern for manga-style rendering</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>The Screen Tone effect adds manga/comic-style halftone dot patterns over the surface. It is useful for stylized NPR (Non-Photorealistic Rendering), reproducing the characteristic screentone shading found in printed manga and pop art illustrations.</p>
+    <p>Controlled by the keyword <code>_SCREEN_TONE</code>. No shader instructions are generated when disabled.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Screen Tone Color</span>
+        <span class="param-prop">_ScreenToneColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the color of the halftone dots.</p>
+        <p class="param-default">Default: (0, 0, 0, 1) (black)</p>
+      </div>
+      <div class="param-tip">Black produces classic manga-style screentone. Try colored dots for pop art or retro comic effects.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Screen Tone Scale</span>
+        <span class="param-prop">_ScreenToneScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the density and scale of the halftone dot pattern. Lower values produce larger dots, higher values produce finer dots.</p>
+        <p class="param-default">Default: 10</p>
+        <p class="param-range">Range: 1 - 200</p>
+      </div>
+      <div class="param-tip">Use low Scale (5-10) for large dots (pop art style), high Scale (50-100) for fine print-style halftone. Values around 20-30 give a classic manga feel.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Screen Tone Threshold</span>
+        <span class="param-prop">_ScreenToneThreshold</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the brightness threshold for dot visibility. Areas darker than this threshold will display the screentone dots.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+      <div class="param-tip">Lower values restrict dots to darker shadow areas only. Higher values extend dots into brighter areas. Combine with shadow areas for manga-style shading.</div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Screen Tone Mask</span>
+        <span class="param-prop">_ScreenToneMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls the display area of the screen tone effect.</p>
+        <p class="param-default">Default: "white" (full display)</p>
+      </div>
+      <div class="param-tip">White = screentone visible, Black = screentone hidden. Useful for applying screentone only to clothing or shadow areas while keeping skin clean.</div>
+    </div>
+
+    <h2 id="blend">Blend &amp; Blur</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_ScreenToneBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the blend method for the screen tone effect.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Standard blending</li>
+          <li><strong>Soft (1)</strong> - Soft blending. Prevents harsh transitions</li>
+          <li><strong>Screen (2)</strong> - Screen blending. Natural brightness addition</li>
+          <li><strong>Overlay (3)</strong> - Overlay blending. Enhances contrast</li>
+        </ul>
+        <p class="param-default">Default: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_ScreenToneBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity (opacity) of the screen tone effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_ScreenToneBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the blur amount of the screen tone effect. Softens dot edges for a smoother appearance.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

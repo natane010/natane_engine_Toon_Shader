@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Height Fade - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Height Fade</h1>
+    <p class="page-subtitle">Height-based transparency fading for gradual appearance/disappearance</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Height Fade gradually fades the material based on its world or local height position. This creates effects where objects appear to emerge from or dissolve into the ground, a fog boundary, or any spatial threshold.</p>
+    <p>Three fade modes are available: Alpha blending for smooth transparency, Clip for a hard binary cutoff, and Dithering which uses an ordered dithering pattern that works on opaque shaders without transparency sorting issues.</p>
+    <p>An optional glowing edge color adds a bright dissolve-like border at the fade boundary for dramatic visual effects.</p>
+    <p>Controlled by the keyword <code>_HEIGHT_FADE</code>.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fade Start</span>
+        <span class="param-prop">_HeightFadeStart</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>The height position where fading begins. Below this height (or above, if inverted), the material is fully transparent.</p>
+        <p class="param-default">Default: 0</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fade End</span>
+        <span class="param-prop">_HeightFadeEnd</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>The height position where fading ends. Above this height, the material is fully opaque. The region between Start and End is the transition zone.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+      <div class="param-tip">Animate this value over time to create teleport or spawn effects.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fade Axis</span>
+        <span class="param-prop">_HeightFadeAxis</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects which axis the height fade operates along. Y is the most common (vertical fade), but X and Z are available for horizontal or depth-based effects.</p>
+        <p class="param-default">Default: Y</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Coordinate Space</span>
+        <span class="param-prop">_HeightFadeSpace</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Determines whether the height is measured in local object space or world space. Local space moves with the object, world space is fixed in the scene.</p>
+        <p class="param-default">Default: Local</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Invert Fade</span>
+        <span class="param-prop">_HeightFadeInvert</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Reverses the fade direction. When enabled, the material fades out above the threshold instead of below it.</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fade Mode</span>
+        <span class="param-prop">_HeightFadeMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the fading method. <strong>Alpha</strong> uses smooth transparency blending. <strong>Clip</strong> uses a hard binary cutoff (fully visible or fully invisible). <strong>Dithering</strong> uses an ordered dithering pattern that simulates transparency on opaque shaders.</p>
+        <p class="param-default">Default: Alpha</p>
+      </div>
+      <div class="param-tip">Dithering mode avoids transparency sorting artifacts and works on opaque shader variants.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fade Intensity</span>
+        <span class="param-prop">_HeightFadeBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the overall strength of the fade effect. At 0, the height fade has no effect. At 1, the fade is at full intensity.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Dither Scale</span>
+        <span class="param-prop">_HeightFadeDitherScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the scale of the dithering pattern when using Dithering mode. Lower values produce a coarser, more visible pattern. Higher values create a finer, less noticeable pattern.</p>
+        <p class="param-default">Default: 4</p>
+        <p class="param-range">Range: 1 - 200</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Edge Width</span>
+        <span class="param-prop">_HeightFadeEdgeWidth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The width of the glowing edge effect at the fade boundary. Set to 0 to disable the edge glow entirely.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Edge Color</span>
+        <span class="param-prop">_HeightFadeEdgeColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>The HDR color of the glowing edge at the fade boundary. Using HDR values (intensity > 1) creates a bloom-compatible glow effect.</p>
+        <p class="param-default">Default: (1, 0.5, 0, 1) — Orange</p>
+      </div>
+      <div class="param-tip">Bright HDR colors (intensity 2-5) combined with post-processing bloom create a striking sci-fi dissolve appearance.</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <ul>
+      <li>For teleport or spawn effects, animate the HeightFadeEnd value over time using an animation clip or script.</li>
+      <li>Dithering mode is recommended for opaque shader variants, as it avoids transparency sorting issues that can cause visual glitches in VRChat worlds.</li>
+      <li>The edge glow creates a sci-fi dissolve appearance when combined with bright HDR colors and post-processing bloom.</li>
+      <li>Use World space with the Y axis for consistent ground-level fading across all objects in a scene.</li>
+      <li>Combine with the Dissolve effect for layered disappearance animations — height fade for the overall direction and dissolve for texture-based detail.</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

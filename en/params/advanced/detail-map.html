@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detail Map - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Detail Map</h1>
+    <p class="page-subtitle">Secondary UV texture for close-up surface detail enhancement</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Detail Map adds a secondary texture layer using a second UV set to enhance surface detail at close viewing distances. This technique overlays fine-grained patterns — such as brick textures, concrete cracks, fabric weave, or metal scratches — on top of the main texture at a different tiling scale.</p>
+    <p>The system includes both an albedo detail map (for color detail) and a normal detail map (for surface relief detail), allowing you to add both visual and lighting-responsive fine detail to surfaces.</p>
+    <p>This feature is primarily designed for the Background shader variant, targeting environmental surfaces like walls, floors, and terrain where multi-scale detail is essential for visual quality.</p>
+    <p>Controlled by the keyword <code>_DETAIL_MAP</code>.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Detail Albedo Map</span>
+        <span class="param-prop">_DetailAlbedoMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A secondary color texture that is blended with the main albedo texture. This adds fine color detail such as surface grain, stains, or micro-patterns that tile at the detail scale.</p>
+        <p class="param-default">Default: None</p>
+      </div>
+      <div class="param-tip">Use a neutral gray (128, 128, 128) base for detail albedo maps that only darken or lighten the surface without shifting color.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Detail Normal Map</span>
+        <span class="param-prop">_DetailNormalMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A secondary normal map that is blended with the main normal map using the UDN (Unreal Developer Network) blending method. This adds fine surface relief that responds correctly to lighting.</p>
+        <p class="param-default">Default: None</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Detail Albedo Scale</span>
+        <span class="param-prop">_DetailAlbedoScale</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of the detail albedo texture blending. Higher values make the detail texture more visible, lower values make it more subtle.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Detail Normal Scale</span>
+        <span class="param-prop">_DetailNormalScale</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of the detail normal map. Higher values produce more pronounced surface relief from the detail layer. A value of 0 effectively disables the detail normal contribution.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">UV Set</span>
+        <span class="param-prop">_DetailUVSet</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Selects which UV channel to use for the detail textures. Use 0 for UV0 (same as the main texture) or 1 for UV1 (the second UV set, often used for lightmapping or detail).</p>
+        <p class="param-default">Default: 0</p>
+      </div>
+      <div class="param-tip">UV1 is commonly set up with different tiling in 3D modeling software, making it ideal for detail textures that need independent UV control.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Detail Tiling</span>
+        <span class="param-prop">_DetailTiling</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>A multiplier applied to the detail texture UV coordinates. Higher values tile the detail texture more densely, creating finer patterns. Lower values stretch the detail across a larger area.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+      <div class="param-tip">For environmental surfaces, a tiling value of 4-8 relative to the main texture often provides good multi-scale detail.</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <ul>
+      <li>Use detail maps to add fine surface texture (brick patterns, concrete cracks, fabric weave) that tiles at a different scale from the main texture.</li>
+      <li>Combining a main texture (low tiling, unique detail) with a detail texture (high tiling, repeating pattern) creates surfaces that look good both close up and far away.</li>
+      <li>For best results, ensure your mesh has a proper UV1 channel set up in your 3D modeling software if you plan to use UV Set 1.</li>
+      <li>Detail normal maps add significant visual quality at close range with minimal performance cost — they only add one extra texture sample per pixel.</li>
+      <li>This feature is designed for the Background shader variant. For character materials, consider using the Makeup layer system instead for layered detail.</li>
+      <li>Keep detail albedo maps neutral in color to avoid tinting issues when the detail pattern repeats visibly.</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>
