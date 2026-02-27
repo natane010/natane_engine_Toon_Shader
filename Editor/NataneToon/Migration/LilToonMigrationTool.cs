@@ -661,11 +661,13 @@ namespace NataneToon.Editor
 
             // === MatCap ===
             CaptureTexture(material, "_MatCapTex", properties);
+            CaptureTexture(material, "_MatCapBlendMask", properties);
             CaptureColor(material, "_MatCapColor", properties);
             CaptureFloat(material, "_MatCapBlend", properties);
             CaptureFloat(material, "_MatCapBlendMode", properties);
             // MatCap 2nd
             CaptureTexture(material, "_MatCap2ndTex", properties);
+            CaptureTexture(material, "_MatCap2ndBlendMask", properties);
             CaptureColor(material, "_MatCap2ndColor", properties);
             CaptureFloat(material, "_MatCap2ndBlend", properties);
             CaptureFloat(material, "_MatCap2ndBlendMode", properties);
@@ -996,6 +998,46 @@ namespace NataneToon.Editor
                 string lilName = lilBlendMode >= 0 && lilBlendMode < 4 ? lilModeNames[lilBlendMode] : $"Unknown({lilBlendMode})";
                 string nataneName = nataneBlendMode >= 0 && nataneBlendMode < 3 ? nataneModeNames[nataneBlendMode] : $"Unknown({nataneBlendMode})";
                 report.infos.Add($"MatCap有効化: Blend={matCapBlend:F2}, Intensity=1.0, BlendMode: {lilName}→{nataneName}");
+
+                // MatCap マスクテクスチャ移行: lilToon _MatCapBlendMask → Natane _MatCapMask
+                SetTextureIfExists(sourceProps, "_MatCapBlendMask", targetMaterial, "_MatCapMask");
+                if (sourceProps.ContainsKey("_MatCapBlendMask") && sourceProps["_MatCapBlendMask"] != null)
+                {
+                    report.infos.Add("MatCapマスクテクスチャを移行しました");
+                }
+            }
+
+            // === MatCap 2nd ===
+            bool useMatCap2nd = GetFloatOr(sourceProps, "_UseMatCap2nd", 0) > 0.5f;
+
+            if (useMatCap2nd && sourceProps.ContainsKey("_MatCap2ndTex") && sourceProps["_MatCap2ndTex"] != null)
+            {
+                SetTextureIfExists(sourceProps, "_MatCap2ndTex", targetMaterial, "_MatCapTex2");
+
+                targetMaterial.SetFloat("_MatCap2", 1.0f);
+                targetMaterial.EnableKeyword("_MATCAP_2");
+
+                float matCap2ndBlend = GetFloatOr(sourceProps, "_MatCap2ndBlend", 1.0f);
+                targetMaterial.SetFloat("_MatCapIntensity2", 1.0f);
+                targetMaterial.SetFloat("_MatCapBlend2", matCap2ndBlend);
+
+                // MatCap 2nd Blend Mode変換
+                int lilBlendMode2 = 1;
+                if (sourceProps.ContainsKey("_MatCap2ndBlendMode"))
+                {
+                    lilBlendMode2 = (int)(float)sourceProps["_MatCap2ndBlendMode"];
+                }
+                int nataneBlendMode2 = ConvertMatCapBlendMode(lilBlendMode2);
+                targetMaterial.SetFloat("_MatCapBlendMode2", nataneBlendMode2);
+
+                // MatCap 2nd マスクテクスチャ移行
+                SetTextureIfExists(sourceProps, "_MatCap2ndBlendMask", targetMaterial, "_MatCapMask2");
+
+                report.infos.Add($"MatCap 2nd有効化: Blend={matCap2ndBlend:F2}, Intensity=1.0");
+                if (sourceProps.ContainsKey("_MatCap2ndBlendMask") && sourceProps["_MatCap2ndBlendMask"] != null)
+                {
+                    report.infos.Add("MatCap 2ndマスクテクスチャを移行しました");
+                }
             }
 
             // === Specular ===
