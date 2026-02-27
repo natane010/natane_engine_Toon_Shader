@@ -528,10 +528,8 @@ namespace NataneToon.Editor
         private void DetectMultipleShadowLayers(Dictionary<string, object> properties, ConversionReport report)
         {
             // lilToonの2nd, 3rd shadowレイヤーを検出
-            bool has2ndShadow = properties.ContainsKey("_Shadow2ndColor") ||
-                               properties.ContainsKey("_lilShadow2ndColor");
-            bool has3rdShadow = properties.ContainsKey("_Shadow3rdColor") ||
-                               properties.ContainsKey("_lilShadow3rdColor");
+            bool has2ndShadow = properties.ContainsKey("_Shadow2ndColor");
+            bool has3rdShadow = properties.ContainsKey("_Shadow3rdColor");
 
             if (has2ndShadow || has3rdShadow)
             {
@@ -545,82 +543,89 @@ namespace NataneToon.Editor
         {
             var properties = new Dictionary<string, object>();
 
-            // Textures
+            // =============================================
+            // lilToon の実際のプロパティ名に基づくキャプチャ
+            // (GitHub: lilxyzw/lilToon lts.shader より)
+            // =============================================
+
+            // === Core ===
             CaptureTexture(material, "_MainTex", properties);
-            CaptureTexture(material, "_BumpMap", properties);
-            CaptureTexture(material, "_EmissionMap", properties);
-            CaptureTexture(material, "_MatCapTex", properties);
-
-            // Colors
             CaptureColor(material, "_Color", properties);
-            CaptureColor(material, "_ShadowColor", properties);
-            CaptureColor(material, "_EmissionColor", properties);
-
-            // Floats
             CaptureFloat(material, "_Cutoff", properties);
+
+            // === Normal Map ===
+            CaptureTexture(material, "_BumpMap", properties);
             CaptureFloat(material, "_BumpScale", properties);
 
-            // lilToon specific properties
-            CaptureTexture(material, "_lilMainTex", properties);
-            CaptureColor(material, "_lilColor", properties);
-            CaptureColor(material, "_lilShadowColor", properties);
-            CaptureFloat(material, "_lilShadowBorder", properties);
-            CaptureFloat(material, "_lilShadowBlur", properties);
+            // === lilToon Feature Toggles (重要！) ===
+            CaptureFloat(material, "_UseShadow", properties);
+            CaptureFloat(material, "_UseRim", properties);
+            CaptureFloat(material, "_UseRimShade", properties);
+            CaptureFloat(material, "_UseMatCap", properties);
+            CaptureFloat(material, "_UseMatCap2nd", properties);
+            CaptureFloat(material, "_UseEmission", properties);
+            CaptureFloat(material, "_UseEmission2nd", properties);
+            CaptureFloat(material, "_UseOutline", properties);
 
-            // 複数シャドウレイヤーの検出用
-            CaptureColor(material, "_Shadow2ndColor", properties);
-            CaptureColor(material, "_Shadow3rdColor", properties);
-            CaptureColor(material, "_lilShadow2ndColor", properties);
-            CaptureColor(material, "_lilShadow3rdColor", properties);
-
-            // Shadow extended
+            // === Shadow (lilToonの実際のプロパティ名: _ShadowBorder, _ShadowBlur) ===
+            CaptureColor(material, "_ShadowColor", properties);
+            CaptureFloat(material, "_ShadowBorder", properties);
+            CaptureFloat(material, "_ShadowBlur", properties);
             CaptureFloat(material, "_ShadowStrength", properties);
             CaptureFloat(material, "_ShadowNormalStrength", properties);
+
+            // Shadow 2nd/3rd
+            CaptureColor(material, "_Shadow2ndColor", properties);
             CaptureFloat(material, "_Shadow2ndBorder", properties);
+            CaptureFloat(material, "_Shadow2ndBlur", properties);
+            CaptureColor(material, "_Shadow3rdColor", properties);
             CaptureFloat(material, "_Shadow3rdBorder", properties);
-            CaptureFloat(material, "_lilShadow2ndBorder", properties);
-            CaptureFloat(material, "_lilShadow3rdBorder", properties);
+            CaptureFloat(material, "_Shadow3rdBlur", properties);
 
-            // Rim light
+            // Shadow textures
+            CaptureTexture(material, "_ShadowColorTex", properties);
+            CaptureTexture(material, "_ShadowStrengthMask", properties);
+            CaptureTexture(material, "_ShadowBorderMask", properties);
+            CaptureTexture(material, "_ShadowBlurMask", properties);
+
+            // === Rim Light ===
             CaptureColor(material, "_RimColor", properties);
-            CaptureFloat(material, "_RimPower", properties);
-            CaptureFloat(material, "_RimFresnelPower", properties);
-
-            // Rim extended
-            CaptureFloat(material, "_RimMainStrength", properties);
-            CaptureFloat(material, "_RimEnableLighting", properties);
-            CaptureFloat(material, "_RimBlendMode", properties);
-
-            // Outline
-            CaptureFloat(material, "_OutlineWidth", properties);
-            CaptureColor(material, "_OutlineColor", properties);
-
-            // Outline extended
-            CaptureFloat(material, "_OutlineFixWidth", properties);
-            CaptureFloat(material, "_OutlineEnableLighting", properties);
-
-            // Emission
-            CaptureTexture(material, "_EmissionMap", properties);
-            CaptureColor(material, "_EmissionColor", properties);
-
-            // MatCap properties (拡張)
-            CaptureFloat(material, "_MatCapBlend", properties);
-            CaptureFloat(material, "_MatCapMainStrength", properties);
-            CaptureFloat(material, "_MatCapBlendMode", properties);
-            CaptureColor(material, "_MatCapColor", properties);
-
-            // Specular / Surface properties
-            CaptureFloat(material, "_Smoothness", properties);
-            CaptureFloat(material, "_Metallic", properties);
-            CaptureFloat(material, "_Reflectance", properties);
-            CaptureFloat(material, "_SpecularBorder", properties);
-            CaptureFloat(material, "_SpecularBlur", properties);
-            CaptureFloat(material, "_SpecularToon", properties);
-            CaptureFloat(material, "_ApplySpecular", properties);
-
-            // Rim Light properties (拡張)
+            CaptureTexture(material, "_RimColorTex", properties);
             CaptureFloat(material, "_RimBorder", properties);
             CaptureFloat(material, "_RimBlur", properties);
+            CaptureFloat(material, "_RimFresnelPower", properties);
+            CaptureFloat(material, "_RimEnableLighting", properties);
+            CaptureFloat(material, "_RimShadowMask", properties);
+
+            // === Outline ===
+            CaptureColor(material, "_OutlineColor", properties);
+            CaptureFloat(material, "_OutlineWidth", properties);
+            CaptureFloat(material, "_OutlineFixWidth", properties);
+            CaptureTexture(material, "_OutlineTex", properties);
+
+            // === Emission ===
+            CaptureTexture(material, "_EmissionMap", properties);
+            CaptureColor(material, "_EmissionColor", properties);
+            CaptureTexture(material, "_Emission2ndMap", properties);
+            CaptureColor(material, "_Emission2ndColor", properties);
+
+            // === MatCap ===
+            CaptureTexture(material, "_MatCapTex", properties);
+            CaptureColor(material, "_MatCapColor", properties);
+            CaptureFloat(material, "_MatCapBlend", properties);
+            CaptureFloat(material, "_MatCapBlendMode", properties);
+            // MatCap 2nd
+            CaptureTexture(material, "_MatCap2ndTex", properties);
+            CaptureColor(material, "_MatCap2ndColor", properties);
+            CaptureFloat(material, "_MatCap2ndBlend", properties);
+            CaptureFloat(material, "_MatCap2ndBlendMode", properties);
+
+            // === Specular / Surface ===
+            CaptureFloat(material, "_Smoothness", properties);
+            CaptureFloat(material, "_Metallic", properties);
+            CaptureFloat(material, "_SpecularToon", properties);
+            CaptureFloat(material, "_SpecularBorder", properties);
+            CaptureFloat(material, "_SpecularBlur", properties);
 
             return properties;
         }
@@ -657,95 +662,70 @@ namespace NataneToon.Editor
 
         private void MapPropertiesWithReport(Dictionary<string, object> sourceProps, Material targetMaterial, ConversionReport report)
         {
-            // Main Texture
+            // =============================================
+            // lilToon → Natane Toon Shader プロパティマッピング
+            // lilToonの実際のプロパティ名に基づく (lts.shader)
+            // =============================================
+
+            // === Main Texture & Color ===
             SetTextureIfExists(sourceProps, "_MainTex", targetMaterial, "_MainTex");
-            SetTextureIfExists(sourceProps, "_lilMainTex", targetMaterial, "_MainTex");
-
-            // Color
             SetColorIfExists(sourceProps, "_Color", targetMaterial, "_Color");
-            SetColorIfExists(sourceProps, "_lilColor", targetMaterial, "_Color");
 
-            // Shadow Color
-            if (sourceProps.ContainsKey("_lilShadowColor"))
-            {
-                Color shadowColor = (Color)sourceProps["_lilShadowColor"];
+            // === Shadow ===
+            bool useShadow = GetFloatOr(sourceProps, "_UseShadow", 0) > 0.5f;
 
-                // ShadowStrength → ShadowColorのアルファで近似
-                if (sourceProps.ContainsKey("_ShadowStrength"))
-                {
-                    float strength = (float)sourceProps["_ShadowStrength"];
-                    shadowColor = Color.Lerp(Color.white, shadowColor, strength);
-                    report.infos.Add($"ShadowStrength: {strength:F2} → ShadowColorに適用");
-                }
-
-                targetMaterial.SetColor("_ShadowColor", shadowColor);
-                targetMaterial.EnableKeyword("_USE_RAMP");
-            }
-            else if (sourceProps.ContainsKey("_ShadowColor"))
+            if (sourceProps.ContainsKey("_ShadowColor"))
             {
                 Color shadowColor = (Color)sourceProps["_ShadowColor"];
 
-                // ShadowStrength → ShadowColorのアルファで近似
-                if (sourceProps.ContainsKey("_ShadowStrength"))
+                // ShadowStrength → ShadowColorに適用
+                float shadowStrength = GetFloatOr(sourceProps, "_ShadowStrength", 1.0f);
+                if (shadowStrength < 0.99f)
                 {
-                    float strength = (float)sourceProps["_ShadowStrength"];
-                    shadowColor = Color.Lerp(Color.white, shadowColor, strength);
-                    report.infos.Add($"ShadowStrength: {strength:F2} → ShadowColorに適用");
+                    shadowColor = Color.Lerp(Color.white, shadowColor, shadowStrength);
+                    report.infos.Add($"ShadowStrength: {shadowStrength:F2} → ShadowColorに適用");
                 }
 
                 targetMaterial.SetColor("_ShadowColor", shadowColor);
             }
 
-            // Shadow Settings - 改善された変換 (Step 4)
-            if (sourceProps.ContainsKey("_lilShadowBorder"))
+            // Shadow Border & Blur → Natane Shadow パラメータ
+            if (sourceProps.ContainsKey("_ShadowBorder"))
             {
-                float border = (float)sourceProps["_lilShadowBorder"];
-                float blur = sourceProps.ContainsKey("_lilShadowBlur") ? (float)sourceProps["_lilShadowBlur"] : 0.2f;
+                float border = (float)sourceProps["_ShadowBorder"];
+                float blur = GetFloatOr(sourceProps, "_ShadowBlur", 0.1f);
 
                 // ShadowSteps: lilToonは基本2トーン（明暗1境界）
                 targetMaterial.SetFloat("_ShadowSteps", 2);
 
-                // ShadowOffset: border 0.5 = 中央、0→暗い側、1→明るい側
+                // ShadowOffset: lilToon border 0.5 = 中央
                 float shadowOffset = border - 0.5f;
                 targetMaterial.SetFloat("_ShadowOffset", shadowOffset);
-                report.infos.Add($"Shadow Border: {border:F3} → Shadow Offset: {shadowOffset:F3}");
 
                 // ShadowBlend: lilToonのblurをNataneのblendに変換
-                // blur=0 → 鋭い境界(blend=0), blur=1 → 柔らかい(blend=0.8)
                 float blend = Mathf.Clamp01(blur * 0.8f);
                 targetMaterial.SetFloat("_ShadowBlend", blend);
 
-                // ShadowSharpness: blurの逆数系
-                // blur小 → sharpness大 (鋭い境界)
+                // ShadowSharpness: blur小→鋭い, blur大→柔らかい
                 float sharpness = Mathf.Lerp(0.3f, 0.02f, blur);
                 targetMaterial.SetFloat("_ShadowSharpness", sharpness);
 
                 // StepBorderSmooth: blurに比例
                 targetMaterial.SetFloat("_StepBorderSmooth", blur * 0.3f);
 
-                report.infos.Add($"Shadow Blur: {blur:F3} → Blend: {blend:F3}, Sharpness: {sharpness:F3}, StepBorderSmooth: {blur * 0.3f:F3}");
-
-                // 極端な値の警告
-                if (blur < 0.05f)
-                {
-                    report.warnings.Add("Shadow Blurが非常に小さい値です。エッジが鋭すぎる可能性があります。");
-                }
-                else if (blur > 0.8f)
-                {
-                    report.warnings.Add("Shadow Blurが非常に大きい値です。シャドウが不明瞭になる可能性があります。");
-                }
+                report.infos.Add($"Shadow: Border={border:F2}→Offset={shadowOffset:F2}, Blur={blur:F2}→Blend={blend:F2}/Sharpness={sharpness:F3}");
             }
             else
             {
-                // Default settings for good toon shading
+                // デフォルト設定
                 targetMaterial.SetFloat("_ShadowSteps", 2);
                 targetMaterial.SetFloat("_ShadowSharpness", 0.1f);
             }
 
-            // マルチシャドウレイヤー変換 (Step 5)
+            // マルチシャドウレイヤー変換
             MapMultiShadowLayers(sourceProps, targetMaterial, report);
 
-            // Normal Map
+            // === Normal Map ===
             SetTextureIfExists(sourceProps, "_BumpMap", targetMaterial, "_BumpMap");
             SetFloatIfExists(sourceProps, "_BumpScale", targetMaterial, "_BumpScale");
 
@@ -755,129 +735,78 @@ namespace NataneToon.Editor
                 targetMaterial.EnableKeyword("_NORMALMAP");
             }
 
-            // Rim Light - 改善された変換 (Step 6)
-            bool hasRim = false;
-            float rimIntensity = 1.0f;
+            // === Rim Light ===
+            // lilToon: _UseRim=1 で有効化
+            bool useRim = GetFloatOr(sourceProps, "_UseRim", 0) > 0.5f;
 
-            if (sourceProps.ContainsKey("_RimColor"))
-            {
-                Color rimColor = (Color)sourceProps["_RimColor"];
-                if (rimColor.a > 0 || rimColor.maxColorComponent > 0)
-                {
-                    targetMaterial.SetColor("_RimColor", rimColor);
-                    hasRim = true;
-
-                    // Rim Intensityのデフォルト値を設定
-                    rimIntensity = Mathf.Max(rimColor.maxColorComponent, 0.5f);
-                }
-            }
-
-            // RimMainStrength → RimIntensity（最重要！）
-            if (sourceProps.ContainsKey("_RimMainStrength"))
-            {
-                float strength = (float)sourceProps["_RimMainStrength"];
-                rimIntensity = strength;
-                hasRim = hasRim || strength > 0.01f;
-                report.infos.Add($"RimMainStrength: {strength:F2} → RimIntensity");
-            }
-
-            if (sourceProps.ContainsKey("_RimFresnelPower"))
-            {
-                float power = (float)sourceProps["_RimFresnelPower"];
-                targetMaterial.SetFloat("_RimPower", Mathf.Clamp(power, 0.1f, 10f));
-                hasRim = true;
-                report.infos.Add($"Rim Fresnel Power: {power:F2} → Rim Power: {Mathf.Clamp(power, 0.1f, 10f):F2}");
-            }
-            else if (sourceProps.ContainsKey("_RimPower"))
-            {
-                SetFloatIfExists(sourceProps, "_RimPower", targetMaterial, "_RimPower");
-                hasRim = true;
-            }
-
-            if (hasRim)
+            if (useRim)
             {
                 targetMaterial.SetFloat("_RimLight", 1.0f);
                 targetMaterial.EnableKeyword("_RIM_LIGHT");
 
-                // Rim Intensity設定
-                if (targetMaterial.HasProperty("_RimIntensity"))
+                // RimColor
+                if (sourceProps.ContainsKey("_RimColor"))
                 {
-                    targetMaterial.SetFloat("_RimIntensity", rimIntensity);
-                }
-                report.infos.Add($"Rim Light有効化。Intensity: {rimIntensity:F2}");
-
-                // Rim Spread設定（_RimBorderから計算）
-                if (sourceProps.ContainsKey("_RimBorder"))
-                {
-                    float border = (float)sourceProps["_RimBorder"];
-                    // borderが小さい→広がりが大きい（逆相関）
-                    float spread = Mathf.Lerp(3.0f, 0.5f, border);
-                    targetMaterial.SetFloat("_RimSpread", spread);
-                    report.infos.Add($"Rim Border: {border:F2} → Rim Spread: {spread:F2}");
-                }
-                else
-                {
-                    targetMaterial.SetFloat("_RimSpread", 2.0f);
+                    targetMaterial.SetColor("_RimColor", (Color)sourceProps["_RimColor"]);
                 }
 
-                // Rim Blur処理
-                if (sourceProps.ContainsKey("_RimBlur"))
+                // RimFresnelPower → RimPower
+                float rimPower = GetFloatOr(sourceProps, "_RimFresnelPower", 3.5f);
+                targetMaterial.SetFloat("_RimPower", Mathf.Clamp(rimPower, 0.1f, 10f));
+                report.infos.Add($"Rim: FresnelPower={rimPower:F2}→RimPower={Mathf.Clamp(rimPower, 0.1f, 10f):F2}");
+
+                // RimIntensity: lilToonでは色のアルファと強度で制御
+                targetMaterial.SetFloat("_RimIntensity", 1.0f);
+
+                // RimBorder → RimSpread (逆相関)
+                // lilToon: border=0.5→リム中程度, border=0→広い, border=1→狭い
+                float rimBorder = GetFloatOr(sourceProps, "_RimBorder", 0.5f);
+                // NataneのRimSpreadは0-1で、0=通常、値が大きいほど広がる
+                // lilToonのborderが小さいほどリムが広い
+                float rimSpread = Mathf.Clamp01(1.0f - rimBorder);
+                targetMaterial.SetFloat("_RimSpread", rimSpread);
+                report.infos.Add($"Rim: Border={rimBorder:F2}→Spread={rimSpread:F2}");
+
+                // RimBlur → RimPowerの微調整
+                float rimBlur = GetFloatOr(sourceProps, "_RimBlur", 0.65f);
+                if (rimBlur > 0.01f)
                 {
-                    float blur = (float)sourceProps["_RimBlur"];
-                    if (blur > 0.01f)
-                    {
-                        float currentPower = targetMaterial.GetFloat("_RimPower");
-                        // blurの影響を50%に（旧30%から改善）
-                        float adjustedPower = currentPower * (1.0f - blur * 0.5f);
-                        targetMaterial.SetFloat("_RimPower", Mathf.Max(adjustedPower, 0.1f));
-                        report.infos.Add($"Rim Blur: {blur:F2} → Rim Power調整: {adjustedPower:F2}");
-                    }
+                    float currentPower = targetMaterial.GetFloat("_RimPower");
+                    // blurが大きいほどpowerを下げて柔らかくする
+                    float adjustedPower = currentPower * (1.0f - rimBlur * 0.5f);
+                    targetMaterial.SetFloat("_RimPower", Mathf.Max(adjustedPower, 0.1f));
+                    report.infos.Add($"Rim: Blur={rimBlur:F2}→Power調整={adjustedPower:F2}");
                 }
 
                 // RimEnableLighting → RimDirStrength
-                if (sourceProps.ContainsKey("_RimEnableLighting"))
-                {
-                    float enableLighting = (float)sourceProps["_RimEnableLighting"];
-                    targetMaterial.SetFloat("_RimDirStrength", enableLighting);
-                    report.infos.Add($"RimEnableLighting: {enableLighting:F2} → RimDirStrength");
-                }
+                float rimEnableLighting = GetFloatOr(sourceProps, "_RimEnableLighting", 1.0f);
+                targetMaterial.SetFloat("_RimDirStrength", rimEnableLighting);
 
-                // RimBlendMode マッピング
-                if (sourceProps.ContainsKey("_RimBlendMode"))
-                {
-                    int lilMode = (int)(float)sourceProps["_RimBlendMode"];
-                    int nataneMode = ConvertRimBlendMode(lilMode);
-                    targetMaterial.SetFloat("_RimBlendMode", nataneMode);
-                    report.infos.Add($"Rim Blend Mode: {lilMode} → {nataneMode} ({GetRimBlendModeName(nataneMode)})");
-                }
+                // RimShadowMask
+                float rimShadowMask = GetFloatOr(sourceProps, "_RimShadowMask", 0.5f);
+                targetMaterial.SetFloat("_RimShadowMask", rimShadowMask);
 
-                // RimShadowMask: 影部分ではリムを少し抑える
-                targetMaterial.SetFloat("_RimShadowMask", 0.3f);
+                report.infos.Add($"Rim Light有効化: DirStrength={rimEnableLighting:F2}, ShadowMask={rimShadowMask:F2}");
             }
 
-            // Outline - 変換後の確認ダイアログ
+            // === Outline ===
+            // lilToonでは_UseOutlineはシェーダーバリアントで分かれるが、プロパティとしても存在
             bool hasOutline = false;
             if (sourceProps.ContainsKey("_OutlineWidth"))
             {
                 float originalWidth = (float)sourceProps["_OutlineWidth"];
                 if (originalWidth > 0)
                 {
-                    // lilToonのアウトライン幅をNatane Toon Shaderの単位に変換
-                    float convertedWidth = Mathf.Clamp(originalWidth * 0.01f, 0, 0.1f);
+                    // lilToon OutlineWidth (Range 0-1, デフォルト0.08) → Natane OutlineWidth (0-1, デフォルト0.1)
+                    // lilToonとNataneでスケールが近いが微調整
+                    float convertedWidth = originalWidth;
                     targetMaterial.SetFloat("_OutlineWidth", convertedWidth);
                     hasOutline = true;
 
-                    // 変換レポートに記録
                     report.outlineWidthAdjusted = true;
                     report.originalOutlineWidth = originalWidth;
                     report.convertedOutlineWidth = convertedWidth;
-                    report.infos.Add($"Outline Width: {originalWidth:F3} → {convertedWidth:F4} (スケール調整済み)");
-
-                    // 極端な値の警告
-                    if (originalWidth > 10f)
-                    {
-                        report.warnings.Add($"Outline Widthが大きすぎる可能性があります（元の値: {originalWidth:F2}）。変換後の見た目を確認してください。");
-                    }
+                    report.infos.Add($"Outline Width: {originalWidth:F4}");
                 }
             }
 
@@ -891,193 +820,118 @@ namespace NataneToon.Editor
             {
                 targetMaterial.SetFloat("_Outline", 1.0f);
                 targetMaterial.EnableKeyword("_OUTLINE");
-
-                // OutlineFixWidth情報をレポートに記録
-                if (sourceProps.ContainsKey("_OutlineFixWidth"))
-                {
-                    float fixWidth = (float)sourceProps["_OutlineFixWidth"];
-                    if (fixWidth > 0.5f)
-                    {
-                        report.infos.Add("Outline FixWidth: 有効（距離に依存しない固定幅）");
-                    }
-                }
             }
 
-            // Emission
-            SetTextureIfExists(sourceProps, "_EmissionMap", targetMaterial, "_EmissionMap");
+            // === Emission ===
+            bool useEmission = GetFloatOr(sourceProps, "_UseEmission", 0) > 0.5f;
 
-            bool hasEmission = false;
-            if (sourceProps.ContainsKey("_EmissionColor"))
+            if (useEmission)
             {
-                Color emissionColor = (Color)sourceProps["_EmissionColor"];
-                if (emissionColor.maxColorComponent > 0)
+                SetTextureIfExists(sourceProps, "_EmissionMap", targetMaterial, "_EmissionMap");
+                if (sourceProps.ContainsKey("_EmissionColor"))
                 {
-                    targetMaterial.SetColor("_EmissionColor", emissionColor);
-                    hasEmission = true;
+                    targetMaterial.SetColor("_EmissionColor", (Color)sourceProps["_EmissionColor"]);
                 }
-            }
-
-            if (hasEmission || (sourceProps.ContainsKey("_EmissionMap") && sourceProps["_EmissionMap"] != null))
-            {
                 targetMaterial.SetFloat("_Emission", 1.0f);
                 targetMaterial.EnableKeyword("_EMISSION");
+                report.infos.Add("Emission有効化");
             }
 
-            // MatCap - 改善された変換処理
-            SetTextureIfExists(sourceProps, "_MatCapTex", targetMaterial, "_MatCapTex");
-            if (sourceProps.ContainsKey("_MatCapTex") && sourceProps["_MatCapTex"] != null)
+            // === MatCap ===
+            bool useMatCap = GetFloatOr(sourceProps, "_UseMatCap", 0) > 0.5f;
+
+            if (useMatCap && sourceProps.ContainsKey("_MatCapTex") && sourceProps["_MatCapTex"] != null)
             {
+                SetTextureIfExists(sourceProps, "_MatCapTex", targetMaterial, "_MatCapTex");
+
                 targetMaterial.SetFloat("_MatCap", 1.0f);
                 targetMaterial.EnableKeyword("_MATCAP");
 
-                // MatCap Intensity変換
-                if (sourceProps.ContainsKey("_MatCapBlend"))
-                {
-                    float matCapBlend = (float)sourceProps["_MatCapBlend"];
-                    targetMaterial.SetFloat("_MatCapIntensity", matCapBlend);
-                    report.infos.Add($"MatCap Intensity: {matCapBlend:F2}");
-                }
-                else if (sourceProps.ContainsKey("_MatCapMainStrength"))
-                {
-                    float strength = (float)sourceProps["_MatCapMainStrength"];
-                    targetMaterial.SetFloat("_MatCapIntensity", strength);
-                    report.infos.Add($"MatCap Intensity: {strength:F2} (from MainStrength)");
-                }
-                else
-                {
-                    targetMaterial.SetFloat("_MatCapIntensity", 0.8f);
-                    report.infos.Add("MatCap Intensity: 0.8 (デフォルト値)");
-                }
+                // MatCap Intensity (from _MatCapBlend)
+                float matCapBlend = GetFloatOr(sourceProps, "_MatCapBlend", 1.0f);
+                targetMaterial.SetFloat("_MatCapIntensity", matCapBlend);
 
                 // MatCap Blend Mode変換
+                // lilToon: 0=Normal, 1=Add, 2=Screen, 3=Multiply
+                // Natane:  0=Add, 1=Multiply, 2=Replace
                 if (sourceProps.ContainsKey("_MatCapBlendMode"))
                 {
                     int lilBlendMode = (int)(float)sourceProps["_MatCapBlendMode"];
                     int nataneBlendMode = ConvertMatCapBlendMode(lilBlendMode);
                     targetMaterial.SetFloat("_MatCapBlendMode", nataneBlendMode);
-                    report.infos.Add($"MatCap Blend Mode: {lilBlendMode} → {nataneBlendMode} ({GetMatCapBlendModeName(nataneBlendMode)})");
-                }
-                else
-                {
-                    targetMaterial.SetFloat("_MatCapBlendMode", 0);
+                    report.infos.Add($"MatCap: Blend={matCapBlend:F2}, BlendMode={lilBlendMode}→{nataneBlendMode}");
                 }
 
-                // MatCapColor情報をレポートに記録
-                if (sourceProps.ContainsKey("_MatCapColor"))
-                {
-                    Color matCapColor = (Color)sourceProps["_MatCapColor"];
-                    if (matCapColor != Color.white)
-                    {
-                        report.infos.Add($"MatCapColor: {matCapColor}（テクスチャに事前乗算されていない場合は手動調整が必要）");
-                    }
-                }
+                report.infos.Add($"MatCap有効化: Intensity={matCapBlend:F2}");
             }
 
-            // Specular - 改善された変換 (Step 7)
+            // === Specular ===
+            // lilToonではSmoothnessとSpecularToonで制御
             bool hasSpecular = false;
-            float specularIntensity = 0f;
 
-            // lilToon SpecularToon=1の場合、NataneのAnime-style smoothstepに近い
             if (sourceProps.ContainsKey("_SpecularToon"))
             {
                 float specToon = (float)sourceProps["_SpecularToon"];
                 if (specToon > 0.5f && sourceProps.ContainsKey("_SpecularBorder"))
                 {
                     float specBorder = (float)sourceProps["_SpecularBorder"];
-                    // lilToon Toon Specular: smoothstep(border, border+blur, ndoth)
+                    float specBlur = GetFloatOr(sourceProps, "_SpecularBlur", 0.0f);
+
+                    // lilToon: smoothstep(border, border+blur, ndoth)
                     // Natane: smoothstep(1-size-softness, 1-size+softness, ndoth)
-                    // → size = 1 - border
                     float size = Mathf.Clamp01(1.0f - specBorder);
+                    float softness = Mathf.Clamp01(specBlur);
                     targetMaterial.SetFloat("_SpecularSize", size);
+                    targetMaterial.SetFloat("_SpecularSoftness", Mathf.Max(softness, 0.05f));
                     hasSpecular = true;
-                    specularIntensity = 1.0f;
-                    report.infos.Add($"SpecularToon: border={specBorder:F2} → SpecularSize: {size:F3}");
+                    report.infos.Add($"Specular(Toon): Border={specBorder:F2}→Size={size:F2}, Blur={specBlur:F2}→Softness={softness:F2}");
                 }
             }
 
-            if (sourceProps.ContainsKey("_Smoothness"))
+            if (!hasSpecular && sourceProps.ContainsKey("_Smoothness"))
             {
                 float smoothness = (float)sourceProps["_Smoothness"];
                 if (smoothness > 0.01f)
                 {
-                    if (!hasSpecular) // SpecularToonで既に設定済みでない場合
-                    {
-                        float specularSize = OptimizeSpecularSize(smoothness);
-                        targetMaterial.SetFloat("_SpecularSize", specularSize);
-                        report.infos.Add($"Smoothness: {smoothness:F2} → Specular Size: {specularSize:F3}");
-                    }
+                    float specularSize = OptimizeSpecularSize(smoothness);
+                    targetMaterial.SetFloat("_SpecularSize", specularSize);
                     hasSpecular = true;
-                    specularIntensity = Mathf.Max(specularIntensity, smoothness);
+                    report.infos.Add($"Specular(PBR): Smoothness={smoothness:F2}→Size={specularSize:F3}");
                 }
-            }
-
-            if (sourceProps.ContainsKey("_Metallic"))
-            {
-                float metallic = (float)sourceProps["_Metallic"];
-                if (metallic > 0.01f)
-                {
-                    specularIntensity = Mathf.Max(specularIntensity, metallic);
-                    hasSpecular = true;
-                    report.infos.Add($"Metallic: {metallic:F2} (スペキュラー強度に反映)");
-                }
-            }
-
-            if (sourceProps.ContainsKey("_Reflectance"))
-            {
-                float reflectance = (float)sourceProps["_Reflectance"];
-                if (reflectance > 0.01f)
-                {
-                    specularIntensity = Mathf.Max(specularIntensity, reflectance * 0.8f);
-                    hasSpecular = true;
-                    report.infos.Add($"Reflectance: {reflectance:F2} (スペキュラー強度に反映)");
-                }
-            }
-
-            if (sourceProps.ContainsKey("_SpecularBlur"))
-            {
-                float specBlur = (float)sourceProps["_SpecularBlur"];
-                float softness = Mathf.Clamp01(specBlur);
-                targetMaterial.SetFloat("_SpecularSoftness", softness);
-                hasSpecular = true;
-                report.infos.Add($"Specular Blur: {specBlur:F2} → Specular Softness: {softness:F2}");
             }
 
             if (hasSpecular)
             {
                 targetMaterial.SetFloat("_Specular", 1.0f);
                 targetMaterial.EnableKeyword("_SPECULAR");
-
-                if (!sourceProps.ContainsKey("_SpecularColor"))
-                {
-                    targetMaterial.SetColor("_SpecularColor", new Color(1, 1, 1, 1));
-                }
-                if (!sourceProps.ContainsKey("_SpecularBlur"))
-                {
-                    targetMaterial.SetFloat("_SpecularSoftness", 0.3f);
-                }
-
-                report.infos.Add($"Specular有効化 (強度: {specularIntensity:F2})");
+                targetMaterial.SetColor("_SpecularColor", new Color(1, 1, 1, 1));
+                report.infos.Add("Specular有効化");
             }
 
-            // Surface Properties - Glossiness/Matte変換
+            // === Surface Properties ===
             if (sourceProps.ContainsKey("_Smoothness"))
             {
                 float smoothness = (float)sourceProps["_Smoothness"];
                 targetMaterial.SetFloat("_Glossiness", smoothness);
-
-                float matteEffect = 1.0f - smoothness;
-                targetMaterial.SetFloat("_MatteEffect", matteEffect);
-
-                report.infos.Add($"Surface Finish: Glossiness={smoothness:F2}, Matte={matteEffect:F2}");
             }
 
-            // Alpha Cutoff (Step 8) - Cutoutバリアントで重要
+            // === Alpha Cutoff ===
             if (sourceProps.ContainsKey("_Cutoff"))
             {
                 float cutoff = (float)sourceProps["_Cutoff"];
                 targetMaterial.SetFloat("_Cutoff", cutoff);
                 report.infos.Add($"Alpha Cutoff: {cutoff:F2}");
             }
+        }
+
+        /// <summary>
+        /// sourcePropsからfloatを取得、なければデフォルト値を返す
+        /// </summary>
+        private float GetFloatOr(Dictionary<string, object> props, string key, float defaultValue)
+        {
+            if (props.ContainsKey(key))
+                return (float)props[key];
+            return defaultValue;
         }
 
         private void SetTextureIfExists(Dictionary<string, object> source, string sourceKey, Material target, string targetKey)
@@ -1105,24 +959,6 @@ namespace NataneToon.Editor
         }
 
         /// <summary>
-        /// Shadow Blurから最適なShadow Sharpnessへ変換（非線形カーブ）
-        /// lilToonのblurは0-1の範囲で、Natane Toon Shaderのsharpnessは0.001-0.5の範囲
-        /// 自然な見た目のために指数カーブを使用
-        /// </summary>
-        private float OptimizeShadowSharpness(float blur)
-        {
-            // blur: 0 (sharp) → 1 (blur)
-            // sharpness: 0.5 (sharp) → 0.001 (blur)
-
-            // 非線形変換で自然な見た目に
-            float normalized = 1.0f - blur; // 反転（blurが大きい→sharpnessが小さい）
-            float curved = Mathf.Pow(normalized, 2.0f); // 二次曲線で中間値をより鋭く
-            float sharpness = Mathf.Lerp(0.001f, 0.5f, curved);
-
-            return sharpness;
-        }
-
-        /// <summary>
         /// SmoothnessからSpecular Sizeへ変換（非線形カーブ）
         /// lilToonのSmoothnessは0-1の範囲、Natane Toon ShaderのSpecularSizeは0.01-1.0が推奨
         /// 1.5乗カーブで中間値をやや小さくし、より自然なハイライトに
@@ -1141,38 +977,18 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// lilToonのMatCapBlendModeをNatane Toon ShaderのBlendModeに変換
+        /// lilToon: 0=Normal, 1=Add, 2=Screen, 3=Multiply
+        /// Natane:  0=Add, 1=Multiply, 2=Replace
         /// </summary>
         private int ConvertMatCapBlendMode(int lilBlendMode)
         {
-            // lilToon MatCap Blend Modes (推定):
-            // 0 = Add
-            // 1 = Multiply
-            // 2 = Screen
-            // 3 = Overlay
-            //
-            // Natane Toon Shader MatCap Blend Modes:
-            // 0 = Add
-            // 1 = Multiply
-            // 2 = Screen
-            // 3 = Overlay
-
-            // 多くの場合、同じ順序なのでそのまま返す
-            // ただし、範囲チェックは必要
-            return Mathf.Clamp(lilBlendMode, 0, 3);
-        }
-
-        /// <summary>
-        /// MatCap Blend Modeの名前を取得（レポート用）
-        /// </summary>
-        private string GetMatCapBlendModeName(int blendMode)
-        {
-            switch (blendMode)
+            switch (lilBlendMode)
             {
-                case 0: return "Add";
-                case 1: return "Multiply";
-                case 2: return "Screen";
-                case 3: return "Overlay";
-                default: return "Unknown";
+                case 0: return 0; // Normal → Add (最も近い)
+                case 1: return 0; // Add → Add
+                case 2: return 0; // Screen → Add (近似)
+                case 3: return 1; // Multiply → Multiply
+                default: return 0;
             }
         }
 
@@ -1200,11 +1016,13 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// マルチシャドウレイヤー変換（2nd/3rd Shadow）
+        /// lilToon: _Shadow2ndColor, _Shadow2ndBorder (0-1), _Shadow3rdColor, _Shadow3rdBorder (0-1)
+        /// Natane:  _Shadow2ndColor, _Shadow2ndBorder, _Shadow3rdColor, _Shadow3rdBorder + _USE_MULTI_SHADOW keyword
         /// </summary>
         private void MapMultiShadowLayers(Dictionary<string, object> sourceProps, Material targetMaterial, ConversionReport report)
         {
-            bool has2nd = TryGetColor(sourceProps, "_Shadow2ndColor", "_lilShadow2ndColor", out Color shadow2nd);
-            bool has3rd = TryGetColor(sourceProps, "_Shadow3rdColor", "_lilShadow3rdColor", out Color shadow3rd);
+            bool has2nd = sourceProps.ContainsKey("_Shadow2ndColor");
+            bool has3rd = sourceProps.ContainsKey("_Shadow3rdColor");
 
             if (!has2nd && !has3rd) return;
 
@@ -1213,85 +1031,25 @@ namespace NataneToon.Editor
 
             if (has2nd)
             {
+                Color shadow2nd = (Color)sourceProps["_Shadow2ndColor"];
                 targetMaterial.SetColor("_Shadow2ndColor", shadow2nd);
-                float border2nd = TryGetFloat(sourceProps, "_Shadow2ndBorder", "_lilShadow2ndBorder", 0.5f);
+                float border2nd = GetFloatOr(sourceProps, "_Shadow2ndBorder", 0.15f);
                 targetMaterial.SetFloat("_Shadow2ndBorder", border2nd);
                 report.infos.Add($"2nd Shadow: Color={shadow2nd}, Border={border2nd:F2}");
             }
 
             if (has3rd)
             {
-                targetMaterial.SetColor("_Shadow3rdColor", shadow3rd);
-                float border3rd = TryGetFloat(sourceProps, "_Shadow3rdBorder", "_lilShadow3rdBorder", 0.3f);
-                targetMaterial.SetFloat("_Shadow3rdBorder", border3rd);
-                report.infos.Add($"3rd Shadow: Color={shadow3rd}, Border={border3rd:F2}");
+                Color shadow3rd = (Color)sourceProps["_Shadow3rdColor"];
+                // lilToon 3rdColorデフォルトは(0,0,0,0)=透明=無効
+                if (shadow3rd.a > 0.01f)
+                {
+                    targetMaterial.SetColor("_Shadow3rdColor", shadow3rd);
+                    float border3rd = GetFloatOr(sourceProps, "_Shadow3rdBorder", 0.25f);
+                    targetMaterial.SetFloat("_Shadow3rdBorder", border3rd);
+                    report.infos.Add($"3rd Shadow: Color={shadow3rd}, Border={border3rd:F2}");
+                }
             }
-        }
-
-        /// <summary>
-        /// lilToonのRimBlendModeをNatane Toon ShaderのRimBlendModeに変換
-        /// lilToon: 0=Add, 1=Screen, 2=Multiply
-        /// Natane:  0=Add, 1=Multiply, 2=Screen, 3=Overlay
-        /// </summary>
-        private int ConvertRimBlendMode(int lilMode)
-        {
-            switch (lilMode)
-            {
-                case 0: return 0; // Add → Add
-                case 1: return 2; // Screen → Screen
-                case 2: return 1; // Multiply → Multiply
-                default: return 0; // Default to Add
-            }
-        }
-
-        /// <summary>
-        /// Rim Blend Modeの名前を取得（レポート用）
-        /// </summary>
-        private string GetRimBlendModeName(int blendMode)
-        {
-            switch (blendMode)
-            {
-                case 0: return "Add";
-                case 1: return "Multiply";
-                case 2: return "Screen";
-                case 3: return "Overlay";
-                default: return "Unknown";
-            }
-        }
-
-        /// <summary>
-        /// 2つのプロパティ名候補からColorを取得（lilプレフィックス/非プレフィックス両対応）
-        /// </summary>
-        private bool TryGetColor(Dictionary<string, object> props, string key1, string key2, out Color color)
-        {
-            if (props.ContainsKey(key1) && props[key1] is Color c1)
-            {
-                color = c1;
-                return true;
-            }
-            if (props.ContainsKey(key2) && props[key2] is Color c2)
-            {
-                color = c2;
-                return true;
-            }
-            color = Color.white;
-            return false;
-        }
-
-        /// <summary>
-        /// 2つのプロパティ名候補からfloatを取得（lilプレフィックス/非プレフィックス両対応）
-        /// </summary>
-        private float TryGetFloat(Dictionary<string, object> props, string key1, string key2, float defaultValue)
-        {
-            if (props.ContainsKey(key1))
-            {
-                return (float)props[key1];
-            }
-            if (props.ContainsKey(key2))
-            {
-                return (float)props[key2];
-            }
-            return defaultValue;
         }
 
         /// <summary>
