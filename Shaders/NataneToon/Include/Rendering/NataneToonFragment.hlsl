@@ -819,6 +819,17 @@ half4 frag(v2f i) : SV_Target
             half gray = CALC_LUMINANCE(col.rgb);
             col.rgb = lerp(gray, col.rgb, _Saturation);
             col.rgb *= _Brightness;
+
+            // ★★★ DEBUG: StandardToon 黒レンダリング診断 ★★★
+            // 赤=ライティングパス到達、緑=stDirectCol正常、青=stLightColor正常
+            // テスト後にこのブロックを削除してください
+            half3 _dbgColor = half3(0, 0, 0);
+            _dbgColor.r = saturate(CALC_LUMINANCE(lighting));     // lighting の明るさ
+            _dbgColor.g = saturate(CALC_LUMINANCE(stDirectCol));  // stDirectCol の明るさ
+            _dbgColor.b = saturate(CALC_LUMINANCE(stLightColor)); // stLightColor の明るさ
+            col.rgb = _dbgColor;
+            col.a = 1.0;
+            return col;
         #else
             // Optimized: Cache original luminance (used multiple times)
             half originalLum = CALC_LUMINANCE(originalAlbedo);
