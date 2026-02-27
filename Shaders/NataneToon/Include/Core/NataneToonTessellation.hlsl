@@ -18,7 +18,6 @@ struct TessellationControlPoint
     #ifdef _SMOOTH_NORMAL
         float4 color : COLOR;
     #endif
-    UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
 // ===== Tessellation Factors =====
@@ -33,7 +32,6 @@ TessellationControlPoint tessVert(appdata v)
 {
     TessellationControlPoint o;
     UNITY_SETUP_INSTANCE_ID(v);
-    UNITY_TRANSFER_INSTANCE_ID(v, o);
     o.vertex = v.vertex;
     o.normal = v.normal;
     o.tangent = v.tangent;

@@ -1039,7 +1039,6 @@ struct v2f
     #ifdef _DETAIL_MAP
         float2 uv1 : TEXCOORD12;
     #endif
-    UNITY_VERTEX_INPUT_INSTANCE_ID
     UNITY_VERTEX_OUTPUT_STEREO
 };
 
