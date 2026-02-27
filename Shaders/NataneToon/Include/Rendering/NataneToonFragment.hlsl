@@ -693,6 +693,16 @@ half4 frag(v2f i) : SV_Target
 
         // ========== STEP 5: Final Composition ==========
         #ifdef _USE_LIGHT_VOLUME
+            #ifdef _STANDARD_TOON
+            // StandardToon + LV: lilToon互換合成を行い、LV を環境光として追加
+            {
+                half3 stResult = lerp(stIndirectCol, stDirectCol, shadingValue);
+                stResult += additionalResult * col.rgb;
+                // LV 環境光をアルベドに掛けて合成（StandardToon の lighting はアルベド込み）
+                half3 lvEnv = max(directLightLV, float3(0, 0, 0)) * col.rgb;
+                lighting = max(stResult, lvEnv);
+            }
+            #else
             if (_LightVolumeBlendMode < 0.5) // Add (Legacy)
             {
                 lighting = directResult + additionalResult;
@@ -723,6 +733,7 @@ half4 frag(v2f i) : SV_Target
                 half3 totalIndirect = max(indirectResult, directLightLV);
                 lighting = max(totalIndirect, directResult + additionalResult);
             }
+            #endif
 
             // Light Volume Specular (additive on albedo)
             #ifdef _LIGHT_VOLUME_SPECULAR
