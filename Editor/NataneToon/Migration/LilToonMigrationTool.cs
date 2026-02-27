@@ -690,38 +690,54 @@ namespace NataneToon.Editor
             }
 
             // Shadow Border & Blur → Natane Shadow パラメータ
+            // =============================================
+            // lilToonとNataneのシャドウモデルの違い:
+            //
+            // lilToon: NdotL = dot(L,N) * 0.5 + 0.5  (Half-Lambert, 範囲[0,1])
+            //   toon = saturate((NdotL - (border-blur/2)) / blur)  ... 線形ランプ
+            //   影の境界(raw ndotl空間) = 2*border - 1
+            //
+            // Natane: ndotl = saturate(raw_ndotl + offset)
+            //   ToonShading(ndotl, steps=1, sharpness):
+            //     smoothstep(0.5-sr, 0.5+sr, ndotl)  where sr = sharpness * 0.5
+            //   影の境界(raw ndotl空間) = 0.5 - offset
+            //
+            // 変換式:
+            //   offset = 1.5 - 2*border  (Half-Lambert→raw ndotl空間の補正)
+            //   sharpness = 2*blur       (HL空間→raw ndotl空間の幅補正)
+            //   steps = 1                (lilToonは2トーン = 明暗1境界)
+            // =============================================
             if (sourceProps.ContainsKey("_ShadowBorder"))
             {
                 float border = (float)sourceProps["_ShadowBorder"];
                 float blur = GetFloatOr(sourceProps, "_ShadowBlur", 0.1f);
 
-                // ShadowSteps: lilToonは基本2トーン（明暗1境界）
-                targetMaterial.SetFloat("_ShadowSteps", 2);
+                // Steps=1: lilToonの基本2トーン（明暗1境界）に対応
+                targetMaterial.SetFloat("_ShadowSteps", 1);
 
-                // ShadowOffset: lilToon border 0.5 = 中央
-                float shadowOffset = border - 0.5f;
+                // ShadowOffset: Half-Lambert空間からraw ndotl空間への変換
+                // lilToon border=0.5 → 垂直面が境界 → offset=0.5
+                float shadowOffset = 1.5f - 2.0f * border;
+                shadowOffset = Mathf.Clamp(shadowOffset, -0.5f, 1.0f);
                 targetMaterial.SetFloat("_ShadowOffset", shadowOffset);
 
-                // ShadowBlend: lilToonのblurをNataneのblendに変換
-                // lilToon blur=0.1(デフォルト) → Natane blend は柔らかめに
-                float blend = Mathf.Clamp01(blur);
-                targetMaterial.SetFloat("_ShadowBlend", blend);
-
-                // ShadowSharpness: Nataneデフォルト0.1を基準に
-                // blur小→やや鋭い(0.15), blur大→柔らかい(0.02)
-                float sharpness = Mathf.Lerp(0.15f, 0.02f, blur);
+                // ShadowSharpness: lilToonのblur幅をNataneのsmoothstep幅に変換
+                // Half-Lambert空間のblur → raw ndotl空間では2倍の幅
+                float sharpness = Mathf.Clamp(blur * 2.0f, 0.0f, 1.0f);
                 targetMaterial.SetFloat("_ShadowSharpness", sharpness);
 
-                // StepBorderSmooth: blurに比例して境界を滑らかに
-                targetMaterial.SetFloat("_StepBorderSmooth", blur * 0.5f);
+                // ShadowBlend=0, StepBorderSmooth=0: sharpnessだけで幅を制御（二重適用防止）
+                targetMaterial.SetFloat("_ShadowBlend", 0);
+                targetMaterial.SetFloat("_StepBorderSmooth", 0);
 
-                report.infos.Add($"Shadow: Border={border:F2}→Offset={shadowOffset:F2}, Blur={blur:F2}→Blend={blend:F2}/Sharpness={sharpness:F3}");
+                report.infos.Add($"Shadow: Border={border:F2}→Offset={shadowOffset:F2}, Blur={blur:F2}→Sharpness={sharpness:F3}, Steps=1");
             }
             else
             {
                 // デフォルト設定
-                targetMaterial.SetFloat("_ShadowSteps", 2);
-                targetMaterial.SetFloat("_ShadowSharpness", 0.1f);
+                targetMaterial.SetFloat("_ShadowSteps", 1);
+                targetMaterial.SetFloat("_ShadowSharpness", 0.2f);
+                targetMaterial.SetFloat("_ShadowOffset", 0.5f);
             }
 
             // マルチシャドウレイヤー変換
