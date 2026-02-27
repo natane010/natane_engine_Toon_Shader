@@ -1064,14 +1064,15 @@ namespace NataneToon.Editor
             targetMaterial.SetFloat("_Saturation", 1.0f);
             report.infos.Add("StandardToon v2: normalize+luminanceバイパスのため補償不要 (_LightIntensity=1.0)");
 
-            // === Shadow Floor / GI（StandardToon v2 ではほぼ不使用） ===
-            // v2 の独自パイプラインは _ShadowMaxDarkness, _LightMinInfluence, _GIIntensity を
-            // バイパスするが、ユーザーがToon/Gradientモードに切り替えた場合に備えて
-            // 安全な値を設定しておく。
+            // === Shadow Floor / GI（StandardToon v2 では不使用） ===
+            // StandardToon は独自の lilToon 互換パイプラインで合成するため、
+            // Natane の indirectResult / _IndirectLightMinColor 系は使用しない。
+            // _GIIntensity = 0 で間接光系を無効化し、色かぶりを防止。
+            // 黒防止は _LightColorMin (= lilToon _LightMinLimit) で保証。
             targetMaterial.SetFloat("_ShadowMaxDarkness", 0.15f);
             targetMaterial.SetFloat("_LightMinInfluence", 0.05f);
-            targetMaterial.SetFloat("_GIIntensity", 1.0f);
-            report.infos.Add("Floor/GI: 安全値設定 (v2パイプラインではバイパスされるが、モード切替時の互換のため)");
+            targetMaterial.SetFloat("_GIIntensity", 0.0f);
+            report.infos.Add("Floor/GI: StandardToon用設定 (_GIIntensity=0, 黒防止は_LightColorMinで保証)");
 
             // === Light Color Limits (lilToon互換) ===
             // StandardToonモードでは直接乗算のため、÷2補正は不要。
