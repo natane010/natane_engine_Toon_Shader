@@ -5,6 +5,38 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2026-02-27
+
+### Added
+- **StandardToon ShaderType**: シェーダータイプドロップダウンに「StandardToon (lilToon互換)」を追加
+  - インスペクター上部から直接 StandardToon モードを選択可能
+  - Toon ↔ StandardToon の相互切替で `_ShadingMode` を自動設定
+- **StandardToon v2 ライティングパイプライン**: lilToon 完全再現のシェーディングシステム
+  - Half-Lambert ベースの LilToonShading 関数
+  - 3段影（Shadow 1st/2nd/3rd）+ Shadow Color Texture 対応
+  - lilToon 互換 SH ライティング統合
+- **lilToon 移行ツール機能強化**:
+  - MatCap マスクテクスチャ移行（`_MatCapBlendMask` → `_MatCapMask`）
+  - MatCap 2nd の完全移行（テクスチャ・ブレンドモード・マスク）
+  - ライトカラー制限（`_LightColorMin` / `_LightColorMax`）移行
+  - モノクロライティング（`_MonochromeLighting`）移行
+
+### Fixed
+- **StandardToon 黒レンダリングバグ修正**: MatCap の Multiply ブレンドモードが原因で全身真っ黒になる問題を修正
+  - StandardToon では MatCap を常に Add モード（`SafeAdditiveBlend`）に強制
+- **StandardToon + Light Volume 黒レンダリング修正**: LV 環境での stLightColor 依存による暗転を修正
+- **Shadow Color Texture サンプリング修正**: 未設定時にアルベド情報が失われる問題を修正
+- **lilToon 移行 — MatCap 安全移行**: 移行時に MatCap をオフ状態で移行するよう変更
+  - テクスチャ・パラメーター・ブレンドモード・マスクは全て保持
+  - ユーザーが手動で有効化・調整する安全なアプローチに変更
+
+### Changed
+- **lilToon 移行ツール**: MatCap の移行方針を変更
+  - MatCap はオフ状態で移行（lilToon と Natane で挙動が大きく異なるため）
+  - 移行レポートに警告メッセージを追加
+
+---
+
 ## [1.3.1] - 2026-02-27
 
 ### Added
