@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tessellation - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Tessellation</h1>
+    <p class="page-subtitle">Hardware tessellation and displacement mapping for surface detail</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Tessellation adds hardware-level geometry subdivision to your mesh at render time, creating smoother silhouettes and rounder surfaces without modifying the source mesh. By subdividing triangles on the GPU, edges that would appear jagged or faceted become smooth curves.</p>
+    <p>Optional displacement mapping takes this further by extruding the subdivided geometry based on a heightmap texture, producing real geometric detail such as bumps, cracks, and surface relief that responds correctly to lighting and silhouette edges.</p>
+    <p>Controlled by the keywords <code>_TESSELLATION</code> and <code>_TESS_DISPLACEMENT</code>.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Tessellation Factor</span>
+        <span class="param-prop">_TessFactor</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the subdivision level applied to each triangle. A factor of 4 splits each triangle into roughly 16 smaller triangles. Higher values produce smoother geometry but significantly increase the triangle count.</p>
+        <p class="param-default">Default: 4</p>
+        <p class="param-range">Range: 1 - 16</p>
+      </div>
+      <div class="param-tip">A factor of 16 generates approximately 256 triangles per original triangle. Keep this value as low as possible while achieving the desired smoothness.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Phong Tessellation Strength</span>
+        <span class="param-prop">_TessPhongStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Applies Phong tessellation smoothing, which projects subdivided vertices onto the curved surface defined by vertex normals. This rounds out flat-shaded geometry without a displacement map.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+      <div class="param-tip">At 1.0, vertices are fully projected to the interpolated normal plane. Use 0.3-0.7 for natural-looking curvature on character models.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Normal Smoothing</span>
+        <span class="param-prop">_TessNormalSmooth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the interpolation smoothing applied to normals on the subdivided surface. Higher values produce softer shading transitions across tessellated faces.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Distance Min</span>
+        <span class="param-prop">_TessDistanceMin</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>The near distance threshold in world units. Objects closer than this distance receive the full tessellation factor. This is measured from the camera to the vertex.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Distance Max</span>
+        <span class="param-prop">_TessDistanceMax</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>The far distance threshold in world units. Objects beyond this distance receive no tessellation (factor = 1). Between Min and Max, the factor is linearly interpolated.</p>
+        <p class="param-default">Default: 20</p>
+      </div>
+      <div class="param-tip">Setting appropriate distance limits is essential for performance. Most viewers won't notice tessellation beyond 10-15 meters.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Displacement Map</span>
+        <span class="param-prop">_TessDispMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A grayscale heightmap texture used to displace the tessellated vertices along their normals. White areas are pushed outward, black areas are pushed inward (or vice versa depending on strength sign).</p>
+        <p class="param-default">Default: "gray"</p>
+      </div>
+      <div class="param-tip">Use a mid-gray (128) base for displacement maps so detail can extrude both inward and outward.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Displacement Strength</span>
+        <span class="param-prop">_TessDispStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the amplitude of the displacement effect. Positive values push geometry outward along normals, negative values push inward. Zero disables displacement entirely.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: -1 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Displacement Offset</span>
+        <span class="param-prop">_TessDispOffset</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Shifts the center point of the displacement. At 0, mid-gray in the heightmap produces no displacement. Adjusting this value biases the displacement inward or outward overall.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: -0.5 - 0.5</p>
+      </div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <ul>
+      <li><strong>Performance warning</strong>: TessFactor of 16 generates up to 16x more triangles per mesh. Always use distance-based LOD (TessDistanceMin/Max) to limit tessellation to close-up views only.</li>
+      <li><strong>VRChat Quest</strong>: Avoid tessellation entirely on Quest platform. Mobile GPUs do not handle hardware tessellation efficiently, and it may cause severe frame drops.</li>
+      <li>Combine Phong tessellation with normal maps for the best visual result at moderate subdivision levels (4-6).</li>
+      <li>Displacement maps should match your normal map for consistent surface detail.</li>
+      <li>For character models, tessellation is most effective on silhouette edges (arms, head outline). Consider using it selectively on key materials only.</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

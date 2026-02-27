@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDFシャドウマップ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>SDFシャドウマップ</h1>
+    <p class="page-subtitle">SDF（符号付き距離場）によるシャドウマッピング</p>
+
+    <h2 id="overview">概要</h2>
+    <p>SDFシャドウマップは、SDF（Signed Distance Field：符号付き距離場）テクスチャを使用して、モデル上の正確な影の境界を定義します。標準的なNdotLベースのシェーディングとは異なり、SDF影は影のエッジが表示される場所を完全にアーティスティックに制御できます。特に顔の影に有効で、Face SDF Rotation機能により頭部の向きに基づいた適切な顔の影の投影が可能になり、どの角度から見ても自然な影が得られます。キーワード: <code>_SDF_MAP</code>, <code>_FACE_SDF_ROTATION</code></p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SDFシャドウテクスチャ</span>
+        <span class="param-prop">_SDFMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>影の境界を定義するSDF（符号付き距離場）テクスチャです。白い領域は完全に照らされた部分、黒い領域は完全に影になった部分を表し、その間のグラデーションが影の遷移ゾーンを定義します。</p>
+        <p class="param-default">デフォルト: "white"</p>
+      </div>
+      <div class="param-tip">アニメ風の顔の影には、白=明るい部分、黒=影の部分となるようにSDFテクスチャをペイントします。グラデーション部分が、光の方向の変化に応じて影のエッジが移動する領域を制御します。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SDF影の強度</span>
+        <span class="param-prop">_SDFIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>SDF影エフェクトの全体的な強度を制御します。0ではSDF影の効果はありません。1ではSDF影が完全に適用され、標準のNdotL影計算を完全に置き換えます。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">0.5から始めて、SDF影の影響を強めたい場合は上げていきます。顔の影でSDFを優先させたい場合は0.7〜0.9程度が効果的です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SDF影のソフトネス</span>
+        <span class="param-prop">_SDFSoftness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>SDFテクスチャで定義される影のエッジのソフトネスを制御します。低い値はシャープなセルシェーディング風の影のエッジを生成し、高い値はより滑らかで段階的な明暗の遷移を作成します。</p>
+        <p class="param-default">デフォルト: 0.1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">クラシックなアニメ風には低め（0.05〜0.15）に設定します。より柔らかい絵画的な雰囲気にしたい場合は0.3〜0.5を試してください。非常に高い値では影の定義が失われる場合があります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SDF影のオフセット</span>
+        <span class="param-prop">_SDFOffset</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>影の境界のしきい値をシフトします。負の値は影の境界を内側に押し込み（明るい領域が増加）、正の値は外側に押し出します（影の領域が増加）。SDFテクスチャを再ペイントすることなく、影のエッジの位置を微調整するのに使用します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: -1 〜 1</p>
+      </div>
+      <div class="param-tip">素早い調整に便利です。影が早く出すぎる（影が多い）場合はオフセットを下げ、遅すぎる（明るい部分が多い）場合は上げてください。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">顔の正面方向</span>
+        <span class="param-prop">_FaceForwardDirection</span>
+        <span class="param-badge badge-vector">vector</span>
+      </div>
+      <div class="param-body">
+        <p>オブジェクト空間での顔の正面方向を定義します。このベクトルはFace SDF Rotationシステムが頭部の向きを判定するために使用され、頭の動きに合わせてSDF影が正しく回転します。</p>
+        <p class="param-default">デフォルト: (0, 0, 1, 0)</p>
+      </div>
+      <div class="param-tip">ほとんどのヒューマノイドモデルでは、デフォルトの(0, 0, 1, 0)で正しく動作します。モデルが別の軸を向いている場合は、オブジェクト空間で顔が向いている方向に合わせて調整してください。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">顔の右方向</span>
+        <span class="param-prop">_FaceRightDirection</span>
+        <span class="param-badge badge-vector">vector</span>
+      </div>
+      <div class="param-body">
+        <p>オブジェクト空間での顔の右方向を定義します。正面方向と合わせて、SDF影の正しい回転のための顔のローカル座標系を確立します。</p>
+        <p class="param-default">デフォルト: (1, 0, 0, 0)</p>
+      </div>
+      <div class="param-tip">ほとんどのヒューマノイドモデルでは、デフォルトの(1, 0, 0, 0)で正しく動作します。モデルが標準的でない向きを使用している場合のみ調整してください。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <ul>
+      <li>アニメ風の顔の影には、白が明るい領域、黒が影の領域を表すSDFテクスチャをペイントします。グラデーションが影の遷移を制御します。</li>
+      <li>Face SDF Rotationは頭の回転に基づいてSDFサンプリングを自動的に調整するため、キャラクターが頭を回してもいつでも自然な影が落ちます。</li>
+      <li>この機能は、標準的なNdotLセルシェーディングでよく発生する不自然な顔の影を防ぐために不可欠です。</li>
+      <li>画像編集ツールを使って手描きの影マスクからSDFテクスチャを生成するか、専用のSDF生成ツールを使用できます。</li>
+      <li>Shadow Color Textureと組み合わせることで、顔の影の見た目をさらにアーティスティックに制御できます。</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quest Lite Mode - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Quest Lite Mode</h1>
+    <p class="page-subtitle">Automatic feature stripping for mobile GPU optimization</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Quest Lite Mode is a compile-time optimization switch that automatically strips GPU-intensive features from the shader when targeting mobile GPUs such as the Meta Quest. When the <code>_QUEST_LITE</code> keyword is enabled, the following expensive features are disabled at the shader compilation stage, meaning they generate zero GPU instructions:</p>
+    <ul>
+      <li>MatCap 2nd &amp; 3rd (<code>_MATCAP_2</code>, <code>_MATCAP_3</code>)</li>
+      <li>Glitter (<code>_GLITTER</code>)</li>
+      <li>Water Drip (<code>_WATER_DRIP</code>)</li>
+      <li>Hologram (<code>_HOLOGRAM</code>)</li>
+      <li>Glitch (<code>_GLITCH</code>)</li>
+      <li>Intersection Fade (<code>_INTERSECTION_FADE</code>)</li>
+    </ul>
+    <p>This results in an expected performance improvement of 30-50% on mobile GPUs compared to the full-feature shader. PC users can keep Quest Lite disabled for full visual quality.</p>
+    <p>Controlled by the keyword <code>_QUEST_LITE</code>. This feature is available in the Background shader variant.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Quest Lite Mode</span>
+        <span class="param-prop">_QUEST_LITE</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Enables or disables Quest Lite Mode. This is a shader keyword with no additional float or texture properties — it acts purely as a compile-time switch.</p>
+        <p>When enabled, the listed GPU-intensive features are excluded from shader compilation entirely, reducing instruction count and texture sampling overhead to zero for those features.</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+      <div class="param-tip">This keyword controls compile-time stripping. Toggling it triggers shader recompilation.</div>
+    </div>
+
+    <h2 id="stripped">Stripped Features Detail</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCap 2nd &amp; 3rd</span>
+        <span class="param-prop">_MATCAP_2, _MATCAP_3</span>
+        <span class="param-badge badge-toggle">stripped</span>
+      </div>
+      <div class="param-body">
+        <p>The second and third MatCap layers are disabled. The primary MatCap (<code>_MATCAP</code>) remains available. MatCaps require texture lookups and blending operations that are expensive on mobile.</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glitter</span>
+        <span class="param-prop">_GLITTER</span>
+        <span class="param-badge badge-toggle">stripped</span>
+      </div>
+      <div class="param-body">
+        <p>The sparkle/glitter effect is disabled. Glitter involves random sampling and per-pixel noise generation, which is GPU-intensive on mobile hardware.</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Water Drip</span>
+        <span class="param-prop">_WATER_DRIP</span>
+        <span class="param-badge badge-toggle">stripped</span>
+      </div>
+      <div class="param-body">
+        <p>The animated water drip effect is disabled. This effect uses multiple texture samples and time-based animation that impacts mobile performance.</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hologram</span>
+        <span class="param-prop">_HOLOGRAM</span>
+        <span class="param-badge badge-toggle">stripped</span>
+      </div>
+      <div class="param-body">
+        <p>The hologram scanline effect is disabled. Hologram rendering involves screen-space calculations and alpha manipulation.</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glitch</span>
+        <span class="param-prop">_GLITCH</span>
+        <span class="param-badge badge-toggle">stripped</span>
+      </div>
+      <div class="param-body">
+        <p>The digital glitch effect is disabled. Glitch effects use noise functions and UV distortion that add computational overhead.</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Intersection Fade</span>
+        <span class="param-prop">_INTERSECTION_FADE</span>
+        <span class="param-badge badge-toggle">stripped</span>
+      </div>
+      <div class="param-body">
+        <p>The depth-based intersection fade effect is disabled. This feature requires depth texture sampling, which is particularly expensive on mobile GPUs.</p>
+      </div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <ul>
+      <li>Enable Quest Lite for any material intended for use in VRChat Quest worlds. The compile-time stripping means zero runtime overhead — disabled features simply do not exist in the compiled shader.</li>
+      <li>PC users should keep Quest Lite disabled to enjoy full visual quality with all effects available.</li>
+      <li>The primary MatCap (1st) is <strong>not</strong> stripped — only the 2nd and 3rd MatCap layers are removed. You can still use a single MatCap for material definition on Quest.</li>
+      <li>Combine with the Material Validator tool (<code>Tools &gt; Natane &gt; Material Validator</code>) to check whether your material meets Quest performance guidelines.</li>
+      <li>When creating cross-platform content, consider using two material variants: one with Quest Lite enabled (for Quest builds) and one without (for PC builds).</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

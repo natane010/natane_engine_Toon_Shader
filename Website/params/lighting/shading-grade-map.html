@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>シェーディンググレードマップ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>シェーディンググレードマップ</h1>
+    <p class="page-subtitle">グレースケールテクスチャによる領域ごとの影の濃さ制御</p>
+
+    <h2 id="overview">概要</h2>
+    <p>シェーディンググレードマップは、グレースケールテクスチャを使用してテクセル単位で影の濃さを制御します。白い領域は通常通りのライティング計算を受け、灰色の領域は影に偏り、黒い領域はライティング条件に関係なく常に影としてレンダリングされます。これにより、ライティングの設定を変更することなく、特定の部位における影の配置を正確にコントロールできます。キーワード: <code>_SHADING_GRADE_MAP</code></p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">シェーディンググレードマップテクスチャ</span>
+        <span class="param-prop">_ShadingGradeMap</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>テクセルごとの影のバイアスを制御するグレースケールテクスチャです。白（1.0）はその領域が通常のライティング計算を使用することを意味します。灰色の値はその領域を影に偏らせます。黒（0.0）はライトの方向に関係なく、その領域を完全な影に強制します。</p>
+        <p class="param-default">デフォルト: "white"</p>
+      </div>
+      <div class="param-tip">グレードマップをペイントして、ライティングに関係なく影が出現する場所を制御します。例えば、頬の部分をわずかに灰色にペイントすると、いつでも微妙な影が付き、かわいいアニメ風の見た目になります。メインテクスチャと同じUVレイアウトを使用してください。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">シェーディンググレードスケール</span>
+        <span class="param-prop">_ShadingGradeScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>グレードマップに適用されるスケール/オフセット値です。正の値はグレードマップを明るくし（全体的に影が減少）、負の値は暗くします（全体的に影が増加）。テクスチャを編集することなく、グレードマップの影響度をグローバルに調整できます。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: -1 〜 1</p>
+      </div>
+      <div class="param-tip">クイックなグローバル調整として使用します。グレードマップの影が強すぎる場合はスケールを上げ、影が目立たない場合は下げてください。部位ごとの細かい制御はテクスチャ自体で行います。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <ul>
+      <li>白=完全に明るい（通常のライティング計算）、黒=完全に影（常に影）。灰色の値は中間的なバイアスを提供します。</li>
+      <li>頬の部分をわずかに灰色（0.7〜0.8程度）にペイントすると、常に微妙な影が付いてかわいらしいソフトなアニメ風の外観になります。</li>
+      <li>首やあご下の領域をより暗く（0.3〜0.5）ペイントすると、常にこれらの領域に影が付き、アンビエントオクルージョンのような効果を模倣できます。</li>
+      <li>Scaleパラメータは全体的なバイアスを調整します：正の値は明るくなり（影が減少）、負の値は暗くなります（影が増加）。</li>
+      <li>この機能はlilToon互換のワークフローでよく使用されます。lilToonから移行する場合、既存のシェーディンググレードマップはそのまま使用できます。</li>
+      <li>標準の影コントロールと組み合わせることで、レイヤード影のアーティストリーが実現できます。グレードマップは他の影エフェクトが適用される前のライティング計算にバイアスをかけます。</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

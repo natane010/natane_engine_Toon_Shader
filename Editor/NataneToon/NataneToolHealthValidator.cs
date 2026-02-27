@@ -137,6 +137,26 @@ namespace NataneToon.Editor
             new ToolRegistryEntry("ShaderPrewarming", "シェーダープリウォーミング Shader Prewarming",
                 NataneToolMenuPaths.ShaderPrewarming, "NataneToon.Editor.ShaderPrewarmingEditor", ASSEMBLY_TOOLS),
 
+            // --- Optimization Tools (Tools assembly, continued) ---
+            new ToolRegistryEntry("AssetReferenceChecker", "アセット参照チェック Asset Reference Checker",
+                NataneToolMenuPaths.AssetReferenceChecker, "NataneToon.Editor.AssetReferenceChecker", ASSEMBLY_TOOLS),
+
+            // --- Mesh Tools (Tools assembly) ---
+            new ToolRegistryEntry("SmoothNormalBaker", "スムース法線ベイク Smooth Normal Baker",
+                NataneToolMenuPaths.SmoothNormalBaker, "NataneToon.Editor.SmoothNormalBaker", ASSEMBLY_TOOLS),
+
+            // --- Preset Tools (Editor assembly, continued) ---
+            new ToolRegistryEntry("GenerateDefaultPresets", "デフォルトプリセット生成 Generate Default Presets",
+                NataneToolMenuPaths.GenerateDefaultPresets, "NataneToon.Editor.DefaultPresetGenerator", ASSEMBLY_EDITOR),
+            new ToolRegistryEntry("RegenerateAllPresets", "全プリセット再生成 Regenerate All Presets",
+                NataneToolMenuPaths.RegenerateAllPresets, "NataneToon.Editor.DefaultPresetGenerator", ASSEMBLY_EDITOR),
+
+            // --- Core Tools (Editor assembly) ---
+            new ToolRegistryEntry("Dashboard", "ダッシュボード Dashboard",
+                NataneToolMenuPaths.Dashboard, "NataneToon.Editor.NataneDashboard", ASSEMBLY_EDITOR),
+            new ToolRegistryEntry("HelpWindow", "ヘルプ Help",
+                NataneToolMenuPaths.HelpWindow, "NataneToon.Editor.UnifiedHelpSystem", ASSEMBLY_EDITOR),
+
             // --- Other Tools (Editor assembly) ---
             new ToolRegistryEntry("ParticleEffectEditor", "パーティクルエフェクトエディタ Particle Effect Editor",
                 NataneToolMenuPaths.ParticleEffectEditor, "NataneParticleSystemEditor.ParticleEffectEditorWindow", ASSEMBLY_EDITOR),

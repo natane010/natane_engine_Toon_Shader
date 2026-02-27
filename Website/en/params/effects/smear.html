@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smear Effect - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Smear Effect</h1>
+    <p class="page-subtitle">Motion smear and afterimage trail effect</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>The Smear effect creates motion blur/smear trails for dynamic movement expressions. It supports manual direction control and automatic motion detection, making it ideal for anime-style speed effects and dance animations.</p>
+    <p>Controlled by the keyword <code>_SMEAR</code>. No shader instructions are generated when disabled.</p>
+
+    <h2 id="stretch">Stretch Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Smear Stretch</span>
+        <span class="param-prop">_SmearStretch</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the stretch amount of the smear effect. Higher values produce more pronounced stretching.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 3</p>
+      </div>
+      <div class="param-tip">Start with low values (0.3-0.5) for subtle motion hints. Values above 1.5 create dramatic anime-style speed streaks.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Smear Direction</span>
+        <span class="param-prop">_SmearDirection</span>
+        <span class="param-badge badge-color">vector</span>
+      </div>
+      <div class="param-body">
+        <p>Manually sets the smear direction vector. Used when you want precise control over the smear orientation.</p>
+        <p class="param-default">Default: (0, 0, 0, 0)</p>
+      </div>
+      <div class="param-tip">For horizontal motion, use (1, 0, 0, 0). For vertical, use (0, 1, 0, 0). Animate this via VRChat parameters for directional control.</div>
+    </div>
+
+    <h2 id="noise">Noise Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Noise Scale</span>
+        <span class="param-prop">_SmearNoiseScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the scale of the noise pattern applied to the smear. Adds variation and organic quality to the effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Noise Strength</span>
+        <span class="param-prop">_SmearNoiseStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the distortion strength of the noise applied to the smear trail.</p>
+        <p class="param-default">Default: 0.3</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <h2 id="motion">Motion Detection</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Auto Magnitude</span>
+        <span class="param-prop">_SmearAutoMagnitude</span>
+        <span class="param-badge badge-enum">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Enables automatic motion detection. When active, the smear reacts automatically to object movement.</p>
+        <p class="param-default">Default: 0 (Off)</p>
+      </div>
+      <div class="param-tip">Enable this for VRChat dance animations to get automatic motion-reactive smear without manual animation setup.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Motion Sensitivity</span>
+        <span class="param-prop">_SmearMotionSensitivity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the sensitivity of automatic motion detection. Higher values make the effect respond to smaller movements.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0.1 - 10</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">VAT Velocity</span>
+        <span class="param-prop">_SmearVATVelocity</span>
+        <span class="param-badge badge-enum">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Uses Vertex Animation Texture (VAT) velocity data as the smear source. Enable when using VAT-based animations.</p>
+        <p class="param-default">Default: 0 (Off)</p>
+      </div>
+    </div>
+
+    <h2 id="trail">Trail Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Trail Length</span>
+        <span class="param-prop">_SmearTrailLength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the length of the afterimage trail behind the smear.</p>
+        <p class="param-default">Default: 0.1</p>
+        <p class="param-range">Range: 0 - 0.5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Trail Fade</span>
+        <span class="param-prop">_SmearTrailFade</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the fade-out speed of the trail. Higher values make the trail disappear more quickly.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <h2 id="glow">Glow &amp; Emission</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glow Color</span>
+        <span class="param-prop">_SmearGlowColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the color of the glow applied to the smear trail.</p>
+        <p class="param-default">Default: (1, 1, 1, 1) (white)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glow Intensity</span>
+        <span class="param-prop">_SmearGlowIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of the glow effect on the smear.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 3</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Glow Power</span>
+        <span class="param-prop">_SmearGlowPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the falloff power of the glow. Higher values concentrate the glow more tightly.</p>
+        <p class="param-default">Default: 3</p>
+        <p class="param-range">Range: 0.5 - 10</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Emission</span>
+        <span class="param-prop">_SmearEmission</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the emission strength of the smear effect. Creates a self-illuminated appearance.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 3</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Emission Color</span>
+        <span class="param-prop">_SmearEmissionColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the emission color of the smear trail.</p>
+        <p class="param-default">Default: (1, 0.5, 0, 1) (orange)</p>
+      </div>
+      <div class="param-tip">Orange creates a flame-like trail, blue produces an energy/magic effect, and white gives a clean speed-line look.</div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Smear Mask</span>
+        <span class="param-prop">_SmearMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls the display area of the smear effect.</p>
+        <p class="param-default">Default: "white" (full display)</p>
+      </div>
+      <div class="param-tip">White = smear visible, Black = smear hidden. Use to restrict smear to specific limbs or areas.</div>
+    </div>
+
+    <h2 id="blend">Blend &amp; Blur</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_SmearBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the blend method for the smear effect.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Standard blending</li>
+          <li><strong>Soft (1)</strong> - Soft blending. Prevents over-brightening</li>
+          <li><strong>Screen (2)</strong> - Screen blending. Natural brightness addition</li>
+          <li><strong>Overlay (3)</strong> - Overlay blending. Enhances contrast</li>
+        </ul>
+        <p class="param-default">Default: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_SmearBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity (opacity) of the smear effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_SmearBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the blur amount of the smear effect.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Distance Fade</span>
+        <span class="param-prop">_SmearDistFade</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Fades the smear effect based on camera distance. Higher values cause the effect to fade out at closer distances.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+      <div class="param-tip">Use distance fade for VRChat optimization to reduce visual noise when the avatar is far from the camera.</div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

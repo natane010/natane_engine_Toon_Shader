@@ -56,26 +56,56 @@ namespace NataneToon.Editor
 
         private static readonly Dictionary<string, string> ToolKeyToMenuPath = new Dictionary<string, string>
         {
+            // --- Core ---
+            { "Dashboard", Dashboard },
+            { "HelpWindow", HelpWindow },
+
+            // --- Material ---
             { "MaterialValidator", MaterialValidator },
             { "BatchMaterialProcessor", MaterialEditor }, // Legacy key mapped to unified editor
-            { "ShadowAdjustmentWizard", ShadowAdjustmentWizard },
+            { "MaterialEditor", MaterialEditor },
             { "MaterialPreview", MaterialPreview },
+            { "MaterialComparison", MaterialComparison },
+            { "MakeupLayerManager", MakeupLayerManager },
+
+            // --- Presets ---
+            { "MaterialPresetBrowser", MaterialPresetBrowser },
+            { "ColorPaletteManager", ColorPaletteManager },
+            { "GenerateDefaultPresets", GenerateDefaultPresets },
+            { "RegenerateAllPresets", RegenerateAllPresets },
+            { "VTuberPresetGenerator", VTuberPresetGenerator },
+
+            // --- Effects ---
+            { "ShadowAdjustmentWizard", ShadowAdjustmentWizard },
+            { "MatCapLayerComposer", MatCapLayerComposer },
+            { "DissolvePatternGenerator", DissolvePatternGenerator },
+            { "RimLightDirectionVisualizer", RimLightDirectionVisualizer },
+            { "ScreenFXSetup", ScreenFXSetup },
+
+            // --- Optimization ---
+            { "PerformanceBudget", PerformanceBudgetTool },
             { "TextureOptimizer", TextureOptimizer },
             { "OutlineOptimizer", OutlineOptimizer },
-            { "DissolvePatternGenerator", DissolvePatternGenerator },
-            { "MatCapLayerComposer", MatCapLayerComposer },
-            { "ScreenFXSetup", ScreenFXSetup },
-            { "PerformanceBudget", PerformanceBudgetTool },
-            { "VRCLightVolumes", VRCLightVolumesHelper },
+            { "RefractionQualityBalancer", RefractionQualityBalancer },
+            { "AssetReferenceChecker", AssetReferenceChecker },
+
+            // --- Migration ---
+            { "LilToonMigration", LilToonMigration },
+            { "BatchMaterialConverter", BatchMaterialConverter },
             { "PrefabVariantConverter", PrefabVariantConverter },
-            { "UVTextureGenerator", UVTextureGenerator },
-            { "ParticleEffectEditor", ParticleEffectEditor },
-            { "VTuberPresetGenerator", VTuberPresetGenerator },
+
+            // --- Shader ---
+            { "ShaderVariantCollector", ShaderVariantCollector },
             { "ShaderPrewarming", ShaderPrewarming },
             { "ShaderVariantStripper", ShaderVariantStripper },
-            { "ShaderVariantCollector", ShaderVariantCollector },
-            { "AssetReferenceChecker", AssetReferenceChecker },
-            { "SmoothNormalBaker", SmoothNormalBaker }
+            { "VRCLightVolumes", VRCLightVolumesHelper },
+
+            // --- Mesh ---
+            { "SmoothNormalBaker", SmoothNormalBaker },
+
+            // --- Generator / Other ---
+            { "UVTextureGenerator", UVTextureGenerator },
+            { "ParticleEffectEditor", ParticleEffectEditor },
         };
 
         private static readonly Dictionary<string, string> LegacyPathAliases = new Dictionary<string, string>

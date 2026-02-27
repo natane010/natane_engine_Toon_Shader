@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スクリーントーンエフェクト - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>スクリーントーンエフェクト</h1>
+    <p class="page-subtitle">漫画風ハーフトーン・スクリーントーンのオーバーレイパターン</p>
+
+    <h2 id="overview">概要</h2>
+    <p>スクリーントーンエフェクトは、サーフェスに漫画・コミック風のハーフトーンドットパターンを重ねて描画します。印刷された漫画やポップアートのイラストに見られる特徴的なスクリーントーンシェーディングを再現する、スタイライズドNPR（ノンフォトリアリスティックレンダリング）に最適です。</p>
+    <p>キーワード <code>_SCREEN_TONE</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スクリーントーンの色</span>
+        <span class="param-prop">_ScreenToneColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>ハーフトーンドットの色を設定します。</p>
+        <p class="param-default">デフォルト: (0, 0, 0, 1)（黒）</p>
+      </div>
+      <div class="param-tip">黒で定番の漫画風スクリーントーンになります。カラードットでポップアートやレトロコミック風の表現も可能です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スクリーントーンのスケール</span>
+        <span class="param-prop">_ScreenToneScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ハーフトーンドットパターンの密度とスケールを制御します。値が小さいほど大きなドット、値が大きいほど細かいドットになります。</p>
+        <p class="param-default">デフォルト: 10</p>
+        <p class="param-range">範囲: 1 〜 200</p>
+      </div>
+      <div class="param-tip">低いScale（5〜10）で大きなドット（ポップアート風）、高いScale（50〜100）で細かい印刷風ハーフトーンになります。20〜30あたりが定番の漫画の雰囲気です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スクリーントーンの閾値</span>
+        <span class="param-prop">_ScreenToneThreshold</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ドット表示の明るさ閾値を設定します。この閾値より暗い領域にスクリーントーンドットが表示されます。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">低い値は暗い影部分のみにドットを制限します。高い値は明るい領域にもドットを広げます。影部分と組み合わせて漫画風シェーディングを実現できます。</div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スクリーントーンマスク</span>
+        <span class="param-prop">_ScreenToneMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>スクリーントーンエフェクトの表示領域を制御するマスクテクスチャです。</p>
+        <p class="param-default">デフォルト: "white"（全面表示）</p>
+      </div>
+      <div class="param-tip">白 = スクリーントーンあり、黒 = スクリーントーンなし。衣装や影部分のみにスクリーントーンを適用し、肌はクリーンに保つといった使い分けに便利です。</div>
+    </div>
+
+    <h2 id="blend">ブレンド＆ブラー</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_ScreenToneBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>スクリーントーンエフェクトのブレンド方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常の合成</li>
+          <li><strong>Soft (1)</strong> - ソフト合成。激しい遷移を防ぐ</li>
+          <li><strong>Screen (2)</strong> - スクリーン合成。自然な明るさ加算</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ合成。コントラスト強調</li>
+        </ul>
+        <p class="param-default">デフォルト: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_ScreenToneBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スクリーントーンエフェクトの強度（不透明度）を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_ScreenToneBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スクリーントーンエフェクトのぼかし量を調整します。ドットの縁を柔らかくして滑らかな見た目にします。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>
