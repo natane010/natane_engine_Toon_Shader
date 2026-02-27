@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
     /// <summary>
     /// Performance Budget Tool
     /// パフォーマンスバジェットツール
@@ -28,7 +29,10 @@ namespace NataneToon.Editor
             { "_AUDIOLINK", 5 }, { "_HOLOGRAM", 12 }, { "_GLITCH", 6 },
             { "_HOLOGRAM_NOISE", 2 },
             { "_DECAL", 3 }, { "_VAT", 6 }, { "_VERTEX_ANIMATION", 4 },
-            { "_PIXEL_VERTEX_LIGHTS", 3 }
+            { "_PIXEL_VERTEX_LIGHTS", 3 },
+            { "_DETAIL_MAP", 5 }, { "_TRIPLANAR", 10 }, { "_HEIGHT_FOG", 3 },
+            { "_SURFACE_COVER", 6 }, { "_MIRROR_CONTROL", 1 }, { "_WATER_DRIP", 8 },
+            { "_VIDEO_TEXTURE", 3 }, { "_INTERSECTION_FADE", 4 }
         };
 
         private Dictionary<TargetPlatform, int> platformBudgets = new Dictionary<TargetPlatform, int>
@@ -39,7 +43,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/最適化 Optimization/パフォーマンスバジェット Performance Budget Tool", false, 31)]
         public static void ShowWindow()
         {
-            var window = GetWindow<PerformanceBudgetTool>("パフォーマンスバジェット Performance Budget Tool");
+            var window = GetWindow<PerformanceBudgetTool>(L("パフォーマンスバジェット", "Performance Budget Tool"));
             window.minSize = new Vector2(500, 500);
             window.Show();
         }
@@ -52,12 +56,12 @@ namespace NataneToon.Editor
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(5);
 
-            targetMaterial = (Material)EditorGUILayout.ObjectField("ターゲット", targetMaterial, typeof(Material), false);
-            targetPlatform = (TargetPlatform)EditorGUILayout.EnumPopup("プラットフォーム", targetPlatform);
+            targetMaterial = (Material)EditorGUILayout.ObjectField(L("ターゲット", "Target"), targetMaterial, typeof(Material), false);
+            targetPlatform = (TargetPlatform)EditorGUILayout.EnumPopup(L("プラットフォーム", "Platform"), targetPlatform);
 
             if (targetMaterial == null)
             {
-                EditorGUILayout.HelpBox("マテリアルを選択してください", MessageType.Info);
+                EditorGUILayout.HelpBox(L("マテリアルを選択してください", "Please select a material"), MessageType.Info);
                 return;
             }
 
@@ -81,14 +85,14 @@ namespace NataneToon.Editor
             float percentage = (float)currentCost / budget;
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("パフォーマンスコスト", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("パフォーマンスコスト", "Performance Cost"), EditorStyles.boldLabel);
 
             Color meterColor = percentage < 0.7f ? Color.green : percentage < 1f ? Color.yellow : Color.red;
             Rect rect = GUILayoutUtility.GetRect(18, 18f);
             EditorGUI.ProgressBar(rect, percentage, $"{currentCost} / {budget}");
 
-            EditorGUILayout.LabelField($"使用率: {percentage * 100:F1}%");
-            EditorGUILayout.LabelField($"評価: {GetPerformanceRating(percentage)}");
+            EditorGUILayout.LabelField($"{L("使用率", "Usage")}: {percentage * 100:F1}%");
+            EditorGUILayout.LabelField($"{L("評価", "Rating")}: {GetPerformanceRating(percentage)}");
 
             EditorGUILayout.EndVertical();
         }
@@ -96,7 +100,7 @@ namespace NataneToon.Editor
         private void DrawFeatureList()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("有効な機能", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("有効な機能", "Active Features"), EditorStyles.boldLabel);
 
             foreach (var feature in featureCosts)
             {
@@ -105,9 +109,9 @@ namespace NataneToon.Editor
                 {
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.LabelField(feature.Key.Replace("_", ""), GUILayout.Width(150));
-                    EditorGUILayout.LabelField($"コスト: {feature.Value}", GUILayout.Width(100));
+                    EditorGUILayout.LabelField($"{L("コスト", "Cost")}: {feature.Value}", GUILayout.Width(100));
 
-                    if (GUILayout.Button("無効化 Disable", GUILayout.Width(100)))
+                    if (GUILayout.Button(L("無効化", "Disable"), GUILayout.Width(100)))
                     {
                         Undo.RecordObject(targetMaterial, "Disable Feature");
                         targetMaterial.DisableKeyword(feature.Key);
@@ -129,14 +133,14 @@ namespace NataneToon.Editor
             if (currentCost > budget)
             {
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-                EditorGUILayout.LabelField("推奨事項 Recommendations", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField(L("推奨事項", "Recommendations"), EditorStyles.boldLabel);
 
                 EditorGUILayout.HelpBox(
-                    $"バジェット超過: {currentCost - budget}ポイント削減が必要\n" +
-                    $"Over budget: Need to reduce by {currentCost - budget} points",
+                    L($"バジェット超過: {currentCost - budget}ポイント削減が必要",
+                      $"Over budget: Need to reduce by {currentCost - budget} points"),
                     MessageType.Warning);
 
-                EditorGUILayout.LabelField("削減候補 Reduction Candidates:");
+                EditorGUILayout.LabelField(L("削減候補:", "Reduction Candidates:"));
 
                 var sortedFeatures = new List<KeyValuePair<string, int>>(featureCosts);
                 sortedFeatures.Sort((a, b) => b.Value.CompareTo(a.Value));
@@ -168,11 +172,11 @@ namespace NataneToon.Editor
 
         private string GetPerformanceRating(float percentage)
         {
-            if (percentage < 0.5f) return "A (優秀 Excellent)";
-            if (percentage < 0.7f) return "B (良好 Good)";
-            if (percentage < 1.0f) return "C (許容 Acceptable)";
-            if (percentage < 1.5f) return "D (重い Heavy)";
-            return "F (過負荷 Overload)";
+            if (percentage < 0.5f) return L("A (優秀)", "A (Excellent)");
+            if (percentage < 0.7f) return L("B (良好)", "B (Good)");
+            if (percentage < 1.0f) return L("C (許容)", "C (Acceptable)");
+            if (percentage < 1.5f) return L("D (重い)", "D (Heavy)");
+            return L("F (過負荷)", "F (Overload)");
         }
     }
 }

@@ -5,6 +5,8 @@ using System.Linq;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// UV Texture Generator - Comprehensive mask texture creation tool.
     /// UVテクスチャ生成ツール - 包括的なマスクテクスチャ作成ツール
@@ -113,8 +115,8 @@ namespace NataneToon.Editor
         private Vector2 templateScrollPosition;
 
         // ===== Tab Labels =====
-        private static readonly string[] tabLabels = {
-            "ノイズ", "UVマスク", "グラデ", "メッシュ", "複合", "テンプレ", "CHパック"
+        private static string[] tabLabels => new[] {
+            L("ノイズ", "Noise"), L("UVマスク", "UV Mask"), L("グラデ", "Gradient"), L("メッシュ", "Mesh"), L("複合", "Combined"), L("テンプレ", "Template"), L("CHパック", "CH Pack")
         };
         private static readonly int[] textureSizes = { 256, 512, 1024, 2048, 4096 };
         private static readonly string[] textureSizeLabels = { "256", "512", "1024", "2048", "4096" };
@@ -132,7 +134,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/UVテクスチャ生成 UV Texture Generator", false, 141)]
         public static void ShowWindow()
         {
-            var window = GetWindow<UVTextureGenerator>("UVテクスチャ生成 UV Texture Generator");
+            var window = GetWindow<UVTextureGenerator>(L("UVテクスチャ生成", "UV Texture Generator"));
             window.minSize = new Vector2(580, 700);
             window.Show();
         }
@@ -170,7 +172,7 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             NataneToonShaderGUIUtility.DrawHeaderWithHelp("UVテクスチャ生成", "UV Texture Generator", "UVTextureGenerator");
             EditorGUILayout.LabelField(
-                "マスクテクスチャの生成・編集・エクスポート\nGenerate, edit, and export mask textures",
+                L("マスクテクスチャの生成・編集・エクスポート", "Generate, edit, and export mask textures"),
                 EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(5);
@@ -211,7 +213,7 @@ namespace NataneToon.Editor
             // Layer panel
             EditorGUILayout.Space(5);
             layerPanelFoldout = NataneToonShaderGUIUtility.DrawFoldoutHeader(
-                "レイヤー Layers", layerPanelFoldout);
+                L("レイヤー", "Layers"), layerPanelFoldout);
             if (layerPanelFoldout)
             {
                 bool layerChanged = MaskLayerPanelUI.DrawLayerPanel(layerStack, ref layerScrollPosition);
@@ -252,52 +254,52 @@ namespace NataneToon.Editor
         private void DrawNoiseTab()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("ノイズ設定 Noise Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ノイズ設定", "Noise Settings"), EditorStyles.boldLabel);
 
-            noiseType = (NoiseType)EditorGUILayout.EnumPopup("ノイズタイプ", noiseType);
-            textureSize = EditorGUILayout.IntPopup("テクスチャサイズ", textureSize, textureSizeLabels, textureSizes);
-            scale = EditorGUILayout.Slider("スケール", scale, 0.5f, 50f);
-            seed = EditorGUILayout.IntField("シード", seed);
-            contrast = EditorGUILayout.Slider("コントラスト", contrast, 0.1f, 3f);
-            invert = EditorGUILayout.Toggle("反転", invert);
+            noiseType = (NoiseType)EditorGUILayout.EnumPopup(L("ノイズタイプ", "Noise Type"), noiseType);
+            textureSize = EditorGUILayout.IntPopup(L("テクスチャサイズ", "Texture Size"), textureSize, textureSizeLabels, textureSizes);
+            scale = EditorGUILayout.Slider(L("スケール", "Scale"), scale, 0.5f, 50f);
+            seed = EditorGUILayout.IntField(L("シード", "Seed"), seed);
+            contrast = EditorGUILayout.Slider(L("コントラスト", "Contrast"), contrast, 0.1f, 3f);
+            invert = EditorGUILayout.Toggle(L("反転", "Invert"), invert);
 
             if (noiseType == NoiseType.FBM)
             {
                 NataneToonShaderGUIUtility.DrawSeparator();
-                EditorGUILayout.LabelField("FBM設定", EditorStyles.boldLabel);
-                octaves = EditorGUILayout.IntSlider("オクターブ", octaves, 1, 8);
-                lacunarity = EditorGUILayout.Slider("ラクナリティ", lacunarity, 1f, 4f);
-                persistence = EditorGUILayout.Slider("パーシステンス", persistence, 0f, 1f);
+                EditorGUILayout.LabelField(L("FBM設定", "FBM Settings"), EditorStyles.boldLabel);
+                octaves = EditorGUILayout.IntSlider(L("オクターブ", "Octaves"), octaves, 1, 8);
+                lacunarity = EditorGUILayout.Slider(L("ラクナリティ", "Lacunarity"), lacunarity, 1f, 4f);
+                persistence = EditorGUILayout.Slider(L("パーシステンス", "Persistence"), persistence, 0f, 1f);
             }
 
-            offset = EditorGUILayout.Vector2Field("オフセット", offset);
+            offset = EditorGUILayout.Vector2Field(L("オフセット", "Offset"), offset);
 
             // Alpha noise settings
             NataneToonShaderGUIUtility.DrawSeparator();
             noiseAlphaEnabled = EditorGUILayout.Toggle(
-                new GUIContent("アルファノイズ有効 Enable Alpha Noise",
-                    "Generate alpha channel from noise / ノイズからアルファチャンネルを生成"),
+                new GUIContent(L("アルファノイズ有効", "Enable Alpha Noise"),
+                    L("ノイズからアルファチャンネルを生成", "Generate alpha channel from noise")),
                 noiseAlphaEnabled);
 
             if (noiseAlphaEnabled)
             {
                 EditorGUI.indentLevel++;
-                noiseAlphaType = (NoiseType)EditorGUILayout.EnumPopup("αノイズタイプ Alpha Noise Type", noiseAlphaType);
-                noiseAlphaScale = EditorGUILayout.Slider("αスケール Alpha Scale", noiseAlphaScale, 0.5f, 50f);
-                noiseAlphaSeed = EditorGUILayout.IntField("αシード Alpha Seed", noiseAlphaSeed);
-                noiseAlphaContrast = EditorGUILayout.Slider("αコントラスト Alpha Contrast", noiseAlphaContrast, 0.1f, 3f);
-                noiseAlphaInvert = EditorGUILayout.Toggle("α反転 Alpha Invert", noiseAlphaInvert);
+                noiseAlphaType = (NoiseType)EditorGUILayout.EnumPopup(L("αノイズタイプ", "Alpha Noise Type"), noiseAlphaType);
+                noiseAlphaScale = EditorGUILayout.Slider(L("αスケール", "Alpha Scale"), noiseAlphaScale, 0.5f, 50f);
+                noiseAlphaSeed = EditorGUILayout.IntField(L("αシード", "Alpha Seed"), noiseAlphaSeed);
+                noiseAlphaContrast = EditorGUILayout.Slider(L("αコントラスト", "Alpha Contrast"), noiseAlphaContrast, 0.1f, 3f);
+                noiseAlphaInvert = EditorGUILayout.Toggle(L("α反転", "Alpha Invert"), noiseAlphaInvert);
                 EditorGUI.indentLevel--;
             }
 
             EditorGUILayout.Space(10);
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("プレビュー生成 Generate Preview", GUILayout.Height(30)))
+            if (GUILayout.Button(L("プレビュー生成", "Generate Preview"), GUILayout.Height(30)))
             {
                 GenerateNoiseTexture();
             }
-            if (GUILayout.Button("レイヤーに追加 Add to Layer", GUILayout.Height(30)))
+            if (GUILayout.Button(L("レイヤーに追加", "Add to Layer"), GUILayout.Height(30)))
             {
                 GenerateNoiseToLayer();
             }
@@ -363,19 +365,19 @@ namespace NataneToon.Editor
         private void DrawUVMaskTab()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("メッシュ設定 Mesh Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("メッシュ設定", "Mesh Settings"), EditorStyles.boldLabel);
 
             EditorGUI.BeginChangeCheck();
-            meshSource = EditorGUILayout.ObjectField("メッシュソース", meshSource, typeof(Object), true);
+            meshSource = EditorGUILayout.ObjectField(L("メッシュソース", "Mesh Source"), meshSource, typeof(Object), true);
             if (EditorGUI.EndChangeCheck())
                 islands.Clear();
 
-            uvChannel = EditorGUILayout.IntPopup("UVチャンネル", uvChannel, new[] { "UV0", "UV1", "UV2", "UV3" }, new[] { 0, 1, 2, 3 });
-            maskTextureSize = EditorGUILayout.IntPopup("テクスチャサイズ", maskTextureSize, textureSizeLabels, textureSizes);
+            uvChannel = EditorGUILayout.IntPopup(L("UVチャンネル", "UV Channel"), uvChannel, new[] { "UV0", "UV1", "UV2", "UV3" }, new[] { 0, 1, 2, 3 });
+            maskTextureSize = EditorGUILayout.IntPopup(L("テクスチャサイズ", "Texture Size"), maskTextureSize, textureSizeLabels, textureSizes);
 
             EditorGUILayout.Space(5);
 
-            if (GUILayout.Button("アイランドを検出 Detect Islands", GUILayout.Height(25)))
+            if (GUILayout.Button(L("アイランドを検出", "Detect Islands"), GUILayout.Height(25)))
                 DetectIslands();
 
             EditorGUILayout.EndVertical();
@@ -388,9 +390,9 @@ namespace NataneToon.Editor
                 EditorGUILayout.Space(10);
 
                 EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button("プレビュー生成 Generate Preview", GUILayout.Height(30)))
+                if (GUILayout.Button(L("プレビュー生成", "Generate Preview"), GUILayout.Height(30)))
                     GenerateUVMaskTexture();
-                if (GUILayout.Button("レイヤーに追加 Add to Layer", GUILayout.Height(30)))
+                if (GUILayout.Button(L("レイヤーに追加", "Add to Layer"), GUILayout.Height(30)))
                     GenerateUVMaskToLayer();
                 EditorGUILayout.EndHorizontal();
             }
@@ -400,16 +402,16 @@ namespace NataneToon.Editor
         {
             EditorGUILayout.Space(5);
             islandsFoldout = NataneToonShaderGUIUtility.DrawFoldoutHeader(
-                $"検出アイランド Detected Islands ({islands.Count})", islandsFoldout);
+                L($"検出アイランド ({islands.Count})", $"Detected Islands ({islands.Count})"), islandsFoldout);
 
             if (!islandsFoldout) return;
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("全選択 Select All", GUILayout.Height(20)))
+            if (GUILayout.Button(L("全選択", "Select All"), GUILayout.Height(20)))
                 foreach (var island in islands) island.selected = true;
-            if (GUILayout.Button("全解除 Deselect All", GUILayout.Height(20)))
+            if (GUILayout.Button(L("全解除", "Deselect All"), GUILayout.Height(20)))
                 foreach (var island in islands) island.selected = false;
             EditorGUILayout.EndHorizontal();
 
@@ -422,7 +424,8 @@ namespace NataneToon.Editor
             {
                 var island = islands[i];
                 island.selected = EditorGUILayout.ToggleLeft(
-                    $"アイランド #{i}  (\u25B3{island.triangleCount}, 面積: {island.area:F3})",
+                    L($"アイランド #{i}  (\u25B3{island.triangleCount}, 面積: {island.area:F3})",
+                      $"Island #{i}  (\u25B3{island.triangleCount}, Area: {island.area:F3})"),
                     island.selected);
             }
 
@@ -434,17 +437,17 @@ namespace NataneToon.Editor
         {
             EditorGUILayout.Space(5);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("フィル設定 Fill Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("フィル設定", "Fill Settings"), EditorStyles.boldLabel);
 
-            fillMode = (FillMode)EditorGUILayout.EnumPopup("フィルモード", fillMode);
+            fillMode = (FillMode)EditorGUILayout.EnumPopup(L("フィルモード", "Fill Mode"), fillMode);
 
             if (fillMode == FillMode.BoundaryGradient)
             {
-                gradientWidth = EditorGUILayout.IntSlider("グラデーション幅 (px)", gradientWidth, 1, 100);
-                gradientDirection = (GradientDirection)EditorGUILayout.EnumPopup("方向", gradientDirection);
+                gradientWidth = EditorGUILayout.IntSlider(L("グラデーション幅 (px)", "Gradient Width (px)"), gradientWidth, 1, 100);
+                gradientDirection = (GradientDirection)EditorGUILayout.EnumPopup(L("方向", "Direction"), gradientDirection);
             }
 
-            maskInvert = EditorGUILayout.Toggle("反転", maskInvert);
+            maskInvert = EditorGUILayout.Toggle(L("反転", "Invert"), maskInvert);
 
             EditorGUILayout.EndVertical();
         }
@@ -472,8 +475,9 @@ namespace NataneToon.Editor
             Mesh mesh = ExtractMesh();
             if (mesh == null)
             {
-                EditorUtility.DisplayDialog("エラー",
-                    "メッシュを取得できません。\nMesh, GameObject, MeshFilter, SkinnedMeshRenderer を指定してください。", "OK");
+                EditorUtility.DisplayDialog(L("エラー", "Error"),
+                    L("メッシュを取得できません。\nMesh, GameObject, MeshFilter, SkinnedMeshRenderer を指定してください。",
+                      "Cannot get mesh.\nPlease specify a Mesh, GameObject, MeshFilter, or SkinnedMeshRenderer."), "OK");
                 return;
             }
 
@@ -482,14 +486,14 @@ namespace NataneToon.Editor
 
             if (uvs.Count == 0)
             {
-                EditorUtility.DisplayDialog("エラー", $"UV{uvChannel} が存在しません。", "OK");
+                EditorUtility.DisplayDialog(L("エラー", "Error"), L($"UV{uvChannel} が存在しません。", $"UV{uvChannel} does not exist."), "OK");
                 return;
             }
 
             islands = UVIslandDetector.DetectIslands(mesh, uvs);
 
             if (islands.Count == 0)
-                EditorUtility.DisplayDialog("情報", "アイランドが検出されませんでした。", "OK");
+                EditorUtility.DisplayDialog(L("情報", "Info"), L("アイランドが検出されませんでした。", "No islands were detected."), "OK");
         }
 
         private Color[] GenerateUVMaskPixels(int size)
@@ -549,38 +553,38 @@ namespace NataneToon.Editor
         private void DrawGradientTab()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("グラデーション設定 Gradient Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("グラデーション設定", "Gradient Settings"), EditorStyles.boldLabel);
 
-            textureSize = EditorGUILayout.IntPopup("テクスチャサイズ", textureSize, textureSizeLabels, textureSizes);
-            gradientType = (GradientType)EditorGUILayout.EnumPopup("タイプ Type", gradientType);
+            textureSize = EditorGUILayout.IntPopup(L("テクスチャサイズ", "Texture Size"), textureSize, textureSizeLabels, textureSizes);
+            gradientType = (GradientType)EditorGUILayout.EnumPopup(L("タイプ", "Type"), gradientType);
 
             if (gradientType == GradientType.HeightBased)
             {
                 DrawMeshSourceField();
                 EditorGUILayout.HelpBox(
-                    "高さベースグラデーションにはメッシュが必要です。\nHeight-based gradient requires a mesh.",
+                    L("高さベースグラデーションにはメッシュが必要です。", "Height-based gradient requires a mesh."),
                     MessageType.Info);
             }
             else
             {
                 if (gradientType == GradientType.Linear || gradientType == GradientType.Angular)
-                    gradientParams.angle = EditorGUILayout.Slider("角度 Angle", gradientParams.angle, 0f, 360f);
+                    gradientParams.angle = EditorGUILayout.Slider(L("角度", "Angle"), gradientParams.angle, 0f, 360f);
 
                 if (gradientType == GradientType.Radial)
-                    gradientParams.radius = EditorGUILayout.Slider("半径 Radius", gradientParams.radius, 0.01f, 2f);
+                    gradientParams.radius = EditorGUILayout.Slider(L("半径", "Radius"), gradientParams.radius, 0.01f, 2f);
 
-                gradientParams.center = EditorGUILayout.Vector2Field("中心 Center", gradientParams.center);
+                gradientParams.center = EditorGUILayout.Vector2Field(L("中心", "Center"), gradientParams.center);
             }
 
-            gradientParams.curve = EditorGUILayout.CurveField("カーブ Curve", gradientParams.curve);
-            gradientParams.invert = EditorGUILayout.Toggle("反転 Invert", gradientParams.invert);
+            gradientParams.curve = EditorGUILayout.CurveField(L("カーブ", "Curve"), gradientParams.curve);
+            gradientParams.invert = EditorGUILayout.Toggle(L("反転", "Invert"), gradientParams.invert);
 
             EditorGUILayout.Space(10);
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("プレビュー生成 Generate Preview", GUILayout.Height(30)))
+            if (GUILayout.Button(L("プレビュー生成", "Generate Preview"), GUILayout.Height(30)))
                 GenerateGradientTexture();
-            if (GUILayout.Button("レイヤーに追加 Add to Layer", GUILayout.Height(30)))
+            if (GUILayout.Button(L("レイヤーに追加", "Add to Layer"), GUILayout.Height(30)))
                 GenerateGradientToLayer();
             EditorGUILayout.EndHorizontal();
 
@@ -618,14 +622,14 @@ namespace NataneToon.Editor
                 Mesh mesh = ExtractMesh();
                 if (mesh == null)
                 {
-                    EditorUtility.DisplayDialog("エラー", "メッシュを取得できません。", "OK");
+                    EditorUtility.DisplayDialog(L("エラー", "Error"), L("メッシュを取得できません。", "Cannot get mesh."), "OK");
                     return null;
                 }
                 List<Vector2> uvs = new List<Vector2>();
                 mesh.GetUVs(uvChannel, uvs);
                 if (uvs.Count == 0)
                 {
-                    EditorUtility.DisplayDialog("エラー", $"UV{uvChannel} が存在しません。", "OK");
+                    EditorUtility.DisplayDialog(L("エラー", "Error"), L($"UV{uvChannel} が存在しません。", $"UV{uvChannel} does not exist."), "OK");
                     return null;
                 }
                 GradientGenerator.GenerateHeightBased(pixels, size, mesh, uvs,
@@ -646,23 +650,23 @@ namespace NataneToon.Editor
         private void DrawMeshInfoTab()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("メッシュ情報 Mesh Info Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("メッシュ情報", "Mesh Info Settings"), EditorStyles.boldLabel);
 
             DrawMeshSourceField();
-            textureSize = EditorGUILayout.IntPopup("テクスチャサイズ", textureSize, textureSizeLabels, textureSizes);
-            meshInfoType = (MeshInfoType)EditorGUILayout.EnumPopup("タイプ Type", meshInfoType);
+            textureSize = EditorGUILayout.IntPopup(L("テクスチャサイズ", "Texture Size"), textureSize, textureSizeLabels, textureSizes);
+            meshInfoType = (MeshInfoType)EditorGUILayout.EnumPopup(L("タイプ", "Type"), meshInfoType);
 
             switch (meshInfoType)
             {
                 case MeshInfoType.Curvature:
-                    curvatureSensitivity = EditorGUILayout.Slider("感度 Sensitivity", curvatureSensitivity, 0.1f, 5f);
+                    curvatureSensitivity = EditorGUILayout.Slider(L("感度", "Sensitivity"), curvatureSensitivity, 0.1f, 5f);
                     break;
                 case MeshInfoType.NormalDirection:
-                    normalDirection = EditorGUILayout.Vector3Field("方向 Direction", normalDirection);
-                    normalThreshold = EditorGUILayout.Slider("閾値 Threshold", normalThreshold, 0f, 1f);
+                    normalDirection = EditorGUILayout.Vector3Field(L("方向", "Direction"), normalDirection);
+                    normalThreshold = EditorGUILayout.Slider(L("閾値", "Threshold"), normalThreshold, 0f, 1f);
                     break;
                 case MeshInfoType.VertexColor:
-                    vertexColorChannel = EditorGUILayout.IntPopup("チャンネル Channel", vertexColorChannel,
+                    vertexColorChannel = EditorGUILayout.IntPopup(L("チャンネル", "Channel"), vertexColorChannel,
                         new[] { "R", "G", "B", "A" }, new[] { 0, 1, 2, 3 });
                     break;
             }
@@ -670,9 +674,9 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(10);
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("プレビュー生成 Generate Preview", GUILayout.Height(30)))
+            if (GUILayout.Button(L("プレビュー生成", "Generate Preview"), GUILayout.Height(30)))
                 GenerateMeshInfoTexture();
-            if (GUILayout.Button("レイヤーに追加 Add to Layer", GUILayout.Height(30)))
+            if (GUILayout.Button(L("レイヤーに追加", "Add to Layer"), GUILayout.Height(30)))
                 GenerateMeshInfoToLayer();
             EditorGUILayout.EndHorizontal();
 
@@ -684,14 +688,14 @@ namespace NataneToon.Editor
             Mesh mesh = ExtractMesh();
             if (mesh == null)
             {
-                EditorUtility.DisplayDialog("エラー", "メッシュを取得できません。", "OK");
+                EditorUtility.DisplayDialog(L("エラー", "Error"), L("メッシュを取得できません。", "Cannot get mesh."), "OK");
                 return null;
             }
             List<Vector2> uvs = new List<Vector2>();
             mesh.GetUVs(uvChannel, uvs);
             if (uvs.Count == 0)
             {
-                EditorUtility.DisplayDialog("エラー", $"UV{uvChannel} が存在しません。", "OK");
+                EditorUtility.DisplayDialog(L("エラー", "Error"), L($"UV{uvChannel} が存在しません。", $"UV{uvChannel} does not exist."), "OK");
                 return null;
             }
 
@@ -743,18 +747,18 @@ namespace NataneToon.Editor
         {
             // Mesh settings
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("メッシュ設定 Mesh Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("メッシュ設定", "Mesh Settings"), EditorStyles.boldLabel);
 
             EditorGUI.BeginChangeCheck();
-            meshSource = EditorGUILayout.ObjectField("メッシュソース", meshSource, typeof(Object), true);
+            meshSource = EditorGUILayout.ObjectField(L("メッシュソース", "Mesh Source"), meshSource, typeof(Object), true);
             if (EditorGUI.EndChangeCheck())
                 islands.Clear();
 
-            uvChannel = EditorGUILayout.IntPopup("UVチャンネル", uvChannel, new[] { "UV0", "UV1", "UV2", "UV3" }, new[] { 0, 1, 2, 3 });
+            uvChannel = EditorGUILayout.IntPopup(L("UVチャンネル", "UV Channel"), uvChannel, new[] { "UV0", "UV1", "UV2", "UV3" }, new[] { 0, 1, 2, 3 });
 
             EditorGUILayout.Space(5);
 
-            if (GUILayout.Button("アイランドを検出 Detect Islands", GUILayout.Height(25)))
+            if (GUILayout.Button(L("アイランドを検出", "Detect Islands"), GUILayout.Height(25)))
                 DetectIslands();
 
             EditorGUILayout.EndVertical();
@@ -765,39 +769,39 @@ namespace NataneToon.Editor
             // Noise settings
             EditorGUILayout.Space(5);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("ノイズ設定 Noise Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ノイズ設定", "Noise Settings"), EditorStyles.boldLabel);
 
-            noiseType = (NoiseType)EditorGUILayout.EnumPopup("ノイズタイプ", noiseType);
-            textureSize = EditorGUILayout.IntPopup("テクスチャサイズ", textureSize, textureSizeLabels, textureSizes);
-            scale = EditorGUILayout.Slider("スケール", scale, 0.5f, 50f);
-            seed = EditorGUILayout.IntField("シード", seed);
-            contrast = EditorGUILayout.Slider("コントラスト", contrast, 0.1f, 3f);
+            noiseType = (NoiseType)EditorGUILayout.EnumPopup(L("ノイズタイプ", "Noise Type"), noiseType);
+            textureSize = EditorGUILayout.IntPopup(L("テクスチャサイズ", "Texture Size"), textureSize, textureSizeLabels, textureSizes);
+            scale = EditorGUILayout.Slider(L("スケール", "Scale"), scale, 0.5f, 50f);
+            seed = EditorGUILayout.IntField(L("シード", "Seed"), seed);
+            contrast = EditorGUILayout.Slider(L("コントラスト", "Contrast"), contrast, 0.1f, 3f);
 
             if (noiseType == NoiseType.FBM)
             {
                 NataneToonShaderGUIUtility.DrawSeparator();
-                EditorGUILayout.LabelField("FBM設定", EditorStyles.boldLabel);
-                octaves = EditorGUILayout.IntSlider("オクターブ", octaves, 1, 8);
-                lacunarity = EditorGUILayout.Slider("ラクナリティ", lacunarity, 1f, 4f);
-                persistence = EditorGUILayout.Slider("パーシステンス", persistence, 0f, 1f);
+                EditorGUILayout.LabelField(L("FBM設定", "FBM Settings"), EditorStyles.boldLabel);
+                octaves = EditorGUILayout.IntSlider(L("オクターブ", "Octaves"), octaves, 1, 8);
+                lacunarity = EditorGUILayout.Slider(L("ラクナリティ", "Lacunarity"), lacunarity, 1f, 4f);
+                persistence = EditorGUILayout.Slider(L("パーシステンス", "Persistence"), persistence, 0f, 1f);
             }
 
-            offset = EditorGUILayout.Vector2Field("オフセット", offset);
+            offset = EditorGUILayout.Vector2Field(L("オフセット", "Offset"), offset);
             EditorGUILayout.EndVertical();
 
             // Combine settings
             EditorGUILayout.Space(5);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("合成設定 Combine Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("合成設定", "Combine Settings"), EditorStyles.boldLabel);
 
-            combineMode = (CombineMode)EditorGUILayout.EnumPopup("合成モード", combineMode);
-            invert = EditorGUILayout.Toggle("反転", invert);
+            combineMode = (CombineMode)EditorGUILayout.EnumPopup(L("合成モード", "Combine Mode"), combineMode);
+            invert = EditorGUILayout.Toggle(L("反転", "Invert"), invert);
 
             EditorGUILayout.EndVertical();
 
             EditorGUILayout.Space(10);
 
-            if (GUILayout.Button("テクスチャを生成 Generate Texture", GUILayout.Height(30)))
+            if (GUILayout.Button(L("テクスチャを生成", "Generate Texture"), GUILayout.Height(30)))
                 GenerateCombinedTexture();
         }
 
@@ -806,7 +810,7 @@ namespace NataneToon.Editor
             Mesh mesh = ExtractMesh();
             if (mesh == null)
             {
-                EditorUtility.DisplayDialog("エラー", "メッシュを取得できません。", "OK");
+                EditorUtility.DisplayDialog(L("エラー", "Error"), L("メッシュを取得できません。", "Cannot get mesh."), "OK");
                 return;
             }
 
@@ -814,7 +818,7 @@ namespace NataneToon.Editor
             mesh.GetUVs(uvChannel, uvs);
             if (uvs.Count == 0)
             {
-                EditorUtility.DisplayDialog("エラー", $"UV{uvChannel} が存在しません。", "OK");
+                EditorUtility.DisplayDialog(L("エラー", "Error"), L($"UV{uvChannel} が存在しません。", $"UV{uvChannel} does not exist."), "OK");
                 return;
             }
 
@@ -865,9 +869,9 @@ namespace NataneToon.Editor
         private void DrawTemplatesTab()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("テンプレート Templates", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("テンプレート", "Templates"), EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "テンプレートを選択してレイヤースタックに適用します。\nSelect a template to apply to the layer stack.",
+                L("テンプレートを選択してレイヤースタックに適用します。", "Select a template to apply to the layer stack."),
                 MessageType.Info);
 
             DrawMeshSourceField();
@@ -896,7 +900,7 @@ namespace NataneToon.Editor
                 EditorGUILayout.LabelField($"{info.nameJP} / {info.nameEN}", EditorStyles.boldLabel);
                 EditorGUILayout.LabelField(info.descriptionJP, EditorStyles.wordWrappedMiniLabel);
                 if (info.requiresMesh)
-                    EditorGUILayout.LabelField("* メッシュ必要 Mesh required", EditorStyles.miniLabel);
+                    EditorGUILayout.LabelField(L("* メッシュ必要", "* Mesh required"), EditorStyles.miniLabel);
                 EditorGUILayout.EndVertical();
 
                 EditorGUILayout.EndHorizontal();
@@ -909,7 +913,7 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space(10);
 
-            if (GUILayout.Button("テンプレートを適用 Apply Template", GUILayout.Height(30)))
+            if (GUILayout.Button(L("テンプレートを適用", "Apply Template"), GUILayout.Height(30)))
             {
                 ApplySelectedTemplate();
             }
@@ -950,15 +954,15 @@ namespace NataneToon.Editor
 
             // Canvas header with controls
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("キャンバス Canvas", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("キャンバス", "Canvas"), EditorStyles.boldLabel);
             GUILayout.FlexibleSpace();
 
             showUVWireframe = GUILayout.Toggle(showUVWireframe,
-                new GUIContent("UV", "UVワイヤーフレーム表示 Show UV wireframe"),
+                new GUIContent("UV", L("UVワイヤーフレーム表示", "Show UV wireframe")),
                 EditorStyles.miniButton, GUILayout.Width(30));
 
             brushEnabled = GUILayout.Toggle(brushEnabled,
-                new GUIContent("Brush", "ブラシツール有効化 Enable brush tool"),
+                new GUIContent("Brush", L("ブラシツール有効化", "Enable brush tool")),
                 EditorStyles.miniButton, GUILayout.Width(50));
 
             if (GUILayout.Button("Fit", EditorStyles.miniButton, GUILayout.Width(30)))
@@ -1048,7 +1052,7 @@ namespace NataneToon.Editor
             else
             {
                 EditorGUI.LabelField(canvasArea,
-                    "「テクスチャを生成」を押すとプレビューが表示されます\nClick 'Generate' to see preview",
+                    L("「テクスチャを生成」を押すとプレビューが表示されます", "Click 'Generate' to see preview"),
                     new GUIStyle(EditorStyles.centeredGreyMiniLabel)
                     { alignment = TextAnchor.MiddleCenter, wordWrap = true });
             }
@@ -1133,7 +1137,7 @@ namespace NataneToon.Editor
 
         private void DrawFilterPanel()
         {
-            filterFoldout = NataneToonShaderGUIUtility.DrawFoldoutHeader("フィルター Filters", filterFoldout);
+            filterFoldout = NataneToonShaderGUIUtility.DrawFoldoutHeader(L("フィルター", "Filters"), filterFoldout);
             if (!filterFoldout) return;
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
@@ -1143,9 +1147,9 @@ namespace NataneToon.Editor
 
             // Gaussian Blur
             EditorGUILayout.BeginHorizontal();
-            filterBlurSigma = EditorGUILayout.Slider("ブラー Blur (sigma)", filterBlurSigma, 0.1f, 20f);
+            filterBlurSigma = EditorGUILayout.Slider(L("ブラー (sigma)", "Blur (sigma)"), filterBlurSigma, 0.1f, 20f);
             EditorGUI.BeginDisabledGroup(!hasLayer);
-            if (GUILayout.Button("適用", GUILayout.Width(40)))
+            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(40)))
             {
                 ApplyFilterToActiveLayer((pixels, w, h) =>
                     MaskTextureFilters.GaussianBlur(pixels, w, h, filterBlurSigma));
@@ -1154,17 +1158,17 @@ namespace NataneToon.Editor
             EditorGUILayout.EndHorizontal();
 
             // Levels
-            EditorGUILayout.LabelField("レベル補正 Levels", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(L("レベル補正", "Levels"), EditorStyles.miniLabel);
             EditorGUILayout.BeginHorizontal();
-            filterLevelInputMin = EditorGUILayout.FloatField("入力Min", filterLevelInputMin, GUILayout.Width(120));
-            filterLevelInputMax = EditorGUILayout.FloatField("入力Max", filterLevelInputMax, GUILayout.Width(120));
+            filterLevelInputMin = EditorGUILayout.FloatField(L("入力Min", "Input Min"), filterLevelInputMin, GUILayout.Width(120));
+            filterLevelInputMax = EditorGUILayout.FloatField(L("入力Max", "Input Max"), filterLevelInputMax, GUILayout.Width(120));
             EditorGUILayout.EndHorizontal();
-            filterLevelGamma = EditorGUILayout.Slider("ガンマ Gamma", filterLevelGamma, 0.01f, 10f);
+            filterLevelGamma = EditorGUILayout.Slider(L("ガンマ", "Gamma"), filterLevelGamma, 0.01f, 10f);
             EditorGUILayout.BeginHorizontal();
-            filterLevelOutputMin = EditorGUILayout.FloatField("出力Min", filterLevelOutputMin, GUILayout.Width(120));
-            filterLevelOutputMax = EditorGUILayout.FloatField("出力Max", filterLevelOutputMax, GUILayout.Width(120));
+            filterLevelOutputMin = EditorGUILayout.FloatField(L("出力Min", "Output Min"), filterLevelOutputMin, GUILayout.Width(120));
+            filterLevelOutputMax = EditorGUILayout.FloatField(L("出力Max", "Output Max"), filterLevelOutputMax, GUILayout.Width(120));
             EditorGUI.BeginDisabledGroup(!hasLayer);
-            if (GUILayout.Button("適用", GUILayout.Width(40)))
+            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(40)))
             {
                 ApplyFilterToActiveLayer((pixels, w, h) =>
                     MaskTextureFilters.Levels(pixels, w, h,
@@ -1176,9 +1180,9 @@ namespace NataneToon.Editor
 
             // Edge Detection
             EditorGUILayout.BeginHorizontal();
-            filterEdgeStrength = EditorGUILayout.Slider("エッジ検出 Edge", filterEdgeStrength, 0.1f, 5f);
+            filterEdgeStrength = EditorGUILayout.Slider(L("エッジ検出", "Edge Detection"), filterEdgeStrength, 0.1f, 5f);
             EditorGUI.BeginDisabledGroup(!hasLayer);
-            if (GUILayout.Button("適用", GUILayout.Width(40)))
+            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(40)))
             {
                 ApplyFilterToActiveLayer((pixels, w, h) =>
                     MaskTextureFilters.SobelEdge(pixels, w, h, filterEdgeStrength));
@@ -1188,9 +1192,9 @@ namespace NataneToon.Editor
 
             // Sharpen
             EditorGUILayout.BeginHorizontal();
-            filterSharpenAmount = EditorGUILayout.Slider("シャープ Sharpen", filterSharpenAmount, 0f, 3f);
+            filterSharpenAmount = EditorGUILayout.Slider(L("シャープ", "Sharpen"), filterSharpenAmount, 0f, 3f);
             EditorGUI.BeginDisabledGroup(!hasLayer);
-            if (GUILayout.Button("適用", GUILayout.Width(40)))
+            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(40)))
             {
                 ApplyFilterToActiveLayer((pixels, w, h) =>
                     MaskTextureFilters.Sharpen(pixels, w, h, filterSharpenAmount, filterSharpenSigma));
@@ -1200,9 +1204,9 @@ namespace NataneToon.Editor
 
             // Threshold
             EditorGUILayout.BeginHorizontal();
-            filterThreshold = EditorGUILayout.Slider("二値化 Threshold", filterThreshold, 0f, 1f);
+            filterThreshold = EditorGUILayout.Slider(L("二値化", "Threshold"), filterThreshold, 0f, 1f);
             EditorGUI.BeginDisabledGroup(!hasLayer);
-            if (GUILayout.Button("適用", GUILayout.Width(40)))
+            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(40)))
             {
                 ApplyFilterToActiveLayer((pixels, w, h) =>
                     MaskTextureFilters.Threshold(pixels, w, h, filterThreshold));
@@ -1230,7 +1234,7 @@ namespace NataneToon.Editor
         private void Draw3DPreviewSection()
         {
             show3DPreview = NataneToonShaderGUIUtility.DrawFoldoutHeader(
-                "3Dプレビュー 3D Preview", show3DPreview);
+                L("3Dプレビュー", "3D Preview"), show3DPreview);
 
             if (!show3DPreview) return;
 
@@ -1240,8 +1244,8 @@ namespace NataneToon.Editor
             if (mesh == null)
             {
                 EditorGUILayout.HelpBox(
-                    "3Dプレビューにはメッシュが必要です。メッシュソースを設定してください。\n" +
-                    "Mesh is required for 3D preview. Set a mesh source.",
+                    L("3Dプレビューにはメッシュが必要です。メッシュソースを設定してください。",
+                      "Mesh is required for 3D preview. Set a mesh source."),
                     MessageType.Info);
                 EditorGUILayout.EndVertical();
                 return;
@@ -1273,9 +1277,9 @@ namespace NataneToon.Editor
         private void DrawMaterialAssignment()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("マテリアル割当 Material Assignment", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("マテリアル割当", "Material Assignment"), EditorStyles.boldLabel);
 
-            targetMaterial = (Material)EditorGUILayout.ObjectField("ターゲットマテリアル", targetMaterial, typeof(Material), false);
+            targetMaterial = (Material)EditorGUILayout.ObjectField(L("ターゲットマテリアル", "Target Material"), targetMaterial, typeof(Material), false);
 
             if (targetMaterial != null)
             {
@@ -1294,12 +1298,12 @@ namespace NataneToon.Editor
                 if (availableProps.Count > 0)
                 {
                     selectedPropertyIndex = Mathf.Clamp(selectedPropertyIndex, 0, availableProps.Count - 1);
-                    selectedPropertyIndex = EditorGUILayout.Popup("割当先プロパティ", selectedPropertyIndex, availableLabels.ToArray());
+                    selectedPropertyIndex = EditorGUILayout.Popup(L("割当先プロパティ", "Target Property"), selectedPropertyIndex, availableLabels.ToArray());
                 }
                 else
                 {
                     EditorGUILayout.HelpBox(
-                        "対応するテクスチャプロパティが見つかりません。\nNo compatible texture properties found.",
+                        L("対応するテクスチャプロパティが見つかりません。", "No compatible texture properties found."),
                         MessageType.Warning);
                 }
             }
@@ -1314,11 +1318,11 @@ namespace NataneToon.Editor
         private void DrawMeshSourceField()
         {
             EditorGUI.BeginChangeCheck();
-            meshSource = EditorGUILayout.ObjectField("メッシュソース Mesh Source", meshSource, typeof(Object), true);
+            meshSource = EditorGUILayout.ObjectField(L("メッシュソース", "Mesh Source"), meshSource, typeof(Object), true);
             if (EditorGUI.EndChangeCheck())
                 islands.Clear();
 
-            uvChannel = EditorGUILayout.IntPopup("UVチャンネル", uvChannel,
+            uvChannel = EditorGUILayout.IntPopup(L("UVチャンネル", "UV Channel"), uvChannel,
                 new[] { "UV0", "UV1", "UV2", "UV3" }, new[] { 0, 1, 2, 3 });
         }
 

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Brush mode for mask texture painting.
     /// マスクテクスチャペイント用ブラシモード
@@ -339,12 +341,12 @@ namespace NataneToon.Editor
     /// </summary>
     internal static class BrushSettingsUI
     {
-        private static readonly GUIContent[] modeLabels = new GUIContent[]
+        private static GUIContent[] modeLabels => new GUIContent[]
         {
-            new GUIContent("ペイント Paint", "Paint grayscale values / グレースケール値をペイント"),
-            new GUIContent("消しゴム Erase", "Erase to black / 黒に消去"),
-            new GUIContent("スムーズ Smooth", "Smooth/blur values / 値をスムーズ・ぼかし"),
-            new GUIContent("α消去 Erase Alpha", "Erase alpha channel / アルファチャンネルを消去")
+            new GUIContent(L("ペイント", "Paint"), L("グレースケール値をペイント", "Paint grayscale values")),
+            new GUIContent(L("消しゴム", "Erase"), L("黒に消去", "Erase to black")),
+            new GUIContent(L("スムーズ", "Smooth"), L("値をスムーズ・ぼかし", "Smooth/blur values")),
+            new GUIContent(L("α消去", "Erase Alpha"), L("アルファチャンネルを消去", "Erase alpha channel"))
         };
 
         /// <summary>
@@ -355,12 +357,12 @@ namespace NataneToon.Editor
         {
             if (settings == null) return;
 
-            EditorGUILayout.LabelField("ブラシ設定 Brush Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ブラシ設定", "Brush Settings"), EditorStyles.boldLabel);
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField("モード Mode", GUILayout.Width(100));
+                EditorGUILayout.LabelField(L("モード", "Mode"), GUILayout.Width(100));
                 int modeIndex = GUILayout.Toolbar((int)settings.mode, modeLabels);
                 settings.mode = (BrushMode)modeIndex;
                 EditorGUILayout.EndHorizontal();
@@ -368,34 +370,31 @@ namespace NataneToon.Editor
                 EditorGUILayout.Space(4);
 
                 settings.size = EditorGUILayout.Slider(
-                    new GUIContent("サイズ Size", "Brush radius in pixels / ブラシ半径（ピクセル）"),
+                    new GUIContent(L("サイズ", "Size"), L("ブラシ半径（ピクセル）", "Brush radius in pixels")),
                     settings.size, 1f, 100f);
 
                 settings.hardness = EditorGUILayout.Slider(
-                    new GUIContent("硬さ Hardness", "Edge hardness: 0=soft, 1=hard / エッジ硬さ: 0=ソフト, 1=ハード"),
+                    new GUIContent(L("硬さ", "Hardness"), L("エッジ硬さ: 0=ソフト, 1=ハード", "Edge hardness: 0=soft, 1=hard")),
                     settings.hardness, 0f, 1f);
 
                 settings.opacity = EditorGUILayout.Slider(
-                    new GUIContent("不透明度 Opacity", "Brush opacity / ブラシ不透明度"),
+                    new GUIContent(L("不透明度", "Opacity"), L("ブラシ不透明度", "Brush opacity")),
                     settings.opacity, 0f, 1f);
 
                 if (settings.mode == BrushMode.Paint)
                 {
                     settings.strength = EditorGUILayout.Slider(
-                        new GUIContent("強度 Strength", "Paint value (grayscale 0-1) / ペイント値（グレースケール 0-1）"),
+                        new GUIContent(L("強度", "Strength"), L("ペイント値（グレースケール 0-1）", "Paint value (grayscale 0-1)")),
                         settings.strength, 0f, 1f);
 
                     settings.paintAlpha = EditorGUILayout.Slider(
-                        new GUIContent("アルファ Alpha", "Paint alpha value (0=transparent, 1=opaque) / ペイントアルファ値（0=透明, 1=不透明）"),
+                        new GUIContent(L("アルファ", "Alpha"), L("ペイントアルファ値（0=透明, 1=不透明）", "Paint alpha value (0=transparent, 1=opaque)")),
                         settings.paintAlpha, 0f, 1f);
                 }
 
                 EditorGUILayout.Space(2);
                 EditorGUILayout.LabelField(
-                    "ショートカット: スクロール=サイズ変更",
-                    EditorStyles.miniLabel);
-                EditorGUILayout.LabelField(
-                    "Shortcut: Scroll=Size",
+                    L("ショートカット: スクロール=サイズ変更", "Shortcut: Scroll=Size"),
                     EditorStyles.miniLabel);
             }
         }

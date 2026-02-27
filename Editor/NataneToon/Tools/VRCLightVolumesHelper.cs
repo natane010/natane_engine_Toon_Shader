@@ -3,6 +3,8 @@ using UnityEditor;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// VRC Light Volumes Integration Helper
     /// VRC Light Volumes統合ヘルパー
@@ -18,7 +20,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/VRChat/VRCライトボリュームヘルパー VRC Light Volumes Helper", false, 61)]
         public static void ShowWindow()
         {
-            var window = GetWindow<VRCLightVolumesHelper>("VRCライトボリュームヘルパー VRC Light Volumes Helper");
+            var window = GetWindow<VRCLightVolumesHelper>(L("VRCライトボリュームヘルパー", "VRC Light Volumes Helper"));
             window.minSize = new Vector2(500, 450);
             window.Show();
         }
@@ -28,15 +30,15 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(10);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             NataneToonShaderGUIUtility.DrawHeaderWithHelp("VRC Light Volumes統合ヘルパー", "VRC Light Volumes Helper", "VRCLightVolumes");
-            EditorGUILayout.LabelField("VRChat Light Volumesの設定を簡単に\nEasy setup for VRChat Light Volumes", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(L("VRChat Light Volumesの設定を簡単に", "Easy setup for VRChat Light Volumes"), EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(10);
 
-            targetMaterial = (Material)EditorGUILayout.ObjectField("ターゲット Target", targetMaterial, typeof(Material), false);
+            targetMaterial = (Material)EditorGUILayout.ObjectField(L("ターゲット", "Target"), targetMaterial, typeof(Material), false);
 
             if (targetMaterial == null)
             {
-                EditorGUILayout.HelpBox("マテリアルを選択してください\nSelect a material", MessageType.Info);
+                EditorGUILayout.HelpBox(L("マテリアルを選択してください", "Select a material"), MessageType.Info);
                 return;
             }
 
@@ -54,11 +56,11 @@ namespace NataneToon.Editor
         private void DrawQuickSetup()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("クイック設定 Quick Setup", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("クイック設定", "Quick Setup"), EditorStyles.boldLabel);
 
-            quality = (LightVolumeQuality)EditorGUILayout.EnumPopup("品質プリセット Quality Preset", quality);
+            quality = (LightVolumeQuality)EditorGUILayout.EnumPopup(L("品質プリセット", "Quality Preset"), quality);
 
-            if (GUILayout.Button("プリセットを適用 Apply Preset", GUILayout.Height(30)))
+            if (GUILayout.Button(L("プリセットを適用", "Apply Preset"), GUILayout.Height(30)))
             {
                 ApplyQualityPreset(quality);
             }
@@ -69,13 +71,13 @@ namespace NataneToon.Editor
         private void DrawDetailedSettings()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("詳細設定 Detailed Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("詳細設定", "Detailed Settings"), EditorStyles.boldLabel);
 
             if (targetMaterial.HasProperty("_UseLightVolume"))
             {
                 EditorGUI.BeginChangeCheck();
                 bool useLV = targetMaterial.GetFloat("_UseLightVolume") > 0.5f;
-                useLV = EditorGUILayout.Toggle("Light Volumeを使用 Use", useLV);
+                useLV = EditorGUILayout.Toggle(L("Light Volumeを使用", "Use Light Volume"), useLV);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Toggle Light Volume");
@@ -87,7 +89,7 @@ namespace NataneToon.Editor
             if (targetMaterial.HasProperty("_LightVolumeIntensity"))
             {
                 EditorGUI.BeginChangeCheck();
-                float intensity = EditorGUILayout.Slider("強度 Intensity", targetMaterial.GetFloat("_LightVolumeIntensity"), 0f, 2f);
+                float intensity = EditorGUILayout.Slider(L("強度", "Intensity"), targetMaterial.GetFloat("_LightVolumeIntensity"), 0f, 2f);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change LV Intensity");
@@ -99,7 +101,7 @@ namespace NataneToon.Editor
             if (targetMaterial.HasProperty("_LightVolumeFalloff"))
             {
                 EditorGUI.BeginChangeCheck();
-                float falloff = EditorGUILayout.Slider("減衰 Falloff", targetMaterial.GetFloat("_LightVolumeFalloff"), 0f, 1f);
+                float falloff = EditorGUILayout.Slider(L("減衰", "Falloff"), targetMaterial.GetFloat("_LightVolumeFalloff"), 0f, 1f);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change LV Falloff");
@@ -114,14 +116,14 @@ namespace NataneToon.Editor
         private void DrawTesting()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("テスト Test", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("テスト", "Test"), EditorStyles.boldLabel);
 
             EditorGUILayout.HelpBox(
-                "VRChatワールドでLight Volumesが有効な場所でテストしてください\n" +
-                "Test in VRChat world where Light Volumes are enabled",
+                L("VRChatワールドでLight Volumesが有効な場所でテストしてください",
+                "Test in VRChat world where Light Volumes are enabled"),
                 MessageType.Info);
 
-            if (GUILayout.Button("デバッグモードを有効化 Enable Debug Mode"))
+            if (GUILayout.Button(L("デバッグモードを有効化", "Enable Debug Mode")))
             {
                 if (targetMaterial.HasProperty("_LightVolumeDebug"))
                 {
@@ -172,7 +174,7 @@ namespace NataneToon.Editor
             }
 
             EditorUtility.SetDirty(targetMaterial);
-            EditorUtility.DisplayDialog("適用完了 Applied", $"{preset}プリセットを適用しました\nApplied {preset} preset", "OK");
+            EditorUtility.DisplayDialog(L("適用完了", "Applied"), L($"{preset}プリセットを適用しました", $"Applied {preset} preset"), "OK");
         }
     }
 }

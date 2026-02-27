@@ -3,6 +3,8 @@ using UnityEditor;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Enhanced material preview window with lighting control
     /// ライティング制御付き拡張マテリアルプレビューウィンドウ
@@ -29,7 +31,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/マテリアル Material/マテリアルプレビュー Material Preview", false, 13)]
         public static void ShowWindow()
         {
-            var window = GetWindow<MaterialPreviewWindow>("マテリアルプレビュー Material Preview");
+            var window = GetWindow<MaterialPreviewWindow>(L("マテリアルプレビュー", "Material Preview"));
             window.minSize = new Vector2(400, 500);
             window.Show();
         }
@@ -67,29 +69,29 @@ namespace NataneToon.Editor
             NataneToonShaderGUIUtility.DrawHeaderWithHelp("マテリアルプレビュー", "Material Preview", "MaterialPreview");
             EditorGUILayout.Space(5);
 
-            previewMaterial = (Material)EditorGUILayout.ObjectField("マテリアル", previewMaterial, typeof(Material), false);
+            previewMaterial = (Material)EditorGUILayout.ObjectField(L("マテリアル", "Material"), previewMaterial, typeof(Material), false);
 
-            currentShape = (PreviewShape)EditorGUILayout.EnumPopup("プレビュー形状", currentShape);
+            currentShape = (PreviewShape)EditorGUILayout.EnumPopup(L("プレビュー形状", "Preview Shape"), currentShape);
             if (GUI.changed) CreatePreviewObject();
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("ライティング", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ライティング", "Lighting"), EditorStyles.boldLabel);
 
-            ambientColor = EditorGUILayout.ColorField("環境光色", ambientColor);
-            lightColor = EditorGUILayout.ColorField("ライト色", lightColor);
-            lightIntensity = EditorGUILayout.Slider("ライト強度", lightIntensity, 0f, 2f);
+            ambientColor = EditorGUILayout.ColorField(L("環境光色", "Ambient Color"), ambientColor);
+            lightColor = EditorGUILayout.ColorField(L("ライト色", "Light Color"), lightColor);
+            lightIntensity = EditorGUILayout.Slider(L("ライト強度", "Light Intensity"), lightIntensity, 0f, 2f);
 
             EditorGUILayout.Space(5);
 
-            if (GUILayout.Button("ビューをリセット")) ResetView();
-            if (GUILayout.Button("マテリアルを自動選択") && Selection.activeObject is Material)
+            if (GUILayout.Button(L("ビューをリセット", "Reset View"))) ResetView();
+            if (GUILayout.Button(L("マテリアルを自動選択", "Auto-Select Material")) && Selection.activeObject is Material)
             {
                 previewMaterial = Selection.activeObject as Material;
             }
 
             EditorGUILayout.EndVertical();
 
-            EditorGUILayout.HelpBox("ドラッグで回転 • スクロールでズーム", MessageType.Info);
+            EditorGUILayout.HelpBox(L("ドラッグで回転 / スクロールでズーム", "Drag to rotate / Scroll to zoom"), MessageType.Info);
         }
 
         private void DrawPreview()

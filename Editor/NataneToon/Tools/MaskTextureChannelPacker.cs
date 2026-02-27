@@ -3,6 +3,8 @@ using UnityEditor;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     // ================================================================
     // Channel Packing Configuration
     // ================================================================
@@ -114,14 +116,14 @@ namespace NataneToon.Editor
         {
             // --- Pack Section ---
             foldoutPack = NataneToonShaderGUIUtility.DrawFoldoutHeader(
-                "チャンネルパッキング Channel Packing", foldoutPack);
+                L("チャンネルパッキング", "Channel Packing"), foldoutPack);
 
             if (foldoutPack)
             {
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
-                EditorGUILayout.LabelField("出力サイズ Output Size", EditorStyles.boldLabel);
-                outputSize = EditorGUILayout.IntPopup("サイズ", outputSize,
+                EditorGUILayout.LabelField(L("出力サイズ", "Output Size"), EditorStyles.boldLabel);
+                outputSize = EditorGUILayout.IntPopup(L("サイズ", "Size"), outputSize,
                     new[] { "256", "512", "1024", "2048", "4096" },
                     new[] { 256, 512, 1024, 2048, 4096 });
 
@@ -129,19 +131,19 @@ namespace NataneToon.Editor
                 NataneToonShaderGUIUtility.DrawSeparator();
 
                 // Red channel
-                DrawChannelRow("R (赤)", ref config.redSource, ref config.redFrom,
+                DrawChannelRow(L("R (赤)", "R (Red)"), ref config.redSource, ref config.redFrom,
                     new Color(1f, 0.3f, 0.3f, 0.15f));
 
                 // Green channel
-                DrawChannelRow("G (緑)", ref config.greenSource, ref config.greenFrom,
+                DrawChannelRow(L("G (緑)", "G (Green)"), ref config.greenSource, ref config.greenFrom,
                     new Color(0.3f, 1f, 0.3f, 0.15f));
 
                 // Blue channel
-                DrawChannelRow("B (青)", ref config.blueSource, ref config.blueFrom,
+                DrawChannelRow(L("B (青)", "B (Blue)"), ref config.blueSource, ref config.blueFrom,
                     new Color(0.3f, 0.3f, 1f, 0.15f));
 
                 // Alpha channel
-                DrawChannelRow("A (アルファ)", ref config.alphaSource, ref config.alphaFrom,
+                DrawChannelRow(L("A (アルファ)", "A (Alpha)"), ref config.alphaSource, ref config.alphaFrom,
                     new Color(1f, 1f, 1f, 0.1f));
 
                 EditorGUILayout.Space(10);
@@ -150,7 +152,7 @@ namespace NataneToon.Editor
                                     config.blueSource != null || config.alphaSource != null;
 
                 EditorGUI.BeginDisabledGroup(!hasAnySource);
-                if (GUILayout.Button("パック Pack Channels", GUILayout.Height(28)))
+                if (GUILayout.Button(L("パック", "Pack Channels"), GUILayout.Height(28)))
                 {
                     Texture2D packed = Pack(config, outputSize);
                     SavePackedTexture(packed, "ChannelPacked");
@@ -165,19 +167,19 @@ namespace NataneToon.Editor
 
             // --- Unpack Section ---
             foldoutUnpack = NataneToonShaderGUIUtility.DrawFoldoutHeader(
-                "チャンネルアンパック Channel Unpack", foldoutUnpack);
+                L("チャンネルアンパック", "Channel Unpack"), foldoutUnpack);
 
             if (foldoutUnpack)
             {
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
                 unpackSource = (Texture2D)EditorGUILayout.ObjectField(
-                    "ソーステクスチャ Source", unpackSource, typeof(Texture2D), false);
+                    L("ソーステクスチャ", "Source Texture"), unpackSource, typeof(Texture2D), false);
 
                 EditorGUILayout.Space(5);
 
                 EditorGUI.BeginDisabledGroup(unpackSource == null);
-                if (GUILayout.Button("アンパック Unpack to R/G/B/A", GUILayout.Height(28)))
+                if (GUILayout.Button(L("アンパック R/G/B/A に分割", "Unpack to R/G/B/A"), GUILayout.Height(28)))
                 {
                     int size = Mathf.Max(unpackSource.width, unpackSource.height);
                     Texture2D[] channels = Unpack(unpackSource, size);
@@ -290,10 +292,10 @@ namespace NataneToon.Editor
         private static void SavePackedTexture(Texture2D texture, string defaultName)
         {
             string path = EditorUtility.SaveFilePanelInProject(
-                "テクスチャを保存 Save Texture",
+                L("テクスチャを保存", "Save Texture"),
                 defaultName,
                 "png",
-                "保存場所を選択してください Choose save location");
+                L("保存場所を選択してください", "Choose save location"));
 
             if (string.IsNullOrEmpty(path)) return;
 
@@ -302,8 +304,8 @@ namespace NataneToon.Editor
             AssetDatabase.Refresh();
 
             EditorUtility.DisplayDialog(
-                "保存完了 Save Complete",
-                $"テクスチャを保存しました: {path}\nTexture saved: {path}",
+                L("保存完了", "Save Complete"),
+                L($"テクスチャを保存しました: {path}", $"Texture saved: {path}"),
                 "OK");
         }
     }

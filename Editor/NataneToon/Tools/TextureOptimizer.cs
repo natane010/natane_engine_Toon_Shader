@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Texture optimization tool
     /// テクスチャ最適化ツール
@@ -34,7 +36,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/最適化 Optimization/テクスチャ最適化 Texture Optimizer", false, 32)]
         public static void ShowWindow()
         {
-            var window = GetWindow<TextureOptimizer>("テクスチャ最適化 Texture Optimizer");
+            var window = GetWindow<TextureOptimizer>(L("テクスチャ最適化", "Texture Optimizer"));
             window.minSize = new Vector2(600, 500);
             window.Show();
         }
@@ -43,7 +45,8 @@ namespace NataneToon.Editor
         {
             NataneToonShaderGUIUtility.DrawToolHeader("テクスチャ最適化ツール", "Texture Optimizer", "TextureOptimizer");
             EditorGUILayout.HelpBox(
-                "パフォーマンス向上のためにテクスチャを最適化\nOptimize textures for better performance",
+                L("パフォーマンス向上のためにテクスチャを最適化",
+                  "Optimize textures for better performance"),
                 MessageType.Info);
 
             EditorGUILayout.Space(10);
@@ -58,33 +61,33 @@ namespace NataneToon.Editor
         private void DrawSettings()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("最適化設定 Optimization Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("最適化設定", "Optimization Settings"), EditorStyles.boldLabel);
 
-            maxTextureSize = EditorGUILayout.IntPopup("最大テクスチャサイズ Max Texture Size", maxTextureSize,
+            maxTextureSize = EditorGUILayout.IntPopup(L("最大テクスチャサイズ", "Max Texture Size"), maxTextureSize,
                 new[] { "512", "1024", "2048", "4096" },
                 new[] { 512, 1024, 2048, 4096 });
 
-            enableCompression = EditorGUILayout.Toggle("圧縮を有効化 Enable Compression", enableCompression);
+            enableCompression = EditorGUILayout.Toggle(L("圧縮を有効化", "Enable Compression"), enableCompression);
             if (enableCompression)
             {
-                compressionQuality = (TextureImporterCompression)EditorGUILayout.EnumPopup("品質 Quality", compressionQuality);
+                compressionQuality = (TextureImporterCompression)EditorGUILayout.EnumPopup(L("品質", "Quality"), compressionQuality);
             }
 
-            generateMipmaps = EditorGUILayout.Toggle("ミップマップを生成 Generate Mipmaps", generateMipmaps);
+            generateMipmaps = EditorGUILayout.Toggle(L("ミップマップを生成", "Generate Mipmaps"), generateMipmaps);
 
             EditorGUILayout.Space(5);
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("選択テクスチャを追加 Add Selected Textures")) AddSelectedTextures();
-            if (GUILayout.Button("プロジェクトをスキャン Scan Project")) ScanProject();
-            if (GUILayout.Button("クリア Clear")) texturesToOptimize.Clear();
+            if (GUILayout.Button(L("選択テクスチャを追加", "Add Selected Textures"))) AddSelectedTextures();
+            if (GUILayout.Button(L("プロジェクトをスキャン", "Scan Project"))) ScanProject();
+            if (GUILayout.Button(L("クリア", "Clear"))) texturesToOptimize.Clear();
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(5);
 
             if (texturesToOptimize.Count > 0)
             {
-                if (GUILayout.Button("分析して最適化 Analyze & Optimize", GUILayout.Height(30)))
+                if (GUILayout.Button(L("分析して最適化", "Analyze & Optimize"), GUILayout.Height(30)))
                 {
                     AnalyzeAndOptimize();
                 }
@@ -97,7 +100,7 @@ namespace NataneToon.Editor
         {
             if (texturesToOptimize.Count == 0) return;
 
-            EditorGUILayout.LabelField($"最適化するテクスチャ Textures to Optimize ({texturesToOptimize.Count})", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L($"最適化するテクスチャ ({texturesToOptimize.Count})", $"Textures to Optimize ({texturesToOptimize.Count})"), EditorStyles.boldLabel);
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Height(150));
             for (int i = texturesToOptimize.Count - 1; i >= 0; i--)
@@ -118,26 +121,26 @@ namespace NataneToon.Editor
             if (results.Count == 0) return;
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("最適化結果 Optimization Results", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("最適化結果", "Optimization Results"), EditorStyles.boldLabel);
 
             long totalSaved = 0;
             foreach (var result in results)
             {
                 EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                 EditorGUILayout.LabelField(result.texture.name, EditorStyles.boldLabel);
-                EditorGUILayout.LabelField($"問題 Issue: {result.issue}");
-                EditorGUILayout.LabelField($"修正 Fix: {result.fix}");
+                EditorGUILayout.LabelField(L($"問題: {result.issue}", $"Issue: {result.issue}"));
+                EditorGUILayout.LabelField(L($"修正: {result.fix}", $"Fix: {result.fix}"));
                 if (result.memoryAfter < result.memoryBefore)
                 {
                     long saved = result.memoryBefore - result.memoryAfter;
-                    EditorGUILayout.LabelField($"節約メモリ Memory saved: {saved / 1024}KB");
+                    EditorGUILayout.LabelField(L($"節約メモリ: {saved / 1024}KB", $"Memory saved: {saved / 1024}KB"));
                     totalSaved += saved;
                 }
                 EditorGUILayout.EndVertical();
             }
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField($"合計節約メモリ Total memory saved: {totalSaved / (1024 * 1024)}MB", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L($"合計節約メモリ: {totalSaved / (1024 * 1024)}MB", $"Total memory saved: {totalSaved / (1024 * 1024)}MB"), EditorStyles.boldLabel);
 
             EditorGUILayout.EndVertical();
         }
@@ -240,8 +243,8 @@ namespace NataneToon.Editor
             }
 
             EditorUtility.DisplayDialog(
-                "Optimization Complete",
-                $"Optimized {optimizedCount} textures",
+                L("最適化完了", "Optimization Complete"),
+                L($"{optimizedCount}個のテクスチャを最適化しました", $"Optimized {optimizedCount} textures"),
                 "OK");
         }
 

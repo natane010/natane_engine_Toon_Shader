@@ -4,6 +4,8 @@ using System.IO;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Export format options for mask textures.
     /// マスクテクスチャのエクスポート形式
@@ -171,13 +173,13 @@ namespace NataneToon.Editor
             switch (preset)
             {
                 case CompressionPreset.Default:
-                    return "標準圧縮 (2048px, Compressed)\nStandard compression";
+                    return L("標準圧縮 (2048px, Compressed)", "Standard compression (2048px, Compressed)");
                 case CompressionPreset.VRChatPC:
-                    return "VRChat PC最適化 (2048px, BC7 高品質)\nVRChat PC optimized (BC7 HQ)";
+                    return L("VRChat PC最適化 (2048px, BC7 高品質)", "VRChat PC optimized (2048px, BC7 HQ)");
                 case CompressionPreset.VRChatQuest:
-                    return "VRChat Quest最適化 (1024px, ASTC 6x6)\nVRChat Quest optimized (ASTC 6x6)";
+                    return L("VRChat Quest最適化 (1024px, ASTC 6x6)", "VRChat Quest optimized (1024px, ASTC 6x6)");
                 case CompressionPreset.HighQuality:
-                    return "非圧縮 高品質 (4096px)\nUncompressed high quality";
+                    return L("非圧縮 高品質 (4096px)", "Uncompressed high quality (4096px)");
                 default:
                     return "";
             }
@@ -199,14 +201,14 @@ namespace NataneToon.Editor
             bool saved = false;
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("エクスポート Export", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("エクスポート", "Export"), EditorStyles.boldLabel);
 
             selectedFormat = (ExportFormat)EditorGUILayout.EnumPopup(
-                new GUIContent("形式 Format", "出力ファイル形式 Output file format"),
+                new GUIContent(L("形式", "Format"), L("出力ファイル形式", "Output file format")),
                 selectedFormat);
 
             selectedPreset = (CompressionPreset)EditorGUILayout.EnumPopup(
-                new GUIContent("プリセット Preset", "圧縮設定プリセット Compression preset"),
+                new GUIContent(L("プリセット", "Preset"), L("圧縮設定プリセット", "Compression preset")),
                 selectedPreset);
 
             // Show preset description
@@ -215,7 +217,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(5);
 
             GUI.enabled = texture != null;
-            if (GUILayout.Button("保存 Save", GUILayout.Height(28)))
+            if (GUILayout.Button(L("保存", "Save"), GUILayout.Height(28)))
             {
                 string extension = GetFormatExtension(selectedFormat);
                 string defaultName = "MaskTexture" + extension;
@@ -224,7 +226,7 @@ namespace NataneToon.Editor
                     : Path.GetDirectoryName(lastExportPath);
 
                 string filePath = EditorUtility.SaveFilePanel(
-                    "マスクテクスチャを保存 Save Mask Texture",
+                    L("マスクテクスチャを保存", "Save Mask Texture"),
                     defaultDir,
                     defaultName,
                     extension.TrimStart('.'));
@@ -237,8 +239,8 @@ namespace NataneToon.Editor
                     {
                         saved = true;
                         EditorUtility.DisplayDialog(
-                            "エクスポート完了 Export Complete",
-                            $"保存先: {result}\nプリセット: {selectedPreset}",
+                            L("エクスポート完了", "Export Complete"),
+                            L($"保存先: {result}\nプリセット: {selectedPreset}", $"Saved to: {result}\nPreset: {selectedPreset}"),
                             "OK");
                     }
                 }

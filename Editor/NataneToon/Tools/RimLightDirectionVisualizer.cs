@@ -3,6 +3,7 @@ using UnityEditor;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
     /// <summary>
     /// Rim Light Direction Visualizer
     /// リムライト方向ビジュアライザー
@@ -16,7 +17,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/エフェクト Effects/リムライト方向ビジュアライザー Rim Light Direction Visualizer", false, 44)]
         public static void ShowWindow()
         {
-            var window = GetWindow<RimLightDirectionVisualizer>("リムライト方向ビジュアライザー Rim Light Direction Visualizer");
+            var window = GetWindow<RimLightDirectionVisualizer>(L("リムライト方向ビジュアライザー", "Rim Light Direction Visualizer"));
             window.minSize = new Vector2(500, 450);
             window.Show();
         }
@@ -24,15 +25,15 @@ namespace NataneToon.Editor
         private void OnGUI()
         {
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField("リムライト方向ビジュアライザー Rim Light Direction Visualizer", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox("リムライトの方向を視覚的に調整\nVisually adjust rim light direction", MessageType.Info);
+            EditorGUILayout.LabelField(L("リムライト方向ビジュアライザー", "Rim Light Direction Visualizer"), EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(L("リムライトの方向を視覚的に調整", "Visually adjust rim light direction"), MessageType.Info);
             EditorGUILayout.Space(10);
 
-            targetMaterial = (Material)EditorGUILayout.ObjectField("ターゲット Target", targetMaterial, typeof(Material), false);
+            targetMaterial = (Material)EditorGUILayout.ObjectField(L("ターゲット", "Target"), targetMaterial, typeof(Material), false);
 
             if (targetMaterial == null)
             {
-                EditorGUILayout.HelpBox("マテリアルを選択してください\nSelect a material", MessageType.Info);
+                EditorGUILayout.HelpBox(L("マテリアルを選択してください", "Please select a material"), MessageType.Info);
                 return;
             }
 
@@ -50,13 +51,13 @@ namespace NataneToon.Editor
         private void DrawRimSettings()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("リムライト設定 Rim Light Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("リムライト設定", "Rim Light Settings"), EditorStyles.boldLabel);
 
             if (targetMaterial.HasProperty("_UseRimLight"))
             {
                 EditorGUI.BeginChangeCheck();
                 bool useRim = targetMaterial.GetFloat("_UseRimLight") > 0.5f;
-                useRim = EditorGUILayout.Toggle("リムライト有効 Enable", useRim);
+                useRim = EditorGUILayout.Toggle(L("リムライト有効", "Enable Rim Light"), useRim);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Toggle Rim Light");
@@ -68,7 +69,7 @@ namespace NataneToon.Editor
             if (targetMaterial.HasProperty("_RimColor"))
             {
                 EditorGUI.BeginChangeCheck();
-                Color color = EditorGUILayout.ColorField("色 Color", targetMaterial.GetColor("_RimColor"));
+                Color color = EditorGUILayout.ColorField(L("色", "Color"), targetMaterial.GetColor("_RimColor"));
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change Rim Color");
@@ -80,7 +81,7 @@ namespace NataneToon.Editor
             if (targetMaterial.HasProperty("_RimIntensity"))
             {
                 EditorGUI.BeginChangeCheck();
-                float intensity = EditorGUILayout.Slider("強度 Intensity", targetMaterial.GetFloat("_RimIntensity"), 0f, 2f);
+                float intensity = EditorGUILayout.Slider(L("強度", "Intensity"), targetMaterial.GetFloat("_RimIntensity"), 0f, 2f);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change Rim Intensity");
@@ -92,7 +93,7 @@ namespace NataneToon.Editor
             if (targetMaterial.HasProperty("_RimPower"))
             {
                 EditorGUI.BeginChangeCheck();
-                float power = EditorGUILayout.Slider("パワー Power", targetMaterial.GetFloat("_RimPower"), 0.1f, 10f);
+                float power = EditorGUILayout.Slider(L("パワー", "Power"), targetMaterial.GetFloat("_RimPower"), 0.1f, 10f);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change Rim Power");
@@ -107,14 +108,14 @@ namespace NataneToon.Editor
         private void DrawDirectionControl()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("方向制御 Direction Control", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("方向制御", "Direction Control"), EditorStyles.boldLabel);
 
             if (targetMaterial.HasProperty("_RimDirection"))
             {
                 EditorGUI.BeginChangeCheck();
                 Vector4 dir = targetMaterial.GetVector("_RimDirection");
                 rimDirection = new Vector3(dir.x, dir.y, dir.z);
-                rimDirection = EditorGUILayout.Vector3Field("方向 Direction", rimDirection);
+                rimDirection = EditorGUILayout.Vector3Field(L("方向", "Direction"), rimDirection);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change Rim Direction");
@@ -125,14 +126,14 @@ namespace NataneToon.Editor
 
             // Spherical coordinates for easier control
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("簡易コントロール Easy Control", EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(L("簡易コントロール", "Easy Control"), EditorStyles.miniBoldLabel);
 
             float azimuth = Mathf.Atan2(rimDirection.x, rimDirection.z) * Mathf.Rad2Deg;
             float elevation = Mathf.Asin(rimDirection.y / rimDirection.magnitude) * Mathf.Rad2Deg;
 
             EditorGUI.BeginChangeCheck();
-            azimuth = EditorGUILayout.Slider("方位角 Azimuth", azimuth, -180f, 180f);
-            elevation = EditorGUILayout.Slider("仰角 Elevation", elevation, -90f, 90f);
+            azimuth = EditorGUILayout.Slider(L("方位角", "Azimuth"), azimuth, -180f, 180f);
+            elevation = EditorGUILayout.Slider(L("仰角", "Elevation"), elevation, -90f, 90f);
             if (EditorGUI.EndChangeCheck())
             {
                 float azimuthRad = azimuth * Mathf.Deg2Rad;
@@ -157,23 +158,23 @@ namespace NataneToon.Editor
         private void DrawPresets()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("方向プリセット Direction Presets", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("方向プリセット", "Direction Presets"), EditorStyles.boldLabel);
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("上 Top"))
+            if (GUILayout.Button(L("上", "Top")))
                 ApplyDirectionPreset(new Vector3(0, 1, 0));
-            if (GUILayout.Button("下 Bottom"))
+            if (GUILayout.Button(L("下", "Bottom")))
                 ApplyDirectionPreset(new Vector3(0, -1, 0));
-            if (GUILayout.Button("左 Left"))
+            if (GUILayout.Button(L("左", "Left")))
                 ApplyDirectionPreset(new Vector3(-1, 0, 0));
-            if (GUILayout.Button("右 Right"))
+            if (GUILayout.Button(L("右", "Right")))
                 ApplyDirectionPreset(new Vector3(1, 0, 0));
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("前 Front"))
+            if (GUILayout.Button(L("前", "Front")))
                 ApplyDirectionPreset(new Vector3(0, 0, 1));
-            if (GUILayout.Button("後 Back"))
+            if (GUILayout.Button(L("後", "Back")))
                 ApplyDirectionPreset(new Vector3(0, 0, -1));
             EditorGUILayout.EndHorizontal();
 

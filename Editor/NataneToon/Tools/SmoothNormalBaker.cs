@@ -4,6 +4,8 @@ using UnityEditor;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Smooth Normal Baker
     /// スムース法線ベイクツール - ハードエッジモデルのアウトライン表示を改善するため、
@@ -27,7 +29,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/メッシュ Mesh/スムース法線ベイク Smooth Normal Baker", false, 60)]
         public static void ShowWindow()
         {
-            var window = GetWindow<SmoothNormalBaker>("スムース法線ベイク");
+            var window = GetWindow<SmoothNormalBaker>(L("スムース法線ベイク", "Smooth Normal Baker"));
             window.minSize = new Vector2(500, 400);
             window.Show();
         }
@@ -39,7 +41,8 @@ namespace NataneToon.Editor
             NataneToonShaderGUIUtility.DrawHeaderWithHelp(
                 "スムース法線ベイクツール", "Smooth Normal Baker", "SmoothNormalBaker");
             EditorGUILayout.LabelField(
-                "スムース法線を頂点カラーにベイクしてアウトラインを改善\nBake smooth normals into vertex colors for better outlines",
+                L("スムース法線を頂点カラーにベイクしてアウトラインを改善",
+                  "Bake smooth normals into vertex colors for better outlines"),
                 EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(10);
@@ -60,15 +63,15 @@ namespace NataneToon.Editor
         private void DrawTargetSelection()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("ターゲットメッシュ", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ターゲットメッシュ", "Target Mesh"), EditorStyles.boldLabel);
 
             EditorGUILayout.HelpBox(
-                "SkinnedMeshRenderer または MeshFilter を持つオブジェクトをドラッグしてください。\n" +
-                "Drag an object with SkinnedMeshRenderer or MeshFilter.",
+                L("SkinnedMeshRenderer または MeshFilter を持つオブジェクトをドラッグしてください。",
+                  "Drag an object with SkinnedMeshRenderer or MeshFilter."),
                 MessageType.Info);
 
             targetObject = EditorGUILayout.ObjectField(
-                "ターゲットオブジェクト", targetObject, typeof(GameObject), true);
+                L("ターゲットオブジェクト", "Target Object"), targetObject, typeof(GameObject), true);
 
             if (targetObject != null)
             {
@@ -76,19 +79,19 @@ namespace NataneToon.Editor
                 if (mesh != null)
                 {
                     EditorGUI.indentLevel++;
-                    EditorGUILayout.LabelField("メッシュ名", mesh.name);
-                    EditorGUILayout.LabelField("頂点数", mesh.vertexCount.ToString());
-                    EditorGUILayout.LabelField("サブメッシュ数", mesh.subMeshCount.ToString());
+                    EditorGUILayout.LabelField(L("メッシュ名", "Mesh Name"), mesh.name);
+                    EditorGUILayout.LabelField(L("頂点数", "Vertex Count"), mesh.vertexCount.ToString());
+                    EditorGUILayout.LabelField(L("サブメッシュ数", "Submesh Count"), mesh.subMeshCount.ToString());
 
                     bool hasColors = mesh.colors != null && mesh.colors.Length > 0;
-                    EditorGUILayout.LabelField("頂点カラー",
-                        hasColors ? "あり (上書きされます)" : "なし");
+                    EditorGUILayout.LabelField(L("頂点カラー", "Vertex Colors"),
+                        hasColors ? L("あり (上書きされます)", "Present (will be overwritten)") : L("なし", "None"));
 
                     if (hasColors)
                     {
                         EditorGUILayout.HelpBox(
-                            "既存の頂点カラーはベイク結果で上書きされます。\n" +
-                            "Existing vertex colors will be overwritten.",
+                            L("既存の頂点カラーはベイク結果で上書きされます。",
+                              "Existing vertex colors will be overwritten."),
                             MessageType.Warning);
                     }
 
@@ -97,8 +100,8 @@ namespace NataneToon.Editor
                 else
                 {
                     EditorGUILayout.HelpBox(
-                        "選択されたオブジェクトにメッシュが見つかりません。\n" +
-                        "SkinnedMeshRenderer または MeshFilter が必要です。",
+                        L("選択されたオブジェクトにメッシュが見つかりません。\nSkinnedMeshRenderer または MeshFilter が必要です。",
+                          "No mesh found on the selected object.\nA SkinnedMeshRenderer or MeshFilter is required."),
                         MessageType.Error);
                 }
             }
@@ -109,31 +112,31 @@ namespace NataneToon.Editor
         private void DrawBakeSettings()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("ベイク設定", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ベイク設定", "Bake Settings"), EditorStyles.boldLabel);
 
-            bakeMode = (BakeMode)EditorGUILayout.EnumPopup("ベイクモード", bakeMode);
+            bakeMode = (BakeMode)EditorGUILayout.EnumPopup(L("ベイクモード", "Bake Mode"), bakeMode);
 
             switch (bakeMode)
             {
                 case BakeMode.ObjectSpace:
                     EditorGUILayout.HelpBox(
-                        "Object Space: スムース法線をオブジェクト空間でエンコードします。\n" +
-                        "シンプルで安定しますが、メッシュの変形には追従しません。",
+                        L("Object Space: スムース法線をオブジェクト空間でエンコードします。\nシンプルで安定しますが、メッシュの変形には追従しません。",
+                          "Object Space: Encodes smooth normals in object space.\nSimple and stable, but does not follow mesh deformation."),
                         MessageType.Info);
                     break;
                 case BakeMode.TangentSpace:
                     EditorGUILayout.HelpBox(
-                        "Tangent Space: スムース法線をタンジェント空間でエンコードします。\n" +
-                        "スキニングやブレンドシェイプの変形に追従します（推奨）。",
+                        L("Tangent Space: スムース法線をタンジェント空間でエンコードします。\nスキニングやブレンドシェイプの変形に追従します（推奨）。",
+                          "Tangent Space: Encodes smooth normals in tangent space.\nFollows skinning and blend shape deformation (recommended)."),
                         MessageType.Info);
                     break;
             }
 
-            autoAssign = EditorGUILayout.Toggle("自動アサイン", autoAssign);
+            autoAssign = EditorGUILayout.Toggle(L("自動アサイン", "Auto Assign"), autoAssign);
             if (autoAssign)
             {
                 EditorGUILayout.LabelField(
-                    "  ベイク後に自動的にメッシュを差し替えます",
+                    L("  ベイク後に自動的にメッシュを差し替えます", "  Automatically replaces mesh after baking"),
                     EditorStyles.miniLabel);
             }
 
@@ -143,11 +146,11 @@ namespace NataneToon.Editor
         private void DrawBakeButton()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("実行", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("実行", "Execute"), EditorStyles.boldLabel);
 
             EditorGUI.BeginDisabledGroup(targetObject == null || GetMeshFromTarget() == null);
 
-            if (GUILayout.Button("ベイク実行", GUILayout.Height(35)))
+            if (GUILayout.Button(L("ベイク実行", "Bake"), GUILayout.Height(35)))
             {
                 ExecuteBake();
             }
@@ -158,7 +161,7 @@ namespace NataneToon.Editor
             {
                 EditorGUILayout.Space(5);
                 EditorGUILayout.LabelField(
-                    $"最後のベイク結果: {lastBakedMesh.name}",
+                    L($"最後のベイク結果: {lastBakedMesh.name}", $"Last bake result: {lastBakedMesh.name}"),
                     EditorStyles.miniLabel);
             }
 
@@ -168,16 +171,23 @@ namespace NataneToon.Editor
         private void DrawUsageHelp()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("使い方", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("使い方", "Usage"), EditorStyles.boldLabel);
 
             EditorGUILayout.HelpBox(
-                "1. SkinnedMeshRenderer または MeshFilter を持つオブジェクトを選択\n" +
-                "2. ベイクモードを選択（通常は Tangent Space を推奨）\n" +
-                "3.「ベイク実行」ボタンを押す\n" +
-                "4. ベイクされたメッシュが .asset として保存されます\n" +
-                "5. シェーダーの「スムース法線アウトライン」を有効にしてください\n\n" +
-                "※ 元のメッシュは変更されません（非破壊ワークフロー）\n" +
-                "※ 頂点カラーの RGB チャンネルにスムース法線が格納されます",
+                L("1. SkinnedMeshRenderer または MeshFilter を持つオブジェクトを選択\n" +
+                  "2. ベイクモードを選択（通常は Tangent Space を推奨）\n" +
+                  "3.「ベイク実行」ボタンを押す\n" +
+                  "4. ベイクされたメッシュが .asset として保存されます\n" +
+                  "5. シェーダーの「スムース法線アウトライン」を有効にしてください\n\n" +
+                  "※ 元のメッシュは変更されません（非破壊ワークフロー）\n" +
+                  "※ 頂点カラーの RGB チャンネルにスムース法線が格納されます",
+                  "1. Select an object with SkinnedMeshRenderer or MeshFilter\n" +
+                  "2. Choose a bake mode (Tangent Space recommended)\n" +
+                  "3. Press the 'Bake' button\n" +
+                  "4. The baked mesh will be saved as a .asset file\n" +
+                  "5. Enable 'Smooth Normal Outline' in the shader\n\n" +
+                  "* The original mesh is not modified (non-destructive workflow)\n" +
+                  "* Smooth normals are stored in the RGB channels of vertex colors"),
                 MessageType.None);
 
             EditorGUILayout.EndVertical();
@@ -188,7 +198,7 @@ namespace NataneToon.Editor
             Mesh sourceMesh = GetMeshFromTarget();
             if (sourceMesh == null)
             {
-                EditorUtility.DisplayDialog("エラー", "メッシュが見つかりません。", "OK");
+                EditorUtility.DisplayDialog(L("エラー", "Error"), L("メッシュが見つかりません。", "Mesh not found."), "OK");
                 return;
             }
 
@@ -197,17 +207,17 @@ namespace NataneToon.Editor
             if (useTangentSpace && (sourceMesh.tangents == null || sourceMesh.tangents.Length == 0))
             {
                 bool proceed = EditorUtility.DisplayDialog(
-                    "警告",
-                    "メッシュにタンジェント情報がありません。\n" +
-                    "Object Space モードに切り替えてベイクしますか？",
-                    "Object Space でベイク",
-                    "キャンセル");
+                    L("警告", "Warning"),
+                    L("メッシュにタンジェント情報がありません。\nObject Space モードに切り替えてベイクしますか？",
+                      "The mesh has no tangent information.\nSwitch to Object Space mode and bake?"),
+                    L("Object Space でベイク", "Bake in Object Space"),
+                    L("キャンセル", "Cancel"));
 
                 if (!proceed) return;
                 useTangentSpace = false;
             }
 
-            EditorUtility.DisplayProgressBar("スムース法線ベイク", "ベイク処理中...", 0.3f);
+            EditorUtility.DisplayProgressBar(L("スムース法線ベイク", "Smooth Normal Bake"), L("ベイク処理中...", "Baking..."), 0.3f);
 
             Mesh bakedMesh;
             try
@@ -217,17 +227,18 @@ namespace NataneToon.Editor
             catch (System.Exception e)
             {
                 EditorUtility.ClearProgressBar();
-                EditorUtility.DisplayDialog("エラー",
-                    $"ベイク中にエラーが発生しました:\n{e.Message}", "OK");
+                EditorUtility.DisplayDialog(L("エラー", "Error"),
+                    L($"ベイク中にエラーが発生しました:\n{e.Message}",
+                      $"An error occurred during baking:\n{e.Message}"), "OK");
                 Debug.LogException(e);
                 return;
             }
 
-            EditorUtility.DisplayProgressBar("スムース法線ベイク", "保存中...", 0.7f);
+            EditorUtility.DisplayProgressBar(L("スムース法線ベイク", "Smooth Normal Bake"), L("保存中...", "Saving..."), 0.7f);
 
             string savedPath = SaveBakedMesh(bakedMesh, sourceMesh);
 
-            EditorUtility.DisplayProgressBar("スムース法線ベイク", "完了", 1.0f);
+            EditorUtility.DisplayProgressBar(L("スムース法線ベイク", "Smooth Normal Bake"), L("完了", "Complete"), 1.0f);
             EditorUtility.ClearProgressBar();
 
             if (string.IsNullOrEmpty(savedPath))
@@ -245,8 +256,9 @@ namespace NataneToon.Editor
             }
 
             EditorUtility.DisplayDialog(
-                "ベイク完了",
-                $"スムース法線をベイクしました。\n保存先: {savedPath}",
+                L("ベイク完了", "Bake Complete"),
+                L($"スムース法線をベイクしました。\n保存先: {savedPath}",
+                  $"Smooth normals have been baked.\nSaved to: {savedPath}"),
                 "OK");
 
             Selection.activeObject = savedMesh;
@@ -366,10 +378,10 @@ namespace NataneToon.Editor
             }
 
             string savePath = EditorUtility.SaveFilePanelInProject(
-                "スムース法線メッシュを保存",
+                L("スムース法線メッシュを保存", "Save Smooth Normal Mesh"),
                 defaultName,
                 "asset",
-                "ベイクしたメッシュの保存場所を選択してください",
+                L("ベイクしたメッシュの保存場所を選択してください", "Choose a location to save the baked mesh"),
                 directory);
 
             if (string.IsNullOrEmpty(savePath)) return null;

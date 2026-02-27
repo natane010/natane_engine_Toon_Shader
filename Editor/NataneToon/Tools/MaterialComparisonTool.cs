@@ -5,6 +5,7 @@ using System.Linq;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
     /// <summary>
     /// Material Comparison Tool
     /// マテリアル比較ツール
@@ -23,7 +24,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/マテリアル Material/マテリアル比較 Material Comparison Tool", false, 14)]
         public static void ShowWindow()
         {
-            var window = GetWindow<MaterialComparisonTool>("マテリアル比較 Material Comparison Tool");
+            var window = GetWindow<MaterialComparisonTool>(L("マテリアル比較", "Material Comparison Tool"));
             window.minSize = new Vector2(600, 600);
             window.Show();
         }
@@ -31,8 +32,8 @@ namespace NataneToon.Editor
         private void OnGUI()
         {
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField("マテリアル比較ツール", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox("2つのマテリアルを比較", MessageType.Info);
+            EditorGUILayout.LabelField(L("マテリアル比較ツール", "Material Comparison Tool"), EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(L("2つのマテリアルを比較", "Compare two materials"), MessageType.Info);
             EditorGUILayout.Space(10);
 
             DrawMaterialSelection();
@@ -65,17 +66,17 @@ namespace NataneToon.Editor
         private void DrawMaterialSelection()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("マテリアル選択", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("マテリアル選択", "Material Selection"), EditorStyles.boldLabel);
 
             EditorGUILayout.BeginHorizontal();
 
             EditorGUILayout.BeginVertical();
-            EditorGUILayout.LabelField("マテリアルA", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("マテリアルA", "Material A"), EditorStyles.boldLabel);
             materialA = (Material)EditorGUILayout.ObjectField(materialA, typeof(Material), false);
             EditorGUILayout.EndVertical();
 
             EditorGUILayout.BeginVertical();
-            EditorGUILayout.LabelField("マテリアルB", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("マテリアルB", "Material B"), EditorStyles.boldLabel);
             materialB = (Material)EditorGUILayout.ObjectField(materialB, typeof(Material), false);
             EditorGUILayout.EndVertical();
 
@@ -83,7 +84,7 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space(5);
 
-            if (GUILayout.Button("比較を実行", GUILayout.Height(25)))
+            if (GUILayout.Button(L("比較を実行", "Run Comparison"), GUILayout.Height(25)))
             {
                 CompareMaterials();
             }
@@ -91,9 +92,9 @@ namespace NataneToon.Editor
             if (materialA != null && materialB != null)
             {
                 EditorGUILayout.Space(5);
-                if (GUILayout.Button("AからBにコピー"))
+                if (GUILayout.Button(L("AからBにコピー", "Copy A to B")))
                 {
-                    if (EditorUtility.DisplayDialog("確認", "マテリアルAの設定をBにコピーしますか？", "はい", "いいえ"))
+                    if (EditorUtility.DisplayDialog(L("確認", "Confirm"), L("マテリアルAの設定をBにコピーしますか？", "Copy settings from Material A to B?"), L("はい", "Yes"), L("いいえ", "No")))
                     {
                         CopyMaterialSettings(materialA, materialB);
                     }
@@ -106,11 +107,11 @@ namespace NataneToon.Editor
         private void DrawViewModeSelector()
         {
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Toggle(viewMode == ViewMode.SideBySide, "並べて表示", EditorStyles.toolbarButton))
+            if (GUILayout.Toggle(viewMode == ViewMode.SideBySide, L("並べて表示", "Side by Side"), EditorStyles.toolbarButton))
                 viewMode = ViewMode.SideBySide;
-            if (GUILayout.Toggle(viewMode == ViewMode.Diff, "差分", EditorStyles.toolbarButton))
+            if (GUILayout.Toggle(viewMode == ViewMode.Diff, L("差分", "Diff"), EditorStyles.toolbarButton))
                 viewMode = ViewMode.Diff;
-            if (GUILayout.Toggle(viewMode == ViewMode.Parameters, "パラメータ", EditorStyles.toolbarButton))
+            if (GUILayout.Toggle(viewMode == ViewMode.Parameters, L("パラメータ", "Parameters"), EditorStyles.toolbarButton))
                 viewMode = ViewMode.Parameters;
             EditorGUILayout.EndHorizontal();
         }
@@ -120,12 +121,12 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginHorizontal();
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox, GUILayout.Width(position.width / 2 - 10));
-            EditorGUILayout.LabelField("マテリアルA", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("マテリアルA", "Material A"), EditorStyles.boldLabel);
             DrawMaterialInfo(materialA);
             EditorGUILayout.EndVertical();
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox, GUILayout.Width(position.width / 2 - 10));
-            EditorGUILayout.LabelField("マテリアルB", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("マテリアルB", "Material B"), EditorStyles.boldLabel);
             DrawMaterialInfo(materialB);
             EditorGUILayout.EndVertical();
 
@@ -135,15 +136,15 @@ namespace NataneToon.Editor
         private void DrawDiffView()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("差分", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("差分", "Differences"), EditorStyles.boldLabel);
 
             if (differentProperties.Count == 0)
             {
-                EditorGUILayout.HelpBox("差分がありません - マテリアルは同じ設定です", MessageType.Info);
+                EditorGUILayout.HelpBox(L("差分がありません - マテリアルは同じ設定です", "No differences - Materials have the same settings"), MessageType.Info);
             }
             else
             {
-                EditorGUILayout.HelpBox($"{differentProperties.Count}個の差分が見つかりました", MessageType.Warning);
+                EditorGUILayout.HelpBox(L($"{differentProperties.Count}個の差分が見つかりました", $"{differentProperties.Count} differences found"), MessageType.Warning);
 
                 foreach (var prop in differentProperties)
                 {
@@ -159,7 +160,7 @@ namespace NataneToon.Editor
         private void DrawParametersView()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("パラメータ一覧", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("パラメータ一覧", "Parameter List"), EditorStyles.boldLabel);
 
             // Compare float properties
             string[] floatProps = { "_ToonSteps", "_ToonSharpness", "_ShadowReceive", "_OutlineWidth",
@@ -192,19 +193,19 @@ namespace NataneToon.Editor
         {
             if (mat == null) return;
 
-            EditorGUILayout.LabelField($"名前: {mat.name}");
-            EditorGUILayout.LabelField($"シェーダー: {mat.shader.name}");
+            EditorGUILayout.LabelField($"{L("名前", "Name")}: {mat.name}");
+            EditorGUILayout.LabelField($"{L("シェーダー", "Shader")}: {mat.shader.name}");
 
             EditorGUILayout.Space(5);
 
             int featureCount = CountActiveFeatures(mat);
-            EditorGUILayout.LabelField($"有効な機能: {featureCount}");
+            EditorGUILayout.LabelField($"{L("有効な機能", "Active Features")}: {featureCount}");
 
             EditorGUILayout.Space(5);
 
             if (mat.HasProperty("_Color"))
             {
-                EditorGUILayout.ColorField("メインカラー", mat.GetColor("_Color"));
+                EditorGUILayout.ColorField(L("メインカラー", "Main Color"), mat.GetColor("_Color"));
             }
         }
 
@@ -217,7 +218,7 @@ namespace NataneToon.Editor
             // Compare shader
             if (materialA.shader != materialB.shader)
             {
-                differentProperties.Add($"シェーダー: {materialA.shader.name} != {materialB.shader.name}");
+                differentProperties.Add($"{L("シェーダー", "Shader")}: {materialA.shader.name} != {materialB.shader.name}");
             }
 
             // Compare float properties
@@ -300,15 +301,19 @@ namespace NataneToon.Editor
             EditorUtility.SetDirty(target);
 
             EditorUtility.DisplayDialog(
-                "コピー完了",
-                "マテリアル設定をコピーしました",
+                L("コピー完了", "Copy Complete"),
+                L("マテリアル設定をコピーしました", "Material settings have been copied"),
                 "OK");
         }
 
         private int CountActiveFeatures(Material mat)
         {
             int count = 0;
-            string[] keywords = { "_SPECULAR", "_RIM_LIGHT", "_SSS", "_MATCAP", "_EMISSION", "_NORMALMAP" };
+            string[] keywords = { "_SPECULAR", "_RIM_LIGHT", "_SSS", "_MATCAP", "_EMISSION", "_NORMALMAP",
+                                  "_REFLECTION", "_ENV_RIM", "_PARALLAX", "_REFRACTION",
+                                  "_DETAIL_MAP", "_TRIPLANAR", "_HEIGHT_FOG",
+                                  "_SURFACE_COVER", "_MIRROR_CONTROL", "_QUEST_LITE",
+                                  "_WATER_DRIP", "_VIDEO_TEXTURE", "_INTERSECTION_FADE" };
 
             foreach (var keyword in keywords)
             {

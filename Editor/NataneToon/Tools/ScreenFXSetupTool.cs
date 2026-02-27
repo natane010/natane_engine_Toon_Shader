@@ -4,6 +4,8 @@ using UnityEngine.Rendering;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Creates a camera-attached full-screen quad for Natane screen FX.
     /// Runtime scripts are not required, so this is VRC-safe for worlds.
@@ -21,8 +23,9 @@ namespace NataneToon.Editor
             if (camera == null)
             {
                 EditorUtility.DisplayDialog(
-                    "Camera Not Found",
-                    "No camera was found in the scene.\nSelect a camera object, or set the MainCamera tag and try again.",
+                    L("カメラが見つかりません", "Camera Not Found"),
+                    L("シーンにカメラが見つかりませんでした。\nカメラオブジェクトを選択するか、MainCameraタグを設定して再試行してください。",
+                      "No camera was found in the scene.\nSelect a camera object, or set the MainCamera tag and try again."),
                     "OK");
                 return;
             }
@@ -31,8 +34,9 @@ namespace NataneToon.Editor
             if (shader == null)
             {
                 EditorUtility.DisplayDialog(
-                    "Shader Not Found",
-                    $"Shader '{ScreenFxShaderName}' was not found.",
+                    L("シェーダーが見つかりません", "Shader Not Found"),
+                    L($"シェーダー '{ScreenFxShaderName}' が見つかりませんでした。",
+                      $"Shader '{ScreenFxShaderName}' was not found."),
                     "OK");
                 return;
             }
@@ -66,12 +70,17 @@ namespace NataneToon.Editor
             Selection.activeGameObject = overlay;
 
             EditorUtility.DisplayDialog(
-                "Screen FX Overlay Created",
-                $"作成完了\n- Camera: {camera.name}\n- Overlay: {overlay.name}\n- Material: {materialPath}\n\n" +
-                "ヒント\n" +
-                "1) Overlayをカメラ直下で微調整\n" +
-                "2) 必要に応じて描画レイヤー/カリングマスクを調整\n" +
-                "3) MaterialでPosterize/Edge/Vignetteを調整",
+                L("Screen FX Overlay 作成完了", "Screen FX Overlay Created"),
+                L($"作成完了\n- Camera: {camera.name}\n- Overlay: {overlay.name}\n- Material: {materialPath}\n\n" +
+                  "ヒント\n" +
+                  "1) Overlayをカメラ直下で微調整\n" +
+                  "2) 必要に応じて描画レイヤー/カリングマスクを調整\n" +
+                  "3) MaterialでPosterize/Edge/Vignetteを調整",
+                  $"Created successfully\n- Camera: {camera.name}\n- Overlay: {overlay.name}\n- Material: {materialPath}\n\n" +
+                  "Tips\n" +
+                  "1) Fine-tune the Overlay under the camera\n" +
+                  "2) Adjust render layer/culling mask as needed\n" +
+                  "3) Adjust Posterize/Edge/Vignette in the Material"),
                 "OK");
         }
 

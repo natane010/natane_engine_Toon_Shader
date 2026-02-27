@@ -7,6 +7,8 @@ using NataneToon.MaterialSystem;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Material Preset Browser for easy material management
     /// Provides visual preset selection, filtering, and application
@@ -317,11 +319,11 @@ namespace NataneToon.Editor
             NataneToonMaterialPresetEditor.ApplyPresetWithUIUpdate(preset, selectedMaterial);
 
             EditorUtility.DisplayDialog(
-                "Preset Applied / プリセット適用完了",
-                $"Successfully applied preset '{preset.presetName}' to material '{selectedMaterial.name}'\n" +
-                $"Inspector UI has been updated to show active features.\n\n" +
-                $"プリセット '{preset.presetName}' をマテリアル '{selectedMaterial.name}' に適用しました。\n" +
+                L("プリセット適用完了", "Preset Applied"),
+                L($"プリセット '{preset.presetName}' をマテリアル '{selectedMaterial.name}' に適用しました。\n" +
                 $"インスペクターUIは有効な機能を表示するように更新されました。",
+                $"Successfully applied preset '{preset.presetName}' to material '{selectedMaterial.name}'\n" +
+                $"Inspector UI has been updated to show active features."),
                 "OK");
         }
 
@@ -517,8 +519,8 @@ namespace NataneToon.Editor
         {
             // Show confirmation dialog
             bool proceed = EditorUtility.DisplayDialog(
-                "Generate VTuber Presets",
-                "VTuber向けの高品質マテリアルプリセットを生成します。\n\n" +
+                L("VTuberプリセット生成", "Generate VTuber Presets"),
+                L("VTuber向けの高品質マテリアルプリセットを生成します。\n\n" +
                 "以下の5種類のプリセットが作成されます：\n" +
                 "1. キャラクター肌 - 柔らかいセルシェーディング、SSS\n" +
                 "2. キャラクター髪 - ツヤのあるアニメ調ヘア\n" +
@@ -527,8 +529,17 @@ namespace NataneToon.Editor
                 "5. ライブパフォーマンス - 軽量・高パフォーマンス\n\n" +
                 "保存先: Assets/NataneToon/Runtime/Presets/VTuber/\n\n" +
                 "生成しますか？",
-                "生成する",
-                "キャンセル");
+                "Generate high-quality VTuber material presets.\n\n" +
+                "The following 5 presets will be created:\n" +
+                "1. Character Skin - Soft cell shading with SSS\n" +
+                "2. Character Hair - Glossy anime-style hair\n" +
+                "3. Character Clothing - Clean anime style\n" +
+                "4. Character Eyes - Sparkling eyes\n" +
+                "5. Live Performance - Lightweight & high performance\n\n" +
+                "Location: Assets/NataneToon/Runtime/Presets/VTuber/\n\n" +
+                "Generate?"),
+                L("生成する", "Generate"),
+                L("キャンセル", "Cancel"));
 
             if (!proceed) return;
 
@@ -551,9 +562,11 @@ namespace NataneToon.Editor
                 {
                     Debug.LogError($"[MaterialPresetBrowser] Failed to create directory: {e.Message}");
                     EditorUtility.DisplayDialog(
-                        "Error / エラー",
-                        $"ディレクトリの作成に失敗しました:\n{e.Message}\n\n" +
+                        L("エラー", "Error"),
+                        L($"ディレクトリの作成に失敗しました:\n{e.Message}\n\n" +
                         $"手動で以下のディレクトリを作成してください:\n{presetPath}",
+                        $"Failed to create directory:\n{e.Message}\n\n" +
+                        $"Please manually create the directory:\n{presetPath}"),
                         "OK");
                     return;
                 }
@@ -580,12 +593,17 @@ namespace NataneToon.Editor
 
             // Show completion dialog
             EditorUtility.DisplayDialog(
-                "Complete / 完了",
-                $"VTuber向けプリセットの生成が完了しました！\n\n" +
+                L("完了", "Complete"),
+                L($"VTuber向けプリセットの生成が完了しました！\n\n" +
                 $"生成されたプリセット: {presetsCreated}個\n" +
                 $"保存場所: {presetPath}\n\n" +
                 $"プリセットはこのブラウザに表示されています。\n" +
                 $"マテリアルを選択して「Apply」ボタンで適用できます。",
+                $"VTuber preset generation complete!\n\n" +
+                $"Presets created: {presetsCreated}\n" +
+                $"Location: {presetPath}\n\n" +
+                $"Presets are now displayed in this browser.\n" +
+                $"Select a material and click 'Apply' to use them."),
                 "OK");
 
             Debug.Log($"[MaterialPresetBrowser] VTuber向けプリセットを{presetsCreated}個生成しました");

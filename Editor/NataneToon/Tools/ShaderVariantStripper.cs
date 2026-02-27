@@ -8,6 +8,8 @@ using System.Linq;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Build-time Shader Variant Stripper for Natane Toon Shader
     /// Natane Toon Shader用のビルド時シェーダーバリアントストリッパー
@@ -248,7 +250,7 @@ namespace NataneToon.Editor
         public static void ShowWindow()
         {
             var window = GetWindow<ShaderVariantStripperSettingsWindow>(
-                "バリアントストリッピング設定 Variant Stripping Settings");
+                L("バリアントストリッピング設定", "Variant Stripping Settings"));
             window.minSize = new Vector2(450, 320);
             window.Show();
         }
@@ -263,15 +265,15 @@ namespace NataneToon.Editor
         {
             EditorGUILayout.Space(10);
             EditorGUILayout.LabelField(
-                "Natane Toon バリアントストリッピング設定 Variant Stripping Settings",
+                L("Natane Toon バリアントストリッピング設定", "Natane Toon Variant Stripping Settings"),
                 EditorStyles.boldLabel);
             EditorGUILayout.Space(10);
 
             EditorGUILayout.HelpBox(
-                "ビルド時にプロジェクト内のマテリアルが使用していないシェーダーバリアントを自動的に除去します。\n" +
-                "これによりビルドサイズが大幅に削減されます。\n\n" +
+                L("ビルド時にプロジェクト内のマテリアルが使用していないシェーダーバリアントを自動的に除去します。\n" +
+                "これによりビルドサイズが大幅に削減されます。",
                 "Automatically strips unused shader variants at build time based on project materials.\n" +
-                "This significantly reduces build size.",
+                "This significantly reduces build size."),
                 MessageType.Info);
 
             EditorGUILayout.Space(10);
@@ -280,8 +282,8 @@ namespace NataneToon.Editor
             EditorGUI.BeginChangeCheck();
             strippingEnabled = EditorGUILayout.Toggle(
                 new GUIContent(
-                    "バリアントストリッピングを有効化 Enable Variant Stripping",
-                    "ビルド時に未使用バリアントを自動除去 Automatically strip unused variants at build time"),
+                    L("バリアントストリッピングを有効化", "Enable Variant Stripping"),
+                    L("ビルド時に未使用バリアントを自動除去", "Automatically strip unused variants at build time")),
                 strippingEnabled);
 
             if (EditorGUI.EndChangeCheck())
@@ -295,8 +297,8 @@ namespace NataneToon.Editor
             EditorGUI.BeginChangeCheck();
             logEnabled = EditorGUILayout.Toggle(
                 new GUIContent(
-                    "ログ出力を有効化 Enable Log Output",
-                    "ストリッピング結果をConsoleに出力 Output stripping results to Console"),
+                    L("ログ出力を有効化", "Enable Log Output"),
+                    L("ストリッピング結果をConsoleに出力", "Output stripping results to Console")),
                 logEnabled);
 
             if (EditorGUI.EndChangeCheck())
@@ -307,34 +309,34 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(20);
 
             // Status section
-            EditorGUILayout.LabelField("現在の状態 Current Status", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("現在の状態", "Current Status"), EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
 
             // Count Natane materials
             int materialCount = CountNataneMaterials();
-            EditorGUILayout.LabelField($"Natane Toon マテリアル数: {materialCount}");
+            EditorGUILayout.LabelField($"{L("Natane Toon マテリアル数", "Natane Toon Material Count")}: {materialCount}");
 
             EditorGUILayout.Space(10);
 
             if (strippingEnabled)
             {
                 EditorGUILayout.HelpBox(
-                    "ストリッピングが有効です。次回のビルド時に自動的に実行されます。\n" +
-                    "Stripping is enabled. It will run automatically on the next build.",
+                    L("ストリッピングが有効です。次回のビルド時に自動的に実行されます。",
+                    "Stripping is enabled. It will run automatically on the next build."),
                     MessageType.Info);
             }
             else
             {
                 EditorGUILayout.HelpBox(
-                    "ストリッピングが無効です。ビルドサイズが大きくなる可能性があります。\n" +
-                    "Stripping is disabled. Build size may be larger than necessary.",
+                    L("ストリッピングが無効です。ビルドサイズが大きくなる可能性があります。",
+                    "Stripping is disabled. Build size may be larger than necessary."),
                     MessageType.Warning);
             }
 
             EditorGUILayout.Space(10);
 
             // Scan button
-            if (GUILayout.Button("マテリアルキーワードをスキャン Scan Material Keywords", GUILayout.Height(30)))
+            if (GUILayout.Button(L("マテリアルキーワードをスキャン", "Scan Material Keywords"), GUILayout.Height(30)))
             {
                 ScanAndDisplayKeywords();
             }
@@ -379,8 +381,9 @@ namespace NataneToon.Editor
                     if (i % 50 == 0)
                     {
                         EditorUtility.DisplayProgressBar(
-                            "マテリアルスキャン Material Scan",
-                            $"スキャン中... Scanning... ({i}/{materialGuids.Length})",
+                            L("マテリアルスキャン", "Material Scan"),
+                            L($"スキャン中... ({i}/{materialGuids.Length})",
+                            $"Scanning... ({i}/{materialGuids.Length})"),
                             (float)i / materialGuids.Length);
                     }
 
@@ -424,10 +427,10 @@ namespace NataneToon.Editor
             Debug.Log($"[Natane Toon Stripper] Keyword scan results:\n{report}");
 
             EditorUtility.DisplayDialog(
-                "スキャン結果 Scan Results",
-                $"マテリアル数 Materials: {materialCount}\n" +
-                $"ユニークキーワードセット Unique Keyword Sets: {uniqueSets.Count}\n\n" +
-                "詳細はConsoleを確認してください。\nSee Console for details.",
+                L("スキャン結果", "Scan Results"),
+                $"{L("マテリアル数", "Materials")}: {materialCount}\n" +
+                $"{L("ユニークキーワードセット", "Unique Keyword Sets")}: {uniqueSets.Count}\n\n" +
+                L("詳細はConsoleを確認してください。", "See Console for details."),
                 "OK");
         }
     }

@@ -5,6 +5,8 @@ using System.Linq;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Asset Reference Checker - Detects missing/broken references in scenes, prefabs, and materials
     /// アセット参照チェッカー - シーン、プレハブ、マテリアルの欠損/破損参照を検出
@@ -48,17 +50,17 @@ namespace NataneToon.Editor
 
         private bool hasScanned = false;
 
-        private static readonly string[] ScanModeLabels = new[]
+        private static string[] ScanModeLabels => new[]
         {
-            "シーン Scene",
-            "プレハブ Prefab",
-            "マテリアル Material"
+            L("シーン", "Scene"),
+            L("プレハブ", "Prefab"),
+            L("マテリアル", "Material")
         };
 
         [MenuItem("Tools/Natane/最適化 Optimization/アセット参照チェック Asset Reference Checker", false, 35)]
         public static void ShowWindow()
         {
-            var window = GetWindow<AssetReferenceChecker>("アセット参照チェッカー Asset Reference Checker");
+            var window = GetWindow<AssetReferenceChecker>(L("アセット参照チェッカー", "Asset Reference Checker"));
             window.minSize = new Vector2(550, 450);
             window.Show();
         }
@@ -90,17 +92,17 @@ namespace NataneToon.Editor
                 "AssetReferenceChecker");
 
             EditorGUILayout.HelpBox(
-                "シーン、プレハブ、マテリアルの欠損・破損した参照を検出します。\n" +
-                "Missing Script、欠損マテリアル、テクスチャ、シェーダーエラーなどをスキャンします。\n" +
+                L("シーン、プレハブ、マテリアルの欠損・破損した参照を検出します。\n" +
+                "Missing Script、欠損マテリアル、テクスチャ、シェーダーエラーなどをスキャンします。",
                 "Detects missing/broken references in scenes, prefabs, and materials.\n" +
-                "Scans for Missing Scripts, missing materials, textures, shader errors, and more.",
+                "Scans for Missing Scripts, missing materials, textures, shader errors, and more."),
                 MessageType.Info);
         }
 
         private void DrawScanModeSelector()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("スキャンモード Scan Mode", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("スキャンモード", "Scan Mode"), EditorStyles.boldLabel);
             scanMode = (ScanMode)GUILayout.Toolbar((int)scanMode, ScanModeLabels);
             EditorGUILayout.EndVertical();
         }
@@ -127,13 +129,13 @@ namespace NataneToon.Editor
 
         private void DrawSceneModeSettings()
         {
-            EditorGUILayout.LabelField("シーンスキャン設定 Scene Scan Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("シーンスキャン設定", "Scene Scan Settings"), EditorStyles.boldLabel);
             includeInactive = EditorGUILayout.ToggleLeft(
-                "非アクティブオブジェクトを含む Include Inactive Objects", includeInactive);
+                L("非アクティブオブジェクトを含む", "Include Inactive Objects"), includeInactive);
 
             EditorGUILayout.Space(5);
 
-            if (GUILayout.Button("シーンをスキャン Scan Scene", GUILayout.Height(30)))
+            if (GUILayout.Button(L("シーンをスキャン", "Scan Scene"), GUILayout.Height(30)))
             {
                 ScanScene();
             }
@@ -141,9 +143,9 @@ namespace NataneToon.Editor
 
         private void DrawPrefabModeSettings()
         {
-            EditorGUILayout.LabelField("プレハブスキャン設定 Prefab Scan Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("プレハブスキャン設定", "Prefab Scan Settings"), EditorStyles.boldLabel);
             targetPrefab = (GameObject)EditorGUILayout.ObjectField(
-                "ターゲットプレハブ Target Prefab", targetPrefab, typeof(GameObject), false);
+                L("ターゲットプレハブ", "Target Prefab"), targetPrefab, typeof(GameObject), false);
 
             EditorGUILayout.Space(5);
 
@@ -151,13 +153,13 @@ namespace NataneToon.Editor
 
             using (new EditorGUI.DisabledScope(targetPrefab == null))
             {
-                if (GUILayout.Button("プレハブをスキャン Scan Prefab", GUILayout.Height(30)))
+                if (GUILayout.Button(L("プレハブをスキャン", "Scan Prefab"), GUILayout.Height(30)))
                 {
                     ScanPrefab(targetPrefab);
                 }
             }
 
-            if (GUILayout.Button("プロジェクト全体スキャン Scan All Project Prefabs", GUILayout.Height(30)))
+            if (GUILayout.Button(L("プロジェクト全体スキャン", "Scan All Project Prefabs"), GUILayout.Height(30)))
             {
                 ScanProjectPrefabs();
             }
@@ -167,13 +169,13 @@ namespace NataneToon.Editor
 
         private void DrawMaterialModeSettings()
         {
-            EditorGUILayout.LabelField("マテリアルスキャン設定 Material Scan Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("マテリアルスキャン設定", "Material Scan Settings"), EditorStyles.boldLabel);
             nataneToonOnly = EditorGUILayout.ToggleLeft(
-                "Natane Toon Shaderのみ Natane Toon Shader Only", nataneToonOnly);
+                L("Natane Toon Shaderのみ", "Natane Toon Shader Only"), nataneToonOnly);
 
             EditorGUILayout.Space(5);
 
-            if (GUILayout.Button("マテリアルをスキャン Scan Materials", GUILayout.Height(30)))
+            if (GUILayout.Button(L("マテリアルをスキャン", "Scan Materials"), GUILayout.Height(30)))
             {
                 ScanMaterials();
             }
@@ -182,7 +184,7 @@ namespace NataneToon.Editor
         private void DrawResultSummary()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("結果サマリー Result Summary", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("結果サマリー", "Result Summary"), EditorStyles.boldLabel);
 
             int errorCount = issues.Count(i => i.severity == IssueSeverity.Error);
             int warningCount = issues.Count(i => i.severity == IssueSeverity.Warning);
@@ -193,13 +195,13 @@ namespace NataneToon.Editor
             var originalColor = GUI.color;
 
             GUI.color = errorCount > 0 ? new Color(1f, 0.4f, 0.4f) : Color.white;
-            EditorGUILayout.LabelField($"エラー Errors: {errorCount}", EditorStyles.boldLabel, GUILayout.Width(160));
+            EditorGUILayout.LabelField($"{L("エラー", "Errors")}: {errorCount}", EditorStyles.boldLabel, GUILayout.Width(160));
 
             GUI.color = warningCount > 0 ? new Color(1f, 0.9f, 0.3f) : Color.white;
-            EditorGUILayout.LabelField($"警告 Warnings: {warningCount}", EditorStyles.boldLabel, GUILayout.Width(170));
+            EditorGUILayout.LabelField($"{L("警告", "Warnings")}: {warningCount}", EditorStyles.boldLabel, GUILayout.Width(170));
 
             GUI.color = Color.white;
-            EditorGUILayout.LabelField($"情報 Info: {infoCount}", EditorStyles.boldLabel, GUILayout.Width(130));
+            EditorGUILayout.LabelField($"{L("情報", "Info")}: {infoCount}", EditorStyles.boldLabel, GUILayout.Width(130));
 
             GUI.color = originalColor;
 
@@ -208,7 +210,7 @@ namespace NataneToon.Editor
             if (issues.Count == 0)
             {
                 EditorGUILayout.HelpBox(
-                    "問題は検出されませんでした。\nNo issues detected.",
+                    L("問題は検出されませんでした。", "No issues detected."),
                     MessageType.Info);
             }
 
@@ -220,14 +222,14 @@ namespace NataneToon.Editor
             if (issues.Count == 0) return;
 
             EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("フィルタ Filter:", EditorStyles.miniLabel, GUILayout.Width(80));
+            EditorGUILayout.LabelField(L("フィルタ:", "Filter:"), EditorStyles.miniLabel, GUILayout.Width(80));
             showErrors = EditorGUILayout.ToggleLeft("Error", showErrors, GUILayout.Width(70));
             showWarnings = EditorGUILayout.ToggleLeft("Warning", showWarnings, GUILayout.Width(80));
             showInfos = EditorGUILayout.ToggleLeft("Info", showInfos, GUILayout.Width(60));
 
             GUILayout.FlexibleSpace();
 
-            if (GUILayout.Button("Consoleに出力 Export to Console", GUILayout.Width(200)))
+            if (GUILayout.Button(L("Consoleに出力", "Export to Console"), GUILayout.Width(200)))
             {
                 ExportToConsole();
             }
@@ -244,7 +246,7 @@ namespace NataneToon.Editor
                 (i.severity == IssueSeverity.Warning && showWarnings) ||
                 (i.severity == IssueSeverity.Info && showInfos)).ToList();
 
-            EditorGUILayout.LabelField($"表示中 Showing: {filteredIssues.Count} / {issues.Count}", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField($"{L("表示中", "Showing")}: {filteredIssues.Count} / {issues.Count}", EditorStyles.miniLabel);
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
 
@@ -300,17 +302,17 @@ namespace NataneToon.Editor
             EditorGUILayout.LabelField(issue.description, EditorStyles.wordWrappedLabel);
 
             // Foldout for details
-            issue.foldout = EditorGUILayout.Foldout(issue.foldout, "詳細 Details");
+            issue.foldout = EditorGUILayout.Foldout(issue.foldout, L("詳細", "Details"));
             if (issue.foldout)
             {
                 EditorGUI.indentLevel++;
                 if (!string.IsNullOrEmpty(issue.componentName))
-                    EditorGUILayout.LabelField($"コンポーネント Component: {issue.componentName}");
+                    EditorGUILayout.LabelField($"{L("コンポーネント", "Component")}: {issue.componentName}");
                 if (!string.IsNullOrEmpty(issue.propertyName))
-                    EditorGUILayout.LabelField($"プロパティ Property: {issue.propertyName}");
+                    EditorGUILayout.LabelField($"{L("プロパティ", "Property")}: {issue.propertyName}");
                 if (!string.IsNullOrEmpty(issue.assetPath))
-                    EditorGUILayout.LabelField($"アセットパス Asset Path: {issue.assetPath}");
-                EditorGUILayout.LabelField($"種別 Type: {issue.type}");
+                    EditorGUILayout.LabelField($"{L("アセットパス", "Asset Path")}: {issue.assetPath}");
+                EditorGUILayout.LabelField($"{L("種別", "Type")}: {issue.type}");
                 EditorGUI.indentLevel--;
             }
 
@@ -330,7 +332,7 @@ namespace NataneToon.Editor
             for (int i = 0; i < allObjects.Length; i++)
             {
                 if (EditorUtility.DisplayCancelableProgressBar(
-                    "シーンスキャン中 Scanning Scene",
+                    L("シーンスキャン中", "Scanning Scene"),
                     $"{allObjects[i].name} ({i + 1}/{allObjects.Length})",
                     (float)i / allObjects.Length))
                 {
@@ -358,7 +360,7 @@ namespace NataneToon.Editor
             for (int i = 0; i < transforms.Length; i++)
             {
                 if (EditorUtility.DisplayCancelableProgressBar(
-                    "プレハブスキャン中 Scanning Prefab",
+                    L("プレハブスキャン中", "Scanning Prefab"),
                     $"{transforms[i].name} ({i + 1}/{transforms.Length})",
                     (float)i / transforms.Length))
                 {
@@ -386,7 +388,7 @@ namespace NataneToon.Editor
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
 
                 if (EditorUtility.DisplayCancelableProgressBar(
-                    "プロジェクトプレハブスキャン中 Scanning Project Prefabs",
+                    L("プロジェクトプレハブスキャン中", "Scanning Project Prefabs"),
                     $"{path} ({i + 1}/{guids.Length})",
                     (float)i / guids.Length))
                 {
@@ -421,7 +423,7 @@ namespace NataneToon.Editor
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
 
                 if (EditorUtility.DisplayCancelableProgressBar(
-                    "マテリアルスキャン中 Scanning Materials",
+                    L("マテリアルスキャン中", "Scanning Materials"),
                     $"{path} ({i + 1}/{guids.Length})",
                     (float)i / guids.Length))
                 {

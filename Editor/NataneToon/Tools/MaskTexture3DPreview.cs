@@ -3,6 +3,8 @@ using UnityEditor;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// 3D preview for mask textures using PreviewRenderUtility.
     /// PreviewRenderUtilityを使用したマスクテクスチャの3Dプレビュー
@@ -115,7 +117,7 @@ namespace NataneToon.Editor
             if (previewUtility == null) Initialize();
             if (previewMesh == null)
             {
-                EditorGUI.LabelField(rect, "メッシュが未設定 No mesh assigned",
+                EditorGUI.LabelField(rect, L("メッシュが未設定", "No mesh assigned"),
                     new GUIStyle(EditorStyles.centeredGreyMiniLabel) { alignment = TextAnchor.MiddleCenter });
                 return;
             }
@@ -215,7 +217,7 @@ namespace NataneToon.Editor
         public void DrawPreviewUI()
         {
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("表示モード Display Mode", GUILayout.Width(160));
+            EditorGUILayout.LabelField(L("表示モード", "Display Mode"), GUILayout.Width(160));
             var newMode = (DisplayMode)EditorGUILayout.EnumPopup(displayMode);
             if (newMode != displayMode)
             {

@@ -3,6 +3,8 @@ using UnityEditor;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// MatCap Layer Composer
     /// MatCapレイヤーコンポーザー
@@ -16,12 +18,12 @@ namespace NataneToon.Editor
         private readonly string[] matcapProps = { "_MatCap", "_MatCap2", "_MatCap3" };
         private readonly string[] matcapIntensityProps = { "_MatCapIntensity", "_MatCap2Intensity", "_MatCap3Intensity" };
         private readonly string[] matcapBlendProps = { "_MatCapBlend", "_MatCap2Blend", "_MatCap3Blend" };
-        private readonly string[] blendModeNames = { "加算", "乗算", "オーバーレイ" };
+        private string[] blendModeNames => new[] { L("加算", "Additive"), L("乗算", "Multiply"), L("オーバーレイ", "Overlay") };
 
         [MenuItem("Tools/Natane/エフェクト Effects/MatCapレイヤーコンポーザー MatCap Layer Composer", false, 42)]
         public static void ShowWindow()
         {
-            var window = GetWindow<MatCapLayerComposer>("MatCapレイヤーコンポーザー MatCap Layer Composer");
+            var window = GetWindow<MatCapLayerComposer>(L("MatCapレイヤーコンポーザー", "MatCap Layer Composer"));
             window.minSize = new Vector2(500, 600);
             window.Show();
         }
@@ -31,11 +33,11 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(10);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             NataneToonShaderGUIUtility.DrawHeaderWithHelp("MatCapレイヤーコンポーザー", "MatCap Layer Composer", "MatCapLayerComposer");
-            EditorGUILayout.LabelField("3つのMatCapレイヤーをリアルタイムプレビュー\nReal-time preview of 3 MatCap layers", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(L("3つのMatCapレイヤーをリアルタイムプレビュー", "Real-time preview of 3 MatCap layers"), EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(10);
 
-            targetMaterial = (Material)EditorGUILayout.ObjectField("ターゲットマテリアル", targetMaterial, typeof(Material), false);
+            targetMaterial = (Material)EditorGUILayout.ObjectField(L("ターゲットマテリアル", "Target Material"), targetMaterial, typeof(Material), false);
 
             if (targetMaterial == null) return;
 
@@ -80,7 +82,7 @@ namespace NataneToon.Editor
                     if (targetMaterial.HasProperty(matcapIntensityProps[index]))
                     {
                         EditorGUI.BeginChangeCheck();
-                        float intensity = EditorGUILayout.Slider("強度", targetMaterial.GetFloat(matcapIntensityProps[index]), 0f, 2f);
+                        float intensity = EditorGUILayout.Slider(L("強度", "Intensity"), targetMaterial.GetFloat(matcapIntensityProps[index]), 0f, 2f);
                         if (EditorGUI.EndChangeCheck())
                         {
                             Undo.RecordObject(targetMaterial, "Change MatCap Intensity");
@@ -93,7 +95,7 @@ namespace NataneToon.Editor
                     {
                         EditorGUI.BeginChangeCheck();
                         int blend = (int)targetMaterial.GetFloat(matcapBlendProps[index]);
-                        blend = EditorGUILayout.Popup("ブレンド", blend, blendModeNames);
+                        blend = EditorGUILayout.Popup(L("ブレンド", "Blend"), blend, blendModeNames);
                         if (EditorGUI.EndChangeCheck())
                         {
                             Undo.RecordObject(targetMaterial, "Change Blend Mode");
@@ -112,11 +114,11 @@ namespace NataneToon.Editor
         private void DrawBatchOperations()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("一括操作", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("一括操作", "Batch Operations"), EditorStyles.boldLabel);
 
-            if (GUILayout.Button("すべてクリア", GUILayout.Height(30)))
+            if (GUILayout.Button(L("すべてクリア", "Clear All"), GUILayout.Height(30)))
             {
-                if (EditorUtility.DisplayDialog("確認", "すべてのMatCapをクリアしますか？", "はい", "いいえ"))
+                if (EditorUtility.DisplayDialog(L("確認", "Confirm"), L("すべてのMatCapをクリアしますか？", "Clear all MatCaps?"), L("はい", "Yes"), L("いいえ", "No")))
                 {
                     Undo.RecordObject(targetMaterial, "Clear All MatCaps");
                     foreach (var prop in matcapProps)

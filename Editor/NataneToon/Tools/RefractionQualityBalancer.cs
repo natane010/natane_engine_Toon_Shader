@@ -3,6 +3,7 @@ using UnityEditor;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
     /// <summary>
     /// Refraction Quality Balancer
     /// 屈折品質バランサー
@@ -18,7 +19,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/最適化 Optimization/屈折品質バランサー Refraction Quality Balancer", false, 34)]
         public static void ShowWindow()
         {
-            var window = GetWindow<RefractionQualityBalancer>("屈折品質バランサー Refraction Quality Balancer");
+            var window = GetWindow<RefractionQualityBalancer>(L("屈折品質バランサー", "Refraction Quality Balancer"));
             window.minSize = new Vector2(500, 500);
             window.Show();
         }
@@ -26,15 +27,15 @@ namespace NataneToon.Editor
         private void OnGUI()
         {
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField("屈折品質バランサー", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox("パフォーマンスと品質のバランスを調整", MessageType.Info);
+            EditorGUILayout.LabelField(L("屈折品質バランサー", "Refraction Quality Balancer"), EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(L("パフォーマンスと品質のバランスを調整", "Adjust balance between performance and quality"), MessageType.Info);
             EditorGUILayout.Space(10);
 
-            targetMaterial = (Material)EditorGUILayout.ObjectField("ターゲット", targetMaterial, typeof(Material), false);
+            targetMaterial = (Material)EditorGUILayout.ObjectField(L("ターゲット", "Target"), targetMaterial, typeof(Material), false);
 
             if (targetMaterial == null)
             {
-                EditorGUILayout.HelpBox("マテリアルを選択してください", MessageType.Info);
+                EditorGUILayout.HelpBox(L("マテリアルを選択してください", "Please select a material"), MessageType.Info);
                 return;
             }
 
@@ -52,14 +53,14 @@ namespace NataneToon.Editor
         private void DrawQualitySelector()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("品質プリセット Quality Preset", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("品質プリセット", "Quality Preset"), EditorStyles.boldLabel);
 
-            quality = (QualityPreset)EditorGUILayout.EnumPopup("プリセット Preset", quality);
+            quality = (QualityPreset)EditorGUILayout.EnumPopup(L("プリセット", "Preset"), quality);
 
             string description = GetQualityDescription(quality);
             EditorGUILayout.HelpBox(description, MessageType.Info);
 
-            if (GUILayout.Button("このプリセットを適用 Apply Preset", GUILayout.Height(30)))
+            if (GUILayout.Button(L("このプリセットを適用", "Apply Preset"), GUILayout.Height(30)))
             {
                 ApplyQualityPreset(quality);
             }
@@ -70,13 +71,13 @@ namespace NataneToon.Editor
         private void DrawRefractionSettings()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("屈折設定 Refraction Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("屈折設定", "Refraction Settings"), EditorStyles.boldLabel);
 
             if (targetMaterial.HasProperty("_UseRefraction"))
             {
                 EditorGUI.BeginChangeCheck();
                 bool useRefraction = targetMaterial.GetFloat("_UseRefraction") > 0.5f;
-                useRefraction = EditorGUILayout.Toggle("屈折を使用 Use Refraction", useRefraction);
+                useRefraction = EditorGUILayout.Toggle(L("屈折を使用", "Use Refraction"), useRefraction);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Toggle Refraction");
@@ -88,7 +89,7 @@ namespace NataneToon.Editor
             if (targetMaterial.HasProperty("_RefractionIntensity"))
             {
                 EditorGUI.BeginChangeCheck();
-                float intensity = EditorGUILayout.Slider("強度 Intensity", targetMaterial.GetFloat("_RefractionIntensity"), 0f, 1f);
+                float intensity = EditorGUILayout.Slider(L("強度", "Intensity"), targetMaterial.GetFloat("_RefractionIntensity"), 0f, 1f);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change Refraction Intensity");
@@ -100,7 +101,7 @@ namespace NataneToon.Editor
             if (targetMaterial.HasProperty("_IOR"))
             {
                 EditorGUI.BeginChangeCheck();
-                float ior = EditorGUILayout.Slider("屈折率 IOR", targetMaterial.GetFloat("_IOR"), 1f, 3f);
+                float ior = EditorGUILayout.Slider(L("屈折率", "IOR"), targetMaterial.GetFloat("_IOR"), 1f, 3f);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change IOR");
@@ -112,7 +113,7 @@ namespace NataneToon.Editor
             if (targetMaterial.HasProperty("_RefractionSamples"))
             {
                 EditorGUI.BeginChangeCheck();
-                int samples = EditorGUILayout.IntSlider("サンプル数 Samples", (int)targetMaterial.GetFloat("_RefractionSamples"), 1, 9);
+                int samples = EditorGUILayout.IntSlider(L("サンプル数", "Samples"), (int)targetMaterial.GetFloat("_RefractionSamples"), 1, 9);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change Refraction Samples");
@@ -127,7 +128,7 @@ namespace NataneToon.Editor
         private void DrawPerformanceInfo()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("パフォーマンス情報 Performance Info", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("パフォーマンス情報", "Performance Info"), EditorStyles.boldLabel);
 
             int samples = 5; // Default
             if (targetMaterial.HasProperty("_RefractionSamples"))
@@ -136,15 +137,15 @@ namespace NataneToon.Editor
             string performanceRating = GetPerformanceRating(samples);
             int gpuCost = samples * 10; // Rough estimate
 
-            EditorGUILayout.LabelField($"現在のサンプル数 Current Samples: {samples}");
-            EditorGUILayout.LabelField($"推定GPUコスト Estimated GPU Cost: {gpuCost}%");
-            EditorGUILayout.LabelField($"パフォーマンス評価 Performance Rating: {performanceRating}");
+            EditorGUILayout.LabelField($"{L("現在のサンプル数", "Current Samples")}: {samples}");
+            EditorGUILayout.LabelField($"{L("推定GPUコスト", "Estimated GPU Cost")}: {gpuCost}%");
+            EditorGUILayout.LabelField($"{L("パフォーマンス評価", "Performance Rating")}: {performanceRating}");
 
             EditorGUILayout.Space(5);
 
             EditorGUILayout.HelpBox(
-                "サンプル数が多いほど品質は向上しますが、パフォーマンスが低下します\n" +
-                "Higher sample count improves quality but decreases performance",
+                L("サンプル数が多いほど品質は向上しますが、パフォーマンスが低下します",
+                  "Higher sample count improves quality but decreases performance"),
                 MessageType.Info);
 
             EditorGUILayout.EndVertical();
@@ -196,7 +197,7 @@ namespace NataneToon.Editor
             }
 
             EditorUtility.SetDirty(targetMaterial);
-            EditorUtility.DisplayDialog("適用完了 Applied", $"{preset}を適用しました\nApplied {preset}", "OK");
+            EditorUtility.DisplayDialog(L("適用完了", "Applied"), L($"{preset}を適用しました", $"Applied {preset}"), "OK");
         }
 
         private string GetQualityDescription(QualityPreset preset)
@@ -204,15 +205,15 @@ namespace NataneToon.Editor
             switch (preset)
             {
                 case QualityPreset.VeryLow:
-                    return "最低品質（サンプル数: 1）- モバイル向け\nLowest quality (Samples: 1) - For mobile";
+                    return L("最低品質（サンプル数: 1）- モバイル向け", "Lowest quality (Samples: 1) - For mobile");
                 case QualityPreset.Low:
-                    return "低品質（サンプル数: 3）- Quest向け\nLow quality (Samples: 3) - For Quest";
+                    return L("低品質（サンプル数: 3）- Quest向け", "Low quality (Samples: 3) - For Quest");
                 case QualityPreset.Medium:
-                    return "中品質（サンプル数: 5）- バランス型\nMedium quality (Samples: 5) - Balanced";
+                    return L("中品質（サンプル数: 5）- バランス型", "Medium quality (Samples: 5) - Balanced");
                 case QualityPreset.High:
-                    return "高品質（サンプル数: 7）- PC向け\nHigh quality (Samples: 7) - For PC";
+                    return L("高品質（サンプル数: 7）- PC向け", "High quality (Samples: 7) - For PC");
                 case QualityPreset.VeryHigh:
-                    return "最高品質（サンプル数: 9）- ハイエンドPC向け\nVery high quality (Samples: 9) - For high-end PC";
+                    return L("最高品質（サンプル数: 9）- ハイエンドPC向け", "Very high quality (Samples: 9) - For high-end PC");
                 default:
                     return "";
             }
@@ -220,11 +221,11 @@ namespace NataneToon.Editor
 
         private string GetPerformanceRating(int samples)
         {
-            if (samples <= 1) return "A (非常に軽い Very Light)";
-            if (samples <= 3) return "B (軽い Light)";
-            if (samples <= 5) return "C (普通 Normal)";
-            if (samples <= 7) return "D (重い Heavy)";
-            return "E (非常に重い Very Heavy)";
+            if (samples <= 1) return L("A (非常に軽い)", "A (Very Light)");
+            if (samples <= 3) return L("B (軽い)", "B (Light)");
+            if (samples <= 5) return L("C (普通)", "C (Normal)");
+            if (samples <= 7) return L("D (重い)", "D (Heavy)");
+            return L("E (非常に重い)", "E (Very Heavy)");
         }
     }
 }

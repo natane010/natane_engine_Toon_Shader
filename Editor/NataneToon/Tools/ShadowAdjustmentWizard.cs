@@ -3,6 +3,7 @@ using UnityEditor;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
     /// <summary>
     /// Shadow Adjustment Wizard
     /// シャドウ調整ウィザード
@@ -47,7 +48,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/エフェクト Effects/シャドウ調整ウィザード Shadow Adjustment Wizard", false, 41)]
         public static void ShowWindow()
         {
-            var window = GetWindow<ShadowAdjustmentWizard>("シャドウ調整ウィザード Shadow Adjustment Wizard");
+            var window = GetWindow<ShadowAdjustmentWizard>(L("シャドウ調整ウィザード", "Shadow Adjustment Wizard"));
             window.minSize = new Vector2(550, 650);
             window.Show();
         }
@@ -93,7 +94,7 @@ namespace NataneToon.Editor
         {
             NataneToonShaderGUIUtility.DrawToolHeader("シャドウ調整ウィザード", "Shadow Adjustment Wizard", "ShadowAdjustmentWizard");
             EditorGUILayout.HelpBox(
-                "複数のシャドウパラメータを簡単に設定\nEasy setup for multiple shadow parameters",
+                L("複数のシャドウパラメータを簡単に設定", "Easy setup for multiple shadow parameters"),
                 MessageType.Info);
         }
 
@@ -103,11 +104,11 @@ namespace NataneToon.Editor
 
             string[] stepNames = new string[]
             {
-                "1. マテリアル\n   Material",
-                "2. 基本シャドウ\n   Basic Shadow",
-                "3. 多階調\n   Multi-Tone",
-                "4. マップ\n   Maps",
-                "5. プレビュー\n   Preview"
+                L("1. マテリアル", "1. Material"),
+                L("2. 基本シャドウ", "2. Basic Shadow"),
+                L("3. 多階調", "3. Multi-Tone"),
+                L("4. マップ", "4. Maps"),
+                L("5. プレビュー", "5. Preview")
             };
 
             for (int i = 0; i < stepNames.Length; i++)
@@ -131,12 +132,12 @@ namespace NataneToon.Editor
         private void DrawSelectMaterialStep()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("ステップ1: マテリアル選択 Step 1: Select Material", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ステップ1: マテリアル選択", "Step 1: Select Material"), EditorStyles.boldLabel);
             EditorGUILayout.Space(10);
 
             EditorGUI.BeginChangeCheck();
             targetMaterial = (Material)EditorGUILayout.ObjectField(
-                "ターゲットマテリアル Target Material",
+                L("ターゲットマテリアル", "Target Material"),
                 targetMaterial,
                 typeof(Material),
                 false);
@@ -149,7 +150,7 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space(10);
 
-            if (GUILayout.Button("選択中のマテリアルを使用 Use Selected Material", GUILayout.Height(30)))
+            if (GUILayout.Button(L("選択中のマテリアルを使用", "Use Selected Material"), GUILayout.Height(30)))
             {
                 if (Selection.activeObject is Material mat)
                 {
@@ -159,8 +160,8 @@ namespace NataneToon.Editor
                 else
                 {
                     EditorUtility.DisplayDialog(
-                        "エラー Error",
-                        "マテリアルを選択してください\nPlease select a material",
+                        L("エラー", "Error"),
+                        L("マテリアルを選択してください", "Please select a material"),
                         "OK");
                 }
             }
@@ -168,13 +169,13 @@ namespace NataneToon.Editor
             if (targetMaterial != null)
             {
                 EditorGUILayout.Space(10);
-                EditorGUILayout.HelpBox($"選択中 Selected: {targetMaterial.name}", MessageType.Info);
+                EditorGUILayout.HelpBox($"{L("選択中", "Selected")}: {targetMaterial.name}", MessageType.Info);
 
                 if (!IsNataneToonShader(targetMaterial))
                 {
                     EditorGUILayout.HelpBox(
-                        "警告: このマテリアルはNatane Toon Shaderを使用していません。一部のパラメータが利用できない可能性があります。\n" +
-                        "Warning: This material is not using Natane Toon Shader. Some parameters may not be available.",
+                        L("警告: このマテリアルはNatane Toon Shaderを使用していません。一部のパラメータが利用できない可能性があります。",
+                          "Warning: This material is not using Natane Toon Shader. Some parameters may not be available."),
                         MessageType.Warning);
                 }
             }
@@ -186,21 +187,21 @@ namespace NataneToon.Editor
         {
             if (targetMaterial == null)
             {
-                EditorGUILayout.HelpBox("マテリアルを選択してください\nPlease select a material first", MessageType.Warning);
+                EditorGUILayout.HelpBox(L("マテリアルを選択してください", "Please select a material first"), MessageType.Warning);
                 return;
             }
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("ステップ2: 基本シャドウ設定 Step 2: Basic Shadow Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ステップ2: 基本シャドウ設定", "Step 2: Basic Shadow Settings"), EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
 
             // Preset selector
-            EditorGUILayout.LabelField("プリセット Presets", EditorStyles.boldLabel);
-            selectedPreset = (ShadowPreset)EditorGUILayout.EnumPopup("スタイル Style", selectedPreset);
+            EditorGUILayout.LabelField(L("プリセット", "Presets"), EditorStyles.boldLabel);
+            selectedPreset = (ShadowPreset)EditorGUILayout.EnumPopup(L("スタイル", "Style"), selectedPreset);
 
             if (selectedPreset != ShadowPreset.Custom)
             {
-                if (GUILayout.Button("このプリセットを適用 Apply This Preset", GUILayout.Height(25)))
+                if (GUILayout.Button(L("このプリセットを適用", "Apply This Preset"), GUILayout.Height(25)))
                 {
                     ApplyShadowPreset(selectedPreset);
                 }
@@ -210,7 +211,7 @@ namespace NataneToon.Editor
                 EditorGUILayout.Space(10);
             }
 
-            EditorGUILayout.LabelField("手動調整 Manual Adjustment", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("手動調整", "Manual Adjustment"), EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
 
             // Toon Steps
@@ -218,7 +219,7 @@ namespace NataneToon.Editor
             {
                 EditorGUI.BeginChangeCheck();
                 int toonSteps = EditorGUILayout.IntSlider(
-                    "トゥーン段階 Toon Steps",
+                    L("トゥーン段階", "Toon Steps"),
                     (int)targetMaterial.GetFloat("_ToonSteps"),
                     1,
                     10);
@@ -236,7 +237,7 @@ namespace NataneToon.Editor
             {
                 EditorGUI.BeginChangeCheck();
                 float sharpness = EditorGUILayout.Slider(
-                    "境界シャープネス Sharpness",
+                    L("境界シャープネス", "Sharpness"),
                     targetMaterial.GetFloat("_ToonSharpness"),
                     0f,
                     1f);
@@ -254,7 +255,7 @@ namespace NataneToon.Editor
             {
                 EditorGUI.BeginChangeCheck();
                 Color shadowColor = EditorGUILayout.ColorField(
-                    "影の色 Shadow Color",
+                    L("影の色", "Shadow Color"),
                     targetMaterial.GetColor("_ShadowColor"));
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -270,7 +271,7 @@ namespace NataneToon.Editor
             {
                 EditorGUI.BeginChangeCheck();
                 float shadowReceive = EditorGUILayout.Slider(
-                    "影の受け取り Shadow Receive",
+                    L("影の受け取り", "Shadow Receive"),
                     targetMaterial.GetFloat("_ShadowReceive"),
                     0f,
                     1f);
@@ -290,22 +291,22 @@ namespace NataneToon.Editor
         {
             if (targetMaterial == null)
             {
-                EditorGUILayout.HelpBox("マテリアルを選択してください\nPlease select a material first", MessageType.Warning);
+                EditorGUILayout.HelpBox(L("マテリアルを選択してください", "Please select a material first"), MessageType.Warning);
                 return;
             }
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("ステップ3: 多階調シャドウ Step 3: Multi-Tone Shadow", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ステップ3: 多階調シャドウ", "Step 3: Multi-Tone Shadow"), EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "複数段階の影を設定します（1次影、2次影、3次影）\n" +
-                "Configure multiple shadow levels (1st, 2nd, 3rd shadow)",
+                L("複数段階の影を設定します（1次影、2次影、3次影）",
+                  "Configure multiple shadow levels (1st, 2nd, 3rd shadow)"),
                 MessageType.Info);
             EditorGUILayout.Space(5);
 
             // Enable multi-tone shadows
             bool useMultiTone = targetMaterial.IsKeywordEnabled("_USE_MULTI_TONE_SHADOW");
             EditorGUI.BeginChangeCheck();
-            useMultiTone = EditorGUILayout.Toggle("多階調シャドウを使用 Use Multi-Tone", useMultiTone);
+            useMultiTone = EditorGUILayout.Toggle(L("多階調シャドウを使用", "Use Multi-Tone"), useMultiTone);
             if (EditorGUI.EndChangeCheck())
             {
                 Undo.RecordObject(targetMaterial, "Toggle Multi-Tone Shadow");
@@ -321,11 +322,11 @@ namespace NataneToon.Editor
                 EditorGUILayout.Space(10);
 
                 // 1st Shadow
-                EditorGUILayout.LabelField("1次影 1st Shadow", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField(L("1次影", "1st Shadow"), EditorStyles.boldLabel);
                 if (targetMaterial.HasProperty("_1stShadowColor"))
                 {
                     EditorGUI.BeginChangeCheck();
-                    Color color1 = EditorGUILayout.ColorField("色 Color", targetMaterial.GetColor("_1stShadowColor"));
+                    Color color1 = EditorGUILayout.ColorField(L("色", "Color"), targetMaterial.GetColor("_1stShadowColor"));
                     if (EditorGUI.EndChangeCheck())
                     {
                         Undo.RecordObject(targetMaterial, "Change 1st Shadow Color");
@@ -337,7 +338,7 @@ namespace NataneToon.Editor
                 if (targetMaterial.HasProperty("_1stShadowBorder"))
                 {
                     EditorGUI.BeginChangeCheck();
-                    float border1 = EditorGUILayout.Slider("境界 Border", targetMaterial.GetFloat("_1stShadowBorder"), 0f, 1f);
+                    float border1 = EditorGUILayout.Slider(L("境界", "Border"), targetMaterial.GetFloat("_1stShadowBorder"), 0f, 1f);
                     if (EditorGUI.EndChangeCheck())
                     {
                         Undo.RecordObject(targetMaterial, "Change 1st Shadow Border");
@@ -349,11 +350,11 @@ namespace NataneToon.Editor
                 EditorGUILayout.Space(5);
 
                 // 2nd Shadow
-                EditorGUILayout.LabelField("2次影 2nd Shadow", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField(L("2次影", "2nd Shadow"), EditorStyles.boldLabel);
                 if (targetMaterial.HasProperty("_2ndShadowColor"))
                 {
                     EditorGUI.BeginChangeCheck();
-                    Color color2 = EditorGUILayout.ColorField("色 Color", targetMaterial.GetColor("_2ndShadowColor"));
+                    Color color2 = EditorGUILayout.ColorField(L("色", "Color"), targetMaterial.GetColor("_2ndShadowColor"));
                     if (EditorGUI.EndChangeCheck())
                     {
                         Undo.RecordObject(targetMaterial, "Change 2nd Shadow Color");
@@ -365,7 +366,7 @@ namespace NataneToon.Editor
                 if (targetMaterial.HasProperty("_2ndShadowBorder"))
                 {
                     EditorGUI.BeginChangeCheck();
-                    float border2 = EditorGUILayout.Slider("境界 Border", targetMaterial.GetFloat("_2ndShadowBorder"), 0f, 1f);
+                    float border2 = EditorGUILayout.Slider(L("境界", "Border"), targetMaterial.GetFloat("_2ndShadowBorder"), 0f, 1f);
                     if (EditorGUI.EndChangeCheck())
                     {
                         Undo.RecordObject(targetMaterial, "Change 2nd Shadow Border");
@@ -377,11 +378,11 @@ namespace NataneToon.Editor
                 EditorGUILayout.Space(5);
 
                 // 3rd Shadow
-                EditorGUILayout.LabelField("3次影 3rd Shadow", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField(L("3次影", "3rd Shadow"), EditorStyles.boldLabel);
                 if (targetMaterial.HasProperty("_3rdShadowColor"))
                 {
                     EditorGUI.BeginChangeCheck();
-                    Color color3 = EditorGUILayout.ColorField("色 Color", targetMaterial.GetColor("_3rdShadowColor"));
+                    Color color3 = EditorGUILayout.ColorField(L("色", "Color"), targetMaterial.GetColor("_3rdShadowColor"));
                     if (EditorGUI.EndChangeCheck())
                     {
                         Undo.RecordObject(targetMaterial, "Change 3rd Shadow Color");
@@ -393,7 +394,7 @@ namespace NataneToon.Editor
                 if (targetMaterial.HasProperty("_3rdShadowBorder"))
                 {
                     EditorGUI.BeginChangeCheck();
-                    float border3 = EditorGUILayout.Slider("境界 Border", targetMaterial.GetFloat("_3rdShadowBorder"), 0f, 1f);
+                    float border3 = EditorGUILayout.Slider(L("境界", "Border"), targetMaterial.GetFloat("_3rdShadowBorder"), 0f, 1f);
                     if (EditorGUI.EndChangeCheck())
                     {
                         Undo.RecordObject(targetMaterial, "Change 3rd Shadow Border");
@@ -410,25 +411,25 @@ namespace NataneToon.Editor
         {
             if (targetMaterial == null)
             {
-                EditorGUILayout.HelpBox("マテリアルを選択してください\nPlease select a material first", MessageType.Warning);
+                EditorGUILayout.HelpBox(L("マテリアルを選択してください", "Please select a material first"), MessageType.Warning);
                 return;
             }
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("ステップ4: シャドウマップ Step 4: Shadow Maps", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ステップ4: シャドウマップ", "Step 4: Shadow Maps"), EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "テクスチャを使用して影を詳細に制御\n" +
-                "Control shadows in detail using textures",
+                L("テクスチャを使用して影を詳細に制御",
+                  "Control shadows in detail using textures"),
                 MessageType.Info);
             EditorGUILayout.Space(5);
 
             // Ramp Texture
-            EditorGUILayout.LabelField("ランプテクスチャ Ramp Texture", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ランプテクスチャ", "Ramp Texture"), EditorStyles.boldLabel);
             if (targetMaterial.HasProperty("_RampTex"))
             {
                 EditorGUI.BeginChangeCheck();
                 Texture2D rampTex = (Texture2D)EditorGUILayout.ObjectField(
-                    "ランプ Ramp",
+                    L("ランプ", "Ramp"),
                     targetMaterial.GetTexture("_RampTex"),
                     typeof(Texture2D),
                     false);
@@ -443,7 +444,7 @@ namespace NataneToon.Editor
                     EditorUtility.SetDirty(targetMaterial);
                 }
 
-                if (GUILayout.Button("ランプテクスチャを自動生成 Auto-Generate Ramp", GUILayout.Height(25)))
+                if (GUILayout.Button(L("ランプテクスチャを自動生成", "Auto-Generate Ramp"), GUILayout.Height(25)))
                 {
                     GenerateRampTexture();
                 }
@@ -452,12 +453,12 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(10);
 
             // Shading Grade Map
-            EditorGUILayout.LabelField("シェーディンググレードマップ Shading Grade Map", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("シェーディンググレードマップ", "Shading Grade Map"), EditorStyles.boldLabel);
             if (targetMaterial.HasProperty("_ShadingGradeMap"))
             {
                 EditorGUI.BeginChangeCheck();
                 Texture2D gradeMap = (Texture2D)EditorGUILayout.ObjectField(
-                    "グレードマップ Grade Map",
+                    L("グレードマップ", "Grade Map"),
                     targetMaterial.GetTexture("_ShadingGradeMap"),
                     typeof(Texture2D),
                     false);
@@ -469,20 +470,20 @@ namespace NataneToon.Editor
                 }
 
                 EditorGUILayout.HelpBox(
-                    "白=明るく、黒=暗く影を調整\n" +
-                    "White=brighter, Black=darker shadows",
+                    L("白=明るく、黒=暗く影を調整",
+                      "White=brighter, Black=darker shadows"),
                     MessageType.Info);
             }
 
             EditorGUILayout.Space(10);
 
             // AO Map
-            EditorGUILayout.LabelField("アンビエントオクルージョン Ambient Occlusion", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("アンビエントオクルージョン", "Ambient Occlusion"), EditorStyles.boldLabel);
             if (targetMaterial.HasProperty("_OcclusionMap"))
             {
                 EditorGUI.BeginChangeCheck();
                 Texture2D aoMap = (Texture2D)EditorGUILayout.ObjectField(
-                    "AOマップ AO Map",
+                    L("AOマップ", "AO Map"),
                     targetMaterial.GetTexture("_OcclusionMap"),
                     typeof(Texture2D),
                     false);
@@ -497,7 +498,7 @@ namespace NataneToon.Editor
                 {
                     EditorGUI.BeginChangeCheck();
                     float aoStrength = EditorGUILayout.Slider(
-                        "強度 Strength",
+                        L("強度", "Strength"),
                         targetMaterial.GetFloat("_OcclusionStrength"),
                         0f,
                         1f);
@@ -517,56 +518,56 @@ namespace NataneToon.Editor
         {
             if (targetMaterial == null)
             {
-                EditorGUILayout.HelpBox("マテリアルを選択してください\nPlease select a material first", MessageType.Warning);
+                EditorGUILayout.HelpBox(L("マテリアルを選択してください", "Please select a material first"), MessageType.Warning);
                 return;
             }
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("ステップ5: プレビュー Step 5: Preview", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ステップ5: プレビュー", "Step 5: Preview"), EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
 
             EditorGUILayout.HelpBox(
-                "シャドウ設定のプレビュー\n" +
-                "Preview shadow settings",
+                L("シャドウ設定のプレビュー",
+                  "Preview shadow settings"),
                 MessageType.Info);
 
             EditorGUILayout.Space(10);
 
             // Summary
-            EditorGUILayout.LabelField("設定サマリー Settings Summary", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("設定サマリー", "Settings Summary"), EditorStyles.boldLabel);
 
             if (targetMaterial.HasProperty("_ToonSteps"))
             {
-                EditorGUILayout.LabelField($"トゥーン段階 Toon Steps: {targetMaterial.GetFloat("_ToonSteps")}");
+                EditorGUILayout.LabelField($"{L("トゥーン段階", "Toon Steps")}: {targetMaterial.GetFloat("_ToonSteps")}");
             }
 
             if (targetMaterial.HasProperty("_ToonSharpness"))
             {
-                EditorGUILayout.LabelField($"シャープネス Sharpness: {targetMaterial.GetFloat("_ToonSharpness"):F2}");
+                EditorGUILayout.LabelField($"{L("シャープネス", "Sharpness")}: {targetMaterial.GetFloat("_ToonSharpness"):F2}");
             }
 
             if (targetMaterial.HasProperty("_ShadowColor"))
             {
                 Color shadowColor = targetMaterial.GetColor("_ShadowColor");
-                EditorGUILayout.LabelField($"影の色 Shadow Color: RGB({shadowColor.r:F2}, {shadowColor.g:F2}, {shadowColor.b:F2})");
+                EditorGUILayout.LabelField($"{L("影の色", "Shadow Color")}: RGB({shadowColor.r:F2}, {shadowColor.g:F2}, {shadowColor.b:F2})");
             }
 
             EditorGUILayout.Space(10);
 
             // Quick actions
-            if (GUILayout.Button("設定をリセット Reset Settings", GUILayout.Height(30)))
+            if (GUILayout.Button(L("設定をリセット", "Reset Settings"), GUILayout.Height(30)))
             {
                 if (EditorUtility.DisplayDialog(
-                    "設定をリセット Reset Settings",
-                    "シャドウ設定をデフォルトに戻しますか？\nReset shadow settings to default?",
-                    "はい Yes",
-                    "いいえ No"))
+                    L("設定をリセット", "Reset Settings"),
+                    L("シャドウ設定をデフォルトに戻しますか？", "Reset shadow settings to default?"),
+                    L("はい", "Yes"),
+                    L("いいえ", "No")))
                 {
                     ResetShadowSettings();
                 }
             }
 
-            if (GUILayout.Button("マテリアルをpingして選択 Ping Material", GUILayout.Height(25)))
+            if (GUILayout.Button(L("マテリアルをpingして選択", "Ping Material"), GUILayout.Height(25)))
             {
                 EditorGUIUtility.PingObject(targetMaterial);
                 Selection.activeObject = targetMaterial;
@@ -581,7 +582,7 @@ namespace NataneToon.Editor
 
             using (new EditorGUI.DisabledScope(currentStep == WizardStep.SelectMaterial))
             {
-                if (GUILayout.Button("← 前へ Previous", GUILayout.Height(30)))
+                if (GUILayout.Button(L("← 前へ", "← Previous"), GUILayout.Height(30)))
                 {
                     currentStep = (WizardStep)((int)currentStep - 1);
                 }
@@ -591,7 +592,7 @@ namespace NataneToon.Editor
 
             using (new EditorGUI.DisabledScope(currentStep == WizardStep.Preview || targetMaterial == null))
             {
-                if (GUILayout.Button("次へ Next →", GUILayout.Height(30)))
+                if (GUILayout.Button(L("次へ →", "Next →"), GUILayout.Height(30)))
                 {
                     currentStep = (WizardStep)((int)currentStep + 1);
                 }
@@ -665,8 +666,8 @@ namespace NataneToon.Editor
             EditorUtility.SetDirty(targetMaterial);
 
             EditorUtility.DisplayDialog(
-                "プリセット適用 Preset Applied",
-                $"{preset}プリセットを適用しました\nApplied {preset} preset",
+                L("プリセット適用", "Preset Applied"),
+                L($"{preset}プリセットを適用しました", $"Applied {preset} preset"),
                 "OK");
         }
 
@@ -674,10 +675,10 @@ namespace NataneToon.Editor
         {
             // Create a simple gradient ramp texture
             string path = EditorUtility.SaveFilePanelInProject(
-                "ランプテクスチャを保存 Save Ramp Texture",
+                L("ランプテクスチャを保存", "Save Ramp Texture"),
                 "RampTexture",
                 "png",
-                "保存場所を選択 Choose save location");
+                L("保存場所を選択", "Choose save location"));
 
             if (string.IsNullOrEmpty(path)) return;
 
@@ -719,8 +720,8 @@ namespace NataneToon.Editor
             EditorUtility.SetDirty(targetMaterial);
 
             EditorUtility.DisplayDialog(
-                "成功 Success",
-                $"ランプテクスチャを生成しました\nGenerated ramp texture: {path}",
+                L("成功", "Success"),
+                L($"ランプテクスチャを生成しました: {path}", $"Generated ramp texture: {path}"),
                 "OK");
         }
 

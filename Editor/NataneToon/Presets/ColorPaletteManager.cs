@@ -6,6 +6,8 @@ using NataneToon.MaterialSystem;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Color palette management window
     /// Manage project-wide color schemes and apply to materials
@@ -21,26 +23,25 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/プリセット Presets/カラーパレット管理 Color Palette Manager", false, 22)]
         public static void ShowWindow()
         {
-            var window = GetWindow<ColorPaletteManager>("カラーパレット Color Palette");
+            var window = GetWindow<ColorPaletteManager>(L("カラーパレット", "Color Palette"));
             window.minSize = new Vector2(500, 400);
             window.Show();
         }
 
         private void OnGUI()
         {
-            EditorGUILayout.LabelField("Color Palette Manager", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("カラーパレットマネージャー", EditorStyles.miniLabel);
-            EditorGUILayout.HelpBox("プロジェクトの色を管理し、マテリアル間で同期\nManage project colors and sync across materials", MessageType.Info);
+            EditorGUILayout.LabelField(L("カラーパレットマネージャー", "Color Palette Manager"), EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(L("プロジェクトの色を管理し、マテリアル間で同期", "Manage project colors and sync across materials"), MessageType.Info);
 
             EditorGUILayout.Space(10);
 
             // Palette selection
             currentPalette = (ColorPalette)EditorGUILayout.ObjectField(
-                "現在のパレット Current Palette", currentPalette, typeof(ColorPalette), false);
+                L("現在のパレット", "Current Palette"), currentPalette, typeof(ColorPalette), false);
 
             if (currentPalette == null)
             {
-                if (GUILayout.Button("新しいパレットを作成 Create New Palette", GUILayout.Height(25)))
+                if (GUILayout.Button(L("新しいパレットを作成", "Create New Palette"), GUILayout.Height(25)))
                 {
                     CreateNewPalette();
                 }
@@ -69,8 +70,8 @@ namespace NataneToon.Editor
 
             // Actions
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("色を追加 Add Color")) AddColor();
-            if (GUILayout.Button("選択したマテリアルに適用 Apply to Selected Materials")) ApplyToSelected();
+            if (GUILayout.Button(L("色を追加", "Add Color"))) AddColor();
+            if (GUILayout.Button(L("選択したマテリアルに適用", "Apply to Selected Materials"))) ApplyToSelected();
             EditorGUILayout.EndHorizontal();
         }
 

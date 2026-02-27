@@ -158,6 +158,7 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField(L(titleJP, titleEN), EditorStyles.boldLabel);
             GUILayout.FlexibleSpace();
+            DrawLanguageToggleButton();
             DrawHelpButton(toolKey);
             EditorGUILayout.EndHorizontal();
         }
@@ -540,10 +541,24 @@ namespace NataneToon.Editor
             EditorGUILayout.EndVertical();
 
             GUILayout.FlexibleSpace();
+            DrawLanguageToggleButton();
             DrawHelpButton(toolKey);
 
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
+        }
+
+        /// <summary>
+        /// Draw JP/EN language toggle button
+        /// JP/EN 言語切り替えボタンを描画
+        /// </summary>
+        public static void DrawLanguageToggleButton()
+        {
+            string label = NataneToonLocalization.IsJapanese ? "EN" : "JP";
+            if (GUILayout.Button(label, GUILayout.Width(35), GUILayout.Height(25)))
+            {
+                NataneToonLocalization.ToggleLanguage();
+            }
         }
 
         /// <summary>

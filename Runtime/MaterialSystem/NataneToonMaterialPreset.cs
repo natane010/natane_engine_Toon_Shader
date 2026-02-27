@@ -132,6 +132,41 @@ namespace NataneToon.MaterialSystem
         // Normal Map
         public float normalMapIntensity = 1f;
 
+        // Detail Map (Background)
+        public bool useDetailMap = false;
+        public float detailAlbedoScale = 0.5f;
+        public float detailNormalScale = 1f;
+        public float detailUVSet = 0f;
+        public float detailTiling = 1f;
+
+        // Triplanar (Background)
+        public bool useTriplanar = false;
+        public float triplanarScale = 1f;
+        public float triplanarBlendSharpness = 4f;
+
+        // Height Fog (Background)
+        public bool useHeightFog = false;
+        public Color heightFogColor = new Color(0.7f, 0.8f, 0.9f, 1f);
+        public float heightFogStart = 0f;
+        public float heightFogEnd = 10f;
+        public float heightFogDensity = 0.5f;
+
+        // Surface Cover (Background)
+        public bool useSurfaceCover = false;
+        public Color coverColor = Color.white;
+        public float coverAmount = 0.5f;
+        public float coverThreshold = 0.3f;
+        public float coverBlendSharpness = 4f;
+        public float coverTiling = 0.1f;
+
+        // Mirror Control (VRChat)
+        public bool useMirrorControl = false;
+        public float mirrorMode = 0f;
+        public float mirrorEmissionMultiplier = 1f;
+
+        // Quest Lite
+        public bool useQuestLite = false;
+
         // Rendering
         public int renderQueue = 2000;
         public int cullMode = 2; // 0=Off, 1=Front, 2=Back
@@ -277,6 +312,41 @@ namespace NataneToon.MaterialSystem
             // Normal Map
             if (material.HasProperty("_NormalMapIntensity")) material.SetFloat("_NormalMapIntensity", p.normalMapIntensity);
 
+            // Detail Map
+            SetKeyword(material, "_DETAIL_MAP", p.useDetailMap);
+            if (material.HasProperty("_DetailAlbedoScale")) material.SetFloat("_DetailAlbedoScale", p.detailAlbedoScale);
+            if (material.HasProperty("_DetailNormalScale")) material.SetFloat("_DetailNormalScale", p.detailNormalScale);
+            if (material.HasProperty("_DetailUVSet")) material.SetFloat("_DetailUVSet", p.detailUVSet);
+            if (material.HasProperty("_DetailTiling")) material.SetFloat("_DetailTiling", p.detailTiling);
+
+            // Triplanar
+            SetKeyword(material, "_TRIPLANAR", p.useTriplanar);
+            if (material.HasProperty("_TriplanarScale")) material.SetFloat("_TriplanarScale", p.triplanarScale);
+            if (material.HasProperty("_TriplanarBlendSharpness")) material.SetFloat("_TriplanarBlendSharpness", p.triplanarBlendSharpness);
+
+            // Height Fog
+            SetKeyword(material, "_HEIGHT_FOG", p.useHeightFog);
+            if (material.HasProperty("_HeightFogColor")) material.SetColor("_HeightFogColor", p.heightFogColor);
+            if (material.HasProperty("_HeightFogStart")) material.SetFloat("_HeightFogStart", p.heightFogStart);
+            if (material.HasProperty("_HeightFogEnd")) material.SetFloat("_HeightFogEnd", p.heightFogEnd);
+            if (material.HasProperty("_HeightFogDensity")) material.SetFloat("_HeightFogDensity", p.heightFogDensity);
+
+            // Surface Cover
+            SetKeyword(material, "_SURFACE_COVER", p.useSurfaceCover);
+            if (material.HasProperty("_CoverColor")) material.SetColor("_CoverColor", p.coverColor);
+            if (material.HasProperty("_CoverAmount")) material.SetFloat("_CoverAmount", p.coverAmount);
+            if (material.HasProperty("_CoverThreshold")) material.SetFloat("_CoverThreshold", p.coverThreshold);
+            if (material.HasProperty("_CoverBlendSharpness")) material.SetFloat("_CoverBlendSharpness", p.coverBlendSharpness);
+            if (material.HasProperty("_CoverTiling")) material.SetFloat("_CoverTiling", p.coverTiling);
+
+            // Mirror Control
+            SetKeyword(material, "_MIRROR_CONTROL", p.useMirrorControl);
+            if (material.HasProperty("_MirrorMode")) material.SetFloat("_MirrorMode", p.mirrorMode);
+            if (material.HasProperty("_MirrorEmissionMultiplier")) material.SetFloat("_MirrorEmissionMultiplier", p.mirrorEmissionMultiplier);
+
+            // Quest Lite
+            SetKeyword(material, "_QUEST_LITE", p.useQuestLite);
+
             // Rendering
             material.renderQueue = p.renderQueue;
             if (material.HasProperty("_Cull")) material.SetFloat("_Cull", p.cullMode);
@@ -393,6 +463,41 @@ namespace NataneToon.MaterialSystem
 
             // Normal Map
             if (material.HasProperty("_NormalMapIntensity")) p.normalMapIntensity = material.GetFloat("_NormalMapIntensity");
+
+            // Detail Map
+            p.useDetailMap = material.IsKeywordEnabled("_DETAIL_MAP");
+            if (material.HasProperty("_DetailAlbedoScale")) p.detailAlbedoScale = material.GetFloat("_DetailAlbedoScale");
+            if (material.HasProperty("_DetailNormalScale")) p.detailNormalScale = material.GetFloat("_DetailNormalScale");
+            if (material.HasProperty("_DetailUVSet")) p.detailUVSet = material.GetFloat("_DetailUVSet");
+            if (material.HasProperty("_DetailTiling")) p.detailTiling = material.GetFloat("_DetailTiling");
+
+            // Triplanar
+            p.useTriplanar = material.IsKeywordEnabled("_TRIPLANAR");
+            if (material.HasProperty("_TriplanarScale")) p.triplanarScale = material.GetFloat("_TriplanarScale");
+            if (material.HasProperty("_TriplanarBlendSharpness")) p.triplanarBlendSharpness = material.GetFloat("_TriplanarBlendSharpness");
+
+            // Height Fog
+            p.useHeightFog = material.IsKeywordEnabled("_HEIGHT_FOG");
+            if (material.HasProperty("_HeightFogColor")) p.heightFogColor = material.GetColor("_HeightFogColor");
+            if (material.HasProperty("_HeightFogStart")) p.heightFogStart = material.GetFloat("_HeightFogStart");
+            if (material.HasProperty("_HeightFogEnd")) p.heightFogEnd = material.GetFloat("_HeightFogEnd");
+            if (material.HasProperty("_HeightFogDensity")) p.heightFogDensity = material.GetFloat("_HeightFogDensity");
+
+            // Surface Cover
+            p.useSurfaceCover = material.IsKeywordEnabled("_SURFACE_COVER");
+            if (material.HasProperty("_CoverColor")) p.coverColor = material.GetColor("_CoverColor");
+            if (material.HasProperty("_CoverAmount")) p.coverAmount = material.GetFloat("_CoverAmount");
+            if (material.HasProperty("_CoverThreshold")) p.coverThreshold = material.GetFloat("_CoverThreshold");
+            if (material.HasProperty("_CoverBlendSharpness")) p.coverBlendSharpness = material.GetFloat("_CoverBlendSharpness");
+            if (material.HasProperty("_CoverTiling")) p.coverTiling = material.GetFloat("_CoverTiling");
+
+            // Mirror Control
+            p.useMirrorControl = material.IsKeywordEnabled("_MIRROR_CONTROL");
+            if (material.HasProperty("_MirrorMode")) p.mirrorMode = material.GetFloat("_MirrorMode");
+            if (material.HasProperty("_MirrorEmissionMultiplier")) p.mirrorEmissionMultiplier = material.GetFloat("_MirrorEmissionMultiplier");
+
+            // Quest Lite
+            p.useQuestLite = material.IsKeywordEnabled("_QUEST_LITE");
 
             // Rendering
             p.renderQueue = material.renderQueue;

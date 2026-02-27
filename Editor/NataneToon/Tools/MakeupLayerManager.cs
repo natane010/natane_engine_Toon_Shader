@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Makeup Texture Layer Management Tool
     /// メイクアップテクスチャレイヤー管理ツール
@@ -37,7 +39,7 @@ namespace NataneToon.Editor
                 saturationProp = "_2ndSaturation",
                 valueProp = "_2ndValue",
                 blendModeProp = "_2ndBlendMode",
-                displayName = "第2レイヤー"
+                displayName = "Layer 2"
             },
             new LayerData {
                 textureProp = "_3rdTex",
@@ -46,7 +48,7 @@ namespace NataneToon.Editor
                 saturationProp = "_3rdSaturation",
                 valueProp = "_3rdValue",
                 blendModeProp = "_3rdBlendMode",
-                displayName = "第3レイヤー"
+                displayName = "Layer 3"
             },
             new LayerData {
                 textureProp = "_4thTex",
@@ -55,7 +57,7 @@ namespace NataneToon.Editor
                 saturationProp = "_4thSaturation",
                 valueProp = "_4thValue",
                 blendModeProp = "_4thBlendMode",
-                displayName = "第4レイヤー"
+                displayName = "Layer 4"
             },
             new LayerData {
                 textureProp = "_5thTex",
@@ -64,11 +66,11 @@ namespace NataneToon.Editor
                 saturationProp = "_5thSaturation",
                 valueProp = "_5thValue",
                 blendModeProp = "_5thBlendMode",
-                displayName = "第5レイヤー"
+                displayName = "Layer 5"
             },
         };
 
-        private string[] blendModeNames = new string[] { "加算", "乗算", "オーバーレイ", "スクリーン" };
+        private string[] blendModeNames => new[] { L("加算", "Additive"), L("乗算", "Multiply"), L("オーバーレイ", "Overlay"), L("スクリーン", "Screen") };
 
         // Layer templates
         private enum LayerTemplate { Custom, Blush, EyeShadow, Lipstick, Highlight, Contour }
@@ -77,7 +79,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/マテリアル Material/メイクアップレイヤー管理 Makeup Layer Manager", false, 15)]
         public static void ShowWindow()
         {
-            var window = GetWindow<MakeupLayerManager>("メイクアップレイヤー管理 Makeup Layer Manager");
+            var window = GetWindow<MakeupLayerManager>(L("メイクアップレイヤー管理", "Makeup Layer Manager"));
             window.minSize = new Vector2(500, 700);
             window.Show();
         }
@@ -109,8 +111,8 @@ namespace NataneToon.Editor
         private void DrawHeader()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("メイクアップレイヤー管理", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("5つのテクスチャレイヤーをHSV調整付きで視覚的に管理", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(L("メイクアップレイヤー管理", "Makeup Layer Manager"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("5つのテクスチャレイヤーをHSV調整付きで視覚的に管理", "Visually manage 5 texture layers with HSV adjustment"), EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
         }
 
@@ -120,7 +122,7 @@ namespace NataneToon.Editor
 
             EditorGUI.BeginChangeCheck();
             targetMaterial = (Material)EditorGUILayout.ObjectField(
-                "ターゲットマテリアル",
+                L("ターゲットマテリアル", "Target Material"),
                 targetMaterial,
                 typeof(Material),
                 false);
@@ -131,7 +133,7 @@ namespace NataneToon.Editor
                 Repaint();
             }
 
-            if (GUILayout.Button("選択中のマテリアルを使用", GUILayout.Height(25)))
+            if (GUILayout.Button(L("選択中のマテリアルを使用", "Use Selected Material"), GUILayout.Height(25)))
             {
                 if (Selection.activeObject is Material mat)
                 {
@@ -140,8 +142,8 @@ namespace NataneToon.Editor
                 else
                 {
                     EditorUtility.DisplayDialog(
-                        "エラー",
-                        "マテリアルを選択してください",
+                        L("エラー", "Error"),
+                        L("マテリアルを選択してください", "Please select a material"),
                         "OK");
                 }
             }
@@ -152,7 +154,7 @@ namespace NataneToon.Editor
         private void DrawLayerStack()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("レイヤースタック", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("レイヤースタック", "Layer Stack"), EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
 
             // Draw layers from top to bottom
@@ -165,14 +167,14 @@ namespace NataneToon.Editor
             // Base layer (read-only)
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             GUI.backgroundColor = new Color(0.7f, 0.7f, 0.7f);
-            EditorGUILayout.LabelField("ベースレイヤー (_MainTex)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ベースレイヤー", "Base Layer") + " (_MainTex)", EditorStyles.boldLabel);
             GUI.backgroundColor = Color.white;
 
             if (targetMaterial.HasProperty("_MainTex"))
             {
                 using (new EditorGUI.DisabledScope(true))
                 {
-                    EditorGUILayout.ObjectField("テクスチャ", targetMaterial.GetTexture("_MainTex"), typeof(Texture2D), false);
+                    EditorGUILayout.ObjectField(L("テクスチャ", "Texture"), targetMaterial.GetTexture("_MainTex"), typeof(Texture2D), false);
                 }
             }
             EditorGUILayout.EndVertical();
@@ -199,13 +201,13 @@ namespace NataneToon.Editor
             // Quick enable/disable
             if (hasTexture)
             {
-                if (GUILayout.Button("クリア", GUILayout.Width(80)))
+                if (GUILayout.Button(L("クリア", "Clear"), GUILayout.Width(80)))
                 {
                     if (EditorUtility.DisplayDialog(
-                        "レイヤーをクリア",
-                        $"{layer.displayName}のテクスチャをクリアしますか？",
-                        "はい",
-                        "いいえ"))
+                        L("レイヤーをクリア", "Clear Layer"),
+                        L($"{layer.displayName}のテクスチャをクリアしますか？", $"Clear texture for {layer.displayName}?"),
+                        L("はい", "Yes"),
+                        L("いいえ", "No")))
                     {
                         Undo.RecordObject(targetMaterial, "Clear Layer Texture");
                         targetMaterial.SetTexture(layer.textureProp, null);
@@ -224,7 +226,7 @@ namespace NataneToon.Editor
                 // Texture
                 EditorGUI.BeginChangeCheck();
                 Texture2D newTex = (Texture2D)EditorGUILayout.ObjectField(
-                    "テクスチャ",
+                    L("テクスチャ", "Texture"),
                     tex,
                     typeof(Texture2D),
                     false);
@@ -248,7 +250,7 @@ namespace NataneToon.Editor
                     if (targetMaterial.HasProperty(layer.colorProp))
                     {
                         EditorGUI.BeginChangeCheck();
-                        Color color = EditorGUILayout.ColorField("色", targetMaterial.GetColor(layer.colorProp));
+                        Color color = EditorGUILayout.ColorField(L("色", "Color"), targetMaterial.GetColor(layer.colorProp));
                         if (EditorGUI.EndChangeCheck())
                         {
                             Undo.RecordObject(targetMaterial, "Change Layer Color");
@@ -259,12 +261,12 @@ namespace NataneToon.Editor
 
                     // HSV adjustment
                     EditorGUILayout.Space(5);
-                    EditorGUILayout.LabelField("HSV調整", EditorStyles.boldLabel);
+                    EditorGUILayout.LabelField(L("HSV調整", "HSV Adjustment"), EditorStyles.boldLabel);
 
                     if (targetMaterial.HasProperty(layer.hueProp))
                     {
                         EditorGUI.BeginChangeCheck();
-                        float hue = EditorGUILayout.Slider("色相", targetMaterial.GetFloat(layer.hueProp), -180f, 180f);
+                        float hue = EditorGUILayout.Slider(L("色相", "Hue"), targetMaterial.GetFloat(layer.hueProp), -180f, 180f);
                         if (EditorGUI.EndChangeCheck())
                         {
                             Undo.RecordObject(targetMaterial, "Change Layer Hue");
@@ -276,7 +278,7 @@ namespace NataneToon.Editor
                     if (targetMaterial.HasProperty(layer.saturationProp))
                     {
                         EditorGUI.BeginChangeCheck();
-                        float saturation = EditorGUILayout.Slider("彩度", targetMaterial.GetFloat(layer.saturationProp), 0f, 2f);
+                        float saturation = EditorGUILayout.Slider(L("彩度", "Saturation"), targetMaterial.GetFloat(layer.saturationProp), 0f, 2f);
                         if (EditorGUI.EndChangeCheck())
                         {
                             Undo.RecordObject(targetMaterial, "Change Layer Saturation");
@@ -288,7 +290,7 @@ namespace NataneToon.Editor
                     if (targetMaterial.HasProperty(layer.valueProp))
                     {
                         EditorGUI.BeginChangeCheck();
-                        float value = EditorGUILayout.Slider("明度", targetMaterial.GetFloat(layer.valueProp), 0f, 2f);
+                        float value = EditorGUILayout.Slider(L("明度", "Value"), targetMaterial.GetFloat(layer.valueProp), 0f, 2f);
                         if (EditorGUI.EndChangeCheck())
                         {
                             Undo.RecordObject(targetMaterial, "Change Layer Value");
@@ -303,7 +305,7 @@ namespace NataneToon.Editor
                         EditorGUILayout.Space(5);
                         EditorGUI.BeginChangeCheck();
                         int blendMode = (int)targetMaterial.GetFloat(layer.blendModeProp);
-                        blendMode = EditorGUILayout.Popup("ブレンドモード", blendMode, blendModeNames);
+                        blendMode = EditorGUILayout.Popup(L("ブレンドモード", "Blend Mode"), blendMode, blendModeNames);
                         if (EditorGUI.EndChangeCheck())
                         {
                             Undo.RecordObject(targetMaterial, "Change Blend Mode");
@@ -314,14 +316,14 @@ namespace NataneToon.Editor
 
                     // Reset button
                     EditorGUILayout.Space(5);
-                    if (GUILayout.Button("このレイヤーをリセット"))
+                    if (GUILayout.Button(L("このレイヤーをリセット", "Reset This Layer")))
                     {
                         ResetLayer(layer);
                     }
                 }
                 else
                 {
-                    EditorGUILayout.HelpBox("テクスチャが設定されていません", MessageType.Info);
+                    EditorGUILayout.HelpBox(L("テクスチャが設定されていません", "No texture is set"), MessageType.Info);
                 }
 
                 EditorGUI.indentLevel--;
@@ -333,20 +335,20 @@ namespace NataneToon.Editor
         private void DrawTemplates()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("レイヤーテンプレート", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("レイヤーテンプレート", "Layer Templates"), EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "事前設定されたHSV値でレイヤーを素早く設定",
+                L("事前設定されたHSV値でレイヤーを素早く設定", "Quickly configure layers with preset HSV values"),
                 MessageType.Info);
 
-            selectedTemplate = (LayerTemplate)EditorGUILayout.EnumPopup("テンプレート", selectedTemplate);
+            selectedTemplate = (LayerTemplate)EditorGUILayout.EnumPopup(L("テンプレート", "Template"), selectedTemplate);
 
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("第2レイヤーに適用", GUILayout.Height(25)))
+            if (GUILayout.Button(L("第2レイヤーに適用", "Apply to Layer 2"), GUILayout.Height(25)))
             {
                 ApplyTemplate(0, selectedTemplate);
             }
-            if (GUILayout.Button("第3レイヤーに適用", GUILayout.Height(25)))
+            if (GUILayout.Button(L("第3レイヤーに適用", "Apply to Layer 3"), GUILayout.Height(25)))
             {
                 ApplyTemplate(1, selectedTemplate);
             }
@@ -355,11 +357,11 @@ namespace NataneToon.Editor
 
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("第4レイヤーに適用", GUILayout.Height(25)))
+            if (GUILayout.Button(L("第4レイヤーに適用", "Apply to Layer 4"), GUILayout.Height(25)))
             {
                 ApplyTemplate(2, selectedTemplate);
             }
-            if (GUILayout.Button("第5レイヤーに適用", GUILayout.Height(25)))
+            if (GUILayout.Button(L("第5レイヤーに適用", "Apply to Layer 5"), GUILayout.Height(25)))
             {
                 ApplyTemplate(3, selectedTemplate);
             }
@@ -372,17 +374,17 @@ namespace NataneToon.Editor
         private void DrawBatchOperations()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("一括操作", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("一括操作", "Batch Operations"), EditorStyles.boldLabel);
 
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("すべてリセット", GUILayout.Height(30)))
+            if (GUILayout.Button(L("すべてリセット", "Reset All"), GUILayout.Height(30)))
             {
                 if (EditorUtility.DisplayDialog(
-                    "すべてリセット",
-                    "すべてのメイクアップレイヤーをリセットしますか？",
-                    "はい",
-                    "いいえ"))
+                    L("すべてリセット", "Reset All"),
+                    L("すべてのメイクアップレイヤーをリセットしますか？", "Reset all makeup layers?"),
+                    L("はい", "Yes"),
+                    L("いいえ", "No")))
                 {
                     foreach (var layer in layers)
                     {
@@ -391,13 +393,13 @@ namespace NataneToon.Editor
                 }
             }
 
-            if (GUILayout.Button("すべてクリア", GUILayout.Height(30)))
+            if (GUILayout.Button(L("すべてクリア", "Clear All"), GUILayout.Height(30)))
             {
                 if (EditorUtility.DisplayDialog(
-                    "すべてクリア",
-                    "すべてのメイクアップレイヤーのテクスチャをクリアしますか?",
-                    "はい",
-                    "いいえ"))
+                    L("すべてクリア", "Clear All"),
+                    L("すべてのメイクアップレイヤーのテクスチャをクリアしますか?", "Clear textures for all makeup layers?"),
+                    L("はい", "Yes"),
+                    L("いいえ", "No")))
                 {
                     Undo.RecordObject(targetMaterial, "Clear All Layers");
                     foreach (var layer in layers)
@@ -510,8 +512,8 @@ namespace NataneToon.Editor
             EditorUtility.SetDirty(targetMaterial);
 
             EditorUtility.DisplayDialog(
-                "テンプレート適用",
-                $"{template}テンプレートを{layer.displayName}に適用しました",
+                L("テンプレート適用", "Template Applied"),
+                L($"{template}テンプレートを{layer.displayName}に適用しました", $"Applied {template} template to {layer.displayName}"),
                 "OK");
         }
     }

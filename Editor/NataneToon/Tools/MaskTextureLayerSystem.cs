@@ -4,6 +4,8 @@ using System.Collections.Generic;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Blend modes for mask texture layer compositing.
     /// マスクテクスチャレイヤー合成用ブレンドモード
@@ -420,7 +422,7 @@ namespace NataneToon.Editor
             bool changed = false;
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("レイヤー Layers", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("レイヤー", "Layers"), EditorStyles.boldLabel);
 
             // Toolbar
             changed |= DrawToolbar(stack);
@@ -444,7 +446,8 @@ namespace NataneToon.Editor
             {
                 EditorGUILayout.Space(2);
                 EditorGUILayout.LabelField(
-                    $"アクティブ: {stack.ActiveLayer.name} ({stack.ActiveLayer.width}x{stack.ActiveLayer.height})",
+                    L($"アクティブ: {stack.ActiveLayer.name} ({stack.ActiveLayer.width}x{stack.ActiveLayer.height})",
+                      $"Active: {stack.ActiveLayer.name} ({stack.ActiveLayer.width}x{stack.ActiveLayer.height})"),
                     EditorStyles.miniLabel);
             }
 
@@ -457,14 +460,14 @@ namespace NataneToon.Editor
             bool changed = false;
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button(new GUIContent("+", "新規レイヤー追加 Add new layer"), GUILayout.Width(25)))
+            if (GUILayout.Button(new GUIContent("+", L("新規レイヤー追加", "Add new layer")), GUILayout.Width(25)))
             {
                 stack.AddLayer($"Layer {stack.Layers.Count + 1}");
                 changed = true;
             }
 
             GUI.enabled = stack.Layers.Count > 1;
-            if (GUILayout.Button(new GUIContent("-", "レイヤー削除 Remove layer"), GUILayout.Width(25)))
+            if (GUILayout.Button(new GUIContent("-", L("レイヤー削除", "Remove layer")), GUILayout.Width(25)))
             {
                 stack.RemoveLayer(stack.ActiveLayerIndex);
                 changed = true;
@@ -472,7 +475,7 @@ namespace NataneToon.Editor
             GUI.enabled = true;
 
             GUI.enabled = stack.ActiveLayerIndex < stack.Layers.Count - 1;
-            if (GUILayout.Button(new GUIContent("\u25B2", "上へ移動 Move up"), GUILayout.Width(25)))
+            if (GUILayout.Button(new GUIContent("\u25B2", L("上へ移動", "Move up")), GUILayout.Width(25)))
             {
                 stack.MoveLayer(stack.ActiveLayerIndex, stack.ActiveLayerIndex + 1);
                 changed = true;
@@ -480,7 +483,7 @@ namespace NataneToon.Editor
             GUI.enabled = true;
 
             GUI.enabled = stack.ActiveLayerIndex > 0;
-            if (GUILayout.Button(new GUIContent("\u25BC", "下へ移動 Move down"), GUILayout.Width(25)))
+            if (GUILayout.Button(new GUIContent("\u25BC", L("下へ移動", "Move down")), GUILayout.Width(25)))
             {
                 stack.MoveLayer(stack.ActiveLayerIndex, stack.ActiveLayerIndex - 1);
                 changed = true;
@@ -488,14 +491,14 @@ namespace NataneToon.Editor
             GUI.enabled = true;
 
             GUI.enabled = stack.Layers.Count > 0;
-            if (GUILayout.Button(new GUIContent("複製", "レイヤーを複製 Duplicate layer"), GUILayout.Width(40)))
+            if (GUILayout.Button(new GUIContent(L("複製", "Dup"), L("レイヤーを複製", "Duplicate layer")), GUILayout.Width(40)))
             {
                 stack.DuplicateLayer(stack.ActiveLayerIndex);
                 changed = true;
             }
 
             GUI.enabled = stack.ActiveLayerIndex > 0 && stack.Layers.Count > 1;
-            if (GUILayout.Button(new GUIContent("結合", "下のレイヤーと結合 Merge down"), GUILayout.Width(40)))
+            if (GUILayout.Button(new GUIContent(L("結合", "Merge"), L("下のレイヤーと結合", "Merge down")), GUILayout.Width(40)))
             {
                 stack.MergeDown(stack.ActiveLayerIndex);
                 changed = true;
@@ -536,7 +539,7 @@ namespace NataneToon.Editor
             if (EditorGUI.EndChangeCheck()) changed = true;
 
             string lockLabel = layer.locked ? "L" : "U";
-            string lockTooltip = layer.locked ? "ロック解除 Unlock" : "ロック Lock";
+            string lockTooltip = layer.locked ? L("ロック解除", "Unlock") : L("ロック", "Lock");
             if (GUILayout.Button(new GUIContent(lockLabel, lockTooltip), GUILayout.Width(22)))
             {
                 layer.locked = !layer.locked;
@@ -575,7 +578,7 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("レイヤー", EditorStyles.boldLabel, GUILayout.Width(60));
+            EditorGUILayout.LabelField(L("レイヤー", "Layers"), EditorStyles.boldLabel, GUILayout.Width(60));
 
             if (GUILayout.Button("+", GUILayout.Width(20)))
             {

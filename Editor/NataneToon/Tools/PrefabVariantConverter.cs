@@ -6,6 +6,8 @@ using System.IO;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Prefab Variant Converter with Material Migration
     /// プレハブバリアント生成＆マテリアル移行ツール
@@ -41,7 +43,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/移行 Migration/プレハブバリアント変換 Prefab Variant Converter", false, 54)]
         public static void ShowWindow()
         {
-            var window = GetWindow<PrefabVariantConverter>("プレハブバリアント変換 Prefab Variant Converter");
+            var window = GetWindow<PrefabVariantConverter>(L("プレハブバリアント変換", "Prefab Variant Converter"));
             window.minSize = new Vector2(600, 700);
             window.Show();
         }
@@ -68,8 +70,8 @@ namespace NataneToon.Editor
                 "Prefab Variant Converter",
                 "PrefabVariantConverter");
             EditorGUILayout.LabelField(
-                "プレハブバリアントを生成し、lilToonマテリアルをNataneToonに一括変換\n" +
-                "Create prefab variant and batch convert lilToon materials to NataneToon",
+                L("プレハブバリアントを生成し、lilToonマテリアルをNataneToonに一括変換",
+                "Create prefab variant and batch convert lilToon materials to NataneToon"),
                 EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
 
@@ -95,15 +97,15 @@ namespace NataneToon.Editor
         private void DrawPrefabSelection()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("1. プレハブ選択 Prefab Selection", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("1. プレハブ選択", "1. Prefab Selection"), EditorStyles.boldLabel);
 
             EditorGUILayout.HelpBox(
-                "シーンまたはプロジェクトビューでプレハブを選択してください\n" +
-                "Select a prefab in Scene or Project view",
+                L("シーンまたはプロジェクトビューでプレハブを選択してください",
+                "Select a prefab in Scene or Project view"),
                 MessageType.Info);
 
             GUI.enabled = false;
-            EditorGUILayout.ObjectField("選択中のプレハブ Selected Prefab", selectedPrefab, typeof(GameObject), false);
+            EditorGUILayout.ObjectField(L("選択中のプレハブ", "Selected Prefab"), selectedPrefab, typeof(GameObject), false);
             GUI.enabled = true;
 
             if (selectedPrefab != null)
@@ -114,25 +116,25 @@ namespace NataneToon.Editor
                     prefabPath = AssetDatabase.GetAssetPath(selectedPrefab);
                 }
 
-                EditorGUILayout.LabelField("パス Path:", EditorStyles.miniLabel);
+                EditorGUILayout.LabelField(L("パス:", "Path:"), EditorStyles.miniLabel);
                 EditorGUILayout.SelectableLabel(prefabPath, EditorStyles.textField, GUILayout.Height(18));
 
                 // Material count
                 int materialCount = detectedMaterials.Count;
                 int lilToonCount = detectedMaterials.Count(m => m.isLilToon);
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField($"マテリアル数 Materials: {materialCount}");
-                EditorGUILayout.LabelField($"lilToonマテリアル lilToon Materials: {lilToonCount}",
+                EditorGUILayout.LabelField($"{L("マテリアル数", "Materials")}: {materialCount}");
+                EditorGUILayout.LabelField($"{L("lilToonマテリアル", "lilToon Materials")}: {lilToonCount}",
                     lilToonCount > 0 ? EditorStyles.boldLabel : EditorStyles.label);
             }
             else
             {
                 EditorGUILayout.HelpBox(
-                    "プレハブが選択されていません\nNo prefab selected",
+                    L("プレハブが選択されていません", "No prefab selected"),
                     MessageType.Warning);
             }
 
-            if (GUILayout.Button("選択を更新 Refresh Selection", GUILayout.Height(25)))
+            if (GUILayout.Button(L("選択を更新", "Refresh Selection"), GUILayout.Height(25)))
             {
                 RefreshSelection();
             }
@@ -143,16 +145,16 @@ namespace NataneToon.Editor
         private void DrawSettings()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("2. 設定 Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("2. 設定", "2. Settings"), EditorStyles.boldLabel);
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField("バリアント保存先 Variant Save Location", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("バリアント保存先", "Variant Save Location"), EditorStyles.boldLabel);
 
             EditorGUILayout.BeginHorizontal();
-            variantFolderPath = EditorGUILayout.TextField("フォルダパス Folder Path", variantFolderPath);
-            if (GUILayout.Button("選択 Browse", GUILayout.Width(60)))
+            variantFolderPath = EditorGUILayout.TextField(L("フォルダパス", "Folder Path"), variantFolderPath);
+            if (GUILayout.Button(L("選択", "Browse"), GUILayout.Width(60)))
             {
-                string path = EditorUtility.OpenFolderPanel("バリアント保存先を選択", "Assets", "");
+                string path = EditorUtility.OpenFolderPanel(L("バリアント保存先を選択", "Select variant save location"), "Assets", "");
                 if (!string.IsNullOrEmpty(path))
                 {
                     if (path.StartsWith(Application.dataPath))
@@ -164,21 +166,21 @@ namespace NataneToon.Editor
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField("マテリアル設定 Material Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("マテリアル設定", "Material Settings"), EditorStyles.boldLabel);
 
-            materialPrefix = EditorGUILayout.TextField("接頭辞 Prefix", materialPrefix);
-            materialSuffix = EditorGUILayout.TextField("接尾辞 Suffix", materialSuffix);
+            materialPrefix = EditorGUILayout.TextField(L("接頭辞", "Prefix"), materialPrefix);
+            materialSuffix = EditorGUILayout.TextField(L("接尾辞", "Suffix"), materialSuffix);
 
             EditorGUILayout.Space(5);
-            createMaterialFolder = EditorGUILayout.Toggle("専用フォルダに保存 Save to Folder", createMaterialFolder);
+            createMaterialFolder = EditorGUILayout.Toggle(L("専用フォルダに保存", "Save to Folder"), createMaterialFolder);
 
             if (createMaterialFolder)
             {
                 EditorGUILayout.BeginHorizontal();
-                materialFolderPath = EditorGUILayout.TextField("保存先 Save Path", materialFolderPath);
-                if (GUILayout.Button("選択 Browse", GUILayout.Width(60)))
+                materialFolderPath = EditorGUILayout.TextField(L("保存先", "Save Path"), materialFolderPath);
+                if (GUILayout.Button(L("選択", "Browse"), GUILayout.Width(60)))
                 {
-                    string path = EditorUtility.OpenFolderPanel("マテリアル保存先を選択", "Assets", "");
+                    string path = EditorUtility.OpenFolderPanel(L("マテリアル保存先を選択", "Select material save location"), "Assets", "");
                     if (!string.IsNullOrEmpty(path))
                     {
                         if (path.StartsWith(Application.dataPath))
@@ -194,10 +196,10 @@ namespace NataneToon.Editor
             if (detectedMaterials.Count > 0 && detectedMaterials.Any(m => m.isLilToon))
             {
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("命名プレビュー Naming Preview:", EditorStyles.miniLabel);
+                EditorGUILayout.LabelField(L("命名プレビュー:", "Naming Preview:"), EditorStyles.miniLabel);
                 var firstLilToon = detectedMaterials.First(m => m.isLilToon);
                 string exampleName = GetNewMaterialName(firstLilToon.original);
-                EditorGUILayout.SelectableLabel($"例 Example: {firstLilToon.original.name} → {exampleName}",
+                EditorGUILayout.SelectableLabel($"{L("例", "Example")}: {firstLilToon.original.name} → {exampleName}",
                     EditorStyles.textField, GUILayout.Height(18));
             }
 
@@ -210,7 +212,7 @@ namespace NataneToon.Editor
 
             EditorGUILayout.BeginHorizontal();
             showMaterialPreview = EditorGUILayout.Foldout(showMaterialPreview,
-                $"3. マテリアルプレビュー Material Preview ({detectedMaterials.Count})", true);
+                $"3. {L("マテリアルプレビュー", "Material Preview")} ({detectedMaterials.Count})", true);
             EditorGUILayout.EndHorizontal();
 
             if (showMaterialPreview && detectedMaterials.Count > 0)
@@ -222,9 +224,9 @@ namespace NataneToon.Editor
                 int willConvertCount = detectedMaterials.Count(m => m.willConvert);
 
                 EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-                EditorGUILayout.LabelField($"lilToonマテリアル: {lilToonCount}", GUILayout.Width(150));
-                EditorGUILayout.LabelField($"変換予定: {willConvertCount}", GUILayout.Width(150));
-                if (GUILayout.Button(willConvertCount == lilToonCount ? "すべて解除 Deselect All" : "すべて選択 Select All"))
+                EditorGUILayout.LabelField($"{L("lilToonマテリアル", "lilToon Materials")}: {lilToonCount}", GUILayout.Width(150));
+                EditorGUILayout.LabelField($"{L("変換予定", "To Convert")}: {willConvertCount}", GUILayout.Width(150));
+                if (GUILayout.Button(willConvertCount == lilToonCount ? L("すべて解除", "Deselect All") : L("すべて選択", "Select All")))
                 {
                     bool selectAll = willConvertCount != lilToonCount;
                     foreach (var mat in detectedMaterials.Where(m => m.isLilToon))
@@ -263,13 +265,13 @@ namespace NataneToon.Editor
                     }
                     else
                     {
-                        EditorGUILayout.LabelField("(変換不要 No conversion needed)", EditorStyles.miniLabel);
+                        EditorGUILayout.LabelField(L("(変換不要)", "(No conversion needed)"), EditorStyles.miniLabel);
                     }
 
                     EditorGUILayout.EndHorizontal();
 
                     EditorGUILayout.LabelField(
-                        $"使用箇所 Used in: {matInfo.renderer.name} [Slot {matInfo.materialIndex}]",
+                        $"{L("使用箇所", "Used in")}: {matInfo.renderer.name} [Slot {matInfo.materialIndex}]",
                         EditorStyles.miniLabel);
 
                     EditorGUILayout.EndVertical();
@@ -282,37 +284,36 @@ namespace NataneToon.Editor
         private void DrawActions()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("4. 実行 Execute", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("4. 実行", "4. Execute"), EditorStyles.boldLabel);
 
             int willConvertCount = detectedMaterials.Count(m => m.willConvert);
 
             if (willConvertCount == 0)
             {
                 EditorGUILayout.HelpBox(
-                    "変換するマテリアルがありません\n" +
-                    "No materials selected for conversion",
+                    L("変換するマテリアルがありません", "No materials selected for conversion"),
                     MessageType.Warning);
             }
             else
             {
                 EditorGUILayout.HelpBox(
-                    $"以下の処理を実行します：\n" +
-                    $"• プレハブバリアントを作成\n" +
-                    $"• {willConvertCount}個のlilToonマテリアルを複製\n" +
-                    $"• NataneToonシェーダーに変換\n" +
-                    $"• バリアントに新しいマテリアルを適用\n\n" +
+                    L($"以下の処理を実行します：\n" +
+                    $"・プレハブバリアントを作成\n" +
+                    $"・{willConvertCount}個のlilToonマテリアルを複製\n" +
+                    $"・NataneToonシェーダーに変換\n" +
+                    $"・バリアントに新しいマテリアルを適用",
                     $"The following will be executed:\n" +
-                    $"• Create prefab variant\n" +
-                    $"• Duplicate {willConvertCount} lilToon materials\n" +
-                    $"• Convert to NataneToon shader\n" +
-                    $"• Apply new materials to variant",
+                    $"・Create prefab variant\n" +
+                    $"・Duplicate {willConvertCount} lilToon materials\n" +
+                    $"・Convert to NataneToon shader\n" +
+                    $"・Apply new materials to variant"),
                     MessageType.Info);
             }
 
             EditorGUILayout.Space(5);
 
             GUI.enabled = willConvertCount > 0;
-            if (GUILayout.Button("バリアント生成＆変換実行 Create Variant & Convert", GUILayout.Height(40)))
+            if (GUILayout.Button(L("バリアント生成＆変換実行", "Create Variant & Convert"), GUILayout.Height(40)))
             {
                 ExecuteConversion();
             }
@@ -408,13 +409,13 @@ namespace NataneToon.Editor
 
                 var materialsToConvert = detectedMaterials.Where(m => m.willConvert).ToList();
 
-                EditorUtility.DisplayProgressBar("変換中 Converting", "マテリアルを変換中...", 0f);
+                EditorUtility.DisplayProgressBar(L("変換中", "Converting"), L("マテリアルを変換中...", "Converting materials..."), 0f);
 
                 for (int i = 0; i < materialsToConvert.Count; i++)
                 {
                     var matInfo = materialsToConvert[i];
-                    EditorUtility.DisplayProgressBar("変換中 Converting",
-                        $"マテリアルを変換中... {matInfo.original.name}",
+                    EditorUtility.DisplayProgressBar(L("変換中", "Converting"),
+                        L($"マテリアルを変換中... {matInfo.original.name}", $"Converting material... {matInfo.original.name}"),
                         (float)i / materialsToConvert.Count);
 
                     Material newMaterial = ConvertMaterial(matInfo.original);
@@ -425,7 +426,7 @@ namespace NataneToon.Editor
                     }
                 }
 
-                EditorUtility.DisplayProgressBar("変換中 Converting", "バリアントを作成中...", 0.8f);
+                EditorUtility.DisplayProgressBar(L("変換中", "Converting"), L("バリアントを作成中...", "Creating variant..."), 0.8f);
 
                 // Step 3: Create prefab variant
                 string prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(selectedPrefab);
@@ -477,11 +478,15 @@ namespace NataneToon.Editor
                 Selection.activeObject = createdVariant;
 
                 EditorUtility.DisplayDialog(
-                    "変換完了 Conversion Complete",
-                    $"プレハブバリアントを作成しました\nCreated prefab variant\n\n" +
-                    $"バリアント Variant: {variantPath}\n" +
-                    $"変換したマテリアル Converted Materials: {convertedCount}個\n\n" +
-                    $"詳細はコンソールを確認してください\nCheck console for details",
+                    L("変換完了", "Conversion Complete"),
+                    L($"プレハブバリアントを作成しました\n\n" +
+                    $"バリアント: {variantPath}\n" +
+                    $"変換したマテリアル: {convertedCount}個\n\n" +
+                    $"詳細はコンソールを確認してください",
+                    $"Created prefab variant\n\n" +
+                    $"Variant: {variantPath}\n" +
+                    $"Converted Materials: {convertedCount}\n\n" +
+                    $"Check console for details"),
                     "OK");
 
                 Debug.Log($"[PrefabVariantConverter] バリアント作成完了: {variantPath}");
@@ -491,8 +496,9 @@ namespace NataneToon.Editor
             {
                 EditorUtility.ClearProgressBar();
                 EditorUtility.DisplayDialog(
-                    "エラー Error",
-                    $"変換中にエラーが発生しました\nError during conversion:\n\n{e.Message}",
+                    L("エラー", "Error"),
+                    L($"変換中にエラーが発生しました:\n\n{e.Message}",
+                    $"Error during conversion:\n\n{e.Message}"),
                     "OK");
                 Debug.LogError($"[PrefabVariantConverter] エラー: {e}");
             }

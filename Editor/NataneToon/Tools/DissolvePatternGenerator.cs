@@ -3,6 +3,8 @@ using UnityEditor;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Dissolve Pattern Generator
     /// ディゾルブパターンジェネレーター
@@ -22,7 +24,7 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/エフェクト Effects/ディゾルブパターン生成 Dissolve Pattern Generator", false, 43)]
         public static void ShowWindow()
         {
-            var window = GetWindow<DissolvePatternGenerator>("ディゾルブパターン生成 Dissolve Pattern Generator");
+            var window = GetWindow<DissolvePatternGenerator>(L("ディゾルブパターン生成", "Dissolve Pattern Generator"));
             window.minSize = new Vector2(500, 550);
             window.Show();
         }
@@ -32,11 +34,11 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(10);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             NataneToonShaderGUIUtility.DrawHeaderWithHelp("ディゾルブパターンジェネレーター", "Dissolve Pattern Generator", "DissolvePatternGenerator");
-            EditorGUILayout.LabelField("プロシージャルにディゾルブテクスチャを生成\nGenerate dissolve textures procedurally", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(L("プロシージャルにディゾルブテクスチャを生成", "Generate dissolve textures procedurally"), EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(10);
 
-            targetMaterial = (Material)EditorGUILayout.ObjectField("ターゲット", targetMaterial, typeof(Material), false);
+            targetMaterial = (Material)EditorGUILayout.ObjectField(L("ターゲット", "Target"), targetMaterial, typeof(Material), false);
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
 
@@ -52,16 +54,16 @@ namespace NataneToon.Editor
         private void DrawGenerator()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("テクスチャ生成", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("テクスチャ生成", "Texture Generation"), EditorStyles.boldLabel);
 
-            noiseType = (NoiseType)EditorGUILayout.EnumPopup("ノイズタイプ", noiseType);
-            textureSize = EditorGUILayout.IntPopup("サイズ", textureSize, new[] { "256", "512", "1024" }, new[] { 256, 512, 1024 });
-            scale = EditorGUILayout.Slider("スケール", scale, 1f, 20f);
-            contrast = EditorGUILayout.Slider("コントラスト", contrast, 0.1f, 3f);
+            noiseType = (NoiseType)EditorGUILayout.EnumPopup(L("ノイズタイプ", "Noise Type"), noiseType);
+            textureSize = EditorGUILayout.IntPopup(L("サイズ", "Size"), textureSize, new[] { "256", "512", "1024" }, new[] { 256, 512, 1024 });
+            scale = EditorGUILayout.Slider(L("スケール", "Scale"), scale, 1f, 20f);
+            contrast = EditorGUILayout.Slider(L("コントラスト", "Contrast"), contrast, 0.1f, 3f);
 
             EditorGUILayout.Space(10);
 
-            if (GUILayout.Button("テクスチャを生成", GUILayout.Height(30)))
+            if (GUILayout.Button(L("テクスチャを生成", "Generate Texture"), GUILayout.Height(30)))
             {
                 GenerateDissolveTexture();
             }
@@ -74,12 +76,12 @@ namespace NataneToon.Editor
             if (targetMaterial == null) return;
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("ディゾルブ設定", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ディゾルブ設定", "Dissolve Settings"), EditorStyles.boldLabel);
 
             if (targetMaterial.HasProperty("_DissolveAmount"))
             {
                 EditorGUI.BeginChangeCheck();
-                float amount = EditorGUILayout.Slider("溶解量", targetMaterial.GetFloat("_DissolveAmount"), 0f, 1f);
+                float amount = EditorGUILayout.Slider(L("溶解量", "Dissolve Amount"), targetMaterial.GetFloat("_DissolveAmount"), 0f, 1f);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change Dissolve Amount");
@@ -91,7 +93,7 @@ namespace NataneToon.Editor
             if (targetMaterial.HasProperty("_DissolveEdgeWidth"))
             {
                 EditorGUI.BeginChangeCheck();
-                float width = EditorGUILayout.Slider("エッジ幅", targetMaterial.GetFloat("_DissolveEdgeWidth"), 0f, 0.5f);
+                float width = EditorGUILayout.Slider(L("エッジ幅", "Edge Width"), targetMaterial.GetFloat("_DissolveEdgeWidth"), 0f, 0.5f);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change Edge Width");
@@ -103,7 +105,7 @@ namespace NataneToon.Editor
             if (targetMaterial.HasProperty("_DissolveEdgeColor"))
             {
                 EditorGUI.BeginChangeCheck();
-                Color color = EditorGUILayout.ColorField(new GUIContent("エッジ色"), targetMaterial.GetColor("_DissolveEdgeColor"), true, true, true);
+                Color color = EditorGUILayout.ColorField(new GUIContent(L("エッジ色", "Edge Color")), targetMaterial.GetColor("_DissolveEdgeColor"), true, true, true);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change Edge Color");
@@ -118,7 +120,7 @@ namespace NataneToon.Editor
         private void DrawPreview()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("プレビュー", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("プレビュー", "Preview"), EditorStyles.boldLabel);
 
             if (targetMaterial != null && targetMaterial.HasProperty("_DissolveMap"))
             {
@@ -136,10 +138,10 @@ namespace NataneToon.Editor
         private void GenerateDissolveTexture()
         {
             string path = EditorUtility.SaveFilePanelInProject(
-                "ディゾルブテクスチャを保存",
+                L("ディゾルブテクスチャを保存", "Save Dissolve Texture"),
                 "DissolvePattern",
                 "png",
-                "保存場所を選択");
+                L("保存場所を選択", "Select save location"));
 
             if (string.IsNullOrEmpty(path)) return;
 
@@ -173,8 +175,8 @@ namespace NataneToon.Editor
             }
 
             EditorUtility.DisplayDialog(
-                "生成完了",
-                $"ディゾルブテクスチャを生成しました: {path}",
+                L("生成完了", "Generation Complete"),
+                L($"ディゾルブテクスチャを生成しました: {path}", $"Dissolve texture generated: {path}"),
                 "OK");
         }
 

@@ -6,6 +6,8 @@ using System.Linq;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Shader Variant Collection Tool for Natane Toon Shader
     /// Natane Toon Shaderのシェーダーバリアントコレクションツール
@@ -27,20 +29,23 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/シェーダー Shader/シェーダーバリアント収集 Shader Variant Collector", false, 71)]
         public static void ShowWindow()
         {
-            GetWindow<ShaderVariantCollector>("シェーダーバリアント収集 Shader Variant Collector");
+            GetWindow<ShaderVariantCollector>(L("シェーダーバリアント収集", "Shader Variant Collector"));
         }
 
         private void OnGUI()
         {
-            EditorGUILayout.LabelField("Natane Toon シェーダーバリアント収集 Shader Variant Collector", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Natane Toon シェーダーバリアント収集", "Natane Toon Shader Variant Collector"), EditorStyles.boldLabel);
             EditorGUILayout.Space();
 
             EditorGUILayout.HelpBox(
-                "このツールはShaderVariantCollectionを作成します。\n" +
+                L("このツールはShaderVariantCollectionを作成します。\n" +
+                "- 未使用バリアントを除外してビルドサイズを削減\n" +
+                "- プリウォームでロード時間を改善\n" +
+                "- 実行時のシェーダーコンパイルのスタッターを防止",
                 "This tool creates a ShaderVariantCollection to:\n" +
-                "- 未使用バリアントを除外してビルドサイズを削減 Reduce build size by excluding unused variants\n" +
-                "- プリウォームでロード時間を改善 Improve loading times with pre-warmed shaders\n" +
-                "- 実行時のシェーダーコンパイルのスタッターを防止 Prevent shader compilation stutters at runtime",
+                "- Reduce build size by excluding unused variants\n" +
+                "- Improve loading times with pre-warmed shaders\n" +
+                "- Prevent shader compilation stutters at runtime"),
                 MessageType.Info
             );
 
@@ -48,7 +53,7 @@ namespace NataneToon.Editor
 
             // Collection Reference
             collection = (ShaderVariantCollection)EditorGUILayout.ObjectField(
-                "バリアントコレクション Variant Collection",
+                L("バリアントコレクション", "Variant Collection"),
                 collection,
                 typeof(ShaderVariantCollection),
                 false
@@ -57,12 +62,12 @@ namespace NataneToon.Editor
             if (collection == null)
             {
                 EditorGUILayout.HelpBox(
-                    "コレクションが選択されていません。「新規コレクション作成」をクリックして作成してください。\n" +
-                    "No collection selected. Click 'Create New Collection' to create one.",
+                    L("コレクションが選択されていません。「新規コレクション作成」をクリックして作成してください。",
+                    "No collection selected. Click 'Create New Collection' to create one."),
                     MessageType.Warning
                 );
 
-                if (GUILayout.Button("新規コレクション作成 Create New Collection"))
+                if (GUILayout.Button(L("新規コレクション作成", "Create New Collection")))
                 {
                     CreateNewCollection();
                 }
@@ -71,39 +76,39 @@ namespace NataneToon.Editor
             }
 
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("バリアントオプション Variant Options", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("バリアントオプション", "Variant Options"), EditorStyles.boldLabel);
             collectFromUsedMaterialKeywords = EditorGUILayout.Toggle(
-                "プロジェクト内マテリアルのキーワードのみ収集 Collect Used Material Keywords Only",
+                L("プロジェクト内マテリアルのキーワードのみ収集", "Collect Used Material Keywords Only"),
                 collectFromUsedMaterialKeywords
             );
             if (collectFromUsedMaterialKeywords)
             {
                 EditorGUILayout.HelpBox(
-                    "Natane Toon系マテリアルを走査し、実際に使われているキーワードの組み合わせのみを収集します。\n" +
-                    "Scan Natane Toon materials and collect only actually used keyword sets.",
+                    L("Natane Toon系マテリアルを走査し、実際に使われているキーワードの組み合わせのみを収集します。",
+                    "Scan Natane Toon materials and collect only actually used keyword sets."),
                     MessageType.Info
                 );
             }
             EditorGUI.BeginDisabledGroup(collectFromUsedMaterialKeywords);
-            includeBasic = EditorGUILayout.Toggle("基本バリアントを含む Include Basic Variants", includeBasic);
-            EditorGUILayout.HelpBox("一般的な組み合わせ: 機能なし、アウトラインのみ、エミッションのみ\nCommon combinations: No features, Outline only, Emission only", MessageType.None);
+            includeBasic = EditorGUILayout.Toggle(L("基本バリアントを含む", "Include Basic Variants"), includeBasic);
+            EditorGUILayout.HelpBox(L("一般的な組み合わせ: 機能なし、アウトラインのみ、エミッションのみ", "Common combinations: No features, Outline only, Emission only"), MessageType.None);
 
-            includeAdvanced = EditorGUILayout.Toggle("高度なバリアントを含む Include Advanced Variants", includeAdvanced);
-            EditorGUILayout.HelpBox("高度な組み合わせ: SSS、MatCap、スペキュラー、リムライト\nAdvanced combinations: SSS, MatCap, Specular, Rim Light", MessageType.None);
+            includeAdvanced = EditorGUILayout.Toggle(L("高度なバリアントを含む", "Include Advanced Variants"), includeAdvanced);
+            EditorGUILayout.HelpBox(L("高度な組み合わせ: SSS、MatCap、スペキュラー、リムライト", "Advanced combinations: SSS, MatCap, Specular, Rim Light"), MessageType.None);
 
-            includeVirtualExpression = EditorGUILayout.Toggle("バーチャル表現を含む Include Virtual Expression", includeVirtualExpression);
-            EditorGUILayout.HelpBox("バーチャル表現: ディゾルブ、色相シフト、エミッションアニメーション\nVirtual expression: Dissolve, Hue Shift, Emission Animations", MessageType.None);
+            includeVirtualExpression = EditorGUILayout.Toggle(L("バーチャル表現を含む", "Include Virtual Expression"), includeVirtualExpression);
+            EditorGUILayout.HelpBox(L("バーチャル表現: ディゾルブ、色相シフト、エミッションアニメーション", "Virtual expression: Dissolve, Hue Shift, Emission Animations"), MessageType.None);
 
             EditorGUILayout.Space();
-            includeAllCombinations = EditorGUILayout.Toggle("全組み合わせを含む (警告) Include All Combinations (WARNING)", includeAllCombinations);
+            includeAllCombinations = EditorGUILayout.Toggle(L("全組み合わせを含む (警告)", "Include All Combinations (WARNING)"), includeAllCombinations);
 
             if (includeAllCombinations)
             {
                 EditorGUILayout.HelpBox(
-                    "これは数千バリアントを作成し、ビルドサイズを大幅に増やします。\n" +
-                    "テストまたはすべての組み合わせが必要な場合のみ使用してください。\n" +
+                    L("これは数千バリアントを作成し、ビルドサイズを大幅に増やします。\n" +
+                    "テストまたはすべての組み合わせが必要な場合のみ使用してください。",
                     "This will create thousands of variants and significantly increase build size!\n" +
-                    "Only use for testing or if you need every possible combination.",
+                    "Only use for testing or if you need every possible combination."),
                     MessageType.Warning
                 );
             }
@@ -113,12 +118,12 @@ namespace NataneToon.Editor
             // Estimate variants
             if (collectFromUsedMaterialKeywords)
             {
-                EditorGUILayout.LabelField("推定バリアント数 Estimated Variants: material keyword sets (auto)", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField(L("推定バリアント数: マテリアルキーワードセット (自動)", "Estimated Variants: material keyword sets (auto)"), EditorStyles.boldLabel);
             }
             else
             {
                 estimatedVariants = EstimateVariantCount();
-                EditorGUILayout.LabelField($"推定バリアント数 Estimated Variants: {estimatedVariants}", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField($"{L("推定バリアント数", "Estimated Variants")}: {estimatedVariants}", EditorStyles.boldLabel);
             }
 
             EditorGUILayout.Space();
@@ -126,19 +131,19 @@ namespace NataneToon.Editor
             // Action Buttons
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button("バリアントを収集 Collect Variants", GUILayout.Height(30)))
+            if (GUILayout.Button(L("バリアントを収集", "Collect Variants"), GUILayout.Height(30)))
             {
                 CollectVariants();
             }
 
-            if (GUILayout.Button("コレクションをクリア Clear Collection", GUILayout.Height(30)))
+            if (GUILayout.Button(L("コレクションをクリア", "Clear Collection"), GUILayout.Height(30)))
             {
                 ClearCollection();
             }
 
             EditorGUILayout.EndHorizontal();
 
-            if (GUILayout.Button("コレクションを保存 Save Collection", GUILayout.Height(30)))
+            if (GUILayout.Button(L("コレクションを保存", "Save Collection"), GUILayout.Height(30)))
             {
                 SaveCollection();
             }
@@ -148,19 +153,19 @@ namespace NataneToon.Editor
             // Current Collection Info
             if (collection != null)
             {
-                EditorGUILayout.LabelField("現在のコレクション情報 Current Collection Info", EditorStyles.boldLabel);
-                EditorGUILayout.LabelField($"シェーダー数 Shader Count: {collection.shaderCount}");
-                EditorGUILayout.LabelField($"バリアント数 Variant Count: {collection.variantCount}");
+                EditorGUILayout.LabelField(L("現在のコレクション情報", "Current Collection Info"), EditorStyles.boldLabel);
+                EditorGUILayout.LabelField($"{L("シェーダー数", "Shader Count")}: {collection.shaderCount}");
+                EditorGUILayout.LabelField($"{L("バリアント数", "Variant Count")}: {collection.variantCount}");
 
                 // Empty collection warning
                 if (collection.variantCount == 0)
                 {
                     EditorGUILayout.Space(5);
                     EditorGUILayout.HelpBox(
-                        "コレクションが空です。「バリアントを収集」を実行してバリアントを追加してください。\n" +
-                        "空のコレクションではビルド最適化やプリウォーミングの効果がありません。\n\n" +
+                        L("コレクションが空です。「バリアントを収集」を実行してバリアントを追加してください。\n" +
+                        "空のコレクションではビルド最適化やプリウォーミングの効果がありません。",
                         "Collection is empty. Run 'Collect Variants' to add variants.\n" +
-                        "An empty collection provides no build optimization or prewarming benefit.",
+                        "An empty collection provides no build optimization or prewarming benefit."),
                         MessageType.Warning
                     );
                 }
@@ -170,10 +175,10 @@ namespace NataneToon.Editor
         private void CreateNewCollection()
         {
             string path = EditorUtility.SaveFilePanelInProject(
-                "シェーダーバリアントコレクションを作成 Create Shader Variant Collection",
+                L("シェーダーバリアントコレクションを作成", "Create Shader Variant Collection"),
                 "NataneToonShaderVariants",
                 "shadervariants",
-                "シェーダーバリアントコレクションの保存場所を選択 Choose a location to save the shader variant collection",
+                L("シェーダーバリアントコレクションの保存場所を選択", "Choose a location to save the shader variant collection"),
                 "Assets/ShaderVariants"
             );
 
@@ -183,8 +188,8 @@ namespace NataneToon.Editor
                 AssetDatabase.CreateAsset(collection, path);
                 AssetDatabase.SaveAssets();
                 EditorUtility.DisplayDialog(
-                    "成功 Success",
-                    "シェーダーバリアントコレクションが正常に作成されました。\nShader Variant Collection created successfully!",
+                    L("成功", "Success"),
+                    L("シェーダーバリアントコレクションが正常に作成されました。", "Shader Variant Collection created successfully!"),
                     "OK");
             }
         }
@@ -216,8 +221,8 @@ namespace NataneToon.Editor
             if (collection == null)
             {
                 EditorUtility.DisplayDialog(
-                    "エラー Error",
-                    "最初にコレクションを作成または選択してください。\nPlease create or select a collection first!",
+                    L("エラー", "Error"),
+                    L("最初にコレクションを作成または選択してください。", "Please create or select a collection first!"),
                     "OK");
                 return;
             }
@@ -233,8 +238,8 @@ namespace NataneToon.Editor
             if (opaqueShader == null)
             {
                 EditorUtility.DisplayDialog(
-                    "エラー Error",
-                    "Natane Toon Shaderが見つかりませんでした。\nCould not find Natane Toon Shaders!",
+                    L("エラー", "Error"),
+                    L("Natane Toon Shaderが見つかりませんでした。", "Could not find Natane Toon Shaders!"),
                     "OK");
                 return;
             }
@@ -301,11 +306,11 @@ namespace NataneToon.Editor
                 : string.Empty;
 
             EditorUtility.DisplayDialog(
-                "成功 Success",
-                $"{totalVariants}個のシェーダーバリアントを収集しました。\n" +
-                $"Collected {totalVariants} shader variants!\n" +
-                $"シェーダー数 Shader Count: {collection.shaderCount}\n" +
-                $"バリアント数 Variant Count: {collection.variantCount}" +
+                L("成功", "Success"),
+                L($"{totalVariants}個のシェーダーバリアントを収集しました。",
+                $"Collected {totalVariants} shader variants!") + "\n" +
+                $"{L("シェーダー数", "Shader Count")}: {collection.shaderCount}\n" +
+                $"{L("バリアント数", "Variant Count")}: {collection.variantCount}" +
                 modeSuffix,
                 "OK"
             );
@@ -331,8 +336,9 @@ namespace NataneToon.Editor
                     if (i % 50 == 0)
                     {
                         EditorUtility.DisplayProgressBar(
-                            "マテリアルスキャン Material Scan",
-                            $"マテリアルを走査中... Scanning materials... ({i}/{materialGuids.Length})",
+                            L("マテリアルスキャン", "Material Scan"),
+                            L($"マテリアルを走査中... ({i}/{materialGuids.Length})",
+                            $"Scanning materials... ({i}/{materialGuids.Length})"),
                             (float)i / materialGuids.Length);
                     }
 
@@ -514,17 +520,18 @@ namespace NataneToon.Editor
             if (collection != null)
             {
                 if (EditorUtility.DisplayDialog(
-                    "コレクションをクリア Clear Collection",
-                    "このコレクションからすべてのバリアントをクリアしてもよろしいですか？\nAre you sure you want to clear all variants from this collection?",
-                    "はい Yes",
-                    "いいえ No"))
+                    L("コレクションをクリア", "Clear Collection"),
+                    L("このコレクションからすべてのバリアントをクリアしてもよろしいですか？",
+                    "Are you sure you want to clear all variants from this collection?"),
+                    L("はい", "Yes"),
+                    L("いいえ", "No")))
                 {
                     collection.Clear();
                     EditorUtility.SetDirty(collection);
                     AssetDatabase.SaveAssets();
                     EditorUtility.DisplayDialog(
-                        "成功 Success",
-                        "コレクションをクリアしました。\nCollection cleared!",
+                        L("成功", "Success"),
+                        L("コレクションをクリアしました。", "Collection cleared!"),
                         "OK");
                 }
             }
@@ -537,8 +544,8 @@ namespace NataneToon.Editor
                 EditorUtility.SetDirty(collection);
                 AssetDatabase.SaveAssets();
                 EditorUtility.DisplayDialog(
-                    "成功 Success",
-                    "コレクションを保存しました。\nCollection saved!",
+                    L("成功", "Success"),
+                    L("コレクションを保存しました。", "Collection saved!"),
                     "OK");
             }
         }

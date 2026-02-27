@@ -5,6 +5,8 @@ using NataneToon.MaterialSystem;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Tool to generate default material presets for designers
     /// Creates a comprehensive library of common material types
@@ -34,15 +36,17 @@ namespace NataneToon.Editor
         public static void ShowWindow()
         {
             bool proceed = EditorUtility.DisplayDialog(
-                "デフォルトプリセットを生成 / Generate Default Presets",
-                "以下の場所にデフォルトマテリアルプリセットのライブラリを作成します：\n" +
+                L("デフォルトプリセットを生成", "Generate Default Presets"),
+                L("以下の場所にデフォルトマテリアルプリセットのライブラリを作成します：\n" +
                 PRESET_FOLDER + "\n\n" +
                 "これらのプリセットは一般的なマテリアルタイプの出発点を提供します。\n" +
-                "既存のプリセットは上書きされません。\n\n" +
-                "This will create a library of default material presets.\n" +
-                "Existing presets will not be overwritten.",
-                "生成 / Generate",
-                "キャンセル / Cancel");
+                "既存のプリセットは上書きされません。",
+                "This will create a library of default material presets at:\n" +
+                PRESET_FOLDER + "\n\n" +
+                "These presets provide starting points for common material types.\n" +
+                "Existing presets will not be overwritten."),
+                L("生成", "Generate"),
+                L("キャンセル", "Cancel"));
 
             if (proceed)
             {
@@ -55,12 +59,11 @@ namespace NataneToon.Editor
         public static void RegeneratePresets()
         {
             bool proceed = EditorUtility.DisplayDialog(
-                "全プリセットを再生成 / Regenerate All Presets",
-                "これにより既存のプリセットが再生成されます。\n" +
-                "This will regenerate all presets.\n\n" +
-                "続行しますか？\nContinue?",
-                "はい Yes",
-                "いいえ No");
+                L("全プリセットを再生成", "Regenerate All Presets"),
+                L("これにより既存のプリセットが再生成されます。\n続行しますか？",
+                "This will regenerate all presets.\nContinue?"),
+                L("はい", "Yes"),
+                L("いいえ", "No"));
 
             if (proceed)
             {
@@ -156,11 +159,15 @@ namespace NataneToon.Editor
             AssetDatabase.Refresh();
 
             EditorUtility.DisplayDialog(
-                "Presets Generated",
+                L("プリセット生成完了", "Presets Generated"),
+                L($"{createdCount}個のデフォルトマテリアルプリセットを作成しました！\n\n" +
+                $"保存先: {PRESET_FOLDER}\n\n" +
+                "Material Preset Browserから使用できます:\n" +
+                "Tools > Natane > Material Preset Browser",
                 $"Successfully created {createdCount} default material presets!\n\n" +
                 $"Location: {PRESET_FOLDER}\n\n" +
                 "Open the Material Preset Browser to use them:\n" +
-                "Tools > Natane > Material Preset Browser",
+                "Tools > Natane > Material Preset Browser"),
                 "OK");
 
             Debug.Log($"[DefaultPresetGenerator] Created {createdCount} default presets in {PRESET_FOLDER}");
