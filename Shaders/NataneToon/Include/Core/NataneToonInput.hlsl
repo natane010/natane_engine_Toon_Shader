@@ -750,6 +750,20 @@ CBUFFER_START(UnityPerMaterial)
 
     // ===== 19. Quest Lite (Quest軽量パス) =====
     // No CBUFFER properties needed - keyword only
+
+    // ===== 20. PCSS (Percentage Closer Soft Shadows) =====
+    #if defined(_PCSS)
+    float _PCSSLightSize;
+    float _PCSSSoftness;
+    float _PCSSBlockerSearchRadius;
+    float _PCSSMinFilterRadius;
+    float _PCSSMaxFilterRadius;
+    float _PCSSSampleCount;
+    float _PCSSBlendMode;
+    float _PCSSBlend;
+    float _PCSSBlur;
+    #endif
+
 CBUFFER_END
 
 // VRChat Mirror Mode global variable (set by VRChat runtime)
@@ -981,9 +995,31 @@ samplerCUBE _ReflectionCube;
 samplerCUBE _EnvRimCube;
 #endif
 
-// Intersection Fade
-#if defined(_INTERSECTION_FADE)
+// Intersection Fade / PCSS — shared _CameraDepthTexture declaration
+#if defined(_INTERSECTION_FADE) || defined(_PCSS)
 UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
+#endif
+
+// PCSS Poisson Disk sampling pattern (32 samples)
+#if defined(_PCSS)
+static const float2 PoissonDisk32[32] = {
+    float2(-0.94201624, -0.39906216), float2( 0.94558609, -0.76890725),
+    float2(-0.09418410, -0.92938870), float2( 0.34495938,  0.29387760),
+    float2(-0.91588581,  0.45771432), float2(-0.81544232, -0.87912464),
+    float2(-0.38277543,  0.27676845), float2( 0.97484398,  0.75648379),
+    float2( 0.44323325, -0.97511554), float2( 0.53742981, -0.47373420),
+    float2(-0.26496911, -0.41893023), float2( 0.79197514,  0.19090188),
+    float2(-0.24188840,  0.99706507), float2(-0.81409955,  0.91437590),
+    float2( 0.19984126,  0.78641367), float2( 0.14383161, -0.14100790),
+    float2(-0.44451373, -0.69745003), float2( 0.69546413, -0.16150797),
+    float2(-0.65731890,  0.68906659), float2( 0.36949191,  0.56157024),
+    float2(-0.10214935, -0.18408868), float2( 0.83618390,  0.48918439),
+    float2(-0.56318188, -0.29645988), float2( 0.27004808, -0.68117476),
+    float2(-0.73403048,  0.09498067), float2( 0.47089072,  0.97014981),
+    float2(-0.95723576, -0.09001040), float2( 0.09698980,  0.41944910),
+    float2( 0.60395759, -0.74880689), float2(-0.47938831,  0.56906949),
+    float2( 0.85680531,  0.91739876), float2(-0.33726816, -0.97149441)
+};
 #endif
 
 // GrabPass texture for Refraction — declared in NataneToonUtils.hlsl (VR stereo-aware)

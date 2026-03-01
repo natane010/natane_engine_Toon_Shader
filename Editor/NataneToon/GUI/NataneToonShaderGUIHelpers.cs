@@ -669,6 +669,75 @@ namespace NataneToon.Editor
         }
 
         /// <summary>
+        /// Draw PCSS (Percentage Closer Soft Shadows) controls
+        /// PCSS設定UIを描画
+        /// </summary>
+        public static void DrawPCSSControls(
+            DrawToggleDelegate drawToggle,
+            DrawPropertyDelegate drawProperty,
+            DrawHelpToggleDelegate drawHelpToggle)
+        {
+            bool usePCSS = drawToggle("_PCSS", "_UsePCSS",
+                L("PCSSソフトシャドウを使用", "Use PCSS Soft Shadows"));
+
+            if (usePCSS)
+            {
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField(
+                    L("PCSS設定", "PCSS Settings"), EditorStyles.boldLabel);
+                drawProperty("_PCSSLightSize", L("光源サイズ", "Light Size"));
+                drawProperty("_PCSSSoftness", L("ソフトネス", "Softness"));
+                drawProperty("_PCSSBlockerSearchRadius",
+                    L("ブロッカー探索半径", "Blocker Search Radius"));
+                drawProperty("_PCSSMinFilterRadius",
+                    L("最小フィルタ半径", "Min Filter Radius"));
+                drawProperty("_PCSSMaxFilterRadius",
+                    L("最大フィルタ半径", "Max Filter Radius"));
+                drawProperty("_PCSSSampleCount",
+                    L("サンプル品質", "Sample Quality"));
+
+                EditorGUILayout.Space(5);
+                drawProperty("_PCSSBlendMode",
+                    L("ブレンドモード", "Blend Mode"));
+                drawProperty("_PCSSBlend",
+                    L("ブレンド", "Blend"));
+                drawProperty("_PCSSBlur",
+                    L("ブラー", "Blur"));
+
+                drawHelpToggle("PCSS",
+                    L("PCSS (Percentage Closer Soft Shadows):\n" +
+                      "光源サイズに基づいた物理ベースのソフトシャドウです。\n" +
+                      "遮蔽物に近い影はシャープに、遠い影はソフトになります。\n\n" +
+                      "• 光源サイズ: 大きいほど全体的にソフト\n" +
+                      "• ソフトネス: ペナンブラの拡大係数\n" +
+                      "• ブロッカー探索半径: 遮蔽物検出の範囲\n" +
+                      "• フィルタ半径: PCFフィルタの最小/最大サイズ\n" +
+                      "• サンプル品質: 高いほど滑らかだがGPU負荷増加\n\n" +
+                      "【ブレンド設定】\n" +
+                      "• ブレンドモード: Normal/Soft/Screen/Overlay\n" +
+                      "• ブレンド: 0=元の影そのまま、1=PCSS完全適用\n" +
+                      "• ブラー: フィルタ半径を追加拡張し影をよりぼかす\n\n" +
+                      "注意: ディレクショナルライトのみ対応です。\n" +
+                      "「影のスムージング」とは排他的に動作します（PCSS有効時はスムージング無視）。",
+                      "PCSS (Percentage Closer Soft Shadows):\n" +
+                      "Physically-based soft shadows using light source size.\n" +
+                      "Shadows near occluder are sharp, far shadows are soft.\n\n" +
+                      "• Light Size: Larger = softer overall\n" +
+                      "• Softness: Penumbra scale factor\n" +
+                      "• Blocker Search Radius: Occluder detection range\n" +
+                      "• Filter Radius: Min/Max PCF filter size\n" +
+                      "• Sample Quality: Higher = smoother but more GPU cost\n\n" +
+                      "[Blend Settings]\n" +
+                      "• Blend Mode: Normal/Soft/Screen/Overlay\n" +
+                      "• Blend: 0 = original shadow, 1 = full PCSS\n" +
+                      "• Blur: Expands filter radius for extra softness\n\n" +
+                      "Note: Directional light only.\n" +
+                      "Mutually exclusive with Shadow Smoothing (PCSS overrides when enabled)."),
+                    MessageType.Info);
+            }
+        }
+
+        /// <summary>
         /// Draw Shadow Color Texture controls
         /// </summary>
         public static void DrawShadowColorTextureControls(

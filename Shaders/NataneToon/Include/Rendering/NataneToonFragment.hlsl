@@ -287,15 +287,88 @@ half4 frag(v2f i) : SV_Target
         }
     #endif
 
-    // ===== Shadow Map Smoothing (PCF + Adaptive) =====
-    // このセクションの処理:
-    // シャドウマップのジャギーを軽減するアンチエイリアシング。
-    // ディレクショナルライト: スクリーンスペースシャドウに PCF 3x3 (9-tap) フィルタ適用。
-    // ポイント/スポットライト: fwidth ベースの適応型 smoothstep でエッジを滑らかにする。
-    // その後、シャドウ受け取りマスクとシャドウ強度を最終的な atten に反映する。
-    if (_ShadowSmoothing > 0.001)
-    {
-        #if defined(UNITY_PASS_FORWARDBASE) && defined(SHADOWS_SCREEN) && !defined(UNITY_NO_SCREENSPACE_SHADOWS)
+    // ===== PCSS / Shadow Map Smoothing (PCF + Adaptive) =====
+    // PCSS (Percentage Closer Soft Shadows) — スクリーンスペース近似:
+    //   遮蔽物に近い影はシャープ、遠い影はソフトになるコンタクトハードニング効果。
+    //   ブロッカー探索 → ペナンブラ推定 → 可変幅PCF の3フェーズ。
+    // Shadow Map Smoothing (従来):
+    //   ディレクショナルライト: PCF 3x3 (9-tap) フィルタ。
+    //   ポイント/スポットライト: fwidth ベースの適応型 smoothstep。
+    #if defined(UNITY_PASS_FORWARDBASE) && defined(SHADOWS_SCREEN) && !defined(UNITY_NO_SCREENSPACE_SHADOWS)
+        #ifdef _PCSS
+        {
+            // === PCSS: Percentage Closer Soft Shadows (Screen-Space Approximation) ===
+            half pcssOriginalAtten = atten; // 元の atten を保存（Blend 用）
+            float2 pcssShadowUV = i._ShadowCoord.xy / i._ShadowCoord.w;
+            float pcssReceiverDepth = LinearEyeDepth(
+                UNITY_SAMPLE_SCREENSPACE_TEXTURE(_CameraDepthTexture, pcssShadowUV).r);
+
+            // Blur: ブロッカー探索半径も拡張して、よりぼかす
+            float pcssBlurScale = 1.0 + _PCSSBlur * 4.0;
+
+            // --- Phase 1: Blocker Search ---
+            float2 pcssSearchTexelSize = _PCSSBlockerSearchRadius * pcssBlurScale / _ScreenParams.xy;
+            float pcssAvgBlockerDepth = 0.0;
+            float pcssBlockerCount = 0.0;
+            int pcssSamples = clamp((int)_PCSSSampleCount, 8, 32);
+
+            [loop]
+            for (int bi = 0; bi < pcssSamples; bi++)
+            {
+                float2 bOffset = PoissonDisk32[bi] * pcssSearchTexelSize;
+                float bShadowVal = UNITY_SAMPLE_SCREENSPACE_TEXTURE(
+                    _ShadowMapTexture, pcssShadowUV + bOffset).r;
+
+                if (bShadowVal < 0.5) // In shadow
+                {
+                    float bSampleDepth = LinearEyeDepth(
+                        UNITY_SAMPLE_SCREENSPACE_TEXTURE(_CameraDepthTexture, pcssShadowUV + bOffset).r);
+                    pcssAvgBlockerDepth += bSampleDepth;
+                    pcssBlockerCount += 1.0;
+                }
+            }
+
+            if (pcssBlockerCount > 0.0)
+            {
+                pcssAvgBlockerDepth /= pcssBlockerCount;
+
+                // --- Phase 2: Penumbra Estimation ---
+                float pcssDepthDiff = max(pcssReceiverDepth - pcssAvgBlockerDepth, 0.001);
+                float pcssPenumbra = pcssDepthDiff * _PCSSLightSize / max(pcssAvgBlockerDepth, 0.01);
+                float pcssFilterRadius = clamp(
+                    pcssPenumbra * _PCSSSoftness,
+                    _PCSSMinFilterRadius,
+                    _PCSSMaxFilterRadius);
+                // Blur: フィルタ半径にもブラースケールを適用
+                float2 pcssFilterTexelSize = pcssFilterRadius * pcssBlurScale / _ScreenParams.xy;
+
+                // --- Phase 3: Variable-Width Poisson Disk PCF ---
+                half pcssSum = 0.0;
+                [loop]
+                for (int fi = 0; fi < pcssSamples; fi++)
+                {
+                    float2 fOffset = PoissonDisk32[fi] * pcssFilterTexelSize;
+                    pcssSum += UNITY_SAMPLE_SCREENSPACE_TEXTURE(
+                        _ShadowMapTexture, pcssShadowUV + fOffset).r;
+                }
+                atten = pcssSum / (half)pcssSamples;
+            }
+            else
+            {
+                // No blockers found — fully lit or fully shadowed
+                atten = UNITY_SAMPLE_SCREENSPACE_TEXTURE(
+                    _ShadowMapTexture, pcssShadowUV).r;
+            }
+
+            // --- Blend + BlendMode: PCSS結果を元のattenとブレンド ---
+            // ApplyEffectBlendPost (half3版) を使い、atten をグレースケール色として処理
+            half3 pcssPreColor = half3(pcssOriginalAtten, pcssOriginalAtten, pcssOriginalAtten);
+            half3 pcssPostColor = half3(atten, atten, atten);
+            atten = ApplyEffectBlendPost(pcssPreColor, pcssPostColor, _PCSSBlend, _PCSSBlendMode).r;
+        }
+        #else
+        if (_ShadowSmoothing > 0.001)
+        {
             // --- Directional Light: PCF 9-tap on screen-space shadow map ---
             float2 shadowUV = i._ShadowCoord.xy / i._ShadowCoord.w;
             float2 texelSize = _ShadowSmoothing * PCF_TEXEL_SCALE / _ScreenParams.xy;
@@ -311,14 +384,18 @@ half4 frag(v2f i) : SV_Target
                 }
             }
             atten = pcfShadow / PCF_SAMPLE_COUNT;
-        #else
+        }
+        #endif
+    #else
+        if (_ShadowSmoothing > 0.001)
+        {
             // --- Point/Spot Light: Adaptive smoothstep ---
             half attenDeriv = fwidth(atten);
             half adaptiveCenter = clamp(atten, 0.1, 0.9);
             half smoothWidth = max(attenDeriv, _ShadowSmoothing * SMOOTH_WIDTH_SCALE);
             atten = smoothstep(adaptiveCenter - smoothWidth, adaptiveCenter + smoothWidth, atten);
-        #endif
-    }
+        }
+    #endif
 
     // Apply shadow receive strength (allows controlling how much shadows affect this material)
     // マスクの判定を反転: 白（1.0）= 影を受けない、黒（0.0）= 影を受ける
@@ -1723,7 +1800,7 @@ half4 frag(v2f i) : SV_Target
     #ifdef _INTERSECTION_FADE
     {
         float2 intersectScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
-        float sceneDepth = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, intersectScreenUV));
+        float sceneDepth = LinearEyeDepth(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_CameraDepthTexture, intersectScreenUV).r);
         float fragDepth = i.screenPos.w;
         float depthDiff = sceneDepth - fragDepth;
         half intersectionFade = saturate(depthDiff / max(_IntersectionFadeDistance, 0.001));

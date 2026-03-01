@@ -1136,6 +1136,10 @@ public class NataneToonShaderGUI : ShaderGUI
                 "shadow edges appear jagged."),
                 MessageType.Info);
 
+            // PCSS (Percentage Closer Soft Shadows)
+            EditorGUILayout.Space(5);
+            NataneToonShaderGUIHelpers.DrawPCSSControls(DrawToggle, DrawProperty, DrawHelpToggle);
+
             DrawProperty("_ShadowMaxDarkness", L("影の最大暗さ", "Shadow Maximum Darkness"));
             DrawHelpToggle("ShadowMaxDarkness", L("影の最小明るさです。0 = 完全に暗い、1 = 暗くならない。影が真っ黒になりすぎるのを防ぎます。", "Minimum shadow brightness. 0 = Fully dark, 1 = No darkening. Prevents shadows from becoming too black."), MessageType.Info);
 
@@ -5455,7 +5459,10 @@ public class NataneToonShaderGUI : ShaderGUI
             ("_LTCGI", "_LTCGI"),
 
             // Dithering Alpha
-            ("_DitheringAlpha", "_DITHERING_ALPHA")
+            ("_DitheringAlpha", "_DITHERING_ALPHA"),
+
+            // PCSS Soft Shadow
+            ("_UsePCSS", "_PCSS")
         };
 
         bool anyChanges = false;

@@ -167,6 +167,17 @@ Shader "Natane/Toon Shader"
         _LightColorInfluence ("Light Color Influence", Range(0, 1)) = 1
         _ShadowReceive ("Shadow Receive", Range(0, 1)) = 1
         _ShadowSmoothing ("Shadow Map Smoothing", Range(0, 1)) = 0
+        [Space(5)]
+        [Toggle(_PCSS)] _UsePCSS ("Enable PCSS Soft Shadow", Float) = 0
+        _PCSSLightSize ("PCSS Light Size", Range(0.01, 5.0)) = 1.0
+        _PCSSSoftness ("PCSS Softness", Range(0.1, 10.0)) = 1.0
+        _PCSSBlockerSearchRadius ("PCSS Blocker Search Radius", Range(1, 20)) = 8
+        _PCSSMinFilterRadius ("PCSS Min Filter Radius", Range(0.5, 5.0)) = 1.0
+        _PCSSMaxFilterRadius ("PCSS Max Filter Radius", Range(1, 30)) = 15.0
+        [Enum(Low 8,8,Medium 16,16,High 32,32)] _PCSSSampleCount ("PCSS Sample Quality", Float) = 16
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _PCSSBlendMode ("PCSS Blend Mode", Float) = 0
+        _PCSSBlend ("PCSS Blend", Range(0, 1)) = 1
+        _PCSSBlur ("PCSS Blur", Range(0, 1)) = 0
         _ShadowMaxDarkness ("Shadow Max Darkness", Range(0, 1)) = 0
         _LightColorMin ("Light Color Min (ライト色下限)", Range(0, 1)) = 0
         _LightColorMax ("Light Color Max (ライト色上限)", Range(0, 10)) = 1
@@ -1107,6 +1118,7 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma shader_feature_local _TESSELLATION
             #pragma shader_feature_local _TESS_DISPLACEMENT
+            #pragma shader_feature_local _PCSS
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Include/Core/NataneToonCore.hlsl"
