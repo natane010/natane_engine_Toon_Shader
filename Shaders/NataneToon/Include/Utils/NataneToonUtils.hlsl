@@ -920,7 +920,7 @@ float2 CalculateGlitchUV(float2 uv, float intensity, float speed, float blockSiz
     float2 offset = float2(0, 0);
     if (random > 1.0 - intensity)
     {
-        offset.x = (random - 0.5) * intensity * 0.1;
+        offset.x = (random - 0.5) * intensity * 0.15;
     }
 
     return uv + offset;
@@ -932,7 +932,7 @@ float2 CalculateGlitchUV(float2 uv, float intensity, float speed, float blockSiz
 half3 CalculateGlitchRGBSplit(half3 baseColor, float2 uv,
                                sampler2D tex, float intensity)
 {
-    float offset = intensity * 0.01;
+    float offset = intensity * 0.02;
     half3 center = tex2D(tex, uv).rgb;
     half rShifted = tex2D(tex, uv + float2(offset, 0)).r;
     half bShifted = tex2D(tex, uv - float2(offset, 0)).b;
@@ -943,7 +943,71 @@ half3 CalculateGlitchRGBSplit(half3 baseColor, float2 uv,
     return saturate(half3(baseColor.r + rDelta, baseColor.g, baseColor.b + bDelta));
 }
 
+// Apply noise texture for glitch variety
+// mode: 0=UV Distortion, 1=Color Corruption, 2=Block Noise
+half3 ApplyGlitchNoise(half3 color, float2 uv, sampler2D noiseTex,
+                        float4 noiseST, float4 scrollSpeed,
+                        float intensity, float mode, sampler2D mainTex)
+{
+    // Scrolling noise UV (manual calculation, not TRANSFORM_TEX)
+    float2 noiseUV = uv * noiseST.xy + noiseST.zw;
+    noiseUV += scrollSpeed.xy * _Time.y;
+    half4 noise = tex2D(noiseTex, noiseUV);
+
+    if (mode < 0.5)
+    {
+        // UV Distortion - offset UVs by noise
+        float2 noiseOffset = (noise.rg - 0.5) * intensity * 0.1;
+        half3 distorted = tex2D(mainTex, uv + noiseOffset).rgb;
+        color = lerp(color, distorted, intensity);
+    }
+    else if (mode < 1.5)
+    {
+        // Color Corruption - replace color with noise
+        half3 corruptColor = noise.rgb;
+        color = lerp(color, corruptColor, intensity * noise.a);
+    }
+    else
+    {
+        // Block Noise - blocky color modulation
+        float blockVal = step(0.5, noise.r);
+        half3 blockColor = color * lerp(1.0, noise.g * 2.0, intensity);
+        color = lerp(color, blockColor, blockVal * intensity);
+    }
+    return color;
+}
+
 #endif // _GLITCH
+
+// ===== Glitch Stretch Functions (conditionally compiled) =====
+#if defined(_GLITCH_STRETCH)
+
+// Calculate UV stretch for glitch stretch effect
+// Only stretches horizontally (U axis), preserving V
+float2 CalculateGlitchStretchUV(float2 uv, float intensity, float speed,
+                                  float blockSize, float frequency)
+{
+    float time = floor(_Time.y * speed * 10.0) / 10.0;
+
+    // Block-based triggering
+    float block = floor(uv.y / blockSize);
+    float blockRand = frac(sin(block * 45.23 + time) * 43758.5453);
+
+    // Frequency gate — only trigger stretch for some blocks
+    float trigger = step(1.0 - frequency, blockRand);
+
+    // Stretch amount varies per block
+    float stretchAmount = frac(sin(block * 12.9898 + time * 1.7) * 43758.5453);
+    stretchAmount = (stretchAmount * 2.0 - 1.0) * intensity;
+
+    // Apply horizontal stretch: scale UV.x around center (0.5)
+    float2 stretchedUV = uv;
+    stretchedUV.x = lerp(uv.x, 0.5 + (uv.x - 0.5) * (1.0 + stretchAmount * 3.0), trigger);
+
+    return stretchedUV;
+}
+
+#endif // _GLITCH_STRETCH
 
 // ===== Decal Functions =====
 #if defined(_DECAL)

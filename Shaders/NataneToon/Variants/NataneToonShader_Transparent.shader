@@ -595,14 +595,31 @@ Shader "Natane/Toon Shader (Transparent)"
         _HologramBlend ("Hologram Blend", Range(0, 1)) = 1
         _HologramBlur ("Hologram Blur", Range(0, 1)) = 0
         [Toggle(_GLITCH)] _Glitch ("Enable Glitch", Float) = 0
-        _GlitchIntensity ("Glitch Intensity", Range(0, 1)) = 0.5
+        _GlitchIntensity ("Glitch Intensity", Range(0, 3)) = 0.5
         _GlitchSpeed ("Glitch Speed", Float) = 1
         _GlitchBlockSize ("Glitch Block Size", Range(0.01, 1)) = 0.1
-        _GlitchRGBSplitIntensity ("RGB Split Intensity", Range(0, 1)) = 0.5
+        _GlitchRGBSplitIntensity ("RGB Split Intensity", Range(0, 3)) = 0.5
         _GlitchFrequency ("Glitch Frequency", Range(0, 1)) = 0.3
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _GlitchBlendMode ("Glitch Blend Mode", Float) = 0
         _GlitchBlend ("Glitch Blend", Range(0, 1)) = 1
         _GlitchBlur ("Glitch Blur", Range(0, 1)) = 0
+        _GlitchMask ("Glitch Mask", 2D) = "white" {}
+        _GlitchMaskScale ("Glitch Mask Scale", Range(1, 5)) = 1
+        _GlitchMaskAffectsRGBSplit ("Mask Affects RGB Split", Range(0, 1)) = 1
+        _GlitchMaskAffectsFrequency ("Mask Affects Frequency", Range(0, 1)) = 0
+        _GlitchNoiseTex ("Glitch Noise Texture", 2D) = "gray" {}
+        _GlitchNoiseIntensity ("Noise Intensity", Range(0, 1)) = 0.5
+        _GlitchNoiseScrollSpeed ("Noise Scroll Speed", Vector) = (1, 0.5, 0, 0)
+        [Enum(UV Distortion,0,Color Corruption,1,Block Noise,2)] _GlitchNoiseMode ("Noise Mode", Float) = 0
+
+        [Space(5)]
+        [Toggle(_GLITCH_STRETCH)] _GlitchStretch ("Enable Stretch Glitch", Float) = 0
+        _GlitchStretchIntensity ("Stretch Intensity", Range(0, 5)) = 0.5
+        _GlitchStretchSpeed ("Stretch Speed", Float) = 1
+        _GlitchStretchBlockSize ("Stretch Block Size", Range(0.01, 1)) = 0.1
+        _GlitchStretchFrequency ("Stretch Frequency", Range(0, 1)) = 0.3
+        _GlitchStretchMask ("Stretch Glitch Mask", 2D) = "white" {}
+        _GlitchStretchMaskScale ("Stretch Mask Scale", Range(1, 5)) = 1
 
         [Header(Decal System Stickers)]
         [Toggle(_DECAL)] _Decal ("Enable Decal", Float) = 0
@@ -1110,6 +1127,7 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _VERTEX_ANIMATION
             #pragma shader_feature_local _HOLOGRAM
             #pragma shader_feature_local _GLITCH
+            #pragma shader_feature_local _GLITCH_STRETCH
             #pragma shader_feature_local _HOLOGRAM_NOISE
             #pragma shader_feature_local _DECAL
             #pragma shader_feature_local _BACKFACE_TEXTURE

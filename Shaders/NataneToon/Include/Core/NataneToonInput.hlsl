@@ -566,6 +566,24 @@ CBUFFER_START(UnityPerMaterial)
     float _GlitchBlend;
     float _GlitchBlendMode;
     float _GlitchBlur;
+    float4 _GlitchMask_ST;
+    float _GlitchMaskScale;
+    float _GlitchMaskAffectsRGBSplit;
+    float _GlitchMaskAffectsFrequency;
+    float4 _GlitchNoiseTex_ST;
+    float _GlitchNoiseIntensity;
+    float4 _GlitchNoiseScrollSpeed;
+    float _GlitchNoiseMode;
+    #endif
+
+    // ===== Glitch Stretch =====
+    #if defined(_GLITCH_STRETCH)
+    float _GlitchStretchIntensity;
+    float _GlitchStretchSpeed;
+    float _GlitchStretchBlockSize;
+    float _GlitchStretchFrequency;
+    float4 _GlitchStretchMask_ST;
+    float _GlitchStretchMaskScale;
     #endif
 
     // Decal
@@ -962,6 +980,17 @@ sampler2D _HologramMask;
 #endif
 #if defined(_HOLOGRAM_NOISE)
 sampler2D _HologramNoiseTex;
+#endif
+
+// Glitch Mask
+#if defined(_GLITCH)
+sampler2D _GlitchMask;
+sampler2D _GlitchNoiseTex;
+#endif
+
+// Glitch Stretch Mask
+#if defined(_GLITCH_STRETCH)
+sampler2D _GlitchStretchMask;
 #endif
 
 // VAT

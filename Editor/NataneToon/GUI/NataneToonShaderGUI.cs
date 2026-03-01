@@ -2498,12 +2498,43 @@ public class NataneToonShaderGUI : ShaderGUI
 
                 DrawBlendControls(materialEditor, targetMaterial, "_GlitchBlend", "_GlitchBlendMode", "_GlitchBlur");
 
+                EditorGUILayout.Space(3);
+                DrawProperty("_GlitchMask", L("グリッチマスク", "Glitch Mask"));
+                DrawProperty("_GlitchMaskScale", L("マスクスケール", "Mask Scale"));
+                DrawProperty("_GlitchMaskAffectsRGBSplit", L("マスクがRGBスプリットに影響", "Mask Affects RGB Split"));
+                DrawProperty("_GlitchMaskAffectsFrequency", L("マスクが発生頻度に影響", "Mask Affects Frequency"));
+
+                EditorGUILayout.Space(5);
+                EditorGUILayout.LabelField(L("ノイズテクスチャ", "Noise Texture"), EditorStyles.boldLabel);
+                DrawProperty("_GlitchNoiseTex", L("ノイズテクスチャ", "Noise Texture"));
+                DrawProperty("_GlitchNoiseIntensity", L("ノイズ強度", "Noise Intensity"));
+                DrawProperty("_GlitchNoiseScrollSpeed", L("ノイズスクロール速度", "Noise Scroll Speed"));
+                DrawProperty("_GlitchNoiseMode", L("ノイズモード", "Noise Mode"));
+
                 // Per-effect distance fade
                 if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
                 {
                     DrawProperty("_GlitchDistFade", L("距離フェード強度", "Distance Fade Intensity"));
                 }
 
+                EditorGUI.indentLevel--;
+            }
+
+            // Stretch Glitch (independent from normal Glitch)
+            EditorGUILayout.Space(SECTION_SPACING);
+            bool enableStretchGlitch = DrawToggle("_GLITCH_STRETCH", "_GlitchStretch", L("ストレッチグリッチを有効化", "Enable Stretch Glitch"));
+            if (enableStretchGlitch)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("ストレッチグリッチ設定", "Stretch Glitch Settings"), EditorStyles.boldLabel);
+                DrawProperty("_GlitchStretchIntensity", L("ストレッチ強度", "Stretch Intensity"));
+                DrawProperty("_GlitchStretchSpeed", L("ストレッチ速度", "Stretch Speed"));
+                DrawProperty("_GlitchStretchBlockSize", L("ブロックサイズ", "Block Size"));
+                DrawProperty("_GlitchStretchFrequency", L("発生頻度", "Frequency"));
+                EditorGUILayout.Space(3);
+                DrawProperty("_GlitchStretchMask", L("ストレッチマスク", "Stretch Mask"));
+                DrawProperty("_GlitchStretchMaskScale", L("マスクスケール", "Mask Scale"));
                 EditorGUI.indentLevel--;
             }
 
@@ -2515,7 +2546,16 @@ public class NataneToonShaderGUI : ShaderGUI
                 "• エッジグロウ: Fresnelベースの縁光り\n" +
                 "• モノクロ化: 色をホログラム色に統一\n" +
                 "• 透明度: Fresnel連動の自動透明化\n" +
-                "• グリッチ: ランダムなUV歪み＋RGB色ずれ\n\n" +
+                "• グリッチ: ランダムなUV歪み＋RGB色ずれ（強度最大3.0）\n" +
+                "  → マスクで部位ごとにグリッチ強度を制御可能\n" +
+                "  → マスクスケール: マスク効果を増幅（1=等倍、5=最大5倍）\n" +
+                "  → RGBスプリット・発生頻度もマスクで部位制御可能\n" +
+                "• ノイズテクスチャ: グリッチにテクスチャベースのノイズを追加\n" +
+                "  → UV Distortion: ノイズでUVをさらに歪ませる\n" +
+                "  → Color Corruption: ノイズ色を混ぜてカラーグリッチ\n" +
+                "  → Block Noise: ブロック状にノイズパターンを適用\n" +
+                "• ストレッチグリッチ: テクスチャだけ横に伸縮（強度最大5.0）\n" +
+                "  → 専用マスクで適用範囲を制御\n\n" +
                 "💡 Transparent バリアントとの組み合わせで\n" +
                 "よりリアルなホログラム投影を実現できます。",
                 "🔷 Hologram & Glitch:\n" +
@@ -2524,7 +2564,16 @@ public class NataneToonShaderGUI : ShaderGUI
                 "• Edge Glow: Fresnel-based edge glow\n" +
                 "• Monochrome: Unify colors to hologram tint\n" +
                 "• Transparency: Fresnel-linked auto transparency\n" +
-                "• Glitch: Random UV distortion + RGB shift\n\n" +
+                "• Glitch: Random UV distortion + RGB shift (max intensity 3.0)\n" +
+                "  → Mask controls intensity per area\n" +
+                "  → Mask Scale amplifies mask effect (1=normal, 5=max boost)\n" +
+                "  → RGB Split & Frequency also affected by mask\n" +
+                "• Noise Texture: Add texture-based noise to glitch\n" +
+                "  → UV Distortion: Further UV warping from noise\n" +
+                "  → Color Corruption: Mix noise colors for color glitch\n" +
+                "  → Block Noise: Block-pattern noise overlay\n" +
+                "• Stretch Glitch: Horizontal UV stretch (max intensity 5.0)\n" +
+                "  → Dedicated mask for area control\n\n" +
                 "💡 Combine with Transparent variant for\n" +
                 "more realistic hologram projection."),
                 MessageType.Info);
@@ -5444,6 +5493,7 @@ public class NataneToonShaderGUI : ShaderGUI
             // Hologram / Glitch
             ("_Hologram", "_HOLOGRAM"),
             ("_Glitch", "_GLITCH"),
+            ("_GlitchStretch", "_GLITCH_STRETCH"),
             ("_UseHologramNoise", "_HOLOGRAM_NOISE"),
 
             // Decal

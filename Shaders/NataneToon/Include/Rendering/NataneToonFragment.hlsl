@@ -47,6 +47,24 @@ half4 frag(v2f i) : SV_Target
         mainUV = AnimateUV(uv, _MainTexScrollSpeed.xy, _MainTexRotateSpeed);
     #endif
 
+    // ===== Glitch Stretch (UV modification before main texture sampling) =====
+    #if defined(_GLITCH_STRETCH) && defined(UNITY_PASS_FORWARDBASE)
+    {
+        half stretchMaskVal = tex2D(_GlitchStretchMask, TRANSFORM_TEX(mainUV, _GlitchStretchMask)).r;
+        // Mask Scale: マスク値を増幅（1.0=等倍、5.0=5倍ブースト）
+        stretchMaskVal = saturate(stretchMaskVal * _GlitchStretchMaskScale);
+        half stretchTrigger = step(1.0 - _GlitchStretchFrequency,
+            frac(sin(_Time.y * _GlitchStretchSpeed) * 43758.5453));
+        if (stretchTrigger > 0.5 && stretchMaskVal > 0.001)
+        {
+            float2 stretchedUV = CalculateGlitchStretchUV(mainUV,
+                _GlitchStretchIntensity * stretchMaskVal, _GlitchStretchSpeed,
+                _GlitchStretchBlockSize, _GlitchStretchFrequency);
+            mainUV = stretchedUV;
+        }
+    }
+    #endif
+
     // ===== Texture Sampling =====
     #ifdef _TRIPLANAR
         half4 mainTex = TriplanarSample(_MainTex, i.worldPos, i.worldNormal, _TriplanarScale, _TriplanarBlendSharpness);
@@ -1653,21 +1671,39 @@ half4 frag(v2f i) : SV_Target
     #if defined(_GLITCH) && defined(UNITY_PASS_FORWARDBASE)
     {
         half3 preGlitch = col.rgb;
+
+        // Glitch mask sampling with scale amplification
+        half glitchMask = tex2D(_GlitchMask, TRANSFORM_TEX(uv, _GlitchMask)).r;
+        // Mask Scale: マスク値を増幅して「白い部分をさらに強く」できる
+        // Scale=1: 等倍（従来通り）、Scale=5: マスク0.2→1.0に増幅
+        glitchMask = saturate(glitchMask * _GlitchMaskScale);
+
         // Glitch trigger (random occurrence)
-        half glitchTrigger = step(1.0 - _GlitchFrequency,
+        // Mask Affects Frequency: マスク値が頻度にも影響（白い部分ほど頻繁にグリッチ発生）
+        half effectiveFrequency = lerp(_GlitchFrequency, _GlitchFrequency * glitchMask, _GlitchMaskAffectsFrequency);
+        half glitchTrigger = step(1.0 - effectiveFrequency,
             frac(sin(_Time.y * _GlitchSpeed) * 43758.5453));
 
-        if (glitchTrigger > 0.5)
+        // Apply mask to intensity (amplified by MaskScale)
+        half maskedGlitchIntensity = _GlitchIntensity * glitchMask;
+
+        if (glitchTrigger > 0.5 && maskedGlitchIntensity > 0.001)
         {
             // UV distortion
             float2 glitchUV = CalculateGlitchUV(uv,
-                _GlitchIntensity, _GlitchSpeed, _GlitchBlockSize);
+                maskedGlitchIntensity, _GlitchSpeed, _GlitchBlockSize);
 
-            // RGB split
+            // RGB split — Mask Affects RGB Split: マスクでRGBスプリットも制御
+            half maskedRGBSplit = lerp(_GlitchRGBSplitIntensity,
+                _GlitchRGBSplitIntensity * glitchMask, _GlitchMaskAffectsRGBSplit);
             half3 splitColor = CalculateGlitchRGBSplit(
-                col.rgb, glitchUV, _MainTex, _GlitchRGBSplitIntensity);
-            col.rgb = lerp(col.rgb, splitColor, _GlitchIntensity);
+                col.rgb, glitchUV, _MainTex, maskedRGBSplit);
+            col.rgb = lerp(col.rgb, splitColor, maskedGlitchIntensity);
         }
+        // Apply noise texture for additional glitch variety
+        col.rgb = ApplyGlitchNoise(col.rgb, uv, _GlitchNoiseTex,
+            _GlitchNoiseTex_ST, _GlitchNoiseScrollSpeed,
+            _GlitchNoiseIntensity * glitchMask, _GlitchNoiseMode, _MainTex);
         // Blur dampens glitch distortion by blending back towards original
         col.rgb = lerp(col.rgb, preGlitch, _GlitchBlur * 0.5);
         half glitchBlendFaded = _GlitchBlend;
