@@ -1835,7 +1835,7 @@ half4 frag(v2f i) : SV_Target
     // ===== STAGE B: Illustration Style — Screen Space Effects =====
     // ================================================================
 
-    #if defined(UNITY_PASS_FORWARDBASE)
+    #if defined(UNITY_PASS_FORWARDBASE) && (defined(_WATERCOLOR) || defined(_SOFT_FILTER) || defined(_KUWAHARA_FILTER) || defined(_SCREEN_EDGE) || defined(_COLOR_BLEEDING) || defined(_CHROMATIC_ABERRATION))
     {
         float2 illustGrabUV = i.screenPos.xy / i.screenPos.w;
         float2 illustScreenUV = i.pos.xy / _ScreenParams.xy;
