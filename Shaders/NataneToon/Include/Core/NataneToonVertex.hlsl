@@ -48,6 +48,26 @@ void ApplyVAT(inout float4 vertex, inout float3 normal, float2 uv)
 }
 #endif
 
+// ===== Hand-Drawn Outline Helper Functions =====
+#ifdef _OUTLINE_HAND_DRAWN
+// Modulate outline width using noise texture for hand-drawn variation
+float GetHandDrawnWidthFactor(float2 uv)
+{
+    float2 noiseUV = uv * _OutlineNoiseTiling;
+    float widthNoise = tex2Dlod(_OutlineNoiseTex, float4(noiseUV, 0, 0)).r;
+    return lerp(1.0 - _OutlineWidthVariation, 1.0 + _OutlineWidthVariation, widthNoise);
+}
+
+// Compute position jitter from vertex hash for hand-drawn wobble
+float3 GetHandDrawnJitter(float3 objectPos)
+{
+    float hash1 = frac(sin(dot(objectPos.xy, float2(12.9898, 78.233))) * 43758.5453);
+    float hash2 = frac(sin(dot(objectPos.yz, float2(45.164, 93.177))) * 27183.8241);
+    float hash3 = frac(sin(dot(objectPos.xz, float2(63.419, 17.652))) * 69143.2758);
+    return (float3(hash1, hash2, hash3) * 2.0 - 1.0) * _OutlineJitterAmount * 0.001;
+}
+#endif
+
 // Vertex Shader
 // Transforms vertices and prepares data for fragment shader
 v2f vert(appdata v)
@@ -172,8 +192,8 @@ v2f vert(appdata v)
     }
     #endif
 
-    // Calculate screen position for GrabPass (Refraction) / Dithering Alpha / Intersection Fade
-    #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA) || defined(_INTERSECTION_FADE)
+    // Calculate screen position for GrabPass (Refraction / Illustration filters) / Dithering Alpha / Intersection Fade
+    #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA) || defined(_INTERSECTION_FADE) || defined(_SOFT_FILTER) || defined(_KUWAHARA_FILTER) || defined(_COLOR_BLEEDING) || defined(_CHROMATIC_ABERRATION) || defined(_SCREEN_EDGE) || defined(_WATERCOLOR)
         o.screenPos = ComputeScreenPos(o.pos);
     #endif
 

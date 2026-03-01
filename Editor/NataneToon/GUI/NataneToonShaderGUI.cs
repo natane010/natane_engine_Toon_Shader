@@ -2480,6 +2480,50 @@ public class NataneToonShaderGUI : ShaderGUI
                     DrawProperty("_HologramDistFade", L("距離フェード強度", "Distance Fade Intensity"));
                 }
 
+                DrawHelpToggle("Hologram",
+                    L("🔷 ホログラム:\n" +
+                      "SF/サイバーパンク風のホログラム投影効果を追加します。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• ホログラム色: 全体のティント色（青緑=定番SF風、紫=魔法風）\n" +
+                      "• モノクロ化: テクスチャ色をホログラム色で上書き（0=テクスチャ保持、1=完全モノクロ）\n" +
+                      "• スキャンライン: 走査線エフェクト\n" +
+                      "  - 速度: スキャンライン移動速度\n" +
+                      "  - 強度: スキャンライン明暗差（0.5〜0.8推奨）\n" +
+                      "  - 密度: 走査線の本数（10〜50推奨）\n" +
+                      "  - 幅: 各走査線の太さ（0.3〜0.7推奨）\n" +
+                      "• エッジグロウ: Fresnelベースの輪郭発光\n" +
+                      "  - 範囲: 低い=広い発光、高い=細いエッジのみ（2〜5推奨）\n" +
+                      "  - 強度: 発光の明るさ（0.5〜2.0推奨）\n" +
+                      "• 透明度: ホログラム全体の透明度\n" +
+                      "• フリッカー: ランダムな明滅（速度+量で制御）\n" +
+                      "• ノイズ歪み: UV歪みによるちらつき\n\n" +
+                      "💡 Tips:\n" +
+                      "• Transparentバリアントと組み合わせると半透明ホログラム投影に\n" +
+                      "• エッジグロウ強め + 透明度低め = ゴースト/幽霊表現\n" +
+                      "• ノイズテクスチャONで信号劣化風のホログラムに\n" +
+                      "⚡ パフォーマンス: 軽〜中程度（スキャンライン+Fresnel計算）",
+                      "🔷 Hologram:\n" +
+                      "Adds sci-fi/cyberpunk holographic projection effects.\n\n" +
+                      "📋 Parameters:\n" +
+                      "• Hologram Color: overall tint (cyan=classic sci-fi, purple=magic)\n" +
+                      "• Monochrome: override texture color (0=keep texture, 1=full monochrome)\n" +
+                      "• Scanlines: scanning line effect\n" +
+                      "  - Speed: scanline scroll speed\n" +
+                      "  - Intensity: light/dark contrast (0.5-0.8 recommended)\n" +
+                      "  - Density: number of lines (10-50 recommended)\n" +
+                      "  - Width: thickness per line (0.3-0.7 recommended)\n" +
+                      "• Edge Glow: Fresnel-based rim glow\n" +
+                      "  - Range: lower=wider glow, higher=thin edge only (2-5 recommended)\n" +
+                      "  - Intensity: glow brightness (0.5-2.0 recommended)\n" +
+                      "• Alpha: overall hologram transparency\n" +
+                      "• Flicker: random brightness variation (speed + amount)\n" +
+                      "• Noise Distortion: UV warp for interference\n\n" +
+                      "💡 Tips:\n" +
+                      "• Use with Transparent variant for see-through hologram\n" +
+                      "• Strong edge glow + low alpha = ghost/phantom effect\n" +
+                      "• Enable Noise Texture for degraded signal look\n" +
+                      "⚡ Performance: Light-Medium (scanlines + Fresnel)"),
+                    MessageType.Info);
                 EditorGUI.indentLevel--;
             }
 
@@ -2517,6 +2561,52 @@ public class NataneToonShaderGUI : ShaderGUI
                     DrawProperty("_GlitchDistFade", L("距離フェード強度", "Distance Fade Intensity"));
                 }
 
+                DrawHelpToggle("Glitch",
+                    L("⚡ グリッチ:\n" +
+                      "ランダムなUV歪みとRGB色ずれによるデジタル信号破損を表現します。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• グリッチ強度: UV歪みの大きさ（0.1〜0.5=微弱、1.0=標準、2.0+=激しい）\n" +
+                      "• グリッチ速度: 歪みの変化スピード\n" +
+                      "• ブロックサイズ: グリッチのブロック粒度（小さい=細かいノイズ、大きい=大きな帯状）\n" +
+                      "• RGBスプリット強度: RGB各チャンネルのずれ量（0.01〜0.05=微細、0.1+=激しい色ずれ）\n" +
+                      "• 発生頻度: グリッチが起こる確率（0.5=半分の時間、1.0=常時）\n\n" +
+                      "📋 マスク設定:\n" +
+                      "• グリッチマスク: 白=グリッチ適用 / 黒=適用しない\n" +
+                      "• マスクスケール: マスク効果の増幅（1=等倍、5=最大5倍ブースト）\n" +
+                      "• マスクがRGBスプリットに影響: マスクで色ずれも部位制御\n" +
+                      "• マスクが発生頻度に影響: マスクで発生率も部位制御\n\n" +
+                      "📋 ノイズテクスチャ:\n" +
+                      "• UV Distortion: ノイズでUVをさらに歪ませる\n" +
+                      "• Color Corruption: ノイズ色を混ぜてカラー崩壊\n" +
+                      "• Block Noise: ブロック状のノイズパターン適用\n\n" +
+                      "💡 Tips:\n" +
+                      "• ホログラムと併用でSFホログラム通信の乱れを表現\n" +
+                      "• 色収差と併用でよりリアルなデジタル破損に\n" +
+                      "• マスクで目や手だけグリッチさせると「バグったアバター」演出\n" +
+                      "⚡ パフォーマンス: 軽量（UV演算 + テクスチャ数サンプル）",
+                      "⚡ Glitch:\n" +
+                      "Creates digital signal corruption with random UV distortion and RGB shift.\n\n" +
+                      "📋 Parameters:\n" +
+                      "• Glitch Intensity: UV distortion amount (0.1-0.5=subtle, 1.0=standard, 2.0+=heavy)\n" +
+                      "• Glitch Speed: distortion change rate\n" +
+                      "• Block Size: glitch block granularity (small=fine noise, large=wide bands)\n" +
+                      "• RGB Split Intensity: RGB channel offset (0.01-0.05=subtle, 0.1+=heavy)\n" +
+                      "• Frequency: glitch occurrence probability (0.5=half the time, 1.0=constant)\n\n" +
+                      "📋 Mask Settings:\n" +
+                      "• Glitch Mask: white=apply / black=skip\n" +
+                      "• Mask Scale: amplifies mask effect (1=normal, 5=max boost)\n" +
+                      "• Mask Affects RGB Split: per-area color shift control\n" +
+                      "• Mask Affects Frequency: per-area occurrence control\n\n" +
+                      "📋 Noise Texture:\n" +
+                      "• UV Distortion: additional UV warping from noise\n" +
+                      "• Color Corruption: mix noise colors for color breakdown\n" +
+                      "• Block Noise: block-pattern noise overlay\n\n" +
+                      "💡 Tips:\n" +
+                      "• Combine with Hologram for sci-fi communication glitch\n" +
+                      "• Add Chromatic Aberration for more realistic digital corruption\n" +
+                      "• Mask specific areas (eyes/hands) for 'bugged avatar' effect\n" +
+                      "⚡ Performance: Light (UV math + few texture samples)"),
+                    MessageType.Info);
                 EditorGUI.indentLevel--;
             }
 
@@ -2535,6 +2625,32 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUILayout.Space(3);
                 DrawProperty("_GlitchStretchMask", L("ストレッチマスク", "Stretch Mask"));
                 DrawProperty("_GlitchStretchMaskScale", L("マスクスケール", "Mask Scale"));
+                DrawHelpToggle("StretchGlitch",
+                    L("📐 ストレッチグリッチ:\n" +
+                      "テクスチャだけを横に伸縮させるグリッチです（通常グリッチとは独立）。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• ストレッチ強度: 伸縮の大きさ（0.5=微細、2.0=標準、5.0=最大）\n" +
+                      "• ストレッチ速度: 伸縮アニメーション速度\n" +
+                      "• ブロックサイズ: 伸縮するブロックの高さ\n" +
+                      "• 発生頻度: ストレッチが起こる確率\n" +
+                      "• マスク/マスクスケール: 適用範囲と強度の制御\n\n" +
+                      "💡 Tips:\n" +
+                      "• 通常グリッチと組み合わせると激しいデジタル崩壊に\n" +
+                      "• 単体使用で「VHSテープの横ずれ」風レトロ演出\n" +
+                      "⚡ パフォーマンス: 極めて軽量（UV演算のみ）",
+                      "📐 Stretch Glitch:\n" +
+                      "Horizontally stretches the texture in blocks (independent from normal Glitch).\n\n" +
+                      "📋 Parameters:\n" +
+                      "• Stretch Intensity: stretch amount (0.5=subtle, 2.0=standard, 5.0=max)\n" +
+                      "• Stretch Speed: animation speed\n" +
+                      "• Block Size: height of stretch blocks\n" +
+                      "• Frequency: occurrence probability\n" +
+                      "• Mask/Mask Scale: area and intensity control\n\n" +
+                      "💡 Tips:\n" +
+                      "• Combine with normal Glitch for intense digital corruption\n" +
+                      "• Use alone for retro 'VHS tape horizontal shift' effect\n" +
+                      "⚡ Performance: Very light (UV math only)"),
+                    MessageType.Info);
                 EditorGUI.indentLevel--;
             }
 
@@ -2579,6 +2695,533 @@ public class NataneToonShaderGUI : ShaderGUI
                 MessageType.Info);
         }
         EndBoxedSection(GetFoldout("Hologram"));
+    }
+
+    private void DrawIllustrationStyleSection()
+    {
+        SetFoldout("IllustrationStyle", DrawBoxedSection(L("イラスト調スタイル", "Illustration Style"), GetFoldout("IllustrationStyle"), SectionCategory.Effects, "_COLOR_QUANTIZE"));
+        if (GetFoldout("IllustrationStyle"))
+        {
+            // --- Color Quantization ---
+            bool useQuantize = DrawToggle("_COLOR_QUANTIZE", "_UseColorQuantize",
+                L("色の量子化", "Color Quantization"));
+            if (useQuantize)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_QuantizeMode", L("量子化モード", "Quantize Mode"));
+                float quantizeMode = targetMaterial.HasProperty("_QuantizeMode") ? targetMaterial.GetFloat("_QuantizeMode") : 0f;
+                if (quantizeMode > FLOAT_COMPARISON_THRESHOLD) // HSV mode
+                {
+                    DrawProperty("_QuantizeHueLevels", L("色相レベル", "Hue Levels"));
+                    DrawProperty("_QuantizeSatLevels", L("彩度レベル", "Saturation Levels"));
+                    DrawProperty("_QuantizeValLevels", L("明度レベル", "Value Levels"));
+                }
+                else // RGB mode
+                {
+                    DrawProperty("_QuantizeLevels", L("量子化レベル", "Quantize Levels"));
+                }
+                DrawProperty("_QuantizeDither", L("ディザ量", "Dither Amount"));
+                DrawProperty("_QuantizeBlend", L("ブレンド", "Blend"));
+                DrawProperty("_QuantizeMask", L("マスク", "Mask"));
+                DrawHelpToggle("ColorQuantize",
+                    L("🎨 色の量子化 (Color Quantization):\n" +
+                      "出力色のレベル数を減らし、デジタルイラストの「塗り分け」感を実現します。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• 量子化モード: RGB=均一な色数削減 / HSV=色相・彩度・明度を個別に制御（推奨）\n" +
+                      "• HSVモード時:\n" +
+                      "  - 色相レベル: 色の種類数（12=標準、6=レトロ、36=自然）\n" +
+                      "  - 彩度レベル: 鮮やかさの段階数（4〜8推奨）\n" +
+                      "  - 明度レベル: 明暗の段階数（4〜8推奨）\n" +
+                      "• RGBモード時: 量子化レベル（8=標準、4=強いポスタライズ、16〜32=微細）\n" +
+                      "• ディザ量: バンディング（段差模様）を防止するノイズ量（0.3〜0.5推奨）\n" +
+                      "• ブレンド: 0=効果なし、1=完全適用\n" +
+                      "• マスク: 白=量子化適用 / 黒=元の色を維持\n\n" +
+                      "💡 Tips:\n" +
+                      "• セル塗りイラスト風: HSVモード、明度4〜6、彩度4〜6\n" +
+                      "• ポップアート風: RGBモード、レベル3〜4\n" +
+                      "• 3D LUT と組み合わせると映画的な色彩制限が可能\n" +
+                      "⚡ パフォーマンス: 極めて軽量（ALU演算のみ）",
+                      "🎨 Color Quantization:\n" +
+                      "Reduces color levels to create a flat, illustrated look.\n\n" +
+                      "📋 Parameters:\n" +
+                      "• Quantize Mode: RGB=uniform reduction / HSV=separate H/S/V control (recommended)\n" +
+                      "• HSV mode:\n" +
+                      "  - Hue Levels: number of hue steps (12=standard, 6=retro, 36=natural)\n" +
+                      "  - Saturation Levels: saturation steps (4-8 recommended)\n" +
+                      "  - Value Levels: brightness steps (4-8 recommended)\n" +
+                      "• RGB mode: Quantize Levels (8=standard, 4=strong posterize, 16-32=subtle)\n" +
+                      "• Dither: prevents banding artifacts (0.3-0.5 recommended)\n" +
+                      "• Blend: 0=no effect, 1=full\n" +
+                      "• Mask: white=apply / black=keep original\n\n" +
+                      "💡 Tips:\n" +
+                      "• Cel-shaded look: HSV mode, Value 4-6, Saturation 4-6\n" +
+                      "• Pop art: RGB mode, Levels 3-4\n" +
+                      "• Combine with 3D LUT for cinematic color restriction\n" +
+                      "⚡ Performance: Very light (ALU only)"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(SECTION_SPACING);
+
+            // --- 3D LUT ---
+            bool useLUT = DrawToggle("_LUT_3D", "_UseLUT3D",
+                L("3D LUT カラーグレーディング", "3D LUT Color Grading"));
+            if (useLUT)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_LUT3DTex", L("LUTテクスチャ", "LUT Texture"));
+                DrawProperty("_LUT3DIntensity", L("強度", "Intensity"));
+                DrawProperty("_LUT3DSize", L("LUTサイズ", "LUT Size"));
+                DrawHelpToggle("LUT3D",
+                    L("🎬 3D LUT カラーグレーディング:\n" +
+                      "LUT（ルックアップテーブル）テクスチャで映画的・絵画的な色調変換を行います。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• LUTテクスチャ: 横長のストリップテクスチャ（32x32x32=1024x32px が標準）\n" +
+                      "• 強度: 0=元の色、1=LUT完全適用（0.5〜0.8で自然な調整）\n" +
+                      "• LUTサイズ: テクスチャのグリッドサイズ（通常32。テクスチャに合わせて設定）\n\n" +
+                      "💡 Tips:\n" +
+                      "• LUTテクスチャはPhotoshop/GIMP等のカラー調整をLUTとして書き出して作成\n" +
+                      "• フリーのLUTパックも多数利用可能（映画風、ヴィンテージ風、アニメ風等）\n" +
+                      "• 色の量子化と組み合わせて世界観統一に最適\n" +
+                      "• Filter Modeを「Point」に設定すると色の階段化が鮮明に\n" +
+                      "⚡ パフォーマンス: 極めて軽量（テクスチャ2サンプル）",
+                      "🎬 3D LUT Color Grading:\n" +
+                      "Applies cinematic color transformation using a LUT texture.\n\n" +
+                      "📋 Parameters:\n" +
+                      "• LUT Texture: horizontal strip (32x32x32 = 1024x32px standard)\n" +
+                      "• Intensity: 0=original, 1=full LUT (0.5-0.8 for natural look)\n" +
+                      "• LUT Size: grid size matching your texture (usually 32)\n\n" +
+                      "💡 Tips:\n" +
+                      "• Create LUTs by exporting color adjustments from Photoshop/GIMP\n" +
+                      "• Many free LUT packs available (cinematic, vintage, anime styles)\n" +
+                      "• Great with Color Quantization for unified art direction\n" +
+                      "• Set Filter Mode to 'Point' for sharp color banding\n" +
+                      "⚡ Performance: Very light (2 texture samples)"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(SECTION_SPACING);
+
+            // --- Hatching ---
+            bool useHatching = DrawToggle("_HATCHING", "_UseHatching",
+                L("ハッチング", "Hatching"));
+            if (useHatching)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_HatchTex0", L("ハッチテクスチャ 0 (RGBA=L1-4)", "Hatch Texture 0"));
+                DrawProperty("_HatchTex1", L("ハッチテクスチャ 1 (RG=L5-6)", "Hatch Texture 1"));
+                DrawProperty("_HatchingTiling", L("タイリング", "Tiling"));
+                DrawProperty("_HatchingColor", L("ハッチング色", "Hatching Color"));
+                DrawProperty("_HatchingBlend", L("ブレンド", "Blend"));
+                DrawProperty("_HatchingMask", L("マスク", "Mask"));
+                DrawHelpToggle("Hatching",
+                    L("✏️ ハッチング (Tonal Art Maps):\n" +
+                      "明暗に応じて斜線パターンを適用し、鉛筆画・エッチング風のシェーディングを表現します。\n" +
+                      "6段階のTAM（Tonal Art Map）方式で、明→暗で線が徐々に密になります。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• ハッチテクスチャ 0: RGBAチャンネルにレベル1〜4をパック\n" +
+                      "  R=最も薄い線（明部）、G/B=中間、A=やや密な線\n" +
+                      "• ハッチテクスチャ 1: RGチャンネルにレベル5〜6をパック\n" +
+                      "  R=密な線、G=最も密な線（暗部）\n" +
+                      "• タイリング: テクスチャの繰り返し数（5〜15推奨、モデルサイズで調整）\n" +
+                      "• ハッチング色: 線の色（黒=鉛筆風、茶色=セピア風、青=設計図風）\n" +
+                      "• マスク: 白=ハッチング適用 / 黒=適用しない（肌のみ除外等）\n\n" +
+                      "💡 Tips:\n" +
+                      "• テクスチャ作成: 45度/135度の斜線パターンを密度違いで6枚用意\n" +
+                      "• 色の量子化(2段=白黒)と組み合わせて銅版画風に\n" +
+                      "• エッジ検出と合わせるとコミック/マンガ調に\n" +
+                      "⚡ パフォーマンス: 非常に軽量（テクスチャ2枚サンプル）",
+                      "✏️ Hatching (Tonal Art Maps):\n" +
+                      "Applies cross-hatch patterns based on brightness for a pencil/etching look.\n" +
+                      "Uses 6-level TAM: lines get denser from bright to dark areas.\n\n" +
+                      "📋 Parameters:\n" +
+                      "• Hatch Texture 0: RGBA channels = levels 1-4\n" +
+                      "  R=lightest lines, G/B=medium, A=denser\n" +
+                      "• Hatch Texture 1: RG channels = levels 5-6\n" +
+                      "  R=dense, G=densest (shadow areas)\n" +
+                      "• Tiling: repetition count (5-15 recommended, adjust per model size)\n" +
+                      "• Hatching Color: line color (black=pencil, brown=sepia, blue=blueprint)\n" +
+                      "• Mask: white=apply / black=skip (e.g., exclude skin)\n\n" +
+                      "💡 Tips:\n" +
+                      "• Create textures: 45/135 degree line patterns at 6 density levels\n" +
+                      "• Combine with Color Quantize (2 levels=B&W) for engraving look\n" +
+                      "• Add Screen Edge for comic/manga style\n" +
+                      "⚡ Performance: Very light (2 texture samples)"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(SECTION_SPACING);
+
+            // --- Watercolor ---
+            bool useWC = DrawToggle("_WATERCOLOR", "_UseWatercolor",
+                L("水彩シミュレーション", "Watercolor Simulation"));
+            if (useWC)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_WCEdgeDarkening", L("エッジダークニング", "Edge Darkening"));
+                DrawProperty("_WCWetEdge", L("ウェットエッジ", "Wet Edge"));
+                DrawProperty("_WCGranulation", L("粒子感", "Granulation"));
+                DrawProperty("_WCGranulationTex", L("粒子感テクスチャ", "Granulation Texture"));
+                DrawProperty("_WCPaperTex", L("紙テクスチャ", "Paper Texture"));
+                DrawProperty("_WCPaperIntensity", L("紙の強度", "Paper Intensity"));
+                DrawProperty("_WCPaperTiling", L("紙タイリング", "Paper Tiling"));
+                DrawProperty("_WCBlend", L("ブレンド", "Blend"));
+                DrawProperty("_WCMask", L("マスク", "Mask"));
+                DrawHelpToggle("Watercolor",
+                    L("🎨 水彩シミュレーション:\n" +
+                      "GrabPassを利用し、エッジダークニング・ウェットエッジ・紙のテクスチャを組み合わせて\n" +
+                      "リアルな水彩画の質感を再現します。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• エッジダークニング: 色境界を暗くする強度（0.3〜0.7推奨）\n" +
+                      "  → 水彩絵具がエッジに溜まる「ダークエッジ」現象を再現\n" +
+                      "• ウェットエッジ: 輪郭部に色が溜まる「ウェットインウェット」効果（0.2〜0.5推奨）\n" +
+                      "• 粒子感: 紙の凹凸による絵具の粒子感（0.3〜0.6推奨）\n" +
+                      "• 粒子感テクスチャ: ノイズテクスチャ（ガウシアンノイズ等）\n" +
+                      "• 紙テクスチャ: 画用紙/水彩紙のテクスチャ（凹凸のあるもの推奨）\n" +
+                      "• 紙の強度: 紙テクスチャの影響度（0.1〜0.4推奨。高すぎると紙が目立ちすぎる）\n" +
+                      "• 紙タイリング: 紙テクスチャの繰り返し数（2〜5推奨）\n" +
+                      "• マスク: 白=水彩効果適用 / 黒=適用しない\n\n" +
+                      "💡 Tips:\n" +
+                      "• 色の量子化（低レベル）と合わせるとポスターカラー風に\n" +
+                      "• エッジダークニング強め+ウェットエッジ弱めで「乾いた水彩」表現\n" +
+                      "• 紙テクスチャは実際の水彩紙をスキャンしたものが最適\n" +
+                      "• ソフトフィルターと併用でさらに柔らかい印象に\n" +
+                      "⚡ パフォーマンス: 中程度（GrabPass + テクスチャ3〜4サンプル）",
+                      "🎨 Watercolor Simulation:\n" +
+                      "Combines edge darkening, wet edges, and paper texture using GrabPass\n" +
+                      "to create realistic watercolor painting effects.\n\n" +
+                      "📋 Parameters:\n" +
+                      "• Edge Darkening: darkens color boundaries (0.3-0.7 recommended)\n" +
+                      "  → Simulates paint pooling at edges\n" +
+                      "• Wet Edge: color accumulation at contours (0.2-0.5 recommended)\n" +
+                      "• Granulation: paper roughness effect on paint (0.3-0.6 recommended)\n" +
+                      "• Granulation Texture: noise texture (Gaussian noise etc.)\n" +
+                      "• Paper Texture: watercolor paper texture (bumpy texture recommended)\n" +
+                      "• Paper Intensity: paper influence (0.1-0.4 recommended; too high makes paper too visible)\n" +
+                      "• Paper Tiling: paper texture repeat count (2-5 recommended)\n" +
+                      "• Mask: white=apply / black=skip\n\n" +
+                      "💡 Tips:\n" +
+                      "• Combine with Color Quantize (low levels) for poster paint look\n" +
+                      "• High edge darkening + low wet edge = 'dry watercolor' look\n" +
+                      "• Best paper textures are scanned from real watercolor paper\n" +
+                      "• Add Soft Filter for even softer impression\n" +
+                      "⚡ Performance: Medium (GrabPass + 3-4 texture samples)"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(SECTION_SPACING);
+
+            // --- Soft Filter ---
+            bool useSoft = DrawToggle("_SOFT_FILTER", "_UseSoftFilter",
+                L("ソフトフィルター / Diffusion", "Soft Filter / Diffusion"));
+            if (useSoft)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_SoftFilterMode", L("フィルターモード", "Filter Mode"));
+                DrawProperty("_SoftFilterRadius", L("半径", "Radius"));
+                DrawProperty("_SoftFilterBlend", L("ブレンド", "Blend"));
+                float softMode = targetMaterial.HasProperty("_SoftFilterMode") ? targetMaterial.GetFloat("_SoftFilterMode") : 0f;
+                if (softMode > FLOAT_COMPARISON_THRESHOLD)
+                    DrawProperty("_SoftFilterThreshold", L("Bloom閾値", "Bloom Threshold"));
+                DrawHelpToggle("SoftFilter",
+                    L("✨ ソフトフィルター / Diffusion:\n" +
+                      "GrabPassに対してガウシアンブラーを適用し、\n" +
+                      "劇場版アニメや映画のような柔らかいDiffusion効果を実現します。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• フィルターモード:\n" +
+                      "  0=Gaussian: 均一なソフトフォーカス（柔らかい空気感）\n" +
+                      "  1=Bloom Mix: 高輝度部分のみブラーをブレンド（ハイライトが輝く）\n" +
+                      "• 半径: ブラー強度（1〜3=微細な柔らかさ、5〜8=ドリーミー、10+=強いディフュージョン）\n" +
+                      "• ブレンド: 0=効果なし、1=完全適用（0.3〜0.6で自然な仕上がり）\n" +
+                      "• Bloom閾値（Bloom Mixモード時）: この輝度以上のピクセルのみブラー適用\n" +
+                      "  （0.5=中間輝度以上、0.8=高輝度のみ、0.3=広範囲にBloom）\n\n" +
+                      "💡 Tips:\n" +
+                      "• 劇場版アニメ風: Gaussianモード、半径2〜4、ブレンド0.3〜0.5\n" +
+                      "• ドリーミー回想シーン: 半径8+、ブレンド0.6+\n" +
+                      "• Bloom Mixモードは画面の印象を大きく変えずにハイライトに輝きを追加\n" +
+                      "⚡ パフォーマンス: 中〜高（13タップ × 2パス ガウシアンブラー）",
+                      "✨ Soft Filter / Diffusion:\n" +
+                      "Applies Gaussian blur to GrabPass for a soft, dreamy look\n" +
+                      "like theatrical anime or cinematic diffusion.\n\n" +
+                      "📋 Parameters:\n" +
+                      "• Filter Mode:\n" +
+                      "  0=Gaussian: uniform soft focus (soft atmosphere)\n" +
+                      "  1=Bloom Mix: blurs only bright areas (glowing highlights)\n" +
+                      "• Radius: blur strength (1-3=subtle, 5-8=dreamy, 10+=heavy diffusion)\n" +
+                      "• Blend: 0=off, 1=full (0.3-0.6 for natural result)\n" +
+                      "• Bloom Threshold (Bloom Mix mode): only blur pixels above this brightness\n" +
+                      "  (0.5=mid-bright, 0.8=highlights only, 0.3=wide bloom)\n\n" +
+                      "💡 Tips:\n" +
+                      "• Theatrical anime: Gaussian mode, radius 2-4, blend 0.3-0.5\n" +
+                      "• Dreamy flashback: radius 8+, blend 0.6+\n" +
+                      "• Bloom Mix adds glow to highlights without changing overall impression\n" +
+                      "⚡ Performance: Medium-High (13-tap × 2-pass Gaussian blur)"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(SECTION_SPACING);
+
+            // --- Kuwahara Filter ---
+            bool useKuwahara = DrawToggle("_KUWAHARA_FILTER", "_UseKuwahara",
+                L("油絵フィルター (Kuwahara)", "Oil Paint Filter (Kuwahara)"));
+            if (useKuwahara)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_KuwaharaRadius", L("半径", "Radius"));
+                DrawProperty("_KuwaharaBlend", L("ブレンド", "Blend"));
+                DrawHelpToggle("Kuwahara",
+                    L("🖌️ 油絵フィルター (Kuwahara):\n" +
+                      "4象限分散ベースのKuwaharaフィルターで、エッジを保持しながら\n" +
+                      "油絵・厚塗り風のストローク表現を実現します。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• 半径: フィルターの探索範囲（2〜4=微細な油絵感、6〜8=はっきりした筆跡、10+=抽象画風）\n" +
+                      "• ブレンド: 0=効果なし、1=完全適用（0.5〜0.8推奨）\n\n" +
+                      "💡 Tips:\n" +
+                      "• 半径を大きくするほど「平筆で塗った」ような大胆なストロークに\n" +
+                      "• 色の量子化と合わせるとデジタル厚塗りイラスト風\n" +
+                      "• ソフトフィルターの代わりに使うと印象派風の仕上がり\n" +
+                      "• エッジ検出と併用で「絵画の中のキャラクター」表現\n" +
+                      "⚠️ 半径を大きくしすぎるとディテールが失われるので注意\n" +
+                      "⚡ パフォーマンス: 高（半径に応じてサンプル数が二次的に増加。半径8以下推奨）",
+                      "🖌️ Oil Paint Filter (Kuwahara):\n" +
+                      "4-quadrant variance-based Kuwahara filter that preserves edges\n" +
+                      "while creating oil painting / impasto brush stroke effects.\n\n" +
+                      "📋 Parameters:\n" +
+                      "• Radius: search range (2-4=subtle, 6-8=visible strokes, 10+=abstract)\n" +
+                      "• Blend: 0=off, 1=full (0.5-0.8 recommended)\n\n" +
+                      "💡 Tips:\n" +
+                      "• Larger radius = bolder, more visible brush strokes\n" +
+                      "• Combine with Color Quantize for digital impasto illustration\n" +
+                      "• Use instead of Soft Filter for impressionist look\n" +
+                      "• Add Screen Edge for 'character in a painting' effect\n" +
+                      "⚠️ Very large radius may lose fine detail\n" +
+                      "⚡ Performance: High (samples grow quadratically with radius; keep ≤8)"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(SECTION_SPACING);
+
+            // --- Screen Edge Detection ---
+            bool useEdge = DrawToggle("_SCREEN_EDGE", "_UseScreenEdge",
+                L("スクリーンエッジ検出", "Screen Edge Detection"));
+            if (useEdge)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_EdgeColor", L("エッジ色", "Edge Color"));
+                DrawProperty("_EdgeWidth", L("エッジ幅", "Edge Width"));
+                DrawProperty("_EdgeDepthSensitivity", L("深度感度", "Depth Sensitivity"));
+                DrawProperty("_EdgeNormalSensitivity", L("法線感度", "Normal Sensitivity"));
+                DrawProperty("_EdgeBlend", L("ブレンド", "Blend"));
+                DrawHelpToggle("ScreenEdge",
+                    L("🔲 スクリーンエッジ検出:\n" +
+                      "深度バッファと法線バッファからSobelフィルターでエッジを抽出し、\n" +
+                      "スクリーンスペースの輪郭線を描画します。\n" +
+                      "通常のアウトラインとは異なり、画面全体にかかるポスプロ的な効果です。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• エッジ色: 輪郭線の色（黒=インク線、白=光る輪郭、色付き=アーティスティック）\n" +
+                      "• エッジ幅: 検出に使うピクセル幅（1=細い線、2〜3=標準、5+=太い線）\n" +
+                      "• 深度感度: 奥行き差によるエッジ検出の敏感さ（1〜5推奨）\n" +
+                      "  → 高すぎると遠景にもエッジが出るので注意\n" +
+                      "• 法線感度: 面の向き差によるエッジ検出の敏感さ（1〜3推奨）\n" +
+                      "  → 曲面の変化を拾いたい場合に上げる\n" +
+                      "• ブレンド: 0=効果なし、1=完全適用\n\n" +
+                      "💡 Tips:\n" +
+                      "• 通常のアウトラインと併用で「太い外周線 + 細いディテール線」表現\n" +
+                      "• ハッチングと合わせるとマンガ風に\n" +
+                      "• 法線感度のみ高めにすると、面の角だけに線が入る「モデリング線」風\n" +
+                      "• 深度感度のみ高めにすると、前景・背景の分離線に\n" +
+                      "⚡ パフォーマンス: 中程度（Sobel 3x3カーネル × 深度+法線の2パス）",
+                      "🔲 Screen Edge Detection:\n" +
+                      "Extracts edges from depth and normal buffers using Sobel filter\n" +
+                      "for screen-space contour lines (post-process style).\n" +
+                      "Unlike regular outline, this applies across the entire screen.\n\n" +
+                      "📋 Parameters:\n" +
+                      "• Edge Color: line color (black=ink, white=glowing, colored=artistic)\n" +
+                      "• Edge Width: pixel width for detection (1=thin, 2-3=standard, 5+=thick)\n" +
+                      "• Depth Sensitivity: edge detection from depth differences (1-5 recommended)\n" +
+                      "  → Too high catches edges in distant scenery\n" +
+                      "• Normal Sensitivity: edge detection from surface angle changes (1-3 recommended)\n" +
+                      "  → Increase to catch curved surface details\n" +
+                      "• Blend: 0=off, 1=full\n\n" +
+                      "💡 Tips:\n" +
+                      "• Use with regular Outline for 'thick contour + thin detail lines'\n" +
+                      "• Combine with Hatching for manga look\n" +
+                      "• High normal sensitivity only = 'modeling wireframe' style\n" +
+                      "• High depth sensitivity only = foreground/background separation lines\n" +
+                      "⚡ Performance: Medium (Sobel 3x3 kernel × 2 passes: depth + normal)"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(SECTION_SPACING);
+
+            // --- Color Bleeding ---
+            bool useBleed = DrawToggle("_COLOR_BLEEDING", "_UseColorBleeding",
+                L("色のにじみ", "Color Bleeding"));
+            if (useBleed)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_BleedingRadius", L("にじみ半径", "Bleeding Radius"));
+                DrawProperty("_BleedingBlend", L("ブレンド", "Blend"));
+                DrawHelpToggle("ColorBleeding",
+                    L("💧 色のにじみ (Color Bleeding):\n" +
+                      "GrabPassの周囲8方向からカラーサンプリングし、\n" +
+                      "水彩絵具や印刷のインクがにじむような色の拡散効果を実現します。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• にじみ半径: にじみの広がり（ピクセル単位）\n" +
+                      "  1〜3=微細なにじみ（印刷風）、5〜10=はっきりしたにじみ（水彩風）\n" +
+                      "• ブレンド: 0=効果なし、1=完全適用（0.3〜0.6推奨）\n\n" +
+                      "💡 Tips:\n" +
+                      "• 水彩シミュレーションと併用で本格的な水彩表現\n" +
+                      "• 弱めのにじみ(半径2、ブレンド0.2)でアナログ印刷風のにじみ\n" +
+                      "• 色の量子化と合わせると版画風の独特な色のにじみに\n" +
+                      "• 強すぎると全体がぼやけるので、ブレンド値で調整\n" +
+                      "⚡ パフォーマンス: 中程度（8方向サンプリング）",
+                      "💧 Color Bleeding:\n" +
+                      "Samples GrabPass colors from 8 surrounding directions\n" +
+                      "to create watercolor/print ink bleeding effects.\n\n" +
+                      "📋 Parameters:\n" +
+                      "• Bleeding Radius: spread amount in pixels\n" +
+                      "  1-3=subtle (print-like), 5-10=visible (watercolor-like)\n" +
+                      "• Blend: 0=off, 1=full (0.3-0.6 recommended)\n\n" +
+                      "💡 Tips:\n" +
+                      "• Combine with Watercolor for authentic watercolor look\n" +
+                      "• Light bleeding (radius 2, blend 0.2) for analog print effect\n" +
+                      "• Add Color Quantize for unique woodblock print bleeding\n" +
+                      "• Too strong makes everything blurry; adjust with Blend\n" +
+                      "⚡ Performance: Medium (8-direction sampling)"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(SECTION_SPACING);
+
+            // --- Chromatic Aberration ---
+            bool useCA = DrawToggle("_CHROMATIC_ABERRATION", "_UseChromaticAberration",
+                L("色収差", "Chromatic Aberration"));
+            if (useCA)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_CAIntensity", L("強度", "Intensity"));
+                DrawProperty("_CABlend", L("ブレンド", "Blend"));
+                DrawHelpToggle("ChromaticAberration",
+                    L("🌈 色収差 (Chromatic Aberration):\n" +
+                      "GrabPassのRGBチャンネルをスクリーン中心からの距離に応じてずらし、\n" +
+                      "光学レンズの色収差（フリンジング）を再現します。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• 強度: RGBのずれ量（0.001〜0.005=写真風の微細な収差、\n" +
+                      "  0.01〜0.02=アニメ演出風、0.05+=極端なグリッチ/サイケデリック）\n" +
+                      "• ブレンド: 0=効果なし、1=完全適用\n\n" +
+                      "💡 Tips:\n" +
+                      "• 画面の端ほど色ずれが強くなります（レンズの特性を再現）\n" +
+                      "• 微弱な値(0.002)でリアルなカメラレンズ風の表現に\n" +
+                      "• 中程度(0.01)でアニメの「見せ場」カット演出\n" +
+                      "• グリッチエフェクトと併用でサイバーパンク/デジタル崩壊表現\n" +
+                      "• VRでは酔いの原因になり得るので控えめに\n" +
+                      "⚡ パフォーマンス: 軽量（GrabPass 3サンプル）",
+                      "🌈 Chromatic Aberration:\n" +
+                      "Offsets RGB channels based on distance from screen center\n" +
+                      "to simulate optical lens fringing effects.\n\n" +
+                      "📋 Parameters:\n" +
+                      "• Intensity: RGB offset amount (0.001-0.005=realistic photo lens,\n" +
+                      "  0.01-0.02=anime dramatic, 0.05+=extreme glitch/psychedelic)\n" +
+                      "• Blend: 0=off, 1=full\n\n" +
+                      "💡 Tips:\n" +
+                      "• Color shift increases toward screen edges (real lens behavior)\n" +
+                      "• Subtle (0.002) for realistic camera lens look\n" +
+                      "• Medium (0.01) for anime 'key moment' dramatic shots\n" +
+                      "• Combine with Glitch for cyberpunk/digital decay\n" +
+                      "• Keep subtle in VR to avoid motion sickness\n" +
+                      "⚡ Performance: Light (3 GrabPass samples)"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(SECTION_SPACING);
+
+            // --- Hand-drawn Outline ---
+            bool useHandDrawn = DrawToggle("_OUTLINE_HAND_DRAWN", "_UseHandDrawnOutline",
+                L("手書き風アウトライン", "Hand-drawn Outline"));
+            if (useHandDrawn)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_OutlineNoiseTex", L("ノイズテクスチャ", "Noise Texture"));
+                DrawProperty("_OutlineNoiseTiling", L("ノイズタイリング", "Noise Tiling"));
+                DrawProperty("_OutlineWidthVariation", L("太さ変動", "Width Variation"));
+                DrawProperty("_OutlineJitterAmount", L("揺れ量", "Jitter Amount"));
+                DrawHelpToggle("HandDrawnOutline",
+                    L("✏️ 手書き風アウトライン:\n" +
+                      "ノイズテクスチャで線の太さをランダムに変動させ、\n" +
+                      "頂点ハッシュで位置を微小にブレさせることで、\n" +
+                      "手描きペン/インク線のような温かみのあるアウトラインを実現します。\n" +
+                      "※ アウトラインセクションの「アウトラインを有効にする」もONにしてください。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• ノイズテクスチャ: 線幅の変動パターン（グレースケールノイズ。パーリンノイズ推奨）\n" +
+                      "• ノイズタイリング: テクスチャの繰り返し回数（1〜5推奨。高いほど細かい変動）\n" +
+                      "• 太さ変動: ノイズによる太さの振れ幅（0.1〜0.3=微細な揺れ、\n" +
+                      "  0.5=はっきりした手描き感、0.8〜1.0=ラフスケッチ風）\n" +
+                      "• 揺れ量: 頂点位置のランダムずれ（0.5〜2.0=ペンの震え、5+=大胆な歪み）\n\n" +
+                      "💡 Tips:\n" +
+                      "• 太さ変動だけ使うと「つけペン/Gペン」風の強弱ある線に\n" +
+                      "• 揺れ量を足すと「鉛筆ラフスケッチ」風のブレる線に\n" +
+                      "• ノイズテクスチャを変えると線の個性が大きく変わる\n" +
+                      "• スクリーンエッジ検出と併用で「手描きイラスト + ディテール線」\n" +
+                      "• 水彩やハッチングとの組み合わせで統一感のある手描きスタイルに\n" +
+                      "⚡ パフォーマンス: 極めて軽量（頂点シェーダーのみ、テクスチャ1サンプル）",
+                      "✏️ Hand-drawn Outline:\n" +
+                      "Uses noise texture for random width variation and vertex hash for\n" +
+                      "micro-jitter, creating warm, hand-drawn pen/ink-style outlines.\n" +
+                      "Note: 'Enable Outline' in the Outline section must also be ON.\n\n" +
+                      "📋 Parameters:\n" +
+                      "• Noise Texture: width variation pattern (grayscale; Perlin noise recommended)\n" +
+                      "• Noise Tiling: texture repeat count (1-5 recommended; higher=finer variation)\n" +
+                      "• Width Variation: amount of thickness change (0.1-0.3=subtle,\n" +
+                      "  0.5=clear hand-drawn feel, 0.8-1.0=rough sketch)\n" +
+                      "• Jitter Amount: random vertex offset (0.5-2.0=pen tremor, 5+=bold distortion)\n\n" +
+                      "💡 Tips:\n" +
+                      "• Width Variation only = 'dip pen/G-pen' style varying thickness\n" +
+                      "• Add Jitter = 'pencil rough sketch' style wobbly lines\n" +
+                      "• Changing noise texture dramatically changes line character\n" +
+                      "• Combine with Screen Edge for 'hand-drawn + detail lines'\n" +
+                      "• Pair with Watercolor/Hatching for unified hand-drawn style\n" +
+                      "⚡ Performance: Very light (vertex shader only, 1 texture sample)"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(SECTION_SPACING);
+            DrawHelpToggle("IllustrationStyle",
+                L("✏️ イラスト調スタイル:\n" +
+                  "• 色の量子化: イラストの塗り分け感を実現\n" +
+                  "• 3D LUT: 映画的なカラーグレーディング\n" +
+                  "• ハッチング: 鉛筆画風の斜線シェーディング\n" +
+                  "• 水彩: エッジダークニング+ウェットエッジ+紙テクスチャ\n" +
+                  "• ソフトフィルター: 劇場版アニメのDiffusion効果\n" +
+                  "• Kuwahara: 油絵/厚塗り風フィルター\n" +
+                  "• エッジ検出: 深度+法線ベースの輪郭線\n" +
+                  "• 色のにじみ: 水彩的な色の拡散\n" +
+                  "• 色収差: レンズの色ずれ効果\n" +
+                  "• 手書きアウトライン: ノイズによる太さ揺れ",
+                  "✏️ Illustration Style:\n" +
+                  "• Color Quantize: Flat illustration look\n" +
+                  "• 3D LUT: Cinematic color grading\n" +
+                  "• Hatching: Pencil-style cross-hatching\n" +
+                  "• Watercolor: Edge darkening + wet edges + paper texture\n" +
+                  "• Soft Filter: Anime diffusion effect\n" +
+                  "• Kuwahara: Oil painting filter\n" +
+                  "• Screen Edge: Depth+normal edge detection\n" +
+                  "• Color Bleeding: Watercolor-like color spread\n" +
+                  "• Chromatic Aberration: Lens color shift\n" +
+                  "• Hand-drawn Outline: Noise-modulated line width"),
+                MessageType.Info);
+        }
+        EndBoxedSection(GetFoldout("IllustrationStyle"));
     }
 
     private void DrawOutlineSection()
@@ -3022,9 +3665,41 @@ public class NataneToonShaderGUI : ShaderGUI
 
             if (useNormalMap)
             {
+                EditorGUI.indentLevel++;
                 DrawProperty("_BumpMap", L("ノーマルマップ", "Normal Map"));
                 DrawProperty("_BumpScale", L("ノーマルのスケール", "Normal Scale"));
                 DrawUVAnimationSettings("_BumpMapScrollSpeed", "_BumpMapRotateSpeed", L("ノーマルマップ", "Normal Map"));
+                DrawHelpToggle("NormalMap",
+                    L("🗺️ ノーマルマップ:\n" +
+                      "テクスチャで法線方向を変化させ、ポリゴンを増やさずに凹凸の表現を追加します。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• ノーマルマップ: タンジェントスペース法線テクスチャ（青紫色のテクスチャ）\n" +
+                      "  → Unity標準のNormal Map形式で「Texture Type: Normal map」を設定\n" +
+                      "• スケール: 凹凸の強さ（0=凹凸なし、1=標準、2+=強調）\n" +
+                      "  → 負の値で凹凸を反転\n" +
+                      "• UVアニメーション: スクロール/回転で流れるような凹凸に\n\n" +
+                      "💡 Tips:\n" +
+                      "• トゥーンシェーディングの影境界に微妙な凹凸感を加えたい時に\n" +
+                      "• スケール 0.5〜1.0 で自然な凹凸（強すぎるとトゥーン感が崩れる場合あり）\n" +
+                      "• 服のシワや肌のディテールをローポリモデルに追加するのに最適\n" +
+                      "• UVスクロールで水面/溶岩の流れる凹凸を表現可能\n" +
+                      "⚡ パフォーマンス: 極めて軽量（テクスチャ1サンプル）",
+                      "🗺️ Normal Map:\n" +
+                      "Modifies surface normals via texture for bump detail without extra polygons.\n\n" +
+                      "📋 Parameters:\n" +
+                      "• Normal Map: tangent-space normal texture (blue/purple texture)\n" +
+                      "  → Set 'Texture Type: Normal map' in Unity import settings\n" +
+                      "• Scale: bump strength (0=flat, 1=standard, 2+=exaggerated)\n" +
+                      "  → Negative values invert the bumps\n" +
+                      "• UV Animation: scroll/rotate for flowing bump effects\n\n" +
+                      "💡 Tips:\n" +
+                      "• Adds subtle depth variation to toon shading boundaries\n" +
+                      "• Scale 0.5-1.0 for natural bumps (too high may break toon look)\n" +
+                      "• Great for adding cloth wrinkles or skin detail to low-poly models\n" +
+                      "• UV scroll for flowing water/lava surface bumps\n" +
+                      "⚡ Performance: Very light (1 texture sample)"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
             }
         }
         EndBoxedSection(GetFoldout("NormalMap"));
@@ -3238,6 +3913,46 @@ public class NataneToonShaderGUI : ShaderGUI
                 {
                     DrawProperty("_VertexAnimMask", L("頂点アニメーションマスク", "Vertex Animation Mask"));
                 }
+                DrawHelpToggle("VertexAnimation",
+                    L("🌊 頂点アニメーション:\n" +
+                      "頂点シェーダーで自動的にメッシュを動かすプロシージャルアニメーションです。\n\n" +
+                      "📋 パラメータ:\n" +
+                      "• アニメーション種類:\n" +
+                      "  0=風揺れ（草木、髪、布向け。Y軸基準で上方ほど大きく揺れる）\n" +
+                      "  1=呼吸（キャラ向け。全体が膨張収縮するサイン波）\n" +
+                      "  2=脈動（エフェクト向け。法線方向に膨らむ波動）\n" +
+                      "• 速度: アニメーションのサイクル速度（1=標準、0.5=ゆっくり、3=速い）\n" +
+                      "• 強度: 動きの大きさ（0.01〜0.05=微細な揺れ、0.1=目に見える動き、0.5+=大胆な変形）\n" +
+                      "• 周波数: 波の細かさ（低い=大きな波、高い=細かい波。風揺れで1〜5推奨）\n\n" +
+                      "📋 マスク:\n" +
+                      "• マスクテクスチャ: 白=アニメーション適用 / 黒=固定\n" +
+                      "  → 風揺れ時は根元を黒、先端を白にすると自然な揺れに\n" +
+                      "  → 呼吸時はお腹周りだけ白にすると呼吸感UP\n\n" +
+                      "💡 Tips:\n" +
+                      "• 風揺れ: 草木/髪/ケープに。強度0.02〜0.05、周波数2〜4\n" +
+                      "• 呼吸: キャラの胸元に。強度0.005〜0.02、速度0.5〜1.0\n" +
+                      "• スミア（Smear）と組み合わせて動きの残像を追加可能\n" +
+                      "⚡ パフォーマンス: 極めて軽量（頂点シェーダーのsin/cos演算のみ）",
+                      "🌊 Vertex Animation:\n" +
+                      "Procedural vertex animation that automatically moves the mesh.\n\n" +
+                      "📋 Parameters:\n" +
+                      "• Animation Type:\n" +
+                      "  0=Wind (grass/hair/cloth; Y-axis based, more motion at top)\n" +
+                      "  1=Breathing (characters; uniform sine wave expansion)\n" +
+                      "  2=Pulse (effects; normal-direction wave)\n" +
+                      "• Speed: cycle speed (1=standard, 0.5=slow, 3=fast)\n" +
+                      "• Intensity: motion amount (0.01-0.05=subtle, 0.1=visible, 0.5+=dramatic)\n" +
+                      "• Frequency: wave detail (low=broad, high=fine; 1-5 for wind)\n\n" +
+                      "📋 Mask:\n" +
+                      "• Mask Texture: white=animate / black=fixed\n" +
+                      "  → For wind: black at roots, white at tips for natural sway\n" +
+                      "  → For breathing: white on chest area for natural feel\n\n" +
+                      "💡 Tips:\n" +
+                      "• Wind: grass/hair/capes. Intensity 0.02-0.05, frequency 2-4\n" +
+                      "• Breathing: character chest. Intensity 0.005-0.02, speed 0.5-1.0\n" +
+                      "• Combine with Smear for motion trails\n" +
+                      "⚡ Performance: Very light (vertex shader sin/cos only)"),
+                    MessageType.Info);
                 EditorGUI.indentLevel--;
             }
         }
@@ -4734,6 +5449,16 @@ public class NataneToonShaderGUI : ShaderGUI
                 new[] { "_USE_LIGHT_VOLUME", "Light Volume" },
                 new[] { "_DISTANCE_FADE", L("距離フェード", "Dist Fade") },
                 new[] { "_BACKFACE_TEXTURE", L("裏面", "Backface") },
+                new[] { "_COLOR_QUANTIZE", L("色量子化", "Quantize") },
+                new[] { "_LUT_3D", "3D LUT" },
+                new[] { "_HATCHING", L("ハッチング", "Hatching") },
+                new[] { "_WATERCOLOR", L("水彩", "Watercolor") },
+                new[] { "_SOFT_FILTER", L("ソフトフィルター", "Soft Filter") },
+                new[] { "_KUWAHARA_FILTER", "Kuwahara" },
+                new[] { "_SCREEN_EDGE", L("エッジ検出", "Edge Detect") },
+                new[] { "_COLOR_BLEEDING", L("色にじみ", "Bleeding") },
+                new[] { "_CHROMATIC_ABERRATION", L("色収差", "Chrom Aber") },
+                new[] { "_OUTLINE_HAND_DRAWN", L("手書き線", "Hand-drawn") },
             };
 
             int enabledCount = 0;
@@ -5001,6 +5726,7 @@ public class NataneToonShaderGUI : ShaderGUI
         // ─── ビジュアルエフェクト ───
         NataneToonShaderGUIUtility.DrawCategoryDivider(L("ビジュアルエフェクト", "Visual Effects"));
         SafeDrawSection(DrawHologramSection, L("ホログラム＆グリッチ", "Hologram & Glitch"));
+        SafeDrawSection(DrawIllustrationStyleSection, L("イラスト調スタイル", "Illustration Style"));
         SafeDrawSection(DrawOutlineSection, L("アウトライン", "Outline"));
         SafeDrawSection(DrawEmissionSection, L("エミッション", "Emission"));
         SafeDrawSection(DrawVirtualExpressionSection, L("バーチャル表現", "Virtual Expression"));
@@ -5124,6 +5850,7 @@ public class NataneToonShaderGUI : ShaderGUI
             case "BackgroundLightmap": return DrawBackgroundLightmapSection;
             case "PBR": return DrawPBRSection;
             case "Hologram": return DrawHologramSection;
+            case "IllustrationStyle": return DrawIllustrationStyleSection;
             case "Decal": return DrawDecalSection;
             case "Outline": return DrawOutlineSection;
             case "Emission": return DrawEmissionSection;
@@ -5495,6 +6222,18 @@ public class NataneToonShaderGUI : ShaderGUI
             ("_Glitch", "_GLITCH"),
             ("_GlitchStretch", "_GLITCH_STRETCH"),
             ("_UseHologramNoise", "_HOLOGRAM_NOISE"),
+
+            // Illustration Style
+            ("_UseColorQuantize", "_COLOR_QUANTIZE"),
+            ("_UseLUT3D", "_LUT_3D"),
+            ("_UseHatching", "_HATCHING"),
+            ("_UseWatercolor", "_WATERCOLOR"),
+            ("_UseSoftFilter", "_SOFT_FILTER"),
+            ("_UseKuwahara", "_KUWAHARA_FILTER"),
+            ("_UseScreenEdge", "_SCREEN_EDGE"),
+            ("_UseColorBleeding", "_COLOR_BLEEDING"),
+            ("_UseChromaticAberration", "_CHROMATIC_ABERRATION"),
+            ("_UseHandDrawnOutline", "_OUTLINE_HAND_DRAWN"),
 
             // Decal
             ("_Decal", "_DECAL"),

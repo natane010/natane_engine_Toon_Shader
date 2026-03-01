@@ -958,6 +958,46 @@ half4 frag(v2f i) : SV_Target
         #endif
     #endif
 
+    // ================================================================
+    // ===== STAGE A: Illustration Style — Color Transform =====
+    // ================================================================
+
+    #if defined(_COLOR_QUANTIZE) && defined(UNITY_PASS_FORWARDBASE)
+    {
+        half qMask = tex2D(_QuantizeMask, uv).r;
+        half3 quantized;
+        if (_QuantizeMode > 0.5)
+        {
+            // HSV quantization
+            quantized = QuantizeColorHSV(col.rgb, _QuantizeHueLevels, _QuantizeSatLevels,
+                _QuantizeValLevels, _QuantizeDither, i.pos.xy);
+        }
+        else
+        {
+            // RGB quantization
+            quantized = QuantizeColorRGB(col.rgb, _QuantizeLevels, _QuantizeDither, i.pos.xy);
+        }
+        col.rgb = lerp(col.rgb, quantized, _QuantizeBlend * qMask);
+    }
+    #endif
+
+    #if defined(_LUT_3D) && defined(UNITY_PASS_FORWARDBASE)
+    {
+        half3 lutColor = ApplyLUT3D(saturate(col.rgb), _LUT3DTex, _LUT3DSize);
+        col.rgb = lerp(col.rgb, lutColor, _LUT3DIntensity);
+    }
+    #endif
+
+    #if defined(_HATCHING) && defined(UNITY_PASS_FORWARDBASE)
+    {
+        half hMask = tex2D(_HatchingMask, uv).r;
+        // Use luminance of current color as proxy for shading value
+        half hatchShading = dot(col.rgb, half3(0.299, 0.587, 0.114));
+        col.rgb = ApplyHatching(col.rgb, uv, hatchShading, hMask,
+            _HatchTex0, _HatchTex1, _HatchingTiling, _HatchingColor, _HatchingBlend);
+    }
+    #endif
+
     // ===== Post-Lighting Effects =====
     // このセクションの処理:
     // ライティング適用後に各種視覚エフェクトを順番に加算合成する。
@@ -1789,6 +1829,59 @@ half4 frag(v2f i) : SV_Target
             // Clip pixels based on dissolve amount and mask
             clip(dissolveAlpha + (1.0 - dissolveMaskValue));
         }
+    #endif
+
+    // ================================================================
+    // ===== STAGE B: Illustration Style — Screen Space Effects =====
+    // ================================================================
+
+    #if defined(UNITY_PASS_FORWARDBASE)
+    {
+        float2 illustGrabUV = i.screenPos.xy / i.screenPos.w;
+        float2 illustScreenUV = i.pos.xy / _ScreenParams.xy;
+
+        #ifdef _WATERCOLOR
+        {
+            half wcMask = tex2D(_WCMask, TRANSFORM_TEX(uv, _WCMask)).r;
+            half wcShading = dot(col.rgb, half3(0.299, 0.587, 0.114));
+            col.rgb = ApplyWatercolor(col.rgb, uv, illustScreenUV, wcShading, wcMask,
+                _WCGranulationTex, _WCGranulationTex_ST, _WCPaperTex, _WCPaperTex_ST,
+                _WCEdgeDarkening, _WCWetEdge, _WCGranulation, _WCPaperIntensity, _WCPaperTiling, _WCBlend);
+        }
+        #endif
+
+        #ifdef _SOFT_FILTER
+        {
+            col.rgb = ApplySoftFilter(col.rgb, illustGrabUV, _SoftFilterRadius,
+                _SoftFilterBlend, _SoftFilterThreshold, _SoftFilterMode);
+        }
+        #endif
+
+        #ifdef _KUWAHARA_FILTER
+        {
+            col.rgb = ApplyKuwaharaFilter(illustGrabUV, (int)_KuwaharaRadius, _KuwaharaBlend, col.rgb);
+        }
+        #endif
+
+        #ifdef _SCREEN_EDGE
+        {
+            half edgeValue = ApplyScreenEdge(illustScreenUV, _EdgeDepthSensitivity, _EdgeNormalSensitivity, _EdgeWidth);
+            col.rgb = lerp(col.rgb, _EdgeColor.rgb, edgeValue * _EdgeBlend);
+        }
+        #endif
+
+        #ifdef _COLOR_BLEEDING
+        {
+            col.rgb = ApplyColorBleeding(col.rgb, illustGrabUV, _BleedingRadius, _BleedingBlend);
+        }
+        #endif
+
+        #ifdef _CHROMATIC_ABERRATION
+        {
+            col.rgb = ApplyChromaticAberration(illustGrabUV, _CAIntensity, _CABlend, col.rgb);
+        }
+        #endif
+    }
     #endif
 
     // ===== Alpha Mask =====

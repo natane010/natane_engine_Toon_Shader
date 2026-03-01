@@ -782,6 +782,67 @@ CBUFFER_START(UnityPerMaterial)
     float _PCSSBlur;
     #endif
 
+    // ===== 21. Illustration Style (イラスト風技法) =====
+    #ifdef _COLOR_QUANTIZE
+    float _QuantizeMode;
+    float _QuantizeLevels;
+    float _QuantizeHueLevels;
+    float _QuantizeSatLevels;
+    float _QuantizeValLevels;
+    float _QuantizeDither;
+    float _QuantizeBlend;
+    #endif
+    #ifdef _LUT_3D
+    float _LUT3DIntensity;
+    float _LUT3DSize;
+    #endif
+    #ifdef _HATCHING
+    float _HatchingTiling;
+    float4 _HatchingColor;
+    float _HatchingBlend;
+    #endif
+    #ifdef _WATERCOLOR
+    float _WCEdgeDarkening;
+    float _WCWetEdge;
+    float _WCGranulation;
+    float _WCPaperIntensity;
+    float _WCPaperTiling;
+    float _WCBlend;
+    float4 _WCGranulationTex_ST;
+    float4 _WCPaperTex_ST;
+    float4 _WCMask_ST;
+    #endif
+    #ifdef _SOFT_FILTER
+    float _SoftFilterRadius;
+    float _SoftFilterBlend;
+    float _SoftFilterThreshold;
+    float _SoftFilterMode;
+    #endif
+    #ifdef _KUWAHARA_FILTER
+    float _KuwaharaRadius;
+    float _KuwaharaBlend;
+    #endif
+    #ifdef _SCREEN_EDGE
+    float4 _EdgeColor;
+    float _EdgeWidth;
+    float _EdgeDepthSensitivity;
+    float _EdgeNormalSensitivity;
+    float _EdgeBlend;
+    #endif
+    #ifdef _COLOR_BLEEDING
+    float _BleedingRadius;
+    float _BleedingBlend;
+    #endif
+    #ifdef _CHROMATIC_ABERRATION
+    float _CAIntensity;
+    float _CABlend;
+    #endif
+    #ifdef _OUTLINE_HAND_DRAWN
+    float _OutlineNoiseTiling;
+    float _OutlineWidthVariation;
+    float _OutlineJitterAmount;
+    #endif
+
 CBUFFER_END
 
 // VRChat Mirror Mode global variable (set by VRChat runtime)
@@ -993,6 +1054,30 @@ sampler2D _GlitchNoiseTex;
 sampler2D _GlitchStretchMask;
 #endif
 
+// Illustration Style Textures
+#ifdef _COLOR_QUANTIZE
+sampler2D _QuantizeMask;
+#endif
+#ifdef _LUT_3D
+sampler2D _LUT3DTex;
+#endif
+#ifdef _HATCHING
+sampler2D _HatchTex0;
+sampler2D _HatchTex1;
+sampler2D _HatchingMask;
+#endif
+#ifdef _WATERCOLOR
+sampler2D _WCGranulationTex;
+sampler2D _WCPaperTex;
+sampler2D _WCMask;
+#endif
+#ifdef _SCREEN_EDGE
+UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthNormalsTexture);
+#endif
+#ifdef _OUTLINE_HAND_DRAWN
+sampler2D _OutlineNoiseTex;
+#endif
+
 // VAT
 #if defined(_VAT)
 sampler2D _VATPositionMap;
@@ -1024,8 +1109,8 @@ samplerCUBE _ReflectionCube;
 samplerCUBE _EnvRimCube;
 #endif
 
-// Intersection Fade / PCSS — shared _CameraDepthTexture declaration
-#if defined(_INTERSECTION_FADE) || defined(_PCSS)
+// Intersection Fade / PCSS / Screen Edge — shared _CameraDepthTexture declaration
+#if defined(_INTERSECTION_FADE) || defined(_PCSS) || defined(_SCREEN_EDGE)
 UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
 #endif
 
@@ -1086,8 +1171,8 @@ struct v2f
     float3 worldBinormal : TEXCOORD4;
     UNITY_FOG_COORDS(5)
     SHADOW_COORDS(6)
-    #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA) || defined(_INTERSECTION_FADE)
-        float4 screenPos : TEXCOORD7; // For GrabPass (Refraction) / Dithering / Intersection Fade
+    #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA) || defined(_INTERSECTION_FADE) || defined(_SOFT_FILTER) || defined(_KUWAHARA_FILTER) || defined(_COLOR_BLEEDING) || defined(_CHROMATIC_ABERRATION) || defined(_SCREEN_EDGE) || defined(_WATERCOLOR)
+        float4 screenPos : TEXCOORD7; // For GrabPass / Dithering / Intersection Fade / Illustration Style
     #endif
     #if defined(VERTEXLIGHT_ON) && !defined(_PIXEL_VERTEX_LIGHTS)
         float3 vertexLightColor : TEXCOORD8;

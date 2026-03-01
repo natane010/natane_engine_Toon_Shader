@@ -1285,4 +1285,401 @@ half4 TriplanarSample(sampler2D tex, float3 worldPos, float3 worldNormal, float 
 
 #endif // _TRIPLANAR
 
+// =============================================================================
+// ===== Illustration Style Functions ==========================================
+// =============================================================================
+// Artistic post-processing effects for illustration/painterly rendering.
+// Each function is guarded by its own shader_feature keyword.
+
+// ---------- 1. Color Quantization (色量子化) ----------
+#ifdef _COLOR_QUANTIZE
+
+// Bayer 4x4 dithering matrix for ordered dithering in quantization
+// NOTE: _DITHERING_ALPHA section also defines a BayerMatrix4x4 *function*.
+//       These are separate: the array here is used inline for quantization,
+//       while the function is for alpha dithering.
+static const float IllustBayerMatrix4x4[16] = {
+     0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
+    12.0/16.0,  4.0/16.0, 14.0/16.0,  6.0/16.0,
+     3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
+    15.0/16.0,  7.0/16.0, 13.0/16.0,  5.0/16.0
+};
+
+// Quantize colour in RGB space with optional Bayer dithering.
+// levels:       number of discrete levels per channel (e.g. 8)
+// ditherAmount: dithering noise strength (0 = no dither)
+// screenPos:    pixel position in screen space (e.g. i.screenPos.xy * _ScreenParams.xy)
+half3 QuantizeColorRGB(half3 color, float levels, float ditherAmount, float2 screenPos)
+{
+    int2 ditherCoord = int2(fmod(screenPos, 4.0));
+    float dither = IllustBayerMatrix4x4[ditherCoord.y * 4 + ditherCoord.x] - 0.5;
+    color += dither * ditherAmount / levels;
+    return floor(color * levels + 0.5) / levels;
+}
+
+// Quantize colour in HSV space (independent levels per channel).
+// Reuses RGBtoHSV / HSVtoRGB defined earlier in this file.
+half3 QuantizeColorHSV(half3 color, float hueLevels, float satLevels, float valLevels,
+                       float ditherAmount, float2 screenPos)
+{
+    half3 hsv = RGBtoHSV(color);
+    int2 ditherCoord = int2(fmod(screenPos, 4.0));
+    float dither = IllustBayerMatrix4x4[ditherCoord.y * 4 + ditherCoord.x] - 0.5;
+    hsv.x = floor((hsv.x + dither * ditherAmount / hueLevels) * hueLevels + 0.5) / hueLevels;
+    hsv.y = floor((hsv.y + dither * ditherAmount / satLevels) * satLevels + 0.5) / satLevels;
+    hsv.z = floor((hsv.z + dither * ditherAmount / valLevels) * valLevels + 0.5) / valLevels;
+    return HSVtoRGB(hsv);
+}
+
+#endif // _COLOR_QUANTIZE
+
+// ---------- 2. 3D LUT (Look-Up Table) ----------
+#ifdef _LUT_3D
+
+// Apply a strip-layout 3D LUT (e.g. 32x32x32 packed into a 1024x32 texture).
+// color:   input linear RGB (should be [0,1])
+// lutTex:  the LUT texture sampler
+// lutSize: number of cells per axis (typically 32)
+half3 ApplyLUT3D(half3 color, sampler2D lutTex, float lutSize)
+{
+    float blue = color.b * (lutSize - 1.0);
+    float blueFloor = floor(blue);
+    float blueFrac = blue - blueFloor;
+
+    float invSize = 1.0 / lutSize;
+    float halfTexel = 0.5 * invSize;
+
+    // UV for the lower blue slice
+    float2 uv1;
+    uv1.x = (blueFloor * invSize + color.r * invSize * (1.0 - invSize)) + halfTexel * invSize;
+    uv1.y = color.g * (1.0 - invSize) + halfTexel;
+
+    // UV for the upper blue slice
+    float2 uv2;
+    uv2.x = (min(blueFloor + 1.0, lutSize - 1.0) * invSize + color.r * invSize * (1.0 - invSize)) + halfTexel * invSize;
+    uv2.y = uv1.y;
+
+    half3 lut1 = tex2D(lutTex, uv1).rgb;
+    half3 lut2 = tex2D(lutTex, uv2).rgb;
+
+    return lerp(lut1, lut2, blueFrac);
+}
+
+#endif // _LUT_3D
+
+// ---------- 3. Hatching (TAM 6-level cross-hatching) ----------
+#ifdef _HATCHING
+
+// Apply 6-level TAM hatching.
+// hatchTex0 (RGBA) = density levels 1-4, hatchTex1 (RG) = levels 5-6.
+// shadingValue: 0 (full shadow) .. 1 (full light)
+// maskValue:    hatching mask (0 = no hatching)
+// tiling:       UV tiling multiplier for hatching pattern
+// hatchColor:   tint colour for hatching strokes
+// blend:        overall blend strength
+half3 ApplyHatching(half3 baseColor, float2 uv, half shadingValue, half maskValue,
+    sampler2D hatchTex0, sampler2D hatchTex1, float tiling, half4 hatchColor, float blend)
+{
+    float2 hatchUV = uv * tiling;
+    half4 h0 = tex2D(hatchTex0, hatchUV); // RGBA = levels 1-4
+    half2 h1 = tex2D(hatchTex1, hatchUV).rg; // RG = levels 5-6
+
+    // Map shading value to 6 weight slots
+    half lum = shadingValue * 6.0;
+    half w0 = saturate(lum - 5.0);
+    half w1 = saturate(lum - 4.0) - w0;
+    half w2 = saturate(lum - 3.0) - w0 - w1;
+    half w3 = saturate(lum - 2.0) - w0 - w1 - w2;
+    half w4 = saturate(lum - 1.0) - w0 - w1 - w2 - w3;
+    half w5 = 1.0 - w0 - w1 - w2 - w3 - w4;
+
+    half hatchValue = w1 * h0.r + w2 * h0.g + w3 * h0.b + w4 * h0.a
+                    + w5 * h1.r + max(0, 1.0 - lum) * h1.g;
+
+    return lerp(baseColor, baseColor * hatchColor.rgb, hatchValue * maskValue * blend);
+}
+
+#endif // _HATCHING
+
+// ---------- 4. Watercolor Simulation (水彩シミュレーション) ----------
+#ifdef _WATERCOLOR
+
+// Simulates watercolor painting with edge darkening, wet edge, granulation, and paper texture.
+// All texture-space effects (no GrabPass required).
+// granTex / granTex_ST: granulation (pigment particle) texture + tiling/offset
+// paperTex / paperTex_ST: paper surface texture + tiling/offset (sampled in screen space)
+half3 ApplyWatercolor(half3 baseColor, float2 uv, float2 screenUV, half shadingValue,
+    half maskValue, sampler2D granTex, float4 granTex_ST, sampler2D paperTex, float4 paperTex_ST,
+    float edgeDarkening, float wetEdge, float granulation, float paperIntensity, float paperTiling, float blend)
+{
+    // 1. Edge Darkening — ddx/ddy gradient magnitude drives darkening
+    half3 dx = ddx(baseColor);
+    half3 dy = ddy(baseColor);
+    half edgeStrength = saturate(length(dx) + length(dy));
+    half3 darkened = baseColor * (1.0 - edgeStrength * edgeDarkening);
+
+    // 2. Wet Edge — colours concentrate at edges (increase saturation locally)
+    half wetFactor = smoothstep(0.0, wetEdge, edgeStrength);
+    half3 saturatedColor = darkened;
+    half lum = CALC_LUMINANCE(darkened);
+    saturatedColor = lerp(half3(lum, lum, lum), darkened, 1.0 + wetFactor * 0.5);
+
+    // 3. Granulation — pigment particles settle in texture valleys
+    float2 granUV = uv * granTex_ST.xy + granTex_ST.zw;
+    half granTex_val = tex2D(granTex, granUV).r;
+    half granEffect = lerp(1.0, granTex_val, granulation * (1.0 - shadingValue));
+    half3 granulated = saturatedColor * granEffect;
+
+    // 4. Paper Texture — screen-space paper grain overlay
+    float2 paperUV = screenUV * paperTiling;
+    half paperVal = tex2D(paperTex, paperUV).r;
+    half paperEffect = paperVal * 2.0 - 1.0; // remap [0,1] → [-1,1]
+    half3 papered = granulated + granulated * paperEffect * paperIntensity;
+
+    return lerp(baseColor, saturate(papered), maskValue * blend);
+}
+
+#endif // _WATERCOLOR
+
+// ---------- 5. Gaussian Blur / Soft Filter (13-tap separated) ----------
+// Requires GrabPass (_GrabTexture). The texture & texel size are declared in the
+// _REFRACTION section above. If _REFRACTION is not active, the caller must ensure
+// _GrabTexture is still available (e.g. shared GrabPass declaration in the shader).
+#ifdef _SOFT_FILTER
+
+static const int ILLUST_GAUSS_SAMPLES = 13;
+static const float IllustGaussWeights[13] = {
+    0.0044, 0.0115, 0.0257, 0.0488, 0.0799, 0.1133, 0.1389,
+    0.1133, 0.0799, 0.0488, 0.0257, 0.0115, 0.0044
+};
+static const float IllustGaussOffsets[13] = {
+    -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6
+};
+
+// Single-axis 13-tap Gaussian blur on GrabPass.
+// direction: blur axis (e.g. float2(1,0) for horizontal)
+// blurRadius: pixel radius multiplier
+half3 GaussianBlurGrabPass(float2 screenUV, float2 direction, float blurRadius)
+{
+    half3 result = 0;
+    float2 texelSize = _GrabTexture_TexelSize.xy * blurRadius;
+    [unroll]
+    for (int i = 0; i < ILLUST_GAUSS_SAMPLES; i++)
+    {
+        float2 offset = direction * IllustGaussOffsets[i] * texelSize;
+        result += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, screenUV + offset).rgb * IllustGaussWeights[i];
+    }
+    return result;
+}
+
+// Two-pass (H + V averaged) soft filter with optional selective bloom mode.
+// mode: 0 = full blur, >0.5 = selective bloom (only bright areas are blurred)
+// threshold: luminance threshold for selective bloom mode
+half3 ApplySoftFilter(half3 baseColor, float2 grabUV, float radius, float blend,
+                      float threshold, float mode)
+{
+    half3 blurredH = GaussianBlurGrabPass(grabUV, float2(1, 0), radius);
+    half3 blurredV = GaussianBlurGrabPass(grabUV, float2(0, 1), radius);
+    half3 blurred = (blurredH + blurredV) * 0.5;
+
+    if (mode > 0.5)
+    {
+        // Selective Bloom mode — only blend where luminance exceeds threshold
+        half baseLum = CALC_LUMINANCE(baseColor);
+        half bloomMask = smoothstep(threshold, threshold + 0.2, baseLum);
+        return lerp(baseColor, lerp(baseColor, blurred, bloomMask), blend);
+    }
+    else
+    {
+        // Full blur mode
+        return lerp(baseColor, blurred, blend);
+    }
+}
+
+#endif // _SOFT_FILTER
+
+// ---------- 6. Kuwahara Filter (油絵風フィルタ) ----------
+// Requires GrabPass (_GrabTexture).
+#ifdef _KUWAHARA_FILTER
+
+// Kuwahara filter: selects the mean colour of the quadrant with minimum variance.
+// Produces a painterly, oil-painting look.
+// radius: kernel radius per quadrant (small values 2-4 recommended for performance)
+half3 ApplyKuwaharaFilter(float2 grabUV, int radius, float blend, half3 baseColor)
+{
+    half3 meanColors[4] = { half3(0,0,0), half3(0,0,0), half3(0,0,0), half3(0,0,0) };
+    half variances[4] = { 0, 0, 0, 0 };
+    float2 texelSize = _GrabTexture_TexelSize.xy;
+    float count = (float)(radius * radius);
+
+    // Iterate over 4 quadrants: top-left, top-right, bottom-left, bottom-right
+    [loop]
+    for (int qx = 0; qx < 2; qx++)
+    {
+        [loop]
+        for (int qy = 0; qy < 2; qy++)
+        {
+            int quadIdx = qx * 2 + qy;
+            half3 sum = 0;
+            half3 sumSq = 0;
+
+            [loop]
+            for (int ix = 0; ix < radius; ix++)
+            {
+                [loop]
+                for (int iy = 0; iy < radius; iy++)
+                {
+                    float2 offset = float2(ix - radius * (1 - qx), iy - radius * (1 - qy)) * texelSize;
+                    half3 s = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, grabUV + offset).rgb;
+                    sum += s;
+                    sumSq += s * s;
+                }
+            }
+
+            meanColors[quadIdx] = sum / count;
+            half3 var = sumSq / count - meanColors[quadIdx] * meanColors[quadIdx];
+            variances[quadIdx] = dot(var, LUMA_WEIGHTS);
+        }
+    }
+
+    // Select quadrant with minimum variance (most uniform region)
+    int minIdx = 0;
+    half minVar = variances[0];
+    [unroll]
+    for (int i = 1; i < 4; i++)
+    {
+        if (variances[i] < minVar)
+        {
+            minVar = variances[i];
+            minIdx = i;
+        }
+    }
+
+    return lerp(baseColor, meanColors[minIdx], blend);
+}
+
+#endif // _KUWAHARA_FILTER
+
+// ---------- 7. Sobel Edge Detection (スクリーンスペース輪郭検出) ----------
+// Requires _CameraDepthTexture and _CameraDepthNormalsTexture.
+// DecodeViewNormalStereo is provided by UnityCG.cginc (already included).
+#ifdef _SCREEN_EDGE
+
+// Sobel edge detection on depth buffer.
+// Returns 0..1 edge strength (1 = strong edge).
+half SobelEdgeDepth(float2 screenUV, float sensitivity)
+{
+    float2 texel = _CameraDepthTexture_TexelSize.xy;
+
+    float d00 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenUV + float2(-texel.x, -texel.y)));
+    float d10 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenUV + float2(0, -texel.y)));
+    float d20 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenUV + float2(texel.x, -texel.y)));
+    float d01 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenUV + float2(-texel.x, 0)));
+    float d21 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenUV + float2(texel.x, 0)));
+    float d02 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenUV + float2(-texel.x, texel.y)));
+    float d12 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenUV + float2(0, texel.y)));
+    float d22 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenUV + float2(texel.x, texel.y)));
+
+    float sobelX = -d00 - 2.0*d01 - d02 + d20 + 2.0*d21 + d22;
+    float sobelY = -d00 - 2.0*d10 - d20 + d02 + 2.0*d12 + d22;
+
+    return saturate(sqrt(sobelX * sobelX + sobelY * sobelY) * sensitivity);
+}
+
+// Sobel edge detection on camera normals buffer.
+// Returns 0..1 edge strength (1 = strong normal discontinuity).
+half SobelEdgeNormal(float2 screenUV, float sensitivity)
+{
+    float2 texel = _CameraDepthTexture_TexelSize.xy;
+
+    half3 n00 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(-texel.x, -texel.y)));
+    half3 n10 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(0, -texel.y)));
+    half3 n20 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(texel.x, -texel.y)));
+    half3 n01 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(-texel.x, 0)));
+    half3 n21 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(texel.x, 0)));
+    half3 n02 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(-texel.x, texel.y)));
+    half3 n12 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(0, texel.y)));
+    half3 n22 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(texel.x, texel.y)));
+
+    half3 sobelX = -n00 - 2.0*n01 - n02 + n20 + 2.0*n21 + n22;
+    half3 sobelY = -n00 - 2.0*n10 - n20 + n02 + 2.0*n12 + n22;
+
+    return saturate((length(sobelX) + length(sobelY)) * sensitivity);
+}
+
+// Combined depth + normal edge detection.
+// Returns max(depth edge, normal edge) as final edge strength.
+half ApplyScreenEdge(float2 screenUV, float depthSens, float normalSens, float edgeWidth)
+{
+    // edgeWidth is pre-baked into sensitivity values by the caller
+    half depthEdge = SobelEdgeDepth(screenUV, depthSens);
+    half normalEdge = SobelEdgeNormal(screenUV, normalSens);
+
+    return saturate(max(depthEdge, normalEdge));
+}
+
+#endif // _SCREEN_EDGE
+
+// ---------- 8. Color Bleeding (色にじみ) ----------
+// Requires GrabPass (_GrabTexture).
+#ifdef _COLOR_BLEEDING
+
+// Simulates colour bleeding / pigment diffusion.
+// Samples 8 directions around the pixel; brighter neighbours bleed INTO darker areas.
+half3 ApplyColorBleeding(half3 baseColor, float2 grabUV, float radius, float blend)
+{
+    float2 texelSize = _GrabTexture_TexelSize.xy * radius;
+    half3 sum = 0;
+
+    // 8-direction sampling (cardinal + diagonal)
+    static const float2 bleedDirs[8] = {
+        float2( 1,  0), float2(-1,  0), float2( 0,  1), float2( 0, -1),
+        float2( 0.707,  0.707), float2(-0.707,  0.707),
+        float2( 0.707, -0.707), float2(-0.707, -0.707)
+    };
+
+    half selfLum = CALC_LUMINANCE(baseColor);
+
+    [unroll]
+    for (int i = 0; i < 8; i++)
+    {
+        half3 s = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, grabUV + bleedDirs[i] * texelSize).rgb;
+        // Selective mixing: blend only if neighbour is brighter (colour flows light → dark)
+        half sampleLum = CALC_LUMINANCE(s);
+        half mixFactor = saturate(sampleLum - selfLum);
+        sum += lerp(baseColor, s, mixFactor);
+    }
+    sum /= 8.0;
+
+    return lerp(baseColor, sum, blend);
+}
+
+#endif // _COLOR_BLEEDING
+
+// ---------- 9. Chromatic Aberration (色収差) ----------
+// Requires GrabPass (_GrabTexture).
+#ifdef _CHROMATIC_ABERRATION
+
+// Radial chromatic aberration — R/G/B channels are shifted outward from screen centre.
+// intensity: pixel offset strength
+// blend: mix factor with original colour
+half3 ApplyChromaticAberration(float2 grabUV, float intensity, float blend, half3 baseColor)
+{
+    float2 dir = grabUV - 0.5;
+    float2 offset = dir * intensity * _GrabTexture_TexelSize.xy;
+
+    half r = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, grabUV + offset).r;
+    half g = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, grabUV).g;
+    half b = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, grabUV - offset).b;
+
+    half3 caColor = half3(r, g, b);
+    return lerp(baseColor, caColor, blend);
+}
+
+#endif // _CHROMATIC_ABERRATION
+
+// =============================================================================
+// ===== End of Illustration Style Functions ===================================
+// =============================================================================
+
 #endif // NATANE_TOON_UTILS_INCLUDED

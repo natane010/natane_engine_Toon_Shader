@@ -621,6 +621,73 @@ Shader "Natane/Toon Shader (Transparent)"
         _GlitchStretchMask ("Stretch Glitch Mask", 2D) = "white" {}
         _GlitchStretchMaskScale ("Stretch Mask Scale", Range(1, 5)) = 1
 
+        // ===== Illustration Style (イラスト風技法) =====
+        [Header(Illustration Style)]
+        [Toggle(_COLOR_QUANTIZE)] _UseColorQuantize ("Enable Color Quantize", Float) = 0
+        [Enum(RGB,0,HSV,1)] _QuantizeMode ("Quantize Mode", Float) = 1
+        _QuantizeLevels ("Quantize Levels", Range(2, 32)) = 8
+        _QuantizeHueLevels ("Hue Levels", Range(2, 36)) = 12
+        _QuantizeSatLevels ("Saturation Levels", Range(2, 16)) = 8
+        _QuantizeValLevels ("Value Levels", Range(2, 16)) = 8
+        _QuantizeDither ("Dither Amount", Range(0, 1)) = 0.5
+        _QuantizeBlend ("Quantize Blend", Range(0, 1)) = 1
+        _QuantizeMask ("Quantize Mask", 2D) = "white" {}
+
+        [Toggle(_LUT_3D)] _UseLUT3D ("Enable 3D LUT", Float) = 0
+        _LUT3DTex ("LUT Texture", 2D) = "white" {}
+        _LUT3DIntensity ("LUT Intensity", Range(0, 1)) = 1
+        _LUT3DSize ("LUT Grid Size", Float) = 32
+
+        [Toggle(_HATCHING)] _UseHatching ("Enable Hatching", Float) = 0
+        _HatchTex0 ("Hatch Texture 0 (RGBA=L1-4)", 2D) = "white" {}
+        _HatchTex1 ("Hatch Texture 1 (RG=L5-6)", 2D) = "white" {}
+        _HatchingTiling ("Hatching Tiling", Float) = 8
+        _HatchingColor ("Hatching Color", Color) = (0.1, 0.1, 0.1, 1)
+        _HatchingBlend ("Hatching Blend", Range(0, 1)) = 1
+        _HatchingMask ("Hatching Mask", 2D) = "white" {}
+
+        [Toggle(_WATERCOLOR)] _UseWatercolor ("Enable Watercolor", Float) = 0
+        _WCEdgeDarkening ("Edge Darkening", Range(0, 2)) = 0.5
+        _WCWetEdge ("Wet Edge", Range(0, 1)) = 0.3
+        _WCGranulation ("Granulation", Range(0, 1)) = 0.4
+        _WCGranulationTex ("Granulation Texture", 2D) = "gray" {}
+        _WCPaperTex ("Paper Texture", 2D) = "white" {}
+        _WCPaperIntensity ("Paper Intensity", Range(0, 1)) = 0.3
+        _WCPaperTiling ("Paper Tiling", Float) = 1
+        _WCBlend ("Watercolor Blend", Range(0, 1)) = 1
+        _WCMask ("Watercolor Mask", 2D) = "white" {}
+
+        [Toggle(_SOFT_FILTER)] _UseSoftFilter ("Enable Soft Filter", Float) = 0
+        _SoftFilterRadius ("Filter Radius", Range(0, 10)) = 2
+        _SoftFilterBlend ("Filter Blend", Range(0, 1)) = 0.5
+        _SoftFilterThreshold ("Bloom Threshold", Range(0, 1)) = 0.6
+        [Enum(Full Blur,0,Selective Bloom,1)] _SoftFilterMode ("Filter Mode", Float) = 1
+
+        [Toggle(_KUWAHARA_FILTER)] _UseKuwahara ("Enable Kuwahara Filter", Float) = 0
+        _KuwaharaRadius ("Kuwahara Radius", Range(1, 6)) = 3
+        _KuwaharaBlend ("Kuwahara Blend", Range(0, 1)) = 1
+
+        [Toggle(_SCREEN_EDGE)] _UseScreenEdge ("Enable Screen Edge", Float) = 0
+        _EdgeColor ("Edge Color", Color) = (0, 0, 0, 1)
+        _EdgeWidth ("Edge Width", Range(0.1, 5)) = 1
+        _EdgeDepthSensitivity ("Depth Sensitivity", Range(0, 50)) = 10
+        _EdgeNormalSensitivity ("Normal Sensitivity", Range(0, 10)) = 2
+        _EdgeBlend ("Edge Blend", Range(0, 1)) = 1
+
+        [Toggle(_COLOR_BLEEDING)] _UseColorBleeding ("Enable Color Bleeding", Float) = 0
+        _BleedingRadius ("Bleeding Radius", Range(0, 5)) = 1
+        _BleedingBlend ("Bleeding Blend", Range(0, 1)) = 0.3
+
+        [Toggle(_CHROMATIC_ABERRATION)] _UseChromaticAberration ("Enable Chromatic Aberration", Float) = 0
+        _CAIntensity ("CA Intensity", Range(0, 20)) = 3
+        _CABlend ("CA Blend", Range(0, 1)) = 1
+
+        [Toggle(_OUTLINE_HAND_DRAWN)] _UseHandDrawnOutline ("Enable Hand-drawn Outline", Float) = 0
+        _OutlineNoiseTex ("Outline Noise Texture", 2D) = "gray" {}
+        _OutlineNoiseTiling ("Noise Tiling", Float) = 5
+        _OutlineWidthVariation ("Width Variation", Range(0, 0.5)) = 0.2
+        _OutlineJitterAmount ("Jitter Amount", Range(0, 1)) = 0.3
+
         [Header(Decal System Stickers)]
         [Toggle(_DECAL)] _Decal ("Enable Decal", Float) = 0
         _DecalTex ("Decal Texture", 2D) = "white" {}
@@ -786,6 +853,7 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma shader_feature_local _SMEAR
             #pragma shader_feature_local _HEIGHT_FADE
+            #pragma shader_feature_local _OUTLINE_HAND_DRAWN
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
@@ -955,7 +1023,17 @@ Shader "Natane/Toon Shader (Transparent)"
                             outlineWidth *= edgeComp;
                         }
 
+                        // Hand-drawn outline: width variation
+                        #ifdef _OUTLINE_HAND_DRAWN
+                            outlineWidth *= GetHandDrawnWidthFactor(v.uv);
+                        #endif
+
                         o.pos.xy += offset * o.pos.z * outlineWidth;
+
+                        // Hand-drawn outline: position jitter
+                        #ifdef _OUTLINE_HAND_DRAWN
+                            o.pos.xyz += GetHandDrawnJitter(v.vertex.xyz);
+                        #endif
                     }
                     else
                     {
@@ -972,8 +1050,18 @@ Shader "Natane/Toon Shader (Transparent)"
                             outlineWidth *= edgeComp;
                         }
 
+                        // Hand-drawn outline: width variation
+                        #ifdef _OUTLINE_HAND_DRAWN
+                            outlineWidth *= GetHandDrawnWidthFactor(v.uv);
+                        #endif
+
                         float3 scaledPos = v.vertex.xyz + normalize(outlineNormal) * outlineWidth;
                         o.pos = UnityObjectToClipPos(float4(scaledPos, 1.0));
+
+                        // Hand-drawn outline: position jitter
+                        #ifdef _OUTLINE_HAND_DRAWN
+                            o.pos.xyz += GetHandDrawnJitter(v.vertex.xyz);
+                        #endif
                     }
 
                     #ifdef _HEIGHT_FADE
@@ -1128,6 +1216,15 @@ Shader "Natane/Toon Shader (Transparent)"
             #pragma shader_feature_local _HOLOGRAM
             #pragma shader_feature_local _GLITCH
             #pragma shader_feature_local _GLITCH_STRETCH
+            #pragma shader_feature_local _COLOR_QUANTIZE
+            #pragma shader_feature_local _LUT_3D
+            #pragma shader_feature_local _HATCHING
+            #pragma shader_feature_local _WATERCOLOR
+            #pragma shader_feature_local _SOFT_FILTER
+            #pragma shader_feature_local _KUWAHARA_FILTER
+            #pragma shader_feature_local _SCREEN_EDGE
+            #pragma shader_feature_local _COLOR_BLEEDING
+            #pragma shader_feature_local _CHROMATIC_ABERRATION
             #pragma shader_feature_local _HOLOGRAM_NOISE
             #pragma shader_feature_local _DECAL
             #pragma shader_feature_local _BACKFACE_TEXTURE
