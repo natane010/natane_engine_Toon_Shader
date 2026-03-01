@@ -5,6 +5,49 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.5] - 2026-03-02
+
+### Added
+- **PCSS (Percentage Closer Soft Shadows)**: スクリーンスペース近似によるコンタクトハードニングシャドウ
+  - 3フェーズアルゴリズム: ブロッカー探索 → ペナンブラ推定 → 可変幅 Poisson Disk PCF
+  - サンプル品質選択: Low (8) / Medium (16) / High (32)
+  - ブレンドモード (Normal/Soft/Screen/Overlay)、ブレンド強度、ブラー対応
+  - `shader_feature_local` によりPCSS無効時ゼロコスト
+  - VRChat互換（ランタイムスクリプト不要）
+- **グリッチマスクテクスチャ**: 部位ごとにグリッチ強度を制御
+  - マスクスケール (1-5倍) で増幅可能
+  - RGBスプリット・発生頻度もマスクで部位制御可能
+- **ストレッチグリッチ**: テクスチャUVのみ横伸縮する独立グリッチモード
+  - 専用マスクテクスチャ（マスクスケール対応）
+  - 既存グリッチ `_GLITCH` とは独立したキーワード `_GLITCH_STRETCH`
+- **グリッチノイズテクスチャ**: テクスチャベースのノイズでグリッチ表現を拡張
+  - 3モード: UV Distortion / Color Corruption / Block Noise
+  - スクロール速度対応
+- **グリッチ強度上限引き上げ**: Intensity 0-3、RGB Split 0-3、Stretch 0-5
+
+### Changed
+- UV歪みスケール 0.1→0.15、RGB分離スケール 0.01→0.02 で高強度時の効果増強
+
+### Fixed
+- `SAMPLE_DEPTH_TEXTURE` → `UNITY_SAMPLE_SCREENSPACE_TEXTURE` 統一（VRステレオインスタンシング互換性向上、他シェーダー併用時の安定性改善）
+
+---
+
+## [1.3.4] - 2026-02-28
+
+### Fixed
+- **VRステレオインスタンシング修正**: SV_InstanceID/テッセレーションパイプライン非互換修正
+
+---
+
+## [1.3.3] - 2026-02-28
+
+### Fixed
+- **テッセレーション予約語エラー修正**: HLSL予約語との衝突を解消
+- **VRステレオインスタンシング修正**: ステレオレンダリング時の不具合を修正
+
+---
+
 ## [1.3.2] - 2026-02-27
 
 ### Added
