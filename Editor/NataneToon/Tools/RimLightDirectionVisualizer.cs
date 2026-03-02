@@ -53,15 +53,16 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(L("リムライト設定", "Rim Light Settings"), EditorStyles.boldLabel);
 
-            if (targetMaterial.HasProperty("_UseRimLight"))
+            string rimToggleProperty = GetRimToggleProperty(targetMaterial);
+            if (!string.IsNullOrEmpty(rimToggleProperty))
             {
                 EditorGUI.BeginChangeCheck();
-                bool useRim = targetMaterial.GetFloat("_UseRimLight") > 0.5f;
+                bool useRim = targetMaterial.GetFloat(rimToggleProperty) > 0.5f;
                 useRim = EditorGUILayout.Toggle(L("リムライト有効", "Enable Rim Light"), useRim);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Toggle Rim Light");
-                    targetMaterial.SetFloat("_UseRimLight", useRim ? 1f : 0f);
+                    SetRimLightEnabled(targetMaterial, useRim);
                     EditorUtility.SetDirty(targetMaterial);
                 }
             }
@@ -110,16 +111,17 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(L("方向制御", "Direction Control"), EditorStyles.boldLabel);
 
-            if (targetMaterial.HasProperty("_RimDirection"))
+            string rimDirectionProperty = GetRimDirectionProperty(targetMaterial);
+            if (!string.IsNullOrEmpty(rimDirectionProperty))
             {
                 EditorGUI.BeginChangeCheck();
-                Vector4 dir = targetMaterial.GetVector("_RimDirection");
+                Vector4 dir = targetMaterial.GetVector(rimDirectionProperty);
                 rimDirection = new Vector3(dir.x, dir.y, dir.z);
                 rimDirection = EditorGUILayout.Vector3Field(L("方向", "Direction"), rimDirection);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change Rim Direction");
-                    targetMaterial.SetVector("_RimDirection", new Vector4(rimDirection.x, rimDirection.y, rimDirection.z, 0));
+                    targetMaterial.SetVector(rimDirectionProperty, new Vector4(rimDirection.x, rimDirection.y, rimDirection.z, 0));
                     EditorUtility.SetDirty(targetMaterial);
                 }
             }
@@ -144,10 +146,10 @@ namespace NataneToon.Editor
                     Mathf.Cos(azimuthRad) * Mathf.Cos(elevationRad)
                 ).normalized;
 
-                if (targetMaterial.HasProperty("_RimDirection"))
+                if (!string.IsNullOrEmpty(rimDirectionProperty))
                 {
                     Undo.RecordObject(targetMaterial, "Change Rim Direction");
-                    targetMaterial.SetVector("_RimDirection", new Vector4(rimDirection.x, rimDirection.y, rimDirection.z, 0));
+                    targetMaterial.SetVector(rimDirectionProperty, new Vector4(rimDirection.x, rimDirection.y, rimDirection.z, 0));
                     EditorUtility.SetDirty(targetMaterial);
                 }
             }
@@ -184,11 +186,52 @@ namespace NataneToon.Editor
         private void ApplyDirectionPreset(Vector3 direction)
         {
             rimDirection = direction.normalized;
-            if (targetMaterial.HasProperty("_RimDirection"))
+            string rimDirectionProperty = GetRimDirectionProperty(targetMaterial);
+            if (!string.IsNullOrEmpty(rimDirectionProperty))
             {
                 Undo.RecordObject(targetMaterial, "Apply Rim Direction Preset");
-                targetMaterial.SetVector("_RimDirection", new Vector4(rimDirection.x, rimDirection.y, rimDirection.z, 0));
+                targetMaterial.SetVector(rimDirectionProperty, new Vector4(rimDirection.x, rimDirection.y, rimDirection.z, 0));
                 EditorUtility.SetDirty(targetMaterial);
+            }
+        }
+
+        private static string GetRimToggleProperty(Material material)
+        {
+            if (material == null) return null;
+            if (material.HasProperty("_RimLight")) return "_RimLight";
+            if (material.HasProperty("_UseRimLight")) return "_UseRimLight";
+            return null;
+        }
+
+        private static string GetRimDirectionProperty(Material material)
+        {
+            if (material == null) return null;
+            if (material.HasProperty("_RimLightDirection")) return "_RimLightDirection";
+            if (material.HasProperty("_RimDirection")) return "_RimDirection";
+            return null;
+        }
+
+        private static void SetRimLightEnabled(Material material, bool enabled)
+        {
+            if (material == null) return;
+
+            if (material.HasProperty("_RimLight"))
+            {
+                material.SetFloat("_RimLight", enabled ? 1f : 0f);
+            }
+
+            if (material.HasProperty("_UseRimLight"))
+            {
+                material.SetFloat("_UseRimLight", enabled ? 1f : 0f);
+            }
+
+            if (enabled)
+            {
+                material.EnableKeyword("_RIM_LIGHT");
+            }
+            else
+            {
+                material.DisableKeyword("_RIM_LIGHT");
             }
         }
     }

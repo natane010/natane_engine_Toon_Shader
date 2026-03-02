@@ -7,24 +7,27 @@ namespace NataneToon.Editor
 
     /// <summary>
     /// MatCap Layer Composer
-    /// MatCapレイヤーコンポーザー
     /// </summary>
     public class MatCapLayerComposer : EditorWindow
     {
         private Material targetMaterial;
         private Vector2 scrollPosition;
-        private bool[] layerFoldouts = new bool[] { true, true, true };
+        private readonly bool[] layerFoldouts = { true, true, true };
 
-        private readonly string[] matcapProps = { "_MatCap", "_MatCap2", "_MatCap3" };
-        private readonly string[] matcapIntensityProps = { "_MatCapIntensity", "_MatCap2Intensity", "_MatCap3Intensity" };
-        private readonly string[] matcapBlendProps = { "_MatCapBlend", "_MatCap2Blend", "_MatCap3Blend" };
-        private string[] blendModeNames => new[] { L("加算", "Additive"), L("乗算", "Multiply"), L("オーバーレイ", "Overlay") };
+        private readonly string[] matcapTextureProps = { "_MatCapTex", "_MatCapTex2", "_MatCapTex3" };
+        private readonly string[] matcapEnableProps = { "_MatCap", "_MatCap2", "_MatCap3" };
+        private readonly string[] matcapEnableKeywords = { "_MATCAP", "_MATCAP_2", "_MATCAP_3" };
+        private readonly string[] matcapIntensityProps = { "_MatCapIntensity", "_MatCapIntensity2", "_MatCapIntensity3" };
+        private readonly string[] matcapBlendModeProps = { "_MatCapBlendMode", "_MatCapBlendMode2", "_MatCapBlendMode3" };
+        private readonly string[] matcapBlendProps = { "_MatCapBlend", "_MatCapBlend2", "_MatCapBlend3" };
+
+        private string[] BlendModeNames => new[] { L("加算", "Add"), L("乗算", "Multiply"), L("置換", "Replace") };
 
         [MenuItem("Tools/Natane/エフェクト Effects/MatCapレイヤーコンポーザー MatCap Layer Composer", false, 42)]
         public static void ShowWindow()
         {
             var window = GetWindow<MatCapLayerComposer>(L("MatCapレイヤーコンポーザー", "MatCap Layer Composer"));
-            window.minSize = new Vector2(500, 600);
+            window.minSize = new Vector2(500, 560);
             window.Show();
         }
 
@@ -33,51 +36,73 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(10);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             NataneToonShaderGUIUtility.DrawHeaderWithHelp("MatCapレイヤーコンポーザー", "MatCap Layer Composer", "MatCapLayerComposer");
-            EditorGUILayout.LabelField(L("3つのMatCapレイヤーをリアルタイムプレビュー", "Real-time preview of 3 MatCap layers"), EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(L("MatCap 1-3を同時に編集します。", "Edit MatCap layers 1-3 in one place."), EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(10);
 
             targetMaterial = (Material)EditorGUILayout.ObjectField(L("ターゲットマテリアル", "Target Material"), targetMaterial, typeof(Material), false);
-
-            if (targetMaterial == null) return;
+            if (targetMaterial == null)
+            {
+                return;
+            }
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
-
             for (int i = 0; i < 3; i++)
             {
                 DrawMatCapLayer(i);
-                EditorGUILayout.Space(5);
+                EditorGUILayout.Space(6);
             }
 
-            EditorGUILayout.Space(10);
             DrawBatchOperations();
-
             EditorGUILayout.EndScrollView();
         }
 
         private void DrawMatCapLayer(int index)
         {
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            if (!targetMaterial.HasProperty(matcapTextureProps[index]))
+            {
+                return;
+            }
 
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             layerFoldouts[index] = EditorGUILayout.Foldout(layerFoldouts[index], $"MatCap Layer {index + 1}", true);
 
-            if (layerFoldouts[index] && targetMaterial.HasProperty(matcapProps[index]))
+            if (layerFoldouts[index])
             {
                 EditorGUI.indentLevel++;
 
+                Texture2D currentTex = targetMaterial.GetTexture(matcapTextureProps[index]) as Texture2D;
+                bool enabled = targetMaterial.HasProperty(matcapEnableProps[index]) && targetMaterial.GetFloat(matcapEnableProps[index]) > 0.5f;
+
                 EditorGUI.BeginChangeCheck();
-                Texture2D matcap = (Texture2D)EditorGUILayout.ObjectField("MatCap", targetMaterial.GetTexture(matcapProps[index]), typeof(Texture2D), false);
+                Texture2D newTex = (Texture2D)EditorGUILayout.ObjectField("MatCap", currentTex, typeof(Texture2D), false);
                 if (EditorGUI.EndChangeCheck())
                 {
-                    Undo.RecordObject(targetMaterial, "Change MatCap");
-                    targetMaterial.SetTexture(matcapProps[index], matcap);
+                    Undo.RecordObject(targetMaterial, "Change MatCap Texture");
+                    targetMaterial.SetTexture(matcapTextureProps[index], newTex);
+                    SetLayerEnabled(index, newTex != null);
                     EditorUtility.SetDirty(targetMaterial);
+                    currentTex = newTex;
+                    enabled = newTex != null;
                 }
 
-                if (matcap != null)
+                if (targetMaterial.HasProperty(matcapEnableProps[index]))
+                {
+                    EditorGUI.BeginChangeCheck();
+                    bool nextEnabled = EditorGUILayout.Toggle(L("有効", "Enabled"), enabled);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        Undo.RecordObject(targetMaterial, "Toggle MatCap");
+                        SetLayerEnabled(index, nextEnabled);
+                        EditorUtility.SetDirty(targetMaterial);
+                        enabled = nextEnabled;
+                    }
+                }
+
+                if (currentTex != null)
                 {
                     Rect previewRect = GUILayoutUtility.GetRect(100, 100);
-                    EditorGUI.DrawPreviewTexture(previewRect, matcap, null, ScaleMode.ScaleToFit);
+                    EditorGUI.DrawPreviewTexture(previewRect, currentTex, null, ScaleMode.ScaleToFit);
 
                     if (targetMaterial.HasProperty(matcapIntensityProps[index]))
                     {
@@ -91,14 +116,26 @@ namespace NataneToon.Editor
                         }
                     }
 
+                    if (targetMaterial.HasProperty(matcapBlendModeProps[index]))
+                    {
+                        EditorGUI.BeginChangeCheck();
+                        int mode = (int)targetMaterial.GetFloat(matcapBlendModeProps[index]);
+                        mode = EditorGUILayout.Popup(L("ブレンドモード", "Blend Mode"), mode, BlendModeNames);
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            Undo.RecordObject(targetMaterial, "Change MatCap Blend Mode");
+                            targetMaterial.SetFloat(matcapBlendModeProps[index], mode);
+                            EditorUtility.SetDirty(targetMaterial);
+                        }
+                    }
+
                     if (targetMaterial.HasProperty(matcapBlendProps[index]))
                     {
                         EditorGUI.BeginChangeCheck();
-                        int blend = (int)targetMaterial.GetFloat(matcapBlendProps[index]);
-                        blend = EditorGUILayout.Popup(L("ブレンド", "Blend"), blend, blendModeNames);
+                        float blend = EditorGUILayout.Slider(L("ブレンド", "Blend"), targetMaterial.GetFloat(matcapBlendProps[index]), 0f, 1f);
                         if (EditorGUI.EndChangeCheck())
                         {
-                            Undo.RecordObject(targetMaterial, "Change Blend Mode");
+                            Undo.RecordObject(targetMaterial, "Change MatCap Blend");
                             targetMaterial.SetFloat(matcapBlendProps[index], blend);
                             EditorUtility.SetDirty(targetMaterial);
                         }
@@ -116,21 +153,38 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(L("一括操作", "Batch Operations"), EditorStyles.boldLabel);
 
-            if (GUILayout.Button(L("すべてクリア", "Clear All"), GUILayout.Height(30)))
+            if (GUILayout.Button(L("すべてクリア", "Clear All"), GUILayout.Height(28)))
             {
-                if (EditorUtility.DisplayDialog(L("確認", "Confirm"), L("すべてのMatCapをクリアしますか？", "Clear all MatCaps?"), L("はい", "Yes"), L("いいえ", "No")))
+                Undo.RecordObject(targetMaterial, "Clear All MatCaps");
+                for (int i = 0; i < matcapTextureProps.Length; i++)
                 {
-                    Undo.RecordObject(targetMaterial, "Clear All MatCaps");
-                    foreach (var prop in matcapProps)
+                    if (targetMaterial.HasProperty(matcapTextureProps[i]))
                     {
-                        if (targetMaterial.HasProperty(prop))
-                            targetMaterial.SetTexture(prop, null);
+                        targetMaterial.SetTexture(matcapTextureProps[i], null);
                     }
-                    EditorUtility.SetDirty(targetMaterial);
+                    SetLayerEnabled(i, false);
                 }
+                EditorUtility.SetDirty(targetMaterial);
             }
 
             EditorGUILayout.EndVertical();
+        }
+
+        private void SetLayerEnabled(int index, bool enabled)
+        {
+            if (targetMaterial.HasProperty(matcapEnableProps[index]))
+            {
+                targetMaterial.SetFloat(matcapEnableProps[index], enabled ? 1f : 0f);
+            }
+
+            if (enabled)
+            {
+                targetMaterial.EnableKeyword(matcapEnableKeywords[index]);
+            }
+            else
+            {
+                targetMaterial.DisableKeyword(matcapEnableKeywords[index]);
+            }
         }
     }
 }

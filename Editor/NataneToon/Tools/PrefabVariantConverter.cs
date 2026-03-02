@@ -564,6 +564,7 @@ namespace NataneToon.Editor
             CaptureTexture(material, "_BumpMap", properties);
             CaptureTexture(material, "_EmissionMap", properties);
             CaptureTexture(material, "_MatCapTex", properties);
+            CaptureTexture(material, "_OutlineWidthMap", properties);
             CaptureTexture(material, "_OutlineWidthMask", properties);
 
             // lilToon specific textures (with different names)
@@ -633,7 +634,8 @@ namespace NataneToon.Editor
             MapTexture(originalProperties, targetMaterial, "_EmissionMap", "_EmissionMap");
             MapTexture(originalProperties, targetMaterial, "_lilEmissionMap", "_EmissionMap");
             MapTexture(originalProperties, targetMaterial, "_MatCapTex", "_MatCapTex");  // Fixed: _MatCap is Float, _MatCapTex is Texture
-            MapTexture(originalProperties, targetMaterial, "_OutlineWidthMask", "_OutlineWidthMask");
+            MapTexture(originalProperties, targetMaterial, "_OutlineWidthMap", "_OutlineWidthMap");
+            MapTexture(originalProperties, targetMaterial, "_OutlineWidthMask", "_OutlineWidthMap");
 
             // Map colors
             MapColor(originalProperties, targetMaterial, "_Color", "_Color");

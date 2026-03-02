@@ -34,9 +34,9 @@ namespace NataneToon.Editor
 
         // Parameter adjustment (Batch Mode)
         private enum AdjustMode { Set, Add, Multiply }
-        private string[] floatParameters = new[] { "_ToonSteps", "_ToonSharpness", "_ShadowReceive", "_OutlineWidth",
-                                                   "_SpecularIntensity", "_RimIntensity", "_SSSIntensity",
-                                                   "_EmissionIntensity", "_ReflectionIntensity", "_Metallic", "_Smoothness" };
+        private string[] floatParameters = new[] { "_ShadowSteps", "_ShadowSharpness", "_ShadowReceive", "_OutlineWidth",
+                                                   "_SpecularBlend", "_RimIntensity", "_SSSIntensity",
+                                                   "_EmissionGlow", "_ReflectionIntensity", "_Metallic", "_Smoothness" };
         private int selectedParameter = 0;
         private AdjustMode adjustMode = AdjustMode.Set;
         private float adjustValue = 1.0f;
@@ -57,7 +57,7 @@ namespace NataneToon.Editor
         private Texture2D replacementTexture;
 
         // Feature toggle (Batch Mode)
-        private string[] features = new[] { "_SPECULAR", "_RIM", "_SSS", "_MATCAP", "_OUTLINE", "_EMISSION",
+        private string[] features = new[] { "_SPECULAR", "_RIM_LIGHT", "_SSS", "_MATCAP", "_OUTLINE", "_EMISSION",
                                            "_NORMALMAP", "_REFLECTION", "_ENV_RIM", "_PARALLAX", "_REFRACTION",
                                            "_DETAIL_MAP", "_TRIPLANAR", "_HEIGHT_FOG",
                                            "_SURFACE_COVER", "_MIRROR_CONTROL", "_QUEST_LITE",
@@ -402,24 +402,24 @@ namespace NataneToon.Editor
             showShadingSettings = DrawFoldoutSection(L("シェーディング", "Shading"), showShadingSettings, () =>
             {
                 DrawColorProperty("_ShadowColor", L("影色", "Shadow Color"));
-                DrawIntProperty("_ToonSteps", L("トゥーン段階", "Toon Steps"), 1, 10);
-                DrawFloatProperty("_ToonSharpness", L("境界シャープネス", "Sharpness"), 0f, 1f);
+                DrawIntProperty("_ShadowSteps", L("トゥーン段階", "Toon Steps"), 1, 10);
+                DrawFloatProperty("_ShadowSharpness", L("境界シャープネス", "Sharpness"), 0f, 1f);
                 DrawFloatProperty("_ShadowReceive", L("影の受け取り", "Shadow Receive"), 0f, 1f);
             });
 
             // スペキュラー設定
             showSpecularSettings = DrawFoldoutSection(L("スペキュラー", "Specular"), showSpecularSettings, () =>
             {
-                if (currentMaterial.HasProperty("_UseSpecular"))
+                if (currentMaterial.HasProperty("_Specular"))
                 {
-                    DrawToggleProperty("_UseSpecular", L("スペキュラーを使用", "Use Specular"));
-                    if (currentMaterial.GetFloat("_UseSpecular") > 0.5f)
+                    DrawToggleProperty("_Specular", L("スペキュラーを使用", "Use Specular"), "_SPECULAR");
+                    if (currentMaterial.GetFloat("_Specular") > 0.5f)
                     {
                         EditorGUI.indentLevel++;
                         DrawColorProperty("_SpecularColor", L("スペキュラー色", "Color"));
-                        DrawFloatProperty("_SpecularIntensity", L("強度", "Intensity"), 0f, 2f);
+                        DrawFloatProperty("_SpecularBlend", L("強度", "Intensity"), 0f, 1f);
                         DrawFloatProperty("_SpecularSize", L("サイズ", "Size"), 0f, 1f);
-                        DrawFloatProperty("_SpecularSharpness", L("シャープネス", "Sharpness"), 0f, 1f);
+                        DrawFloatProperty("_SpecularSoftness", L("シャープネス", "Sharpness"), 0f, 1f);
                         EditorGUI.indentLevel--;
                     }
                 }
@@ -428,10 +428,10 @@ namespace NataneToon.Editor
             // リムライト設定
             showRimLightSettings = DrawFoldoutSection(L("リムライト", "Rim Light"), showRimLightSettings, () =>
             {
-                if (currentMaterial.HasProperty("_UseRimLight"))
+                if (currentMaterial.HasProperty("_RimLight"))
                 {
-                    DrawToggleProperty("_UseRimLight", L("リムライトを使用", "Use Rim Light"));
-                    if (currentMaterial.GetFloat("_UseRimLight") > 0.5f)
+                    DrawToggleProperty("_RimLight", L("リムライトを使用", "Use Rim Light"), "_RIM_LIGHT");
+                    if (currentMaterial.GetFloat("_RimLight") > 0.5f)
                     {
                         EditorGUI.indentLevel++;
                         DrawColorProperty("_RimColor", L("リムライト色", "Color"));
@@ -445,10 +445,10 @@ namespace NataneToon.Editor
             // アウトライン設定
             showOutlineSettings = DrawFoldoutSection(L("アウトライン", "Outline"), showOutlineSettings, () =>
             {
-                if (currentMaterial.HasProperty("_UseOutline"))
+                if (currentMaterial.HasProperty("_Outline"))
                 {
-                    DrawToggleProperty("_UseOutline", L("アウトラインを使用", "Use Outline"));
-                    if (currentMaterial.GetFloat("_UseOutline") > 0.5f)
+                    DrawToggleProperty("_Outline", L("アウトラインを使用", "Use Outline"), "_OUTLINE");
+                    if (currentMaterial.GetFloat("_Outline") > 0.5f)
                     {
                         EditorGUI.indentLevel++;
                         DrawColorProperty("_OutlineColor", L("アウトライン色", "Color"));
@@ -461,14 +461,14 @@ namespace NataneToon.Editor
             // エミッション設定
             showEmissionSettings = DrawFoldoutSection(L("エミッション", "Emission"), showEmissionSettings, () =>
             {
-                if (currentMaterial.HasProperty("_UseEmission"))
+                if (currentMaterial.HasProperty("_Emission"))
                 {
-                    DrawToggleProperty("_UseEmission", L("エミッションを使用", "Use Emission"));
-                    if (currentMaterial.GetFloat("_UseEmission") > 0.5f)
+                    DrawToggleProperty("_Emission", L("エミッションを使用", "Use Emission"), "_EMISSION");
+                    if (currentMaterial.GetFloat("_Emission") > 0.5f)
                     {
                         EditorGUI.indentLevel++;
                         DrawColorProperty("_EmissionColor", L("エミッション色", "Color"));
-                        DrawFloatProperty("_EmissionIntensity", L("強度", "Intensity"), 0f, 5f);
+                        DrawFloatProperty("_EmissionGlow", L("強度", "Intensity"), 0f, 1f);
                         EditorGUI.indentLevel--;
                     }
                 }
@@ -626,8 +626,8 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space(5);
 
-            string[] textureProps = new[] { "_MainTex", "_BumpMap", "_EmissionMap", "_MatCap", "_RampTex",
-                                           "_SpecularMask", "_RimMask", "_SSSMask", "_MatCapMask", "_EmissionMask",
+            string[] textureProps = new[] { "_MainTex", "_BumpMap", "_EmissionMap", "_MatCapTex", "_MatCapTex2", "_MatCapTex3", "_RampTex",
+                                           "_SpecularMask", "_RimMask", "_SSSMask", "_MatCapMask", "_MatCapMask2", "_MatCapMask3", "_EmissionMask",
                                            "_ReflectionMask", "_ParallaxMap" };
             int selectedProp = System.Array.IndexOf(textureProps, textureProperty);
             if (selectedProp < 0) selectedProp = 0;
@@ -833,7 +833,7 @@ namespace NataneToon.Editor
             }
         }
 
-        private void DrawToggleProperty(string propertyName, string label)
+        private void DrawToggleProperty(string propertyName, string label, string keyword = null)
         {
             if (currentMaterial == null || !currentMaterial.HasProperty(propertyName)) return;
 
@@ -843,6 +843,17 @@ namespace NataneToon.Editor
             {
                 Undo.RecordObject(currentMaterial, "Change Material Toggle");
                 currentMaterial.SetFloat(propertyName, newValue ? 1f : 0f);
+                if (!string.IsNullOrEmpty(keyword))
+                {
+                    if (newValue)
+                    {
+                        currentMaterial.EnableKeyword(keyword);
+                    }
+                    else
+                    {
+                        currentMaterial.DisableKeyword(keyword);
+                    }
+                }
                 EditorUtility.SetDirty(currentMaterial);
             }
         }
@@ -1269,10 +1280,10 @@ namespace NataneToon.Editor
                 currentMaterial.SetFloat("_Alpha", 1f);
             if (currentMaterial.HasProperty("_ShadowColor"))
                 currentMaterial.SetColor("_ShadowColor", new Color(0.5f, 0.5f, 0.5f, 1f));
-            if (currentMaterial.HasProperty("_ToonSteps"))
-                currentMaterial.SetFloat("_ToonSteps", 2);
-            if (currentMaterial.HasProperty("_ToonSharpness"))
-                currentMaterial.SetFloat("_ToonSharpness", 0.5f);
+            if (currentMaterial.HasProperty("_ShadowSteps"))
+                currentMaterial.SetFloat("_ShadowSteps", 2);
+            if (currentMaterial.HasProperty("_ShadowSharpness"))
+                currentMaterial.SetFloat("_ShadowSharpness", 0.5f);
 
             EditorUtility.SetDirty(currentMaterial);
             Debug.Log($"マテリアル '{currentMaterial.name}' を初期値に戻しました Reset material '{currentMaterial.name}'");

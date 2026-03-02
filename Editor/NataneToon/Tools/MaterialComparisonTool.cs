@@ -20,6 +20,16 @@ namespace NataneToon.Editor
         private ViewMode viewMode = ViewMode.SideBySide;
 
         private List<string> differentProperties = new List<string>();
+        private static readonly string[][] FloatPropertyAliases =
+        {
+            new[] { "_ShadowSteps", "_ToonSteps" },
+            new[] { "_ShadowSharpness", "_ToonSharpness" },
+            new[] { "_ShadowReceive" },
+            new[] { "_OutlineWidth" },
+            new[] { "_SpecularBlend", "_SpecularIntensity" },
+            new[] { "_RimIntensity" },
+            new[] { "_EmissionGlow", "_EmissionIntensity" }
+        };
 
         [MenuItem("Tools/Natane/マテリアル Material/マテリアル比較 Material Comparison Tool", false, 14)]
         public static void ShowWindow()
@@ -163,20 +173,20 @@ namespace NataneToon.Editor
             EditorGUILayout.LabelField(L("パラメータ一覧", "Parameter List"), EditorStyles.boldLabel);
 
             // Compare float properties
-            string[] floatProps = { "_ToonSteps", "_ToonSharpness", "_ShadowReceive", "_OutlineWidth",
-                                   "_SpecularIntensity", "_RimIntensity", "_EmissionIntensity" };
-
-            foreach (var prop in floatProps)
+            foreach (var aliases in FloatPropertyAliases)
             {
-                if (materialA.HasProperty(prop) && materialB.HasProperty(prop))
+                string propA = GetFirstExistingProperty(materialA, aliases);
+                string propB = GetFirstExistingProperty(materialB, aliases);
+                if (!string.IsNullOrEmpty(propA) && !string.IsNullOrEmpty(propB))
                 {
-                    float valueA = materialA.GetFloat(prop);
-                    float valueB = materialB.GetFloat(prop);
+                    float valueA = materialA.GetFloat(propA);
+                    float valueB = materialB.GetFloat(propB);
                     bool isDifferent = !Mathf.Approximately(valueA, valueB);
+                    string displayName = aliases[0];
 
                     GUI.backgroundColor = isDifferent ? new Color(1f, 0.8f, 0.8f) : Color.white;
                     EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-                    EditorGUILayout.LabelField(prop, GUILayout.Width(150));
+                    EditorGUILayout.LabelField(displayName, GUILayout.Width(150));
                     EditorGUILayout.LabelField($"A: {valueA:F3}", GUILayout.Width(100));
                     EditorGUILayout.LabelField($"B: {valueB:F3}", GUILayout.Width(100));
                     if (isDifferent)
@@ -222,18 +232,17 @@ namespace NataneToon.Editor
             }
 
             // Compare float properties
-            string[] floatProps = { "_ToonSteps", "_ToonSharpness", "_ShadowReceive", "_OutlineWidth",
-                                   "_SpecularIntensity", "_RimIntensity", "_EmissionIntensity" };
-
-            foreach (var prop in floatProps)
+            foreach (var aliases in FloatPropertyAliases)
             {
-                if (materialA.HasProperty(prop) && materialB.HasProperty(prop))
+                string propA = GetFirstExistingProperty(materialA, aliases);
+                string propB = GetFirstExistingProperty(materialB, aliases);
+                if (!string.IsNullOrEmpty(propA) && !string.IsNullOrEmpty(propB))
                 {
-                    float valueA = materialA.GetFloat(prop);
-                    float valueB = materialB.GetFloat(prop);
+                    float valueA = materialA.GetFloat(propA);
+                    float valueB = materialB.GetFloat(propB);
                     if (!Mathf.Approximately(valueA, valueB))
                     {
-                        differentProperties.Add($"{prop}: {valueA:F3} != {valueB:F3}");
+                        differentProperties.Add($"{aliases[0]}: {valueA:F3} != {valueB:F3}");
                     }
                 }
             }
@@ -322,6 +331,24 @@ namespace NataneToon.Editor
             }
 
             return count;
+        }
+
+        private static string GetFirstExistingProperty(Material material, params string[] propertyNames)
+        {
+            if (material == null || propertyNames == null)
+            {
+                return null;
+            }
+
+            foreach (var propertyName in propertyNames)
+            {
+                if (!string.IsNullOrEmpty(propertyName) && material.HasProperty(propertyName))
+                {
+                    return propertyName;
+                }
+            }
+
+            return null;
         }
     }
 }

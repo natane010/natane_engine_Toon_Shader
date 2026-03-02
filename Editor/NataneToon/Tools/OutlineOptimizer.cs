@@ -56,15 +56,16 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(L("アウトライン設定", "Outline Settings"), EditorStyles.boldLabel);
 
-            if (targetMaterial.HasProperty("_UseOutline"))
+            string outlineToggleProperty = GetOutlineToggleProperty(targetMaterial);
+            if (!string.IsNullOrEmpty(outlineToggleProperty))
             {
                 EditorGUI.BeginChangeCheck();
-                bool useOutline = targetMaterial.GetFloat("_UseOutline") > 0.5f;
+                bool useOutline = targetMaterial.GetFloat(outlineToggleProperty) > 0.5f;
                 useOutline = EditorGUILayout.Toggle(L("アウトライン有効", "Enable Outline"), useOutline);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Toggle Outline");
-                    targetMaterial.SetFloat("_UseOutline", useOutline ? 1f : 0f);
+                    SetOutlineEnabled(targetMaterial, useOutline);
                     EditorUtility.SetDirty(targetMaterial);
                 }
             }
@@ -112,8 +113,8 @@ namespace NataneToon.Editor
 
             if (GUILayout.Button(L("アウトラインをクリア", "Clear Outline"), GUILayout.Height(25)))
             {
-                if (targetMaterial.HasProperty("_UseOutline"))
-                    targetMaterial.SetFloat("_UseOutline", 0f);
+                Undo.RecordObject(targetMaterial, "Clear Outline");
+                SetOutlineEnabled(targetMaterial, false);
                 EditorUtility.SetDirty(targetMaterial);
             }
 
@@ -166,13 +167,59 @@ namespace NataneToon.Editor
         private void ApplyPreset(float width, Color color)
         {
             Undo.RecordObject(targetMaterial, "Apply Outline Preset");
-            if (targetMaterial.HasProperty("_UseOutline"))
-                targetMaterial.SetFloat("_UseOutline", 1f);
+            SetOutlineEnabled(targetMaterial, true);
             if (targetMaterial.HasProperty("_OutlineWidth"))
                 targetMaterial.SetFloat("_OutlineWidth", width);
             if (targetMaterial.HasProperty("_OutlineColor"))
                 targetMaterial.SetColor("_OutlineColor", color);
             EditorUtility.SetDirty(targetMaterial);
+        }
+
+        private static string GetOutlineToggleProperty(Material material)
+        {
+            if (material == null)
+            {
+                return null;
+            }
+
+            if (material.HasProperty("_Outline"))
+            {
+                return "_Outline";
+            }
+
+            if (material.HasProperty("_UseOutline"))
+            {
+                return "_UseOutline";
+            }
+
+            return null;
+        }
+
+        private static void SetOutlineEnabled(Material material, bool enabled)
+        {
+            if (material == null)
+            {
+                return;
+            }
+
+            if (material.HasProperty("_Outline"))
+            {
+                material.SetFloat("_Outline", enabled ? 1f : 0f);
+            }
+
+            if (material.HasProperty("_UseOutline"))
+            {
+                material.SetFloat("_UseOutline", enabled ? 1f : 0f);
+            }
+
+            if (enabled)
+            {
+                material.EnableKeyword("_OUTLINE");
+            }
+            else
+            {
+                material.DisableKeyword("_OUTLINE");
+            }
         }
     }
 }

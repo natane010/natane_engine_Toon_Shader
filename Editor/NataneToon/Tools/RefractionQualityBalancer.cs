@@ -73,15 +73,16 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(L("屈折設定", "Refraction Settings"), EditorStyles.boldLabel);
 
-            if (targetMaterial.HasProperty("_UseRefraction"))
+            string refractionToggleProperty = GetRefractionToggleProperty(targetMaterial);
+            if (!string.IsNullOrEmpty(refractionToggleProperty))
             {
                 EditorGUI.BeginChangeCheck();
-                bool useRefraction = targetMaterial.GetFloat("_UseRefraction") > 0.5f;
+                bool useRefraction = targetMaterial.GetFloat(refractionToggleProperty) > 0.5f;
                 useRefraction = EditorGUILayout.Toggle(L("屈折を使用", "Use Refraction"), useRefraction);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Toggle Refraction");
-                    targetMaterial.SetFloat("_UseRefraction", useRefraction ? 1f : 0f);
+                    SetRefractionEnabled(targetMaterial, useRefraction);
                     EditorUtility.SetDirty(targetMaterial);
                 }
             }
@@ -98,14 +99,15 @@ namespace NataneToon.Editor
                 }
             }
 
-            if (targetMaterial.HasProperty("_IOR"))
+            string iorProperty = GetRefractionIorProperty(targetMaterial);
+            if (!string.IsNullOrEmpty(iorProperty))
             {
                 EditorGUI.BeginChangeCheck();
-                float ior = EditorGUILayout.Slider(L("屈折率", "IOR"), targetMaterial.GetFloat("_IOR"), 1f, 3f);
+                float ior = EditorGUILayout.Slider(L("屈折率", "IOR"), targetMaterial.GetFloat(iorProperty), 1f, 3f);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change IOR");
-                    targetMaterial.SetFloat("_IOR", ior);
+                    targetMaterial.SetFloat(iorProperty, ior);
                     EditorUtility.SetDirty(targetMaterial);
                 }
             }
@@ -121,6 +123,17 @@ namespace NataneToon.Editor
                     EditorUtility.SetDirty(targetMaterial);
                 }
             }
+            else if (targetMaterial.HasProperty("_RefractionBlur"))
+            {
+                EditorGUI.BeginChangeCheck();
+                float blur = EditorGUILayout.Slider(L("ぼかし", "Blur"), targetMaterial.GetFloat("_RefractionBlur"), 0f, 1f);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(targetMaterial, "Change Refraction Blur");
+                    targetMaterial.SetFloat("_RefractionBlur", blur);
+                    EditorUtility.SetDirty(targetMaterial);
+                }
+            }
 
             EditorGUILayout.EndVertical();
         }
@@ -130,16 +143,32 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(L("パフォーマンス情報", "Performance Info"), EditorStyles.boldLabel);
 
-            int samples = 5; // Default
             if (targetMaterial.HasProperty("_RefractionSamples"))
-                samples = (int)targetMaterial.GetFloat("_RefractionSamples");
+            {
+                int samples = (int)targetMaterial.GetFloat("_RefractionSamples");
+                string performanceRating = GetPerformanceRating(samples);
+                int gpuCost = samples * 10; // Rough estimate
 
-            string performanceRating = GetPerformanceRating(samples);
-            int gpuCost = samples * 10; // Rough estimate
+                EditorGUILayout.LabelField($"{L("現在のサンプル数", "Current Samples")}: {samples}");
+                EditorGUILayout.LabelField($"{L("推定GPUコスト", "Estimated GPU Cost")}: {gpuCost}%");
+                EditorGUILayout.LabelField($"{L("パフォーマンス評価", "Performance Rating")}: {performanceRating}");
+            }
+            else if (targetMaterial.HasProperty("_RefractionBlur"))
+            {
+                float blur = targetMaterial.GetFloat("_RefractionBlur");
+                string performanceRating = GetBlurPerformanceRating(blur);
+                int gpuCost = Mathf.RoundToInt(20f + blur * 20f); // Rough estimate for blur-based path
 
-            EditorGUILayout.LabelField($"{L("現在のサンプル数", "Current Samples")}: {samples}");
-            EditorGUILayout.LabelField($"{L("推定GPUコスト", "Estimated GPU Cost")}: {gpuCost}%");
-            EditorGUILayout.LabelField($"{L("パフォーマンス評価", "Performance Rating")}: {performanceRating}");
+                EditorGUILayout.LabelField($"{L("現在のぼかし", "Current Blur")}: {blur:F2}");
+                EditorGUILayout.LabelField($"{L("推定GPUコスト", "Estimated GPU Cost")}: {gpuCost}%");
+                EditorGUILayout.LabelField($"{L("パフォーマンス評価", "Performance Rating")}: {performanceRating}");
+            }
+            else
+            {
+                EditorGUILayout.HelpBox(
+                    L("このシェーダーには品質指標（Samples/Blur）が見つかりません。", "No quality control property (Samples/Blur) found on this shader."),
+                    MessageType.Info);
+            }
 
             EditorGUILayout.Space(5);
 
@@ -155,14 +184,15 @@ namespace NataneToon.Editor
         {
             Undo.RecordObject(targetMaterial, "Apply Refraction Quality Preset");
 
-            if (targetMaterial.HasProperty("_UseRefraction"))
-                targetMaterial.SetFloat("_UseRefraction", 1f);
+            SetRefractionEnabled(targetMaterial, true);
 
             switch (preset)
             {
                 case QualityPreset.VeryLow:
                     if (targetMaterial.HasProperty("_RefractionSamples"))
                         targetMaterial.SetFloat("_RefractionSamples", 1);
+                    else if (targetMaterial.HasProperty("_RefractionBlur"))
+                        targetMaterial.SetFloat("_RefractionBlur", 0.05f);
                     if (targetMaterial.HasProperty("_RefractionIntensity"))
                         targetMaterial.SetFloat("_RefractionIntensity", 0.3f);
                     break;
@@ -170,6 +200,8 @@ namespace NataneToon.Editor
                 case QualityPreset.Low:
                     if (targetMaterial.HasProperty("_RefractionSamples"))
                         targetMaterial.SetFloat("_RefractionSamples", 3);
+                    else if (targetMaterial.HasProperty("_RefractionBlur"))
+                        targetMaterial.SetFloat("_RefractionBlur", 0.2f);
                     if (targetMaterial.HasProperty("_RefractionIntensity"))
                         targetMaterial.SetFloat("_RefractionIntensity", 0.5f);
                     break;
@@ -177,6 +209,8 @@ namespace NataneToon.Editor
                 case QualityPreset.Medium:
                     if (targetMaterial.HasProperty("_RefractionSamples"))
                         targetMaterial.SetFloat("_RefractionSamples", 5);
+                    else if (targetMaterial.HasProperty("_RefractionBlur"))
+                        targetMaterial.SetFloat("_RefractionBlur", 0.35f);
                     if (targetMaterial.HasProperty("_RefractionIntensity"))
                         targetMaterial.SetFloat("_RefractionIntensity", 0.7f);
                     break;
@@ -184,6 +218,8 @@ namespace NataneToon.Editor
                 case QualityPreset.High:
                     if (targetMaterial.HasProperty("_RefractionSamples"))
                         targetMaterial.SetFloat("_RefractionSamples", 7);
+                    else if (targetMaterial.HasProperty("_RefractionBlur"))
+                        targetMaterial.SetFloat("_RefractionBlur", 0.55f);
                     if (targetMaterial.HasProperty("_RefractionIntensity"))
                         targetMaterial.SetFloat("_RefractionIntensity", 0.9f);
                     break;
@@ -191,6 +227,8 @@ namespace NataneToon.Editor
                 case QualityPreset.VeryHigh:
                     if (targetMaterial.HasProperty("_RefractionSamples"))
                         targetMaterial.SetFloat("_RefractionSamples", 9);
+                    else if (targetMaterial.HasProperty("_RefractionBlur"))
+                        targetMaterial.SetFloat("_RefractionBlur", 0.75f);
                     if (targetMaterial.HasProperty("_RefractionIntensity"))
                         targetMaterial.SetFloat("_RefractionIntensity", 1f);
                     break;
@@ -226,6 +264,55 @@ namespace NataneToon.Editor
             if (samples <= 5) return L("C (普通)", "C (Normal)");
             if (samples <= 7) return L("D (重い)", "D (Heavy)");
             return L("E (非常に重い)", "E (Very Heavy)");
+        }
+
+        private string GetBlurPerformanceRating(float blur)
+        {
+            if (blur <= 0.1f) return L("A (非常に軽い)", "A (Very Light)");
+            if (blur <= 0.3f) return L("B (軽い)", "B (Light)");
+            if (blur <= 0.5f) return L("C (普通)", "C (Normal)");
+            if (blur <= 0.7f) return L("D (重い)", "D (Heavy)");
+            return L("E (非常に重い)", "E (Very Heavy)");
+        }
+
+        private static string GetRefractionToggleProperty(Material material)
+        {
+            if (material == null) return null;
+            if (material.HasProperty("_Refraction")) return "_Refraction";
+            if (material.HasProperty("_UseRefraction")) return "_UseRefraction";
+            return null;
+        }
+
+        private static string GetRefractionIorProperty(Material material)
+        {
+            if (material == null) return null;
+            if (material.HasProperty("_RefractionIndex")) return "_RefractionIndex";
+            if (material.HasProperty("_IOR")) return "_IOR";
+            return null;
+        }
+
+        private static void SetRefractionEnabled(Material material, bool enabled)
+        {
+            if (material == null) return;
+
+            if (material.HasProperty("_Refraction"))
+            {
+                material.SetFloat("_Refraction", enabled ? 1f : 0f);
+            }
+
+            if (material.HasProperty("_UseRefraction"))
+            {
+                material.SetFloat("_UseRefraction", enabled ? 1f : 0f);
+            }
+
+            if (enabled)
+            {
+                material.EnableKeyword("_REFRACTION");
+            }
+            else
+            {
+                material.DisableKeyword("_REFRACTION");
+            }
         }
     }
 }

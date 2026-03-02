@@ -13,6 +13,7 @@ namespace NataneToon.Editor
     {
         private Material targetMaterial;
         private Vector2 scrollPosition;
+        private static readonly string[] DissolveTextureProperties = { "_DissolveTex", "_DissolveMap" };
 
         private enum NoiseType { Perlin, Voronoi, Cellular, Random, Gradient }
         private NoiseType noiseType = NoiseType.Perlin;
@@ -122,9 +123,10 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(L("プレビュー", "Preview"), EditorStyles.boldLabel);
 
-            if (targetMaterial != null && targetMaterial.HasProperty("_DissolveMap"))
+            string dissolveTextureProperty = GetFirstExistingProperty(targetMaterial, DissolveTextureProperties);
+            if (targetMaterial != null && !string.IsNullOrEmpty(dissolveTextureProperty))
             {
-                Texture2D dissolveTex = targetMaterial.GetTexture("_DissolveMap") as Texture2D;
+                Texture2D dissolveTex = targetMaterial.GetTexture(dissolveTextureProperty) as Texture2D;
                 if (dissolveTex != null)
                 {
                     Rect previewRect = GUILayoutUtility.GetRect(200, 200);
@@ -166,10 +168,15 @@ namespace NataneToon.Editor
 
             Texture2D savedTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
 
-            if (targetMaterial != null && targetMaterial.HasProperty("_DissolveMap"))
+            string dissolveTextureProperty = GetFirstExistingProperty(targetMaterial, DissolveTextureProperties);
+            if (targetMaterial != null && !string.IsNullOrEmpty(dissolveTextureProperty))
             {
                 Undo.RecordObject(targetMaterial, "Set Dissolve Texture");
-                targetMaterial.SetTexture("_DissolveMap", savedTexture);
+                targetMaterial.SetTexture(dissolveTextureProperty, savedTexture);
+                if (targetMaterial.HasProperty("_Dissolve"))
+                {
+                    targetMaterial.SetFloat("_Dissolve", 1f);
+                }
                 targetMaterial.EnableKeyword("_DISSOLVE");
                 EditorUtility.SetDirty(targetMaterial);
             }
@@ -242,6 +249,24 @@ namespace NataneToon.Editor
         private int GetHashCode(Vector2 v)
         {
             return ((int)v.x * 73856093) ^ ((int)v.y * 19349663);
+        }
+
+        private static string GetFirstExistingProperty(Material material, params string[] propertyNames)
+        {
+            if (material == null || propertyNames == null)
+            {
+                return null;
+            }
+
+            foreach (var propertyName in propertyNames)
+            {
+                if (!string.IsNullOrEmpty(propertyName) && material.HasProperty(propertyName))
+                {
+                    return propertyName;
+                }
+            }
+
+            return null;
         }
     }
 }

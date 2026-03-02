@@ -335,8 +335,9 @@ namespace NataneToon.Editor
         {
             // Check texture memory usage
             long totalMemory = 0;
-            var textures = new[] { "_MainTex", "_BumpMap", "_EmissionMap", "_MatCap", "_RampTex",
-                                   "_DissolveMap", "_ThicknessMap", "_SpecularMask", "_RimMask",
+            var countedTextures = new HashSet<Texture2D>();
+            var textures = new[] { "_MainTex", "_BumpMap", "_EmissionMap", "_MatCapTex", "_MatCapTex2", "_MatCapTex3", "_RampTex",
+                                   "_DissolveTex", "_DissolveMap", "_ThicknessMap", "_SpecularMask", "_RimMask",
                                    "_SSSMask", "_MatCapMask", "_EmissionMask", "_DissolveMask",
                                    "_ReflectionMask", "_EnvRimMask", "_ParallaxMap", "_RefractionMask" };
 
@@ -347,8 +348,12 @@ namespace NataneToon.Editor
                     var tex = material.GetTexture(texProp) as Texture2D;
                     if (tex != null)
                     {
-                        long memory = CalculateTextureMemory(tex);
-                        totalMemory += memory;
+                        // Count each Texture2D once even if reused across multiple slots.
+                        if (countedTextures.Add(tex))
+                        {
+                            long memory = CalculateTextureMemory(tex);
+                            totalMemory += memory;
+                        }
 
                         // Check individual texture size
                         if (tex.width > 2048 || tex.height > 2048)
@@ -383,7 +388,7 @@ namespace NataneToon.Editor
 
         private void ValidateTextureSize(Material material)
         {
-            var textures = new[] { "_MainTex", "_BumpMap", "_EmissionMap", "_MatCap", "_RampTex", "_ParallaxMap" };
+            var textures = new[] { "_MainTex", "_BumpMap", "_EmissionMap", "_MatCapTex", "_MatCapTex2", "_MatCapTex3", "_RampTex", "_ParallaxMap" };
 
             foreach (var texProp in textures)
             {
@@ -455,10 +460,12 @@ namespace NataneToon.Editor
             // Check for enabled features without required textures
             var featureChecks = new Dictionary<string, string[]>
             {
-                { "_MATCAP", new[] { "_MatCap" } },
+                { "_MATCAP", new[] { "_MatCapTex" } },
+                { "_MATCAP_2", new[] { "_MatCapTex2" } },
+                { "_MATCAP_3", new[] { "_MatCapTex3" } },
                 { "_NORMALMAP", new[] { "_BumpMap" } },
                 { "_EMISSION", new[] { "_EmissionMap" } },
-                { "_DISSOLVE", new[] { "_DissolveMap" } },
+                { "_DISSOLVE", new[] { "_DissolveTex", "_DissolveMap" } },
                 { "_SSS", new[] { "_ThicknessMap" } },
                 { "_PARALLAX", new[] { "_ParallaxMap" } }
             };

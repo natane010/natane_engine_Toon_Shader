@@ -38,6 +38,8 @@ namespace NataneToon.Editor
         }
 
         private ShadowPreset selectedPreset = ShadowPreset.Custom;
+        private static readonly string[] OcclusionMapProperties = { "_AOMap", "_PBR_OcclusionMap", "_OcclusionMap" };
+        private static readonly string[] OcclusionStrengthProperties = { "_AOIntensity", "_PBR_OcclusionStrength", "_OcclusionStrength" };
 
         // Preview settings (reserved for future use)
         #pragma warning disable CS0414
@@ -215,36 +217,36 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(5);
 
             // Toon Steps
-            if (targetMaterial.HasProperty("_ToonSteps"))
+            if (targetMaterial.HasProperty("_ShadowSteps"))
             {
                 EditorGUI.BeginChangeCheck();
                 int toonSteps = EditorGUILayout.IntSlider(
                     L("トゥーン段階", "Toon Steps"),
-                    (int)targetMaterial.GetFloat("_ToonSteps"),
+                    (int)targetMaterial.GetFloat("_ShadowSteps"),
                     1,
                     10);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change Toon Steps");
-                    targetMaterial.SetFloat("_ToonSteps", toonSteps);
+                    targetMaterial.SetFloat("_ShadowSteps", toonSteps);
                     EditorUtility.SetDirty(targetMaterial);
                     selectedPreset = ShadowPreset.Custom;
                 }
             }
 
             // Toon Sharpness
-            if (targetMaterial.HasProperty("_ToonSharpness"))
+            if (targetMaterial.HasProperty("_ShadowSharpness"))
             {
                 EditorGUI.BeginChangeCheck();
                 float sharpness = EditorGUILayout.Slider(
                     L("境界シャープネス", "Sharpness"),
-                    targetMaterial.GetFloat("_ToonSharpness"),
+                    targetMaterial.GetFloat("_ShadowSharpness"),
                     0f,
                     1f);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change Sharpness");
-                    targetMaterial.SetFloat("_ToonSharpness", sharpness);
+                    targetMaterial.SetFloat("_ShadowSharpness", sharpness);
                     EditorUtility.SetDirty(targetMaterial);
                     selectedPreset = ShadowPreset.Custom;
                 }
@@ -304,16 +306,18 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(5);
 
             // Enable multi-tone shadows
-            bool useMultiTone = targetMaterial.IsKeywordEnabled("_USE_MULTI_TONE_SHADOW");
+            bool useMultiTone = targetMaterial.IsKeywordEnabled("_USE_MULTI_SHADOW");
             EditorGUI.BeginChangeCheck();
             useMultiTone = EditorGUILayout.Toggle(L("多階調シャドウを使用", "Use Multi-Tone"), useMultiTone);
             if (EditorGUI.EndChangeCheck())
             {
                 Undo.RecordObject(targetMaterial, "Toggle Multi-Tone Shadow");
                 if (useMultiTone)
-                    targetMaterial.EnableKeyword("_USE_MULTI_TONE_SHADOW");
+                    targetMaterial.EnableKeyword("_USE_MULTI_SHADOW");
                 else
-                    targetMaterial.DisableKeyword("_USE_MULTI_TONE_SHADOW");
+                    targetMaterial.DisableKeyword("_USE_MULTI_SHADOW");
+                if (targetMaterial.HasProperty("_UseMultiShadow"))
+                    targetMaterial.SetFloat("_UseMultiShadow", useMultiTone ? 1f : 0f);
                 EditorUtility.SetDirty(targetMaterial);
             }
 
@@ -323,26 +327,14 @@ namespace NataneToon.Editor
 
                 // 1st Shadow
                 EditorGUILayout.LabelField(L("1次影", "1st Shadow"), EditorStyles.boldLabel);
-                if (targetMaterial.HasProperty("_1stShadowColor"))
+                if (targetMaterial.HasProperty("_ShadowColor"))
                 {
                     EditorGUI.BeginChangeCheck();
-                    Color color1 = EditorGUILayout.ColorField(L("色", "Color"), targetMaterial.GetColor("_1stShadowColor"));
+                    Color color1 = EditorGUILayout.ColorField(L("色", "Color"), targetMaterial.GetColor("_ShadowColor"));
                     if (EditorGUI.EndChangeCheck())
                     {
                         Undo.RecordObject(targetMaterial, "Change 1st Shadow Color");
-                        targetMaterial.SetColor("_1stShadowColor", color1);
-                        EditorUtility.SetDirty(targetMaterial);
-                    }
-                }
-
-                if (targetMaterial.HasProperty("_1stShadowBorder"))
-                {
-                    EditorGUI.BeginChangeCheck();
-                    float border1 = EditorGUILayout.Slider(L("境界", "Border"), targetMaterial.GetFloat("_1stShadowBorder"), 0f, 1f);
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        Undo.RecordObject(targetMaterial, "Change 1st Shadow Border");
-                        targetMaterial.SetFloat("_1stShadowBorder", border1);
+                        targetMaterial.SetColor("_ShadowColor", color1);
                         EditorUtility.SetDirty(targetMaterial);
                     }
                 }
@@ -351,26 +343,26 @@ namespace NataneToon.Editor
 
                 // 2nd Shadow
                 EditorGUILayout.LabelField(L("2次影", "2nd Shadow"), EditorStyles.boldLabel);
-                if (targetMaterial.HasProperty("_2ndShadowColor"))
+                if (targetMaterial.HasProperty("_Shadow2ndColor"))
                 {
                     EditorGUI.BeginChangeCheck();
-                    Color color2 = EditorGUILayout.ColorField(L("色", "Color"), targetMaterial.GetColor("_2ndShadowColor"));
+                    Color color2 = EditorGUILayout.ColorField(L("色", "Color"), targetMaterial.GetColor("_Shadow2ndColor"));
                     if (EditorGUI.EndChangeCheck())
                     {
                         Undo.RecordObject(targetMaterial, "Change 2nd Shadow Color");
-                        targetMaterial.SetColor("_2ndShadowColor", color2);
+                        targetMaterial.SetColor("_Shadow2ndColor", color2);
                         EditorUtility.SetDirty(targetMaterial);
                     }
                 }
 
-                if (targetMaterial.HasProperty("_2ndShadowBorder"))
+                if (targetMaterial.HasProperty("_Shadow2ndBorder"))
                 {
                     EditorGUI.BeginChangeCheck();
-                    float border2 = EditorGUILayout.Slider(L("境界", "Border"), targetMaterial.GetFloat("_2ndShadowBorder"), 0f, 1f);
+                    float border2 = EditorGUILayout.Slider(L("境界", "Border"), targetMaterial.GetFloat("_Shadow2ndBorder"), 0f, 1f);
                     if (EditorGUI.EndChangeCheck())
                     {
                         Undo.RecordObject(targetMaterial, "Change 2nd Shadow Border");
-                        targetMaterial.SetFloat("_2ndShadowBorder", border2);
+                        targetMaterial.SetFloat("_Shadow2ndBorder", border2);
                         EditorUtility.SetDirty(targetMaterial);
                     }
                 }
@@ -379,26 +371,26 @@ namespace NataneToon.Editor
 
                 // 3rd Shadow
                 EditorGUILayout.LabelField(L("3次影", "3rd Shadow"), EditorStyles.boldLabel);
-                if (targetMaterial.HasProperty("_3rdShadowColor"))
+                if (targetMaterial.HasProperty("_Shadow3rdColor"))
                 {
                     EditorGUI.BeginChangeCheck();
-                    Color color3 = EditorGUILayout.ColorField(L("色", "Color"), targetMaterial.GetColor("_3rdShadowColor"));
+                    Color color3 = EditorGUILayout.ColorField(L("色", "Color"), targetMaterial.GetColor("_Shadow3rdColor"));
                     if (EditorGUI.EndChangeCheck())
                     {
                         Undo.RecordObject(targetMaterial, "Change 3rd Shadow Color");
-                        targetMaterial.SetColor("_3rdShadowColor", color3);
+                        targetMaterial.SetColor("_Shadow3rdColor", color3);
                         EditorUtility.SetDirty(targetMaterial);
                     }
                 }
 
-                if (targetMaterial.HasProperty("_3rdShadowBorder"))
+                if (targetMaterial.HasProperty("_Shadow3rdBorder"))
                 {
                     EditorGUI.BeginChangeCheck();
-                    float border3 = EditorGUILayout.Slider(L("境界", "Border"), targetMaterial.GetFloat("_3rdShadowBorder"), 0f, 1f);
+                    float border3 = EditorGUILayout.Slider(L("境界", "Border"), targetMaterial.GetFloat("_Shadow3rdBorder"), 0f, 1f);
                     if (EditorGUI.EndChangeCheck())
                     {
                         Undo.RecordObject(targetMaterial, "Change 3rd Shadow Border");
-                        targetMaterial.SetFloat("_3rdShadowBorder", border3);
+                        targetMaterial.SetFloat("_Shadow3rdBorder", border3);
                         EditorUtility.SetDirty(targetMaterial);
                     }
                 }
@@ -437,10 +429,7 @@ namespace NataneToon.Editor
                 {
                     Undo.RecordObject(targetMaterial, "Change Ramp Texture");
                     targetMaterial.SetTexture("_RampTex", rampTex);
-                    if (rampTex != null)
-                        targetMaterial.EnableKeyword("_USE_RAMP");
-                    else
-                        targetMaterial.DisableKeyword("_USE_RAMP");
+                    SetKeywordWithOptionalToggle("_USE_RAMP", "_UseRamp", rampTex != null);
                     EditorUtility.SetDirty(targetMaterial);
                 }
 
@@ -466,6 +455,7 @@ namespace NataneToon.Editor
                 {
                     Undo.RecordObject(targetMaterial, "Change Grade Map");
                     targetMaterial.SetTexture("_ShadingGradeMap", gradeMap);
+                    SetKeywordWithOptionalToggle("_SHADING_GRADE_MAP", "_UseGradeMap", gradeMap != null);
                     EditorUtility.SetDirty(targetMaterial);
                 }
 
@@ -479,33 +469,36 @@ namespace NataneToon.Editor
 
             // AO Map
             EditorGUILayout.LabelField(L("アンビエントオクルージョン", "Ambient Occlusion"), EditorStyles.boldLabel);
-            if (targetMaterial.HasProperty("_OcclusionMap"))
+            string occlusionMapProperty = GetFirstExistingProperty(targetMaterial, OcclusionMapProperties);
+            if (!string.IsNullOrEmpty(occlusionMapProperty))
             {
                 EditorGUI.BeginChangeCheck();
                 Texture2D aoMap = (Texture2D)EditorGUILayout.ObjectField(
                     L("AOマップ", "AO Map"),
-                    targetMaterial.GetTexture("_OcclusionMap"),
+                    targetMaterial.GetTexture(occlusionMapProperty),
                     typeof(Texture2D),
                     false);
                 if (EditorGUI.EndChangeCheck())
                 {
                     Undo.RecordObject(targetMaterial, "Change AO Map");
-                    targetMaterial.SetTexture("_OcclusionMap", aoMap);
+                    targetMaterial.SetTexture(occlusionMapProperty, aoMap);
+                    SetKeywordWithOptionalToggle("_USE_AO", "_UseAO", aoMap != null);
                     EditorUtility.SetDirty(targetMaterial);
                 }
 
-                if (targetMaterial.HasProperty("_OcclusionStrength"))
+                string occlusionStrengthProperty = GetFirstExistingProperty(targetMaterial, OcclusionStrengthProperties);
+                if (!string.IsNullOrEmpty(occlusionStrengthProperty))
                 {
                     EditorGUI.BeginChangeCheck();
                     float aoStrength = EditorGUILayout.Slider(
                         L("強度", "Strength"),
-                        targetMaterial.GetFloat("_OcclusionStrength"),
+                        targetMaterial.GetFloat(occlusionStrengthProperty),
                         0f,
                         1f);
                     if (EditorGUI.EndChangeCheck())
                     {
                         Undo.RecordObject(targetMaterial, "Change AO Strength");
-                        targetMaterial.SetFloat("_OcclusionStrength", aoStrength);
+                        targetMaterial.SetFloat(occlusionStrengthProperty, aoStrength);
                         EditorUtility.SetDirty(targetMaterial);
                     }
                 }
@@ -536,14 +529,14 @@ namespace NataneToon.Editor
             // Summary
             EditorGUILayout.LabelField(L("設定サマリー", "Settings Summary"), EditorStyles.boldLabel);
 
-            if (targetMaterial.HasProperty("_ToonSteps"))
+            if (targetMaterial.HasProperty("_ShadowSteps"))
             {
-                EditorGUILayout.LabelField($"{L("トゥーン段階", "Toon Steps")}: {targetMaterial.GetFloat("_ToonSteps")}");
+                EditorGUILayout.LabelField($"{L("トゥーン段階", "Toon Steps")}: {targetMaterial.GetFloat("_ShadowSteps")}");
             }
 
-            if (targetMaterial.HasProperty("_ToonSharpness"))
+            if (targetMaterial.HasProperty("_ShadowSharpness"))
             {
-                EditorGUILayout.LabelField($"{L("シャープネス", "Sharpness")}: {targetMaterial.GetFloat("_ToonSharpness"):F2}");
+                EditorGUILayout.LabelField($"{L("シャープネス", "Sharpness")}: {targetMaterial.GetFloat("_ShadowSharpness"):F2}");
             }
 
             if (targetMaterial.HasProperty("_ShadowColor"))
@@ -608,10 +601,10 @@ namespace NataneToon.Editor
             switch (preset)
             {
                 case ShadowPreset.SharpAnime:
-                    if (targetMaterial.HasProperty("_ToonSteps"))
-                        targetMaterial.SetFloat("_ToonSteps", 2);
-                    if (targetMaterial.HasProperty("_ToonSharpness"))
-                        targetMaterial.SetFloat("_ToonSharpness", 1f);
+                    if (targetMaterial.HasProperty("_ShadowSteps"))
+                        targetMaterial.SetFloat("_ShadowSteps", 2);
+                    if (targetMaterial.HasProperty("_ShadowSharpness"))
+                        targetMaterial.SetFloat("_ShadowSharpness", 1f);
                     if (targetMaterial.HasProperty("_ShadowColor"))
                         targetMaterial.SetColor("_ShadowColor", new Color(0.5f, 0.5f, 0.6f));
                     if (targetMaterial.HasProperty("_ShadowReceive"))
@@ -619,10 +612,10 @@ namespace NataneToon.Editor
                     break;
 
                 case ShadowPreset.SoftToon:
-                    if (targetMaterial.HasProperty("_ToonSteps"))
-                        targetMaterial.SetFloat("_ToonSteps", 3);
-                    if (targetMaterial.HasProperty("_ToonSharpness"))
-                        targetMaterial.SetFloat("_ToonSharpness", 0.3f);
+                    if (targetMaterial.HasProperty("_ShadowSteps"))
+                        targetMaterial.SetFloat("_ShadowSteps", 3);
+                    if (targetMaterial.HasProperty("_ShadowSharpness"))
+                        targetMaterial.SetFloat("_ShadowSharpness", 0.3f);
                     if (targetMaterial.HasProperty("_ShadowColor"))
                         targetMaterial.SetColor("_ShadowColor", new Color(0.6f, 0.6f, 0.65f));
                     if (targetMaterial.HasProperty("_ShadowReceive"))
@@ -630,10 +623,10 @@ namespace NataneToon.Editor
                     break;
 
                 case ShadowPreset.Realistic:
-                    if (targetMaterial.HasProperty("_ToonSteps"))
-                        targetMaterial.SetFloat("_ToonSteps", 5);
-                    if (targetMaterial.HasProperty("_ToonSharpness"))
-                        targetMaterial.SetFloat("_ToonSharpness", 0.1f);
+                    if (targetMaterial.HasProperty("_ShadowSteps"))
+                        targetMaterial.SetFloat("_ShadowSteps", 5);
+                    if (targetMaterial.HasProperty("_ShadowSharpness"))
+                        targetMaterial.SetFloat("_ShadowSharpness", 0.1f);
                     if (targetMaterial.HasProperty("_ShadowColor"))
                         targetMaterial.SetColor("_ShadowColor", new Color(0.7f, 0.7f, 0.75f));
                     if (targetMaterial.HasProperty("_ShadowReceive"))
@@ -641,10 +634,10 @@ namespace NataneToon.Editor
                     break;
 
                 case ShadowPreset.CellShaded:
-                    if (targetMaterial.HasProperty("_ToonSteps"))
-                        targetMaterial.SetFloat("_ToonSteps", 1);
-                    if (targetMaterial.HasProperty("_ToonSharpness"))
-                        targetMaterial.SetFloat("_ToonSharpness", 1f);
+                    if (targetMaterial.HasProperty("_ShadowSteps"))
+                        targetMaterial.SetFloat("_ShadowSteps", 1);
+                    if (targetMaterial.HasProperty("_ShadowSharpness"))
+                        targetMaterial.SetFloat("_ShadowSharpness", 1f);
                     if (targetMaterial.HasProperty("_ShadowColor"))
                         targetMaterial.SetColor("_ShadowColor", new Color(0.4f, 0.4f, 0.5f));
                     if (targetMaterial.HasProperty("_ShadowReceive"))
@@ -652,10 +645,10 @@ namespace NataneToon.Editor
                     break;
 
                 case ShadowPreset.Gradient:
-                    if (targetMaterial.HasProperty("_ToonSteps"))
-                        targetMaterial.SetFloat("_ToonSteps", 10);
-                    if (targetMaterial.HasProperty("_ToonSharpness"))
-                        targetMaterial.SetFloat("_ToonSharpness", 0f);
+                    if (targetMaterial.HasProperty("_ShadowSteps"))
+                        targetMaterial.SetFloat("_ShadowSteps", 10);
+                    if (targetMaterial.HasProperty("_ShadowSharpness"))
+                        targetMaterial.SetFloat("_ShadowSharpness", 0f);
                     if (targetMaterial.HasProperty("_ShadowColor"))
                         targetMaterial.SetColor("_ShadowColor", new Color(0.65f, 0.65f, 0.7f));
                     if (targetMaterial.HasProperty("_ShadowReceive"))
@@ -683,8 +676,8 @@ namespace NataneToon.Editor
             if (string.IsNullOrEmpty(path)) return;
 
             int toonSteps = 2;
-            if (targetMaterial.HasProperty("_ToonSteps"))
-                toonSteps = (int)targetMaterial.GetFloat("_ToonSteps");
+            if (targetMaterial.HasProperty("_ShadowSteps"))
+                toonSteps = (int)targetMaterial.GetFloat("_ShadowSteps");
 
             Texture2D ramp = new Texture2D(256, 16, TextureFormat.RGB24, false);
             ramp.wrapMode = TextureWrapMode.Clamp;
@@ -716,7 +709,7 @@ namespace NataneToon.Editor
 
             Texture2D savedRamp = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
             targetMaterial.SetTexture("_RampTex", savedRamp);
-            targetMaterial.EnableKeyword("_USE_RAMP");
+            SetKeywordWithOptionalToggle("_USE_RAMP", "_UseRamp", savedRamp != null);
             EditorUtility.SetDirty(targetMaterial);
 
             EditorUtility.DisplayDialog(
@@ -729,10 +722,10 @@ namespace NataneToon.Editor
         {
             Undo.RecordObject(targetMaterial, "Reset Shadow Settings");
 
-            if (targetMaterial.HasProperty("_ToonSteps"))
-                targetMaterial.SetFloat("_ToonSteps", 2);
-            if (targetMaterial.HasProperty("_ToonSharpness"))
-                targetMaterial.SetFloat("_ToonSharpness", 0.5f);
+            if (targetMaterial.HasProperty("_ShadowSteps"))
+                targetMaterial.SetFloat("_ShadowSteps", 2);
+            if (targetMaterial.HasProperty("_ShadowSharpness"))
+                targetMaterial.SetFloat("_ShadowSharpness", 0.5f);
             if (targetMaterial.HasProperty("_ShadowColor"))
                 targetMaterial.SetColor("_ShadowColor", new Color(0.5f, 0.5f, 0.5f));
             if (targetMaterial.HasProperty("_ShadowReceive"))
@@ -745,6 +738,40 @@ namespace NataneToon.Editor
         {
             if (mat == null || mat.shader == null) return false;
             return mat.shader.name.Contains("Natane") && mat.shader.name.Contains("Toon");
+        }
+
+        private void SetKeywordWithOptionalToggle(string keyword, string toggleProperty, bool enabled)
+        {
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                if (enabled)
+                    targetMaterial.EnableKeyword(keyword);
+                else
+                    targetMaterial.DisableKeyword(keyword);
+            }
+
+            if (!string.IsNullOrEmpty(toggleProperty) && targetMaterial.HasProperty(toggleProperty))
+            {
+                targetMaterial.SetFloat(toggleProperty, enabled ? 1f : 0f);
+            }
+        }
+
+        private static string GetFirstExistingProperty(Material material, params string[] propertyNames)
+        {
+            if (material == null || propertyNames == null)
+            {
+                return null;
+            }
+
+            foreach (var propertyName in propertyNames)
+            {
+                if (!string.IsNullOrEmpty(propertyName) && material.HasProperty(propertyName))
+                {
+                    return propertyName;
+                }
+            }
+
+            return null;
         }
 
         private void DrawSeparator()
