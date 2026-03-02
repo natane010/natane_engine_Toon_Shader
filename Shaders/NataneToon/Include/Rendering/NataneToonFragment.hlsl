@@ -36,6 +36,15 @@ half4 frag(v2f i) : SV_Target
     // ハイトマップから擬似的な凹凸の奥行き表現を生成する。
     // 全後続テクスチャサンプリングの基準UVとなる。
     float2 uv = i.uv;
+    #if defined(_EYE_PARALLAX) && !defined(_PARALLAX)
+    {
+        // 軽量アイパララックス: ビュー方向のXY成分でUVオフセット
+        float3 eyeViewDir = normalize(UnityWorldSpaceViewDir(i.worldPos));
+        float3 eyeViewTS = mul((float3x3)UNITY_MATRIX_V, eyeViewDir);
+        float2 eyeOffset = eyeViewTS.xy * _EyeParallaxDepth;
+        uv += eyeOffset;
+    }
+    #endif
     #ifdef _PARALLAX
         float3 tangentViewDir = CalculateTangentViewDir(i.worldPos, i.worldTangent, i.worldBinormal, i.worldNormal);
         uv = ParallaxMapping(i.uv, tangentViewDir);
@@ -198,6 +207,26 @@ half4 frag(v2f i) : SV_Target
     #endif
     #endif
 
+    // ===== Procedural Normal Warping =====
+    #ifdef _NORMAL_WARP
+    {
+        // 1. 球状法線: オブジェクト空間位置を正規化
+        float3 sphereNormal = normalize(i.objectPos);
+        // ワールド空間に変換
+        float3 sphereNormalWS = normalize(mul((float3x3)unity_ObjectToWorld, sphereNormal));
+
+        // 2. 球状法線ブレンド
+        worldNormal = normalize(lerp(worldNormal, sphereNormalWS, _NormalRoundness));
+
+        // 3. Y成分フラッテン（ワールド空間で適用）
+        if (_NormalFlattenY > 0.001)
+        {
+            worldNormal.y *= (1.0 - _NormalFlattenY);
+            worldNormal = normalize(worldNormal);
+        }
+    }
+    #endif
+
     // ===== Shadow Receive Mask Setup =====
     // Sample shadow mask once and use it for all shadow-related calculations
     half shadowReceiveMask = 0.0; // Default: fully receive shadows (black = receive shadows)
@@ -248,6 +277,24 @@ half4 frag(v2f i) : SV_Target
         // ForwardAdd: 常に実ライトを使用
         lightDir = normalize(UnityWorldSpaceLightDir(i.worldPos));
         effectiveLightColor = _LightColor0.rgb;
+    #endif
+
+    // ===== Light Direction Snapping (shadow stabilization) =====
+    #ifdef _LIGHT_SNAP
+    {
+        // Quantize light direction to discrete angles to prevent shadow flickering
+        float snapRad = radians(_LightSnapAngle);
+        float phi = atan2(lightDir.z, lightDir.x);
+        float theta = acos(clamp(lightDir.y, -1.0, 1.0));
+        float snappedPhi = round(phi / snapRad) * snapRad;
+        float snappedTheta = round(theta / snapRad) * snapRad;
+        float3 snappedDir = float3(
+            sin(snappedTheta) * cos(snappedPhi),
+            cos(snappedTheta),
+            sin(snappedTheta) * sin(snappedPhi)
+        );
+        lightDir = normalize(lerp(lightDir, snappedDir, 1.0 - _LightSnapSmooth));
+    }
     #endif
 
     // ===== Light Color Correction (lilToon互換: LightMinLimit/LightMaxLimit相当) =====
@@ -438,6 +485,24 @@ half4 frag(v2f i) : SV_Target
     // Apply SDF shadow to ndotl before lighting calculations
     ndotl = ApplySDFShadow(uv, ndotl, lightDir, i.worldPos);
 
+    // ===== Vertex Color Shadow Threshold =====
+    #ifdef _VERTEX_COLOR_SHADOW
+    {
+        // 頂点カラーR値で影閾値をオフセット（R=0.5がデフォルト）
+        half vcOffset = (i.color.r - _VCShadowThreshold) + _VCShadowPush;
+        ndotl = saturate(ndotl + vcOffset);
+    }
+    #endif
+
+    // ===== Wrapped Diffuse =====
+    // (NdotL + wrap) / (1 + wrap) — 0=Lambert, 0.5=Half-Lambert, 1=Uniform
+    #ifndef _STANDARD_TOON
+    if (_WrapAmount > 0.001)
+    {
+        ndotl = (ndotl + _WrapAmount) / (1.0 + _WrapAmount);
+    }
+    #endif
+
     // ===== StandardToon: Half-Lambert =====
     #ifdef _STANDARD_TOON
         // Half-Lambert: maps [-1,1] → [0,1], front faces always ≥ 0.5
@@ -502,6 +567,18 @@ half4 frag(v2f i) : SV_Target
         ao = ApplySoftMask(ao);
         aoEffect = lerp(1.0, ao, _AOIntensity);
         aoForIndirect = lerp(1.0, ao, _AOIntensity * AO_INDIRECT_STRENGTH);
+    #endif
+
+    // ===== Procedural AO (Height-based) =====
+    #ifdef _PROCEDURAL_AO
+    {
+        // オブジェクト空間Y座標からAOグラデーション生成
+        float proceduralAO = smoothstep(0.0, max(_ProceduralAOSoftness, 0.01),
+                                         i.objectPos.y + _ProceduralAOHeightOffset);
+        proceduralAO = lerp(1.0, proceduralAO, _ProceduralAOIntensity);
+        // 既存のaoEffectに乗算で合成
+        aoEffect *= proceduralAO;
+    }
     #endif
 
     #ifdef _USE_RAMP
@@ -597,6 +674,21 @@ half4 frag(v2f i) : SV_Target
         // Apply Shading Grade Map before final lighting
         shadingValue = ApplyShadingGradeMap(uv, shadingValue);
 
+        // ===== Shadow Edge Noise (hand-drawn shadow boundaries) =====
+        #ifdef _SHADOW_EDGE_NOISE
+        {
+            // Only apply noise near shadow boundaries (shadingValue 0.2-0.8)
+            float edgeMask = 1.0 - saturate(abs(shadingValue - 0.5) * 4.0);
+            // Value noise from world position
+            float2 noiseUV = i.worldPos.xz * _ShadowNoiseScale * 0.01;
+            noiseUV += _Time.y * _ShadowNoiseSpeed * 0.1;
+            float noise = frac(sin(dot(noiseUV, float2(12.9898, 78.233))) * 43758.5453);
+            noise = noise * 2.0 - 1.0; // remap to [-1, 1]
+            shadingValue += noise * _ShadowNoiseIntensity * edgeMask;
+            shadingValue = saturate(shadingValue);
+        }
+        #endif
+
         // ===== AO (apply cached AO to shading stage) =====
         #ifdef _USE_AO
             half preShadingAO = shadingValue;
@@ -619,9 +711,27 @@ half4 frag(v2f i) : SV_Target
         half3 texturedShadowColor = shadowColor * shadowColorTex;
         shadowColor = lerp(shadowColor, texturedShadowColor, saturate(_ShadowColorTexStrength));
 
+        // ===== Cast Shadow Color Control =====
+        #ifdef _CAST_SHADOW_COLOR
+        {
+            // Detect cast shadow: low attenuation but surface facing light
+            float castShadowMask = saturate((1.0 - atten) * saturate(ndotl + 0.5));
+            shadowColor = lerp(shadowColor, shadowColor * _CastShadowTint.rgb, castShadowMask * _CastShadowIntensity);
+        }
+        #endif
+
         // Preserve hue and saturation better in shadows
         lighting = lerp(shadowColor, litColor, shadingValue);
     #endif
+
+    // ===== Shadow Color HSV Shift =====
+    if (abs(_ShadowHueShift) > 0.001 || abs(_ShadowSaturation - 1.0) > 0.001)
+    {
+        float3 shadowHSV = RGBtoHSV(shadowColor);
+        shadowHSV.x = frac(shadowHSV.x + _ShadowHueShift);
+        shadowHSV.y = saturate(shadowHSV.y * _ShadowSaturation);
+        shadowColor = HSVtoRGB(shadowHSV);
+    }
 
     // Apply shadow max darkness limit (prevents shadows from being too black)
     shadowColor = max(shadowColor, saturate(_ShadowMaxDarkness));
@@ -958,6 +1068,25 @@ half4 frag(v2f i) : SV_Target
         #endif
     #endif
 
+    // ===== Halftone Shadow =====
+    #if defined(_HALFTONE_SHADOW)
+    {
+        // shadowFactor: 0=lit, 1=shadow
+        float shadowArea = smoothstep(_HalftoneShadowThreshold + _HalftoneShadowSoftness,
+                                       _HalftoneShadowThreshold - _HalftoneShadowSoftness,
+                                       shadingValue);
+        // Circle halftone pattern from screen position
+        float2 htPos = i.pos.xy / _HalftoneShadowScale;
+        float2 htCenter = floor(htPos) + 0.5;
+        float htDist = length(htPos - htCenter);
+        // Dot size proportional to shadow intensity
+        float htDot = step(htDist, shadowArea * 0.5);
+        // Apply halftone
+        col.rgb = lerp(col.rgb, _HalftoneShadowColor.rgb * col.rgb,
+                       htDot * _HalftoneShadowIntensity * _HalftoneShadowBlend);
+    }
+    #endif
+
     // ================================================================
     // ===== STAGE A: Illustration Style — Color Transform =====
     // ================================================================
@@ -1063,12 +1192,42 @@ half4 frag(v2f i) : SV_Target
         col.rgb = ApplyEffectBlendPost(preHairSpec, col.rgb, hairSpecBlendFaded, _HairSpecBlendMode);
     #endif
 
+    // ===== Angel Ring (天使の輪) =====
+    #if defined(_ANGEL_RING)
+    {
+        // MatCapベースUV: ビュー空間法線のY成分でリング位置を決定
+        float2 angelUV = float2(
+            dot(normalize(UNITY_MATRIX_V[0].xyz), worldNormal) * 0.5 + 0.5,
+            dot(normalize(UNITY_MATRIX_V[1].xyz), worldNormal) * 0.5 + 0.5
+        );
+        // Y方向にオフセット（リングの位置調整）
+        angelUV.y += _AngelRingOffset;
+        // リングパターン: Y座標のガウシアンで幅を制御
+        float ringFactor = exp(-pow((angelUV.y - 0.5) / max(_AngelRingWidth, 0.01), 2.0));
+        // テクスチャサンプリング
+        half4 angelTex = tex2D(_AngelRingTex, TRANSFORM_TEX(angelUV, _AngelRingTex));
+        half3 angelColor = angelTex.rgb * _AngelRingColor.rgb * ringFactor * _AngelRingIntensity;
+        // ブレンド
+        half3 preAngel = col.rgb;
+        col.rgb = SafeAdditiveBlend(col.rgb, angelColor, saturate(ringFactor * angelTex.a * _AngelRingColor.a));
+        half angelBlendFaded = _AngelRingBlend;
+        #ifdef _DISTANCE_FADE
+            angelBlendFaded *= distanceFade;
+        #endif
+        col.rgb = ApplyEffectBlendPost(preAngel, col.rgb, angelBlendFaded, _AngelRingBlendMode);
+    }
+    #endif
+
     // ===== Subsurface Scattering =====
     #ifdef _SSS
         half thickness = tex2D(_ThicknessMap, uv).r * _ThicknessScale;
 
-        float sssPowerBlurred = max(0.1, _SSSPower * (1.0 - _SSSBlur * 0.8));
-        half3 sss = SubsurfaceScattering(worldNormal, lightDir, viewDir, thickness, atten, sssPowerBlurred);
+        #if defined(_SSS_LUT)
+            half3 sss = SubsurfaceScatteringLUT(ndotl, worldNormal, i.worldPos, thickness);
+        #else
+            float sssPowerBlurred = max(0.1, _SSSPower * (1.0 - _SSSBlur * 0.8));
+            half3 sss = SubsurfaceScattering(worldNormal, lightDir, viewDir, thickness, atten, sssPowerBlurred);
+        #endif
 
         // Apply mask texture with soft blending
         half sssMask = tex2D(_SSSMask, uv).r;
@@ -1237,6 +1396,23 @@ half4 frag(v2f i) : SV_Target
         col.rgb = ApplyEffectBlendPost(preOffsetRim, col.rgb, offsetRimBlendFaded, _OffsetRimBlendMode);
     #endif
 
+    // ===== Sheen (Fabric Luster) =====
+    #if defined(_SHEEN)
+    {
+        half3 sheen = SheenHighlight(worldNormal, viewDir, lightDir);
+        half sheenMask = tex2D(_SheenMask, TRANSFORM_TEX(uv, _SheenMask)).r;
+        sheen *= sheenMask;
+        sheen = ApplyMatteQuality(sheen, col.rgb, _MatteEffect);
+        half3 preSheen = col.rgb;
+        col.rgb = SafeAdditiveBlend(col.rgb, sheen, saturate(length(sheen) * 0.5));
+        half sheenBlendFaded = _SheenBlend;
+        #ifdef _DISTANCE_FADE
+            sheenBlendFaded *= distanceFade;
+        #endif
+        col.rgb = ApplyEffectBlendPost(preSheen, col.rgb, sheenBlendFaded, _SheenBlendMode);
+    }
+    #endif
+
     // ===== Environmental Rim =====
     #if defined(_ENV_RIM)
         float envRimPowerBlurred = max(0.1, _EnvRimPower * (1.0 - _EnvRimBlur * 0.8));
@@ -1382,6 +1558,26 @@ half4 frag(v2f i) : SV_Target
     #endif
     #endif // !_QUEST_LITE
 
+    // ===== Procedural MatCap (ForwardBase only) =====
+    #if defined(_PROCEDURAL_MATCAP) && defined(UNITY_PASS_FORWARDBASE)
+    {
+        float2 procMatCapUV = CalculateMatCapUV(worldNormal, viewDir);
+        // Spherical gradient from view-space normal
+        half gradient = pow(saturate(1.0 - length(procMatCapUV - 0.5) * 2.0), _ProcMatCapPower);
+        // Fresnel rim enhancement
+        half procFresnel = pow(1.0 - saturate(dot(worldNormal, viewDir)), _ProcMatCapFresnelPower);
+        half3 procMatCap = _ProcMatCapColor.rgb * (gradient + procFresnel) * _ProcMatCapIntensity;
+
+        half3 preProcMatCap = col.rgb;
+        col.rgb = SafeAdditiveBlend(col.rgb, procMatCap, saturate(_ProcMatCapIntensity * 0.5));
+        half procMatCapBlendFaded = _ProcMatCapBlend;
+        #ifdef _DISTANCE_FADE
+            procMatCapBlendFaded *= lerp(1.0, distanceFade, 0.5);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preProcMatCap, col.rgb, procMatCapBlendFaded, _ProcMatCapBlendMode);
+    }
+    #endif
+
     // ===== Cubemap Reflection (ForwardBase only) =====
     #if defined(_REFLECTION) && defined(UNITY_PASS_FORWARDBASE)
         half3 reflection = CubemapReflection(worldNormal, viewDir, _Smoothness, _Metallic);
@@ -1404,6 +1600,28 @@ half4 frag(v2f i) : SV_Target
             reflectionBlendFaded *= lerp(1.0, distanceFade, _ReflectionDistFade);
         #endif
         col.rgb = lerp(preReflection, col.rgb, reflectionBlendFaded);
+    #endif
+
+    // ===== Fake Environment Reflection (Cubemap-free, ForwardBase only) =====
+    #if defined(_FAKE_REFLECTION) && defined(UNITY_PASS_FORWARDBASE)
+    {
+        // Reflect view direction around surface normal
+        float3 reflectDir = reflect(-viewDir, worldNormal);
+        // Sky-ground gradient based on reflection Y component
+        float skyFactor = saturate(reflectDir.y * _FakeReflSmoothness * 5.0 + 0.5);
+        half3 fakeRefl = lerp(_FakeReflGroundColor.rgb, _FakeReflSkyColor.rgb, skyFactor);
+        // Fresnel: stronger reflection at grazing angles
+        half fresnel = pow(1.0 - saturate(dot(worldNormal, viewDir)), _FakeReflFresnelPower);
+        fakeRefl *= fresnel * _FakeReflIntensity;
+
+        half3 preFakeRefl = col.rgb;
+        col.rgb = SafeAdditiveBlend(col.rgb, fakeRefl, saturate(fresnel * _FakeReflIntensity * 0.5));
+        half fakeReflBlendFaded = _FakeReflBlend;
+        #ifdef _DISTANCE_FADE
+            fakeReflBlendFaded *= lerp(1.0, distanceFade, 0.5);
+        #endif
+        col.rgb = ApplyEffectBlendPost(preFakeRefl, col.rgb, fakeReflBlendFaded, _FakeReflBlendMode);
+    }
     #endif
 
     // ===== Refraction (ForwardBase only) =====
@@ -1550,7 +1768,8 @@ half4 frag(v2f i) : SV_Target
     #ifndef _QUEST_LITE
     #if defined(_GLITTER) && defined(UNITY_PASS_FORWARDBASE)
         float2 glitterMaskUV = AnimateUVIfNeeded(uv, _GlitterMaskScrollSpeed.xy, _GlitterMaskRotateSpeed);
-        half3 glitter = GlitterEffect(glitterMaskUV, i.worldPos, viewDir, worldNormal, _GlitterBlur);
+        half3 glitter = GlitterEffect(glitterMaskUV, i.worldPos, viewDir, worldNormal, lightDir, _GlitterBlur);
+        glitter = ApplyMatteQuality(glitter, col.rgb, _MatteEffect);
         half3 preGlitter = col.rgb;
         col.rgb = SafeAdditiveBlendFast(col.rgb, glitter, 1.0);
         half glitterBlendFaded = _GlitterBlend;
@@ -1565,6 +1784,7 @@ half4 frag(v2f i) : SV_Target
     #if defined(_IRIDESCENCE) && defined(UNITY_PASS_FORWARDBASE)
         float iridSizeBlurred = lerp(_IridescenceSize, _IridescenceSize * 3.0, _IridescenceBlur);
         half3 iridescence = IridescenceEffect(worldNormal, viewDir, uv, iridSizeBlurred);
+        iridescence = ApplyMatteQuality(iridescence, col.rgb, _MatteEffect);
         half3 preIridescence = col.rgb;
         col.rgb = SafeAdditiveBlendFast(col.rgb, iridescence, 1.0);
         half iridescenceBlendFaded = _IridescenceBlend;
@@ -2000,6 +2220,21 @@ half4 frag(v2f i) : SV_Target
     }
     #endif
 
+    // ===== Depth-based Color Fade (Aerial Perspective per Material) =====
+    #if defined(_DEPTH_COLOR_FADE)
+    {
+        float camDist = length(_WorldSpaceCameraPos - i.worldPos);
+        float depthFactor = saturate((camDist - _DepthFadeStart) / max(_DepthFadeEnd - _DepthFadeStart, 0.001));
+        // Exponential falloff for more natural aerial perspective
+        depthFactor = 1.0 - exp(-depthFactor * 3.0);
+        // Desaturate
+        half lum = dot(col.rgb, half3(0.299, 0.587, 0.114));
+        col.rgb = lerp(col.rgb, half3(lum, lum, lum), depthFactor * _DepthFadeDesaturation);
+        // Blend toward atmosphere color
+        col.rgb = lerp(col.rgb, _DepthFadeColor.rgb, depthFactor * _DepthFadeIntensity);
+    }
+    #endif
+
     // ===== Final Color Blending (Highlight & Shadow Smoothing) =====
     // Apply final smoothing to prevent harsh white/black spots
     // This is applied at the very end before fog for the most natural result
@@ -2007,8 +2242,12 @@ half4 frag(v2f i) : SV_Target
         col.rgb = ApplyFinalColorBlending(col.rgb);
     #endif
 
-    // ===== Dithering Alpha =====
-    #ifdef _DITHERING_ALPHA
+    // ===== Hashed / Dithering Alpha =====
+    #if defined(_HASHED_ALPHA)
+        float2 hashedScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
+        float2 hashedScreenPos = hashedScreenUV * _ScreenParams.xy;
+        clip(ApplyHashedAlpha(col.a, hashedScreenPos, i.worldPos.xz, _HashedAlphaScale));
+    #elif defined(_DITHERING_ALPHA)
         float2 ditherScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
         float2 ditherScreenPos = ditherScreenUV * _ScreenParams.xy;
         clip(ApplyDitheringAlpha(col.a, ditherScreenPos, max(_DitheringAlphaScale, 1.0)));

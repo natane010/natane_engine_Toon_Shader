@@ -49,7 +49,8 @@ namespace NataneToon.Editor
             DrawToggleDelegate drawToggle,
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle,
-            FindPropertyDelegate findProperty)
+            FindPropertyDelegate findProperty,
+            System.Func<string, bool> isSectionAvailable = null)
         {
             drawHelpToggle("ShadingSection",
                 L("アニメ調セルシェーディング - クリーンで明瞭な陰影境界を実現します。",
@@ -73,8 +74,11 @@ namespace NataneToon.Editor
             EditorGUILayout.HelpBox(L("AO・ディザリング設定は「ライト&影」タブに移動しました。", "AO and dithering settings have been moved to the \"Light & Shadow\" tab."), MessageType.None);
             EditorGUILayout.Space(5);
 
-            // SDF Shadow Map
-            DrawSDFShadowMapControls(drawToggle, drawProperty, drawHelpToggle);
+            // SDF Shadow Map (Background バリアントでは非表示)
+            if (isSectionAvailable == null || isSectionAvailable("SDFMap"))
+            {
+                DrawSDFShadowMapControls(drawToggle, drawProperty, drawHelpToggle);
+            }
 
             EditorGUILayout.Space(10);
 
@@ -178,12 +182,45 @@ namespace NataneToon.Editor
                 }
             }
 
+            // Shadow Color HSV Shift (common to all shading modes)
+            EditorGUILayout.Space(5);
+            drawProperty("_ShadowHueShift", L("影の色相シフト", "Shadow Hue Shift"));
+            drawProperty("_ShadowSaturation", L("影の彩度", "Shadow Saturation"));
+            drawHelpToggle("ShadowHSVShift",
+                L("🎨 影の色相/彩度シフト:\n" +
+                  "影の色をHSVで調整します。\n" +
+                  "• 色相シフト: 影の色味を変更（-0.5〜0.5）\n" +
+                  "• 彩度: 影の鮮やかさを調整（0=グレー、1=そのまま、2=2倍）\n\n" +
+                  "💡 紫がかった影や青みのある影を作るのに最適です。",
+                  "🎨 Shadow Hue/Saturation Shift:\n" +
+                  "Adjusts shadow color in HSV space.\n" +
+                  "• Hue Shift: Changes shadow hue (-0.5 to 0.5)\n" +
+                  "• Saturation: Adjusts shadow vividness (0=gray, 1=unchanged, 2=double)\n\n" +
+                  "💡 Great for creating purple-tinted or blue-tinted shadows."),
+                MessageType.Info);
+
             // Common controls for all shading modes
             EditorGUILayout.Space(5);
             drawProperty("_ShadowOffset", L("影のオフセット", "Shadow Offset"));
             drawHelpToggle("ShadowOffset",
                 L("影の境界を調整します。正の値で影を明るく、負の値で影を暗くします。",
                   "Adjusts the shadow boundary. Positive values brighten shadows, negative values darken them."),
+                MessageType.Info);
+
+            drawProperty("_WrapAmount", L("ラップ量（光の回り込み）", "Wrap Amount (Light Wraparound)"));
+            drawHelpToggle("WrapAmount",
+                L("🌙 ラップドディフューズ:\n" +
+                  "光が物体の裏側に回り込む量を制御します。\n" +
+                  "• 0 = Lambert（標準ライティング）\n" +
+                  "• 0.5 = Half-Lambert相当\n" +
+                  "• 1.0 = 全面均一ライティング\n\n" +
+                  "💡 StandardToonモードでは適用されません（Half-Lambert固定）。",
+                  "🌙 Wrapped Diffuse:\n" +
+                  "Controls how much light wraps around objects.\n" +
+                  "• 0 = Lambert (standard lighting)\n" +
+                  "• 0.5 = Equivalent to Half-Lambert\n" +
+                  "• 1.0 = Uniform lighting\n\n" +
+                  "💡 Not applied in StandardToon mode (fixed Half-Lambert)."),
                 MessageType.Info);
 
             EditorGUILayout.Space(5);
@@ -237,6 +274,31 @@ namespace NataneToon.Editor
                     L("影のなじませが高い値に設定されています。必要に応じて「高度なライティング」タブの他のソフトネスパラメーターも調整してください。",
                       "Shadow blend is set to a high value. Consider adjusting other softness parameters in the \"Advanced Lighting\" tab as needed."),
                     MessageType.Info);
+            }
+
+            // Vertex Color Shadow Threshold
+            EditorGUILayout.Space(10);
+            bool vcShadow = drawToggle("_VERTEX_COLOR_SHADOW", "_VertexColorShadow", L("頂点カラーシャドウ閾値", "Vertex Color Shadow Threshold"));
+            if (vcShadow)
+            {
+                EditorGUI.indentLevel++;
+                drawProperty("_VCShadowThreshold", L("シャドウ閾値", "Shadow Threshold"));
+                drawProperty("_VCShadowPush", L("シャドウプッシュ", "Shadow Push"));
+                drawHelpToggle("VertexColorShadow",
+                    L("🎮 頂点カラーシャドウ閾値（Arc System Works方式）:\n" +
+                      "頂点カラーのR値でNdotLをオフセットし、部位別の影制御を行います。\n" +
+                      "テクスチャ不要で、モデラーが頂点ペイントで影を調整できます。\n\n" +
+                      "• 閾値: R値の中心（0.5 = デフォルト）\n" +
+                      "• プッシュ: 全体の影オフセット\n\n" +
+                      "💡 R=0.5がニュートラル、R>0.5で明るく、R<0.5で暗くなります。",
+                      "🎮 Vertex Color Shadow Threshold (Arc System Works style):\n" +
+                      "Offsets NdotL using vertex color R channel for per-part shadow control.\n" +
+                      "No textures needed - modelers can adjust shadows via vertex painting.\n\n" +
+                      "• Threshold: R value center (0.5 = default)\n" +
+                      "• Push: Global shadow offset\n\n" +
+                      "💡 R=0.5 is neutral, R>0.5 brightens, R<0.5 darkens."),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
             }
         }
 

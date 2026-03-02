@@ -224,6 +224,13 @@ public class NataneToonShaderGUI : ShaderGUI
         new[] { "SurfaceCover", "サーフェスカバー 雪 砂 堆積", "surface cover snow sand accumulation" },
         new[] { "MirrorControl", "ミラー VRChat 鏡", "mirror control vrchat reflection" },
         new[] { "QuestLite", "Quest軽量 モバイル パフォーマンス", "quest lite mobile performance optimization" },
+            new[] { "ShadowEdgeNoise", "影エッジノイズ 手描き風 アナログ", "shadow edge noise hand-drawn analog" },
+            new[] { "CastShadowColor", "キャストシャドウ 落ち影 色", "cast shadow color tint intensity" },
+            new[] { "LightSnap", "ライト方向スナップ 安定化 ちらつき", "light snap direction stabilize flicker" },
+            new[] { "ProceduralMatCap", "プロシージャルMatCap テクスチャ不要 数学的生成", "procedural matcap texture-free mathematical gradient fresnel" },
+            new[] { "FakeReflection", "フェイクリフレクション 疑似環境反射 キューブマップ不要", "fake reflection environment sky ground cubemap-free lightweight" },
+            new[] { "PerspectiveFlat", "パースフラット 遠近圧縮 2D風 奥行き", "perspective flat flatten depth compression 2d illustration" },
+            new[] { "DepthColorFade", "深度カラーフェード 空気遠近法 大気 彩度", "depth color fade aerial perspective atmosphere desaturation distance" },
     };
 
     // ===== SHADER TYPE DRAWER INSTANCES =====
@@ -283,6 +290,14 @@ public class NataneToonShaderGUI : ShaderGUI
         { "Fur", "ShowFur" },
         { "BackgroundLightmap", "ShowBackgroundLightmap" },
         { "PBR", "ShowPBR" },
+            { "HalftoneShadow", "ShowHalftoneShadow" },
+            { "ShadowEdgeNoise", "ShowShadowEdgeNoise" },
+            { "CastShadowColor", "ShowCastShadowColor" },
+            { "LightSnap", "ShowLightSnap" },
+            { "ProceduralMatCap", "ShowProceduralMatCap" },
+            { "FakeReflection", "ShowFakeReflection" },
+            { "PerspectiveFlat", "ShowPerspectiveFlat" },
+            { "DepthColorFade", "ShowDepthColorFade" },
     };
 
     // Default values: keys listed here default to true; all others default to false
@@ -2031,6 +2046,34 @@ public class NataneToonShaderGUI : ShaderGUI
                     MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_GlitterBlend", "_GlitterBlendMode", "_GlitterBlur");
+
+                // Advanced Glints sub-section
+                EditorGUILayout.Space(SECTION_SPACING);
+                bool enableGlints = DrawToggle("_GLINTS_ADVANCED", "_GlintsAdvanced", L("高度なグリンツを有効化", "Enable Advanced Glints"));
+                if (enableGlints)
+                {
+                    EditorGUI.indentLevel++;
+                    DrawProperty("_GlintsSharpness", L("グリンツシャープネス", "Glints Sharpness"));
+                    DrawProperty("_GlintsTemporal", L("時間変動速度", "Temporal Speed"));
+                    DrawProperty("_GlintsNormalJitter", L("法線ジッター", "Normal Jitter"));
+                    DrawHelpToggle("GlintsAdvanced",
+                        L("✨ 高度なグリンツ:\n" +
+                        "通常のグリッターに加え、法線の微細変動による\n" +
+                        "よりリアルな煌めきを追加します。\n\n" +
+                        "• シャープネス: グリンツの鋭さ（8=ぼんやり〜512=超シャープ）\n" +
+                        "• 時間変動速度: 煌めきの時間変化速度\n" +
+                        "• 法線ジッター: 法線のランダム変動量\n\n" +
+                        "💡 宝石やビーズなど微細な煌めきに最適です。",
+                        "✨ Advanced Glints:\n" +
+                        "Adds more realistic sparkle via normal micro-variations\n" +
+                        "on top of standard glitter.\n\n" +
+                        "• Sharpness: Glint sharpness (8=soft, 512=ultra sharp)\n" +
+                        "• Temporal Speed: sparkle time variation speed\n" +
+                        "• Normal Jitter: random normal variation amount\n\n" +
+                        "💡 Perfect for gems, beads, and fine sparkle effects."),
+                        MessageType.Info);
+                    EditorGUI.indentLevel--;
+                }
 
                 // Per-effect distance fade
                 if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
@@ -4366,6 +4409,58 @@ public class NataneToonShaderGUI : ShaderGUI
                 "• Read side: Ref=1, Comp=Equal, Pass=Keep"),
                 MessageType.Info);
 
+            // ─── Alpha Dithering ───
+            EditorGUILayout.Space(SECTION_SPACING);
+            EditorGUILayout.LabelField(L("アルファディザリング", "Alpha Dithering"), EditorStyles.boldLabel);
+
+            bool enableDitheringAlpha = DrawToggle("_DITHERING_ALPHA", "_DitheringAlpha", L("ディザリングアルファを有効化", "Enable Dithering Alpha"));
+            if (enableDitheringAlpha)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_DitheringAlphaScale", L("ディザスケール", "Dither Scale"));
+
+                bool enableHashedAlpha = DrawToggle("_HASHED_ALPHA", "_HashedAlpha", L("Hashed Alphaを有効化", "Enable Hashed Alpha"));
+                if (enableHashedAlpha)
+                {
+                    EditorGUI.indentLevel++;
+                    DrawProperty("_HashedAlphaScale", L("Hashed Alphaスケール", "Hashed Alpha Scale"));
+                    EditorGUI.indentLevel--;
+                }
+
+                bool enableBlueNoise = DrawToggle("_BLUE_NOISE_DITHER", "_BlueNoiseDither", L("Blue Noiseディザを有効化", "Enable Blue Noise Dither"));
+                if (enableBlueNoise)
+                {
+                    EditorGUI.indentLevel++;
+                    DrawProperty("_BlueNoiseTemporal", L("時間変動速度", "Temporal Speed"));
+                    DrawProperty("_BlueNoiseAmount", L("Blue Noiseブレンド", "Blue Noise Blend"));
+                    EditorGUI.indentLevel--;
+                }
+
+                DrawHelpToggle("DitheringAlpha",
+                    L("🔲 アルファディザリング:\n" +
+                    "カットアウト/半透明の境界をディザパターンで滑らかにします。\n\n" +
+                    "• ディザスケール: ディザパターンのスケール（1〜100）\n\n" +
+                    "サブ機能:\n" +
+                    "• Hashed Alpha: ハッシュベースの半透明（TAA前提）\n" +
+                    "  - ノイズっぽい半透明で、TAA適用時に滑らかに見える\n" +
+                    "• Blue Noise Dither: 高品質なブルーノイズパターン\n" +
+                    "  - 時間変動でフリッカーを軽減\n" +
+                    "  - ブレンド量で効果の強さを調整\n\n" +
+                    "💡 カットアウトモードでの髪の透過表現に最適です。",
+                    "🔲 Alpha Dithering:\n" +
+                    "Smooths cutout/transparent boundaries with dither patterns.\n\n" +
+                    "• Dither Scale: dither pattern scale (1-100)\n\n" +
+                    "Sub-features:\n" +
+                    "• Hashed Alpha: Hash-based transparency (requires TAA)\n" +
+                    "  - Noisy transparency that looks smooth with TAA\n" +
+                    "• Blue Noise Dither: High-quality blue noise pattern\n" +
+                    "  - Temporal variation reduces flicker\n" +
+                    "  - Blend controls effect strength\n\n" +
+                    "💡 Ideal for hair transparency in Cutout mode."),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+
         }
         EndBoxedSection(GetFoldout("Rendering"));
     }
@@ -5401,6 +5496,267 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>
     /// Draw presets and sharing section
     /// </summary>
+
+    private void DrawHalftoneShadowSection()
+    {
+        SetFoldout("HalftoneShadow", DrawBoxedSection(L("ハーフトーンシャドウ", "Halftone Shadow"), GetFoldout("HalftoneShadow"), SectionCategory.Effects, "_HALFTONE_SHADOW"));
+        if (GetFoldout("HalftoneShadow"))
+        {
+            bool enableHalftone = DrawToggle("_HALFTONE_SHADOW", "_HalftoneShadow", L("ハーフトーンシャドウを有効化", "Enable Halftone Shadow"));
+            if (enableHalftone)
+            {
+                EditorGUI.indentLevel++;
+                DrawColorProperty("_HalftoneShadowColor", L("ハーフトーンカラー", "Halftone Color"));
+                DrawProperty("_HalftoneShadowScale", L("パターンスケール", "Pattern Scale"));
+                DrawProperty("_HalftoneShadowThreshold", L("影閾値", "Shadow Threshold"));
+                DrawProperty("_HalftoneShadowSoftness", L("ソフトネス", "Softness"));
+                DrawProperty("_HalftoneShadowIntensity", L("強度", "Intensity"));
+                DrawProperty("_HalftoneShadowBlend", L("ブレンド", "Blend"));
+                DrawHelpToggle("HalftoneShadow",
+                    L("ハーフトーンシャドウ:\n" +
+                    "影の部分にハーフトーン（網点）パターンを適用します。\n" +
+                    "漫画やコミック調のシャドウ表現に最適です。\n\n" +
+                    "・ハーフトーンカラー: 影の色味（乗算）\n" +
+                    "・パターンスケール: ドットの大きさ（1〜200）\n" +
+                    "・影閾値: 影が始まるライティング閾値\n" +
+                    "・ソフトネス: 影境界のぼかし量\n" +
+                    "・強度: ハーフトーン効果の強さ",
+                    "Halftone Shadow:\n" +
+                    "Applies halftone (dot pattern) to shadow areas.\n" +
+                    "Perfect for manga/comic-style shadow rendering.\n\n" +
+                    "• Halftone Color: shadow tint (multiply)\n" +
+                    "• Pattern Scale: dot size (1-200)\n" +
+                    "• Shadow Threshold: lighting threshold for shadow\n" +
+                    "• Softness: shadow edge blur amount\n" +
+                    "• Intensity: halftone effect strength"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("HalftoneShadow"));
+    }
+
+    private void DrawShadowEdgeNoiseSection()
+    {
+        SetFoldout("ShadowEdgeNoise", DrawBoxedSection(L("影エッジノイズ", "Shadow Edge Noise"), GetFoldout("ShadowEdgeNoise"), SectionCategory.Effects, "_SHADOW_EDGE_NOISE"));
+        if (GetFoldout("ShadowEdgeNoise"))
+        {
+            bool enableNoise = DrawToggle("_SHADOW_EDGE_NOISE", "_ShadowEdgeNoise", L("影エッジノイズを有効化", "Enable Shadow Edge Noise"));
+            if (enableNoise)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_ShadowEdgeNoiseScale", L("ノイズスケール", "Noise Scale"));
+                DrawProperty("_ShadowEdgeNoiseIntensity", L("ノイズ強度", "Noise Intensity"));
+                DrawProperty("_ShadowEdgeNoiseWidth", L("エッジ幅", "Edge Width"));
+                DrawProperty("_ShadowEdgeNoiseTex", L("ノイズテクスチャ", "Noise Texture"));
+                DrawHelpToggle("ShadowEdgeNoise",
+                    L("影エッジノイズ:\n" +
+                    "影の境界にノイズを加え、手描き風のアナログ感を演出します。\n\n" +
+                    "• ノイズスケール: ノイズの細かさ\n" +
+                    "• ノイズ強度: 効果の強さ\n" +
+                    "• エッジ幅: ノイズが適用される影境界の幅\n" +
+                    "• ノイズテクスチャ: カスタムノイズパターン",
+                    "Shadow Edge Noise:\n" +
+                    "Adds noise to shadow edges for a hand-drawn, analog feel.\n\n" +
+                    "• Noise Scale: noise granularity\n" +
+                    "• Noise Intensity: effect strength\n" +
+                    "• Edge Width: shadow boundary width for noise\n" +
+                    "• Noise Texture: custom noise pattern"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("ShadowEdgeNoise"));
+    }
+
+    private void DrawCastShadowColorSection()
+    {
+        SetFoldout("CastShadowColor", DrawBoxedSection(L("キャストシャドウカラー", "Cast Shadow Color"), GetFoldout("CastShadowColor"), SectionCategory.Lighting, "_CAST_SHADOW_COLOR"));
+        if (GetFoldout("CastShadowColor"))
+        {
+            bool enableCSC = DrawToggle("_CAST_SHADOW_COLOR", "_CastShadowColorEnable", L("キャストシャドウカラーを有効化", "Enable Cast Shadow Color"));
+            if (enableCSC)
+            {
+                EditorGUI.indentLevel++;
+                DrawColorProperty("_CastShadowTint", L("キャストシャドウ色", "Cast Shadow Tint"));
+                DrawProperty("_CastShadowIntensity", L("キャストシャドウ強度", "Cast Shadow Intensity"));
+                DrawHelpToggle("CastShadowColor",
+                    L("キャストシャドウカラー:\n" +
+                    "他のオブジェクトから受ける落ち影の色を調整します。\n\n" +
+                    "• シャドウ色: 落ち影の色味\n" +
+                    "• 強度: 色の適用量",
+                    "Cast Shadow Color:\n" +
+                    "Adjusts the color of shadows cast by other objects.\n\n" +
+                    "• Shadow Tint: shadow color\n" +
+                    "• Intensity: color application amount"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("CastShadowColor"));
+    }
+
+    private void DrawLightSnapSection()
+    {
+        SetFoldout("LightSnap", DrawBoxedSection(L("ライト方向スナップ", "Light Direction Snap"), GetFoldout("LightSnap"), SectionCategory.Lighting, "_LIGHT_SNAP"));
+        if (GetFoldout("LightSnap"))
+        {
+            bool enableSnap = DrawToggle("_LIGHT_SNAP", "_LightSnap", L("ライトスナップを有効化", "Enable Light Snap"));
+            if (enableSnap)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_LightSnapAngle", L("スナップ角度（度）", "Snap Angle (degrees)"));
+                DrawProperty("_LightSnapSmoothness", L("スナップの滑らかさ", "Snap Smoothness"));
+                DrawHelpToggle("LightSnap",
+                    L("ライト方向スナップ:\n" +
+                    "ライトの方向を離散的な角度にスナップさせ、\n" +
+                    "影のちらつきを防止します。\n\n" +
+                    "• スナップ角度: スナップする角度刻み（度）\n" +
+                    "• 滑らかさ: スナップ間の補間量",
+                    "Light Direction Snap:\n" +
+                    "Snaps light direction to discrete angles\n" +
+                    "to prevent shadow flickering.\n\n" +
+                    "• Snap Angle: angle step in degrees\n" +
+                    "• Smoothness: interpolation between snap positions"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("LightSnap"));
+    }
+
+    private void DrawProceduralMatCapSection()
+    {
+        SetFoldout("ProceduralMatCap", DrawBoxedSection(L("プロシージャルMatCap", "Procedural MatCap"), GetFoldout("ProceduralMatCap"), SectionCategory.Effects, "_PROCEDURAL_MATCAP"));
+        if (GetFoldout("ProceduralMatCap"))
+        {
+            bool enableProcMatCap = DrawToggle("_PROCEDURAL_MATCAP", "_ProceduralMatCap", L("プロシージャルMatCapを有効化", "Enable Procedural MatCap"));
+            if (enableProcMatCap)
+            {
+                EditorGUI.indentLevel++;
+                DrawColorProperty("_ProcMatCapColor", L("MatCapカラー", "MatCap Color"));
+                DrawProperty("_ProcMatCapPower", L("フレネルパワー", "Fresnel Power"));
+                DrawProperty("_ProcMatCapIntensity", L("強度", "Intensity"));
+                DrawProperty("_ProcMatCapBlend", L("ブレンド", "Blend"));
+                DrawBlendControls(materialEditor, targetMaterial, "_ProcMatCapBlend", "_ProcMatCapBlendMode");
+                DrawHelpToggle("ProceduralMatCap",
+                    L("プロシージャルMatCap:\n" +
+                    "テクスチャ不要でフレネルベースのMatCap効果を生成します。\n\n" +
+                    "• MatCapカラー: 効果の色\n" +
+                    "• フレネルパワー: エッジ強調度（高い値=より鋭いエッジ）\n" +
+                    "• 強度: 効果の強さ",
+                    "Procedural MatCap:\n" +
+                    "Generates Fresnel-based MatCap effect without textures.\n\n" +
+                    "• MatCap Color: effect color\n" +
+                    "• Fresnel Power: edge emphasis (higher=sharper)\n" +
+                    "• Intensity: effect strength"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("ProceduralMatCap"));
+    }
+
+    private void DrawFakeReflectionSection()
+    {
+        SetFoldout("FakeReflection", DrawBoxedSection(L("フェイクリフレクション", "Fake Reflection"), GetFoldout("FakeReflection"), SectionCategory.Environment, "_FAKE_REFLECTION"));
+        if (GetFoldout("FakeReflection"))
+        {
+            bool enableFakeRef = DrawToggle("_FAKE_REFLECTION", "_FakeReflection", L("フェイクリフレクションを有効化", "Enable Fake Reflection"));
+            if (enableFakeRef)
+            {
+                EditorGUI.indentLevel++;
+                DrawColorProperty("_FakeRefSkyColor", L("空カラー", "Sky Color"));
+                DrawColorProperty("_FakeRefGroundColor", L("地面カラー", "Ground Color"));
+                DrawProperty("_FakeRefIntensity", L("反射強度", "Reflection Intensity"));
+                DrawProperty("_FakeRefSmoothness", L("スムースネス", "Smoothness"));
+                DrawProperty("_FakeRefBlend", L("ブレンド", "Blend"));
+                DrawBlendControls(materialEditor, targetMaterial, "_FakeRefBlend", "_FakeRefBlendMode");
+                DrawHelpToggle("FakeReflection",
+                    L("フェイクリフレクション:\n" +
+                    "キューブマップ不要の軽量環境反射です。\n" +
+                    "法線方向に基づいて空と地面の色をブレンドします。\n\n" +
+                    "• 空カラー/地面カラー: 環境色\n" +
+                    "• 反射強度: 反射の強さ\n" +
+                    "• スムースネス: 反射のぼかし度",
+                    "Fake Reflection:\n" +
+                    "Lightweight environment reflection without cubemaps.\n" +
+                    "Blends sky and ground colors based on normal direction.\n\n" +
+                    "• Sky/Ground Color: environment colors\n" +
+                    "• Reflection Intensity: reflection strength\n" +
+                    "• Smoothness: reflection blur amount"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("FakeReflection"));
+    }
+
+    private void DrawPerspectiveFlatSection()
+    {
+        SetFoldout("PerspectiveFlat", DrawBoxedSection(L("パースフラット", "Perspective Flatten"), GetFoldout("PerspectiveFlat"), SectionCategory.Advanced, "_PERSPECTIVE_FLAT"));
+        if (GetFoldout("PerspectiveFlat"))
+        {
+            bool enablePF = DrawToggle("_PERSPECTIVE_FLAT", "_PerspectiveFlat", L("パースフラットを有効化", "Enable Perspective Flatten"));
+            if (enablePF)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_PerspectiveFlatAmount", L("フラット量", "Flatten Amount"));
+                DrawProperty("_PerspectiveFlatReferenceZ", L("基準Z距離", "Reference Z Distance"));
+                DrawHelpToggle("PerspectiveFlat",
+                    L("パースフラット:\n" +
+                    "パース（遠近感）を圧縮し、2Dイラスト風の平面的な見た目にします。\n\n" +
+                    "• フラット量: 0=通常パース、1=完全に平面化\n" +
+                    "• 基準Z距離: パース圧縮の基準点\n\n" +
+                    "💡 2Dアニメ風の表現に最適です。",
+                    "Perspective Flatten:\n" +
+                    "Compresses perspective for a 2D illustration-like flat appearance.\n\n" +
+                    "• Flatten Amount: 0=normal perspective, 1=fully flattened\n" +
+                    "• Reference Z Distance: reference point for compression\n\n" +
+                    "💡 Perfect for 2D anime-style rendering."),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("PerspectiveFlat"));
+    }
+
+    private void DrawDepthColorFadeSection()
+    {
+        SetFoldout("DepthColorFade", DrawBoxedSection(L("深度カラーフェード", "Depth Color Fade"), GetFoldout("DepthColorFade"), SectionCategory.Environment, "_DEPTH_COLOR_FADE"));
+        if (GetFoldout("DepthColorFade"))
+        {
+            bool enableDCF = DrawToggle("_DEPTH_COLOR_FADE", "_DepthColorFade", L("深度カラーフェードを有効化", "Enable Depth Color Fade"));
+            if (enableDCF)
+            {
+                EditorGUI.indentLevel++;
+                DrawColorProperty("_DepthFadeColor", L("大気カラー", "Atmosphere Color"));
+                DrawProperty("_DepthFadeStart", L("開始距離", "Fade Start Distance"));
+                DrawProperty("_DepthFadeEnd", L("終了距離", "Fade End Distance"));
+                DrawProperty("_DepthFadeIntensity", L("フェード強度", "Fade Intensity"));
+                DrawProperty("_DepthFadeDesaturation", L("彩度低下", "Desaturation"));
+                DrawHelpToggle("DepthColorFade",
+                    L("深度カラーフェード:\n" +
+                    "カメラからの距離に応じて色と彩度を変化させます。\n" +
+                    "空気遠近法（大気パースペクティブ）を再現します。\n\n" +
+                    "• 大気カラー: 遠方の色\n" +
+                    "• 開始/終了距離: フェードの範囲\n" +
+                    "• フェード強度: 効果の強さ\n" +
+                    "• 彩度低下: 遠方ほど色が薄くなる量",
+                    "Depth Color Fade:\n" +
+                    "Changes color and saturation based on camera distance.\n" +
+                    "Simulates aerial perspective (atmospheric perspective).\n\n" +
+                    "• Atmosphere Color: distant color\n" +
+                    "• Start/End Distance: fade range\n" +
+                    "• Fade Intensity: effect strength\n" +
+                    "• Desaturation: color washout at distance"),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("DepthColorFade"));
+    }
+
     private void DrawPresetsSection()
     {
         SetFoldout("Presets", DrawBoxedSection(L("マテリアルプリセット＆共有", "Material Presets & Sharing"), GetFoldout("Presets"), SectionCategory.Basic));
@@ -5434,6 +5790,14 @@ public class NataneToonShaderGUI : ShaderGUI
                 new[] { "_HOLOGRAM", L("ホログラム", "Hologram") },
                 new[] { "_DECAL", L("デカール", "Decal") },
                 new[] { "_OUTLINE", L("アウトライン", "Outline") },
+                new[] { "_HALFTONE_SHADOW", L("ハーフトーンシャドウ", "Halftone Shadow") },
+                new[] { "_SHADOW_EDGE_NOISE", L("影エッジノイズ", "Shadow Edge Noise") },
+                new[] { "_CAST_SHADOW_COLOR", L("キャストシャドウカラー", "Cast Shadow Color") },
+                new[] { "_LIGHT_SNAP", L("ライトスナップ", "Light Snap") },
+                new[] { "_PROCEDURAL_MATCAP", L("プロシージャルMatCap", "Procedural MatCap") },
+                new[] { "_FAKE_REFLECTION", L("フェイクリフレクション", "Fake Reflection") },
+                new[] { "_PERSPECTIVE_FLAT", L("パースフラット", "Perspective Flatten") },
+                new[] { "_DEPTH_COLOR_FADE", L("深度カラーフェード", "Depth Color Fade") },
                 new[] { "_EMISSION", L("エミッション", "Emission") },
                 new[] { "_AUDIOLINK", "AudioLink" },
                 new[] { "_REFLECTION", L("リフレクション", "Reflection") },
@@ -5661,6 +6025,8 @@ public class NataneToonShaderGUI : ShaderGUI
         EditorGUILayout.Space(SECTION_SPACING);
         SafeDrawSection(DrawMakeupTexturesSection, L("メイクアップテクスチャ", "Makeup Textures"));
         SafeDrawSection(DrawScreenToneSection, L("スクリーントーン", "Screen Tone"));
+        SafeDrawSection(DrawHalftoneShadowSection, L("ハーフトーンシャドウ", "Halftone Shadow"));
+        SafeDrawSection(DrawShadowEdgeNoiseSection, L("影エッジノイズ", "Shadow Edge Noise"));
         SafeDrawSection(DrawGradientBaseColorSection, L("グラデーションベースカラー", "Gradient Base Color"));
         SafeDrawSection(DrawShadingSection, L("シェーディング", "Shading"));
     }
@@ -5671,13 +6037,16 @@ public class NataneToonShaderGUI : ShaderGUI
     private void DrawLightingTab()
     {
         DrawExpandCollapseButtons((state) => {
-            SetFoldout("AdvancedLighting", state); SetFoldout("AO", state); SetFoldout("Dithering", state);
+            SetFoldout("AdvancedLighting", state); SetFoldout("CastShadowColor", state); SetFoldout("LightSnap", state);
+            SetFoldout("AO", state); SetFoldout("Dithering", state);
             SetFoldout("LightVolume", state); SetFoldout("LTCGI", state);
             SetFoldout("BackgroundLightmap", state); SetFoldout("PBR", state);
         });
         // ─── ライティング基本 ───
         NataneToonShaderGUIUtility.DrawCategoryDivider(L("ライティング基本", "Lighting Basics"));
         SafeDrawSection(DrawAdvancedLightingSection, L("高度なライティング", "Advanced Lighting"));
+        SafeDrawSection(DrawCastShadowColorSection, L("キャストシャドウカラー", "Cast Shadow Color"));
+        SafeDrawSection(DrawLightSnapSection, L("ライト方向スナップ", "Light Direction Snap"));
         SafeDrawSection(DrawAOSection, "AO");
         SafeDrawSection(DrawDitheringSection, L("ディザリング", "Dithering"));
 
@@ -5702,7 +6071,7 @@ public class NataneToonShaderGUI : ShaderGUI
     {
         DrawExpandCollapseButtons((state) => {
             SetFoldout("Specular", state); SetFoldout("HairSpecular", state); SetFoldout("RimLight", state); SetFoldout("SSS", state);
-            SetFoldout("MatCap", state); SetFoldout("Glitter", state); SetFoldout("Drip", state); SetFoldout("Smear", state); SetFoldout("Fur", state); SetFoldout("Decal", state);
+            SetFoldout("MatCap", state); SetFoldout("ProceduralMatCap", state); SetFoldout("Glitter", state); SetFoldout("Drip", state); SetFoldout("Smear", state); SetFoldout("Fur", state); SetFoldout("Decal", state);
             SetFoldout("Hologram", state); SetFoldout("Outline", state); SetFoldout("Emission", state);
             SetFoldout("VirtualExpression", state); SetFoldout("AudioLink", state); SetFoldout("SurfaceCover", state);
         });
@@ -5716,6 +6085,7 @@ public class NataneToonShaderGUI : ShaderGUI
         // ─── 表面エフェクト ───
         NataneToonShaderGUIUtility.DrawCategoryDivider(L("表面エフェクト", "Surface Effects"));
         SafeDrawSection(DrawMatCapSection, "MatCap");
+        SafeDrawSection(DrawProceduralMatCapSection, L("プロシージャルMatCap", "Procedural MatCap"));
         SafeDrawSection(DrawGlitterSection, L("グリッター", "Glitter"));
         SafeDrawSection(DrawDripSection, L("雫エフェクト", "Drip Effect"));
         SafeDrawSection(DrawSmearSection, L("スミア", "Smear"));
@@ -5739,15 +6109,17 @@ public class NataneToonShaderGUI : ShaderGUI
     private void DrawEnvironmentTab()
     {
         DrawExpandCollapseButtons((state) => {
-            SetFoldout("Reflection", state); SetFoldout("Iridescence", state);
+            SetFoldout("Reflection", state); SetFoldout("FakeReflection", state); SetFoldout("Iridescence", state);
             SetFoldout("EnvironmentalRim", state); SetFoldout("Refraction", state);
             SetFoldout("HeightFog", state);
         });
         SafeDrawSection(DrawReflectionSection, L("リフレクション", "Reflection"));
+        SafeDrawSection(DrawFakeReflectionSection, L("フェイクリフレクション", "Fake Reflection"));
         SafeDrawSection(DrawIridescenceSection, L("イリデッセンス", "Iridescence"));
         SafeDrawSection(DrawEnvironmentalRimSection, L("環境リム", "Environmental Rim"));
         SafeDrawSection(DrawRefractionSection, L("屈折", "Refraction"));
         SafeDrawSection(DrawHeightFogSection, L("ハイトフォグ", "Height Fog"));
+        SafeDrawSection(DrawDepthColorFadeSection, L("深度カラーフェード", "Depth Color Fade"));
     }
 
     /// <summary>
@@ -5758,7 +6130,7 @@ public class NataneToonShaderGUI : ShaderGUI
         DrawExpandCollapseButtons((state) => {
             SetFoldout("NormalMap", state); SetFoldout("Parallax", state); SetFoldout("VertexAnimation", state); SetFoldout("VAT", state);
             SetFoldout("Backface", state); SetFoldout("Video", state); SetFoldout("HeightFade", state); SetFoldout("IntersectionFade", state);
-            SetFoldout("DistanceFade", state); SetFoldout("Rendering", state); SetFoldout("Tessellation", state);
+            SetFoldout("DistanceFade", state); SetFoldout("PerspectiveFlat", state); SetFoldout("Rendering", state); SetFoldout("Tessellation", state);
             SetFoldout("DetailMap", state); SetFoldout("Triplanar", state); SetFoldout("MirrorControl", state); SetFoldout("QuestLite", state);
         });
         // ─── マッピング ───
@@ -5778,6 +6150,7 @@ public class NataneToonShaderGUI : ShaderGUI
         SafeDrawSection(DrawHeightFadeSection, L("高さフェード", "Height Fade"));
         SafeDrawSection(DrawIntersectionFadeSection, L("オブジェクト交差フェード", "Intersection Fade"));
         SafeDrawSection(DrawDistanceFadeSection, L("距離フェード", "Distance Fade"));
+        SafeDrawSection(DrawPerspectiveFlatSection, L("パースフラット", "Perspective Flatten"));
 
         // ─── VRChat＆パフォーマンス ───
         NataneToonShaderGUIUtility.DrawCategoryDivider(L("VRChat＆パフォーマンス", "VRChat & Performance"));
@@ -5878,6 +6251,14 @@ public class NataneToonShaderGUI : ShaderGUI
             case "SurfaceCover": return DrawSurfaceCoverSection;
             case "MirrorControl": return DrawMirrorControlSection;
             case "QuestLite": return DrawQuestLiteSection;
+            case "HalftoneShadow": return DrawHalftoneShadowSection;
+            case "ShadowEdgeNoise": return DrawShadowEdgeNoiseSection;
+            case "CastShadowColor": return DrawCastShadowColorSection;
+            case "LightSnap": return DrawLightSnapSection;
+            case "ProceduralMatCap": return DrawProceduralMatCapSection;
+            case "FakeReflection": return DrawFakeReflectionSection;
+            case "PerspectiveFlat": return DrawPerspectiveFlatSection;
+            case "DepthColorFade": return DrawDepthColorFadeSection;
             default: return null;
         }
     }
@@ -6251,7 +6632,36 @@ public class NataneToonShaderGUI : ShaderGUI
             ("_DitheringAlpha", "_DITHERING_ALPHA"),
 
             // PCSS Soft Shadow
-            ("_UsePCSS", "_PCSS")
+            ("_UsePCSS", "_PCSS"),
+
+            // Outline sub-keywords
+            ("_UseOutlineMask", "_OUTLINE_MASK"),
+            ("_UseOutlineWidthMap", "_OUTLINE_WIDTH_MAP"),
+            ("_OutlineMultiColor", "_OUTLINE_MULTI_COLOR"),
+
+            // Halftone Shadow
+            ("_HalftoneShadow", "_HALFTONE_SHADOW"),
+
+            // Shadow Edge Noise
+            ("_ShadowEdgeNoise", "_SHADOW_EDGE_NOISE"),
+
+            // Cast Shadow Color
+            ("_CastShadowColorEnable", "_CAST_SHADOW_COLOR"),
+
+            // Light Snap
+            ("_LightSnap", "_LIGHT_SNAP"),
+
+            // Procedural MatCap
+            ("_ProceduralMatCap", "_PROCEDURAL_MATCAP"),
+
+            // Fake Reflection
+            ("_FakeReflection", "_FAKE_REFLECTION"),
+
+            // Perspective Flat
+            ("_PerspectiveFlat", "_PERSPECTIVE_FLAT"),
+
+            // Depth Color Fade
+            ("_DepthColorFade", "_DEPTH_COLOR_FADE")
         };
 
         bool anyChanges = false;

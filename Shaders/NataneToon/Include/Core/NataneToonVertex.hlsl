@@ -149,6 +149,16 @@ v2f vert(appdata v)
     // Transform vertex to clip space
     o.pos = UnityObjectToClipPos(v.vertex);
 
+    // ===== Perspective Flattening (3D → 2D depth compression) =====
+    #ifdef _PERSPECTIVE_FLAT
+    {
+        // Compress Z depth toward center to reduce foreshortening
+        // This creates a more 2D/illustration-like appearance
+        float flatZ = lerp(o.pos.z, o.pos.w * 0.5, _PerspectiveFlatAmount);
+        o.pos.z = flatZ;
+    }
+    #endif
+
     // Calculate UV coordinates with tiling and offset
     o.uv = TRANSFORM_TEX(v.uv, _MainTex);
 
@@ -193,7 +203,7 @@ v2f vert(appdata v)
     #endif
 
     // Calculate screen position for GrabPass (Refraction / Illustration filters) / Dithering Alpha / Intersection Fade
-    #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA) || defined(_INTERSECTION_FADE) || defined(_SOFT_FILTER) || defined(_KUWAHARA_FILTER) || defined(_COLOR_BLEEDING) || defined(_CHROMATIC_ABERRATION) || defined(_SCREEN_EDGE) || defined(_WATERCOLOR)
+    #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA) || defined(_HASHED_ALPHA) || defined(_INTERSECTION_FADE) || defined(_SOFT_FILTER) || defined(_KUWAHARA_FILTER) || defined(_COLOR_BLEEDING) || defined(_CHROMATIC_ABERRATION) || defined(_SCREEN_EDGE) || defined(_WATERCOLOR)
         o.screenPos = ComputeScreenPos(o.pos);
     #endif
 
@@ -205,6 +215,21 @@ v2f vert(appdata v)
     // Detail Map UV1 pass-through
     #ifdef _DETAIL_MAP
         o.uv1 = v.uv1;
+    #endif
+
+    // Vertex Color Shadow: pass vertex color to fragment shader
+    #ifdef _VERTEX_COLOR_SHADOW
+        o.color = v.color;
+    #endif
+
+    // Procedural AO / Normal Warping: pass object-space position
+    #if defined(_PROCEDURAL_AO) || defined(_NORMAL_WARP)
+        o.objectPos = v.vertex.xyz;
+    #endif
+
+    // Normal Warping: pass object-space normal
+    #if defined(_NORMAL_WARP)
+        o.objectNormal = v.normal;
     #endif
 
     // Transfer fog and shadow coordinates

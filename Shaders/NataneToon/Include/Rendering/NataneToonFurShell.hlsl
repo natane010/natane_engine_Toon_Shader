@@ -31,6 +31,23 @@ struct v2f_fur {
 
 // Shared samplers and variables (from NataneToonInput.hlsl via the .shader CBUFFER)
 // These are declared in the .shader Pass block that includes this file
+float _MatteEffect;
+
+float3 ApplyFurMatteQuality(float3 effect, float3 baseColor, float matteAmount)
+{
+    matteAmount = saturate(matteAmount);
+    float effectLum = dot(max(effect, 0.0), float3(0.299, 0.587, 0.114));
+    effect = lerp(effect, effectLum.xxx, matteAmount * 0.7);
+
+    float3 tintBase = saturate(baseColor + 0.35);
+    effect = lerp(effect, effect * tintBase, matteAmount * 0.45);
+
+    float lumAfter = dot(max(effect, 0.0), float3(0.299, 0.587, 0.114));
+    float peakCompression = rcp(1.0 + lumAfter * matteAmount * 1.25);
+    float mattePresence = lerp(1.0, 0.55, matteAmount);
+    float matteSoften = lerp(1.0, 0.9, matteAmount);
+    return effect * peakCompression * matteSoften * mattePresence;
+}
 
 // Procedural noise for fur strand pattern (used as fallback when no noise texture is set)
 float _furHash(float2 p)
@@ -153,7 +170,9 @@ fixed4 furFrag(v2f_fur i) : SV_Target
         float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
         float3 halfDir = normalize(lightDir + viewDir);
         float spec = pow(max(0, dot(worldNormal, halfDir)), 40.0) * _FurSpecular * layer;
-        finalColor += lightColor * spec;
+        float3 furSpec = lightColor * spec;
+        furSpec = ApplyFurMatteQuality(furSpec, finalColor, _MatteEffect);
+        finalColor += furSpec;
     }
 
     // Rim light
@@ -162,7 +181,9 @@ fixed4 furFrag(v2f_fur i) : SV_Target
         float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
         float rim = 1.0 - saturate(dot(viewDir, worldNormal));
         rim = pow(rim, 3.0) * _FurRimLight * layer;
-        finalColor += lightColor * rim;
+        float3 furRim = lightColor * rim;
+        furRim = ApplyFurMatteQuality(furRim, finalColor, _MatteEffect);
+        finalColor += furRim;
     }
 
     fixed4 col = fixed4(finalColor, alpha);

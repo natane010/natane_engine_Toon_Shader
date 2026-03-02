@@ -26,7 +26,12 @@ namespace NataneToon.Editor
             "Natane/Toon Shader (Cutout)",
             "Natane/Toon Shader (Transparent)",
             "Natane/Toon Shader (Fur)",
-            "Natane/Toon Shader (Background)"
+            "Natane/Toon Shader (Background)",
+            // Lite variants (no GrabPass)
+            "Natane/Toon Shader (Lite)",
+            "Natane/Toon Shader (Cutout Lite)",
+            "Natane/Toon Shader (Transparent Lite)",
+            "Natane/Toon Shader (Fur Lite)"
         };
 
         private const string EyeShaderName = "Natane/Eye";

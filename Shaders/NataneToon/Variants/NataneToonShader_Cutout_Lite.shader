@@ -1,8 +1,8 @@
-// ===== NataneToon Shader - Fur Variant =====
-// Render Type: Transparent (Shell-based fur requires alpha blending)
-// Queue: Transparent
-// 特徴: シェルベースファー。16シェルパスで毛皮を表現。
-Shader "Natane/Toon Shader (Fur)"
+// ===== NataneToon Shader - Cutout Lite Variant =====
+// Render Type: TransparentCutout
+// Queue: AlphaTest
+// 特徴: アルファカットアウト（Lite版）。GrabPass無し。_Cutoff 閾値でクリッピング。
+Shader "Natane/Toon Shader (Cutout Lite)"
 {
     Properties
     {
@@ -14,21 +14,22 @@ Shader "Natane/Toon Shader (Fur)"
         [Toggle(_MAIN_TEX_ANIMATION)] _MainTexAnimation ("Main Tex Animation", Float) = 0
         _MainTexScrollSpeed ("Scroll Speed XY", Vector) = (0,0,0,0)
         _MainTexRotateSpeed ("Rotate Speed", Float) = 0
+        _Cutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
 
         [Header(Color Preservation)]
         _AlbedoPreservation ("Texture Color Preservation", Range(0, 1)) = 0
         _Saturation ("Saturation", Range(0, 2)) = 1
         _Brightness ("Overall Brightness", Range(0.5, 5.0)) = 1
 
-        [Header(Surface Finish)]
-        _Glossiness ("Glossiness Overall Gloss", Range(0, 1)) = 1
-        _MatteEffect ("Matte Effect Reduce Gloss", Range(0, 1)) = 0
-
         [Header(Final Color Blending)]
         _FinalHighlightBlend ("Highlight Compression Prevent White Blowout", Range(0, 1)) = 0
         _HighlightThreshold ("Highlight Threshold Start Point", Range(0, 1)) = 0.75
         _FinalShadowBlend ("Shadow Lift Prevent Black Crush", Range(0, 1)) = 0
         _ShadowThreshold ("Shadow Threshold Start Point", Range(0, 1)) = 0.25
+
+        [Header(Surface Finish)]
+        _Glossiness ("Glossiness Overall Gloss", Range(0, 1)) = 1
+        _MatteEffect ("Matte Effect Reduce Gloss", Range(0, 1)) = 0
 
         [Header(Makeup Textures)]
         [Toggle(_2ND_TEXTURE)] _Use2ndTexture ("Enable 2nd Texture", Float) = 0
@@ -199,6 +200,17 @@ Shader "Natane/Toon Shader (Fur)"
         _LightColorInfluence ("Light Color Influence", Range(0, 1)) = 1
         _ShadowReceive ("Shadow Receive", Range(0, 1)) = 1
         _ShadowSmoothing ("Shadow Map Smoothing", Range(0, 1)) = 0
+        [Space(5)]
+        [Toggle(_PCSS)] _UsePCSS ("Enable PCSS Soft Shadow", Float) = 0
+        _PCSSLightSize ("PCSS Light Size", Range(0.01, 5.0)) = 1.0
+        _PCSSSoftness ("PCSS Softness", Range(0.1, 10.0)) = 1.0
+        _PCSSBlockerSearchRadius ("PCSS Blocker Search Radius", Range(1, 20)) = 8
+        _PCSSMinFilterRadius ("PCSS Min Filter Radius", Range(0.5, 5.0)) = 1.0
+        _PCSSMaxFilterRadius ("PCSS Max Filter Radius", Range(1, 30)) = 15.0
+        [Enum(Low 8,8,Medium 16,16,High 32,32)] _PCSSSampleCount ("PCSS Sample Quality", Float) = 16
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _PCSSBlendMode ("PCSS Blend Mode", Float) = 0
+        _PCSSBlend ("PCSS Blend", Range(0, 1)) = 1
+        _PCSSBlur ("PCSS Blur", Range(0, 1)) = 0
         _ShadowMaxDarkness ("Shadow Max Darkness", Range(0, 1)) = 0
         _LightColorMin ("Light Color Min (ライト色下限)", Range(0, 1)) = 0
         _LightColorMax ("Light Color Max (ライト色上限)", Range(0, 10)) = 1
@@ -276,7 +288,7 @@ Shader "Natane/Toon Shader (Fur)"
         _RimColor ("Rim Color", Color) = (1,1,1,1)
         _RimPower ("Rim Power", Range(0.1, 10)) = 3
         _RimIntensity ("Rim Intensity", Range(0, 5)) = 1
-        _RimSpread ("Rim Spread Glow", Range(0, 1)) = 0
+        _RimSpread ("Rim Spread (Glow)", Range(0, 1)) = 0
         [Toggle(_RIM_MASK)] _UseRimMask ("Use Rim Mask", Float) = 0
         _RimMask ("Rim Mask", 2D) = "white" {}
         _RimMaskScrollSpeed ("Rim Mask Scroll Speed XY", Vector) = (0,0,0,0)
@@ -288,7 +300,7 @@ Shader "Natane/Toon Shader (Fur)"
         _RimColor2 ("Rim Color 2", Color) = (0.5,0.8,1,1)
         _RimPower2 ("Rim Power 2", Range(0.1, 10)) = 5
         _RimIntensity2 ("Rim Intensity 2", Range(0, 5)) = 0.5
-        _RimSpread2 ("Rim Spread Glow", Range(0, 1)) = 0
+        _RimSpread2 ("Rim Spread 2 (Glow)", Range(0, 1)) = 0
         [Toggle(_RIM_MASK_2)] _UseRimMask2 ("Use Rim Mask 2", Float) = 0
         _RimMask2 ("Rim Mask 2", 2D) = "white" {}
         _RimMask2ScrollSpeed ("Rim Mask 2 Scroll Speed XY", Vector) = (0,0,0,0)
@@ -296,6 +308,7 @@ Shader "Natane/Toon Shader (Fur)"
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _RimBlendMode2 ("Rim 2 Blend Mode", Float) = 0
         _RimBlend2 ("Rim 2 Blend", Range(0, 1)) = 1
         _Rim2Blur ("Rim 2 Blur", Range(0, 1)) = 0
+        [Space(10)]
         [Toggle(_OFFSET_RIM_LIGHT)] _OffsetRimLight ("Enable Offset Rim Light", Float) = 0
         _OffsetRimColor ("Offset Rim Color", Color) = (0.8,0.9,1,1)
         _OffsetRimPower ("Offset Rim Power", Range(0.01, 10)) = 3
@@ -434,6 +447,10 @@ Shader "Natane/Toon Shader (Fur)"
         [Toggle(_EMISSION)] _Emission ("Enable Emission", Float) = 0
         [HDR] _EmissionColor ("Emission Color", Color) = (0,0,0,1)
         _EmissionMap ("Emission Map", 2D) = "white" {}
+        _EmissionGlow ("Emission Glow (Bloom)", Range(0, 1)) = 0
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _EmissionBlendMode ("Emission Blend Mode", Float) = 0
+        _EmissionBlend ("Emission Blend", Range(0, 1)) = 1
+        _EmissionBlur ("Emission Blur", Range(0, 1)) = 0
         [Toggle(_EMISSION_SCROLL)] _EmissionScroll ("Emission Scroll", Float) = 0
         _EmissionScrollSpeed ("Emission Scroll Speed", Float) = 1
         _EmissionScrollSpeedY ("Emission Scroll Speed Y", Float) = 0
@@ -445,15 +462,11 @@ Shader "Natane/Toon Shader (Fur)"
         _EmissionMask ("Emission Mask", 2D) = "white" {}
         _EmissionMaskScrollSpeed ("Emission Mask Scroll Speed XY", Vector) = (0,0,0,0)
         _EmissionMaskRotateSpeed ("Emission Mask Rotate Speed", Float) = 0
-        _EmissionGlow ("Emission Glow Bloom", Range(0, 1)) = 0
-        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _EmissionBlendMode ("Emission Blend Mode", Float) = 0
-        _EmissionBlend ("Emission Blend", Range(0, 1)) = 1
-        _EmissionBlur ("Emission Blur", Range(0, 1)) = 0
 
         [Header(Virtual Expression)]
         [Toggle(_DISSOLVE)] _Dissolve ("Enable Dissolve", Float) = 0
         _DissolveAmount ("Dissolve Amount", Range(0, 1)) = 0
-        _DissolveTex ("Dissolve Texture Noise", 2D) = "white" {}
+        _DissolveTex ("Dissolve Texture (Noise)", 2D) = "white" {}
         _DissolveTexScrollSpeed ("Dissolve Tex Scroll Speed XY", Vector) = (0,0,0,0)
         _DissolveTexRotateSpeed ("Dissolve Tex Rotate Speed", Float) = 0
         _DissolveEdgeWidth ("Dissolve Edge Width", Range(0, 0.5)) = 0.1
@@ -519,7 +532,7 @@ Shader "Natane/Toon Shader (Fur)"
         _IridescenceColor ("Iridescence Color", Color) = (1, 1, 1, 1)
         _IridescenceIntensity ("Intensity", Range(0, 2)) = 0.5
         _IridescenceHueShift ("Hue Shift", Range(0, 1)) = 0.5
-        _IridescenceSize ("Size Frequency", Range(0, 10)) = 1
+        _IridescenceSize ("Size (Frequency)", Range(0, 10)) = 1
         [Toggle(_IRIDESCENCE_MASK)] _UseIridescenceMask ("Use Iridescence Mask", Float) = 0
         _IridescenceMask ("Iridescence Mask", 2D) = "white" {}
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _IridescenceBlendMode ("Iridescence Blend Mode", Float) = 0
@@ -549,15 +562,21 @@ Shader "Natane/Toon Shader (Fur)"
         [Toggle(_EYE_PARALLAX)] _EyeParallax ("Enable Eye Parallax", Float) = 0
         _EyeParallaxDepth ("Eye Depth", Range(0, 0.5)) = 0.1
 
-        [Header(Refraction)]
-        [Toggle(_REFRACTION)] _Refraction ("Enable Refraction", Float) = 0
-        _RefractionIndex ("Refraction Index IOR", Range(1, 3)) = 1.5
-        _RefractionIntensity ("Refraction Intensity", Range(0, 1)) = 1
-        _RefractionBlur ("Refraction Blur", Range(0, 1)) = 0
-        [Toggle(_REFRACTION_MASK)] _UseRefractionMask ("Use Refraction Mask", Float) = 0
-        _RefractionMask ("Refraction Mask", 2D) = "white" {}
-        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _RefractionBlendMode ("Refraction Blend Mode", Float) = 0
-        _RefractionBlend ("Refraction Blend", Range(0, 1)) = 1
+        [Header(Vertex Animation Texture Houdini VAT)]
+        [Toggle(_VAT)] _VAT ("Enable VAT Animation", Float) = 0
+        _VATPositionMap ("VAT Position Map", 2D) = "black" {}
+        [Toggle(_VAT_NORMAL)] _VATNormal ("Use VAT Normal Map", Float) = 0
+        _VATNormalMap ("VAT Normal Map", 2D) = "black" {}
+        _VATNumOfFrames ("Number of Frames", Float) = 24
+        _VATSpeed ("Animation Speed", Float) = 1
+        _VATIntensity ("Animation Intensity", Range(0, 2)) = 1
+        _VATPositionMin ("Position Min Value", Float) = -1
+        _VATPositionMax ("Position Max Value", Float) = 1
+        _VATNormalMin ("Normal Min Value", Float) = -1
+        _VATNormalMax ("Normal Max Value", Float) = 1
+        _VATPadding ("VAT Padding", Range(0, 1)) = 0
+        [Space(10)]
+        [Enum(Absolute,0,Offset,1)] _VATPackingMode ("VAT Packing Mode", Float) = 1
 
         [Header(AudioLink VRChat Club Events)]
         [Toggle(_AUDIOLINK)] _AudioLink ("Enable AudioLink", Float) = 0
@@ -647,22 +666,6 @@ Shader "Natane/Toon Shader (Fur)"
         [Toggle(_VERTEX_ANIM_MASK)] _UseVertexAnimMask ("Use Vertex Anim Mask", Float) = 0
         _VertexAnimMask ("Vertex Anim Mask", 2D) = "white" {}
 
-        [Header(Vertex Animation Texture Houdini VAT)]
-        [Toggle(_VAT)] _VAT ("Enable VAT Animation", Float) = 0
-        _VATPositionMap ("VAT Position Map", 2D) = "black" {}
-        [Toggle(_VAT_NORMAL)] _VATNormal ("Use VAT Normal Map", Float) = 0
-        _VATNormalMap ("VAT Normal Map", 2D) = "black" {}
-        _VATNumOfFrames ("Number of Frames", Float) = 24
-        _VATSpeed ("Animation Speed", Float) = 1
-        _VATIntensity ("Animation Intensity", Range(0, 2)) = 1
-        _VATPositionMin ("Position Min Value", Float) = -1
-        _VATPositionMax ("Position Max Value", Float) = 1
-        _VATNormalMin ("Normal Min Value", Float) = -1
-        _VATNormalMax ("Normal Max Value", Float) = 1
-        _VATPadding ("VAT Padding", Range(0, 1)) = 0
-        [Space(10)]
-        [Enum(Absolute,0,Offset,1)] _VATPackingMode ("VAT Packing Mode", Float) = 1
-
         [Header(Hologram Glitch Effect)]
         [Toggle(_HOLOGRAM)] _Hologram ("Enable Hologram", Float) = 0
         _HologramColor ("Hologram Color", Color) = (0,1,1,1)
@@ -688,14 +691,98 @@ Shader "Natane/Toon Shader (Fur)"
         _HologramBlend ("Hologram Blend", Range(0, 1)) = 1
         _HologramBlur ("Hologram Blur", Range(0, 1)) = 0
         [Toggle(_GLITCH)] _Glitch ("Enable Glitch", Float) = 0
-        _GlitchIntensity ("Glitch Intensity", Range(0, 1)) = 0.5
+        _GlitchIntensity ("Glitch Intensity", Range(0, 3)) = 0.5
         _GlitchSpeed ("Glitch Speed", Float) = 1
         _GlitchBlockSize ("Glitch Block Size", Range(0.01, 1)) = 0.1
-        _GlitchRGBSplitIntensity ("RGB Split Intensity", Range(0, 1)) = 0.5
+        _GlitchRGBSplitIntensity ("RGB Split Intensity", Range(0, 3)) = 0.5
         _GlitchFrequency ("Glitch Frequency", Range(0, 1)) = 0.3
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _GlitchBlendMode ("Glitch Blend Mode", Float) = 0
         _GlitchBlend ("Glitch Blend", Range(0, 1)) = 1
         _GlitchBlur ("Glitch Blur", Range(0, 1)) = 0
+        _GlitchMask ("Glitch Mask", 2D) = "white" {}
+        _GlitchMaskScale ("Glitch Mask Scale", Range(1, 5)) = 1
+        _GlitchMaskAffectsRGBSplit ("Mask Affects RGB Split", Range(0, 1)) = 1
+        _GlitchMaskAffectsFrequency ("Mask Affects Frequency", Range(0, 1)) = 0
+        _GlitchNoiseTex ("Glitch Noise Texture", 2D) = "gray" {}
+        _GlitchNoiseIntensity ("Noise Intensity", Range(0, 1)) = 0.5
+        _GlitchNoiseScrollSpeed ("Noise Scroll Speed", Vector) = (1, 0.5, 0, 0)
+        [Enum(UV Distortion,0,Color Corruption,1,Block Noise,2)] _GlitchNoiseMode ("Noise Mode", Float) = 0
+
+        [Space(5)]
+        [Toggle(_GLITCH_STRETCH)] _GlitchStretch ("Enable Stretch Glitch", Float) = 0
+        _GlitchStretchIntensity ("Stretch Intensity", Range(0, 5)) = 0.5
+        _GlitchStretchSpeed ("Stretch Speed", Float) = 1
+        _GlitchStretchBlockSize ("Stretch Block Size", Range(0.01, 1)) = 0.1
+        _GlitchStretchFrequency ("Stretch Frequency", Range(0, 1)) = 0.3
+        _GlitchStretchMask ("Stretch Glitch Mask", 2D) = "white" {}
+        _GlitchStretchMaskScale ("Stretch Mask Scale", Range(1, 5)) = 1
+
+        // ===== Illustration Style (イラスト風技法) =====
+        [Header(Illustration Style)]
+        [Toggle(_COLOR_QUANTIZE)] _UseColorQuantize ("Enable Color Quantize", Float) = 0
+        [Enum(RGB,0,HSV,1)] _QuantizeMode ("Quantize Mode", Float) = 1
+        _QuantizeLevels ("Quantize Levels", Range(2, 32)) = 8
+        _QuantizeHueLevels ("Hue Levels", Range(2, 36)) = 12
+        _QuantizeSatLevels ("Saturation Levels", Range(2, 16)) = 8
+        _QuantizeValLevels ("Value Levels", Range(2, 16)) = 8
+        _QuantizeDither ("Dither Amount", Range(0, 1)) = 0.5
+        _QuantizeBlend ("Quantize Blend", Range(0, 1)) = 1
+        _QuantizeMask ("Quantize Mask", 2D) = "white" {}
+
+        [Toggle(_LUT_3D)] _UseLUT3D ("Enable 3D LUT", Float) = 0
+        _LUT3DTex ("LUT Texture", 2D) = "white" {}
+        _LUT3DIntensity ("LUT Intensity", Range(0, 1)) = 1
+        _LUT3DSize ("LUT Grid Size", Float) = 32
+
+        [Toggle(_HATCHING)] _UseHatching ("Enable Hatching", Float) = 0
+        _HatchTex0 ("Hatch Texture 0 (RGBA=L1-4)", 2D) = "white" {}
+        _HatchTex1 ("Hatch Texture 1 (RG=L5-6)", 2D) = "white" {}
+        _HatchingTiling ("Hatching Tiling", Float) = 8
+        _HatchingColor ("Hatching Color", Color) = (0.1, 0.1, 0.1, 1)
+        _HatchingBlend ("Hatching Blend", Range(0, 1)) = 1
+        _HatchingMask ("Hatching Mask", 2D) = "white" {}
+
+        [Toggle(_WATERCOLOR)] _UseWatercolor ("Enable Watercolor", Float) = 0
+        _WCEdgeDarkening ("Edge Darkening", Range(0, 2)) = 0.5
+        _WCWetEdge ("Wet Edge", Range(0, 1)) = 0.3
+        _WCGranulation ("Granulation", Range(0, 1)) = 0.4
+        _WCGranulationTex ("Granulation Texture", 2D) = "gray" {}
+        _WCPaperTex ("Paper Texture", 2D) = "white" {}
+        _WCPaperIntensity ("Paper Intensity", Range(0, 1)) = 0.3
+        _WCPaperTiling ("Paper Tiling", Float) = 1
+        _WCBlend ("Watercolor Blend", Range(0, 1)) = 1
+        _WCMask ("Watercolor Mask", 2D) = "white" {}
+
+        [Toggle(_SOFT_FILTER)] _UseSoftFilter ("Enable Soft Filter", Float) = 0
+        _SoftFilterRadius ("Filter Radius", Range(0, 10)) = 2
+        _SoftFilterBlend ("Filter Blend", Range(0, 1)) = 0.5
+        _SoftFilterThreshold ("Bloom Threshold", Range(0, 1)) = 0.6
+        [Enum(Full Blur,0,Selective Bloom,1)] _SoftFilterMode ("Filter Mode", Float) = 1
+
+        [Toggle(_KUWAHARA_FILTER)] _UseKuwahara ("Enable Kuwahara Filter", Float) = 0
+        _KuwaharaRadius ("Kuwahara Radius", Range(1, 6)) = 3
+        _KuwaharaBlend ("Kuwahara Blend", Range(0, 1)) = 1
+
+        [Toggle(_SCREEN_EDGE)] _UseScreenEdge ("Enable Screen Edge", Float) = 0
+        _EdgeColor ("Edge Color", Color) = (0, 0, 0, 1)
+        _EdgeWidth ("Edge Width", Range(0.1, 5)) = 1
+        _EdgeDepthSensitivity ("Depth Sensitivity", Range(0, 50)) = 10
+        _EdgeNormalSensitivity ("Normal Sensitivity", Range(0, 10)) = 2
+        _EdgeBlend ("Edge Blend", Range(0, 1)) = 1
+
+        [Toggle(_COLOR_BLEEDING)] _UseColorBleeding ("Enable Color Bleeding", Float) = 0
+        _BleedingRadius ("Bleeding Radius", Range(0, 5)) = 1
+        _BleedingBlend ("Bleeding Blend", Range(0, 1)) = 0.3
+
+        [Toggle(_CHROMATIC_ABERRATION)] _UseChromaticAberration ("Enable Chromatic Aberration", Float) = 0
+        _CAIntensity ("CA Intensity", Range(0, 20)) = 3
+        _CABlend ("CA Blend", Range(0, 1)) = 1
+
+        [Toggle(_OUTLINE_HAND_DRAWN)] _UseHandDrawnOutline ("Enable Hand-drawn Outline", Float) = 0
+        _OutlineNoiseTex ("Outline Noise Texture", 2D) = "gray" {}
+        _OutlineNoiseTiling ("Noise Tiling", Float) = 5
+        _OutlineWidthVariation ("Width Variation", Range(0, 0.5)) = 0.2
+        _OutlineJitterAmount ("Jitter Amount", Range(0, 1)) = 0.3
 
         [Header(Decal System Stickers)]
         [Toggle(_DECAL)] _Decal ("Enable Decal", Float) = 0
@@ -770,28 +857,6 @@ Shader "Natane/Toon Shader (Fur)"
         _SmearBlur ("Smear Blur", Range(0, 1)) = 0
         _SmearDistFade ("Smear Distance Fade", Range(0, 1)) = 0
 
-        // ===== Fur Shell Based (ファー シェルベース毛皮) =====
-        [Header(Fur Shell Based)]
-        [Toggle(_FUR)] _Fur ("Enable Fur", Float) = 0
-        _FurLength ("Fur Length", Range(0, 0.1)) = 0.02
-        _FurDensity ("Fur Density", Range(1, 100)) = 30
-        _FurAlphaCutoff ("Fur Alpha Cutoff", Range(0, 1)) = 0.1
-        _FurNoiseTex ("Fur Noise Texture", 2D) = "white" {}
-        _FurMask ("Fur Mask", 2D) = "white" {}
-        _FurRootColor ("Fur Root Color", Color) = (0.3, 0.2, 0.15, 1)
-        _FurTipColor ("Fur Tip Color", Color) = (1, 1, 1, 1)
-        _FurColorBlend ("Fur Color Blend", Range(0, 1)) = 0.5
-        _FurGravity ("Fur Gravity", Range(0, 1)) = 0.1
-        _FurWindDirection ("Fur Wind Direction", Vector) = (1, 0, 0, 0)
-        _FurWindSpeed ("Fur Wind Speed", Range(0, 10)) = 1
-        _FurWindStrength ("Fur Wind Strength", Range(0, 1)) = 0.1
-        _FurAO ("Fur Ambient Occlusion", Range(0, 1)) = 0.5
-        _FurShadowStrength ("Fur Shadow Strength", Range(0, 1)) = 0.5
-        _FurSpecular ("Fur Specular", Range(0, 1)) = 0.3
-        _FurRimLight ("Fur Rim Light", Range(0, 1)) = 0
-        _FurLODDistance ("Fur LOD Distance", Range(1, 50)) = 10
-        _FurLODMinLayers ("Fur LOD Min Layers", Range(2, 8)) = 4
-
         [Header(Dithering Alpha Transparent Dithering)]
         [Toggle(_DITHERING_ALPHA)] _DitheringAlpha ("Enable Dithering Alpha", Float) = 0
         _DitheringAlphaScale ("Dithering Alpha Scale", Range(1, 100)) = 10
@@ -800,6 +865,16 @@ Shader "Natane/Toon Shader (Fur)"
         [Toggle(_BLUE_NOISE_DITHER)] _BlueNoiseDither ("Enable Blue Noise Dither", Float) = 0
         _BlueNoiseTemporal ("Blue Noise Temporal Speed", Range(0, 8)) = 1
         _BlueNoiseAmount ("Blue Noise Blend", Range(0, 1)) = 1
+        [Header(Refraction)]
+        [Toggle(_REFRACTION)] _Refraction ("Enable Refraction", Float) = 0
+        _RefractionIndex ("Refraction Index IOR", Range(1, 3)) = 1.5
+        _RefractionIntensity ("Refraction Intensity", Range(0, 1)) = 1
+        _RefractionBlur ("Refraction Blur", Range(0, 1)) = 0
+        [Toggle(_REFRACTION_MASK)] _UseRefractionMask ("Use Refraction Mask", Float) = 0
+        _RefractionMask ("Refraction Mask", 2D) = "white" {}
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _RefractionBlendMode ("Refraction Blend Mode", Float) = 0
+        _RefractionBlend ("Refraction Blend", Range(0, 1)) = 1
+
         [Header(Tessellation Surface Smoothing)]
         [Toggle(_TESSELLATION)] _Tessellation ("Enable Tessellation", Float) = 0
         _TessFactor ("Tessellation Factor", Range(1, 16)) = 4
@@ -844,8 +919,9 @@ Shader "Natane/Toon Shader (Fur)"
     {
         Tags
         {
-            "RenderType"="Transparent"
-            "Queue"="Transparent"
+            "RenderType"="TransparentCutout"
+            "Queue"="AlphaTest"
+            "IgnoreProjector"="True"
         }
 
         Stencil
@@ -859,10 +935,10 @@ Shader "Natane/Toon Shader (Fur)"
             WriteMask [_StencilWriteMask]
         }
 
-        GrabPass
-        {
-            "_nataneBackgroundTexture"
-        }
+        // Lite variant: GrabPass disabled for better performance.
+        // GrabPass-dependent features (_REFRACTION, _SOFT_FILTER, _KUWAHARA_FILTER,
+        // _COLOR_BLEEDING, _CHROMATIC_ABERRATION) are not available in this variant.
+        // Use "Natane/Toon Shader (Cutout)" for full GrabPass features.
 
         // Outline Pass
         Pass
@@ -883,6 +959,7 @@ CGPROGRAM
             #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma shader_feature_local _SMEAR
             #pragma shader_feature_local _HEIGHT_FADE
+            #pragma shader_feature_local _OUTLINE_HAND_DRAWN
             #pragma shader_feature_local _PERSPECTIVE_FLAT
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
@@ -1008,23 +1085,30 @@ CGPROGRAM
                 #endif
 
                 #ifdef _OUTLINE
+                    // Calculate distance compensation for consistent outline width
                     float3 worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
                     float distanceToCamera = distance(worldPos, _WorldSpaceCameraPos);
-                    float distanceFactor = distanceToCamera * 0.1;
+                    float distanceFactor = distanceToCamera * 0.1; // Scale factor for distance compensation
 
+                    // Get outline width from map if enabled
                     float widthMultiplier = 1.0;
                     #ifdef _OUTLINE_WIDTH_MAP
                         widthMultiplier = tex2Dlod(_OutlineWidthMap, float4(v.uv, 0, 0)).r;
                     #endif
 
+                    // Resolve outline normal (smooth normal or original)
                     float3 outlineNormal = v.normal;
                     #ifdef _SMOOTH_NORMAL
                         if (_SmoothNormalMode < 0.5)
                         {
+                            // Mode 0: Vertex Color Object Space
+                            // Decode from vertex color RGB: [0,1] -> [-1,1]
                             outlineNormal = v.color.rgb * 2.0 - 1.0;
                         }
                         else if (_SmoothNormalMode < 1.5)
                         {
+                            // Mode 1: Vertex Color Tangent Space (lilToon compatible)
+                            // Decode from vertex color RGB and transform via TBN matrix
                             float3 smoothTS = v.color.rgb * 2.0 - 1.0;
                             float3 binormal = cross(v.normal, v.tangent.xyz) * v.tangent.w;
                             float3x3 tbnOS = float3x3(v.tangent.xyz, binormal, v.normal);
@@ -1032,6 +1116,8 @@ CGPROGRAM
                         }
                         else
                         {
+                            // Mode 2: Baked Normal Texture
+                            // Sample baked normal from texture and transform from tangent space
                             float3 bakedNormal = tex2Dlod(_SmoothNormalTex, float4(v.uv, 0, 0)).rgb * 2.0 - 1.0;
                             float3 binormal = cross(v.normal, v.tangent.xyz) * v.tangent.w;
                             float3x3 tbnOS = float3x3(v.tangent.xyz, binormal, v.normal);
@@ -1039,6 +1125,7 @@ CGPROGRAM
                         }
                         outlineNormal = normalize(outlineNormal);
                     #else
+                        // Fallback: blend vertex normal toward vertex position direction
                         if (_OutlineCornerSmooth > 0.001)
                         {
                             float3 posNormal = normalize(v.vertex.xyz);
@@ -1048,29 +1135,64 @@ CGPROGRAM
 
                     if (_OutlineMode < 0.5)
                     {
+                        // Mode 0: Inverted Hull - Extrusion along normals in view space
+                        // Improved for better consistency at different angles
                         float3 norm = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, outlineNormal));
                         float2 offset = TransformViewToProjection(norm.xy);
+
                         o.pos = UnityObjectToClipPos(v.vertex);
+
+                        // Apply distance compensation for consistent outline width
+                        // Scale down by 0.01 to maintain original scale with new range (0-1)
                         float outlineWidth = _OutlineWidth * 0.1 * (1.0 + distanceFactor) * widthMultiplier;
+
+                        // Edge width compensation
                         if (_OutlineEdgeCompensation > 0.001)
                         {
                             float normalConsistency = saturate(dot(normalize(v.normal), outlineNormal));
                             float edgeComp = lerp(1.0, lerp(0.3, 1.0, normalConsistency), _OutlineEdgeCompensation);
                             outlineWidth *= edgeComp;
                         }
+
+                        // Hand-drawn outline: width variation
+                        #ifdef _OUTLINE_HAND_DRAWN
+                            outlineWidth *= GetHandDrawnWidthFactor(v.uv);
+                        #endif
+
                         o.pos.xy += offset * o.pos.z * outlineWidth;
+
+                        // Hand-drawn outline: position jitter
+                        #ifdef _OUTLINE_HAND_DRAWN
+                            o.pos.xyz += GetHandDrawnJitter(v.vertex.xyz);
+                        #endif
                     }
                     else
                     {
+                        // Mode 1: Back Face - Scale up vertices along normals in object space
+                        // Improved with distance compensation
+                        // Scale down by 0.1 to maintain original scale with new range (0-1)
                         float outlineWidth = _OutlineWidth * 0.1 * (1.0 + distanceFactor * 0.5) * widthMultiplier;
+
+                        // Edge width compensation
                         if (_OutlineEdgeCompensation > 0.001)
                         {
                             float normalConsistency = saturate(dot(normalize(v.normal), outlineNormal));
                             float edgeComp = lerp(1.0, lerp(0.3, 1.0, normalConsistency), _OutlineEdgeCompensation);
                             outlineWidth *= edgeComp;
                         }
+
+                        // Hand-drawn outline: width variation
+                        #ifdef _OUTLINE_HAND_DRAWN
+                            outlineWidth *= GetHandDrawnWidthFactor(v.uv);
+                        #endif
+
                         float3 scaledPos = v.vertex.xyz + normalize(outlineNormal) * outlineWidth;
                         o.pos = UnityObjectToClipPos(float4(scaledPos, 1.0));
+
+                        // Hand-drawn outline: position jitter
+                        #ifdef _OUTLINE_HAND_DRAWN
+                            o.pos.xyz += GetHandDrawnJitter(v.vertex.xyz);
+                        #endif
                     }
 
                     // Perspective Flattening for outline pass
@@ -1099,6 +1221,7 @@ CGPROGRAM
                 #ifdef _OUTLINE
                     fixed4 col = _OutlineColor;
 
+                    // Apply texture-linked outline color
                     #ifdef _OUTLINE_TEXTURE_COLOR
                         fixed4 texColor = tex2D(_MainTex, TRANSFORM_TEX(i.uv, _MainTex));
                         fixed3 darkenedTexColor = texColor.rgb * (1.0 - _OutlineTexColorDarken);
@@ -1110,17 +1233,22 @@ CGPROGRAM
                         col.rgb = lerp(col.rgb, darkenedTexColor, _OutlineTexColorBlend);
                     #endif
 
+                    // Apply multi-color outline
                     #ifdef _OUTLINE_MULTI_COLOR
-                        float mixFactor = frac(i.uv.y * 5.0 + _Time.y * 0.5);
+                        // Mix between two colors based on UV or other parameter
+                        float mixFactor = frac(i.uv.y * 5.0 + _Time.y * 0.5); // Animated gradient
                         col.rgb = lerp(_OutlineColor.rgb, _OutlineColor2.rgb, mixFactor * _OutlineColorMix);
                     #endif
 
+                    // Apply outline mask
                     #ifdef _OUTLINE_MASK
                         float outlineMask = tex2D(_OutlineMask, i.uv).r;
                         col.a *= outlineMask;
+                        // Discard pixels where outline is fully masked out
                         clip(col.a - 0.01);
                     #endif
 
+                    // Apply height fade to outline
                     #ifdef _HEIGHT_FADE
                     {
                         float height;
@@ -1138,15 +1266,18 @@ CGPROGRAM
 
                         if (_HeightFadeMode < 0.5)
                         {
+                            // Alpha mode
                             col.a *= heightFade;
                             clip(col.a - 0.001);
                         }
                         else if (_HeightFadeMode < 1.5)
                         {
+                            // Clip mode
                             clip(heightFade - 0.001);
                         }
                         else
                         {
+                            // Dithering mode
                             float2 spos = i.pos.xy * max(_HeightFadeDitherScale, 1.0) * 0.1;
                             float ditherThreshold = frac(dot(floor(spos), float2(0.067, 0.258)) * 43.0);
                             clip(heightFade - ditherThreshold);
@@ -1231,7 +1362,7 @@ CGPROGRAM
             #pragma shader_feature_local _ENV_RIM
             #pragma shader_feature_local _PARALLAX
             #pragma shader_feature_local _EYE_PARALLAX
-            #pragma shader_feature_local _REFRACTION
+            // _REFRACTION removed (Lite variant: no GrabPass)
             #pragma shader_feature_local _MATCAP_2
             #pragma shader_feature_local _MATCAP_3
             #pragma shader_feature_local _PROCEDURAL_MATCAP
@@ -1242,6 +1373,14 @@ CGPROGRAM
             #pragma shader_feature_local _VERTEX_ANIMATION
             #pragma shader_feature_local _HOLOGRAM
             #pragma shader_feature_local _GLITCH
+            #pragma shader_feature_local _GLITCH_STRETCH
+            #pragma shader_feature_local _COLOR_QUANTIZE
+            #pragma shader_feature_local _LUT_3D
+            #pragma shader_feature_local _HATCHING
+            #pragma shader_feature_local _WATERCOLOR
+            // _SOFT_FILTER, _KUWAHARA_FILTER removed (Lite variant: no GrabPass)
+            #pragma shader_feature_local _SCREEN_EDGE
+            // _COLOR_BLEEDING, _CHROMATIC_ABERRATION removed (Lite variant: no GrabPass)
             #pragma shader_feature_local _HOLOGRAM_NOISE
             #pragma shader_feature_local _DECAL
             #pragma shader_feature_local _BACKFACE_TEXTURE
@@ -1249,7 +1388,6 @@ CGPROGRAM
             #pragma shader_feature_local _LTCGI
             #pragma shader_feature_local _WATER_DRIP
             #pragma shader_feature_local _SMEAR
-            #pragma shader_feature_local _FUR
             #pragma shader_feature_local _DITHERING_ALPHA
             #pragma shader_feature_local _HASHED_ALPHA
             #pragma shader_feature_local _VAT
@@ -1259,16 +1397,37 @@ CGPROGRAM
             #pragma shader_feature_local _VERTEX_COLOR_SHADOW
             #pragma shader_feature_local _TESSELLATION
             #pragma shader_feature_local _TESS_DISPLACEMENT
+            #pragma shader_feature_local _PCSS
             #pragma shader_feature_local _PERSPECTIVE_FLAT
             #pragma shader_feature_local _DEPTH_COLOR_FADE
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
+            #define CUTOUT_VARIANT
+
+            float _Cutoff;
 
             #include "../Include/Core/NataneToonCore.hlsl"
+
+            half4 frag_cutout(v2f i) : SV_Target
+            {
+                half4 col = frag(i);
+                #if defined(_HASHED_ALPHA)
+                    float2 hashedScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
+                    float2 hashedScreenPos = hashedScreenUV * _ScreenParams.xy;
+                    float hashedAlpha = saturate((col.a - _Cutoff) / max(1.0 - _Cutoff, 0.0001));
+                    float hashedCutout = ApplyHashedAlpha(hashedAlpha, hashedScreenPos, i.worldPos.xz, _HashedAlphaScale);
+                    clip(hashedCutout);
+                #else
+                    clip(col.a - _Cutoff);
+                #endif
+                return col;
+            }
+
+            #define frag frag_cutout
 
             ENDCG
         }
 
-        // Additional Forward Pass for multiple lights
+        // Additional Forward Pass
         Pass
         {
             Name "FORWARD_ADD"
@@ -1295,8 +1454,14 @@ CGPROGRAM
             #pragma shader_feature_local _GRADIENT_BASE_COLOR
             #pragma shader_feature_local _USE_RAMP
             #pragma shader_feature_local _STANDARD_TOON
-            #pragma shader_feature_local _USE_MULTI_SHADOW
             #pragma shader_feature_local _SHADOW_RECEIVE_MASK
+            #pragma shader_feature_local _USE_MULTI_SHADOW
+            #pragma shader_feature_local _SOFT_LIGHTING_MODE
+            #pragma shader_feature_local _HEIGHT_FADE
+            #pragma shader_feature_local _INTERSECTION_FADE
+            #pragma shader_feature_local _DISTANCE_FADE
+            #pragma shader_feature_local _DITHERING_ALPHA
+            #pragma shader_feature_local _HASHED_ALPHA
             #pragma shader_feature_local _SDF_MAP
             #pragma shader_feature_local _SHADING_GRADE_MAP
             #pragma shader_feature_local _USE_AO
@@ -1307,7 +1472,6 @@ CGPROGRAM
             #pragma shader_feature_local _CAST_SHADOW_COLOR
             #pragma shader_feature_local _LIGHT_SNAP
             #pragma shader_feature_local _BLUE_NOISE_DITHER
-#pragma shader_feature_local _SOFT_LIGHTING_MODE
             #pragma shader_feature_local _SPECULAR
             #pragma shader_feature_local _SPECULAR_AA
             #pragma shader_feature_local _HAIR_SPECULAR
@@ -1320,13 +1484,7 @@ CGPROGRAM
             #pragma shader_feature_local _DISSOLVE
             #pragma shader_feature_local _ALPHA_MASK
             #pragma shader_feature_local _PARALLAX
-            #pragma shader_feature_local _HEIGHT_FADE
-            #pragma shader_feature_local _INTERSECTION_FADE
-            #pragma shader_feature_local _DISTANCE_FADE
             #pragma shader_feature_local _SMEAR
-            #pragma shader_feature_local _FUR
-            #pragma shader_feature_local _DITHERING_ALPHA
-            #pragma shader_feature_local _HASHED_ALPHA
             #pragma shader_feature_local _VAT
             #pragma shader_feature_local _VAT_NORMAL
             #pragma shader_feature_local _SMOOTH_NORMAL
@@ -1334,573 +1492,29 @@ CGPROGRAM
             #pragma shader_feature_local _TESSELLATION
             #pragma shader_feature_local _TESS_DISPLACEMENT
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
+            #define CUTOUT_VARIANT
+
+            float _Cutoff;
 
             #include "../Include/Core/NataneToonCore.hlsl"
 
-            ENDCG
-        }
+            half4 frag_cutout(v2f i) : SV_Target
+            {
+                half4 col = frag(i);
+                #if defined(_HASHED_ALPHA)
+                    float2 hashedScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
+                    float2 hashedScreenPos = hashedScreenUV * _ScreenParams.xy;
+                    float hashedAlpha = saturate((col.a - _Cutoff) / max(1.0 - _Cutoff, 0.0001));
+                    float hashedCutout = ApplyHashedAlpha(hashedAlpha, hashedScreenPos, i.worldPos.xz, _HashedAlphaScale);
+                    clip(hashedCutout);
+                #else
+                    clip(col.a - _Cutoff);
+                #endif
+                return col;
+            }
 
-        // ===== Fur Shell Passes (16 shells) =====
-        // Each pass renders one shell layer with increasing distance from the mesh surface.
-        // Shell 0 = root (closest to mesh), Shell 15 = tip (furthest from mesh)
+            #define frag frag_cutout
 
-        // --- Fur Shell 0 ---
-        Pass
-        {
-            Name "FUR_SHELL_0"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 0
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 1 ---
-        Pass
-        {
-            Name "FUR_SHELL_1"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 1
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 2 ---
-        Pass
-        {
-            Name "FUR_SHELL_2"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 2
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 3 ---
-        Pass
-        {
-            Name "FUR_SHELL_3"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 3
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 4 ---
-        Pass
-        {
-            Name "FUR_SHELL_4"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 4
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 5 ---
-        Pass
-        {
-            Name "FUR_SHELL_5"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 5
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 6 ---
-        Pass
-        {
-            Name "FUR_SHELL_6"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 6
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 7 ---
-        Pass
-        {
-            Name "FUR_SHELL_7"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 7
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 8 ---
-        Pass
-        {
-            Name "FUR_SHELL_8"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 8
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 9 ---
-        Pass
-        {
-            Name "FUR_SHELL_9"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 9
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 10 ---
-        Pass
-        {
-            Name "FUR_SHELL_10"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 10
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 11 ---
-        Pass
-        {
-            Name "FUR_SHELL_11"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 11
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 12 ---
-        Pass
-        {
-            Name "FUR_SHELL_12"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 12
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 13 ---
-        Pass
-        {
-            Name "FUR_SHELL_13"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 13
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 14 ---
-        Pass
-        {
-            Name "FUR_SHELL_14"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 14
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
-            ENDCG
-        }
-
-        // --- Fur Shell 15 ---
-        Pass
-        {
-            Name "FUR_SHELL_15"
-            Tags { "LightMode" = "Always" }
-            Cull Back
-            ZWrite Off
-            Blend SrcAlpha OneMinusSrcAlpha
-
-            CGPROGRAM
-            #pragma vertex furVert
-            #pragma fragment furFrag
-            #pragma target 3.0
-            #pragma multi_compile_fog
-            #pragma multi_compile_instancing
-            #pragma shader_feature_local _FUR
-            #define FUR_SHELL_INDEX 15
-            sampler2D _MainTex; float4 _MainTex_ST;
-            float _FurLength; float _FurDensity; float _FurAlphaCutoff; float _FurGravity;
-            half4 _FurRootColor; half4 _FurTipColor; float _FurColorBlend;
-            float _FurAO; float _FurShadowStrength; float4 _FurWindDirection;
-            float _FurWindSpeed; float _FurWindStrength; float _FurSpecular; float _FurRimLight;
-            float _FurLODDistance; float _FurLODMinLayers; float4 _FurNoiseTex_ST;
-            sampler2D _FurNoiseTex; sampler2D _FurMask;
-            #ifdef _FUR
-            #include "../Include/Rendering/NataneToonFurShell.hlsl"
-            #else
-            struct appdata_fur_stub { float4 vertex : POSITION; };
-            struct v2f_fur_stub { float4 pos : SV_POSITION; };
-            v2f_fur_stub furVert(appdata_fur_stub v) { v2f_fur_stub o; o.pos = float4(0,0,0,1); return o; }
-            fixed4 furFrag(v2f_fur_stub i) : SV_Target { clip(-1); return 0; }
-            #endif
             ENDCG
         }
 
@@ -1919,16 +1533,22 @@ CGPROGRAM
 
             #include "UnityCG.cginc"
 
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
+            float _Cutoff;
+
             struct appdata
             {
                 float4 vertex : POSITION;
                 float3 normal : NORMAL;
+                float2 uv : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct v2f
             {
                 V2F_SHADOW_CASTER;
+                float2 uv : TEXCOORD1;
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
@@ -1938,6 +1558,7 @@ CGPROGRAM
                 UNITY_SETUP_INSTANCE_ID(v);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
+                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
                 return o;
             }
@@ -1945,6 +1566,8 @@ CGPROGRAM
             float4 frag(v2f i) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+                fixed4 texcol = tex2D(_MainTex, i.uv);
+                clip(texcol.a - _Cutoff);
                 SHADOW_CASTER_FRAGMENT(i)
             }
             ENDCG
@@ -1952,5 +1575,5 @@ CGPROGRAM
     }
 
     CustomEditor "NataneToonShaderGUI"
-    FallBack "Diffuse"
+    FallBack "Transparent/Cutout/Diffuse"
 }

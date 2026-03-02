@@ -2,6 +2,396 @@
 
 ---
 
+## 実装完了レポート (2026-03-02)
+
+以下の6機能がチーム並行実装で完了:
+
+| # | 機能 | キーワード | 担当 | ステータス |
+|---|------|-----------|------|-----------|
+| 1 | 3層シャドウ | `_USE_MULTI_SHADOW` | (既存実装済み) | ✅ 実装済み |
+| 2 | Angel Ring（天使の輪） | `_ANGEL_RING` | shader-impl-a | ✅ 完了 |
+| 3 | Eye Parallax（目の奥行き） | `_EYE_PARALLAX` | shader-impl-a | ✅ 完了 |
+| 4 | Sheen（布の繊維光沢） | `_SHEEN` | shader-impl-b | ✅ 完了 |
+| 5 | Halftone Shadow（ハーフトーン影） | `_HALFTONE_SHADOW` | shader-impl-b | ✅ 完了 |
+| 6 | SSS LUT（事前計算SSS） | `_SSS_LUT` | shader-impl-c | ✅ 完了 |
+| 7 | Outline HSV Enhancement | `_OUTLINE_TEXTURE_COLOR` 拡張 | shader-impl-c | ✅ 完了 |
+
+## プロシージャルトゥーン機能 実装レポート (2026-03-02)
+
+仕様書10機能の調査結果に基づき、未実装・部分実装の5機能を追加実装:
+
+| # | 機能 | キーワード/プロパティ | 担当 | ステータス |
+|---|------|---------------------|------|-----------|
+| 2 | 頂点カラーシャドウ閾値 | `_VERTEX_COLOR_SHADOW` | lighting-impl | ✅ 新規実装 |
+| 3 | ラップドディフューズ | `_WrapAmount` | lighting-impl | ✅ 修正完了 |
+| 4 | シャドウカラーシフト | `_ShadowHueShift` + `_ShadowSaturation` | lighting-impl | ✅ 修正完了 |
+| 7 | プロシージャルAO | `_PROCEDURAL_AO` | vertex-impl | ✅ 新規実装 |
+| 9 | 法線ワーピング | `_NORMAL_WARP` | vertex-impl | ✅ 新規実装 |
+
+GrabPass干渉確認: 全5機能は数式計算のみ。GrabPass使用なし。干渉リスクなし。
+
+---
+
+## 新Shader表現 追加提案書 (2026-03-02)
+
+> **調査チーム**: shader-research (feature-auditor + trend-researcher)
+> **分析**: 現状95+キーワード (16カテゴリ) vs 業界トレンド (2024-2026) のギャップ分析に基づく
+
+### ギャップ分析サマリー
+
+trend-researcher 推奨11技法のうち **6つは既に実装済み**:
+- SDF Face Shadow (`_SDF_MAP` + `_FACE_SDF_ROTATION`) ✓
+- AudioLink (`_AUDIOLINK` + 6サブ) ✓
+- Kajiya-Kay Hair Specular (`_HAIR_SPECULAR` 2ローブ) ✓
+- Iridescence (`_IRIDESCENCE`) ✓
+- Ramp Shading (`_USE_RAMP`) ✓
+- Half-Lambert (`_STANDARD_TOON`) ✓
+
+以下は **実装されていない or 強化すべき** 表現技法:
+
+---
+
+### 提案 1: 3層シャドウシステム 【優先度 S】
+
+| 項目 | 内容 |
+|------|------|
+| **概要** | 現行の2層マルチシャドウ (`_USE_MULTI_SHADOW`) に3rd Shadow層を追加 |
+| **根拠** | lilToonが3層対応しており、移行ユーザーの互換性向上に直結。原神・崩スタも多層影システムを採用 |
+| **実装コスト** | **小** — 既存2層ロジック (`MultiToneShadowColor`) に3rd境界・色・ぼかしを追加するだけ |
+| **VRChat互換** | ◎ Quest可（ステップ関数の追加のみ） |
+| **実装場所** | `Lighting.hlsl` MultiToneShadowColor関数 + `Input.hlsl` に3rdシャドウプロパティ追加 |
+| **影響範囲** | Opaque/Cutout/Transparent 3バリアント |
+
+---
+
+### 提案 2: Angel Ring（天使の輪）ヘアハイライト 【優先度 A】
+
+| 項目 | 内容 |
+|------|------|
+| **概要** | 髪の頂点にリング状ハイライトを描画。ビュー空間MatCap方式 or UVベース方式で実装 |
+| **根拠** | アニメ髪表現の定番技法。原神・lilToon・Poiyomiが対応。既存 `_HAIR_SPECULAR` (Kajiya-Kay) とは異なる視覚効果 |
+| **実装コスト** | **小** — MatCapベースならUVをビュー空間に変換してテクスチャサンプリング。専用テクスチャ1枚 |
+| **推奨方式** | MatCap方式: ビュー空間法線のY成分をリマップ → angel ring テクスチャをサンプリング → 乗算加算ブレンド |
+| **VRChat互換** | ◎ Quest可（テクスチャ1枚+サンプリングのみ） |
+| **実装場所** | `Fragment.hlsl` Hair Specularセクション近傍。新キーワード `_ANGEL_RING` |
+
+---
+
+### 提案 3: パララックスアイ（目の奥行き表現）【優先度 A】
+
+| 項目 | 内容 |
+|------|------|
+| **概要** | ビュー方向ベースのUVオフセットで瞳に奥行き感を付与。汎用 `_PARALLAX` (最大64サンプルPOM) とは別の軽量専用実装 |
+| **根拠** | VRChat・VTuber向けで需要大。多くのアバターシェーダーが目専用パララックスを搭載。既存POMは重すぎて目には不適 |
+| **実装コスト** | **小** — ビュー方向×深度パラメータでUVオフセットするだけ。サンプリング回数1回 |
+| **推奨方式** | `float2 eyeUVOffset = viewDirTS.xy * _EyeParallaxDepth;` → UV加算 → テクスチャサンプリング |
+| **VRChat互換** | ◎ Quest可（UV演算のみ） |
+| **実装場所** | `Fragment.hlsl` メインテクスチャサンプリング前。新キーワード `_EYE_PARALLAX` |
+
+---
+
+### 提案 4: Sheen（布の繊維光沢）【優先度 B】
+
+| 項目 | 内容 |
+|------|------|
+| **概要** | フレネル角度依存の柔らかい光沢で布の微細繊維感を表現。シルク・ベルベット・ウール等の質感 |
+| **根拠** | PBR布マテリアル標準。NPR向けに簡略化すればリムライトとは異なる質感表現が可能。Poiyomi対応済み |
+| **実装コスト** | **小** — `sheen = pow(1.0 - NdotV, sheenPower) * sheenColor` のフレネル演算 |
+| **推奨方式** | Charlie Sheen モデル簡略版: フレネル項 × シーンカラー × マスク |
+| **VRChat互換** | ◎ Quest可（フレネル演算のみ） |
+| **実装場所** | `Fragment.hlsl` リムライトセクション近傍。新キーワード `_SHEEN` |
+
+---
+
+### 提案 5: ハーフトーンシャドウ（影部分ドットパターン）【優先度 B】
+
+| 項目 | 内容 |
+|------|------|
+| **概要** | 影の暗い部分にハーフトーン（ドットパターン）を適用。コミック/マンガ調の影表現 |
+| **根拠** | ゼンレスゾーンゼロのコミック調表現で注目。既存 `_SCREEN_TONE` は汎用オーバーレイだが、NdotL連動のシャドウハーフトーンは未対応 |
+| **実装コスト** | **小〜中** — スクリーン座標 + NdotL閾値 → Bayerディザ or ドットパターン比較 |
+| **推奨方式** | `screenUV` からドットパターンを生成、`toonShadowFactor` と比較してシャドウ領域にのみ適用 |
+| **VRChat互換** | ○ Quest注意（スクリーン座標演算が必要） |
+| **実装場所** | `Fragment.hlsl` シャドウ適用後。既存 `_SCREEN_TONE` の拡張 or 新キーワード `_HALFTONE_SHADOW` |
+
+---
+
+### 提案 6: Pre-integrated SSS LUT（事前計算SSS）【優先度 B】
+
+| 項目 | 内容 |
+|------|------|
+| **概要** | NdotLと曲率をUVとしてSSS LUTテクスチャをサンプリング。現在の `_SSS` より物理的に正確な肌の半透明感 |
+| **根拠** | フォワードレンダリングでの肌表現業界標準。追加パス不要で既存SSSより品質向上 |
+| **実装コスト** | **中** — LUTテクスチャ生成ツール + サンプリングロジック。曲率計算にはfwidth()使用 |
+| **推奨方式** | `float curvature = length(fwidth(worldNormal)) / length(fwidth(worldPos)); float2 sssUV = float2(NdotL * 0.5 + 0.5, curvature); half3 sss = tex2D(_SSSLut, sssUV).rgb;` |
+| **VRChat互換** | ◎ Quest可（テクスチャルックアップのみ） |
+| **実装場所** | `Lighting.hlsl` SSS計算関数。既存 `_SSS` の拡張モード or 新キーワード `_SSS_LUT` |
+
+---
+
+### 提案 7: アウトラインカラー自動抽出 【優先度 B】
+
+| 項目 | 内容 |
+|------|------|
+| **概要** | メインテクスチャの色からアウトラインカラーを自動生成（暗い版 or HSVシフト版）|
+| **根拠** | 手動設定のアウトラインカラーは面倒。原神・lilToonはテクスチャ色×暗化係数で自動化 |
+| **実装コスト** | **小** — OutlinePassフラグメントでメインテクスチャサンプリング → HSV暗化/彩度調整 |
+| **既存との差分** | `_OUTLINE_TEXTURE_COLOR` は存在するが、HSVシフトや暗化係数の制御がより細かくできる拡張を想定 |
+| **VRChat互換** | ◎ Quest可 |
+| **実装場所** | OutlinePass フラグメント。`_OUTLINE_TEXTURE_COLOR` の拡張 |
+
+---
+
+### 提案 8: Hair Depth Prepass（前髪透過）【優先度 C】
+
+| 項目 | 内容 |
+|------|------|
+| **概要** | 前髪メッシュを先にDepthバッファに書き込み、顔が前髪越しに透けるようにする |
+| **根拠** | 崩壊スターレイルで使用。アニメキャラの前髪表現で重要 |
+| **実装コスト** | **大** — 追加パス + Stencil制御 + メッシュ分離前提 |
+| **VRChat互換** | △ 追加パスが重い。メッシュ分離がアバター制作ワークフローに影響 |
+| **判断** | 優先度低。コストに対して恩恵が限定的。VRChatでの実用性も低い |
+
+---
+
+### 優先実装ロードマップ（提案）
+
+```
+Phase 1 (v1.2.x — 低コスト・高インパクト):
+  ├── 提案1: 3層シャドウ [S] — 既存拡張、lilToon互換性向上
+  ├── 提案2: Angel Ring [A] — MatCap方式、テクスチャ1枚
+  └── 提案3: パララックスアイ [A] — UVオフセット、超軽量
+
+Phase 2 (v1.3.x — 表現力拡張):
+  ├── 提案4: Sheen [B] — フレネル演算、布の質感
+  ├── 提案5: ハーフトーンシャドウ [B] — コミック調影表現
+  └── 提案7: アウトラインカラー自動抽出 [B] — 既存拡張
+
+Phase 3 (v1.4.x — 高品質化):
+  ├── 提案6: Pre-integrated SSS LUT [B] — 肌品質向上
+  └── 提案8: Hair Depth Prepass [C] — 検討のみ
+```
+
+---
+
+## 現在の実装済み機能一覧
+
+> 調査日: 2026-03-02
+> 対象バージョン: v1.2.0 (v1.1.5 branch)
+> シェーダーバリアント: Opaque / Cutout / Transparent / Fur / Background
+
+---
+
+### 1. 基本レンダリング (Core Rendering)
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| *(常時有効)* | メインテクスチャ + カラー乗算 | Fragment.hlsl L68-74 |
+| `_MAIN_TEX_ANIMATION` | メインテクスチャUVスクロール/回転アニメーション | Fragment.hlsl L46-48 |
+| *(常時有効)* | テクスチャカラー保存 (_AlbedoPreservation) | Fragment.hlsl L919-948 |
+| *(常時有効)* | 彩度調整 (_Saturation) | Fragment.hlsl L952-953 |
+| *(常時有効)* | 全体ブライトネス (_Brightness) | Fragment.hlsl L957 |
+| *(常時有効)* | グロッシネス / マット効果 (_Glossiness, _MatteEffect) | Utils.hlsl (ApplyMatteQuality) |
+| *(常時有効)* | ファイナルカラーブレンディング (白飛び/黒潰れ防止) | Utils.hlsl (ApplyFinalColorBlending) |
+
+### 2. マルチレイヤーテクスチャ (Makeup Textures)
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| `_2ND_TEXTURE` | 2ndテクスチャレイヤー (HSV調整, マスク, 4ブレンドモード, UVアニメ) | Fragment.hlsl L93-102 |
+| `_3RD_TEXTURE` | 3rdテクスチャレイヤー (同上) | Fragment.hlsl L104-113 |
+| `_4TH_TEXTURE` | 4thテクスチャレイヤー (同上) | Fragment.hlsl L115-124 |
+| `_5TH_TEXTURE` | 5thテクスチャレイヤー (同上) | Fragment.hlsl L126-135 |
+| `_2ND_TEX_MASK` ~ `_5TH_TEX_MASK` | 各テクスチャ用マスク | Properties (Toggle) |
+
+### 3. スクリーントーン & グラデーション
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| `_SCREEN_TONE` | スクリーントーンオーバーレイ (Bayerディザ, マスク, ブレンドモード) | Fragment.hlsl L149-157, Utils.hlsl |
+| `_GRADIENT_BASE_COLOR` | グラデーションベースカラー (軸/空間選択, ブレンドモード) | Fragment.hlsl L77-86 |
+
+### 4. シェーディング & ライティング (Shading & Lighting)
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| *(常時有効)* | **Toon Shading** (ステップ数/シャープネス可変セルシェーディング) | Lighting.hlsl (ToonShading) |
+| *(常時有効)* | **Gradient Shading** (スムーズグラデーション) | Lighting.hlsl (GradientShading) |
+| `_STANDARD_TOON` | **StandardToon** (lilToon互換: Half-Lambert, ShadowBorder/Blur/Strength, AsUnlit, EnvStrength) | Lighting.hlsl, Fragment.hlsl L518-577 |
+| `_USE_RAMP` | ランプテクスチャシェーディング | Lighting.hlsl (RampShading) |
+| `_USE_MULTI_SHADOW` | マルチトーンシャドウ (2nd/3rdシャドウカラー, ボーダー制御) | Lighting.hlsl (MultiToneShadowColor) |
+| `_SHADOW_RECEIVE_MASK` | シャドウ受け取りマスク | Fragment.hlsl L202-207 |
+| `_SDF_MAP` | SDFシャドウマップ (顔用方向独立シャドウ) | Lighting.hlsl (ApplySDFShadow) |
+| `_FACE_SDF_ROTATION` | 顔SDF回転対応 (ライト方向に応じたUVミラーリング) | Lighting.hlsl L470-511 |
+| `_SHADING_GRADE_MAP` | シェーディンググレードマップ | Fragment.hlsl (ApplyShadingGradeMap) |
+| `_USE_AO` | アンビエントオクルージョン (ブレンドモード, ブラー) | Fragment.hlsl L500-505 |
+| `_USE_DITHERING` | ディザリングシャドウエッジ (Bayer 4x4) | Lighting.hlsl (DitheringPattern) |
+| `_SHADOW_COLOR_TEX` | シャドウカラーテクスチャ | Fragment.hlsl L618-620 |
+| `_SOFT_LIGHTING_MODE` | ソフトライティングモード (グローバルsmoothstep) | Lighting.hlsl (ApplyLightBlend) |
+| `_PCSS` | PCSS ソフトシャドウ (Poisson Disk PCF, ブロッカー探索, ペナンブラ推定) | Fragment.hlsl L316-406 |
+
+### 5. 高度なライティング制御 (Advanced Lighting)
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| *(常時有効)* | ライトカラー補正 (Min/Max/Monochrome) | Fragment.hlsl L258-260 |
+| *(常時有効)* | ライトフォールバック (Dir→PointSpot→SH) | Fragment.hlsl L217-251 |
+| *(常時有効)* | バックライト | Fragment.hlsl L449-454 |
+| `_PIXEL_VERTEX_LIGHTS` | ピクセル精度頂点ライト | Lighting.hlsl (CalculateVertexLightsPixelPrecision) |
+| `_USE_LIGHT_VOLUME` | VRC Light Volumes (SH, 直接/間接光, 4ブレンドモード) | Lighting.hlsl, Fragment.hlsl L654-849 |
+| `_LIGHT_VOLUME_SPECULAR` | Light Volumeスペキュラ | Fragment.hlsl L839-847 |
+
+### 6. 光源依存エフェクト (Light-Based Effects)
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| `_SPECULAR` | スペキュラハイライト (Blinn-Phong系, マスク, UVアニメ) | Lighting.hlsl, Fragment.hlsl L1010-1038 |
+| `_SPECULAR_MASK` | スペキュラマスク | Fragment.hlsl L1016-1018 |
+| `_HAIR_SPECULAR` | ヘアスペキュラ Kajiya-Kay (2ローブ, シフトテクスチャ) | Lighting.hlsl L274-314 |
+| `_HAIR_SPEC_MASK` / `_HAIR_SPEC_SHIFT_TEX` | ヘアスペキュラマスク/シフトテクスチャ | Lighting.hlsl L292-311 |
+| `_RIM_LIGHT` | リムライト (Fresnel, スプレッド, マスク, 方向制御, シャドウマスク) | Lighting.hlsl, Fragment.hlsl L1100-1150 |
+| `_RIM_LIGHT_2` | リムライト2 (独立カラー/パワー/スプレッド) | Fragment.hlsl L1153-1203 |
+| `_OFFSET_RIM_LIGHT` | オフセットリムライト (XYオフセット, ライト方向連動, トゥーンシャープネス) | Lighting.hlsl L330-358 |
+| `_RIM_MASK` / `_RIM_MASK_2` | リムライトマスク (UVアニメ対応) | Fragment.hlsl |
+| `_RIM_DIRECTION_CONTROL` | リムライト方向制御 | Fragment.hlsl L1116-1133 |
+| `_SSS` | サブサーフェススキャタリング (厚みマップ, マスク) | Lighting.hlsl L363-381 |
+| `_THICKNESS_MAP` / `_SSS_MASK` | SSS厚みマップ/マスク | Fragment.hlsl L1068-1076 |
+
+### 7. 視線依存エフェクト (View-Based Effects)
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| `_MATCAP` | MatCap (3ブレンドモード: Add/Multiply/Replace) | Fragment.hlsl L1281-1323 |
+| `_MATCAP_2` / `_MATCAP_3` | MatCap 2/3 (独立テクスチャ/ブレンド) | Fragment.hlsl L1327-1383 |
+| `_MATCAP_MASK` / `_MATCAP_MASK_2` / `_MATCAP_MASK_3` | MatCapマスク | Fragment.hlsl |
+| `_REFLECTION` | キューブマップリフレクション (Fresnel, Metallic) | Lighting.hlsl L385-421 |
+| `_REFLECTION_MASK` | リフレクションマスク | Fragment.hlsl L1390-1392 |
+| `_IRIDESCENCE` | イリデッセンス (虹色Fresnel効果) | Fragment.hlsl L1565-1575 |
+| `_IRIDESCENCE_MASK` | イリデッセンスマスク | Properties |
+| `_ENV_RIM` | 環境リム (キューブマップ低角度反射) | Lighting.hlsl L425-441 |
+| `_ENV_RIM_MASK` | 環境リムマスク | Fragment.hlsl L1248-1250 |
+
+### 8. 発光・特殊視覚エフェクト (Emission & Special FX)
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| `_EMISSION` | エミッション (HDRカラー, マップ, Glow/Bloom) | Fragment.hlsl L1444-1488 |
+| `_EMISSION_SCROLL` | エミッションUVスクロール | Fragment.hlsl L1447-1451 |
+| `_EMISSION_PULSE` | エミッションパルスアニメーション | Fragment.hlsl L1456-1461 |
+| `_EMISSION_MASK` | エミッションマスク (UVアニメ対応) | Fragment.hlsl L1464-1467 |
+| `_GLITTER` | グリッターエフェクト | Fragment.hlsl L1551-1561 |
+| `_GLITTER_MASK` | グリッターマスク (UVアニメ対応) | Fragment.hlsl L1552 |
+| `_HUE_SHIFT` | ヒューシフト (色相回転) | Fragment.hlsl L1492-1497 |
+| `_HOLOGRAM` | ホログラム (スキャンライン, フリッカー, エッジグロー, モノクロ, 透明度) | Fragment.hlsl L1656-1707 |
+| `_HOLOGRAM_NOISE` / `_HOLOGRAM_MASK` | ホログラムノイズ/マスク | Fragment.hlsl L1663-1671 |
+| `_GLITCH` | グリッチ (UV歪み, RGBスプリット, ノイズテクスチャ, マスク) | Fragment.hlsl L1711-1756 |
+| `_GLITCH_STRETCH` | グリッチストレッチ (UV引き延ばしグリッチ) | Fragment.hlsl L51-66 |
+
+### 9. 表面変形 (Surface Modification)
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| `_NORMALMAP` | 法線マップ | Fragment.hlsl L161-168 |
+| `_PARALLAX` | パララックスオクルージョンマッピング (最大64サンプル) | Utils.hlsl, Fragment.hlsl L39-42 |
+| `_REFRACTION` | リフラクション (Snell法則, GrabPass, ブラー) | Lighting.hlsl, Fragment.hlsl L1410-1441 |
+| `_REFRACTION_MASK` | リフラクションマスク | Fragment.hlsl L1415-1416 |
+| `_DISSOLVE` | ディゾルブ (ノイズ/UV/World/Localモード, エッジグロー) | Utils.hlsl, Fragment.hlsl L1786-1832 |
+| `_DISSOLVE_MASK` | ディゾルブマスク | Fragment.hlsl L1793 |
+| `_ALPHA_MASK` | アルファマスク | Fragment.hlsl L1889-1892 |
+| `_DECAL` | デカール (位置/回転/スケール, 4ブレンドモード) | Fragment.hlsl L1759-1783 |
+
+### 10. アウトライン (Outline)
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| `_OUTLINE` | アウトライン (反転ハル法/バックフェイス法) | Shader OutlinePass |
+| `_OUTLINE_MASK` / `_OUTLINE_WIDTH_MAP` | マスク/幅マップ | OutlinePass |
+| `_OUTLINE_MULTI_COLOR` | マルチカラーアウトライン | OutlinePass |
+| `_OUTLINE_TEXTURE_COLOR` | テクスチャ連動カラー | OutlinePass |
+| `_OUTLINE_HAND_DRAWN` | 手描き風アウトライン (ノイズ/ジッター) | Vertex.hlsl L52-68 |
+| `_SMOOTH_NORMAL` | スムースノーマル (頂点カラーOS/TS, ベイクテクスチャ 3モード) | Vertex.hlsl L167-193 |
+
+### 11. 頂点変形 & アニメーション
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| `_VERTEX_ANIMATION` | 頂点アニメーション (Wave/Breath/Wind/Pulse) | Properties |
+| `_VERTEX_ANIM_MASK` | 頂点アニメーションマスク | Properties |
+| `_VAT` | Vertex Animation Texture (Houdini互換) | Vertex.hlsl L5-48 |
+| `_VAT_NORMAL` | VAT法線マップ | Vertex.hlsl L43-47 |
+| `_SMEAR` | スミアエフェクト (残像, トレイル, グロー, VAT連動) | Vertex.hlsl L85-147, Fragment.hlsl L1578-1626 |
+| `_TESSELLATION` | テッセレーション (Phong平滑化, 距離LOD) | Input.hlsl L659-667 |
+| `_TESS_DISPLACEMENT` | テッセレーションディスプレースメント | Properties |
+
+### 12. 距離・高さ・交差制御
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| `_DISTANCE_FADE` | 距離フェード (Alpha/Simplify/Dithering, 近距離, 個別エフェクト20+) | Fragment.hlsl L291-306, L1970-1989 |
+| `_HEIGHT_FADE` | 高さフェード (軸/空間, 反転, Alpha/Clip/Dithering, エッジグロー) | Fragment.hlsl L1895-1925 |
+| `_INTERSECTION_FADE` | オブジェクト交差フェード (深度ベース, エッジハイライト) | Fragment.hlsl L1929-1961 |
+
+### 13. イラスト風技法 (Illustration Style)
+
+**STAGE A: Color Transform**
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| `_COLOR_QUANTIZE` | カラー量子化 (RGB/HSVモード, ディザリング) | Fragment.hlsl L965-982 |
+| `_LUT_3D` | 3D LUT カラーグレーディング | Fragment.hlsl L984-989 |
+| `_HATCHING` | ハッチング (6層クロスハッチ) | Fragment.hlsl L991-998 |
+
+**STAGE B: Screen Space Effects**
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| `_WATERCOLOR` | 水彩画効果 (エッジ暗化, 滲み, 粒状感, 紙テクスチャ) | Fragment.hlsl L1843-1851 |
+| `_SOFT_FILTER` | ソフトフィルター / セレクティブブルーム | Fragment.hlsl L1853-1858 |
+| `_KUWAHARA_FILTER` | Kuwaharaフィルター (油絵風) | Fragment.hlsl L1860-1863 |
+| `_SCREEN_EDGE` | スクリーンエッジ検出 (深度/法線) | Fragment.hlsl L1866-1870 |
+| `_COLOR_BLEEDING` | カラーブリーディング (色にじみ) | Fragment.hlsl L1873-1876 |
+| `_CHROMATIC_ABERRATION` | 色収差 | Fragment.hlsl L1879-1882 |
+
+### 14. AudioLink (VRChat)
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| `_AUDIOLINK` | AudioLink統合 (音楽リアクティブ) | Fragment.hlsl L1500-1547 |
+| サブ: `_AUDIOLINK_EMISSION` / `_AUDIOLINK_RIM` / `_AUDIOLINK_HUE_SHIFT` / `_AUDIOLINK_DISSOLVE` / `_AUDIOLINK_OUTLINE` / `_AUDIOLINK_CHRONOTENSITY` | 各エフェクト音楽連動 | Fragment.hlsl, Properties |
+
+### 15. 外部連携・特殊機能
+
+| キーワード | 機能概要 | 実装ファイル |
+|---|---|---|
+| `_LTCGI` | LTCGI リアルタイムエリアライト (diffuse+specular) | Lighting.hlsl L15-36 |
+| `_WATER_DRIP` / `_DRIP_MASK` | 水滴エフェクト (速度/密度/サイズ/トレイル) | Fragment.hlsl L1630-1652 |
+| `_BACKFACE_TEXTURE` | バックフェイステクスチャ | Properties |
+| `_VIDEO_TEXTURE` | ビデオレンダーテクスチャ | Properties |
+| `_DITHERING_ALPHA` | ディザリングアルファ (Opaque向け擬似透明) | Fragment.hlsl L2011-2015 |
+
+### 16. バリアント専用機能
+
+| キーワード | 機能概要 | バリアント |
+|---|---|---|
+| `_FUR` | ファーシェル (16層, 風/重力, LOD, スペキュラ/リム) | Fur variant |
+| `_BACKGROUND_MODE` | 背景モード (ライトマップ統合) | Background variant |
+| `_PBR` | PBRモード (GGX, MetallicGlossMap, 間接スペキュラ) | Background variant |
+| `_DETAIL_MAP` | ディテールマップ (2nd UV, アルベド/法線) | Background variant |
+| `_TRIPLANAR` | トライプレーナーマッピング | Background variant |
+| `_HEIGHT_FOG` | ハイトフォグ (マテリアルベースフォグ) | Background variant |
+| `_SURFACE_COVER` | サーフェスカバー (雪/砂堆積) | Background variant |
+| `_MIRROR_CONTROL` | VRChatミラー制御 | Background variant |
+| `_QUEST_LITE` | Quest軽量モード (重いエフェクト自動スキップ) | Background variant |
+
+### 総合統計
+
+- **主要キーワード**: 約79個
+- **サブキーワード含め**: 約95+個
+- **シェーダーバリアント**: 5種 (Opaque/Cutout/Transparent/Fur/Background)
+- **ユーティリティ関数**: RGB/HSV変換, トーンマッピング(3種), ブレンドモード(4種), セーフ加算ブレンド等
+
+---
+
 ## lilToon完全移行調査 (liltoon-migration-research team)
 
 ### 目的
@@ -3505,3 +3895,653 @@ half3 ChromaticAberration(float2 grabUV, float intensity, float2 center)
 | 既存共有 | `_CameraDepthTexture` | 深度エッジ検出（既に宣言済み） |
 
 **キーワード追加数**: 10個 (`_SOFT_FILTER`, `_KUWAHARA_FILTER`, `_SCREEN_EDGE`, `_LUT_3D`, `_COLOR_QUANTIZE`, `_HATCHING`, `_WATERCOLOR`, `_OUTLINE_HAND_DRAWN`, `_COLOR_BLEEDING`, `_CHROMATIC_ABERRATION`)
+
+---
+
+## Feature Visibility Investigation
+
+### Shader Variant Analysis (by shader-analyst)
+
+#### バリアント一覧
+
+| バリアント | ファイルパス | Queue | RenderType | GrabPass | Outline Pass | ShadowCaster | Meta Pass | Fur Shell Passes | 固有マクロ |
+|---|---|---|---|---|---|---|---|---|---|
+| **Opaque** | `Shaders/NataneToon/NataneToonShader.shader` | Geometry | Opaque | `_GrabTexture` | OUTLINE (ForwardBase, Cull Front) | ShadowCaster | -- | -- | (なし) |
+| **Cutout** | `Shaders/NataneToon/Variants/NataneToonShader_Cutout.shader` | AlphaTest | TransparentCutout | `_GrabTexture` | OUTLINE (ForwardBase, Cull Front) | ShadowCaster | -- | -- | (なし) |
+| **Transparent** | `Shaders/NataneToon/Variants/NataneToonShader_Transparent.shader` | Transparent | Transparent | `_GrabTexture` | OUTLINE (ForwardBase, Cull Front) | **なし** | -- | -- | (なし) |
+| **Fur** | `Shaders/NataneToon/Variants/NataneToonShader_Fur.shader` | Transparent | Transparent | `_GrabTexture` | OUTLINE (ForwardBase, Cull Front) | ShadowCaster | -- | 16 Shell Passes (LightMode=Always, `_FUR` keyword) | (なし) |
+| **Background** | `Shaders/NataneToon/Variants/NataneToonShader_Background.shader` | Geometry | Opaque | **なし** | OUTLINE (ForwardBase, Cull Front) | ShadowCaster | **Meta Pass あり** | -- | `#define _BACKGROUND_MODE 1` |
+
+#### Pass 構成詳細
+
+| バリアント | Pass 1 (Outline) | Pass 2 (ForwardBase) | Pass 3 (ForwardAdd) | Pass 4 (ShadowCaster) | Pass 5+ (その他) |
+|---|---|---|---|---|---|
+| **Opaque** | OUTLINE (ForwardBase) | ForwardBase (Main) | ForwardAdd | ShadowCaster | -- |
+| **Cutout** | OUTLINE (ForwardBase) | ForwardBase (Main) | ForwardAdd | ShadowCaster | -- |
+| **Transparent** | OUTLINE (ForwardBase) | ForwardBase (Main) | ForwardAdd | **なし** (半透明は影を落とさない) | -- |
+| **Fur** | OUTLINE (ForwardBase) | ForwardBase (Main) | ForwardAdd | ShadowCaster | **16 Fur Shell Passes** (LightMode=Always) |
+| **Background** | OUTLINE (ForwardBase) | ForwardBase (Main, `_BACKGROUND_MODE 1`) | ForwardAdd (`_BACKGROUND_MODE 1`) | ShadowCaster | **Meta Pass** (Lightmap GI用, `_EMISSION` + `_PBR`) |
+
+#### Pragma キーワード比較マトリクス (ForwardBase Main Pass)
+
+**共通キーワード (全5バリアント共通)**:
+| キーワード | Opaque | Cutout | Transparent | Fur | Background |
+|---|---|---|---|---|---|
+| `_MAIN_TEX_ANIMATION` | YES | YES | YES | YES | YES |
+| `_2ND_TEXTURE` | YES | YES | YES | YES | YES |
+| `_3RD_TEXTURE` | YES | YES | YES | YES | YES |
+| `_4TH_TEXTURE` | YES | YES | YES | YES | YES |
+| `_5TH_TEXTURE` | YES | YES | YES | YES | YES |
+| `_SCREEN_TONE` | YES | YES | YES | YES | YES |
+| `_GRADIENT_BASE_COLOR` | YES | YES | YES | YES | YES |
+| `_USE_RAMP` | YES | YES | YES | YES | YES |
+| `_STANDARD_TOON` | YES | YES | YES | YES | YES |
+| `_USE_MULTI_SHADOW` | YES | YES | YES | YES | YES |
+| `_SHADOW_RECEIVE_MASK` | YES | YES | YES | YES | YES |
+| `_SHADING_GRADE_MAP` | YES | YES | YES | YES | YES |
+| `_USE_AO` | YES | YES | YES | YES | YES |
+| `_USE_DITHERING` | YES | YES | YES | YES | YES |
+| `_SOFT_LIGHTING_MODE` | YES | YES | YES | YES | YES |
+| `_SPECULAR` | YES | YES | YES | YES | YES |
+| `_RIM_LIGHT` | YES | YES | YES | YES | YES |
+| `_RIM_LIGHT_2` | YES | YES | YES | YES | YES |
+| `_OFFSET_RIM_LIGHT` | YES | YES | YES | YES | YES |
+| `_EMISSION` | YES | YES | YES | YES | YES |
+| `_NORMALMAP` | YES | YES | YES | YES | YES |
+| `_DISSOLVE` | YES | YES | YES | YES | YES |
+| `_ALPHA_MASK` | YES | YES | YES | YES | YES |
+| `_ENV_RIM` | YES | YES | YES | YES | YES |
+| `_HEIGHT_FADE` | YES | YES | YES | YES | YES |
+| `_DISTANCE_FADE` | YES | YES | YES | YES | YES |
+| `_SMOOTH_NORMAL` | YES | YES | YES | YES | YES |
+| `_MATCAP` | YES | YES | YES | YES | YES |
+
+**バリアント依存キーワード (一部のバリアントのみ)**:
+| キーワード | Opaque | Cutout | Transparent | Fur | Background | 備考 |
+|---|---|---|---|---|---|---|
+| `_SDF_MAP` | YES | YES | YES | YES | **NO** | Background は SDF 未対応 |
+| `_FACE_SDF_ROTATION` | YES | YES | YES | YES | **NO** | Background は SDF 未対応 |
+| `_USE_LIGHT_VOLUME` | YES | YES | YES | YES | YES | Background は default OFF |
+| `_LIGHT_VOLUME_SPECULAR` | YES | YES | YES | YES | YES | -- |
+| `_HAIR_SPECULAR` | YES | YES | YES | YES | **NO** | Background はアバター専用機能除外 |
+| `_SSS` | YES | YES | YES | YES | **NO** | Background はアバター専用機能除外 |
+| `_GLITTER` | YES | YES | YES | YES | YES | -- |
+| `_HUE_SHIFT` | YES | YES | YES | YES | YES | -- |
+| `_REFLECTION` | YES | YES | YES | YES | YES | -- |
+| `_IRIDESCENCE` | YES | YES | YES | YES | YES | -- |
+| `_PARALLAX` | YES | YES | YES | YES | **NO** | Background はアバター専用機能除外 |
+| `_REFRACTION` | YES | YES | YES | YES | **NO** | Background はアバター専用機能除外 (GrabPass もなし) |
+| `_MATCAP_2` | YES | YES | YES | YES | YES | -- |
+| `_MATCAP_3` | YES | YES | YES | YES | YES | -- |
+| `_AUDIOLINK` | YES | YES | YES | YES | YES | -- |
+| `_INTERSECTION_FADE` | YES | YES | YES | YES | YES | -- |
+| `_VERTEX_ANIMATION` | YES | YES | YES | YES | YES | -- |
+| `_HOLOGRAM` | YES | YES | YES | YES | **NO** | Background はアバター専用機能除外 |
+| `_GLITCH` | YES | YES | YES | YES | **NO** | -- |
+| `_GLITCH_STRETCH` | YES | YES | YES | **NO** | **NO** | Fur も非対応 |
+| `_COLOR_QUANTIZE` | YES | YES | YES | **NO** | **NO** | -- |
+| `_LUT_3D` | YES | YES | YES | **NO** | **NO** | -- |
+| `_HATCHING` | YES | YES | YES | **NO** | **NO** | -- |
+| `_WATERCOLOR` | YES | YES | YES | **NO** | **NO** | -- |
+| `_SOFT_FILTER` | YES | YES | YES | **NO** | **NO** | -- |
+| `_KUWAHARA_FILTER` | YES | YES | YES | **NO** | **NO** | -- |
+| `_SCREEN_EDGE` | YES | YES | YES | **NO** | **NO** | -- |
+| `_COLOR_BLEEDING` | YES | YES | YES | **NO** | **NO** | -- |
+| `_CHROMATIC_ABERRATION` | YES | YES | YES | **NO** | **NO** | -- |
+| `_HOLOGRAM_NOISE` | YES | YES | YES | YES | **NO** | -- |
+| `_DECAL` | YES | YES | YES | YES | YES | -- |
+| `_BACKFACE_TEXTURE` | YES | YES | YES | YES | **NO** | -- |
+| `_VIDEO_TEXTURE` | YES | YES | YES | YES | YES | -- |
+| `_LTCGI` | YES | YES | YES | YES | YES | -- |
+| `_WATER_DRIP` | YES | YES | YES | YES | YES | -- |
+| `_SMEAR` | YES | YES | YES | YES | **NO** | -- |
+| `_DITHERING_ALPHA` | YES | YES | YES | YES | **NO** | -- |
+| `_VAT` | YES | YES | YES | YES | **NO** | -- |
+| `_VAT_NORMAL` | YES | YES | YES | YES | **NO** | -- |
+| `_PIXEL_VERTEX_LIGHTS` | YES | YES | YES | YES | YES | -- |
+| `_TESSELLATION` | YES | YES | YES | YES | **NO** | -- |
+| `_TESS_DISPLACEMENT` | YES | YES | YES | YES | **NO** | -- |
+| `_PCSS` | YES | YES | YES | **NO** | **NO** | -- |
+| `_SHADOW_COLOR_TEX` | YES | YES | YES | YES | YES | Properties のみ |
+| `_FUR` | **NO** | **NO** | **NO** | YES | **NO** | Fur 専用 (16 Shell Pass) |
+| `_OUTLINE_HAND_DRAWN` | YES | YES | YES | **NO** | **NO** | Outline Pass のみ |
+| `_PBR` | **NO** | **NO** | **NO** | **NO** | YES | Background 専用 |
+| `_DETAIL_MAP` | **NO** | **NO** | **NO** | **NO** | YES | Background 専用 |
+| `_TRIPLANAR` | **NO** | **NO** | **NO** | **NO** | YES | Background 専用 |
+| `_HEIGHT_FOG` | **NO** | **NO** | **NO** | **NO** | YES | Background 専用 |
+| `_SURFACE_COVER` | **NO** | **NO** | **NO** | **NO** | YES | Background 専用 |
+| `_MIRROR_CONTROL` | **NO** | **NO** | **NO** | **NO** | YES | Background 専用 |
+| `_QUEST_LITE` | **NO** | **NO** | **NO** | **NO** | YES | Background 専用 |
+
+#### バリアント固有の Properties
+
+##### Cutout 固有
+- `_Cutoff` ("Alpha Cutoff", Range(0, 1)) = 0.5 -- 他バリアントにはない
+
+##### Transparent 固有
+- ShadowCaster Pass がない (半透明は影を落とさない設計)
+
+##### Fur 固有
+- `_FurLength`, `_FurDensity`, `_FurAlphaCutoff`, `_FurNoiseTex`, `_FurMask`
+- `_FurRootColor`, `_FurTipColor`, `_FurColorBlend`
+- `_FurGravity`, `_FurWindDirection`, `_FurWindSpeed`, `_FurWindStrength`
+- `_FurAO`, `_FurShadowStrength`, `_FurSpecular`, `_FurRimLight`
+- `_FurLODDistance`, `_FurLODMinLayers`
+- PCSS 未対応 (Properties/Pragma 両方なし)
+
+##### Background 固有
+- `_LightmapToonInfluence`, `_LightmapIntensity` (Lightmap 連携)
+- `_EnablePBR`, `_PBR_MetallicGlossMap`, `_PBR_Metallic`, `_PBR_Smoothness`, `_PBR_OcclusionMap`, `_PBR_OcclusionStrength`, `_PBR_ReflectionIntensity` (PBR Material)
+- `_DetailAlbedoMap`, `_DetailNormalMap`, `_DetailNormalScale`, `_DetailAlbedoScale`, `_DetailUVSet`, `_DetailTiling` (Detail Map)
+- `_Triplanar`, `_TriplanarScale`, `_TriplanarBlendSharpness`, `_TriplanarOffsetX/Y/Z` (Triplanar Mapping)
+- `_HeightFog`, `_HeightFogColor`, `_HeightFogStart`, `_HeightFogEnd`, `_HeightFogDensity`, `_HeightFogMode` (Height Fog)
+- `_SurfaceCover`, `_CoverTex`, `_CoverColor`, `_CoverNormalMap`, `_CoverAmount`, `_CoverThreshold`, `_CoverBlendSharpness`, `_CoverTiling`, `_CoverDirection` (Surface Cover)
+- `_MirrorControl`, `_MirrorMode`, `_MirrorEmissionMultiplier` (Mirror Control)
+- `_QuestLite` (Quest Lite)
+- `#define _BACKGROUND_MODE 1` (ForwardBase / ForwardAdd の両方で定義)
+- Meta Pass あり (Lightmap GI ベイク用)
+- GrabPass **なし** (Refraction 未対応)
+- SDF Map 未対応、Hair Specular 未対応、SSS 未対応、Parallax 未対応
+
+#### バリアント固有の制約まとめ
+
+- **Opaque**: フルフィーチャーのベースラインバリアント。全アバター向け機能を含む。GrabPass あり。
+- **Cutout**: Opaque とほぼ同一。`_Cutoff` プロパティが追加。Queue=AlphaTest、RenderType=TransparentCutout。
+- **Transparent**: Opaque とほぼ同一。ShadowCaster Pass がない。Queue=Transparent、RenderType=Transparent。
+- **Fur**: Shell-based ファー用。16個の追加パス (LightMode=Always)。イラスト風技法系キーワード (ColorQuantize, LUT3D, Hatching, Watercolor, SoftFilter, Kuwahara, ScreenEdge, ColorBleeding, ChromaticAberration, GlitchStretch) が未対応。PCSS も未対応。`_FUR` キーワードは Fur 専用。
+- **Background**: ワールド・背景用に最適化。アバター専用機能 (HairSpecular, SSS, Parallax, Refraction, SDF, Hologram, Glitch, 各種イラスト風技法, Smear, DitheringAlpha, VAT, Tessellation, PCSS) を除外。代わりに PBR, DetailMap, Triplanar, HeightFog, SurfaceCover, MirrorControl, QuestLite, Meta Pass を追加。GrabPass なし。`#define _BACKGROUND_MODE 1` で Background モード分岐。
+
+#### Outline Pass のキーワード差分
+
+| キーワード (Outline Pass) | Opaque | Cutout | Transparent | Fur | Background |
+|---|---|---|---|---|---|
+| `_OUTLINE` | YES | YES | YES | YES | YES |
+| `_OUTLINE_TEXTURE_COLOR` | YES | YES | YES | YES | YES |
+| `_OUTLINE_WIDTH_MAP` | YES | YES | YES | YES | YES |
+| `_OUTLINE_MULTI_COLOR` | YES | YES | YES | YES | YES |
+| `_OUTLINE_MASK` | YES | YES | YES | YES | YES |
+| `_SMOOTH_NORMAL` | YES | YES | YES | YES | YES |
+| `_SMEAR` | YES | YES | YES | YES | **NO** |
+| `_HEIGHT_FADE` | YES | YES | YES | YES | YES |
+| `_OUTLINE_HAND_DRAWN` | YES | YES | YES | **NO** | **NO** |
+
+#### ForwardAdd Pass のキーワード差分
+
+ForwardAdd Pass は全バリアントで共通のキーワードセットを持つが、Background のみ追加の `_PBR` キーワードあり。
+Fur は ForwardAdd に `_FUR` キーワードなし（ForwardAdd は Base Surface のみ）。
+
+#### 数値サマリー
+
+| バリアント | ForwardBase キーワード数 | ForwardAdd キーワード数 | 総 Pass 数 | 固有機能数 |
+|---|---|---|---|---|
+| **Opaque** | 71 | 36 | 4 | 0 |
+| **Cutout** | 71 | 36 | 4 | 1 (_Cutoff) |
+| **Transparent** | 71 | 36 | 3 (ShadowCaster なし) | 0 |
+| **Fur** | 61 (イラスト系/PCSS等なし, +_FUR) | 33 (+_FUR) | 20 (4 + 16 Fur Shell) | 15 (Fur Properties) |
+| **Background** | 51 (アバター系なし, +PBR等) | 26 (+_PBR) | 5 (4 + Meta) | 9カテゴリ (PBR/Detail/Triplanar/HeightFog/SurfaceCover/Mirror/QuestLite/Lightmap/MetaPass) |
+
+---
+
+### GUI Branching Logic Analysis
+
+#### RenderingMode enum
+
+定義箇所: `NataneToonShaderGUI.cs` 144-151行
+
+```csharp
+public enum RenderingMode
+{
+    Opaque = 0,
+    Cutout = 1,
+    Transparent = 2,
+    Fur = 3,
+    Background = 4
+}
+```
+
+ラベル: 不透明 / カットアウト / 半透明 / ファー / 背景 (Background)
+
+#### GetCurrentRenderingMode() 実装
+
+定義箇所: 5062-5078行
+
+**シェーダー名の文字列マッチ**でモードを判定する。プロパティ値ではなく `targetMaterial.shader.name` を見る。
+
+```
+"Background" を含む → Background
+"Fur" を含む → Fur
+"Transparent" を含む → Transparent
+"Cutout" を含む → Cutout
+上記以外 → Opaque
+```
+
+Contains() の優先順位が重要: Background > Fur > Transparent > Cutout > Opaque
+
+#### SetRenderingMode() 実装
+
+定義箇所: 5084-5143行
+
+モード変更時にシェーダー自体を切り替える（プロパティ変更ではない）:
+
+| RenderingMode | シェーダー名 |
+|---|---|
+| Opaque | `Natane/Toon Shader` |
+| Cutout | `Natane/Toon Shader (Cutout)` |
+| Transparent | `Natane/Toon Shader (Transparent)` |
+| Fur | `Natane/Toon Shader (Fur)` |
+| Background | `Natane/Toon Shader (Background)` |
+
+- Fur以外のモードに切り替え時: `_Fur = 0` + `_FUR` キーワード無効化
+- Undo対応済み
+
+#### 既存のバリアント分岐パターン
+
+##### パターン A: セクションメソッド冒頭でのearly return（RenderingMode制約）
+
+| 場所 (メソッド/行) | 分岐条件 | 効果 |
+|---|---|---|
+| `DrawBackgroundLightmapSection()` 2378-2379行 | `currentMode != RenderingMode.Background` | Background以外でセクション全体を非表示 |
+| `DrawPBRSection()` 2400-2401行 | `currentMode != RenderingMode.Background` | Background以外でセクション全体を非表示 |
+
+##### パターン B: タブ描画メソッドでの条件ブロック
+
+| 場所 (メソッド/行) | 分岐条件 | 効果 |
+|---|---|---|
+| `DrawLightingTab()` 5690行 | `GetCurrentRenderingMode() == RenderingMode.Background` | Background時のみ「背景シェーダー専用」カテゴリ区切り + BackgroundLightmap/PBR セクション表示 |
+
+##### パターン C: セクション内部での条件付きプロパティ表示（RenderingMode）
+
+| 場所 (メソッド/行) | 分岐条件 | 効果 |
+|---|---|---|
+| `DrawRenderingSection()` 4247行 | `currentMode == RenderingMode.Cutout` | Cutoff時のみ Alpha Cutoff スライダー表示 |
+| `DrawRenderingSection()` 4275行 | `currentMode == RenderingMode.Transparent` | Transparent時のみ Blend Mode プリセット/プロパティ表示 |
+
+##### パターン D: shader.name.Contains() によるインライン判定
+
+| 場所 (メソッド/行) | 分岐条件 | 効果 |
+|---|---|---|
+| `DrawFurSection()` 2261行 | `targetMaterial.shader.name.Contains("Fur")` | Fur ON かつ非Furシェーダー時に自動で Fur バリアントへ切り替え |
+
+##### パターン E: IsKeywordEnabled() による条件付きプロパティ表示
+
+| キーワード | 使用箇所(行) | 効果 |
+|---|---|---|
+| `_DISTANCE_FADE` | 1254, 1515, 1582, 1633, 1685, 1789, 1878, 1913, 1940, 1967, 2036, 2113, 2240, 2478, 2559, 3531, 3758, 3826, 3861, 4171, 4466, 4587行 (22箇所) | 各エフェクトセクション内に「距離フェード強度」スライダーを追加表示 |
+| `_VAT` | 2150行 | VAT有効時にVAT固有パラメータ表示 |
+| `_STANDARD_TOON` | 6288行 | ValidateAndFixKeywords内でキーワード同期（UI表示分岐ではない） |
+| 各toggleKeyword | 569行 `DrawBoxedSection()` | ON/OFFバッジ表示（セクション自体は非表示にならない） |
+
+#### SectionCategory の仕組み
+
+定義箇所: `NataneToonShaderGUIStyles.cs` 9-17行
+
+```csharp
+public enum SectionCategory
+{
+    Basic,       // 基本設定 (水色 0.35, 0.70, 0.95)
+    Shading,     // シェーディング (紫 0.55, 0.45, 0.85)
+    Lighting,    // ライティング (橙 0.95, 0.75, 0.30)
+    Effects,     // エフェクト (緑 0.40, 0.85, 0.55)
+    Environment, // 環境 (ティール 0.45, 0.80, 0.90)
+    Advanced     // 詳細設定 (赤茶 0.75, 0.55, 0.55)
+}
+```
+
+- `DrawBoxedSection()` の第3引数で指定
+- 各セクションのヘッダー背景色と左アクセントバーの色を決定
+- 5タブ構成とは1:1対応ではない（例: Basic カテゴリだが Advanced タブに表示されるセクションもある）
+
+#### セクション描画順序と分岐
+
+##### Tab 0: テクスチャ&色 (DrawBasicTab)
+
+| セクション | 描画メソッド | Category | RenderingMode制約 | toggleKeyword |
+|---|---|---|---|---|
+| プリセット | DrawPresetsSection | Basic | なし | なし |
+| 機能一覧 | DrawFeatureOverviewSection | Basic | なし | なし |
+| パフォーマンス | DrawPerformanceSection | Basic | なし | なし |
+| クイックセットアップ | DrawQuickSetupSection | - | なし | なし |
+| メインテクスチャ | DrawMainTextureSection | Basic | なし | なし |
+| 表面仕上げ | DrawSurfaceFinishSection | - | なし | なし |
+| 追加テクスチャ (2nd-5th) | DrawMakeupTexturesSection | Basic | なし | なし |
+| スクリーントーン | DrawScreenToneSection | Basic | なし | `_SCREEN_TONE` |
+| グラデーションベースカラー | DrawGradientBaseColorSection | Basic | なし | `_GRADIENT_BASE_COLOR` |
+| トゥーンシェーディング | DrawShadingSection | Shading | なし | なし |
+
+##### Tab 1: ライト&影 (DrawLightingTab)
+
+| セクション | 描画メソッド | Category | RenderingMode制約 | toggleKeyword |
+|---|---|---|---|---|
+| ライティング詳細 | DrawAdvancedLightingSection | Lighting | なし | なし |
+| AO | DrawAOSection | Lighting | なし | `_USE_AO` |
+| ディザリング | DrawDitheringSection | Lighting | なし | `_USE_DITHERING` |
+| VRC ライトボリューム | DrawLightVolumeSection | Lighting | なし | `_USE_LIGHT_VOLUME` |
+| LTCGI | DrawLTCGISection | Lighting | なし | `_LTCGI` |
+| 背景ライトマップ | DrawBackgroundLightmapSection | Lighting | **Background のみ** | なし |
+| PBR マテリアル | DrawPBRSection | Lighting | **Background のみ** | `_PBR` |
+
+BackgroundLightmap/PBRは二重ガード: タブ側 (`if Background`) + メソッド側 (early return)
+
+##### Tab 2: エフェクト (DrawEffectsTab)
+
+| セクション | 描画メソッド | Category | RenderingMode制約 | toggleKeyword |
+|---|---|---|---|---|
+| スペキュラー | DrawSpecularSection | Effects | なし | `_SPECULAR` |
+| ヘアスペキュラー | DrawHairSpecularSection | Effects | なし | `_HAIR_SPECULAR` |
+| リムライト | DrawRimLightSection | Effects | なし | `_RIM_LIGHT` |
+| SSS | DrawSSSSection | Effects | なし | `_SSS` |
+| MatCap | DrawMatCapSection | Effects | なし | `_MATCAP` |
+| グリッター | DrawGlitterSection | Effects | なし | `_GLITTER` |
+| 雫エフェクト | DrawDripSection | Effects | なし | `_WATER_DRIP` |
+| スミア | DrawSmearSection | Effects | なし | `_SMEAR` |
+| ファー | DrawFurSection | Effects | なし | `_FUR` |
+| デカール | DrawDecalSection | Effects | なし | `_DECAL` |
+| サーフェスカバー | DrawSurfaceCoverSection | Effects | なし | `_SURFACE_COVER` |
+| ホログラム | DrawHologramSection | Effects | なし | `_HOLOGRAM` |
+| イラスト調スタイル | DrawIllustrationStyleSection | Effects | なし | `_COLOR_QUANTIZE` |
+| アウトライン | DrawOutlineSection | Effects | なし | `_OUTLINE` |
+| エミッション | DrawEmissionSection | Effects | なし | `_EMISSION` |
+| バーチャル表現 | DrawVirtualExpressionSection | Effects | なし | なし |
+| AudioLink | DrawAudioLinkSection | Effects | なし | `_AUDIOLINK` |
+
+##### Tab 3: 環境&反射 (DrawEnvironmentTab)
+
+| セクション | 描画メソッド | Category | RenderingMode制約 | toggleKeyword |
+|---|---|---|---|---|
+| 反射 / キューブマップ | DrawReflectionSection | Environment | なし | `_REFLECTION` |
+| イリデッセンス | DrawIridescenceSection | Environment | なし | `_IRIDESCENCE` |
+| 環境リム | DrawEnvironmentalRimSection | Environment | なし | `_ENV_RIM` |
+| 屈折 | DrawRefractionSection | Environment | なし | `_REFRACTION` |
+| ハイトフォグ | DrawHeightFogSection | Environment | なし | `_HEIGHT_FOG` |
+
+##### Tab 4: 詳細設定 (DrawAdvancedTab)
+
+| セクション | 描画メソッド | Category | RenderingMode制約 | toggleKeyword |
+|---|---|---|---|---|
+| ノーマルマップ | DrawNormalMapSection | Advanced | なし | `_NORMALMAP` |
+| 視差マッピング | DrawParallaxSection | Advanced | なし | `_PARALLAX` |
+| ディテールマップ | DrawDetailMapSection | Advanced | なし | `_DETAIL_MAP` |
+| トライプレーナー | DrawTriplanarSection | Advanced | なし | `_TRIPLANAR` |
+| 頂点アニメーション | DrawVertexAnimationSection | Advanced | なし | `_VERTEX_ANIMATION` |
+| VAT | DrawVATSection | Advanced | なし | `_VAT` |
+| テッセレーション | DrawTessellationSection | Advanced | なし | `_TESSELLATION` |
+| 裏面テクスチャ | DrawBackfaceSection | Advanced | なし | `_BACKFACE_TEXTURE` |
+| ビデオテクスチャ | DrawVideoSection | Advanced | なし | `_VIDEO_TEXTURE` |
+| 高さフェード | DrawHeightFadeSection | Advanced | なし | `_HEIGHT_FADE` |
+| 交差フェード | DrawIntersectionFadeSection | Advanced | なし | `_INTERSECTION_FADE` |
+| 距離フェード | DrawDistanceFadeSection | Advanced | なし | `_DISTANCE_FADE` |
+| ミラー対応 | DrawMirrorControlSection | Advanced | なし | `_MIRROR_CONTROL` |
+| Quest軽量パス | DrawQuestLiteSection | Advanced | なし | `_QUEST_LITE` |
+| レンダリング設定 | DrawRenderingSection | Advanced | なし | なし |
+
+#### 現在使われている制御パターン
+
+- **パターン1: シェーダー名ベースモード判定** — `GetCurrentRenderingMode()` が `targetMaterial.shader.name.Contains()` でバリアント判定。RenderingMode の切り替えはシェーダー自体の差し替え (`SetRenderingMode()`)。プロパティベースではなくシェーダーファイル単位の切り替え。
+
+- **パターン2: セクションearly return** — `DrawBackgroundLightmapSection()` と `DrawPBRSection()` のみ。メソッド冒頭で `currentMode != Background` なら即 return してセクション全体を非表示にする。
+
+- **パターン3: タブレベル条件ブロック** — `DrawLightingTab()` で `GetCurrentRenderingMode() == Background` チェック。カテゴリ区切り + 複数セクションをまとめて条件付き表示。パターン2との二重ガード。
+
+- **パターン4: セクション内プロパティ条件表示 (RenderingMode)** — `DrawRenderingSection()` 内で Cutout → Alpha Cutoff、Transparent → Blend Mode プリセットを表示。
+
+- **パターン5: セクション内プロパティ条件表示 (IsKeywordEnabled)** — `_DISTANCE_FADE` キーワード有効時に各エフェクトセクション内に「距離フェード強度」スライダーを追加表示（22箇所）。`_VAT` 有効時にVAT固有パラメータ表示。
+
+- **パターン6: 自動シェーダー切り替え** — `DrawFurSection()` で Fur トグルON時に非Furシェーダーなら自動で `SetRenderingMode(Fur)` を呼ぶ。
+
+- **パターン7: ON/OFFバッジ表示** — `DrawBoxedSection()` の `toggleKeyword` 引数で各セクションヘッダーにON/OFFバッジを表示。セクション自体は非表示にならない（どのモードでも全セクション描画される）。
+
+- **パターン8: 非Toonシェーダー分離** — `NataneToonShaderTypeSwitcher.DrawShaderTypeDropdown()` が isNonToon を返した場合、Toon GUI 全体をスキップして Eye/Wirelight/ScreenFX 用の専用ドロワーに委譲。
+
+#### 拡張設計方針の提案
+
+1. **現状の大きな特徴**: ほとんど全てのセクションはRenderingMode問わず表示される（BackgroundLightmap/PBR の2セクションのみ例外）。ON/OFFバッジで有効状態を示すが、セクション自体は隠れない。
+
+2. **新機能追加時の推奨パターン**:
+   - 全バリアント共通の機能 → パターン7（toggleKeyword付きDrawBoxedSection）のみ。制約なし。
+   - 特定バリアント専用の機能 → パターン2（early return）+ パターン3（タブ側ガード）の二重ガード。
+   - 他キーワード依存の子プロパティ → パターン5（IsKeywordEnabled内部チェック）。
+   - バリアント自動切り替え → パターン6（DrawFurSection方式）。
+
+3. **検討事項**: 現在、シェーダーバリアントに存在しないキーワードのセクションも全バリアントで表示されている。例えば Fur セクションは Opaque/Cutout/Transparent でも表示される（ON にすると自動切り替え）。この「全セクション常時表示」方針は UX の一貫性を保つが、ユーザーが不可能な設定を試みるリスクがある。セクション自体を非表示にするか、Warning HelpBox で通知するかの方針決定が必要。
+
+4. **`_DISTANCE_FADE` パターンの横展開可能性**: 22箇所で同一パターンが繰り返されており、共通ユーティリティメソッド化が可能。例: `DrawPerEffectDistanceFade(string propertyName)` ヘルパー。
+
+
+---
+
+## 最新NPR/Toon表現トレンド調査結果
+
+**調査者**: trend-researcher / **調査日**: 2026-03-02
+**調査範囲**: 2024〜2026年のゲーム業界・学術・VRChatにおけるNPR/Toon表現トレンド
+
+---
+
+### 1. ゲーム業界のNPR技法
+
+#### 1-1. HoYoverse (原神 / 崩壊スターレイル / ゼンレスゾーンゼロ)
+
+| 技法名 | 概要 | 使用タイトル | リアルタイム実装 | VRChat実用性 |
+|--------|------|-------------|-----------------|-------------|
+| **SDFベース顔シャドウマップ** | 光の方向に応じた滑らかな顔影遷移。9段階のSDF画像からベイクした単一テクスチャで、FdotLと比較して影を決定。左右反転で180度カバー。 | 原神、崩スタ、ZZZ | ◎ 極めて軽量（テクスチャ1枚+比較演算のみ） | ◎ テクスチャ1枚追加のみ、Quest可 |
+| **シャドウランプテクスチャ** | NdotLをUVとして影色グラデーションテクスチャをサンプリング。昼/夜/屋内等でランプを切り替え可能。 | 原神、崩スタ | ◎ テクスチャルックアップのみ | ◎ Quest可 |
+| **頂点カラーベース影制御** | 頂点カラーのR/G/B/Aチャンネルに影閾値、AO、アウトライン幅等をベイク。アーティストが手動制御。 | 原神、崩スタ、ZZZ | ◎ 頂点データ参照のみ | ◎ Quest可 |
+| **異方性ヘアハイライト (Kajiya-Kay変形)** | Kajiya-Kayモデルをスタイライズ化。Shifted Tangentで天使の輪（Angel Ring）を再現。Primary/Secondary 2つのハイライト。 | 原神、崩スタ | ○ 計算はやや重いが許容範囲 | △ 簡略版なら可 |
+| **マルチレイヤーシャドウ** | 1影・2影・環境影の多層影システム。各層で色・閾値・ぼかしを個別制御。 | 原神、崩スタ | ◎ ステップ関数の組み合わせ | ○ 2層までならQuest可 |
+| **コミック調表現 (ハーフトーン・速度線)** | ZZZの特徴的なコミック/グラフィティスタイル。攻撃時のスピードライン、ハーフトーンパターン、フレーム分割演出。 | ZZZ | ○ ポストプロセス依存 | △ 負荷が高め |
+| **Per-Object Shadow** | キャラクターごとに独立したシャドウマップ。自己影を高精度制御。 | 崩スタ | ○ 追加パスが必要 | × Quest不可 |
+
+**参考リソース**:
+- [StarRailNPRShader (fan-made Unity URP)](https://github.com/stalomeow/StarRailNPRShader) - 崩スタのシェーディング再現プロジェクト
+- [HoyoToon (Unity Built-in)](https://github.com/Hoyotoon/HoyoToon) - HoYoverseゲームのシェーディング再現
+- [Genshin Impact Shader Breakdown (Unity URP)](https://adrianmendez.artstation.com/projects/wJZ4Gg) - 原神キャラシェーダー分解
+
+#### 1-2. Arc System Works (GUILTY GEAR Strive)
+
+| 技法名 | 概要 | 使用タイトル | リアルタイム実装 | VRChat実用性 |
+|--------|------|-------------|-----------------|-------------|
+| **手動法線編集** | ノーマルマップ不使用。アーティストが手動で頂点法線を調整し、光の当たり方を完全制御。約40kポリゴン/キャラ。 | GGXrd、GG Strive | ◎ 追加計算なし | ◎ Quest可 |
+| **フレーム単位のアニメーション手付け** | 2D感を出すため、3Dアニメーションを24fps風にキーフレーム手打ち。間を意図的にコントロール。 | GGXrd、GG Strive | ◎ アニメーションのみ | - (シェーダー外) |
+| **2影テクスチャ直接ペイント** | 影パターンをテクスチャに直接描画。ライティングに依存しない安定した影表現。 | GGXrd、GG Strive | ◎ テクスチャ参照のみ | ◎ Quest可 |
+| **カメラアングル依存メッシュ切替** | 特定のカメラ角度でメッシュの一部を差し替え。2D的な見栄えを3Dで維持。 | GGXrd、GG Strive | ○ ロジック必要 | × VRChat非対応 |
+
+**参考リソース**:
+- [GDC 2015: Guilty Gear Xrd Art Style](https://www.arcsystemworks.com/guilty-gear-xrds-art-style-the-x-factor-between-2d-and-3d-talk-from-gdc-2015-is-now-available-online/) - GDC発表
+- [Unity再現シェーダー](https://github.com/Aerthas/UNITY-Arc-system-Works-Shader) - Unity Built-in向け再現
+
+#### 1-3. Tango Gameworks (Hi-Fi RUSH)
+
+| 技法名 | 概要 | 使用タイトル | リアルタイム実装 | VRChat実用性 |
+|--------|------|-------------|-----------------|-------------|
+| **Deferred Toon Renderer** | UE4のデファードレンダリングパイプラインをトゥーンスタイルに改造。環境全体をセルシェーディング。 | Hi-Fi RUSH | △ エンジン改造が必要 | × VRChat非対応 |
+| **スタイライズドAO/GI/反射** | UE4標準のAmbient Occlusion、GI、リアルタイム反射をスタイライズ化。境界をシャープにし、セル調に変換。 | Hi-Fi RUSH | ○ ポストプロセス依存 | △ 一部再現可能 |
+| **ボリュメトリックフォグのトゥーン化** | ボリュメトリックフォグをバンド化してセル調に。大気表現をNPRに統一。 | Hi-Fi RUSH | ○ ポストプロセス | × Quest不可 |
+| **リズム同期ビジュアルエフェクト** | 音楽のビートに合わせてアウトライン太さ、環境色、エフェクト強度を変動。 | Hi-Fi RUSH | ◎ パラメータ駆動 | ○ AudioLink連携で可 |
+
+**参考リソース**:
+- [GDC 2024: 3D Toon Rendering in Hi-Fi RUSH](https://gdcvault.com/play/1034330/3D-Toon-Rendering-in-Hi) - GDC Vault
+
+#### 1-4. Kuro Games (鳴潮 / Wuthering Waves)
+
+| 技法名 | 概要 | 使用タイトル | リアルタイム実装 | VRChat実用性 |
+|--------|------|-------------|-----------------|-------------|
+| **Deferred Shading + NPRキャラパイプライン** | モバイル向けにデファードシェーディング採用。キャラクターは独立ライティングパイプラインで処理。 | 鳴潮 | △ パイプライン改造必要 | × VRChat非対応 |
+| **SSR/GTAO活用** | Screen Space ReflectionsとGround Truth AOをデファードベースで活用。 | 鳴潮 | △ デファード依存 | × Quest不可 |
+| **キャラクター独立ライティング** | 環境と独立したキャラクターライティングプリセットシステム。環境光に引きずられない安定した見栄え。 | 鳴潮 | ○ ライトプリセット方式 | ○ カスタムライト方式で再現可 |
+
+#### 1-5. Bandai Namco (ブループロトコル)
+
+| 技法名 | 概要 | 使用タイトル | リアルタイム実装 | VRChat実用性 |
+|--------|------|-------------|-----------------|-------------|
+| **劇場アニメ調グラフィックス** | UE4ベースで劇場アニメ品質のセルシェーディングを目指した。NPRの環境・キャラ統一表現。 | ブループロトコル | ○ UE4カスタム | △ コンセプトは参考可 |
+
+**注**: ブループロトコルは2024年1月にサービス終了。技術的詳細の公開は限定的。
+
+---
+
+### 2. 学術・GDC/SIGGRAPH発表
+
+#### GDC 2024-2025 NPR関連
+
+| セッション | 概要 | 発表年 |
+|-----------|------|--------|
+| **3D Toon Rendering in Hi-Fi RUSH** | Tango Gameworksによるデファードトゥーンレンダラーの詳細解説。UE4ベースで環境全体をセルシェーディング化する手法。60fps@ネイティブ解像度の実現技術。 | GDC 2024 |
+| **Genshin Impact: Crafting an Anime Style Open World** | miHoYoによる原神のアニメ調オープンワールド構築。キャラクターはフォワードレンダリング、シーンは別パイプラインの二重構成。 | GDC 2021 (継続参照) |
+
+#### SIGGRAPH 2024-2025 NPR関連
+
+| 論文/セッション | 概要 | 発表年 |
+|---------------|------|--------|
+| **Toonify3D: StyleGAN-based 3D Stylized Face Generator** | POSTECHによるStyleGANベースの3Dスタイライズド顔生成。 | SIGGRAPH 2024 |
+| **Co-Speech Gesture and Facial Expression Generation for NPR 3D Characters** | NPR 3Dキャラクターの共発話ジェスチャー・表情生成。 | SIGGRAPH 2025 |
+
+---
+
+### 3. VRChat/リアルタイム向けシェーダートレンド
+
+#### 3-1. Poiyomi Shaders (v9.3 LTS)
+
+| 機能 | 概要 | Natane対応状況 |
+|------|------|---------------|
+| **VRC Light Volumes対応** | ボクセルベースのベイクドライティングシステム。ライトプローブの次世代代替。アバターに自然なライティングを提供。 | 対応済み (v1.0.1+) |
+| **Module Toggles** | 不要なモジュールをシェーダーから除外可能。コンパイル時間・バリアント削減。 | 参考技法 |
+| **Material Translator** | lilToon等の他シェーダーからの自動マテリアル変換ツール。 | Migration Toolsで対応 |
+| **AudioLink対応** | 音楽リアクティブエフェクト。クラブイベント等で人気。 | v1.2.0で対応予定 |
+| **Decals / RGBA Color Masking** | テクスチャデカールとRGBAマスクによる部分カラー制御。 | 検討可能 |
+| **Glitter / Sparkle** | ラメ/キラキラエフェクト。衣装・アクセサリーに人気。 | 検討可能 |
+
+#### 3-2. lilToon (v2.3.2)
+
+| 機能 | 概要 | Natane対応状況 |
+|------|------|---------------|
+| **マルチレイヤーカラー** | デカール、レイヤーマスク、GIFアニメーション、各種ブレンドモード対応。 | 部分対応 |
+| **3層シャドウ** | 1影・2影・3影の3層システム + SSS + 環境光合成。 | 2層対応済 (3層は検討) |
+| **Feature Flag方式** | コンパイル時にフィーチャーフラグで機能有効化。使わない機能はゼロコスト。 | 対応済み (shader_feature) |
+| **UVスクロール/回転** | テクスチャUVのアニメーション。エフェクト表現に活用。 | 対応済み |
+
+#### 3-3. VRC Light Volumes (v2.0)
+
+| 特徴 | 詳細 |
+|------|------|
+| **ボクセルベースライティング** | 従来のライトプローブの代替。per-pixelのベイクドライティング。 |
+| **パフォーマンス** | 最大32個の同時可視Light Volume、128個の最適化されたPoint/Spot/Areaライト。Quest対応。 |
+| **ランタイム色変更** | ベイクされたライトの色をランタイムで変更可能。 |
+| **シェーダー統合** | lilToon、Poiyomi対応済み。カスタムシェーダーも対応可能。 |
+
+---
+
+### 4. 注目すべき表現技法カテゴリ
+
+#### 4-1. 髪の毛の表現
+
+| 技法名 | 概要 | 実装先例 | リアルタイム | VRChat実用性 |
+|--------|------|---------|-------------|-------------|
+| **Kajiya-Kay Shifted Tangent** | 接線ベクトルを法線方向にシフトして異方性ハイライトを生成。Primary/Secondary 2つのハイライトで豊かな光沢。 | 原神、崩スタ、Backlace | ◎ | ○ 簡略版推奨 |
+| **Angel Ring (天使の輪)** | ビュー空間MatCapまたはUV座標ベースで髪の頂点にリング状ハイライトを配置。テクスチャベースの場合は極めて軽量。 | 原神、lilToon、Poiyomi | ◎ | ◎ Quest可 |
+| **Hair Depth Prepass** | 前髪の透過表現のため、髪メッシュを先にDepthに書き込み。顔が前髪越しに適切に透ける。 | 崩スタ (StarRailNPRShader) | ○ 追加パス | △ |
+
+#### 4-2. 肌の表現
+
+| 技法名 | 概要 | 実装先例 | リアルタイム | VRChat実用性 |
+|--------|------|---------|-------------|-------------|
+| **SDFフェイスシャドウ** | 光方向に応じたSDF比較で滑らかな顔影。 | 原神、崩スタ | ◎ | ◎ Quest可 |
+| **Pre-integrated SSS** | SSSルックアップテクスチャを事前計算。NdotLと曲率でサンプリング。フォワードレンダリングで追加パス不要。 | 各種NPRシェーダー | ◎ | ◎ Quest可 |
+| **Screen-Space SSS (SSSSS)** | スクリーンスペースでのSSS。ステンシルバッファで肌ピクセルをマーク。 | AAA PBRゲーム | △ ポストプロセス | × Quest不可 |
+| **影色のSSS風カラーシフト** | 影部分に赤みを加えるだけのシンプルなSSS近似。 | lilToon、多数NPR | ◎ | ◎ Quest可 |
+
+#### 4-3. 目の表現
+
+| 技法名 | 概要 | 実装先例 | リアルタイム | VRChat実用性 |
+|--------|------|---------|-------------|-------------|
+| **パララックスアイ** | UV座標にビュー依存のオフセットを加え、瞳に奥行き感を付与。 | Backlace、各種VRCシェーダー | ◎ | ◎ Quest可 (UVオフセット方式) |
+| **キャッチライト (MatCapベース)** | MatCapテクスチャで視線追従するハイライトを描画。 | Poiyomi、Backlace | ◎ | ◎ Quest可 |
+| **瞳孔サイズ変動** | ライティングや感情に応じてUVスケールで瞳孔サイズを変化。 | 各種VRCシェーダー | ◎ | ◎ Quest可 |
+
+#### 4-4. 布・衣装の表現
+
+| 技法名 | 概要 | 実装先例 | リアルタイム | VRChat実用性 |
+|--------|------|---------|-------------|-------------|
+| **Sheen (布の微細繊維光沢)** | フレネル的な角度依存光沢で布の繊維感を表現。 | PBR布マテリアル、NPR拡張 | ◎ | ○ 簡略版推奨 |
+| **シルク/サテン光沢** | 異方性反射をサテン布向けに適用。 | ファッション系NPR | ○ | △ |
+| **MatCapベース質感表現** | MatCapテクスチャで金属、布、レザー等の質感を表現。 | lilToon、Poiyomi、Natane | ◎ | ◎ Quest可 |
+
+#### 4-5. エッジ/アウトラインの最新技法
+
+| 技法名 | 概要 | 実装先例 | リアルタイム | VRChat実用性 |
+|--------|------|---------|-------------|-------------|
+| **Inverted Hull (背面法)** | 2パス目で頂点を法線方向に膨張+背面カリング。最も一般的で軽量。 | 全NPRシェーダー | ◎ | ◎ Quest可 |
+| **Screen-Space Edge Detection** | 深度/法線バッファからエッジ検出。距離に依存しない線幅。 | Hi-Fi RUSH、UE系 | ○ ポストプロセス | × VRChat制限 |
+| **頂点カラーアウトライン幅制御** | 頂点カラーチャンネルにアウトライン幅をベイク。 | 原神、GG Strive | ◎ | ◎ Quest可 |
+| **カラーアウトライン** | アウトラインの色をオブジェクトカラーから取得。 | lilToon、Poiyomi | ◎ | ◎ Quest可 |
+| **距離ベースアウトライン幅** | カメラ距離に応じてアウトライン太さを調整。 | 各種NPR | ◎ | ◎ Quest可 |
+
+#### 4-6. ポストプロセス系NPR表現
+
+| 技法名 | 概要 | 実装先例 | リアルタイム | VRChat実用性 |
+|--------|------|---------|-------------|-------------|
+| **ハーフトーンパターン** | 明暗をドットパターンで表現。 | ZZZ、コミック調ゲーム | ○ | △ (ScreenFXとして可) |
+| **Kuwaharaフィルタ (絵画調)** | 異方性Kuwaharaフィルタで水彩/油絵風変換。 | インディーゲーム | ○ | × Quest不可 |
+| **動的ハッチング** | 光の強度に応じてハッチング密度を変化。 | NPR研究 | ○ | △ |
+| **トゥーン化ブルーム** | ブルームをバンド化してセル調に統一。 | Hi-Fi RUSH | ○ | △ |
+
+#### 4-7. ライティング・影の表現改良
+
+| 技法名 | 概要 | 実装先例 | リアルタイム | VRChat実用性 |
+|--------|------|---------|-------------|-------------|
+| **Multi-Step Shadow (N段影)** | NdotLを複数の閾値でステップ化。各層に独立した設定。 | 各種NPRシェーダー | ◎ | ◎ Quest可 |
+| **Half-Lambert** | NdotLを0-1にリマップ。影部分を明るくする伝統的手法。 | lilToon、TF2起源 | ◎ | ◎ Quest可 |
+| **独立キャラクターライティング** | 環境と独立したキャラクター専用ライト設定。 | 鳴潮、崩スタ | ○ | ○ カスタムライト方式 |
+| **VRC Light Volumes** | ボクセルベースのベイクドライティング。 | VRChatワールド | ◎ | ◎ Quest可 |
+
+#### 4-8. スタイライズドな特殊表現
+
+| 技法名 | 概要 | 実装先例 | リアルタイム | VRChat実用性 |
+|--------|------|---------|-------------|-------------|
+| **AudioLinkリアクティブ** | 音楽のビート/周波数でエミッション・色・UV等を変動。 | Poiyomi、VRCシェーダー | ◎ | ◎ AudioLink世界限定 |
+| **グリッチエフェクト** | RGBシフト、スキャンライン、ブロックノイズ等。 | Natane (v1.3.5強化済) | ◎ | ◎ |
+| **PCSS近似ソフトシャドウ** | Percentage Closer Soft Shadowのスクリーンスペース近似。 | Natane (v1.3.5実装済) | ○ | △ Quest注意 |
+| **Distance Fade** | カメラ距離に応じてエフェクト強度を減衰。 | Natane、Backlace | ◎ | ◎ Quest可 |
+| **リムライト (フレネル)** | 輪郭にフレネルベースの光沢。 | 全NPRシェーダー | ◎ | ◎ Quest可 |
+| **Iridescence (玉虫色)** | 視角に応じて色相が変化するレインボー表現。 | Poiyomi | ◎ | ○ |
+
+---
+
+### 5. 2024-2026 NPR業界全体トレンドまとめ
+
+#### 上昇トレンド
+1. **SDFフェイスシャドウ**: HoYoverse発で業界標準化しつつある。ほぼ全てのアニメ調シェーダーが採用または検討。
+2. **VRC Light Volumes**: VRChat向けライティングの革新。lilToon/Poiyomi対応済みで普及加速。
+3. **環境全体NPR化**: Hi-Fi RUSHが示した世界全体をトゥーン化のアプローチ。
+4. **AudioLinkリアクティブ表現**: VRChatクラブシーンで必須化。音楽連動エフェクトの需要増大。
+5. **シェーダー間マテリアル変換**: Poiyomi Material Translatorに代表。シェーダー乗り換えのハードル低下。
+6. **モジュール/Feature Flag方式**: 使わない機能はゼロコスト。コンパイル時最適化の重要性増大。
+
+#### 安定技法 (成熟済)
+- Inverted Hull Outline
+- シャドウランプテクスチャ
+- MatCap質感表現
+- Half-Lambert
+- リムライト
+
+#### 新興/実験的
+- Kuwaharaフィルタ (絵画調ポストプロセス)
+- デファードトゥーンレンダリング (Hi-Fi RUSH方式)
+- AIベーススタイル転写 (Toonify3D等)
+- Per-Object Shadow (崩スタ方式)
+
+---
+
+### 6. Natane Toon Shader v1.2.0+ への推奨追加技法 (優先度順)
+
+| 優先度 | 技法 | 理由 | 実装コスト | 期待効果 |
+|--------|------|------|-----------|---------|
+| **S** | SDFフェイスシャドウ | 業界トレンド最上位。HoYoverse全タイトルで使用。アーティスト需要極大。 | 中 (テクスチャスロット+比較ロジック) | 5/5 |
+| **S** | AudioLink対応 | VRChatクラブシーン必須。v1.2.0で予定済み。 | 中 | 5/5 |
+| **A** | 3層シャドウシステム | lilToon互換性向上+表現力拡張。移行ユーザー獲得。 | 小 (既存2層の拡張) | 4/5 |
+| **A** | Angel Ring (天使の輪) | 髪表現の定番。テクスチャベースで軽量実装可能。 | 小 | 4/5 |
+| **A** | パララックスアイ | UVオフセット方式で極めて軽量。目の表現品質が大幅向上。 | 小 | 4/5 |
+| **B** | カラーアウトライン | オブジェクトカラーからアウトライン色を取得。自然な輪郭線。 | 小 | 3/5 |
+| **B** | Kajiya-Kay ヘアスペキュラ | 異方性ヘアハイライト。簡略版から開始推奨。 | 中 | 3/5 |
+| **B** | Sheen (布の繊維光沢) | フレネルベースで軽量。衣装表現の質向上。 | 小 | 3/5 |
+| **C** | ハーフトーンパターン | ScreenFXとして実装可能。コミック調表現。 | 中 | 2/5 |
+| **C** | Hair Depth Prepass | 前髪透過の高品質化。追加パスが必要。 | 大 | 2/5 |
+| **C** | Iridescence (玉虫色) | ニッチだが需要あり。フレネルベースで比較的軽量。 | 小 | 2/5 |

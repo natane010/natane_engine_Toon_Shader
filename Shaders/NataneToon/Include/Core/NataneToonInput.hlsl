@@ -82,6 +82,16 @@ CBUFFER_START(UnityPerMaterial)
     float _ScreenToneBlur;
     #endif
 
+    // Halftone Shadow
+    #if defined(_HALFTONE_SHADOW)
+    half4 _HalftoneShadowColor;
+    float _HalftoneShadowScale;
+    float _HalftoneShadowThreshold;
+    float _HalftoneShadowSoftness;
+    float _HalftoneShadowIntensity;
+    float _HalftoneShadowBlend;
+    #endif
+
     // Gradient Base Color
     #if defined(_GRADIENT_BASE_COLOR)
     half4 _GradientTopColor;
@@ -102,6 +112,8 @@ CBUFFER_START(UnityPerMaterial)
     float _ShadingMode;
     float _ShadingGradientWidth;
     half4 _ShadowColor;
+    float _ShadowHueShift;
+    float _ShadowSaturation;
     half4 _Shadow2ndColor;
     float _Shadow2ndBorder;
     half4 _Shadow3rdColor;
@@ -110,8 +122,15 @@ CBUFFER_START(UnityPerMaterial)
     float _ShadowSharpness;
     float _StepBorderSmooth;
     float _ShadowOffset;
+    float _WrapAmount;
     float _LitSoftness;
     float _ShadowBlend;
+
+    // Vertex Color Shadow Threshold
+    #if defined(_VERTEX_COLOR_SHADOW)
+    float _VCShadowThreshold;
+    float _VCShadowPush;
+    #endif
 
     // StandardToon (lilToon互換)
     #if defined(_STANDARD_TOON)
@@ -140,11 +159,28 @@ CBUFFER_START(UnityPerMaterial)
     float _AOBlendMode;
     float _AOBlur;
 
+    // Procedural AO
+    #if defined(_PROCEDURAL_AO)
+    float _ProceduralAOHeightOffset;
+    float _ProceduralAOIntensity;
+    float _ProceduralAOSoftness;
+    #endif
+
+    // Normal Warping
+    #if defined(_NORMAL_WARP)
+    float _NormalFlattenY;
+    float _NormalRoundness;
+    #endif
+
     // Dithering
     float _DitheringScale;
     float _DitheringStrength;
     float _DitheringBlend;
     float _DitheringBlur;
+    #if defined(_BLUE_NOISE_DITHER)
+    float _BlueNoiseTemporal;
+    float _BlueNoiseAmount;
+    #endif
 
     // Advanced Lighting Controls
     float _SoftLightingIntensity;
@@ -195,6 +231,9 @@ CBUFFER_START(UnityPerMaterial)
     float4 _SpecularMaskScrollSpeed;
     float _SpecularMaskRotateSpeed;
     #endif
+    #if defined(_SPECULAR_AA)
+    float _SpecularAAStrength;
+    #endif
 
     // Hair Specular (Kajiya-Kay)
     #if defined(_HAIR_SPECULAR)
@@ -207,6 +246,15 @@ CBUFFER_START(UnityPerMaterial)
     float _HairSpecIntensity;
     float _HairSpecBlend;
     float _HairSpecBlendMode;
+    #endif
+
+    #if defined(_ANGEL_RING)
+    half4 _AngelRingColor;
+    float _AngelRingOffset;
+    float _AngelRingWidth;
+    float _AngelRingIntensity;
+    float _AngelRingBlend;
+    float _AngelRingBlendMode;
     #endif
 
     // Rim Light
@@ -251,6 +299,15 @@ CBUFFER_START(UnityPerMaterial)
     float _OffsetRimBlur;
     #endif
 
+    // Sheen
+    #if defined(_SHEEN)
+    half4 _SheenColor;
+    float _SheenIntensity;
+    float _SheenPower;
+    float _SheenBlend;
+    float _SheenBlendMode;
+    #endif
+
     // ===== SECTION 5: Effects - View Based (視線依存エフェクト) =====
     // MatCap、リフレクション、環境リム、イリデッセンス
     // カメラ/視線方向に依存して変化するエフェクト群
@@ -280,11 +337,22 @@ CBUFFER_START(UnityPerMaterial)
     float4 _GlitterMaskScrollSpeed;
     float _GlitterMaskRotateSpeed;
     #endif
+    #if defined(_GLINTS_ADVANCED)
+    float _GlintsSharpness;
+    float _GlintsTemporal;
+    float _GlintsNormalJitter;
+    #endif
 
     // Outline
     #if defined(_OUTLINE)
     half4 _OutlineColor;
     float _OutlineWidth;
+    #endif
+
+    // Outline Texture Color HSV
+    #if defined(_OUTLINE_TEXTURE_COLOR)
+    float _OutlineTexColorHueShift;
+    float _OutlineTexColorSaturation;
     #endif
 
     // Emission
@@ -320,6 +388,11 @@ CBUFFER_START(UnityPerMaterial)
     float _SSSBlend;
     float _SSSBlendMode;
     float _SSSBlur;
+    #endif
+
+    // SSS LUT (Pre-integrated Subsurface Scattering)
+    #if defined(_SSS_LUT)
+    float _SSSLUTScale;
     #endif
 
     // Virtual Expression - Dissolve
@@ -400,6 +473,10 @@ CBUFFER_START(UnityPerMaterial)
     float _ParallaxScale;
     float _ParallaxMinSamples;
     float _ParallaxMaxSamples;
+    #endif
+
+    #if defined(_EYE_PARALLAX)
+    float _EyeParallaxDepth;
     #endif
 
     // Refraction
@@ -623,6 +700,9 @@ CBUFFER_START(UnityPerMaterial)
     #if defined(_DITHERING_ALPHA)
     float _DitheringAlphaScale;
     #endif
+    #if defined(_HASHED_ALPHA)
+    float _HashedAlphaScale;
+    #endif
 
     // Water Drip Effect
     #if defined(_WATER_DRIP)
@@ -842,6 +922,46 @@ CBUFFER_START(UnityPerMaterial)
     float _OutlineWidthVariation;
     float _OutlineJitterAmount;
     #endif
+    #if defined(_PROCEDURAL_MATCAP)
+    half4 _ProcMatCapColor;
+    float _ProcMatCapPower;
+    float _ProcMatCapIntensity;
+    float _ProcMatCapFresnelPower;
+    float _ProcMatCapBlend;
+    float _ProcMatCapBlendMode;
+    #endif
+    #if defined(_FAKE_REFLECTION)
+    half4 _FakeReflSkyColor;
+    half4 _FakeReflGroundColor;
+    float _FakeReflIntensity;
+    float _FakeReflFresnelPower;
+    float _FakeReflSmoothness;
+    float _FakeReflBlend;
+    float _FakeReflBlendMode;
+    #endif
+    #if defined(_SHADOW_EDGE_NOISE)
+    float _ShadowNoiseScale;
+    float _ShadowNoiseIntensity;
+    float _ShadowNoiseSpeed;
+    #endif
+    #if defined(_LIGHT_SNAP)
+    float _LightSnapAngle;
+    float _LightSnapSmooth;
+    #endif
+    #if defined(_CAST_SHADOW_COLOR)
+    half4 _CastShadowTint;
+    float _CastShadowIntensity;
+    #endif
+    #if defined(_PERSPECTIVE_FLAT)
+    float _PerspectiveFlatAmount;
+    #endif
+    #if defined(_DEPTH_COLOR_FADE)
+    half4 _DepthFadeColor;
+    float _DepthFadeStart;
+    float _DepthFadeEnd;
+    float _DepthFadeIntensity;
+    float _DepthFadeDesaturation;
+    #endif
 
 CBUFFER_END
 
@@ -892,6 +1012,12 @@ sampler2D _HairSpecMask;
 sampler2D _HairSpecShiftTex;
 #endif
 
+// Angel Ring
+#if defined(_ANGEL_RING)
+sampler2D _AngelRingTex;
+float4 _AngelRingTex_ST;
+#endif
+
 // Rim Light
 #if defined(_RIM_LIGHT)
 sampler2D _RimMask;
@@ -901,6 +1027,10 @@ sampler2D _RimMask2;
 #endif
 #if defined(_OFFSET_RIM_LIGHT)
 sampler2D _OffsetRimMask;
+#endif
+#if defined(_SHEEN)
+sampler2D _SheenMask;
+float4 _SheenMask_ST;
 #endif
 
 // MatCap
@@ -950,6 +1080,11 @@ sampler2D _BumpMap;
 #if defined(_SSS)
 sampler2D _ThicknessMap;
 sampler2D _SSSMask;
+#endif
+
+// SSS LUT
+#if defined(_SSS_LUT)
+sampler2D _SSSLUTTex;
 #endif
 
 // Dissolve
@@ -1137,6 +1272,7 @@ static const float2 PoissonDisk32[32] = {
 #endif
 
 // GrabPass texture for Refraction — declared in NataneToonUtils.hlsl (VR stereo-aware)
+// Uses "_nataneBackgroundTexture" named GrabPass (unique name to avoid interference with other shaders)
 
 // AudioLink texture (VRChat)
 #if defined(_AUDIOLINK)
@@ -1154,7 +1290,7 @@ struct appdata
     #if defined(_BACKGROUND_MODE) || defined(_DETAIL_MAP)
         float2 uv1 : TEXCOORD1;  // Lightmap UV / Detail UV
     #endif
-    #ifdef _SMOOTH_NORMAL
+    #if defined(_SMOOTH_NORMAL) || defined(_VERTEX_COLOR_SHADOW)
         float4 color : COLOR;
     #endif
     UNITY_VERTEX_INPUT_INSTANCE_ID
@@ -1171,7 +1307,7 @@ struct v2f
     float3 worldBinormal : TEXCOORD4;
     UNITY_FOG_COORDS(5)
     SHADOW_COORDS(6)
-    #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA) || defined(_INTERSECTION_FADE) || defined(_SOFT_FILTER) || defined(_KUWAHARA_FILTER) || defined(_COLOR_BLEEDING) || defined(_CHROMATIC_ABERRATION) || defined(_SCREEN_EDGE) || defined(_WATERCOLOR)
+    #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA) || defined(_HASHED_ALPHA) || defined(_INTERSECTION_FADE) || defined(_SOFT_FILTER) || defined(_KUWAHARA_FILTER) || defined(_COLOR_BLEEDING) || defined(_CHROMATIC_ABERRATION) || defined(_SCREEN_EDGE) || defined(_WATERCOLOR)
         float4 screenPos : TEXCOORD7; // For GrabPass / Dithering / Intersection Fade / Illustration Style
     #endif
     #if defined(VERTEXLIGHT_ON) && !defined(_PIXEL_VERTEX_LIGHTS)
@@ -1188,6 +1324,15 @@ struct v2f
     #endif
     #ifdef _DETAIL_MAP
         float2 uv1 : TEXCOORD12;
+    #endif
+    #ifdef _VERTEX_COLOR_SHADOW
+        half4 color : COLOR;
+    #endif
+    #if defined(_PROCEDURAL_AO) || defined(_NORMAL_WARP)
+        float3 objectPos : TEXCOORD13;
+    #endif
+    #if defined(_NORMAL_WARP)
+        float3 objectNormal : TEXCOORD14;
     #endif
     UNITY_VERTEX_OUTPUT_STEREO
 };

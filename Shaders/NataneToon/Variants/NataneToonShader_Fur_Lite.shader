@@ -1,8 +1,8 @@
-// ===== NataneToon Shader - Fur Variant =====
+// ===== NataneToon Shader - Fur Lite Variant =====
 // Render Type: Transparent (Shell-based fur requires alpha blending)
 // Queue: Transparent
-// 特徴: シェルベースファー。16シェルパスで毛皮を表現。
-Shader "Natane/Toon Shader (Fur)"
+// 特徴: シェルベースファー（Lite版: GrabPassなし、軽量）。
+Shader "Natane/Toon Shader (Fur Lite)"
 {
     Properties
     {
@@ -859,10 +859,10 @@ Shader "Natane/Toon Shader (Fur)"
             WriteMask [_StencilWriteMask]
         }
 
-        GrabPass
-        {
-            "_nataneBackgroundTexture"
-        }
+        // Lite variant: GrabPass disabled for better performance.
+        // GrabPass-dependent features (_REFRACTION, _SOFT_FILTER, _KUWAHARA_FILTER,
+        // _COLOR_BLEEDING, _CHROMATIC_ABERRATION) are not available in this variant.
+        // Use "Natane/Toon Fur" for full GrabPass features.
 
         // Outline Pass
         Pass
@@ -1231,7 +1231,7 @@ CGPROGRAM
             #pragma shader_feature_local _ENV_RIM
             #pragma shader_feature_local _PARALLAX
             #pragma shader_feature_local _EYE_PARALLAX
-            #pragma shader_feature_local _REFRACTION
+            // _REFRACTION removed (Lite variant: no GrabPass)
             #pragma shader_feature_local _MATCAP_2
             #pragma shader_feature_local _MATCAP_3
             #pragma shader_feature_local _PROCEDURAL_MATCAP

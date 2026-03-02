@@ -18,6 +18,7 @@ namespace NataneToon.Editor
         public const string MaterialPreview = "Tools/Natane/マテリアル Material/マテリアルプレビュー Material Preview";
         public const string MaterialComparison = "Tools/Natane/マテリアル Material/マテリアル比較 Material Comparison Tool";
         public const string MakeupLayerManager = "Tools/Natane/マテリアル Material/メイクアップレイヤー管理 Makeup Layer Manager";
+        public const string HierarchyBatchEditor = "Tools/Natane/マテリアル Material/ヒエラルキー一括編集 Hierarchy Batch Editor";
 
         public const string MaterialPresetBrowser = "Tools/Natane/プリセット Presets/Material Preset Browser _p";
         public const string ColorPaletteManager = "Tools/Natane/プリセット Presets/カラーパレット管理 Color Palette Manager";
@@ -67,6 +68,7 @@ namespace NataneToon.Editor
             { "MaterialPreview", MaterialPreview },
             { "MaterialComparison", MaterialComparison },
             { "MakeupLayerManager", MakeupLayerManager },
+            { "HierarchyBatchEditor", HierarchyBatchEditor },
 
             // --- Presets ---
             { "MaterialPresetBrowser", MaterialPresetBrowser },
@@ -198,7 +200,7 @@ namespace NataneToon.Editor
             var paths = new List<string>
             {
                 Dashboard, HelpWindow,
-                MaterialValidator, MaterialEditor, MaterialPreview, MaterialComparison, MakeupLayerManager,
+                MaterialValidator, MaterialEditor, MaterialPreview, MaterialComparison, MakeupLayerManager, HierarchyBatchEditor,
                 MaterialPresetBrowser, ColorPaletteManager, GenerateDefaultPresets, RegenerateAllPresets,
                 ShadowAdjustmentWizard, MatCapLayerComposer, DissolvePatternGenerator,
                 RimLightDirectionVisualizer, ScreenFXSetup,

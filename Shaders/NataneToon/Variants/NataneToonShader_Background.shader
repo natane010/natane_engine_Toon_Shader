@@ -91,6 +91,15 @@ Shader "Natane/Toon Shader (Background)"
         _ScreenToneBlend ("Blend", Range(0, 1)) = 1
         _ScreenToneBlur ("Mask Blur", Range(0, 1)) = 0
 
+        [Header(Halftone Shadow)]
+        [Toggle(_HALFTONE_SHADOW)] _HalftoneShadow ("Enable Halftone Shadow", Float) = 0
+        _HalftoneShadowColor ("Halftone Color", Color) = (0, 0, 0, 1)
+        _HalftoneShadowScale ("Halftone Scale", Range(1, 200)) = 30
+        _HalftoneShadowThreshold ("Shadow Threshold", Range(0, 1)) = 0.5
+        _HalftoneShadowSoftness ("Softness", Range(0, 0.5)) = 0.1
+        _HalftoneShadowIntensity ("Intensity", Range(0, 1)) = 0.5
+        _HalftoneShadowBlend ("Blend", Range(0, 1)) = 1
+
         // ===== Gradient Base Color (グラデーションベースカラー) =====
         [Header(Gradient Base Color)]
         [Toggle(_GRADIENT_BASE_COLOR)] _GradientBaseColor ("Enable Gradient Base Color", Float) = 0
@@ -116,6 +125,8 @@ Shader "Natane/Toon Shader (Background)"
         [Toggle(_USE_RAMP)] _UseRamp ("Use Ramp Texture", Float) = 0
         _RampTex ("Ramp Texture", 2D) = "white" {}
         _ShadowColor ("Shadow Color 1st", Color) = (0.5, 0.5, 0.5, 1)
+        _ShadowHueShift ("Shadow Hue Shift", Range(-0.5, 0.5)) = 0
+        _ShadowSaturation ("Shadow Saturation", Range(0, 2)) = 1
         [Toggle(_USE_MULTI_SHADOW)] _UseMultiShadow ("Use Multi-tone Shadow", Float) = 0
         _Shadow2ndColor ("Shadow Color 2nd", Color) = (0.35, 0.35, 0.35, 1)
         _Shadow2ndBorder ("2nd Shadow Border", Range(0, 1)) = 0.3
@@ -125,8 +136,13 @@ Shader "Natane/Toon Shader (Background)"
         _ShadowSharpness ("Shadow Sharpness", Range(0.001, 1)) = 0.1
         _StepBorderSmooth ("Step Border Smooth", Range(0, 1)) = 0
         _ShadowOffset ("Shadow Offset", Range(-1, 1)) = 0
+        _WrapAmount ("Wrap Amount (Light Wraparound)", Range(0, 1)) = 0
         _LitSoftness ("Lit Area Softness Global Smoothstep", Range(0, 1)) = 0
         _ShadowBlend ("Shadow Blend Softness", Range(0, 1)) = 0
+        [Space(10)]
+        [Toggle(_VERTEX_COLOR_SHADOW)] _VertexColorShadow ("Vertex Color Shadow Threshold", Float) = 0
+        _VCShadowThreshold ("Shadow Threshold", Range(0, 1)) = 0.5
+        _VCShadowPush ("Shadow Push", Range(-1, 1)) = 0
         [Toggle(_SHADOW_RECEIVE_MASK)] _UseShadowReceiveMask ("Use Shadow Receive Mask", Float) = 0
         _ShadowReceiveMask ("Shadow Receive Mask", 2D) = "white" {}
         [Space(10)]
@@ -139,6 +155,11 @@ Shader "Natane/Toon Shader (Background)"
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _AOBlendMode ("AO Blend Mode", Float) = 0
         _AOBlend ("AO Blend", Range(0, 1)) = 1
         _AOBlur ("AO Blur", Range(0, 1)) = 0
+        [Space(10)]
+        [Toggle(_PROCEDURAL_AO)] _ProceduralAO ("Enable Procedural AO", Float) = 0
+        _ProceduralAOHeightOffset ("AO Height Offset", Range(-2, 2)) = 0
+        _ProceduralAOIntensity ("AO Intensity", Range(0, 1)) = 0.5
+        _ProceduralAOSoftness ("AO Softness", Range(0.01, 2)) = 0.5
         [Toggle(_USE_DITHERING)] _UseDithering ("Use Dithering Shadow Edge Only", Float) = 0
         _DitheringScale ("Dithering Scale Pattern Size", Range(1, 100)) = 10
         _DitheringStrength ("Dithering Strength Boundary Softness", Range(0, 1)) = 0.5
@@ -148,6 +169,17 @@ Shader "Natane/Toon Shader (Background)"
         [Toggle(_SHADOW_COLOR_TEX)] _UseShadowColorTex ("Use Shadow Color Texture", Float) = 0
         _ShadowColorTex ("Shadow Color Texture", 2D) = "white" {}
         _ShadowColorTexStrength ("Shadow Color Tex Strength", Range(0, 1)) = 1
+
+        [Header(Shadow Edge Noise)]
+        [Toggle(_SHADOW_EDGE_NOISE)] _ShadowEdgeNoise ("Enable Shadow Edge Noise", Float) = 0
+        _ShadowNoiseScale ("Noise Scale", Range(1, 100)) = 20
+        _ShadowNoiseIntensity ("Noise Intensity", Range(0, 1)) = 0.3
+        _ShadowNoiseSpeed ("Noise Animation Speed", Range(0, 5)) = 0
+
+        [Header(Cast Shadow Color)]
+        [Toggle(_CAST_SHADOW_COLOR)] _CastShadowColorEnable ("Enable Cast Shadow Color", Float) = 0
+        _CastShadowTint ("Cast Shadow Tint", Color) = (0.5, 0.4, 0.6, 1)
+        _CastShadowIntensity ("Cast Shadow Intensity", Range(0, 1)) = 0.5
 
         [Header(Advanced Lighting)]
         [Toggle(_SOFT_LIGHTING_MODE)] _SoftLightingMode ("Soft Lighting Mode Global", Float) = 0
@@ -177,6 +209,11 @@ Shader "Natane/Toon Shader (Background)"
         _ShadowEnvStrength ("Shadow Env Strength", Range(0, 1)) = 0
         [Toggle(_PIXEL_VERTEX_LIGHTS)] _UsePixelVertexLights("Pixel Vertex Lights", Float) = 0
 
+        [Header(Light Direction Snap)]
+        [Toggle(_LIGHT_SNAP)] _LightSnap ("Enable Light Snap", Float) = 0
+        _LightSnapAngle ("Snap Angle (degrees)", Range(5, 90)) = 45
+        _LightSnapSmooth ("Snap Smoothness", Range(0, 1)) = 0.1
+
         [Header(VRC Light Volumes)]
         [Toggle(_USE_LIGHT_VOLUME)] _UseLightVolume ("Use Light Volume", Float) = 0
         _LightVolumeIntensity ("Light Volume Intensity", Range(0, 1)) = 1
@@ -194,9 +231,21 @@ Shader "Natane/Toon Shader (Background)"
         _SpecularMask ("Specular Mask", 2D) = "white" {}
         _SpecularMaskScrollSpeed ("Specular Mask Scroll Speed XY", Vector) = (0,0,0,0)
         _SpecularMaskRotateSpeed ("Specular Mask Rotate Speed", Float) = 0
-        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _SpecularBlendMode ("Specular Blend Mode", Float) = 0
+        [Toggle(_SPECULAR_AA)] _SpecularAA ("Enable Specular Anti-Aliasing", Float) = 0
+        _SpecularAAStrength ("Specular AA Strength", Range(0, 2)) = 1
+[Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _SpecularBlendMode ("Specular Blend Mode", Float) = 0
         _SpecularBlend ("Specular Blend", Range(0, 1)) = 1
         _SpecularBlur ("Specular Blur", Range(0, 1)) = 0
+
+        [Header(Angel Ring)]
+        [Toggle(_ANGEL_RING)] _AngelRing ("Enable Angel Ring", Float) = 0
+        _AngelRingTex ("Angel Ring Texture", 2D) = "white" {}
+        _AngelRingColor ("Angel Ring Color", Color) = (1,1,1,0.5)
+        _AngelRingOffset ("Angel Ring Offset", Range(-0.5, 0.5)) = 0.0
+        _AngelRingWidth ("Angel Ring Width", Range(0.01, 1.0)) = 0.3
+        _AngelRingIntensity ("Angel Ring Intensity", Range(0, 3)) = 1.0
+        _AngelRingBlend ("Angel Ring Blend", Range(0, 1)) = 1
+        [Enum(Add,0,Multiply,1,Screen,2,Overlay,3)] _AngelRingBlendMode ("Angel Ring Blend Mode", Float) = 0
 
         [Header(Rim Light)]
         [Toggle(_RIM_LIGHT)] _RimLight ("Enable Rim Light", Float) = 0
@@ -237,6 +286,16 @@ Shader "Natane/Toon Shader (Background)"
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _OffsetRimBlendMode ("Offset Rim Blend Mode", Float) = 0
         _OffsetRimBlend ("Offset Rim Blend", Range(0, 1)) = 1
         _OffsetRimBlur ("Offset Rim Blur", Range(0, 1)) = 0
+
+        [Header(Sheen Fabric Luster)]
+        [Toggle(_SHEEN)] _Sheen ("Enable Sheen", Float) = 0
+        _SheenColor ("Sheen Color", Color) = (1, 1, 0.9, 1)
+        _SheenIntensity ("Sheen Intensity", Range(0, 3)) = 1.0
+        _SheenPower ("Sheen Power", Range(0.1, 10)) = 2.0
+        _SheenMask ("Sheen Mask", 2D) = "white" {}
+        _SheenBlend ("Sheen Blend", Range(0, 1)) = 1
+        [Enum(Add,0,Multiply,1,Screen,2,Overlay,3)] _SheenBlendMode ("Sheen Blend Mode", Float) = 2
+
         [Space(10)]
         [Toggle(_RIM_DIRECTION_CONTROL)] _RimDirectionControl ("Rim Direction Control", Float) = 0
         _RimLightDirection ("Rim Light Direction", Vector) = (0,1,0,0)
@@ -272,6 +331,15 @@ Shader "Natane/Toon Shader (Background)"
         _MatCapBlend3 ("MatCap 3 Blend", Range(0, 1)) = 1
         _MatCap3Blur ("MatCap 3 Blur", Range(0, 1)) = 0
 
+        [Header(Procedural MatCap)]
+        [Toggle(_PROCEDURAL_MATCAP)] _ProceduralMatCap ("Enable Procedural MatCap", Float) = 0
+        _ProcMatCapColor ("Procedural MatCap Color", Color) = (0.8, 0.85, 1.0, 1)
+        _ProcMatCapPower ("Procedural MatCap Power", Range(0.5, 10)) = 2.0
+        _ProcMatCapIntensity ("Procedural MatCap Intensity", Range(0, 3)) = 1.0
+        _ProcMatCapFresnelPower ("Procedural MatCap Fresnel", Range(0.1, 10)) = 3.0
+        _ProcMatCapBlend ("Procedural MatCap Blend", Range(0, 1)) = 1
+        [Enum(Add,0,Multiply,1,Screen,2,Overlay,3)] _ProcMatCapBlendMode ("Procedural MatCap Blend Mode", Float) = 0
+
         // ===== Outline (アウトライン) =====
         [Header(Outline)]
         [Toggle(_OUTLINE)] _Outline ("Enable Outline", Float) = 0
@@ -290,6 +358,8 @@ Shader "Natane/Toon Shader (Background)"
         [Toggle(_OUTLINE_TEXTURE_COLOR)] _OutlineTextureColor ("Texture-linked Color", Float) = 0
         _OutlineTexColorBlend ("Tex Color Blend", Range(0, 1)) = 0.8
         _OutlineTexColorDarken ("Tex Color Darken", Range(0, 1)) = 0.5
+        _OutlineTexColorHueShift ("Outline Hue Shift", Range(-0.5, 0.5)) = 0
+        _OutlineTexColorSaturation ("Outline Saturation", Range(0, 2)) = 1.0
         [Space(10)]
         [Toggle(_SMOOTH_NORMAL)] _SmoothNormal ("Smooth Normal", Float) = 0
         [Enum(Vertex Color ObjectSpace,0,Vertex Color TangentSpace,1,Baked Normal Texture,2)] _SmoothNormalMode ("Smooth Normal Mode", Float) = 0
@@ -354,6 +424,10 @@ Shader "Natane/Toon Shader (Background)"
         _BumpScale ("Normal Scale", Range(0, 2)) = 1
         _BumpMapScrollSpeed ("Normal Map Scroll Speed XY", Vector) = (0,0,0,0)
         _BumpMapRotateSpeed ("Normal Map Rotate Speed", Float) = 0
+        [Space(10)]
+        [Toggle(_NORMAL_WARP)] _NormalWarp ("Enable Normal Warping", Float) = 0
+        _NormalFlattenY ("Normal Flatten Y", Range(0, 1)) = 0
+        _NormalRoundness ("Normal Roundness (Spherical Blend)", Range(0, 1)) = 0
 
         [Header(Cubemap Reflection)]
         [Toggle(_REFLECTION)] _Reflection ("Enable Reflection", Float) = 0
@@ -368,6 +442,16 @@ Shader "Natane/Toon Shader (Background)"
         [Toggle(_REFLECTION_MASK)] _UseReflectionMask ("Use Reflection Mask", Float) = 0
         _ReflectionMask ("Reflection Mask", 2D) = "white" {}
         _ReflectionBlend ("Reflection Blend", Range(0, 1)) = 1
+
+        [Header(Fake Environment Reflection)]
+        [Toggle(_FAKE_REFLECTION)] _FakeReflection ("Enable Fake Reflection", Float) = 0
+        _FakeReflSkyColor ("Sky Color", Color) = (0.5, 0.7, 1.0, 1)
+        _FakeReflGroundColor ("Ground Color", Color) = (0.3, 0.25, 0.2, 1)
+        _FakeReflIntensity ("Intensity", Range(0, 3)) = 1.0
+        _FakeReflFresnelPower ("Fresnel Power", Range(0.1, 10)) = 3.0
+        _FakeReflSmoothness ("Smoothness", Range(0, 1)) = 0.5
+        _FakeReflBlend ("Blend", Range(0, 1)) = 1
+        [Enum(Add,0,Multiply,1,Screen,2,Overlay,3)] _FakeReflBlendMode ("Blend Mode", Float) = 0
 
         [Header(Iridescence)]
         [Toggle(_IRIDESCENCE)] _Iridescence ("Enable Iridescence", Float) = 0
@@ -392,6 +476,10 @@ Shader "Natane/Toon Shader (Background)"
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _EnvRimBlendMode ("Env Rim Blend Mode", Float) = 0
         _EnvRimBlend ("Env Rim Blend", Range(0, 1)) = 1
         _EnvRimBlur ("Env Rim Blur", Range(0, 1)) = 0
+
+        [Space(10)]
+        [Toggle(_EYE_PARALLAX)] _EyeParallax ("Enable Eye Parallax", Float) = 0
+        _EyeParallaxDepth ("Eye Depth", Range(0, 0.5)) = 0.1
 
         [Header(LTCGI Realtime GI Support)]
         [Toggle(_LTCGI)] _LTCGI ("Enable LTCGI", Float) = 0
@@ -477,7 +565,10 @@ Shader "Natane/Toon Shader (Background)"
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _GlitterBlendMode ("Glitter Blend Mode", Float) = 0
         _GlitterBlend ("Glitter Blend", Range(0, 1)) = 1
         _GlitterBlur ("Glitter Blur", Range(0, 1)) = 0
-
+        [Toggle(_GLINTS_ADVANCED)] _GlintsAdvanced ("Enable Advanced Glints", Float) = 0
+        _GlintsSharpness ("Glints Sharpness", Range(8, 512)) = 128
+        _GlintsTemporal ("Glints Temporal Speed", Range(0, 4)) = 1
+        _GlintsNormalJitter ("Glints Normal Jitter", Range(0, 1)) = 0.35
         // ===== Water Drip (水滴エフェクト) =====
         [Header(Water Drip Effect)]
         [Toggle(_WATER_DRIP)] _WaterDrip ("Enable Water Drip", Float) = 0
@@ -598,11 +689,23 @@ Shader "Natane/Toon Shader (Background)"
         [Header(Quest Lite Mobile Optimization)]
         [Toggle(_QUEST_LITE)] _QuestLite ("Enable Quest Lite", Float) = 0
 
+        [Header(Perspective Flattening)]
+        [Toggle(_PERSPECTIVE_FLAT)] _PerspectiveFlat ("Enable Perspective Flatten", Float) = 0
+        _PerspectiveFlatAmount ("Flatten Amount", Range(0, 1)) = 0.5
+
+        [Header(Depth Color Fade)]
+        [Toggle(_DEPTH_COLOR_FADE)] _DepthColorFade ("Enable Depth Color Fade", Float) = 0
+        _DepthFadeColor ("Atmosphere Color", Color) = (0.7, 0.8, 1.0, 1)
+        _DepthFadeStart ("Fade Start Distance", Float) = 10
+        _DepthFadeEnd ("Fade End Distance", Float) = 100
+        _DepthFadeIntensity ("Fade Intensity", Range(0, 1)) = 0.5
+        _DepthFadeDesaturation ("Desaturation", Range(0, 1)) = 0.3
+
         // ===== Advanced (詳細設定) =====
         [Header(Rendering)]
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull Mode", Float) = 2
         [Enum(Off,0,On,1)] _ZWrite ("Z Write", Float) = 1
-
+        [Enum(Off,0,On,1)] _AlphaToMask ("Alpha To Coverage (MSAA)", Float) = 0
         // ===== Stencil =====
         [Header(Stencil)]
         _StencilRef ("Stencil Reference", Range(0, 255)) = 0
@@ -641,8 +744,8 @@ Shader "Natane/Toon Shader (Background)"
             Tags { "LightMode" = "ForwardBase" }
             Cull Front
             ZWrite [_ZWrite]
-
-            CGPROGRAM
+            AlphaToMask [_AlphaToMask]
+CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #pragma shader_feature_local _OUTLINE
@@ -652,10 +755,30 @@ Shader "Natane/Toon Shader (Background)"
             #pragma shader_feature_local _OUTLINE_MASK
             #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma shader_feature_local _HEIGHT_FADE
+            #pragma shader_feature_local _PERSPECTIVE_FLAT
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
 
             #include "UnityCG.cginc"
+
+            // Inline HSV conversion for Outline pass (standalone CGPROGRAM)
+            #ifdef _OUTLINE_TEXTURE_COLOR
+            float3 RGBtoHSV(float3 rgb)
+            {
+                float4 K = float4(0.0, -1.0/3.0, 2.0/3.0, -1.0);
+                float4 p = lerp(float4(rgb.bg, K.wz), float4(rgb.gb, K.xy), step(rgb.b, rgb.g));
+                float4 q = lerp(float4(p.xyw, rgb.r), float4(rgb.r, p.yzx), step(p.x, rgb.r));
+                float d = q.x - min(q.w, q.y);
+                float e = 1.0e-10;
+                return float3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+            }
+            float3 HSVtoRGB(float3 hsv)
+            {
+                float4 K = float4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
+                float3 p = abs(frac(hsv.xxx + K.xyz) * 6.0 - K.www);
+                return hsv.z * lerp(K.xxx, saturate(p - K.xxx), hsv.y);
+            }
+            #endif
 
             struct appdata
             {
@@ -693,6 +816,8 @@ Shader "Natane/Toon Shader (Background)"
                 float4 _MainTex_ST;
                 float _OutlineTexColorBlend;
                 float _OutlineTexColorDarken;
+                float _OutlineTexColorHueShift;
+                float _OutlineTexColorSaturation;
             #endif
             #ifdef _SMOOTH_NORMAL
                 float _SmoothNormalMode;
@@ -707,6 +832,9 @@ Shader "Natane/Toon Shader (Background)"
                 float _HeightFadeMode;
                 float _HeightFadeBlend;
                 float _HeightFadeDitherScale;
+            #endif
+            #ifdef _PERSPECTIVE_FLAT
+                float _PerspectiveFlatAmount;
             #endif
 
             v2f vert(appdata v)
@@ -782,6 +910,14 @@ Shader "Natane/Toon Shader (Background)"
                         o.pos = UnityObjectToClipPos(float4(scaledPos, 1.0));
                     }
 
+                    // Perspective Flattening for outline pass
+                    #ifdef _PERSPECTIVE_FLAT
+                    {
+                        float flatZ = lerp(o.pos.z, o.pos.w * 0.5, _PerspectiveFlatAmount);
+                        o.pos.z = flatZ;
+                    }
+                    #endif
+
                     #ifdef _HEIGHT_FADE
                     o.worldPos = worldPos;
                     #endif
@@ -803,6 +939,11 @@ Shader "Natane/Toon Shader (Background)"
                     #ifdef _OUTLINE_TEXTURE_COLOR
                         fixed4 texColor = tex2D(_MainTex, TRANSFORM_TEX(i.uv, _MainTex));
                         fixed3 darkenedTexColor = texColor.rgb * (1.0 - _OutlineTexColorDarken);
+                        // HSV adjustment
+                        float3 outHSV = RGBtoHSV(darkenedTexColor);
+                        outHSV.x = frac(outHSV.x + _OutlineTexColorHueShift);
+                        outHSV.y = saturate(outHSV.y * _OutlineTexColorSaturation);
+                        darkenedTexColor = HSVtoRGB(outHSV);
                         col.rgb = lerp(col.rgb, darkenedTexColor, _OutlineTexColorBlend);
                     #endif
 
@@ -867,8 +1008,8 @@ Shader "Natane/Toon Shader (Background)"
             Tags { "LightMode" = "ForwardBase" }
             Cull [_Cull]
             ZWrite [_ZWrite]
-
-            CGPROGRAM
+            AlphaToMask [_AlphaToMask]
+CGPROGRAM
             #pragma target 3.0
             #pragma vertex vert
             #pragma fragment frag
@@ -883,6 +1024,7 @@ Shader "Natane/Toon Shader (Background)"
             #pragma shader_feature_local _4TH_TEXTURE
             #pragma shader_feature_local _5TH_TEXTURE
             #pragma shader_feature_local _SCREEN_TONE
+            #pragma shader_feature_local _HALFTONE_SHADOW
             #pragma shader_feature_local _GRADIENT_BASE_COLOR
             #pragma shader_feature_local _USE_RAMP
             #pragma shader_feature_local _STANDARD_TOON
@@ -890,14 +1032,24 @@ Shader "Natane/Toon Shader (Background)"
             #pragma shader_feature_local _SHADOW_RECEIVE_MASK
             #pragma shader_feature_local _SHADING_GRADE_MAP
             #pragma shader_feature_local _USE_AO
+            #pragma shader_feature_local _PROCEDURAL_AO
+            #pragma shader_feature_local _NORMAL_WARP
             #pragma shader_feature_local _USE_DITHERING
-            #pragma shader_feature_local _SOFT_LIGHTING_MODE
+            #pragma shader_feature_local _SHADOW_EDGE_NOISE
+            #pragma shader_feature_local _CAST_SHADOW_COLOR
+            #pragma shader_feature_local _LIGHT_SNAP
+            #pragma shader_feature_local _BLUE_NOISE_DITHER
+#pragma shader_feature_local _SOFT_LIGHTING_MODE
             #pragma shader_feature_local _USE_LIGHT_VOLUME
             #pragma shader_feature_local _LIGHT_VOLUME_SPECULAR
             #pragma shader_feature_local _SPECULAR
+            #pragma shader_feature_local _SPECULAR_AA
+#pragma shader_feature_local _ANGEL_RING
+            #pragma shader_feature_local _EYE_PARALLAX
             #pragma shader_feature_local _RIM_LIGHT
             #pragma shader_feature_local _RIM_LIGHT_2
             #pragma shader_feature_local _OFFSET_RIM_LIGHT
+            #pragma shader_feature_local _SHEEN
             #pragma shader_feature_local _MATCAP
             #pragma shader_feature_local _EMISSION
             #pragma shader_feature_local _NORMALMAP
@@ -905,20 +1057,24 @@ Shader "Natane/Toon Shader (Background)"
             #pragma shader_feature_local _ALPHA_MASK
             #pragma shader_feature_local _HUE_SHIFT
             #pragma shader_feature_local _REFLECTION
+            #pragma shader_feature_local _FAKE_REFLECTION
             #pragma shader_feature_local _IRIDESCENCE
             #pragma shader_feature_local _ENV_RIM
             #pragma shader_feature_local _MATCAP_2
             #pragma shader_feature_local _MATCAP_3
+            #pragma shader_feature_local _PROCEDURAL_MATCAP
             #pragma shader_feature_local _HEIGHT_FADE
             #pragma shader_feature_local _DISTANCE_FADE
             #pragma shader_feature_local _VERTEX_ANIMATION
             #pragma shader_feature_local _LTCGI
             #pragma shader_feature_local _PIXEL_VERTEX_LIGHTS
             #pragma shader_feature_local _SMOOTH_NORMAL
+            #pragma shader_feature_local _VERTEX_COLOR_SHADOW
             #pragma shader_feature_local _PBR
             #pragma shader_feature_local _DECAL
             #pragma shader_feature_local _GLITTER
-            #pragma shader_feature_local _WATER_DRIP
+            #pragma shader_feature_local _GLINTS_ADVANCED
+#pragma shader_feature_local _WATER_DRIP
             #pragma shader_feature_local _INTERSECTION_FADE
             #pragma shader_feature_local _AUDIOLINK
             #pragma shader_feature_local _VIDEO_TEXTURE
@@ -928,6 +1084,8 @@ Shader "Natane/Toon Shader (Background)"
             #pragma shader_feature_local _SURFACE_COVER
             #pragma shader_feature_local _MIRROR_CONTROL
             #pragma shader_feature_local _QUEST_LITE
+            #pragma shader_feature_local _PERSPECTIVE_FLAT
+            #pragma shader_feature_local _DEPTH_COLOR_FADE
 
             #include "../Include/Core/NataneToonCore.hlsl"
 
@@ -964,10 +1122,17 @@ Shader "Natane/Toon Shader (Background)"
             #pragma shader_feature_local _SHADOW_RECEIVE_MASK
             #pragma shader_feature_local _SHADING_GRADE_MAP
             #pragma shader_feature_local _USE_AO
+            #pragma shader_feature_local _PROCEDURAL_AO
+            #pragma shader_feature_local _NORMAL_WARP
             #pragma shader_feature_local _USE_DITHERING
-            #pragma shader_feature_local _SOFT_LIGHTING_MODE
+            #pragma shader_feature_local _SHADOW_EDGE_NOISE
+            #pragma shader_feature_local _CAST_SHADOW_COLOR
+            #pragma shader_feature_local _LIGHT_SNAP
+            #pragma shader_feature_local _BLUE_NOISE_DITHER
+#pragma shader_feature_local _SOFT_LIGHTING_MODE
             #pragma shader_feature_local _SPECULAR
-            #pragma shader_feature_local _RIM_LIGHT
+            #pragma shader_feature_local _SPECULAR_AA
+#pragma shader_feature_local _RIM_LIGHT
             #pragma shader_feature_local _RIM_LIGHT_2
             #pragma shader_feature_local _OFFSET_RIM_LIGHT
             #pragma shader_feature_local _ENV_RIM
@@ -977,6 +1142,7 @@ Shader "Natane/Toon Shader (Background)"
             #pragma shader_feature_local _HEIGHT_FADE
             #pragma shader_feature_local _DISTANCE_FADE
             #pragma shader_feature_local _SMOOTH_NORMAL
+            #pragma shader_feature_local _VERTEX_COLOR_SHADOW
             #pragma shader_feature_local _PBR
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 

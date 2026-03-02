@@ -201,20 +201,7 @@ float ApplyLightBlend(float lightValue)
 // Creates a dithering effect for softer shadow transitions
 float DitheringPattern(float2 screenPos, float scale)
 {
-    // 4x4 Bayer matrix for dithering
-    float4x4 bayerMatrix = float4x4(
-        0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
-        12.0/16.0, 4.0/16.0, 14.0/16.0,  6.0/16.0,
-        3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
-        15.0/16.0, 7.0/16.0, 13.0/16.0,  5.0/16.0
-    );
-
-    // Scale screen position and get matrix indices
-    float2 scaledPos = screenPos * scale;
-    int2 matrixPos = int2(fmod(scaledPos.x, 4.0), fmod(scaledPos.y, 4.0));
-
-    // Return dithering value
-    return bayerMatrix[matrixPos.x][matrixPos.y];
+    return NataneGetDitherThreshold(screenPos, scale);
 }
 
 // Ramp Texture Shading
@@ -264,8 +251,17 @@ half SpecularHighlight(half3 normal, half3 viewDir, half3 lightDir, half size, h
     half3 halfVector = normalize(lightDir + viewDir);
     half ndoth = max(0.0, dot(normal, halfVector));
 
-    // Create sharp specular with controllable size and softness
-    half spec = smoothstep(1.0 - size - softness, 1.0 - size + softness, ndoth);
+    half edgeMin = 1.0 - size - softness;
+    half edgeMax = 1.0 - size + softness;
+
+    #if defined(_SPECULAR_AA)
+        // Expand threshold by derivatives to reduce high-frequency shimmer.
+        half aaWidth = max(fwidth(ndoth) * _SpecularAAStrength, 0.0005);
+        edgeMin -= aaWidth;
+        edgeMax += aaWidth;
+    #endif
+
+    half spec = smoothstep(edgeMin, edgeMax, ndoth);
     return spec;
 }
 #endif // _SPECULAR
@@ -276,6 +272,12 @@ half KajiyaKaySpecular(half3 shiftedTangent, half3 halfVector, half exponent)
 {
     half TdotH = dot(shiftedTangent, halfVector);
     half sinTH = sqrt(max(0.001, 1.0 - TdotH * TdotH));
+
+    #if defined(_SPECULAR_AA)
+        half aaFactor = 1.0 + fwidth(TdotH) * _SpecularAAStrength * 128.0;
+        exponent = max(1.0, exponent / aaFactor);
+    #endif
+
     return saturate(pow(sinTH, exponent));
 }
 
@@ -358,6 +360,19 @@ half3 OffsetRimLighting(half3 normal, half3 viewDir, half3 lightDir, half power,
 }
 #endif // _OFFSET_RIM_LIGHT
 
+// Sheen (Fabric Luster)
+// Simulates the sheen effect of fabric materials at grazing angles
+#if defined(_SHEEN)
+half3 SheenHighlight(half3 normal, half3 viewDir, half3 lightDir)
+{
+    half NdotV = max(0.0, dot(normal, viewDir));
+    half NdotL = max(0.0, dot(normal, lightDir));
+    // Charlie sheen approximation: grazing angle fabric luster
+    half sheen = pow(1.0 - NdotV, _SheenPower) * NdotL;
+    return saturate(sheen) * _SheenColor.rgb * _SheenIntensity;
+}
+#endif // _SHEEN
+
 // Subsurface Scattering (Translucency)
 // Simulates light passing through thin or translucent materials
 #if defined(_SSS)
@@ -379,6 +394,20 @@ half3 SubsurfaceScattering(half3 normal, half3 lightDir, half3 viewDir, half thi
     return backLight * _SSSColor.rgb * _LightColor0.rgb;
 }
 #endif // _SSS
+
+// Pre-integrated Subsurface Scattering using LUT
+// Uses a 2D lookup table indexed by NdotL and curvature for physically-based SSS
+#if defined(_SSS) && defined(_SSS_LUT)
+half3 SubsurfaceScatteringLUT(half ndotl, half3 normal, half3 worldPos, half thickness)
+{
+    // Curvature calculation (using fwidth)
+    half curvature = saturate(length(fwidth(normal)) / max(length(fwidth(worldPos)), 0.0001) * 0.5);
+    // LUT UV: X=NdotL(0~1), Y=curvature(0~1)
+    float2 lutUV = float2(ndotl * 0.5 + 0.5, curvature * (1.0 - thickness));
+    half3 sssLUT = tex2D(_SSSLUTTex, lutUV).rgb;
+    return sssLUT * _SSSColor.rgb * _SSSLUTScale;
+}
+#endif
 
 // Cubemap Reflection (Environment Mapping)
 // Samples a cubemap based on reflection vector for realistic environment reflections
@@ -540,7 +569,7 @@ float ApplyShadingGradeMap(float2 uv, float shadowFactor)
 
 // Glitter Effect
 // Creates sparkly/shimmery effect on surfaces
-half3 GlitterEffect(float2 uv, float3 worldPos, half3 viewDir, half3 normal, float blur)
+half3 GlitterEffect(float2 uv, float3 worldPos, half3 viewDir, half3 normal, half3 lightDir, float blur)
 {
     #ifdef _GLITTER
         // Create random glitter pattern using world position
@@ -554,17 +583,34 @@ half3 GlitterEffect(float2 uv, float3 worldPos, half3 viewDir, half3 normal, flo
         half glitterMask = lerp(step(densityThreshold, glitterRandom),
             smoothstep(densityThreshold - 0.3, densityThreshold, glitterRandom), blur);
 
-        // Animate glitter using time
-        half glitterTime = _Time.y * _GlitterSpeed;
-        half glitterFlicker = frac(glitterRandom * 10.0 + glitterTime);
-        glitterFlicker = smoothstep(0.3, 0.7, glitterFlicker); // Pulse animation
+        half glitter = 0.0;
+        #if defined(_GLINTS_ADVANCED)
+            // Approximate physically-plausible glints using micro-normal perturbation and NdotH lobe.
+            float3 cell = floor(glitterPos * 4.0);
+            float cellHash = frac(sin(dot(cell, float3(95.435, 74.231, 11.973))) * 43758.5453);
+            float3 randDir = normalize(float3(
+                frac(cellHash * 13.37) * 2.0 - 1.0,
+                frac(cellHash * 7.91) * 2.0 - 1.0,
+                frac(cellHash * 5.23) * 2.0 - 1.0));
+            half3 microNormal = normalize(normal + randDir * _GlintsNormalJitter);
+            half3 halfVec = normalize(viewDir + lightDir);
+            half ndoth = saturate(dot(microNormal, halfVec));
+            half lobe = pow(ndoth, _GlintsSharpness);
 
-        // Calculate view-dependent glitter intensity (sparkles more when viewed at certain angles)
-        half viewDot = max(0.0, dot(normal, viewDir));
-        half viewFactor = viewDot * viewDot;
+            half temporal = frac(cellHash * 21.7 + _Time.y * _GlitterSpeed * _GlintsTemporal);
+            temporal = smoothstep(0.2, 0.8, temporal);
+            glitter = glitterMask * lobe * temporal;
+        #else
+            // Animate glitter using time
+            half glitterTime = _Time.y * _GlitterSpeed;
+            half glitterFlicker = frac(glitterRandom * 10.0 + glitterTime);
+            glitterFlicker = smoothstep(0.3, 0.7, glitterFlicker); // Pulse animation
 
-        // Combine all factors
-        half glitter = glitterMask * glitterFlicker * viewFactor;
+            // Calculate view-dependent glitter intensity (sparkles more when viewed at certain angles)
+            half viewDot = max(0.0, dot(normal, viewDir));
+            half viewFactor = viewDot * viewDot;
+            glitter = glitterMask * glitterFlicker * viewFactor;
+        #endif
 
         // Apply user mask
         half maskValue = tex2D(_GlitterMask, uv).r;

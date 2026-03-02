@@ -395,19 +395,24 @@ half3 SafeAdditiveBlendFast(half3 baseColor, half3 additiveColor, half strength)
 // but remain clearly visible — matte changes quality, not visibility.
 half3 ApplyMatteQuality(half3 effect, half3 baseColor, half matteAmount)
 {
-    // 1. Desaturate: matte surfaces scatter wavelengths, reducing color vibrancy
-    half effectLum = dot(effect, half3(0.299, 0.587, 0.114));
-    effect = lerp(effect, effectLum.xxx, matteAmount * 0.6);
+    matteAmount = saturate(matteAmount);
 
-    // 2. Surface color tinting: matte surfaces impart their own color to reflected light
-    //    Brighten baseColor to prevent over-darkening on dark surfaces
-    half3 tintBase = saturate(baseColor + 0.4);
-    effect = lerp(effect, effect * tintBase, matteAmount * 0.4);
+    // 1. Desaturate: matte scattering reduces spectral separation.
+    half effectLum = CALC_LUMINANCE(max(effect, 0.0));
+    effect = lerp(effect, effectLum.xxx, matteAmount * 0.7);
 
-    // 3. Gentle softening only (matte changes quality, not visibility)
-    effect *= lerp(1.0, 0.75, matteAmount);
+    // 2. Surface tinting: diffuse-like coloration from the base surface.
+    half3 tintBase = saturate(baseColor + 0.35);
+    effect = lerp(effect, effect * tintBase, matteAmount * 0.45);
 
-    return effect;
+    // 3. Peak compression: reduce shiny spikes while preserving broad response.
+    half lumAfter = CALC_LUMINANCE(max(effect, 0.0));
+    half peakCompression = rcp(1.0 + lumAfter * matteAmount * 1.25);
+
+    // 4. Keep a minimum presence so effects stay visible even at full matte.
+    half mattePresence = lerp(1.0, 0.55, matteAmount);
+    half matteSoften = lerp(1.0, 0.9, matteAmount);
+    return effect * peakCompression * matteSoften * mattePresence;
 }
 
 // ===== Blend Mode Functions for Makeup Textures =====
@@ -638,12 +643,19 @@ float2 AnimateUVIfNeeded(float2 baseUV, float2 scrollSpeed, float rotateSpeed)
     return baseUV;
 }
 
-// ===== Refraction Functions =====
-#if defined(_REFRACTION)
+// ===== GrabPass Texture Declaration =====
+// Shared by: _REFRACTION, _SOFT_FILTER, _KUWAHARA_FILTER, _COLOR_BLEEDING, _CHROMATIC_ABERRATION
+// Uses "_nataneBackgroundTexture" named GrabPass (shared with lilToon for cache efficiency)
+#if defined(_REFRACTION) || defined(_SOFT_FILTER) || defined(_KUWAHARA_FILTER) || defined(_COLOR_BLEEDING) || defined(_CHROMATIC_ABERRATION)
 
 // Stereo-aware GrabPass texture declaration for VR Single Pass Instanced
-UNITY_DECLARE_SCREENSPACE_TEXTURE(_GrabTexture);
-float4 _GrabTexture_TexelSize;
+UNITY_DECLARE_SCREENSPACE_TEXTURE(_nataneBackgroundTexture);
+float4 _nataneBackgroundTexture_TexelSize;
+
+#endif // GrabPass texture
+
+// ===== Refraction Functions =====
+#if defined(_REFRACTION)
 
 // Apply refraction distortion to screen UV
 // Returns distorted UV for sampling GrabTexture
@@ -684,22 +696,22 @@ half3 SampleGrabTextureWithBlur(float2 uv, float blurAmount)
     if (blurAmount < EPSILON)
     {
         // No blur, single sample (stereo-aware for VR SPI)
-        return UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, uv).rgb;
+        return UNITY_SAMPLE_SCREENSPACE_TEXTURE(_nataneBackgroundTexture, uv).rgb;
     }
 
     // Optimized 5-sample cross blur: center + 4 directions
     // Quality/Performance balance for VR
     float blurRadius = blurAmount * 0.01;
-    float2 texelSize = blurRadius * _GrabTexture_TexelSize.xy;
+    float2 texelSize = blurRadius * _nataneBackgroundTexture_TexelSize.xy;
 
     // Center sample with higher weight (stereo-aware for VR SPI)
-    half3 color = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, uv).rgb * 0.4;
+    half3 color = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_nataneBackgroundTexture, uv).rgb * 0.4;
 
     // Cross pattern (up, down, left, right)
-    color += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, uv + float2(texelSize.x, 0)).rgb * 0.15;
-    color += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, uv + float2(-texelSize.x, 0)).rgb * 0.15;
-    color += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, uv + float2(0, texelSize.y)).rgb * 0.15;
-    color += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, uv + float2(0, -texelSize.y)).rgb * 0.15;
+    color += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_nataneBackgroundTexture, uv + float2(texelSize.x, 0)).rgb * 0.15;
+    color += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_nataneBackgroundTexture, uv + float2(-texelSize.x, 0)).rgb * 0.15;
+    color += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_nataneBackgroundTexture, uv + float2(0, texelSize.y)).rgb * 0.15;
+    color += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_nataneBackgroundTexture, uv + float2(0, -texelSize.y)).rgb * 0.15;
 
     return color;
 }
@@ -1150,31 +1162,81 @@ half3 CalculateDripEffectFast(float3 worldPos, float time, half3 dripColor, floa
 }
 #endif // _WATER_DRIP
 
-// ===== Dithering Alpha Functions =====
-#if defined(_DITHERING_ALPHA)
+// ===== Shared Dithering / Alpha Functions =====
+static const float NataneBayer4x4[16] = {
+    0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
+    12.0/16.0, 4.0/16.0, 14.0/16.0,  6.0/16.0,
+    3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
+    15.0/16.0, 7.0/16.0, 13.0/16.0,  5.0/16.0
+};
 
-// Bayer matrix 4x4 for ordered dithering
+float NataneInterleavedGradientNoise(float2 pixelPos)
+{
+    return frac(52.9829189 * frac(dot(pixelPos, float2(0.06711056, 0.00583715))));
+}
+
+float NataneBayerThreshold4x4(float2 screenPos, float scale)
+{
+    float2 scaledPos = screenPos * max(scale, 0.0001);
+    int2 coord = int2(fmod(scaledPos, 4.0));
+    return NataneBayer4x4[coord.y * 4 + coord.x];
+}
+
+#if defined(_BLUE_NOISE_DITHER)
+float NataneBlueNoiseThreshold(float2 screenPos, float scale)
+{
+    float2 scaledPos = screenPos * max(scale, 0.0001);
+    float frame = floor(_Time.y * max(_BlueNoiseTemporal, 0.0));
+    float2 temporalJitter = float2(frame * 0.754877666, frame * 0.569840296) * 64.0;
+    float2 p = scaledPos + temporalJitter;
+
+    // Approximation of spatiotemporal blue-noise style distribution using decorrelated IG noise taps.
+    float n0 = NataneInterleavedGradientNoise(p);
+    float n1 = NataneInterleavedGradientNoise(p.yx + 19.19);
+    float n2 = NataneInterleavedGradientNoise(p * 0.5 + 7.7);
+    return frac(n0 + n1 * 0.5 + n2 * 0.25);
+}
+#endif
+
+float NataneGetDitherThreshold(float2 screenPos, float scale)
+{
+    float bayer = NataneBayerThreshold4x4(screenPos, scale);
+    #if defined(_BLUE_NOISE_DITHER)
+        float blue = NataneBlueNoiseThreshold(screenPos, scale);
+        return lerp(bayer, blue, saturate(_BlueNoiseAmount));
+    #else
+        return bayer;
+    #endif
+}
+
+#if defined(_DITHERING_ALPHA)
 float BayerMatrix4x4(float2 screenPos)
 {
-    static const float bayer[16] = {
-        0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
-        12.0/16.0, 4.0/16.0, 14.0/16.0,  6.0/16.0,
-        3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
-        15.0/16.0, 7.0/16.0, 13.0/16.0,  5.0/16.0
-    };
-
-    int2 pos = int2(fmod(screenPos.x, 4), fmod(screenPos.y, 4));
-    return bayer[pos.y * 4 + pos.x];
+    return NataneBayerThreshold4x4(screenPos, 1.0);
 }
 
 // Apply dithering to alpha channel
 float ApplyDitheringAlpha(float alpha, float2 screenPos, float scale)
 {
-    float2 ditherPos = screenPos * scale;
-    float threshold = BayerMatrix4x4(ditherPos);
+    float threshold = NataneGetDitherThreshold(screenPos, scale);
     return alpha - threshold;
 }
 #endif // _DITHERING_ALPHA
+
+#if defined(_HASHED_ALPHA)
+float HashedAlphaThreshold(float2 screenPos, float2 worldPosXZ, float scale)
+{
+    float2 pixelPos = floor(screenPos * max(scale, 0.5));
+    float hashScreen = NataneInterleavedGradientNoise(pixelPos);
+    float hashWorld = frac(sin(dot(worldPosXZ, float2(12.9898, 78.233))) * 43758.5453);
+    return frac(hashScreen + hashWorld * 0.6180339887);
+}
+
+float ApplyHashedAlpha(float alpha, float2 screenPos, float2 worldPosXZ, float scale)
+{
+    return alpha - HashedAlphaThreshold(screenPos, worldPosXZ, scale);
+}
+#endif // _HASHED_ALPHA
 
 // ===== Directional Light Fallback (for non-directional environments) =====
 
@@ -1442,9 +1504,9 @@ half3 ApplyWatercolor(half3 baseColor, float2 uv, float2 screenUV, half shadingV
 #endif // _WATERCOLOR
 
 // ---------- 5. Gaussian Blur / Soft Filter (13-tap separated) ----------
-// Requires GrabPass (_GrabTexture). The texture & texel size are declared in the
+// Requires GrabPass (_nataneBackgroundTexture). The texture & texel size are declared in the
 // _REFRACTION section above. If _REFRACTION is not active, the caller must ensure
-// _GrabTexture is still available (e.g. shared GrabPass declaration in the shader).
+// _nataneBackgroundTexture is still available (e.g. shared GrabPass declaration in the shader).
 #ifdef _SOFT_FILTER
 
 static const int ILLUST_GAUSS_SAMPLES = 13;
@@ -1462,12 +1524,12 @@ static const float IllustGaussOffsets[13] = {
 half3 GaussianBlurGrabPass(float2 screenUV, float2 direction, float blurRadius)
 {
     half3 result = 0;
-    float2 texelSize = _GrabTexture_TexelSize.xy * blurRadius;
+    float2 texelSize = _nataneBackgroundTexture_TexelSize.xy * blurRadius;
     [unroll]
     for (int i = 0; i < ILLUST_GAUSS_SAMPLES; i++)
     {
         float2 offset = direction * IllustGaussOffsets[i] * texelSize;
-        result += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, screenUV + offset).rgb * IllustGaussWeights[i];
+        result += UNITY_SAMPLE_SCREENSPACE_TEXTURE(_nataneBackgroundTexture, screenUV + offset).rgb * IllustGaussWeights[i];
     }
     return result;
 }
@@ -1499,7 +1561,7 @@ half3 ApplySoftFilter(half3 baseColor, float2 grabUV, float radius, float blend,
 #endif // _SOFT_FILTER
 
 // ---------- 6. Kuwahara Filter (油絵風フィルタ) ----------
-// Requires GrabPass (_GrabTexture).
+// Requires GrabPass (_nataneBackgroundTexture).
 #ifdef _KUWAHARA_FILTER
 
 // Kuwahara filter: selects the mean colour of the quadrant with minimum variance.
@@ -1509,7 +1571,7 @@ half3 ApplyKuwaharaFilter(float2 grabUV, int radius, float blend, half3 baseColo
 {
     half3 meanColors[4] = { half3(0,0,0), half3(0,0,0), half3(0,0,0), half3(0,0,0) };
     half variances[4] = { 0, 0, 0, 0 };
-    float2 texelSize = _GrabTexture_TexelSize.xy;
+    float2 texelSize = _nataneBackgroundTexture_TexelSize.xy;
     float count = (float)(radius * radius);
 
     // Iterate over 4 quadrants: top-left, top-right, bottom-left, bottom-right
@@ -1530,7 +1592,7 @@ half3 ApplyKuwaharaFilter(float2 grabUV, int radius, float blend, half3 baseColo
                 for (int iy = 0; iy < radius; iy++)
                 {
                     float2 offset = float2(ix - radius * (1 - qx), iy - radius * (1 - qy)) * texelSize;
-                    half3 s = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, grabUV + offset).rgb;
+                    half3 s = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_nataneBackgroundTexture, grabUV + offset).rgb;
                     sum += s;
                     sumSq += s * s;
                 }
@@ -1621,14 +1683,14 @@ half ApplyScreenEdge(float2 screenUV, float depthSens, float normalSens, float e
 #endif // _SCREEN_EDGE
 
 // ---------- 8. Color Bleeding (色にじみ) ----------
-// Requires GrabPass (_GrabTexture).
+// Requires GrabPass (_nataneBackgroundTexture).
 #ifdef _COLOR_BLEEDING
 
 // Simulates colour bleeding / pigment diffusion.
 // Samples 8 directions around the pixel; brighter neighbours bleed INTO darker areas.
 half3 ApplyColorBleeding(half3 baseColor, float2 grabUV, float radius, float blend)
 {
-    float2 texelSize = _GrabTexture_TexelSize.xy * radius;
+    float2 texelSize = _nataneBackgroundTexture_TexelSize.xy * radius;
     half3 sum = 0;
 
     // 8-direction sampling (cardinal + diagonal)
@@ -1643,7 +1705,7 @@ half3 ApplyColorBleeding(half3 baseColor, float2 grabUV, float radius, float ble
     [unroll]
     for (int i = 0; i < 8; i++)
     {
-        half3 s = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, grabUV + bleedDirs[i] * texelSize).rgb;
+        half3 s = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_nataneBackgroundTexture, grabUV + bleedDirs[i] * texelSize).rgb;
         // Selective mixing: blend only if neighbour is brighter (colour flows light → dark)
         half sampleLum = CALC_LUMINANCE(s);
         half mixFactor = saturate(sampleLum - selfLum);
@@ -1657,7 +1719,7 @@ half3 ApplyColorBleeding(half3 baseColor, float2 grabUV, float radius, float ble
 #endif // _COLOR_BLEEDING
 
 // ---------- 9. Chromatic Aberration (色収差) ----------
-// Requires GrabPass (_GrabTexture).
+// Requires GrabPass (_nataneBackgroundTexture).
 #ifdef _CHROMATIC_ABERRATION
 
 // Radial chromatic aberration — R/G/B channels are shifted outward from screen centre.
@@ -1666,11 +1728,11 @@ half3 ApplyColorBleeding(half3 baseColor, float2 grabUV, float radius, float ble
 half3 ApplyChromaticAberration(float2 grabUV, float intensity, float blend, half3 baseColor)
 {
     float2 dir = grabUV - 0.5;
-    float2 offset = dir * intensity * _GrabTexture_TexelSize.xy;
+    float2 offset = dir * intensity * _nataneBackgroundTexture_TexelSize.xy;
 
-    half r = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, grabUV + offset).r;
-    half g = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, grabUV).g;
-    half b = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_GrabTexture, grabUV - offset).b;
+    half r = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_nataneBackgroundTexture, grabUV + offset).r;
+    half g = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_nataneBackgroundTexture, grabUV).g;
+    half b = UNITY_SAMPLE_SCREENSPACE_TEXTURE(_nataneBackgroundTexture, grabUV - offset).b;
 
     half3 caColor = half3(r, g, b);
     return lerp(baseColor, caColor, blend);
