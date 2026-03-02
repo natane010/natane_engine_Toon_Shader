@@ -1139,6 +1139,18 @@ half4 frag(v2f i) : SV_Target
     #ifdef _SPECULAR
         float specSoftnessBlurred = _SpecularSoftness + _SpecularBlur * 0.3;
         half spec = SpecularHighlight(worldNormal, viewDir, lightDir, _SpecularSize, specSoftnessBlurred);
+
+        // Boundary Dithering: apply dither pattern at specular highlight edges
+        #if defined(_SPECULAR_DITHER)
+        {
+            float2 specDitherScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
+            float2 specDitherScreenPos = specDitherScreenUV * _ScreenParams.xy;
+            float specDitherThreshold = NataneGetDitherThreshold(specDitherScreenPos, _SpecularDitherScale);
+            float ditheredSpec = step(specDitherThreshold, spec);
+            spec = lerp(spec, ditheredSpec, _SpecularDitherStrength);
+        }
+        #endif
+
         half3 specContrib = spec * _SpecularColor.rgb * effectiveLightColor * atten;
 
         // Apply mask texture with soft blending
@@ -1170,6 +1182,19 @@ half4 frag(v2f i) : SV_Target
     #ifdef _HAIR_SPECULAR
         half3 hairSpec = HairSpecularHighlight(worldNormal, i.worldTangent, i.worldBinormal,
                                                 viewDir, lightDir, uv);
+
+        // Boundary Dithering: apply dither pattern at hair specular highlight edges
+        #if defined(_SPECULAR_DITHER)
+        {
+            float2 hairDitherScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
+            float2 hairDitherScreenPos = hairDitherScreenUV * _ScreenParams.xy;
+            float hairDitherThreshold = NataneGetDitherThreshold(hairDitherScreenPos, _SpecularDitherScale);
+            float hairSpecIntensity = max(max(hairSpec.r, hairSpec.g), hairSpec.b);
+            float hairDitherMask = lerp(1.0, step(hairDitherThreshold, hairSpecIntensity), _SpecularDitherStrength);
+            hairSpec *= hairDitherMask;
+        }
+        #endif
+
         hairSpec *= effectiveLightColor * atten;
 
         // Apply additional light intensity scaling in ForwardAdd pass

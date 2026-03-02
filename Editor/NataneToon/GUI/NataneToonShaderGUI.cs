@@ -1526,6 +1526,18 @@ public class NataneToonShaderGUI : ShaderGUI
 
                 DrawBlendControls(materialEditor, targetMaterial, "_SpecularBlend", "_SpecularBlendMode", "_SpecularBlur");
 
+                // 境界ディザリング
+                EditorGUILayout.Space(SECTION_SPACING);
+                bool enableDither = DrawToggle("_SPECULAR_DITHER", "_SpecularDither",
+                    L("境界ディザリング", "Boundary Dithering"));
+                if (enableDither)
+                {
+                    DrawProperty("_SpecularDitherScale",
+                        L("ディザリングスケール", "Dither Scale"));
+                    DrawProperty("_SpecularDitherStrength",
+                        L("ディザリング強度", "Dither Strength"));
+                }
+
                 // Per-effect distance fade
                 if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
                 {
@@ -1592,6 +1604,15 @@ public class NataneToonShaderGUI : ShaderGUI
                     "Use on hair materials for realistic\n" +
                     "light-responsive hair highlights."),
                     MessageType.Info);
+
+                // 境界ディザリング（スペキュラーと共通設定）
+                if (targetMaterial.IsKeywordEnabled("_SPECULAR_DITHER"))
+                {
+                    EditorGUILayout.Space(SECTION_SPACING);
+                    EditorGUILayout.LabelField(
+                        L("境界ディザリング（有効）", "Boundary Dithering (Active)"),
+                        EditorStyles.miniLabel);
+                }
 
                 // Per-effect distance fade
                 if (targetMaterial.IsKeywordEnabled("_DISTANCE_FADE"))
@@ -5779,50 +5800,50 @@ public class NataneToonShaderGUI : ShaderGUI
             // Feature keywords and display names for the overview grid
             string[][] features = new string[][]
             {
-                new[] { "_SPECULAR", L("スペキュラー", "Specular") },
-                new[] { "_HAIR_SPECULAR", L("ヘアハイライト", "Hair Highlight") },
-                new[] { "_RIM_LIGHT", L("リムライト", "Rim Light") },
-                new[] { "_SSS", "SSS" },
-                new[] { "_MATCAP", "MatCap" },
-                new[] { "_GLITTER", L("グリッター", "Glitter") },
-                new[] { "_WATER_DRIP", L("雫", "Drip") },
-                new[] { "_SMEAR", L("スミア", "Smear") },
-                new[] { "_HOLOGRAM", L("ホログラム", "Hologram") },
-                new[] { "_DECAL", L("デカール", "Decal") },
-                new[] { "_OUTLINE", L("アウトライン", "Outline") },
-                new[] { "_HALFTONE_SHADOW", L("ハーフトーンシャドウ", "Halftone Shadow") },
-                new[] { "_SHADOW_EDGE_NOISE", L("影エッジノイズ", "Shadow Edge Noise") },
-                new[] { "_CAST_SHADOW_COLOR", L("キャストシャドウカラー", "Cast Shadow Color") },
-                new[] { "_LIGHT_SNAP", L("ライトスナップ", "Light Snap") },
-                new[] { "_PROCEDURAL_MATCAP", L("プロシージャルMatCap", "Procedural MatCap") },
-                new[] { "_FAKE_REFLECTION", L("フェイクリフレクション", "Fake Reflection") },
-                new[] { "_PERSPECTIVE_FLAT", L("パースフラット", "Perspective Flatten") },
-                new[] { "_DEPTH_COLOR_FADE", L("深度カラーフェード", "Depth Color Fade") },
-                new[] { "_EMISSION", L("エミッション", "Emission") },
-                new[] { "_AUDIOLINK", "AudioLink" },
-                new[] { "_REFLECTION", L("リフレクション", "Reflection") },
-                new[] { "_IRIDESCENCE", L("イリデッセンス", "Iridescence") },
-                new[] { "_ENV_RIM", L("環境リム", "Env Rim") },
-                new[] { "_REFRACTION", L("屈折", "Refraction") },
-                new[] { "_NORMALMAP", L("ノーマルマップ", "Normal Map") },
-                new[] { "_PARALLAX", L("パララックス", "Parallax") },
-                new[] { "_VERTEX_ANIMATION", L("頂点アニメーション", "Vertex Anim") },
-                new[] { "_VAT", "VAT" },
-                new[] { "_USE_AO", "AO" },
-                new[] { "_USE_DITHERING", L("ディザリング", "Dithering") },
-                new[] { "_USE_LIGHT_VOLUME", "Light Volume" },
-                new[] { "_DISTANCE_FADE", L("距離フェード", "Dist Fade") },
-                new[] { "_BACKFACE_TEXTURE", L("裏面", "Backface") },
-                new[] { "_COLOR_QUANTIZE", L("色量子化", "Quantize") },
-                new[] { "_LUT_3D", "3D LUT" },
-                new[] { "_HATCHING", L("ハッチング", "Hatching") },
-                new[] { "_WATERCOLOR", L("水彩", "Watercolor") },
-                new[] { "_SOFT_FILTER", L("ソフトフィルター", "Soft Filter") },
-                new[] { "_KUWAHARA_FILTER", "Kuwahara" },
-                new[] { "_SCREEN_EDGE", L("エッジ検出", "Edge Detect") },
-                new[] { "_COLOR_BLEEDING", L("色にじみ", "Bleeding") },
-                new[] { "_CHROMATIC_ABERRATION", L("色収差", "Chrom Aber") },
-                new[] { "_OUTLINE_HAND_DRAWN", L("手書き線", "Hand-drawn") },
+                new[] { "_SPECULAR", L("スペキュラー", "Specular"), "_Specular" },
+                new[] { "_HAIR_SPECULAR", L("ヘアハイライト", "Hair Highlight"), "_HairSpecular" },
+                new[] { "_RIM_LIGHT", L("リムライト", "Rim Light"), "_RimLight" },
+                new[] { "_SSS", "SSS", "_SSS" },
+                new[] { "_MATCAP", "MatCap", "_MatCap" },
+                new[] { "_GLITTER", L("グリッター", "Glitter"), "_Glitter" },
+                new[] { "_WATER_DRIP", L("雫", "Drip"), "_WaterDrip" },
+                new[] { "_SMEAR", L("スミア", "Smear"), "_Smear" },
+                new[] { "_HOLOGRAM", L("ホログラム", "Hologram"), "_Hologram" },
+                new[] { "_DECAL", L("デカール", "Decal"), "_Decal" },
+                new[] { "_OUTLINE", L("アウトライン", "Outline"), "_Outline" },
+                new[] { "_HALFTONE_SHADOW", L("ハーフトーンシャドウ", "Halftone Shadow"), "_HalftoneShadow" },
+                new[] { "_SHADOW_EDGE_NOISE", L("影エッジノイズ", "Shadow Edge Noise"), "_ShadowEdgeNoise" },
+                new[] { "_CAST_SHADOW_COLOR", L("キャストシャドウカラー", "Cast Shadow Color"), "_CastShadowColorEnable" },
+                new[] { "_LIGHT_SNAP", L("ライトスナップ", "Light Snap"), "_LightSnap" },
+                new[] { "_PROCEDURAL_MATCAP", L("プロシージャルMatCap", "Procedural MatCap"), "_ProceduralMatCap" },
+                new[] { "_FAKE_REFLECTION", L("フェイクリフレクション", "Fake Reflection"), "_FakeReflection" },
+                new[] { "_PERSPECTIVE_FLAT", L("パースフラット", "Perspective Flatten"), "_PerspectiveFlat" },
+                new[] { "_DEPTH_COLOR_FADE", L("深度カラーフェード", "Depth Color Fade"), "_DepthColorFade" },
+                new[] { "_EMISSION", L("エミッション", "Emission"), "_Emission" },
+                new[] { "_AUDIOLINK", "AudioLink", "_AudioLink" },
+                new[] { "_REFLECTION", L("リフレクション", "Reflection"), "_Reflection" },
+                new[] { "_IRIDESCENCE", L("イリデッセンス", "Iridescence"), "_Iridescence" },
+                new[] { "_ENV_RIM", L("環境リム", "Env Rim"), "_EnvRim" },
+                new[] { "_REFRACTION", L("屈折", "Refraction"), "_Refraction" },
+                new[] { "_NORMALMAP", L("ノーマルマップ", "Normal Map"), "_UseNormalMap" },
+                new[] { "_PARALLAX", L("パララックス", "Parallax"), "_Parallax" },
+                new[] { "_VERTEX_ANIMATION", L("頂点アニメーション", "Vertex Anim"), "_VertexAnimation" },
+                new[] { "_VAT", "VAT", "_VAT" },
+                new[] { "_USE_AO", "AO", "_UseAO" },
+                new[] { "_USE_DITHERING", L("ディザリング", "Dithering"), "_UseDithering" },
+                new[] { "_USE_LIGHT_VOLUME", "Light Volume", "_UseLightVolume" },
+                new[] { "_DISTANCE_FADE", L("距離フェード", "Dist Fade"), "_DistanceFade" },
+                new[] { "_BACKFACE_TEXTURE", L("裏面", "Backface"), "_BackfaceTexture" },
+                new[] { "_COLOR_QUANTIZE", L("色量子化", "Quantize"), "_UseColorQuantize" },
+                new[] { "_LUT_3D", "3D LUT", "_UseLUT3D" },
+                new[] { "_HATCHING", L("ハッチング", "Hatching"), "_UseHatching" },
+                new[] { "_WATERCOLOR", L("水彩", "Watercolor"), "_UseWatercolor" },
+                new[] { "_SOFT_FILTER", L("ソフトフィルター", "Soft Filter"), "_UseSoftFilter" },
+                new[] { "_KUWAHARA_FILTER", "Kuwahara", "_UseKuwahara" },
+                new[] { "_SCREEN_EDGE", L("エッジ検出", "Edge Detect"), "_UseScreenEdge" },
+                new[] { "_COLOR_BLEEDING", L("色にじみ", "Bleeding"), "_UseColorBleeding" },
+                new[] { "_CHROMATIC_ABERRATION", L("色収差", "Chrom Aber"), "_UseChromaticAberration" },
+                new[] { "_OUTLINE_HAND_DRAWN", L("手書き線", "Hand-drawn"), "_UseHandDrawnOutline" },
             };
 
             int enabledCount = 0;
@@ -5854,6 +5875,30 @@ public class NataneToonShaderGUI : ShaderGUI
                     fontStyle = isEnabled ? FontStyle.Bold : FontStyle.Normal
                 });
                 GUI.contentColor = oldColor;
+
+                // クリックでトグル
+                if (features[i].Length > 2 && !string.IsNullOrEmpty(features[i][2]))
+                {
+                    EditorGUIUtility.AddCursorRect(btnRect, MouseCursor.Link);
+                    if (Event.current.type == EventType.MouseDown && btnRect.Contains(Event.current.mousePosition))
+                    {
+                        string propName = features[i][2];
+                        string keyword = features[i][0];
+                        MaterialProperty prop = FindProperty(propName, properties, false);
+                        if (prop != null)
+                        {
+                            Undo.RecordObject(targetMaterial, "Toggle " + keyword);
+                            bool newState = !(prop.floatValue > 0.5f);
+                            prop.floatValue = newState ? 1.0f : 0.0f;
+                            if (newState)
+                                targetMaterial.EnableKeyword(keyword);
+                            else
+                                targetMaterial.DisableKeyword(keyword);
+                            EditorUtility.SetDirty(targetMaterial);
+                        }
+                        Event.current.Use();
+                    }
+                }
 
                 if (i % columns == columns - 1 || i == features.Length - 1)
                     EditorGUILayout.EndHorizontal();

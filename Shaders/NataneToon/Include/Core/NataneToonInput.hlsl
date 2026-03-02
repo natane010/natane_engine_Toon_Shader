@@ -234,6 +234,10 @@ CBUFFER_START(UnityPerMaterial)
     #if defined(_SPECULAR_AA)
     float _SpecularAAStrength;
     #endif
+    #if defined(_SPECULAR_DITHER)
+    float _SpecularDitherScale;
+    float _SpecularDitherStrength;
+    #endif
 
     // Hair Specular (Kajiya-Kay)
     #if defined(_HAIR_SPECULAR)
@@ -1307,8 +1311,8 @@ struct v2f
     float3 worldBinormal : TEXCOORD4;
     UNITY_FOG_COORDS(5)
     SHADOW_COORDS(6)
-    #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA) || defined(_HASHED_ALPHA) || defined(_INTERSECTION_FADE) || defined(_SOFT_FILTER) || defined(_KUWAHARA_FILTER) || defined(_COLOR_BLEEDING) || defined(_CHROMATIC_ABERRATION) || defined(_SCREEN_EDGE) || defined(_WATERCOLOR)
-        float4 screenPos : TEXCOORD7; // For GrabPass / Dithering / Intersection Fade / Illustration Style
+    #if defined(_REFRACTION) || defined(_PARALLAX) || defined(_DISSOLVE) || defined(_DITHERING_ALPHA) || defined(_HASHED_ALPHA) || defined(_INTERSECTION_FADE) || defined(_SOFT_FILTER) || defined(_KUWAHARA_FILTER) || defined(_COLOR_BLEEDING) || defined(_CHROMATIC_ABERRATION) || defined(_SCREEN_EDGE) || defined(_WATERCOLOR) || defined(_SPECULAR_DITHER)
+        float4 screenPos : TEXCOORD7; // For GrabPass / Dithering / Intersection Fade / Illustration Style / Specular Dither
     #endif
     #if defined(VERTEXLIGHT_ON) && !defined(_PIXEL_VERTEX_LIGHTS)
         float3 vertexLightColor : TEXCOORD8;

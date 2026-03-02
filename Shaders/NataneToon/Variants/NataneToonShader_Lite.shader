@@ -252,6 +252,9 @@ Shader "Natane/Toon Shader (Lite)"
         _SpecularMaskRotateSpeed ("Specular Mask Rotate Speed", Float) = 0
         [Toggle(_SPECULAR_AA)] _SpecularAA ("Enable Specular Anti-Aliasing", Float) = 0
         _SpecularAAStrength ("Specular AA Strength", Range(0, 2)) = 1
+        [Toggle(_SPECULAR_DITHER)] _SpecularDither ("Specular Dither", Float) = 0
+        _SpecularDitherScale ("Specular Dither Scale", Range(0.5, 8.0)) = 1.0
+        _SpecularDitherStrength ("Specular Dither Strength", Range(0, 1)) = 1.0
 [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _SpecularBlendMode ("Specular Blend Mode", Float) = 0
         _SpecularBlend ("Specular Blend", Range(0, 1)) = 1
         _SpecularBlur ("Specular Blur", Range(0, 1)) = 0
@@ -1337,6 +1340,7 @@ CGPROGRAM
             #pragma shader_feature_local _LIGHT_VOLUME_SPECULAR
             #pragma shader_feature_local _SPECULAR
             #pragma shader_feature_local _SPECULAR_AA
+            #pragma shader_feature_local _SPECULAR_DITHER
             #pragma shader_feature_local _HAIR_SPECULAR
             #pragma shader_feature_local _ANGEL_RING
             #pragma shader_feature_local _RIM_LIGHT
@@ -1446,6 +1450,7 @@ CGPROGRAM
 #pragma shader_feature_local _SOFT_LIGHTING_MODE
             #pragma shader_feature_local _SPECULAR
             #pragma shader_feature_local _SPECULAR_AA
+            #pragma shader_feature_local _SPECULAR_DITHER
             #pragma shader_feature_local _HAIR_SPECULAR
             #pragma shader_feature_local _RIM_LIGHT
             #pragma shader_feature_local _RIM_LIGHT_2
