@@ -6579,6 +6579,8 @@ public class NataneToonShaderGUI : ShaderGUI
 
             // Specular
             ("_Specular", "_SPECULAR"),
+            ("_SpecularDither", "_SPECULAR_DITHER"),
+            ("_HairSpecular", "_HAIR_SPECULAR"),
 
             // Rim Light
             ("_RimLight", "_RIM_LIGHT"),
@@ -6595,6 +6597,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
             // Glitter
             ("_Glitter", "_GLITTER"),
+            ("_GlintsAdvanced", "_GLINTS_ADVANCED"),
 
             // Reflection
             ("_Reflection", "_REFLECTION"),
@@ -6640,6 +6643,9 @@ public class NataneToonShaderGUI : ShaderGUI
             ("_VAT", "_VAT"),
             ("_VATNormal", "_VAT_NORMAL"),
 
+            // Water Drip
+            ("_WaterDrip", "_WATER_DRIP"),
+
             // Smear
             ("_Smear", "_SMEAR"),
 
@@ -6673,8 +6679,18 @@ public class NataneToonShaderGUI : ShaderGUI
             // LTCGI
             ("_LTCGI", "_LTCGI"),
 
+            // Screen Tone
+            ("_ScreenTone", "_SCREEN_TONE"),
+
+            // Gradient Base Color
+            ("_GradientBaseColor", "_GRADIENT_BASE_COLOR"),
+
+            // Blue Noise Dither
+            ("_BlueNoiseDither", "_BLUE_NOISE_DITHER"),
+
             // Dithering Alpha
             ("_DitheringAlpha", "_DITHERING_ALPHA"),
+            ("_HashedAlpha", "_HASHED_ALPHA"),
 
             // PCSS Soft Shadow
             ("_UsePCSS", "_PCSS"),
@@ -6704,6 +6720,14 @@ public class NataneToonShaderGUI : ShaderGUI
 
             // Perspective Flat
             ("_PerspectiveFlat", "_PERSPECTIVE_FLAT"),
+
+            // Height Fade / Intersection Fade
+            ("_HeightFade", "_HEIGHT_FADE"),
+            ("_IntersectionFade", "_INTERSECTION_FADE"),
+
+            // Tessellation
+            ("_Tessellation", "_TESSELLATION"),
+            ("_TessDisplacement", "_TESS_DISPLACEMENT"),
 
             // Depth Color Fade
             ("_DepthColorFade", "_DEPTH_COLOR_FADE")

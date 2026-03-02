@@ -219,24 +219,24 @@ namespace NataneToon.MaterialSystem
 
             // Shading
             if (material.HasProperty("_ShadowColor")) material.SetColor("_ShadowColor", p.shadowColor);
-            if (material.HasProperty("_ToonSteps")) material.SetFloat("_ToonSteps", p.toonSteps);
-            if (material.HasProperty("_ToonSharpness")) material.SetFloat("_ToonSharpness", p.toonSharpness);
+            if (material.HasProperty("_ShadowSteps")) material.SetFloat("_ShadowSteps", p.toonSteps);
+            if (material.HasProperty("_ShadowSharpness")) material.SetFloat("_ShadowSharpness", p.toonSharpness);
             if (material.HasProperty("_ShadowReceive")) material.SetFloat("_ShadowReceive", p.shadowReceive);
-            if (material.HasProperty("_ShadowIntensityMax")) material.SetFloat("_ShadowIntensityMax", p.shadowIntensityMax);
-            if (material.HasProperty("_LightInfluence")) material.SetFloat("_LightInfluence", p.lightInfluence);
+            if (material.HasProperty("_ShadowMaxDarkness")) material.SetFloat("_ShadowMaxDarkness", p.shadowIntensityMax);
+            if (material.HasProperty("_LightMinInfluence")) material.SetFloat("_LightMinInfluence", p.lightInfluence);
             if (material.HasProperty("_LightColorInfluence")) material.SetFloat("_LightColorInfluence", p.lightColorInfluence);
-            if (material.HasProperty("_Backlight")) material.SetFloat("_Backlight", p.backlight);
+            if (material.HasProperty("_BacklightIntensity")) material.SetFloat("_BacklightIntensity", p.backlight);
 
             // Specular
             SetKeyword(material, "_SPECULAR", p.useSpecular);
             if (material.HasProperty("_SpecularColor")) material.SetColor("_SpecularColor", p.specularColor);
-            if (material.HasProperty("_SpecularIntensity")) material.SetFloat("_SpecularIntensity", p.specularIntensity);
             if (material.HasProperty("_SpecularSize")) material.SetFloat("_SpecularSize", p.specularSize);
-            if (material.HasProperty("_SpecularSharpness")) material.SetFloat("_SpecularSharpness", p.specularSharpness);
+            if (material.HasProperty("_SpecularSoftness")) material.SetFloat("_SpecularSoftness", p.specularSharpness);
+            if (material.HasProperty("_SpecularBlend")) material.SetFloat("_SpecularBlend", Mathf.Clamp01(p.specularIntensity));
             SetKeyword(material, "_SPECULAR_MASK", p.useSpecularMask);
 
             // Rim Light
-            SetKeyword(material, "_RIM", p.useRimLight);
+            SetKeyword(material, "_RIM_LIGHT", p.useRimLight);
             if (material.HasProperty("_RimColor")) material.SetColor("_RimColor", p.rimColor);
             if (material.HasProperty("_RimIntensity")) material.SetFloat("_RimIntensity", p.rimIntensity);
             if (material.HasProperty("_RimPower")) material.SetFloat("_RimPower", p.rimPower);
@@ -248,7 +248,7 @@ namespace NataneToon.MaterialSystem
             if (material.HasProperty("_SSSIntensity")) material.SetFloat("_SSSIntensity", p.sssIntensity);
             if (material.HasProperty("_SSSDistortion")) material.SetFloat("_SSSDistortion", p.sssDistortion);
             if (material.HasProperty("_SSSPower")) material.SetFloat("_SSSPower", p.sssPower);
-            if (material.HasProperty("_SSSScale")) material.SetFloat("_SSSScale", p.sssScale);
+            if (material.HasProperty("_ThicknessScale")) material.SetFloat("_ThicknessScale", p.sssScale);
             SetKeyword(material, "_SSS_MASK", p.useSSSMask);
 
             // MatCap
@@ -266,16 +266,13 @@ namespace NataneToon.MaterialSystem
             // Emission
             SetKeyword(material, "_EMISSION", p.useEmission);
             if (material.HasProperty("_EmissionColor")) material.SetColor("_EmissionColor", p.emissionColor);
-            if (material.HasProperty("_EmissionIntensity")) material.SetFloat("_EmissionIntensity", p.emissionIntensity);
+            if (material.HasProperty("_EmissionGlow")) material.SetFloat("_EmissionGlow", p.emissionIntensity);
             SetKeyword(material, "_EMISSION_MASK", p.useEmissionMask);
 
-            // Emission Animation
-            SetKeyword(material, "_EMISSION_ANIMATION", p.useEmissionAnimation);
-            if (material.HasProperty("_EmissionAnimationType")) material.SetFloat("_EmissionAnimationType", p.emissionAnimationType);
+            // Emission Animation (controlled by _EMISSION keyword, no separate animation keyword)
             if (material.HasProperty("_EmissionScrollSpeed")) material.SetFloat("_EmissionScrollSpeed", p.emissionScrollSpeed);
             if (material.HasProperty("_EmissionPulseSpeed")) material.SetFloat("_EmissionPulseSpeed", p.emissionPulseSpeed);
-            if (material.HasProperty("_EmissionPulseMin")) material.SetFloat("_EmissionPulseMin", p.emissionPulseMin);
-            if (material.HasProperty("_EmissionPulseMax")) material.SetFloat("_EmissionPulseMax", p.emissionPulseMax);
+            if (material.HasProperty("_EmissionPulseAmplitude")) material.SetFloat("_EmissionPulseAmplitude", p.emissionPulseMax);
 
             // Virtual Expression
             SetKeyword(material, "_DISSOLVE", p.useDissolve);
@@ -310,7 +307,7 @@ namespace NataneToon.MaterialSystem
             SetKeyword(material, "_REFRACTION_MASK", p.useRefractionMask);
 
             // Normal Map
-            if (material.HasProperty("_NormalMapIntensity")) material.SetFloat("_NormalMapIntensity", p.normalMapIntensity);
+            if (material.HasProperty("_BumpScale")) material.SetFloat("_BumpScale", p.normalMapIntensity);
 
             // Detail Map
             SetKeyword(material, "_DETAIL_MAP", p.useDetailMap);
@@ -373,23 +370,24 @@ namespace NataneToon.MaterialSystem
 
             // Shading
             if (material.HasProperty("_ShadowColor")) p.shadowColor = material.GetColor("_ShadowColor");
-            if (material.HasProperty("_ToonSteps")) p.toonSteps = (int)material.GetFloat("_ToonSteps");
-            if (material.HasProperty("_ToonSharpness")) p.toonSharpness = material.GetFloat("_ToonSharpness");
+            if (material.HasProperty("_ShadowSteps")) p.toonSteps = (int)material.GetFloat("_ShadowSteps");
+            if (material.HasProperty("_ShadowSharpness")) p.toonSharpness = material.GetFloat("_ShadowSharpness");
             if (material.HasProperty("_ShadowReceive")) p.shadowReceive = material.GetFloat("_ShadowReceive");
-            if (material.HasProperty("_ShadowIntensityMax")) p.shadowIntensityMax = material.GetFloat("_ShadowIntensityMax");
-            if (material.HasProperty("_LightInfluence")) p.lightInfluence = material.GetFloat("_LightInfluence");
-            if (material.HasProperty("_Backlight")) p.backlight = material.GetFloat("_Backlight");
+            if (material.HasProperty("_ShadowMaxDarkness")) p.shadowIntensityMax = material.GetFloat("_ShadowMaxDarkness");
+            if (material.HasProperty("_LightMinInfluence")) p.lightInfluence = material.GetFloat("_LightMinInfluence");
+            if (material.HasProperty("_LightColorInfluence")) p.lightColorInfluence = material.GetFloat("_LightColorInfluence");
+            if (material.HasProperty("_BacklightIntensity")) p.backlight = material.GetFloat("_BacklightIntensity");
 
             // Specular
             p.useSpecular = material.IsKeywordEnabled("_SPECULAR");
             if (material.HasProperty("_SpecularColor")) p.specularColor = material.GetColor("_SpecularColor");
-            if (material.HasProperty("_SpecularIntensity")) p.specularIntensity = material.GetFloat("_SpecularIntensity");
             if (material.HasProperty("_SpecularSize")) p.specularSize = material.GetFloat("_SpecularSize");
-            if (material.HasProperty("_SpecularSharpness")) p.specularSharpness = material.GetFloat("_SpecularSharpness");
+            if (material.HasProperty("_SpecularSoftness")) p.specularSharpness = material.GetFloat("_SpecularSoftness");
+            if (material.HasProperty("_SpecularBlend")) p.specularIntensity = material.GetFloat("_SpecularBlend");
             p.useSpecularMask = material.IsKeywordEnabled("_SPECULAR_MASK");
 
             // Rim Light
-            p.useRimLight = material.IsKeywordEnabled("_RIM");
+            p.useRimLight = material.IsKeywordEnabled("_RIM_LIGHT");
             if (material.HasProperty("_RimColor")) p.rimColor = material.GetColor("_RimColor");
             if (material.HasProperty("_RimIntensity")) p.rimIntensity = material.GetFloat("_RimIntensity");
             if (material.HasProperty("_RimPower")) p.rimPower = material.GetFloat("_RimPower");
@@ -401,7 +399,7 @@ namespace NataneToon.MaterialSystem
             if (material.HasProperty("_SSSIntensity")) p.sssIntensity = material.GetFloat("_SSSIntensity");
             if (material.HasProperty("_SSSDistortion")) p.sssDistortion = material.GetFloat("_SSSDistortion");
             if (material.HasProperty("_SSSPower")) p.sssPower = material.GetFloat("_SSSPower");
-            if (material.HasProperty("_SSSScale")) p.sssScale = material.GetFloat("_SSSScale");
+            if (material.HasProperty("_ThicknessScale")) p.sssScale = material.GetFloat("_ThicknessScale");
             p.useSSSMask = material.IsKeywordEnabled("_SSS_MASK");
 
             // MatCap
@@ -418,16 +416,13 @@ namespace NataneToon.MaterialSystem
             // Emission
             p.useEmission = material.IsKeywordEnabled("_EMISSION");
             if (material.HasProperty("_EmissionColor")) p.emissionColor = material.GetColor("_EmissionColor");
-            if (material.HasProperty("_EmissionIntensity")) p.emissionIntensity = material.GetFloat("_EmissionIntensity");
+            if (material.HasProperty("_EmissionGlow")) p.emissionIntensity = material.GetFloat("_EmissionGlow");
             p.useEmissionMask = material.IsKeywordEnabled("_EMISSION_MASK");
 
-            // Emission Animation
-            p.useEmissionAnimation = material.IsKeywordEnabled("_EMISSION_ANIMATION");
-            if (material.HasProperty("_EmissionAnimationType")) p.emissionAnimationType = (int)material.GetFloat("_EmissionAnimationType");
+            // Emission Animation (controlled by _EMISSION keyword, no separate animation keyword)
             if (material.HasProperty("_EmissionScrollSpeed")) p.emissionScrollSpeed = material.GetFloat("_EmissionScrollSpeed");
             if (material.HasProperty("_EmissionPulseSpeed")) p.emissionPulseSpeed = material.GetFloat("_EmissionPulseSpeed");
-            if (material.HasProperty("_EmissionPulseMin")) p.emissionPulseMin = material.GetFloat("_EmissionPulseMin");
-            if (material.HasProperty("_EmissionPulseMax")) p.emissionPulseMax = material.GetFloat("_EmissionPulseMax");
+            if (material.HasProperty("_EmissionPulseAmplitude")) p.emissionPulseMax = material.GetFloat("_EmissionPulseAmplitude");
 
             // Virtual Expression
             p.useDissolve = material.IsKeywordEnabled("_DISSOLVE");
@@ -462,7 +457,7 @@ namespace NataneToon.MaterialSystem
             p.useRefractionMask = material.IsKeywordEnabled("_REFRACTION_MASK");
 
             // Normal Map
-            if (material.HasProperty("_NormalMapIntensity")) p.normalMapIntensity = material.GetFloat("_NormalMapIntensity");
+            if (material.HasProperty("_BumpScale")) p.normalMapIntensity = material.GetFloat("_BumpScale");
 
             // Detail Map
             p.useDetailMap = material.IsKeywordEnabled("_DETAIL_MAP");

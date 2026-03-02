@@ -22,6 +22,7 @@ namespace NataneToon.Editor
         private List<NataneToonMaterialPreset> filteredPresets = new List<NataneToonMaterialPreset>();
         private Material selectedMaterial;
         private NataneToonMaterialPreset selectedPreset;
+        private bool showAllCategories = true;
 
         private const float THUMBNAIL_SIZE = 100f;
         private const float PRESET_CARD_HEIGHT = 140f;
@@ -172,13 +173,25 @@ namespace NataneToon.Editor
         {
             EditorGUILayout.BeginHorizontal();
 
-            // Category filter
-            EditorGUILayout.LabelField("Category:", GUILayout.Width(70));
+            // "All" toggle
             EditorGUI.BeginChangeCheck();
-            selectedCategory = (PresetCategory)EditorGUILayout.EnumPopup(selectedCategory, GUILayout.Width(200));
+            showAllCategories = GUILayout.Toggle(showAllCategories, L("全て", "All"), EditorStyles.toolbarButton, GUILayout.Width(40));
             if (EditorGUI.EndChangeCheck())
             {
                 FilterPresets();
+            }
+
+            // Category filter (disabled when "All" is selected)
+            using (new EditorGUI.DisabledScope(showAllCategories))
+            {
+                EditorGUILayout.LabelField("Category:", GUILayout.Width(70));
+                EditorGUI.BeginChangeCheck();
+                selectedCategory = (PresetCategory)EditorGUILayout.EnumPopup(selectedCategory, GUILayout.Width(200));
+                if (EditorGUI.EndChangeCheck())
+                {
+                    showAllCategories = false;
+                    FilterPresets();
+                }
             }
 
             GUILayout.Space(10);
@@ -195,7 +208,7 @@ namespace NataneToon.Editor
             if (GUILayout.Button("Clear", GUILayout.Width(50)))
             {
                 searchQuery = "";
-                selectedCategory = PresetCategory.Custom;
+                showAllCategories = true;
                 FilterPresets();
             }
 
@@ -300,7 +313,7 @@ namespace NataneToon.Editor
             filteredPresets = allPresets.Where(p =>
             {
                 // Category filter
-                bool categoryMatch = selectedCategory == PresetCategory.Custom || p.category == selectedCategory;
+                bool categoryMatch = showAllCategories || p.category == selectedCategory;
 
                 // Search filter
                 bool searchMatch = string.IsNullOrEmpty(searchQuery) ||
@@ -588,6 +601,7 @@ namespace NataneToon.Editor
             RefreshPresetList();
 
             // Auto-filter to show VTuber presets
+            showAllCategories = false;
             selectedCategory = PresetCategory.Character_Skin;
             FilterPresets();
 

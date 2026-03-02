@@ -5,6 +5,23 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.6] - 2026-03-03
+
+### Added
+- **ヒエラルキー一括編集 インスペクターUI統合**: プロパティブラウザ+Set/Add/Multiply方式を廃止し、MaterialEditor埋め込みによるNataneToonShaderGUI直接描画に刷新。リアルタイム編集・Unity標準Undo・Mixed Values表示に対応（748行→253行、約500行削減）
+- **プリセットブラウザ「全て」カテゴリ**: カテゴリフィルターに「全て」トグルを追加し、全プリセット一覧表示が可能に
+- **GUI トグル-キーワード同期追加**: SpecularDither, HairSpecular, GlintsAdvanced, WaterDrip, ScreenTone, GradientBaseColor, BlueNoiseDither, HashedAlpha, HeightFade, IntersectionFade, Tessellation, TessDisplacement
+
+### Changed
+- **シェーダーバリアント最適化**: 低使用率キーワード約25個を `shader_feature_local` → `shader_feature` に変更。マテリアル間で共有されないキーワードのビルドサイズ削減
+- **プリセットシステム プロパティ名更新**: リネーム済みシェーダープロパティに対応（`_ToonSteps`→`_ShadowSteps`, `_SpecularSharpness`→`_SpecularSoftness`, `_EmissionIntensity`→`_EmissionGlow` 等）
+- **リムライト キーワード修正**: `_RIM` → `_RIM_LIGHT` に統一
+
+### Removed
+- **VTuberPresetGenerator**: 不要になったプリセット生成器を削除
+
+---
+
 ## [1.3.5] - 2026-03-02
 
 ### Added

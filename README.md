@@ -1,6 +1,6 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.2.0-blue)](https://github.com/natane010/natane_toon_shader/releases)
+[![Version](https://img.shields.io/badge/version-1.3.5-blue)](https://github.com/natane010/natane_toon_shader/releases)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -10,78 +10,200 @@ VRChat運用を意識した機能（AudioLink、VRC Light Volumes、LTCGI、最�
 ## 特徴
 
 - `Natane/Toon Shader` を中心に、`Cutout` / `Transparent` バリアントを提供
+- `Lite` バリアント（GrabPassなし軽量版: Opaque / Cutout / Transparent）
+- `Fur` バリアント（シェルベースファーレンダリング）
+- `Background` バリアント（背景/ワールド用、ライトマップ・PBR・Metaパス対応）
 - 瞳専用 `Natane/Eye`（左右対称UV・マスク運用・表情オーバーレイ対応）
 - 特殊表現 `Natane/Toon Shader Wirelight`（Cyber Wireモード、AudioLink連動）
 - 画面効果 `Natane/Screen FX Overlay`（GrabPassベースのカスタム画面演出）
+- `StandardToon` シェーダータイプ（lilToon互換モード）
 - **統合インスペクターUI**: 全シェーダーを1つのインスペクターからドロップダウンで切り替え可能
-- 主要Editorツールを `Tools/Natane/...` に集約（日本語UI）
+- **Inspector日英切り替え**: EN/JPボタンでインスペクターUI言語をワンクリック切替
+- 主要Editorツールを `Tools/Natane/...` に集約（日本語/英語UI）
 
 ## 動作環境
 
 - Unity: `2019.4+`（Built-in Render Pipeline想定）
-- パッケージバージョン: `1.2.0`（`package.json`準拠）
+- パッケージバージョン: `1.3.5`（`package.json`準拠）
 
 ## 収録シェーダー
 
-- `Natane/Toon Shader`
-  - 5レイヤー合成（2nd-5th Texture + Mask）
-  - Toon/Gradient影、Multi Shadow、Ramp
-  - Specular / Rim(2層) / SSS / MatCap(最大3層) / Glitter
-  - Normal Map / Cubemap Reflection / Environmental Rim
-  - Emission / Dissolve / Refraction / Parallax / Iridescence
-  - Hue Shift / Alpha Mask / SDF Map / Shading Grade Map / AO / Shadow Color Texture
-  - AudioLink（Emission/Rim/Hue/Dissolve/Outline/Chronotensity）
-  - Distance Fade / Vertex Animation / Hologram / Glitch / Decal / Backlight
-  - VAT(Houdini) / Main Tex Animation / Backface Texture / Video Texture / LTCGI / Dithering Alpha
+### Natane/Toon Shader
+
+メインのトゥーンシェーダー。146以上のシェーダー機能を搭載。
+
+**テクスチャ・ベース:**
+- 5レイヤー合成（2nd-5th Texture + Mask）
+- Gradient Base Color（グラデーションベースカラー）
+- Hue Shift / Alpha Mask / SDF Map / Shading Grade Map / AO / Shadow Color Texture
+
+**ライティング:**
+- Toon/Gradient影、Multi Shadow、Ramp
+- Specular / Rim(2層) / SSS / MatCap(最大3層) / Glitter
+- Hair Specular（Kajiya-Kay）/ Angel Ring（天使の輪）
+- Offset Rim Light / Sheen / Rim Direction Control
+- SSS LUT / PCSS Soft Shadow / Soft Lighting Mode
+- Cast Shadow Color / Light Direction Snap / Shadow Edge Noise
+- Vertex Color Shadow / Procedural AO / Normal Warp
+- Specular Anti-Aliasing / Pixel Vertex Lights
+- Normal Map / Cubemap Reflection / Environmental Rim
+
+**エフェクト:**
+- Emission / Dissolve / Refraction / Parallax / Iridescence
+- Screen Tone（網点オーバーレイ）/ Halftone Shadow
+- Procedural MatCap / Advanced Glints
+- Fake Reflection / Water Drip（雫エフェクト）/ Smear（残像）
+- Perspective Flatten / Depth Color Fade
+- Eye Parallax / Tessellation
+- Height Fade / Intersection Fade
+- Hologram / Glitch / Glitch Stretch / Glitch Mask / Glitch Noise Texture
+- Distance Fade / Vertex Animation / Decal / Backlight
+- AudioLink（Emission/Rim/Hue/Dissolve/Outline/Chronotensity）
+- VAT(Houdini) / Main Tex Animation / Backface Texture / Video Texture / LTCGI / Dithering Alpha
+
+**イラスト調スタイル（10機能）:**
+- Color Quantize（色量子化）/ 3D LUT
+- Hatching（ハッチング）/ Watercolor（水彩）
+- Soft Filter / Kuwahara Filter
+- Screen Edge Detection / Color Bleeding（色滲み）
+- Chromatic Aberration（色収差）/ Hand-drawn Outline（手描き線）
+
+### バリアント
+
 - `Natane/Toon Shader (Cutout)` — Opaque版の軽量バリアント（一部高度機能を省略）
 - `Natane/Toon Shader (Transparent)` — Cutout同等 + Refraction対応
-- `Natane/Toon Shader Wirelight`
-  - ジオメトリベースのワイヤー表現
-  - Cyber Wireモード（Scanline / Chroma / Glitch）
-  - AudioLink連動（パルス・色・グリッチ）
-  - Cyber Data Stream（データストリーム表現）
-- `Natane/Eye`
-  - Eye State: `Normal / Star / Heart / Dead / Nervous`
-  - Expression Preset: `Normal / Surprised / Crying`
-  - Expression Overlay: `Spiral / Tearful / Shock Rings`
-  - 左右分離: Dual Center / Symmetry / Right Eye UV Mirror
-  - Eye Region Mask（顔と目が同一マテリアルでも運用可能）
-  - Texture Polish / Iris Caustics / Iris Ring Pulse / AudioLink
-  - Bubble Effect / Vignette / Transparency Dither / Stencil制御
-  - Inner Mesh Priority（BlendShape時の内側描画優先）
-- `Natane/Screen FX Overlay`
-  - Posterize / Edge Darken / Chromatic Aberration / Vignette / Scanline / Grain
+- `Natane/Toon Shader (Lite)` — GrabPassなし軽量版
+- `Natane/Toon Shader (Cutout Lite)` — Cutout + Lite
+- `Natane/Toon Shader (Transparent Lite)` — Transparent + Lite
+- `Natane/Toon Shader (Fur)` — シェルベースファーレンダリング
+- `Natane/Toon Shader (Fur Lite)` — Fur + Lite
+- `Natane/Toon Shader (Background)` — 背景ワールド用（ライトマップ・PBR・Metaパス）
+
+### Natane/Toon Shader (Background) 専用機能
+
+- Detail Map（セカンダリUV対応）
+- Triplanar Mapping
+- Height Fog（高さベースフォグ）
+- Surface Cover（雪/砂カバー）
+- Mirror Control
+- Quest Lite（Quest最適化モード）
+- PBR対応（Metallic/Smoothness）
+
+### Natane/Toon Shader Wirelight
+
+- ジオメトリベースのワイヤー表現
+- Cyber Wireモード（Scanline / Chroma / Glitch）
+- AudioLink連動（パルス・色・グリッチ）
+- Cyber Data Stream（データストリーム表現）
+
+### Natane/Eye
+
+- Eye State: `Normal / Star / Heart / Dead / Nervous`
+- Expression Preset: `Normal / Surprised / Crying`
+- Expression Overlay: `Spiral / Tearful / Shock Rings`
+- 左右分離: Dual Center / Symmetry / Right Eye UV Mirror
+- Eye Region Mask（顔と目が同一マテリアルでも運用可能）
+- Texture Polish / Iris Caustics / Iris Ring Pulse / AudioLink
+- Bubble Effect / Vignette / Transparency Dither / Stencil制御
+- Inner Mesh Priority（BlendShape時の内側描画優先）
+
+### Natane/Screen FX Overlay
+
+- Posterize / Edge Darken / Chromatic Aberration / Vignette / Scanline / Grain
+
+## マテリアルプリセットシステム
+
+### Material Preset Browser
+
+`Tools > Natane > プリセット Presets > Material Preset Browser` からアクセスできるビジュアルプリセットブラウザです。
+
+- サムネイル付きプリセットグリッド表示
+- カテゴリフィルタリング・検索機能
+- ワンクリックでマテリアルにプリセット適用
+- プリセット新規作成（現在のマテリアルから）
+
+### デフォルトプリセット
+
+16カテゴリに分類されたプリセットを収録:
+
+- **Character**: Skin / Hair / Clothing / Eyes
+- **Props**: Metal / Plastic / Wood / Fabric
+- **Environment**: Nature / Architecture
+- **Effects**: Transparent / Emission / Special
+- **Style**: Toon / NPR
+- **Custom**: ユーザー定義
+
+### VTuberプリセット（5種）
+
+`Tools > Natane > ユーティリティ Utility > VTuberプリセット生成` で生成:
+
+1. **キャラクター肌** — ソフトセルシェーディング + SSS
+2. **キャラクター髪** — アニメ調ハイライト + MatCap
+3. **キャラクター服** — クリーンなセルシェーディング + アウトライン
+4. **キャラクター目** — エミッション + 強スペキュラー
+5. **ライブパフォーマンス** — 軽量設定（VRChat/配信向け）
+
+### マテリアルパラメータ共有
+
+- **ファイルエクスポート/インポート**: `.ntmaterial` 形式で保存・読み込み
+- **クリップボード**: コピー&ペーストでマテリアルパラメータを転送
+- エクスポートデータにはユーザー名・日時・メモを含むメタデータ付き
+
+## マスクテクスチャツール
+
+マスクテクスチャの作成・編集を支援する統合ツール群です。
+
+- **ブラシペイント**: Paint / Erase / Smooth / EraseAlpha モード、サイズ・硬さ・不透明度調整
+- **3Dプレビュー**: グレースケール / ヒートマップ / チャンネル別表示、回転・ズーム操作
+- **チャンネルパッカー**: 最大4枚のグレースケールテクスチャ → 1枚のRGBAテクスチャに合成、逆分解も可能
+- **エクスポーター**: 複数圧縮形式対応、品質/パフォーマンスプリセット
+- **フィルター**: テクスチャ加工フィルター
+- **ジェネレーター**: マスクテクスチャ自動生成
+- **レイヤーシステム**: マルチレイヤー編集
+- **テンプレート**: よく使うマスクパターンのテンプレート
 
 ## 主要ツール（`Tools/Natane`）
 
 - `Dashboard`
 - `ヘルプ Help`
 - `マテリアル Material`
-  - マテリアル検証 / マテリアルエディタ / マテリアルプレビュー / マテリアル比較 / メイクアップレイヤー管理
+  - マテリアル検証 / マテリアルエディタ / マテリアルプレビュー / マテリアル比較 / メイクアップレイヤー管理 / ヒエラルキー一括編集
 - `プリセット Presets`
   - Material Preset Browser / カラーパレット管理 / デフォルトプリセット生成 / 全プリセット再生成
 - `エフェクト Effects`
   - シャドウ調整ウィザード / MatCapレイヤーコンポーザー / ディゾルブパターン生成 / リムライト方向ビジュアライザー / スクリーンエフェクト設定
 - `最適化 Optimization`
-  - パフォーマンスバジェット / テクスチャ最適化 / アウトライン最適化 / 屈折品質バランサー
+  - パフォーマンスバジェット / テクスチャ最適化 / アウトライン最適化 / 屈折品質バランサー / アセット参照チェック
 - `移行 Migration`
   - lilToon移行 / 一括マテリアル変換 / プレハブバリアント変換
+- `メッシュ Mesh`
+  - スムース法線ベイク（アウトライン用法線をVertex Colorにベイク）
 - `シェーダー Shader`
-  - シェーダーバリアント収集 / シェーダープリウォーミング
+  - シェーダーバリアント収集 / シェーダープリウォーミング / バリアントストリッピング設定
 - `ユーティリティ Utility`
   - UVテクスチャ生成 / パーティクルエフェクトエディタ / VTuberプリセット生成
+- `診断 Diagnostics`
+  - ツール健全性診断（全ツールのアクセス可否・依存関係を検証）
 - `VRChat`
   - VRCライトボリュームヘルパー / VRC Light Volumes 再検出 / LTCGI 再検出
 
+### コンテキストメニュー
+
+- **Assets右クリック** → `Natane/マテリアル検証 Validate Material`（Nataneマテリアル選択時）
+- **Assets右クリック** → `Natane/プリセット適用 Apply Preset`（Nataneマテリアル選択時）
+- **GameObject右クリック** → `Natane/マテリアルを検証 Validate Materials`（Renderer付きオブジェクト選択時）
+
 ## 統合インスペクターUI
 
-v1.2.0 より、全シェーダー（Toon / Eye / Wirelight / Screen FX）のインスペクターが統合されました。
+全シェーダー（Toon / Eye / Wirelight / Screen FX / StandardToon）のインスペクターが統合されています。
 
 - マテリアルを選択すると、インスペクター最上部に **「シェーダータイプ」ドロップダウン** が表示されます
-- ドロップダウンから `Toon` / `Eye` / `Wirelight` / `Screen FX` を選択するだけでシェーダーが切り替わります
+- ドロップダウンから `Toon` / `Eye` / `Wirelight` / `Screen FX` / `StandardToon (lilToon互換)` を選択するだけでシェーダーが切り替わります
+- **EN/JP切り替えボタン**: インスペクター上部のボタンでUI言語を日本語⇔英語にワンクリック切替
 - 切り替え時は確認ダイアログが表示され、Undo（Ctrl+Z）にも対応しています
 - 各シェーダーに最適化された専用UIが自動的に表示されます
-  - **Toon**: 5タブ構成（基本/ライティング/エフェクト/環境/詳細）+ レンダリングモード切替（Opaque/Cutout/Transparent）
+  - **Toon**: 5タブ構成（基本/ライティング/エフェクト/環境/詳細）+ レンダリングモード切替（Opaque/Cutout/Transparent/Lite/Fur/Background）
+  - **StandardToon**: lilToon互換モード（`_ShadingMode` による自動検出）
   - **Eye**: 20セクション構成（瞳状態/デュアルセンター/表情オーバーレイ/虹彩エフェクト等）
   - **Wirelight**: 12セクション + 9種プリセットボタン（サイバーパンク/ホログラム/AudioLink等）
   - **Screen FX**: 4セクション構成（ブレンド/トゥーン化/画面歪み/シネマティック）
@@ -154,18 +276,23 @@ v1.2.0 より、全シェーダー（Toon / Eye / Wirelight / Screen FX）のイ
 
 - 不要機能はトグルでOFFにし、キーワード数を抑える
 - VR向けでは `Refraction`, `GrabPass系`, 多重エフェクトの同時使用を最小化
+- GrabPass不要な場合は `Lite` バリアントを選択
 - `Shader Variant Collector` と `Shader Prewarming` を併用して実機負荷を安定化
+- `バリアントストリッピング設定` でビルド時の未使用バリアントを除去
 - 半透明重なりの破綻対策として、用途に応じて `Cutout` や `Dithering Alpha` を検討
 
 ## スタイル指向（参考）
 
 - パラメータ調整により、フラットなアニメ調からリッチなNPR表現まで幅広いセルシェーディングスタイルに対応します
+- イラスト調スタイル10機能（Color Quantize / Hatching / Watercolor / Kuwahara等）で手描き風表現も可能
 - 既定構成は、NPRセル影を軸にした実用寄りのバランスです
 - 詳細監査: `Documentation~/SHADER_STYLE_AND_OPTIMIZATION_AUDIT.md`
 
 ## ドキュメント
 
 - 変更履歴: `CHANGELOG.md`
+- フォルダ構造: `Documentation~/FOLDER_STRUCTURE.md`
+- シェーダーバリアント: `Documentation~/SHADER_VARIANTS.md`
 - 移行: `Documentation~/MIGRATION_GUIDE.md`
 - クイックスタート: `Documentation~/QUICK_START.md`
 - 技術資料: `Documentation~/TECHNICAL.md`
