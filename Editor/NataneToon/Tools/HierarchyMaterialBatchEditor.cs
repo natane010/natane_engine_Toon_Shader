@@ -72,7 +72,7 @@ namespace NataneToon.Editor
 
             if (selected.Count > 0)
             {
-                embeddedEditor = (MaterialEditor)Editor.CreateEditor(
+                embeddedEditor = (MaterialEditor)UnityEditor.Editor.CreateEditor(
                     selected.ToArray(), typeof(MaterialEditor));
             }
         }
