@@ -5,6 +5,21 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.7] - 2026-03-04
+
+### Added
+- **ディザ座標安定化 (`_DitherStabilize`)**: オブジェクトピボット基準のスクリーンオフセットにより、キャラクター移動時のディザパターンスライドを抑制。0=従来スクリーン基準、1=オブジェクト相対（全9バリアント対応）
+- **スペキュラー強度パラメータ (`_SpecularIntensity`)**: Range(0,5)でスペキュラー強度を直接制御可能に（全9バリアント+EditorGUI対応）
+- **シェーダーバリアントツール全バリアント対応**: ShaderVariantCollector/Stripper/PrewarmingEditorのシェーダー名リストを4種→12種（Lite/Fur/Background/Eye/ScreenFX）に拡張。パスタイプ（ForwardBase/ForwardAdd/ShadowCaster/Meta）をシェーダーごとに正確設定
+
+### Fixed
+- **ShadowCasterパス InstanceIDエラー修正**: `v2f`構造体に`UNITY_VERTEX_INPUT_INSTANCE_ID`を追加し、GPU Instancing時のビルドエラーを解消（7バリアント）
+- **スペキュラー加算ブレンド緩和**: `SafeAdditiveBlend`の過剰圧縮を緩和（compression 0.4→0.25, min 0.15→0.25）、Fragment側の強度乗算も0.5→0.8に調整
+- **fmod負値によるディザ不具合修正**: StabilizeDitherCoordに+100000.0オフセットを追加し、負座標でのBayer配列アクセスエラーを防止
+- **バリアントストリッピング デフォルトOFF**: VRChatで機能が反映されない問題を防止するため、ShaderVariantStripperのデフォルトを無効に変更
+
+---
+
 ## [1.3.6] - 2026-03-03
 
 ### Added
