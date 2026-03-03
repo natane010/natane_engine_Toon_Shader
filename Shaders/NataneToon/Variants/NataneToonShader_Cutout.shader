@@ -1561,6 +1561,7 @@ CGPROGRAM
             {
                 V2F_SHADOW_CASTER;
                 float2 uv : TEXCOORD1;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
