@@ -1151,7 +1151,7 @@ half4 frag(v2f i) : SV_Target
         }
         #endif
 
-        half3 specContrib = spec * _SpecularColor.rgb * effectiveLightColor * atten;
+        half3 specContrib = spec * _SpecularColor.rgb * _SpecularIntensity * effectiveLightColor * atten;
 
         // Apply mask texture with soft blending
         float2 specMaskUV = AnimateUVIfNeeded(uv, _SpecularMaskScrollSpeed.xy, _SpecularMaskRotateSpeed);

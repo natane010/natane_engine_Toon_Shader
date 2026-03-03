@@ -1518,6 +1518,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawColorProperty("_SpecularColor", L("スペキュラーの色", "Specular Color"));
                 DrawProperty("_SpecularSize", L("スペキュラーのサイズ", "Specular Size"));
                 DrawProperty("_SpecularSoftness", L("スペキュラーの柔らかさ", "Specular Softness"));
+                DrawProperty("_SpecularIntensity", L("スペキュラー強度", "Specular Intensity"));
 
                 EditorGUILayout.Space();
                 DrawProperty("_SpecularMask", L("スペキュラーマスク", "Specular Mask"));

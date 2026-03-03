@@ -226,6 +226,7 @@ CBUFFER_START(UnityPerMaterial)
     half4 _SpecularColor;
     float _SpecularSize;
     float _SpecularSoftness;
+    float _SpecularIntensity;
     float _SpecularBlend;
     float _SpecularBlendMode;
     float _SpecularBlur;

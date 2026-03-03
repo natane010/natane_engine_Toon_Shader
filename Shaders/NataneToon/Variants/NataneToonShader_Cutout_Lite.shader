@@ -248,6 +248,7 @@ Shader "Natane/Toon Shader (Cutout Lite)"
         _SpecularColor ("Specular Color", Color) = (1,1,1,1)
         _SpecularSize ("Specular Size", Range(0, 1)) = 0.1
         _SpecularSoftness ("Specular Softness", Range(0.001, 1)) = 0.05
+        _SpecularIntensity ("Specular Intensity", Range(0, 5)) = 1
         [Toggle(_SPECULAR_MASK)] _UseSpecularMask ("Use Specular Mask", Float) = 0
         _SpecularMask ("Specular Mask", 2D) = "white" {}
         _SpecularMaskScrollSpeed ("Specular Mask Scroll Speed XY", Vector) = (0,0,0,0)
