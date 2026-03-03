@@ -32,7 +32,15 @@ namespace NataneToon.Editor
             "Natane/Toon Shader",
             "Natane/Toon Shader (Cutout)",
             "Natane/Toon Shader (Transparent)",
-            "Natane/Toon Shader Wirelight"
+            "Natane/Toon Shader (Lite)",
+            "Natane/Toon Shader (Cutout Lite)",
+            "Natane/Toon Shader (Transparent Lite)",
+            "Natane/Toon Shader (Fur)",
+            "Natane/Toon Shader (Fur Lite)",
+            "Natane/Toon Shader (Background)",
+            "Natane/Toon Shader Wirelight",
+            "Natane/Eye",
+            "Natane/Screen FX Overlay"
         };
 
         /// <summary>
@@ -304,6 +312,41 @@ namespace NataneToon.Editor
         }
 
         /// <summary>
+        /// Shader pass type configuration for auto-collection.
+        /// 自動収集用のシェーダーパスタイプ設定。
+        /// </summary>
+        private struct ShaderPassConfig
+        {
+            public string name;
+            public bool hasForwardAdd;
+            public bool hasShadowCaster;
+            public bool hasMeta;
+
+            public ShaderPassConfig(string name, bool hasForwardAdd, bool hasShadowCaster, bool hasMeta = false)
+            {
+                this.name = name;
+                this.hasForwardAdd = hasForwardAdd;
+                this.hasShadowCaster = hasShadowCaster;
+                this.hasMeta = hasMeta;
+            }
+        }
+
+        private static readonly ShaderPassConfig[] AllShaderConfigs = new ShaderPassConfig[]
+        {
+            new ShaderPassConfig("Natane/Toon Shader",                   true,  true),
+            new ShaderPassConfig("Natane/Toon Shader (Cutout)",           true,  true),
+            new ShaderPassConfig("Natane/Toon Shader (Transparent)",      true,  false),
+            new ShaderPassConfig("Natane/Toon Shader (Lite)",             true,  true),
+            new ShaderPassConfig("Natane/Toon Shader (Cutout Lite)",      true,  true),
+            new ShaderPassConfig("Natane/Toon Shader (Transparent Lite)", true,  false),
+            new ShaderPassConfig("Natane/Toon Shader (Fur)",              true,  true),
+            new ShaderPassConfig("Natane/Toon Shader (Fur Lite)",         true,  true),
+            new ShaderPassConfig("Natane/Toon Shader (Background)",       true,  true, true),
+            new ShaderPassConfig("Natane/Toon Shader Wirelight",          false, false),
+            new ShaderPassConfig("Natane/Eye",                            false, false),
+        };
+
+        /// <summary>
         /// Auto-collect variants from project materials into the given collection.
         /// Runs when the collection is empty at build time.
         /// プロジェクトマテリアルからバリアントを自動収集します。
@@ -313,9 +356,9 @@ namespace NataneToon.Editor
         {
             if (collection == null) return;
 
+            // Collect per-shader keyword sets from project materials
             string[] materialGuids = AssetDatabase.FindAssets("t:Material");
-            var uniqueSets = new HashSet<string>();
-            var keywordSets = new List<string[]>();
+            var perShaderKeywordSets = new Dictionary<string, HashSet<string>>();
             int nataneMaterialCount = 0;
 
             foreach (string guid in materialGuids)
@@ -326,7 +369,8 @@ namespace NataneToon.Editor
                 if (material == null || material.shader == null)
                     continue;
 
-                if (!NataneShaderNames.Contains(material.shader.name))
+                string shaderName = material.shader.name;
+                if (!NataneShaderNames.Contains(shaderName))
                     continue;
 
                 nataneMaterialCount++;
@@ -338,47 +382,52 @@ namespace NataneToon.Editor
                     .ToArray();
 
                 string key = string.Join(";", keywords);
-                if (uniqueSets.Add(key))
-                {
-                    keywordSets.Add(keywords);
-                }
-            }
+                if (!perShaderKeywordSets.ContainsKey(shaderName))
+                    perShaderKeywordSets[shaderName] = new HashSet<string>();
 
-            // Always include base variant
-            if (uniqueSets.Add(string.Empty))
-            {
-                keywordSets.Insert(0, new string[] { });
+                perShaderKeywordSets[shaderName].Add(key);
             }
-
-            // Find shaders and add variants
-            Shader opaqueShader = Shader.Find("Natane/Toon Shader");
-            Shader cutoutShader = Shader.Find("Natane/Toon Shader (Cutout)");
-            Shader transparentShader = Shader.Find("Natane/Toon Shader (Transparent)");
-            Shader wirelightShader = Shader.Find("Natane/Toon Shader Wirelight");
 
             int totalAdded = 0;
+            int uniqueKeywordSets = 0;
 
-            foreach (string[] keywords in keywordSets)
+            foreach (var config in AllShaderConfigs)
             {
-                totalAdded += AddVariantSafe(collection, opaqueShader, PassType.ForwardBase, keywords);
-                totalAdded += AddVariantSafe(collection, opaqueShader, PassType.ForwardAdd, keywords);
-                totalAdded += AddVariantSafe(collection, cutoutShader, PassType.ForwardBase, keywords);
-                totalAdded += AddVariantSafe(collection, cutoutShader, PassType.ForwardAdd, keywords);
-                totalAdded += AddVariantSafe(collection, transparentShader, PassType.ForwardBase, keywords);
-                totalAdded += AddVariantSafe(collection, transparentShader, PassType.ForwardAdd, keywords);
-                totalAdded += AddVariantSafe(collection, wirelightShader, PassType.ForwardBase, keywords);
-            }
+                Shader shader = Shader.Find(config.name);
+                if (shader == null) continue;
 
-            // ShadowCaster base variants
-            totalAdded += AddVariantSafe(collection, opaqueShader, PassType.ShadowCaster, new string[] { });
-            totalAdded += AddVariantSafe(collection, cutoutShader, PassType.ShadowCaster, new string[] { });
-            totalAdded += AddVariantSafe(collection, transparentShader, PassType.ShadowCaster, new string[] { });
+                // Always include base variant
+                var keywordSets = new List<string[]> { new string[] { } };
+
+                if (perShaderKeywordSets.ContainsKey(config.name))
+                {
+                    foreach (string keySet in perShaderKeywordSets[config.name])
+                    {
+                        if (!string.IsNullOrEmpty(keySet))
+                            keywordSets.Add(keySet.Split(';'));
+                    }
+                }
+
+                uniqueKeywordSets += keywordSets.Count;
+
+                foreach (string[] keywords in keywordSets)
+                {
+                    totalAdded += AddVariantSafe(collection, shader, PassType.ForwardBase, keywords);
+                    if (config.hasForwardAdd)
+                        totalAdded += AddVariantSafe(collection, shader, PassType.ForwardAdd, keywords);
+                }
+
+                if (config.hasShadowCaster)
+                    totalAdded += AddVariantSafe(collection, shader, PassType.ShadowCaster, new string[] { });
+                if (config.hasMeta)
+                    totalAdded += AddVariantSafe(collection, shader, PassType.Meta, new string[] { });
+            }
 
             EditorUtility.SetDirty(collection);
             AssetDatabase.SaveAssets();
 
             Debug.Log($"[Natane Toon] Auto-collected {totalAdded} variants from {nataneMaterialCount} materials " +
-                      $"({keywordSets.Count} unique keyword sets)");
+                      $"({uniqueKeywordSets} unique keyword sets across all shaders)");
         }
 
         /// <summary>

@@ -38,7 +38,15 @@ namespace NataneToon.Editor
             "Natane/Toon Shader",
             "Natane/Toon Shader (Cutout)",
             "Natane/Toon Shader (Transparent)",
-            "Natane/Toon Shader Wirelight"
+            "Natane/Toon Shader (Lite)",
+            "Natane/Toon Shader (Cutout Lite)",
+            "Natane/Toon Shader (Transparent Lite)",
+            "Natane/Toon Shader (Fur)",
+            "Natane/Toon Shader (Fur Lite)",
+            "Natane/Toon Shader (Background)",
+            "Natane/Toon Shader Wirelight",
+            "Natane/Eye",
+            "Natane/Screen FX Overlay"
         };
 
         // --- Per-build session cache ---
@@ -355,11 +363,7 @@ namespace NataneToon.Editor
                 if (material == null || material.shader == null)
                     continue;
 
-                string shaderName = material.shader.name;
-                if (shaderName == "Natane/Toon Shader" ||
-                    shaderName == "Natane/Toon Shader (Cutout)" ||
-                    shaderName == "Natane/Toon Shader (Transparent)" ||
-                    shaderName == "Natane/Toon Shader Wirelight")
+                if (ShaderVariantCollector.IsNataneToonShader(material.shader.name))
                 {
                     count++;
                 }
@@ -393,11 +397,7 @@ namespace NataneToon.Editor
                     if (material == null || material.shader == null)
                         continue;
 
-                    string shaderName = material.shader.name;
-                    if (shaderName != "Natane/Toon Shader" &&
-                        shaderName != "Natane/Toon Shader (Cutout)" &&
-                        shaderName != "Natane/Toon Shader (Transparent)" &&
-                        shaderName != "Natane/Toon Shader Wirelight")
+                    if (!ShaderVariantCollector.IsNataneToonShader(material.shader.name))
                         continue;
 
                     materialCount++;
