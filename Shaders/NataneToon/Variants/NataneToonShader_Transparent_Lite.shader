@@ -173,6 +173,7 @@ Shader "Natane/Toon Shader (Transparent Lite)"
         _DitheringStrength ("Dithering Strength Boundary Softness", Range(0, 1)) = 0.5
         _DitheringBlend ("Dithering Blend", Range(0, 1)) = 1
         _DitheringBlur ("Dithering Blur", Range(0, 1)) = 0
+        _DitherStabilize ("Dither Stabilize (Object-Relative)", Range(0, 1)) = 0
         [Space(10)]
         [Toggle(_SHADOW_COLOR_TEX)] _UseShadowColorTex ("Use Shadow Color Texture", Float) = 0
         _ShadowColorTex ("Shadow Color Texture", 2D) = "white" {}

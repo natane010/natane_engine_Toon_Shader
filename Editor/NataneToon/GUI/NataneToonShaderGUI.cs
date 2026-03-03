@@ -4544,6 +4544,26 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawBlendControls(materialEditor, targetMaterial, "_DitheringBlend", null, "_DitheringBlur");
                 EditorGUI.indentLevel--;
             }
+
+            // ディザ座標安定化（全ディザ共通）
+            EditorGUILayout.Space(SECTION_SPACING);
+            DrawProperty("_DitherStabilize", L("ディザ座標安定化", "Dither Stabilize (Object-Relative)"));
+            DrawHelpToggle("DitherStabilize",
+                L("📌 ディザ座標安定化:\n" +
+                "オブジェクトの移動時にディザパターンがスライドする現象を抑制します。\n\n" +
+                "• 0: スクリーン基準（従来動作）\n" +
+                "• 1: オブジェクト相対（メッシュに固定）\n" +
+                "• 中間値: ブレンド\n\n" +
+                "💡 キャラクター移動時のディザチラつきが気になる場合に有効です。\n" +
+                "⚠️ スクリーントーンには影響しません（スクリーン固定が正しい動作）。",
+                "📌 Dither Stabilize:\n" +
+                "Prevents dither patterns from sliding when the object moves.\n\n" +
+                "• 0: Screen-relative (legacy behavior)\n" +
+                "• 1: Object-relative (fixed to mesh)\n" +
+                "• In-between: Blend\n\n" +
+                "💡 Useful when dither flickering is noticeable during character movement.\n" +
+                "⚠️ Does not affect Screen Tone (screen-fixed is correct behavior)."),
+                MessageType.Info);
         }
         EndBoxedSection(GetFoldout("Dithering"));
     }

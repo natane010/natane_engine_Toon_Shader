@@ -350,9 +350,9 @@ half3 SafeAdditiveBlend(half3 baseColor, half3 additiveColor, half strength)
 
     // Gentle compression: reduce strength as brightness increases
     // but keep enough headroom for effect colors to remain visible
-    half compressionFactor = saturate(1.0 - baseLum * 0.4);
+    half compressionFactor = saturate(1.0 - baseLum * 0.25);
     half darknessFactor = smoothstep(0.0, 0.05, baseLum);
-    half finalStrength = strength * max(compressionFactor * darknessFactor, 0.15);
+    half finalStrength = strength * max(compressionFactor * darknessFactor, 0.25);
 
     // For dark colored surfaces, lightly tint additive towards base hue
     half3 tintedAdditive = additiveColor;
@@ -368,11 +368,11 @@ half3 SafeAdditiveBlend(half3 baseColor, half3 additiveColor, half strength)
 
     // Hue-preserving soft clamp: compress luminance while keeping color direction
     half resultLum = CALC_LUMINANCE(result);
-    if (resultLum > 0.95)
+    if (resultLum > 1.05)
     {
-        half compression = smoothstep(0.95, 1.3, resultLum);
+        half compression = smoothstep(1.05, 1.4, resultLum);
         half3 resultDir = result / max(resultLum, 0.01);
-        half clampedLum = lerp(resultLum, 0.98, compression * 0.5);
+        half clampedLum = lerp(resultLum, 1.05, compression * 0.4);
         result = resultDir * clampedLum;
     }
 
@@ -385,8 +385,8 @@ half3 SafeAdditiveBlend(half3 baseColor, half3 additiveColor, half strength)
 half3 SafeAdditiveBlendFast(half3 baseColor, half3 additiveColor, half strength)
 {
     half baseLum = CALC_LUMINANCE(baseColor);
-    half compression = saturate(1.0 - baseLum * 0.4);
-    return baseColor + additiveColor * strength * max(compression, 0.15);
+    half compression = saturate(1.0 - baseLum * 0.25);
+    return baseColor + additiveColor * strength * max(compression, 0.25);
 }
 
 // ===== Matte Material Quality =====
@@ -1161,6 +1161,22 @@ half3 CalculateDripEffectFast(float3 worldPos, float time, half3 dripColor, floa
     return totalDrip;
 }
 #endif // _WATER_DRIP
+
+// ===== Dither Coordinate Stabilization =====
+// Object pivot をスクリーン投影してオフセットすることで
+// オブジェクト移動時のディザパターンスライドを抑制する。
+// Note: HLSL の fmod() は負の値を返すため、Bayer配列の範囲外アクセスを防ぐ必要がある。
+// 大きな正のオフセットを加えて座標を常に正に保つ。
+float2 StabilizeDitherCoord(float2 screenPixelPos)
+{
+    float4 pivotClip = mul(UNITY_MATRIX_VP, float4(unity_ObjectToWorld._m03_m13_m23, 1.0));
+    float2 pivotNDC = pivotClip.xy / pivotClip.w;
+    float2 pivotScreen = (pivotNDC * 0.5 + 0.5) * _ScreenParams.xy;
+    // pivotScreen を引くと負座標が生じ、fmod() で負のインデックスになる。
+    // 十分大きな正のオフセットを加えて常に正を保証する。
+    float2 stablePos = screenPixelPos - pivotScreen + 100000.0;
+    return lerp(screenPixelPos, stablePos, saturate(_DitherStabilize));
+}
 
 // ===== Shared Dithering / Alpha Functions =====
 static const float NataneBayer4x4[16] = {

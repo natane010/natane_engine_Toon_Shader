@@ -177,6 +177,7 @@ CBUFFER_START(UnityPerMaterial)
     float _DitheringStrength;
     float _DitheringBlend;
     float _DitheringBlur;
+    float _DitherStabilize;
     #if defined(_BLUE_NOISE_DITHER)
     float _BlueNoiseTemporal;
     float _BlueNoiseAmount;

@@ -1099,12 +1099,12 @@ half4 frag(v2f i) : SV_Target
         {
             // HSV quantization
             quantized = QuantizeColorHSV(col.rgb, _QuantizeHueLevels, _QuantizeSatLevels,
-                _QuantizeValLevels, _QuantizeDither, i.pos.xy);
+                _QuantizeValLevels, _QuantizeDither, StabilizeDitherCoord(i.pos.xy));
         }
         else
         {
             // RGB quantization
-            quantized = QuantizeColorRGB(col.rgb, _QuantizeLevels, _QuantizeDither, i.pos.xy);
+            quantized = QuantizeColorRGB(col.rgb, _QuantizeLevels, _QuantizeDither, StabilizeDitherCoord(i.pos.xy));
         }
         col.rgb = lerp(col.rgb, quantized, _QuantizeBlend * qMask);
     }
@@ -1145,7 +1145,7 @@ half4 frag(v2f i) : SV_Target
         {
             float2 specDitherScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
             float2 specDitherScreenPos = specDitherScreenUV * _ScreenParams.xy;
-            float specDitherThreshold = NataneGetDitherThreshold(specDitherScreenPos, _SpecularDitherScale);
+            float specDitherThreshold = NataneGetDitherThreshold(StabilizeDitherCoord(specDitherScreenPos), _SpecularDitherScale);
             float ditheredSpec = step(specDitherThreshold, spec);
             spec = lerp(spec, ditheredSpec, _SpecularDitherStrength);
         }
@@ -1170,7 +1170,7 @@ half4 frag(v2f i) : SV_Target
 
         // Use safe additive blending to prevent white-out
         half3 preSpec = col.rgb;
-        col.rgb = SafeAdditiveBlend(col.rgb, specContrib, saturate(length(specContrib) * 0.5));
+        col.rgb = SafeAdditiveBlend(col.rgb, specContrib, saturate(length(specContrib) * 0.8));
         half specBlendFaded = _SpecularBlend;
         #ifdef _DISTANCE_FADE
             specBlendFaded *= lerp(1.0, distanceFade, _SpecularDistFade);
@@ -1188,7 +1188,7 @@ half4 frag(v2f i) : SV_Target
         {
             float2 hairDitherScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
             float2 hairDitherScreenPos = hairDitherScreenUV * _ScreenParams.xy;
-            float hairDitherThreshold = NataneGetDitherThreshold(hairDitherScreenPos, _SpecularDitherScale);
+            float hairDitherThreshold = NataneGetDitherThreshold(StabilizeDitherCoord(hairDitherScreenPos), _SpecularDitherScale);
             float hairSpecIntensity = max(max(hairSpec.r, hairSpec.g), hairSpec.b);
             float hairDitherMask = lerp(1.0, step(hairDitherThreshold, hairSpecIntensity), _SpecularDitherStrength);
             hairSpec *= hairDitherMask;
@@ -1207,7 +1207,7 @@ half4 frag(v2f i) : SV_Target
         hairSpec = ApplyMatteQuality(hairSpec, col.rgb, _MatteEffect);
 
         // Use safe additive blending to prevent white-out
-        half hairSpecStrength = saturate(length(hairSpec) * 0.5);
+        half hairSpecStrength = saturate(length(hairSpec) * 0.8);
         half3 preHairSpec = col.rgb;
         col.rgb = SafeAdditiveBlend(col.rgb, hairSpec, hairSpecStrength);
         half hairSpecBlendFaded = _HairSpecBlend;
@@ -2271,11 +2271,11 @@ half4 frag(v2f i) : SV_Target
     #if defined(_HASHED_ALPHA)
         float2 hashedScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
         float2 hashedScreenPos = hashedScreenUV * _ScreenParams.xy;
-        clip(ApplyHashedAlpha(col.a, hashedScreenPos, i.worldPos.xz, _HashedAlphaScale));
+        clip(ApplyHashedAlpha(col.a, StabilizeDitherCoord(hashedScreenPos), i.worldPos.xz, _HashedAlphaScale));
     #elif defined(_DITHERING_ALPHA)
         float2 ditherScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
         float2 ditherScreenPos = ditherScreenUV * _ScreenParams.xy;
-        clip(ApplyDitheringAlpha(col.a, ditherScreenPos, max(_DitheringAlphaScale, 1.0)));
+        clip(ApplyDitheringAlpha(col.a, StabilizeDitherCoord(ditherScreenPos), max(_DitheringAlphaScale, 1.0)));
     #endif
 
     // ===== Fog =====
