@@ -62,7 +62,7 @@ namespace NataneToon.Editor
         public void OnProcessShader(Shader shader, ShaderSnippetData snippet, IList<ShaderCompilerData> data)
         {
             // Check if stripping is enabled
-            if (!EditorPrefs.GetBool(STRIP_ENABLED_KEY, true))
+            if (!EditorPrefs.GetBool(STRIP_ENABLED_KEY, false))
                 return;
 
             // Only process Natane Toon Shaders
@@ -265,7 +265,7 @@ namespace NataneToon.Editor
 
         private void OnEnable()
         {
-            strippingEnabled = EditorPrefs.GetBool(STRIP_ENABLED_KEY, true);
+            strippingEnabled = EditorPrefs.GetBool(STRIP_ENABLED_KEY, false);
             logEnabled = EditorPrefs.GetBool(STRIP_LOG_KEY, true);
         }
 
