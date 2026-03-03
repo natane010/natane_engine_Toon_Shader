@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Quantize - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Color Quantize</h1>
+    <p class="page-subtitle">Reduce color levels for posterization and illustration-style rendering</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Color Quantize limits the number of discrete color levels in the output, creating posterization, retro game-style, or illustration-style color palettes. Two quantization modes are available: RGB mode (uniform levels per channel) and HSV mode (independent levels for hue, saturation, and value). Optional ordered dithering using a 4x4 Bayer matrix can be applied to reduce banding artifacts.</p>
+    <p>Controlled by the keyword <code>_COLOR_QUANTIZE</code>. No shader instructions are generated when disabled.</p>
+    <p>Applied only in the ForwardBase pass. No GrabPass required; available in all variants.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Quantize Mode</span>
+        <span class="param-prop">_QuantizeMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the color quantization method.</p>
+        <ul>
+          <li><strong>RGB (0)</strong> - Quantizes each R/G/B channel with uniform level count. Simple posterization</li>
+          <li><strong>HSV (1)</strong> - Quantizes hue, saturation, and value independently. Allows more precise color control</li>
+        </ul>
+        <p class="param-default">Default: HSV (1)</p>
+      </div>
+      <div class="param-tip">HSV mode is recommended for illustration-style rendering. Independent control over hue and value enables anime cel-shading-like color palettes.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Quantize Levels (RGB)</span>
+        <span class="param-prop">_QuantizeLevels</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Number of discrete levels per channel in RGB mode. Lower values produce stronger posterization.</p>
+        <ul>
+          <li><strong>2-4</strong> - Extreme retro/pixel art style</li>
+          <li><strong>6-12</strong> - Illustration/anime style (recommended)</li>
+          <li><strong>16-32</strong> - Subtle color reduction</li>
+        </ul>
+        <p class="param-default">Default: 8</p>
+        <p class="param-range">Range: 2 - 32</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Hue Levels</span>
+        <span class="param-prop">_QuantizeHueLevels</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Number of discrete hue levels in HSV mode. Divides the hue wheel into this many segments.</p>
+        <p class="param-default">Default: 12</p>
+        <p class="param-range">Range: 2 - 36</p>
+      </div>
+      <div class="param-tip">12 divides the hue wheel at 30-degree intervals, preserving basic color variety. A value of 6 yields a primary-color-dominant look.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Saturation Levels</span>
+        <span class="param-prop">_QuantizeSatLevels</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Number of discrete saturation levels in HSV mode.</p>
+        <p class="param-default">Default: 8</p>
+        <p class="param-range">Range: 2 - 16</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Value Levels</span>
+        <span class="param-prop">_QuantizeValLevels</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Number of discrete value (brightness) levels in HSV mode. For anime-style shadow rendering, setting this low (3-5) is effective.</p>
+        <p class="param-default">Default: 8</p>
+        <p class="param-range">Range: 2 - 16</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Dither Amount</span>
+        <span class="param-prop">_QuantizeDither</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Intensity of ordered dithering using a 4x4 Bayer matrix. Reduces banding (visible color steps) caused by quantization. Generates a stable dither pattern based on screen-space pixel coordinates.</p>
+        <ul>
+          <li><strong>0</strong> - No dithering (sharp color steps)</li>
+          <li><strong>0.3-0.5</strong> - Moderate dithering (recommended)</li>
+          <li><strong>0.7-1.0</strong> - Strong dithering (retro game style)</li>
+        </ul>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+      <div class="param-tip">Dithering uses the <code>StabilizeDitherCoord</code> function for stable display in VR stereo rendering.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_QuantizeBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of the quantization effect. Multiplied with the mask texture value.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Quantize Mask</span>
+        <span class="param-prop">_QuantizeMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls the application area of the quantization effect. The R channel is used.</p>
+        <p class="param-default">Default: "white" (full application)</p>
+      </div>
+      <div class="param-tip">White = quantization applied, Black = no quantization. Useful for keeping skin smooth while applying the illustration style to clothing only.</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <h3>Anime Cel-Shading Style</h3>
+      <p>In HSV mode, set value levels to 3-4 and dithering to 0 for crisp, anime cel-shading-like color separation. Keep hue levels at 12-18 to maintain natural color variation.</p>
+
+      <h3>Retro Game Style</h3>
+      <p>In RGB mode, set levels to 4-6 and dithering to 0.5-0.8 for a retro game-style limited color palette with dithering patterns.</p>
+
+      <h3>Combining with Kuwahara Filter</h3>
+      <p>Limiting colors with Color Quantize and then smoothing details with the Kuwahara filter creates an impressionist oil-painting style. Color Quantize is processed in Stage A (color transform) and Kuwahara in Stage B (screen space), so they are automatically applied in this order.</p>
+
+      <h3>Performance Notes</h3>
+      <p>Color Quantize is a lightweight effect. HSV mode adds an RGB-to-HSV conversion, but since it requires no GrabPass and uses only arithmetic operations, it is suitable for mobile GPUs (VRChat Quest).</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

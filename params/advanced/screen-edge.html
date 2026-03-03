@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スクリーンエッジ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>スクリーンエッジ</h1>
+    <p class="page-subtitle">スクリーンスペースのエッジ検出によるアウトライン</p>
+
+    <h2 id="overview">概要</h2>
+    <p>スクリーンエッジは、カメラのデプスバッファと法線バッファを使用したスクリーンスペースのエッジ検出機能です。Sobelフィルタを使用して深度と法線の両方のエッジを検出し、それらの最大値を最終的なエッジ強度として出力します。イラスト風のポストプロセス的なアウトラインを実現できます。</p>
+    <p>キーワード <code>_SCREEN_EDGE</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スクリーンエッジを有効化</span>
+        <span class="param-prop">_UseScreenEdge</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>スクリーンエッジ機能の有効/無効を切り替えます。キーワード <code>_SCREEN_EDGE</code> でコンパイル時に分岐します。</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エッジカラー</span>
+        <span class="param-prop">_EdgeColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>エッジの描画色を指定します。検出されたエッジ部分がこの色でブレンドされます。</p>
+        <p class="param-default">デフォルト: (0, 0, 0, 1)（黒）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エッジ幅</span>
+        <span class="param-prop">_EdgeWidth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sobelフィルタのサンプリング間隔を制御し、エッジラインの太さに影響します。値が大きいほど太いエッジが描画されます。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0.1 〜 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">深度感度</span>
+        <span class="param-prop">_EdgeDepthSensitivity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>深度の差分に対するエッジ検出の感度です。値を大きくすると、わずかな深度差でもエッジとして検出されます。</p>
+        <p class="param-default">デフォルト: 10</p>
+        <p class="param-range">範囲: 0 〜 50</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">法線感度</span>
+        <span class="param-prop">_EdgeNormalSensitivity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>法線の差分に対するエッジ検出の感度です。値を大きくすると、滑らかな面のわずかな法線変化でもエッジが出ます。</p>
+        <p class="param-default">デフォルト: 2</p>
+        <p class="param-range">範囲: 0 〜 10</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エッジブレンド</span>
+        <span class="param-prop">_EdgeBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>検出されたエッジをオリジナルカラーにどの程度ブレンドするかを制御します。0で効果なし、1で最大のエッジ適用になります。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <ul>
+        <li>イラスト風・漫画風の表現に最適です。ジオメトリベースのアウトラインと組み合わせることで、より豊かな線画表現が可能です</li>
+        <li>深度エッジはオブジェクトのシルエットを検出し、法線エッジは面の折れ目を検出します。両方の感度を調整してバランスを取りましょう</li>
+        <li>カメラの <code>DepthTextureMode.DepthNormals</code> が必要です。VRChatでは自動的に有効化されます</li>
+        <li>スクリーンスペースの効果のため、フォワードベースパスでのみ動作します</li>
+        <li>エッジ幅を大きくしすぎるとアーティファクトが出る場合があります。1〜2の範囲で調整することを推奨します</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

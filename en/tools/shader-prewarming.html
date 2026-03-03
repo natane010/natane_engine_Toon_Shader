@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shader Prewarming - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Shader Prewarming</h1>
+    <p class="page-subtitle">Pre-compile shader variants to prevent stuttering during gameplay</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; シェーダー Shader &gt; シェーダープリウォーミング Shader Prewarming</span>
+      <span>Category: Shader</span>
+    </div>
+
+    <h2 id="overview">Overview</h2>
+    <p>Shader Prewarming is a tool that pre-compiles (warms up) shader variants to prevent stuttering caused by shader compilation during gameplay. It offers two modes: VRChat-safe editor-only prewarming and runtime prewarming for non-VRChat projects.</p>
+    <p>In Unity, compilation occurs when a shader variant is rendered for the first time, causing temporary frame rate drops (stutters). This tool eliminates this issue by pre-compiling shaders before build or within the editor.</p>
+    <p>The tool implements Unity's build pipeline API (<code>IPreprocessBuildWithReport</code>) to automatically execute prewarming before builds. It also features automatic variant collection from project materials when the ShaderVariantCollection is empty.</p>
+
+    <h2 id="features">Key Features</h2>
+    <ul>
+      <li><strong>Pre-Build Automatic Prewarming</strong> — Implements <code>IPreprocessBuildWithReport</code> to automatically prewarm shaders before builds. When the ShaderVariantCollection is empty, it also auto-collects variants from materials</li>
+      <li><strong>ShaderVariantCollection Warmup</strong> — Detects existing ShaderVariantCollections and warms up all included variants. Supports both Assets layout and UPM package layout</li>
+      <li><strong>Automatic Material Search and Warmup</strong> — Automatically finds all Natane Toon materials in the project, creates a temporary ShaderVariantCollection, and performs targeted warmup</li>
+      <li><strong>Automatic Variant Collection from Materials</strong> — When the ShaderVariantCollection is empty, collects keyword combinations from project materials and auto-registers variants for ForwardBase/ForwardAdd/ShadowCaster/Meta pass types</li>
+      <li><strong>12 Shader Variants Supported</strong> — Targets all Natane Toon Shader variants: Toon Shader, Cutout, Transparent, Lite variants, Fur variants, Background, Wirelight, Eye, and Screen FX Overlay</li>
+      <li><strong>Progress Bar Display</strong> — Shows warmup progress with a progress bar. Processing time and count are also shown in the final report</li>
+      <li><strong>Runtime Prewarming Script Generation</strong> — For non-VRChat projects, can automatically generate and manage a MonoBehaviour script that warms up shaders at runtime</li>
+      <li><strong>Full VRChat Compatibility</strong> — Editor-only mode uses no runtime scripts, making it fully compatible with VRChat's script restrictions</li>
+    </ul>
+
+    <h2 id="access">How to Access</h2>
+    <p>Available through the following menus:</p>
+    <ul>
+      <li><code>Tools &gt; Natane &gt; シェーダー Shader &gt; シェーダープリウォーミング Shader Prewarming &gt; すべてウォームアップ Prewarm All Shaders</code> — Manually prewarm shaders</li>
+      <li><code>Tools &gt; Natane &gt; シェーダー Shader &gt; シェーダープリウォーミング Shader Prewarming &gt; バリアントコレクションをウォームアップ Prewarm Shader Variant Collection</code> — Warm up only the ShaderVariantCollection</li>
+      <li><code>Tools &gt; Natane &gt; シェーダー Shader &gt; シェーダープリウォーミング Shader Prewarming &gt; 設定 Settings</code> — Open settings window</li>
+    </ul>
+
+    <h2 id="usage">How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Open Settings Window</strong>
+        <p>Select <code>Tools &gt; Natane &gt; シェーダー Shader &gt; シェーダープリウォーミング Shader Prewarming &gt; 設定 Settings</code> to open the settings window.</p>
+      </li>
+      <li>
+        <strong>Configure Editor-Only Prewarming (VRChat Safe)</strong>
+        <p>Adjust the following settings:</p>
+        <ul>
+          <li><strong>Prewarm on Build</strong> — Whether to automatically prewarm shaders before building. Enabled by default.</li>
+          <li><strong>Auto-Find Materials</strong> — Whether to automatically find and prewarm all Natane Toon materials in the project. Enabled by default.</li>
+        </ul>
+      </li>
+      <li>
+        <strong>Run Manual Prewarming</strong>
+        <p>Click "Prewarm Shaders Now" to immediately execute prewarming. Processing time and the number of warmed variants/materials are displayed in a dialog.</p>
+      </li>
+      <li>
+        <strong>Runtime Prewarming (Non-VRChat Only)</strong>
+        <p>For non-VRChat projects that need runtime prewarming, click "Generate Runtime Prewarming Script" to generate a MonoBehaviour script. Attach the generated script to a GameObject in your scene and assign the ShaderVariantCollection.</p>
+      </li>
+    </ol>
+
+    <h2 id="runtime">Runtime Prewarming Script</h2>
+    <p>Features of the auto-generated runtime script for non-VRChat projects:</p>
+    <ul>
+      <li><strong>Prewarm on Awake</strong> — Warms up shaders immediately at game start (enabled by default)</li>
+      <li><strong>Prewarm on Start</strong> — Delays warmup execution to after Awake</li>
+      <li><strong>Debug Logs</strong> — Toggle logging of processing time and variant counts</li>
+      <li><strong>Manual Invocation</strong> — Call the <code>PrewarmShaders()</code> method at any desired timing</li>
+    </ul>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>For VRChat projects, always use editor-only mode. The runtime script does not work in VRChat</li>
+      <li>Pre-generating a ShaderVariantCollection with the Shader Variant Collector tool makes prewarming more efficient</li>
+      <li>Pre-build prewarming automatically collects from materials and warms up when the ShaderVariantCollection is empty</li>
+      <li>Prewarming processing time depends on the number of materials and variants in the project. Build time may slightly increase for large projects</li>
+      <li>Use in combination with Variant Stripping to achieve an optimal configuration that prewarms only necessary variants while removing unnecessary ones from the build</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

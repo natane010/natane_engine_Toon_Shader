@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>バリアントストリッピング設定 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>バリアントストリッピング設定</h1>
+    <p class="page-subtitle">ビルド時に未使用シェーダーバリアントを自動除去してビルドサイズを大幅削減</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; シェーダー Shader &gt; バリアントストリッピング設定 Variant Stripping Settings</span>
+      <span>カテゴリ: シェーダー</span>
+    </div>
+
+    <h2 id="overview">概要</h2>
+    <p>バリアントストリッピング設定は、ビルド時にプロジェクト内のマテリアルが使用していないシェーダーバリアントを自動的に除去する機能の設定ツールです。UnityのビルドパイプラインAPIである<code>IPreprocessShaders</code>を実装しており、ビルドプロセスに統合されています。</p>
+    <p>Natane Toon Shaderは多くのオプション機能（アウトライン、スペキュラー、リムライト、SSS等）を持ち、各機能はshader_featureキーワードで制御されています。すべてのキーワードの組み合わせ（バリアント）をビルドに含めると膨大なサイズになりますが、このツールはプロジェクト内のすべてのマテリアルをスキャンし、実際に使用されているキーワードの組み合わせのみをホワイトリストとして保持し、それ以外のバリアントをビルドから除去します。</p>
+    <p>この機能はUnity標準のストリッピング処理の後（<code>callbackOrder = 100</code>）に実行され、Natane Toon Shader専用のバリアント（Opaque/Cutout/Transparent/Lite/Fur/Background/Wirelight/Eye/Screen FX Overlay）のみを対象とするため、他のシェーダーには影響しません。</p>
+
+    <h2 id="features">主な機能</h2>
+    <ul>
+      <li><strong>ビルド時自動ストリッピング</strong> — <code>IPreprocessShaders</code>を実装し、ビルド時に自動的に実行。手動操作は不要で、ビルドボタンを押すだけで未使用バリアントが除去されます</li>
+      <li><strong>マテリアルベースのホワイトリスト</strong> — プロジェクト内のすべてのマテリアルをスキャンし、実際に使用されているキーワードの組み合わせを自動的にホワイトリスト化。基本バリアント（キーワードなし）は常にホワイトリストに含まれます</li>
+      <li><strong>ShaderVariantCollection対応</strong> — 既存のShaderVariantCollectionに含まれるバリアントも認識し、手動で追加したバリアントが除去されないよう保護します</li>
+      <li><strong>12種類のシェーダー対応</strong> — Natane Toon Shaderの全バリアント（Toon Shader、Cutout、Transparent、Lite系、Fur系、Background、Wirelight、Eye、Screen FX Overlay）を対象</li>
+      <li><strong>詳細ログ出力</strong> — シェーダーごとに保持数と除去数をConsoleに出力。ログ出力の有効/無効を切り替え可能</li>
+      <li><strong>マテリアルキーワードスキャン</strong> — プロジェクト内のNatane Toonマテリアル数とユニークなキーワードセット数を確認できるスキャン機能を搭載。プログレスバー付きで大規模プロジェクトにも対応</li>
+      <li><strong>ストリッピング有効/無効切り替え</strong> — 設定ウィンドウからワンクリックでストリッピングの有効/無効を切り替え可能。デフォルトは無効です</li>
+    </ul>
+
+    <h2 id="access">アクセス方法</h2>
+    <p>メニュー: <code>Tools &gt; Natane &gt; シェーダー Shader &gt; バリアントストリッピング設定 Variant Stripping Settings</code></p>
+
+    <h2 id="usage">使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>設定ウィンドウを開く</strong>
+        <p><code>Tools &gt; Natane &gt; シェーダー Shader &gt; バリアントストリッピング設定 Variant Stripping Settings</code> を選択して設定ウィンドウを開きます。</p>
+      </li>
+      <li>
+        <strong>ストリッピングを有効化</strong>
+        <p>「バリアントストリッピングを有効化」トグルをオンにします。これにより、次回のビルド時から自動的にストリッピングが実行されます。</p>
+      </li>
+      <li>
+        <strong>ログ出力の設定（オプション）</strong>
+        <p>「ログ出力を有効化」トグルでConsoleへのログ出力を切り替えます。デフォルトは有効です。ストリッピングの詳細な結果を確認したい場合はオンのままにしてください。</p>
+      </li>
+      <li>
+        <strong>マテリアルキーワードのスキャン（オプション）</strong>
+        <p>「マテリアルキーワードをスキャン」ボタンで、プロジェクト内のNatane Toonマテリアル数とユニークなキーワードセット数を確認できます。スキャン結果の詳細はConsoleに出力されます。</p>
+      </li>
+      <li>
+        <strong>ビルドの実行</strong>
+        <p>通常通りビルドを実行します。ストリッピングが有効な場合、ビルドプロセス中にConsoleに保持数と除去数が出力されます。</p>
+      </li>
+    </ol>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>ストリッピングを有効にする前に、まず「マテリアルキーワードをスキャン」でプロジェクトの現状を確認するのがおすすめです</li>
+      <li>新しいマテリアルを追加した後のビルドでは、自動的に新しいキーワードセットがホワイトリストに追加されます</li>
+      <li>VRChatアバターのアップロードサイズを削減したい場合に特に効果的です</li>
+      <li>ストリッピングはNatane Toon Shaderのみを対象とし、他のシェーダーには影響しません</li>
+      <li>問題が発生した場合は、ストリッピングを無効にしてビルドし直すことで元の状態に戻せます</li>
+      <li>シェーダーバリアント収集ツール（Shader Variant Collector）と併用すると、より効果的にビルドサイズを削減できます</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

@@ -54,7 +54,8 @@
       { file: 'final-blend.html',        label: '最終カラーブレンド' },
       { file: 'surface-finish.html',     label: '表面仕上げ' },
       { file: 'makeup.html',             label: 'メイクアップ' },
-      { file: 'shading.html',            label: 'シェーディング' }
+      { file: 'shading.html',            label: 'シェーディング' },
+      { file: 'main-tex-animation.html', label: 'メインテクスアニメーション' }
     ],
     lighting: [
       { file: 'lighting-general.html',   label: 'ライティング全般' },
@@ -66,7 +67,12 @@
       { file: 'dithering.html',          label: 'ディザリング' },
       { file: 'shadow-color.html',       label: 'シャドウカラーテクスチャ' },
       { file: 'sdf-shadow.html',         label: 'SDFシャドウマップ' },
-      { file: 'shading-grade-map.html',  label: 'シェーディンググレードマップ' }
+      { file: 'shading-grade-map.html',  label: 'シェーディンググレードマップ' },
+      { file: 'procedural-ao.html',      label: 'プロシージャルAO' },
+      { file: 'cast-shadow-color.html',  label: 'キャストシャドウカラー' },
+      { file: 'light-snap.html',         label: 'ライトスナップ' },
+      { file: 'dither-stabilize.html',   label: 'ディザ安定化' },
+      { file: 'specular-intensity.html', label: 'スペキュラー強度' }
     ],
     effects: [
       { file: 'specular.html',           label: 'スペキュラー' },
@@ -90,7 +96,17 @@
       { file: 'screen-tone.html',        label: 'スクリーントーン' },
       { file: 'smear.html',              label: 'スメアエフェクト' },
       { file: 'hair-specular.html',      label: 'ヘアスペキュラー' },
-      { file: 'fur.html',                label: 'ファー' }
+      { file: 'fur.html',                label: 'ファー' },
+      { file: 'offset-rim-light.html',   label: 'オフセットリムライト' },
+      { file: 'kuwahara-filter.html',    label: 'Kuwaharaフィルター' },
+      { file: 'color-bleeding.html',     label: 'カラーブリーディング' },
+      { file: 'watercolor.html',         label: '水彩エフェクト' },
+      { file: 'color-quantize.html',     label: 'カラー量子化' },
+      { file: 'lut-3d.html',             label: '3D LUT' },
+      { file: 'fake-reflection.html',    label: 'フェイクリフレクション' },
+      { file: 'glitch-stretch.html',     label: 'グリッチストレッチ' },
+      { file: 'procedural-matcap.html',  label: 'プロシージャルMatCap' },
+      { file: 'sss-lut.html',            label: 'SSS LUT' }
     ],
     environment: [
       { file: 'reflection.html',         label: 'リフレクション' },
@@ -116,7 +132,12 @@
       { file: 'triplanar.html',          label: 'トライプレーナー' },
       { file: 'surface-cover.html',      label: 'サーフェスカバー' },
       { file: 'mirror-control.html',     label: 'ミラーコントロール' },
-      { file: 'quest-lite.html',         label: 'Quest軽量モード' }
+      { file: 'quest-lite.html',         label: 'Quest軽量モード' },
+      { file: 'eye-parallax.html',       label: 'アイパララックス' },
+      { file: 'screen-edge.html',        label: 'スクリーンエッジ' },
+      { file: 'perspective-flat.html',   label: 'パースペクティブフラット' },
+      { file: 'normal-warp.html',        label: 'ノーマルワープ' },
+      { file: 'smooth-normal.html',      label: 'スムースノーマル' }
     ]
   };
 
@@ -127,7 +148,8 @@
       { file: 'final-blend.html',        label: 'Final Color Blend' },
       { file: 'surface-finish.html',     label: 'Surface Finish' },
       { file: 'makeup.html',             label: 'Makeup' },
-      { file: 'shading.html',            label: 'Shading' }
+      { file: 'shading.html',            label: 'Shading' },
+      { file: 'main-tex-animation.html', label: 'Main Tex Animation' }
     ],
     lighting: [
       { file: 'lighting-general.html',   label: 'Lighting General' },
@@ -139,7 +161,12 @@
       { file: 'dithering.html',          label: 'Dithering' },
       { file: 'shadow-color.html',       label: 'Shadow Color Texture' },
       { file: 'sdf-shadow.html',         label: 'SDF Shadow Map' },
-      { file: 'shading-grade-map.html',  label: 'Shading Grade Map' }
+      { file: 'shading-grade-map.html',  label: 'Shading Grade Map' },
+      { file: 'procedural-ao.html',      label: 'Procedural AO' },
+      { file: 'cast-shadow-color.html',  label: 'Cast Shadow Color' },
+      { file: 'light-snap.html',         label: 'Light Snap' },
+      { file: 'dither-stabilize.html',   label: 'Dither Stabilize' },
+      { file: 'specular-intensity.html', label: 'Specular Intensity' }
     ],
     effects: [
       { file: 'specular.html',           label: 'Specular' },
@@ -163,7 +190,17 @@
       { file: 'screen-tone.html',        label: 'Screen Tone' },
       { file: 'smear.html',              label: 'Smear Effect' },
       { file: 'hair-specular.html',      label: 'Hair Specular' },
-      { file: 'fur.html',                label: 'Fur Rendering' }
+      { file: 'fur.html',                label: 'Fur Rendering' },
+      { file: 'offset-rim-light.html',   label: 'Offset Rim Light' },
+      { file: 'kuwahara-filter.html',    label: 'Kuwahara Filter' },
+      { file: 'color-bleeding.html',     label: 'Color Bleeding' },
+      { file: 'watercolor.html',         label: 'Watercolor Effect' },
+      { file: 'color-quantize.html',     label: 'Color Quantize' },
+      { file: 'lut-3d.html',             label: '3D LUT' },
+      { file: 'fake-reflection.html',    label: 'Fake Reflection' },
+      { file: 'glitch-stretch.html',     label: 'Glitch Stretch' },
+      { file: 'procedural-matcap.html',  label: 'Procedural MatCap' },
+      { file: 'sss-lut.html',            label: 'SSS LUT' }
     ],
     environment: [
       { file: 'reflection.html',         label: 'Reflection' },
@@ -189,7 +226,12 @@
       { file: 'triplanar.html',          label: 'Triplanar Mapping' },
       { file: 'surface-cover.html',      label: 'Surface Cover' },
       { file: 'mirror-control.html',     label: 'Mirror Control' },
-      { file: 'quest-lite.html',         label: 'Quest Lite Mode' }
+      { file: 'quest-lite.html',         label: 'Quest Lite Mode' },
+      { file: 'eye-parallax.html',       label: 'Eye Parallax' },
+      { file: 'screen-edge.html',        label: 'Screen Edge' },
+      { file: 'perspective-flat.html',   label: 'Perspective Flat' },
+      { file: 'normal-warp.html',        label: 'Normal Warp' },
+      { file: 'smooth-normal.html',      label: 'Smooth Normal' }
     ]
   };
 
@@ -219,7 +261,16 @@
     { file: 'prefab-converter.html',      label: 'プレハブバリアント変換',       cat: 'migration' },
     { file: 'shader-variant-collector.html', label: 'シェーダーバリアント収集',  cat: 'shader' },
     { file: 'light-volumes-helper.html',  label: 'ライトボリュームヘルパー',     cat: 'shader' },
-    { file: 'uv-texture-generator.html',  label: 'UVテクスチャ生成',             cat: 'shader' }
+    { file: 'uv-texture-generator.html',  label: 'UVテクスチャ生成',             cat: 'shader' },
+    { file: 'hierarchy-batch-editor.html', label: 'ヒエラルキー一括編集',        cat: 'material' },
+    { file: 'asset-reference-checker.html', label: 'アセット参照チェッカー',     cat: 'optimization' },
+    { file: 'smooth-normal-baker.html',   label: 'スムース法線ベイク',           cat: 'shader' },
+    { file: 'particle-effect-editor.html', label: 'パーティクルエフェクトエディタ', cat: 'effect' },
+    { file: 'diagnostics.html',           label: 'ツール診断',                   cat: 'general' },
+    { file: 'ltcgi-auto-detect.html',     label: 'LTCGI自動検出',               cat: 'shader' },
+    { file: 'light-volumes-auto-detect.html', label: 'Light Volumes自動検出',    cat: 'shader' },
+    { file: 'variant-stripper.html',      label: 'バリアントストリッピング',     cat: 'shader' },
+    { file: 'shader-prewarming.html',     label: 'シェーダープリウォーミング',   cat: 'shader' }
   ];
 
   var TOOL_ORDER_EN = [
@@ -248,7 +299,16 @@
     { file: 'prefab-converter.html',      label: 'Prefab Variant Converter',     cat: 'migration' },
     { file: 'shader-variant-collector.html', label: 'Shader Variant Collector',  cat: 'shader' },
     { file: 'light-volumes-helper.html',  label: 'Light Volumes Helper',         cat: 'shader' },
-    { file: 'uv-texture-generator.html',  label: 'UV Texture Generator',         cat: 'shader' }
+    { file: 'uv-texture-generator.html',  label: 'UV Texture Generator',         cat: 'shader' },
+    { file: 'hierarchy-batch-editor.html', label: 'Hierarchy Batch Editor',      cat: 'material' },
+    { file: 'asset-reference-checker.html', label: 'Asset Reference Checker',    cat: 'optimization' },
+    { file: 'smooth-normal-baker.html',   label: 'Smooth Normal Baker',          cat: 'shader' },
+    { file: 'particle-effect-editor.html', label: 'Particle Effect Editor',      cat: 'effect' },
+    { file: 'diagnostics.html',           label: 'Diagnostics',                  cat: 'general' },
+    { file: 'ltcgi-auto-detect.html',     label: 'LTCGI Auto-Detect',            cat: 'shader' },
+    { file: 'light-volumes-auto-detect.html', label: 'Light Volumes Auto-Detect', cat: 'shader' },
+    { file: 'variant-stripper.html',      label: 'Variant Stripping Settings',   cat: 'shader' },
+    { file: 'shader-prewarming.html',     label: 'Shader Prewarming',            cat: 'shader' }
   ];
 
   /* ---------- Header Nav Data ---------- */

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Specular Intensity - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Specular Intensity</h1>
+    <p class="page-subtitle">Control global brightness of specular highlights</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Specular Intensity is a global multiplier that controls the overall brightness of specular highlights (glossy reflections). It is combined with the Specular Color (<code>_SpecularColor</code>), light color, and light attenuation to determine the final specular contribution.</p>
+    <p>The final specular output is computed as <code>spec * _SpecularColor.rgb * _SpecularIntensity * lightColor * atten</code>. Since the range extends from 0 to 5, you can boost specular beyond the normal 1x multiplier for HDR-style intense highlights.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Specular Intensity</span>
+        <span class="param-prop">_SpecularIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Global brightness multiplier for specular highlights. 0 completely removes specular contribution, 1 is standard intensity, and values above 1 boost the highlights (brighter gloss). Applied before the specular mask (<code>_SpecularMask</code>) and dithering stages.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 to 5</p>
+      </div>
+      <div class="param-tip">For typical materials, 0.5-1.5 is recommended. For metals or jewelry that need strong highlights, values of 2.0-3.0 can be used.</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <ul>
+        <li><strong>Quick adjustment:</strong> When you want to adjust overall specular brightness, changing this value is more intuitive than modifying the Specular Color RGB values. It preserves the hue while adjusting only the intensity.</li>
+        <li><strong>HDR boost:</strong> Setting the value above 1 produces highlights that appear to glow when combined with bloom post-processing. Ideal for jewelry and metallic parts.</li>
+        <li><strong>ForwardAdd pass behavior:</strong> In the ForwardAdd pass (additional lights), <code>_AdditionalLightIntensity</code> is also multiplied, allowing separate control of specular from point lights and spot lights.</li>
+        <li><strong>Relationship with Specular Mask:</strong> <code>_SpecularIntensity</code> controls the overall brightness, while the <code>_SpecularMask</code> texture controls per-region specular presence. Combining both enables expressions like "generally subtle specular but shiny in specific areas."</li>
+        <li><strong>Fully disabling specular:</strong> Setting the value to 0 zeros out the specular contribution, but the shader calculations still run. To fully disable and save performance, turn off the specular feature toggle itself.</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

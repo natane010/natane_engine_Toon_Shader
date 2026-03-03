@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>メインテクスチャアニメーション - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>メインテクスチャアニメーション</h1>
+    <p class="page-subtitle">UVスクロールと回転でテクスチャを動かす</p>
+
+    <h2 id="overview">概要</h2>
+    <p>メインテクスチャアニメーションは、メインテクスチャのUV座標にスクロールと回転のアニメーションを適用する機能です。時間ベースのUV変換により、流れる水面、回転するエネルギーフィールド、スクロールするパターンなどの動的な表現を実現します。</p>
+    <p>キーワード <code>_MAIN_TEX_ANIMATION</code> で制御され、無効時はシェーダー命令が生成されません。ローカルキーワード（<code>shader_feature_local</code>）として実装されています。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">テクスチャアニメーションを有効化</span>
+        <span class="param-prop">_MainTexAnimation</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>メインテクスチャアニメーション機能の有効/無効を切り替えます。キーワード <code>_MAIN_TEX_ANIMATION</code> でコンパイル時に分岐します。</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スクロール速度 XY</span>
+        <span class="param-prop">_MainTexScrollSpeed</span>
+        <span class="param-badge badge-float">vector</span>
+      </div>
+      <div class="param-body">
+        <p>メインテクスチャのUVスクロール速度をXY方向で指定します。各成分は1秒あたりのUVオフセット量に相当します。X成分が水平方向、Y成分が垂直方向のスクロールを制御します。両方のスクロール速度が0に近い場合（二乗和がイプシロン以下）、スクロール処理は自動的にスキップされます。</p>
+        <p class="param-default">デフォルト: (0, 0, 0, 0)</p>
+      </div>
+      <div class="param-tip">水の流れなら (0.1, 0) 、斜め方向のスクロールなら (0.05, 0.05) のように設定します。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">回転速度</span>
+        <span class="param-prop">_MainTexRotateSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>メインテクスチャの回転速度を指定します。UV中心 (0.5, 0.5) を回転中心として、時間に応じたsin/cos変換でUVを回転させます。正の値で反時計回り、負の値で時計回りに回転します。回転速度が0に近い場合（絶対値がイプシロン以下）、回転処理は自動的にスキップされます。</p>
+        <p class="param-default">デフォルト: 0</p>
+      </div>
+      <div class="param-tip">ゆっくりとした回転には0.1〜0.3程度の値がおすすめです。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <ul>
+        <li>スクロールと回転は同時に使用できます。組み合わせることで複雑な動きの表現が可能です</li>
+        <li>フラグメントシェーダーの最初期段階でUV変換が適用されるため、メインテクスチャのサンプリング以降すべての処理に影響します</li>
+        <li>エフェクト系のマテリアル（エネルギー、魔法陣、水面など）に特に適しています</li>
+        <li>VRChatのアニメーションパラメータと連携して、スクロール速度を動的に制御することも可能です</li>
+        <li>速度の値が0の場合は計算がスキップされるため、不要な方向を0に設定しておけばパフォーマンスに影響しません</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

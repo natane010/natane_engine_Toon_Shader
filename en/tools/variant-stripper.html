@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Variant Stripping Settings - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Variant Stripping Settings</h1>
+    <p class="page-subtitle">Automatically strip unused shader variants at build time to significantly reduce build size</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; シェーダー Shader &gt; バリアントストリッピング設定 Variant Stripping Settings</span>
+      <span>Category: Shader</span>
+    </div>
+
+    <h2 id="overview">Overview</h2>
+    <p>Variant Stripping Settings is a configuration tool for the automatic removal of unused shader variants at build time. It implements Unity's build pipeline API <code>IPreprocessShaders</code> and is fully integrated into the build process.</p>
+    <p>Natane Toon Shader has many optional features (outline, specular, rim light, SSS, etc.), each controlled by shader_feature keywords. Including all keyword combinations (variants) in the build results in enormous size, but this tool scans all materials in the project, whitelists only the keyword combinations actually in use, and removes all other variants from the build.</p>
+    <p>This feature runs after Unity's standard stripping process (<code>callbackOrder = 100</code>) and only targets Natane Toon Shader variants (Opaque/Cutout/Transparent/Lite/Fur/Background/Wirelight/Eye/Screen FX Overlay), so it does not affect other shaders.</p>
+
+    <h2 id="features">Key Features</h2>
+    <ul>
+      <li><strong>Automatic Build-Time Stripping</strong> — Implements <code>IPreprocessShaders</code> and runs automatically during builds. No manual action required — simply press the build button and unused variants are removed</li>
+      <li><strong>Material-Based Whitelist</strong> — Scans all materials in the project and automatically whitelists keyword combinations actually in use. The base variant (no keywords) is always included in the whitelist</li>
+      <li><strong>ShaderVariantCollection Support</strong> — Recognizes variants in existing ShaderVariantCollections, ensuring manually added variants are not stripped</li>
+      <li><strong>12 Shader Variants Supported</strong> — Targets all Natane Toon Shader variants: Toon Shader, Cutout, Transparent, Lite variants, Fur variants, Background, Wirelight, Eye, and Screen FX Overlay</li>
+      <li><strong>Detailed Log Output</strong> — Outputs kept and stripped counts per shader to the Console. Log output can be toggled on/off</li>
+      <li><strong>Material Keyword Scan</strong> — Built-in scan feature to check the number of Natane Toon materials and unique keyword sets in the project. Includes a progress bar for large projects</li>
+      <li><strong>Enable/Disable Toggle</strong> — One-click toggle to enable or disable stripping from the settings window. Disabled by default</li>
+    </ul>
+
+    <h2 id="access">How to Access</h2>
+    <p>Menu: <code>Tools &gt; Natane &gt; シェーダー Shader &gt; バリアントストリッピング設定 Variant Stripping Settings</code></p>
+
+    <h2 id="usage">How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Open Settings Window</strong>
+        <p>Select <code>Tools &gt; Natane &gt; シェーダー Shader &gt; バリアントストリッピング設定 Variant Stripping Settings</code> to open the settings window.</p>
+      </li>
+      <li>
+        <strong>Enable Stripping</strong>
+        <p>Turn on the "Enable Variant Stripping" toggle. Stripping will automatically run on the next build.</p>
+      </li>
+      <li>
+        <strong>Configure Log Output (Optional)</strong>
+        <p>Toggle "Enable Log Output" to control Console logging. Enabled by default. Keep it on if you want to see detailed stripping results.</p>
+      </li>
+      <li>
+        <strong>Scan Material Keywords (Optional)</strong>
+        <p>Click "Scan Material Keywords" to check the number of Natane Toon materials and unique keyword sets in the project. Detailed scan results are output to the Console.</p>
+      </li>
+      <li>
+        <strong>Run Build</strong>
+        <p>Run the build as usual. When stripping is enabled, kept and stripped counts are output to the Console during the build process.</p>
+      </li>
+    </ol>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>Before enabling stripping, it is recommended to first run "Scan Material Keywords" to understand the current state of your project</li>
+      <li>New keyword sets from newly added materials are automatically whitelisted on subsequent builds</li>
+      <li>Especially effective for reducing VRChat avatar upload size</li>
+      <li>Stripping only targets Natane Toon Shaders and does not affect other shaders</li>
+      <li>If issues occur, disable stripping and rebuild to revert to the original state</li>
+      <li>Use in combination with the Shader Variant Collector tool for even more effective build size reduction</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

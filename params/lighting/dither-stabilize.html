@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ディザ安定化 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ディザ安定化</h1>
+    <p class="page-subtitle">オブジェクト移動時のディザパターンのスライドを抑制</p>
+
+    <h2 id="overview">概要</h2>
+    <p>ディザ安定化（Dither Stabilize）は、ディザリングパターンをオブジェクトのピボット位置に相対的に固定することで、キャラクターやオブジェクトがワールド空間で移動した際にディザパターンがスクリーン上をスライドする不快な視覚現象を抑制する機能です。</p>
+    <p>通常、ディザリングはスクリーンピクセル座標に基づいて計算されるため、オブジェクトが移動するとディザパターンがオブジェクト表面を滑るように見えます。この機能は、オブジェクトのピボットをスクリーン投影し、そのオフセットを差し引くことでパターンをオブジェクトに固定します。</p>
+    <p>このパラメータはキーワードではなく、float値で制御されます。0で従来のスクリーン固定ディザ、1で完全なオブジェクト相対ディザになります。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ディザ安定化</span>
+        <span class="param-prop">_DitherStabilize</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ディザパターンのオブジェクト相対固定の強さです。0でスクリーン座標ベース（従来動作）、1でオブジェクトピボット相対（完全安定化）になります。中間値でブレンドが可能です。</p>
+        <p>内部的には <code>StabilizeDitherCoord()</code> 関数で、オブジェクトのワールドピボット位置をスクリーン空間に投影し、そのスクリーン座標をディザ座標から差し引くことで実現しています。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">VRChatでキャラクターが歩き回る場合は 1.0 に設定するのがおすすめです。静止オブジェクトでは 0 のままで問題ありません。</div>
+    </div>
+
+    <h2 id="technical">技術的詳細</h2>
+    <div class="feature-section">
+      <p><code>StabilizeDitherCoord()</code> 関数は以下のように動作します:</p>
+      <ol>
+        <li>オブジェクトのワールドピボット位置（<code>unity_ObjectToWorld._m03_m13_m23</code>）をクリップ空間に変換</li>
+        <li>NDC（正規化デバイス座標）に変換し、スクリーンピクセル座標を算出</li>
+        <li>元のスクリーンピクセル座標からピボットのスクリーン座標を差し引く</li>
+        <li>大きな正のオフセット（100000.0）を加えて、fmod()による負のインデックスを防止</li>
+        <li><code>_DitherStabilize</code> の値で元の座標と安定化座標をブレンド</li>
+      </ol>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <ul>
+        <li><strong>影響を受ける機能:</strong> この安定化はシェーダー内のすべてのディザリング処理に適用されます。量子化ディザリング、スペキュラーディザリング、ヘアハイライトディザリング、ハッシュドアルファ、ディザリングアルファのすべてが対象です。</li>
+        <li><strong>VRChatキャラクター:</strong> アバターが移動するとディザパターンが「泳ぐ」のは目立ちやすいため、キャラクター用マテリアルでは 1.0 に設定することを強く推奨します。</li>
+        <li><strong>パフォーマンス:</strong> 追加のマトリックス乗算が1回発生しますが、テクスチャサンプリングは不要で、パフォーマンスへの影響は極めて小さいです。</li>
+        <li><strong>カメラ移動時:</strong> カメラが移動する場合は、どちらの設定でもディザパターンは動きます。この機能はあくまでオブジェクトの移動に対する安定化です。</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

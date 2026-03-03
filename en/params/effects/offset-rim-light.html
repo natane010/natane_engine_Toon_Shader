@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offset Rim Light - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Offset Rim Light</h1>
+    <p class="page-subtitle">Freely position rim highlights with XY offset and light direction linking</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Offset Rim Light differs from the standard rim light by allowing you to manually offset the rim highlight position in the XY direction. It works by adding an offset to the view-space normal before performing the Fresnel calculation, giving you full control over where the light appears. Additionally, it can optionally link to the scene's light direction for dynamic adaptation to changing lighting environments.</p>
+    <p>Controlled by the keyword <code>_OFFSET_RIM_LIGHT</code>. No shader instructions are generated when disabled.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Offset Rim Color</span>
+        <span class="param-prop">_OffsetRimColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the color of the offset rim light. Adjust to match the scene's atmosphere or character design.</p>
+        <p class="param-default">Default: (0.8, 0.9, 1, 1) (pale blue-white)</p>
+      </div>
+      <div class="param-tip">Warm colors work well for backlit scenes, and cool blue tones create a sleek impression.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Power</span>
+        <span class="param-prop">_OffsetRimPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the sharpness (falloff curve) of the rim. Higher values concentrate the effect on thin edge areas, while lower values spread it over a wider area.</p>
+        <p class="param-default">Default: 3</p>
+        <p class="param-range">Range: 0.01 - 10</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Intensity</span>
+        <span class="param-prop">_OffsetRimIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the brightness of the rim light. Values exceeding 1.0 produce HDR-like glow effects.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 10</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Offset X</span>
+        <span class="param-prop">_OffsetRimOffsetX</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Horizontal offset of the rim position in view space. Positive values shift the rim to the right, negative values to the left.</p>
+        <p class="param-default">Default: 0.3</p>
+        <p class="param-range">Range: -5 - 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Offset Y</span>
+        <span class="param-prop">_OffsetRimOffsetY</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Vertical offset of the rim position in view space. Positive values shift the rim upward, negative values downward.</p>
+        <p class="param-default">Default: 0.1</p>
+        <p class="param-range">Range: -5 - 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Use Light Direction</span>
+        <span class="param-prop">_OffsetRimUseLightDir</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>When enabled, the rim position dynamically follows the scene's directional light direction. The light-based offset is added to the manual XY offset.</p>
+        <p class="param-default">Default: 0 (disabled)</p>
+      </div>
+      <div class="param-tip">Enable this for dynamic lighting environments (such as VRChat world lights) for a more natural appearance.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Light Direction Strength</span>
+        <span class="param-prop">_OffsetRimLightDirStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls how strongly the rim follows the light direction. Higher values result in stronger tracking of the light direction.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Sharpness</span>
+        <span class="param-prop">_OffsetRimSharpness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the sharpness of the toon (cel-shading) boundary of the rim. A smoothstep function is applied to create the toon boundary; higher values produce a crisper, more cel-shaded look.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+      <div class="param-tip">Use 0.7-0.9 for a crisp anime-style rim, and 0.2-0.4 for a softer appearance.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Mask</span>
+        <span class="param-prop">_OffsetRimShadowMask</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls how much the rim light is suppressed in shadowed areas. Higher values reduce rim intensity in shadows, producing a more natural lighting result.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Offset Rim Mask</span>
+        <span class="param-prop">_OffsetRimMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls the display area of the offset rim light. The R channel is used.</p>
+        <p class="param-default">Default: "white" (full display)</p>
+      </div>
+      <div class="param-tip">White = rim light visible, Black = rim light hidden. Useful for applying the rim to specific areas like hair or certain parts of clothing.</div>
+    </div>
+
+    <h2 id="blend">Blend Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_OffsetRimBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the blend method for the offset rim light effect.</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - Standard additive blending</li>
+          <li><strong>Soft (1)</strong> - Soft additive. Prevents over-brightening</li>
+          <li><strong>Screen (2)</strong> - Screen blending. Natural brightness addition</li>
+          <li><strong>Overlay (3)</strong> - Overlay blending. Enhances contrast</li>
+        </ul>
+        <p class="param-default">Default: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_OffsetRimBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the overall opacity of the offset rim light effect.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blur</span>
+        <span class="param-prop">_OffsetRimBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Adjusts the blur amount of the rim. Internally attenuates the power value to produce a softer rim.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Distance Fade</span>
+        <span class="param-prop">_OffsetRimDistFade</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>When the distance fade feature (<code>_DISTANCE_FADE</code>) is active, controls how much the offset rim intensity fades based on camera distance.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <h3>Backlighting Effect</h3>
+      <p>Set Offset X to 0 and Offset Y to a positive value (e.g., 0.5) to create a backlit rim from above. Enable "Use Light Direction" to have the rim automatically adjust to match the world's light position.</p>
+
+      <h3>Anime-Style Angel Ring</h3>
+      <p>Set high sharpness (0.7-0.9) and a positive Offset Y to create an angel ring effect on hair. Use a mask texture to apply it only to hair meshes for the best result.</p>
+
+      <h3>Performance Notes</h3>
+      <p>This can be used simultaneously with the standard rim light (_RIM_LIGHT), but enabling both increases shader variant count. For VRChat Quest environments, using only one is recommended.</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D LUT - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>3D LUT</h1>
+    <p class="page-subtitle">Color grading via look-up table</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>The 3D LUT (Look-Up Table) effect applies color grading to the final output color in a post-process-like fashion. It uses a strip-layout 2D texture (e.g., a 32x32x32 color cube packed into a 1024x32 image) to remap each input RGB value through the LUT. This is useful for cinematic or anime-style color correction, vintage color effects, and establishing a specific mood or tone.</p>
+    <p>Controlled by keyword <code>_LUT_3D</code>. When disabled, no shader instructions are generated. Applied only in the ForwardBase pass.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable 3D LUT</span>
+        <span class="param-prop">_UseLUT3D</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Enables or disables the 3D LUT color grading effect.</p>
+        <p class="param-default">Default: 0 (Disabled)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LUT Texture</span>
+        <span class="param-prop">_LUT3DTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The strip-layout 3D LUT texture. The typical format is a 32x32x32 color cube arranged horizontally into a 1024x32 pixel image. LUT textures exported from Photoshop, DaVinci Resolve, LUT Generator, and similar tools can be used.</p>
+        <p class="param-default">Default: "white" (white texture = no color transformation)</p>
+      </div>
+      <div class="param-tip">For accurate color reproduction, disable sRGB in the texture import settings and set the filter to Bilinear. Compression should be set to None.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LUT Intensity</span>
+        <span class="param-prop">_LUT3DIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The strength of the LUT color grading. At 0, the original color is preserved. At 1, the color is fully replaced by the LUT output. Intermediate values linearly interpolate between the original and LUT colors.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+      <div class="param-tip">Setting this to around 0.5-0.8 produces a natural-looking color grade.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LUT Grid Size</span>
+        <span class="param-prop">_LUT3DSize</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>The number of grid cells per axis in the LUT texture. This must match the LUT texture being used. For example, a 32x32x32 LUT requires a value of 32, while a 16x16x16 LUT requires 16.</p>
+        <p class="param-default">Default: 32</p>
+      </div>
+      <div class="param-tip">If this value does not match the LUT texture size, colors will not be remapped correctly. You can calculate the grid size by dividing the texture width by its height (e.g., 1024 / 32 = 32).</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <h3>Obtaining LUT Textures</h3>
+      <ul>
+        <li><strong>Create your own</strong>: Export from Photoshop's "Export Color Lookup" or DaVinci Resolve's color grading tools.</li>
+        <li><strong>Free downloads</strong>: Many cinematic LUT packs are available online. Use tools like 3D LUT Creator to convert them to strip layout format.</li>
+        <li><strong>Format note</strong>: .cube files cannot be used directly. They must be converted to strip-layout PNG/TGA textures.</li>
+      </ul>
+      <h3>Recommended Settings</h3>
+      <ul>
+        <li><strong>Cinematic look</strong>: LUT Intensity at 0.6-0.8 for moderate color correction</li>
+        <li><strong>Dramatic color shift</strong>: LUT Intensity at 1.0 for full LUT application</li>
+        <li><strong>Retro style</strong>: Sepia or vintage LUT at intensity 0.5</li>
+      </ul>
+      <h3>Performance</h3>
+      <p>Requires only two texture samples (for blue slice interpolation) and minimal arithmetic, so the performance cost is very low. Note that it is applied to the final color, so it processes after other effects such as Emission.</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

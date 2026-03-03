@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>プロシージャルMatCap - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>プロシージャルMatCap</h1>
+    <p class="page-subtitle">テクスチャ不要の数学的MatCapライティング</p>
+
+    <h2 id="overview">概要</h2>
+    <p>プロシージャルMatCap（Procedural MatCap）は、MatCapテクスチャを使用せずに数学的な計算のみでMatCap風のライティングを生成するエフェクトです。ビュー空間の法線からMatCap UVを算出し、中心からの距離に基づく球面グラデーションとフレネルリム効果を組み合わせて、テクスチャなしで金属的な光沢やツヤ感を表現します。</p>
+    <p>キーワード <code>_PROCEDURAL_MATCAP</code> で制御され、無効時はシェーダー命令が生成されません。ForwardBaseパスでのみ適用されます。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">プロシージャルMatCap有効化</span>
+        <span class="param-prop">_ProceduralMatCap</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>プロシージャルMatCapの有効・無効を切り替えます。</p>
+        <p class="param-default">デフォルト: 0（無効）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">MatCapカラー</span>
+        <span class="param-prop">_ProcMatCapColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>プロシージャルMatCapの色を指定します。球面グラデーションとフレネル効果の両方にこの色が適用されます。</p>
+        <p class="param-default">デフォルト: (0.8, 0.85, 1.0, 1) 淡い青白</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">パワー</span>
+        <span class="param-prop">_ProcMatCapPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>球面グラデーションの減衰カーブを制御します。MatCap UV空間の中心からの距離を正規化し、pow関数でこの値を指数として適用します。値が大きいほどグラデーションが中心に集中し、シャープなハイライトになります。値が小さいとなだらかなグラデーションになります。</p>
+        <p class="param-default">デフォルト: 2.0</p>
+        <p class="param-range">範囲: 0.5 〜 10</p>
+      </div>
+      <div class="param-tip">1.0〜2.0 でソフトなハイライト、4.0以上で鋭いスポットライト風になります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">強度</span>
+        <span class="param-prop">_ProcMatCapIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>プロシージャルMatCapの全体的な明るさを制御します。グラデーションとフレネルの合計値にこの値が乗算されます。また、SafeAdditiveBlendの飽和防止パラメータにも間接的に影響します（強度の0.5倍）。</p>
+        <p class="param-default">デフォルト: 1.0</p>
+        <p class="param-range">範囲: 0 〜 3</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">フレネルパワー</span>
+        <span class="param-prop">_ProcMatCapFresnelPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>フレネルリム効果の鋭さを制御します。(1 - NdotV) をこの値で累乗することでリム光の幅を調整します。値が大きいほどリム光が狭くエッジ付近に集中し、値が小さいとリム光が広がります。</p>
+        <p class="param-default">デフォルト: 3.0</p>
+        <p class="param-range">範囲: 0.1 〜 10</p>
+      </div>
+    </div>
+
+    <h2 id="blend">ブレンド設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_ProcMatCapBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>プロシージャルMatCapの全体的な適用度を設定します。Distance Fadeが有効な場合、距離に応じてこの値が自動的に減衰します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_ProcMatCapBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>プロシージャルMatCapとベースカラーの合成方法を選択します。</p>
+        <ul>
+          <li><strong>Add (0)</strong> - 加算合成</li>
+          <li><strong>Multiply (1)</strong> - 乗算合成</li>
+          <li><strong>Screen (2)</strong> - スクリーン合成</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ合成</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Add）</p>
+      </div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <h3>テクスチャ版MatCapとの違い</h3>
+      <p>通常のMatCap機能はMatCapテクスチャを使用してリッチなライティングを再現しますが、テクスチャの準備が必要です。プロシージャルMatCapはテクスチャ不要で、パラメータのみで軽量な光沢効果を追加できます。シンプルな金属感やツヤ感の追加に最適です。</p>
+      <h3>おすすめの設定</h3>
+      <ul>
+        <li><strong>金属光沢</strong>: カラー (1.0, 1.0, 1.0)、パワー 2.0、フレネル 2.0、強度 1.0</li>
+        <li><strong>クールな青い光沢</strong>: カラー (0.6, 0.7, 1.0)、パワー 3.0、フレネル 4.0、強度 1.5</li>
+        <li><strong>ソフトな球面ライト</strong>: カラー (1.0, 0.95, 0.9)、パワー 1.0、フレネル 1.0、強度 0.5</li>
+      </ul>
+      <h3>通常MatCapとの併用</h3>
+      <p>テクスチャ版MatCap（最大3枚）と同時に使用可能です。プロシージャルMatCapはテクスチャ版MatCapの後に処理されるため、追加の光沢レイヤーとして機能します。</p>
+      <h3>パフォーマンス</h3>
+      <p>テクスチャサンプリングが不要で、ベクトル演算のみで処理されるため、パフォーマンスコストは非常に低いです。VRChat Quest向けの軽量化に最適です。</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

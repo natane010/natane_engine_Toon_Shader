@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>グリッチストレッチ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>グリッチストレッチ</h1>
+    <p class="page-subtitle">ブロック単位の水平引き伸ばしグリッチ</p>
+
+    <h2 id="overview">概要</h2>
+    <p>グリッチストレッチ（Stretch Glitch）は、UV座標をブロック単位で水平方向に引き伸ばすことで、デジタルデータの破損を再現するエフェクトです。通常のグリッチ（UV歪み + RGBスプリット）とは異なり、テクスチャの水平方向のストレッチに特化しています。マスクテクスチャで適用範囲を制限でき、メインテクスチャのサンプリング前にUVを変形するため、テクスチャ全体に影響します。</p>
+    <p>キーワード <code>_GLITCH_STRETCH</code> で制御され、無効時はシェーダー命令が生成されません。ForwardBaseパスでのみ適用されます。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ストレッチグリッチ有効化</span>
+        <span class="param-prop">_GlitchStretch</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>ストレッチグリッチの有効・無効を切り替えます。</p>
+        <p class="param-default">デフォルト: 0（無効）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ストレッチ強度</span>
+        <span class="param-prop">_GlitchStretchIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>水平方向のストレッチの強さを設定します。値が大きいほどUVが大きく引き伸ばされます。マスク値と乗算されるため、マスクで部分的に強度を制御できます。内部的にはストレッチ量に3倍の係数が掛かります。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 5</p>
+      </div>
+      <div class="param-tip">0.1〜0.5 で控えめな歪み、1.0以上で激しいストレッチになります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ストレッチ速度</span>
+        <span class="param-prop">_GlitchStretchSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>ストレッチのアニメーション速度を設定します。時間ベースの疑似乱数シードに影響し、値が大きいほど高速にパターンが変化します。内部的には _Time.y にこの値を乗算し、10倍してfloorで量子化しています。</p>
+        <p class="param-default">デフォルト: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブロックサイズ</span>
+        <span class="param-prop">_GlitchStretchBlockSize</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ストレッチが適用されるブロック（帯）の高さを設定します。UV.y座標をこの値で分割してブロック化し、各ブロックごとに異なるストレッチ量が適用されます。値が小さいほど細かい帯状のストレッチ、大きいほど太い帯になります。</p>
+        <p class="param-default">デフォルト: 0.1</p>
+        <p class="param-range">範囲: 0.01 〜 1</p>
+      </div>
+      <div class="param-tip">0.02〜0.05 でスキャンライン風、0.1〜0.3 でブロック崩壊風の表現になります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ストレッチ発生頻度</span>
+        <span class="param-prop">_GlitchStretchFrequency</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ストレッチが発生する頻度を設定します。各ブロックの乱数値がこのしきい値を超えた場合にのみストレッチが適用されます。また、全体的なトリガーとしても機能し、時間ベースの乱数が (1 - frequency) を超えた場合にのみエフェクトが発動します。</p>
+        <p class="param-default">デフォルト: 0.3</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">0.1〜0.3 で時折発生、0.5以上で頻繁に、0.9以上でほぼ常時ストレッチが発生します。</div>
+    </div>
+
+    <h2 id="mask">マスク設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ストレッチグリッチマスク</span>
+        <span class="param-prop">_GlitchStretchMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>ストレッチの適用範囲を制限するマスクテクスチャです。Rチャンネルが使用されます。白（1.0）の領域でストレッチが適用され、黒（0.0）の領域では適用されません。ストレッチ強度にマスク値が乗算されます。</p>
+        <p class="param-default">デフォルト: "white"（全体に適用）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">マスクスケール</span>
+        <span class="param-prop">_GlitchStretchMaskScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>マスク値の増幅率です。マスクテクスチャのRチャンネル値にこの値を乗算し、saturateでクランプします。1.0で等倍、5.0でマスク値を5倍にブーストします。薄いマスクの効果を強めたい場合に使用します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 1 〜 5</p>
+      </div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <h3>通常グリッチとの組み合わせ</h3>
+      <p>通常のグリッチ（_GLITCH）と併用することで、UV歪み + RGBスプリット + 水平ストレッチの複合グリッチ効果を作成できます。グリッチストレッチはメインテクスチャのサンプリング前にUVを変形するため、通常グリッチとは独立して動作します。</p>
+      <h3>おすすめの用途</h3>
+      <ul>
+        <li><strong>サイバーパンク演出</strong>: ホログラムやグリッチと併用して、デジタルアバターの不安定さを表現</li>
+        <li><strong>トランジション</strong>: 強度を時間とともに変化させて、出現・消滅のトランジション効果に</li>
+        <li><strong>VJ演出</strong>: マスクとブロックサイズを調整して、音楽に合わせたビジュアル効果に</li>
+      </ul>
+      <h3>パフォーマンス</h3>
+      <p>マスクテクスチャのサンプリング1回とUV計算のみで、パフォーマンスコストは低いです。ただし、メインテクスチャのサンプリング前にUVを変形するため、影響範囲が広い点に注意してください。</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Main Tex Animation - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Main Tex Animation</h1>
+    <p class="page-subtitle">Animate textures with UV scrolling and rotation</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Main Tex Animation applies scroll and rotation animation to the main texture's UV coordinates. Through time-based UV transformation, it enables dynamic effects such as flowing water surfaces, rotating energy fields, and scrolling patterns.</p>
+    <p>Controlled by the keyword <code>_MAIN_TEX_ANIMATION</code>. When disabled, no shader instructions are generated. Implemented as a local keyword (<code>shader_feature_local</code>).</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable Main Tex Animation</span>
+        <span class="param-prop">_MainTexAnimation</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Toggles the Main Tex Animation feature on/off. Branches at compile time using the keyword <code>_MAIN_TEX_ANIMATION</code>.</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Scroll Speed XY</span>
+        <span class="param-prop">_MainTexScrollSpeed</span>
+        <span class="param-badge badge-float">vector</span>
+      </div>
+      <div class="param-body">
+        <p>Specifies the UV scroll speed in the X and Y directions. Each component corresponds to the UV offset per second. The X component controls horizontal scrolling and the Y component controls vertical scrolling. When both scroll speeds are near zero (squared sum below epsilon), the scroll computation is automatically skipped.</p>
+        <p class="param-default">Default: (0, 0, 0, 0)</p>
+      </div>
+      <div class="param-tip">For water flow use (0.1, 0); for diagonal scrolling use (0.05, 0.05).</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Rotate Speed</span>
+        <span class="param-prop">_MainTexRotateSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Specifies the rotation speed of the main texture. The UV is rotated around the center point (0.5, 0.5) using time-based sin/cos transformation. Positive values rotate counter-clockwise, negative values rotate clockwise. When the rotation speed is near zero (absolute value below epsilon), the rotation computation is automatically skipped.</p>
+        <p class="param-default">Default: 0</p>
+      </div>
+      <div class="param-tip">For a gentle rotation, values around 0.1&ndash;0.3 work well.</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <ul>
+        <li>Scrolling and rotation can be used simultaneously. Combining them enables complex motion effects</li>
+        <li>The UV transformation is applied at the very beginning of the fragment shader, so it affects all subsequent processing after main texture sampling</li>
+        <li>Particularly suited for effect materials such as energy, magic circles, and water surfaces</li>
+        <li>Can be combined with VRChat animation parameters to dynamically control scroll speed</li>
+        <li>When speed values are zero, the computation is skipped, so setting unused directions to zero has no performance cost</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

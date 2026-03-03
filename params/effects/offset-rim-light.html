@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>オフセットリムライト - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>オフセットリムライト</h1>
+    <p class="page-subtitle">XYオフセットとライト方向連動で自由に位置を制御できるリムライト</p>
+
+    <h2 id="overview">概要</h2>
+    <p>オフセットリムライトは、通常のリムライトとは異なり、リムの発光位置をXY方向に手動でオフセットできるエフェクトです。ビュー空間の法線にオフセットを加えてからフレネル計算を行うため、光の当たる位置を自由にコントロールできます。さらに、シーンのライト方向に連動させることも可能で、動的なライティング環境に柔軟に対応します。</p>
+    <p>キーワード <code>_OFFSET_RIM_LIGHT</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">オフセットリムの色</span>
+        <span class="param-prop">_OffsetRimColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>オフセットリムライトの発光色を設定します。シーンの雰囲気やキャラクターのデザインに合わせて調整できます。</p>
+        <p class="param-default">デフォルト: (0.8, 0.9, 1, 1)（淡い青白）</p>
+      </div>
+      <div class="param-tip">逆光表現には暖色系、クールな印象には青系がおすすめです。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">パワー</span>
+        <span class="param-prop">_OffsetRimPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>リムの鋭さ（減衰カーブ）を制御します。値が大きいほど縁の細い部分にのみ集中し、小さいほど広範囲に広がります。</p>
+        <p class="param-default">デフォルト: 3</p>
+        <p class="param-range">範囲: 0.01 〜 10</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">強度</span>
+        <span class="param-prop">_OffsetRimIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>リムライトの明るさを制御します。1.0を超える値でHDR的な発光効果が得られます。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 10</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">オフセット X</span>
+        <span class="param-prop">_OffsetRimOffsetX</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ビュー空間でのリム位置の水平方向オフセットです。正の値で右方向、負の値で左方向にリムが移動します。</p>
+        <p class="param-default">デフォルト: 0.3</p>
+        <p class="param-range">範囲: -5 〜 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">オフセット Y</span>
+        <span class="param-prop">_OffsetRimOffsetY</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ビュー空間でのリム位置の垂直方向オフセットです。正の値で上方向、負の値で下方向にリムが移動します。</p>
+        <p class="param-default">デフォルト: 0.1</p>
+        <p class="param-range">範囲: -5 〜 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ライト方向を使用</span>
+        <span class="param-prop">_OffsetRimUseLightDir</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>有効にすると、シーンのディレクショナルライト方向に連動してリム位置が動的に変化します。手動オフセットにライト方向のオフセットが加算されます。</p>
+        <p class="param-default">デフォルト: 0（無効）</p>
+      </div>
+      <div class="param-tip">動的なライティング環境（VRChatのワールドライト等）ではこれを有効にすると自然な見た目になります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ライト方向の強さ</span>
+        <span class="param-prop">_OffsetRimLightDirStrength</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ライト方向連動時の影響度を制御します。値が大きいほどライト方向に強く追従します。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">シャープネス</span>
+        <span class="param-prop">_OffsetRimSharpness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>リムのトゥーン（セル調）境界のシャープさを制御します。smoothstepによるトゥーン境界が適用され、値が高いほどパキッとしたセルシェーディング風になります。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">アニメ調のくっきりしたリムには0.7〜0.9、柔らかい印象には0.2〜0.4がおすすめです。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">シャドウマスク</span>
+        <span class="param-prop">_OffsetRimShadowMask</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>影になっている部分でリムライトをどの程度抑制するかを制御します。値が高いほど影部分でリムが弱くなり、より自然なライティング結果になります。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">オフセットリムマスク</span>
+        <span class="param-prop">_OffsetRimMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>オフセットリムライトの表示領域を制御するマスクテクスチャです。Rチャンネルが参照されます。</p>
+        <p class="param-default">デフォルト: "white"（全面表示）</p>
+      </div>
+      <div class="param-tip">白 = リムライトあり、黒 = リムライトなし。髪や衣装の特定部分にだけリムを適用したい場合に便利です。</div>
+    </div>
+
+    <h2 id="blend">ブレンド設定</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンドモード</span>
+        <span class="param-prop">_OffsetRimBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>オフセットリムライトのブレンド方法を選択します。</p>
+        <ul>
+          <li><strong>Normal (0)</strong> - 通常の加算合成</li>
+          <li><strong>Soft (1)</strong> - ソフトな加算。明るくなりすぎを防ぐ</li>
+          <li><strong>Screen (2)</strong> - スクリーン合成。自然な明るさ加算</li>
+          <li><strong>Overlay (3)</strong> - オーバーレイ合成。コントラスト強調</li>
+        </ul>
+        <p class="param-default">デフォルト: Normal (0)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_OffsetRimBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>オフセットリムライトの全体的な不透明度を制御します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブラー</span>
+        <span class="param-prop">_OffsetRimBlur</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>リムのぼかし量を調整します。内部的にパワー値を減衰させることでソフトなリムを実現します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">距離フェード</span>
+        <span class="param-prop">_OffsetRimDistFade</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>距離フェード機能（<code>_DISTANCE_FADE</code>）有効時に、カメラ距離に応じてオフセットリムの強度を減衰させる度合いを制御します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <h3>逆光表現</h3>
+      <p>オフセットXを0に、オフセットYを正の値（例: 0.5）に設定すると、上方向からの逆光リムが表現できます。「ライト方向を使用」を有効にすると、ワールドのライト位置に追従して自動的に調整されます。</p>
+
+      <h3>アニメ風の天使の輪</h3>
+      <p>シャープネスを高め（0.7〜0.9）にして、オフセットYを正の値にすると、髪の天使の輪のような表現が可能です。マスクテクスチャを使って髪のメッシュだけに適用すると効果的です。</p>
+
+      <h3>パフォーマンスについて</h3>
+      <p>通常のリムライト（_RIM_LIGHT）と同時に使用可能ですが、両方を有効にするとシェーダーバリアント数が増加します。VRChat Quest環境ではどちらか一方の使用を推奨します。</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

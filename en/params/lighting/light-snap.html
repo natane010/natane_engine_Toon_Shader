@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Light Snap - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Light Snap</h1>
+    <p class="page-subtitle">Quantize light direction to prevent shadow flickering</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Light Snap quantizes the light direction vector to discrete angle intervals, preventing shadow flickering caused by subtle light direction changes. This is particularly useful in real-time lighting environments and VRChat worlds where light directions may shift slightly, causing toon shadow boundaries to flicker.</p>
+    <p>Internally, the light direction is converted to spherical coordinates (phi, theta), rounded to the nearest multiple of the snap angle, and then blended back with the original direction using the smoothness parameter.</p>
+    <p>Controlled by the keyword <code>_LIGHT_SNAP</code>. When disabled, no shader instructions are generated.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable Light Snap</span>
+        <span class="param-prop">_LightSnap</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Toggles the Light Snap feature on or off. When enabled, the light direction is snapped to discrete angular intervals.</p>
+        <p class="param-default">Default: 0 (disabled)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Snap Angle</span>
+        <span class="param-prop">_LightSnapAngle</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The angular unit (in degrees) to which the light direction is snapped. For example, setting 45 degrees quantizes the light to 8 directions (360/45). Smaller values create finer snapping (smoother but less stable), while larger values create coarser snapping (more stable but potentially unnatural).</p>
+        <p class="param-default">Default: 45</p>
+        <p class="param-range">Range: 5 to 90 (degrees)</p>
+      </div>
+      <div class="param-tip">Recommended: 15-45 degrees. For VRChat worlds, 30-45 degrees provides a good balance between stability and naturalness.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Snap Smoothness</span>
+        <span class="param-prop">_LightSnapSmooth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the smoothness of the snap transition. 0 uses the fully snapped direction (maximum stability, stepped transitions), while 1 uses the original light direction (no snapping). Internally computed as <code>lerp(lightDir, snappedDir, 1.0 - smooth)</code>.</p>
+        <p class="param-default">Default: 0.1</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Low values of 0.05-0.2 are recommended. This maintains snap stability while minimizing stepping artifacts during direction transitions.</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <ul>
+        <li><strong>VRChat usage:</strong> In VRChat worlds, player movement can cause the light direction to change slightly, resulting in flickering toon shadow boundaries. Light Snap stabilizes these shadows.</li>
+        <li><strong>Cel-shading compatibility:</strong> Hard cel-shading (binary shadow) is especially sensitive to small light direction changes, making this feature particularly effective in such setups.</li>
+        <li><strong>Combining with SDF Shadow:</strong> When used together with SDF-based face shadows, facial lighting becomes even more stable, preventing expression distortion.</li>
+        <li><strong>Caution:</strong> If the snap angle is too large, shadows may visibly jump when the light direction crosses a snap boundary. Use the smoothness parameter to mitigate this.</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

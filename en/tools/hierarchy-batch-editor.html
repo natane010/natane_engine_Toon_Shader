@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hierarchy Batch Editor - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Hierarchy Batch Editor</h1>
+    <p class="page-subtitle">Batch-edit NataneToon materials under a hierarchy using the inspector UI</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Material &gt; Hierarchy Batch Editor</span>
+      <span>Category: Material</span>
+    </div>
+
+    <h2 id="overview">Overview</h2>
+    <p>The Hierarchy Material Batch Editor automatically detects all materials using Natane Toon Shader under a specified root GameObject and allows you to batch-edit them using the same full material inspector UI. You can select multiple materials simultaneously and have changes applied in real-time.</p>
+
+    <h2 id="access">Access</h2>
+    <p>Menu: <code>Tools &gt; Natane &gt; Material &gt; Hierarchy Batch Editor</code></p>
+
+    <h2 id="features">Features</h2>
+    <ul>
+      <li><strong>Hierarchy Scan</strong> - Automatically detects Natane Toon Shader materials from all Renderers under the root object</li>
+      <li><strong>Deduplication</strong> - Shows each material only once even if used by multiple Renderers</li>
+      <li><strong>Hierarchy Path Display</strong> - View the hierarchy path showing where each material is used</li>
+      <li><strong>Selective Batch Editing</strong> - Use checkboxes to individually select or deselect materials for editing</li>
+      <li><strong>Select All / Deselect All</strong> - Quickly toggle selection state of all materials with one click</li>
+      <li><strong>Embedded Material Editor</strong> - Full NataneToonShaderGUI inspector embedded directly in the window</li>
+      <li><strong>Real-time Updates</strong> - Changes are applied in real-time to all selected materials in the scene</li>
+      <li><strong>Material Preview</strong> - Material preview sphere displayed in the embedded editor header</li>
+    </ul>
+
+    <h2 id="usage">How to Use</h2>
+    <ol class="tool-steps">
+      <li>Drag and drop the root GameObject of your avatar or object into the "Root Object" field</li>
+      <li>Press the "Scan" button to search for Natane Toon Shader materials under the hierarchy</li>
+      <li>Select materials to edit using the checkboxes in the material list (all are selected by default)</li>
+      <li>Edit properties in the Material Editor section using the same UI as the standard inspector</li>
+      <li>Changes are applied simultaneously in real-time to all selected materials</li>
+    </ol>
+
+    <h2 id="workflow">Example Workflows</h2>
+    <h3>Unify shadow color across an entire avatar</h3>
+    <ol>
+      <li>Set the avatar root object and scan</li>
+      <li>With all materials selected, change the shadow color</li>
+      <li>The same shadow color is applied to all materials at once</li>
+    </ol>
+    <h3>Edit only specific parts</h3>
+    <ol>
+      <li>After scanning, click "Deselect All" to reset selection</li>
+      <li>Check only the materials you want to edit</li>
+      <li>Changes are applied only to the selected materials</li>
+    </ol>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>Materials on inactive objects are also included in the scan</li>
+      <li>Changing the root object automatically clears previous scan results</li>
+      <li>Use the hierarchy path to identify which part a material belongs to</li>
+      <li>For VRChat avatars, set the avatar root object to adjust body, clothing, and hair materials all at once</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

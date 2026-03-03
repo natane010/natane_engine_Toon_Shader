@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smooth Normal - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Smooth Normal</h1>
+    <p class="page-subtitle">Smooth normals for better outlines and shading</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Smooth Normal uses smoothed normals for outline extrusion direction, preventing outline breaks and unnatural protrusions on hard-edge meshes. It reads smooth normals from vertex colors or a baked texture and uses them as the outline normal. Additionally, the Shading Blend feature allows smooth normals to be applied to lighting calculations, softening shadow boundaries.</p>
+    <p>Controlled by the keyword <code>_SMOOTH_NORMAL</code>. When disabled, no shader instructions are generated. Implemented as a local keyword (<code>shader_feature_local</code>).</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable Smooth Normal</span>
+        <span class="param-prop">_SmoothNormal</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Toggles the Smooth Normal feature on/off. Branches at compile time using the keyword <code>_SMOOTH_NORMAL</code>.</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Smooth Normal Mode</span>
+        <span class="param-prop">_SmoothNormalMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects the source of smooth normals.</p>
+        <ul>
+          <li><strong>0 - Vertex Color ObjectSpace</strong>: Use when vertex color RGB stores object-space normals. Decodes from [0,1] vertex color to [-1,1] range.</li>
+          <li><strong>1 - Vertex Color TangentSpace</strong>: Use when vertex color RGB stores tangent-space normals. Transforms via the TBN matrix. Compatible with lilToon.</li>
+          <li><strong>2 - Baked Normal Texture</strong>: Uses normals baked into a texture. Samples from the texture and transforms from tangent space.</li>
+        </ul>
+        <p class="param-default">Default: 0 (Vertex Color ObjectSpace)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Smooth Normal Texture</span>
+        <span class="param-prop">_SmoothNormalTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The smooth normal texture used in Mode 2 (Baked Normal Texture). Specify a texture containing tangent-space normals.</p>
+        <p class="param-default">Default: "bump"</p>
+      </div>
+      <div class="param-tip">Not used in Modes 0 and 1.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Smooth Normal Shading Blend</span>
+        <span class="param-prop">_SmoothNormalShadingBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls how much smooth normals are blended into the lighting normal. At 0, only the original normal is used for shading; at 1, smooth normals are used exclusively. Use this when you want to soften shadow boundaries in addition to outlines.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 &ndash; 1</p>
+      </div>
+      <div class="param-tip">Values of 0.3&ndash;0.5 reduce shadow jaggedness while retaining the original surface shape.</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <ul>
+        <li>Most effective for improving outline quality. Significant improvements on hard-edge meshes (low-poly models or non-merged meshes)</li>
+        <li>Mode 1 (Vertex Color TangentSpace) is compatible with lilToon smooth normals, allowing seamless migration from lilToon</li>
+        <li>Mode 2 (Baked Normal Texture) is useful when vertex colors are already used for other purposes</li>
+        <li>Shading Blend affects lighting in addition to outlines, so start with conservative values and adjust gradually</li>
+        <li>Used in both the vertex shader (outline direction) and fragment shader (shading blend)</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

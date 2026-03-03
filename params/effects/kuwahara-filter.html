@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kuwaharaフィルター - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Kuwaharaフィルター</h1>
+    <p class="page-subtitle">油絵風のペインタリーな表現を実現するスクリーンスペースフィルター</p>
+
+    <h2 id="overview">概要</h2>
+    <p>Kuwaharaフィルターは、画像処理で使われる非線形フィルターで、油絵のようなペインタリーな表現を生み出します。ピクセル周囲を4つの象限に分割し、各象限の平均色と分散を計算して、最も均一な（分散が最小の）象限の平均色を採用します。これにより、エッジを保持しつつ滑らかな絵画風の見た目が得られます。</p>
+    <p>キーワード <code>_KUWAHARA_FILTER</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+    <p>GrabPassを使用するスクリーンスペースエフェクトです。Liteバリアントでは使用できません。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">半径</span>
+        <span class="param-prop">_KuwaharaRadius</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>フィルターのカーネル半径です。各象限ごとにこの半径分のピクセルをサンプリングします。値が大きいほど強い油絵風効果が得られますが、パフォーマンスコストも増加します（サンプル数は半径の2乗に比例）。</p>
+        <ul>
+          <li><strong>1〜2</strong> - 軽微な滑らか効果</li>
+          <li><strong>3〜4</strong> - 適度な油絵風効果（推奨）</li>
+          <li><strong>5〜6</strong> - 強い油絵風効果（重い処理）</li>
+        </ul>
+        <p class="param-default">デフォルト: 3</p>
+        <p class="param-range">範囲: 1 〜 6</p>
+      </div>
+      <div class="param-tip">VRChat環境では2〜3の低い値を推奨します。半径6では各ピクセルあたり144回のテクスチャサンプリングが発生します。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_KuwaharaBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>フィルター効果と元の画像のブレンド比率を制御します。0で元画像のまま、1で完全にフィルター適用された結果になります。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">0.5〜0.7程度にすると、油絵風の質感を残しつつディテールも維持できるバランスの良い設定になります。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <h3>油絵風のイラスト表現</h3>
+      <p>Color Quantize（色量子化）と組み合わせると、より絵画的な表現が可能です。Kuwaharaフィルターでディテールを平滑化し、Color Quantizeで色数を制限することで、印象派の油絵のようなスタイルが実現できます。</p>
+
+      <h3>アニメ風の背景</h3>
+      <p>半径を小さめ（2程度）にしてブレンドを0.3〜0.5にすると、手描きアニメの背景のような柔らかいテクスチャ感が出ます。</p>
+
+      <h3>パフォーマンスについて</h3>
+      <p>Kuwaharaフィルターはループ内でGrabPassテクスチャを大量にサンプリングするため、GPUコストが比較的高いエフェクトです。半径3の場合、4象限 x 9サンプル = 36回のテクスチャフェッチが発生します。VRChat Quest環境では使用に注意してください。</p>
+
+      <h3>他のスクリーンスペースエフェクトとの併用</h3>
+      <p>Soft Filter、Color Bleeding、Chromatic Aberrationなど他のGrabPassベースエフェクトと同時に使用可能ですが、それぞれがGrabPassを共有するため、処理順序に注意してください。Kuwaharaフィルターは Soft Filter の後、Screen Edge の前に適用されます。</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

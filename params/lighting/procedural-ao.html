@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>プロシージャルAO - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>プロシージャルAO</h1>
+    <p class="page-subtitle">高さベースの自動アンビエントオクルージョン生成</p>
+
+    <h2 id="overview">概要</h2>
+    <p>プロシージャルAO（Procedural Ambient Occlusion）は、オブジェクト空間のY座標（高さ）に基づいてAOグラデーションを自動生成する機能です。AOマップテクスチャを用意する手間なく、モデルの下部（足元や裾など）に自然な暗がりを追加できます。既存のAOマップ（<code>_AOMap</code>）とも乗算で合成されるため、併用して更にリッチな陰影を演出できます。</p>
+    <p>キーワード <code>_PROCEDURAL_AO</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">プロシージャルAO有効化</span>
+        <span class="param-prop">_ProceduralAO</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>プロシージャルAO機能のオン・オフを切り替えます。有効にすると、オブジェクト空間の高さ情報から自動的にAOが計算されます。</p>
+        <p class="param-default">デフォルト: 0（無効）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">AO高さオフセット</span>
+        <span class="param-prop">_ProceduralAOHeightOffset</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>AOグラデーションの基準高さをオフセットします。正の値でAO領域を上方向に拡大し、負の値で下方向に縮小します。モデルのピボット位置やスケールに応じて調整してください。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: -2 〜 2</p>
+      </div>
+      <div class="param-tip">モデルのピボットが足元にある場合は正の値で効果範囲を広げ、中心にある場合は負の値で下半分だけに適用するなど調整すると自然な仕上がりになります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">AO強度</span>
+        <span class="param-prop">_ProceduralAOIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>プロシージャルAOの効果の強さを制御します。0で完全に無効（全体が明るい）、1で最大効果（暗い部分が最も強く出る）になります。内部的には <code>lerp(1.0, proceduralAO, intensity)</code> で合成されます。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">推奨値: 0.3〜0.6。強すぎると地面付近が不自然に暗くなるため、控えめな設定から調整するのがおすすめです。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">AOソフトネス</span>
+        <span class="param-prop">_ProceduralAOSoftness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>AOグラデーションの境界の柔らかさを制御します。値が大きいほどAOの遷移が広く滑らかになり、値が小さいほどシャープな境界になります。内部的には <code>smoothstep</code> の範囲パラメータとして使用されます。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0.01 〜 2</p>
+      </div>
+      <div class="param-tip">トゥーン調の表現では 0.3〜0.8 程度が自然です。最小値（0.01）に近づけるとパキッとしたセルシェーディング風のAOになります。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <ul>
+        <li><strong>テクスチャ不要の簡易AO:</strong> AOマップのベイクが難しいモデルでも、高さベースで自然な陰影を追加できます。ローポリモデルやクイックプロトタイプに最適です。</li>
+        <li><strong>AOマップとの併用:</strong> 既存のAOマップ（<code>_AOMap</code>）と乗算で合成されるため、テクスチャAOでは表現しにくい広い範囲の環境遮蔽を補完できます。</li>
+        <li><strong>衣服の裾や靴:</strong> Height Offset を調整して、スカートの裾、ブーツの底部、手袋の手首部分などに自然なグラデーション影を追加しましょう。</li>
+        <li><strong>パフォーマンス:</strong> テクスチャサンプリングを行わないため、AOマップよりも軽量です。モバイル/Quest向けの最適化にも有効です。</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

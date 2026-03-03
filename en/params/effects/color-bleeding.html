@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Bleeding - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Color Bleeding</h1>
+    <p class="page-subtitle">Simulates pigment diffusion where bright colors bleed into darker areas</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Color Bleeding simulates the effect of color diffusion, similar to watercolor paint bleeding or ink spreading during printing. It samples 8 neighboring pixels (4 cardinal + 4 diagonal directions) and selectively blends brighter neighbors into darker areas, creating a natural color diffusion effect. Only brighter pixels bleed into darker ones, never the reverse.</p>
+    <p>Controlled by the keyword <code>_COLOR_BLEEDING</code>. No shader instructions are generated when disabled.</p>
+    <p>This is a screen-space effect that requires GrabPass. Not available in Lite variants.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Bleeding Radius</span>
+        <span class="param-prop">_BleedingRadius</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the range of color bleeding in pixel units. Larger values spread the color over a wider area. The value is multiplied by the texel size, so the actual effect depends on screen resolution.</p>
+        <ul>
+          <li><strong>0.5-1</strong> - Subtle bleeding (recommended)</li>
+          <li><strong>1-3</strong> - Moderate bleeding</li>
+          <li><strong>3-5</strong> - Large bleeding (may appear blurry)</li>
+        </ul>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_BleedingBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of the bleeding effect. 0 keeps the original image, 1 fully applies the bleeding effect.</p>
+        <p class="param-default">Default: 0.3</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+      <div class="param-tip">The default value of 0.3 is a subtle setting. Increase to 0.5-0.7 for a stronger painterly expression.</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <h3>Watercolor-Style Rendering</h3>
+      <p>Combine with the Watercolor effect for a more authentic watercolor look. The Watercolor effect handles edge darkening and paper texture in texture space, while Color Bleeding handles color diffusion in screen space, creating a complementary pairing.</p>
+
+      <h3>Luminance-Based Selective Blending</h3>
+      <p>Unlike a simple blur, this effect performs luminance-based selective blending. Only brighter neighboring pixels bleed into darker areas, creating a natural one-directional color flow. Dark colors never bleed into bright areas.</p>
+
+      <h3>Performance Notes</h3>
+      <p>With a fixed 8-direction sampling (8 texture fetches), this effect is relatively lightweight compared to the Kuwahara filter. It can be used in VRChat environments with moderate performance impact.</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

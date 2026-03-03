@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VRC Light Volumes 自動検出 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>VRC Light Volumes 自動検出</h1>
+    <p class="page-subtitle">VRC Light Volumesパッケージの自動検出とシェーダー設定の自動切り替え</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; VRChat &gt; VRC Light Volumes 再検出 Re-detect</span>
+      <span>カテゴリ: VRChat連携</span>
+    </div>
+
+    <h2 id="overview">概要</h2>
+    <p>VRC Light Volumes 自動検出は、VRChatの<strong>VRC Light Volumes</strong>（ボクセルベースライティングシステム）パッケージの有無を自動的に検出し、シェーダーの設定を切り替えるツールです。</p>
+    <p>Unityエディタの起動時やパッケージのインストール・アンインストール時に自動実行され、VRC Light Volumesパッケージ（<code>red.sim.lightvolumes</code>）が検出された場合は本物のLight Volumes関数（<code>LightVolumes.cginc</code>）を使用し、未検出の場合はバンドル版のLightVolumes.cgincに自動で切り替わります。</p>
+    <p>VRC Light VolumesはVRChatワールドのライティング品質を向上させるボクセルベースのライティングシステムで、従来のライトプローブよりも高品質な間接照明を提供します。このツールにより、パッケージの有無に関わらずシェーダーが正しく動作します。</p>
+
+    <h2 id="features">主な機能</h2>
+    <ul>
+      <li><strong>エディタ起動時の自動検出</strong> — <code>[InitializeOnLoad]</code>により、Unityエディタ起動時・スクリプトリコンパイル時・パッケージ変更時に自動的にVRC Light Volumesパッケージの有無を検出します</li>
+      <li><strong>シェーダー設定ファイルの自動生成</strong> — 検出結果に基づき、<code>NataneToonLVConfig.hlsl</code>を自動生成します。パッケージ検出時は<code>#define NATANE_VRCLV_AVAILABLE</code>が定義され、シェーダー内で条件付きインクルードが制御されます</li>
+      <li><strong>シェーダーの自動再インポート</strong> — 設定変更後、関連するシェーダーファイル（<code>NataneToonLighting.hlsl</code>など）を自動的に再インポートし、変更を即座に反映します</li>
+      <li><strong>状態変化の追跡</strong> — EditorPrefsを使用して前回の検出状態を記憶し、状態が変化した場合のみ設定ファイルの再生成とシェーダーの再コンパイルを行います。無駄な再コンパイルを防止します</li>
+      <li><strong>手動再検出</strong> — メニューからの手動実行により、強制的に再検出を行い、結果をダイアログで確認できます</li>
+      <li><strong>バンドル版フォールバック</strong> — VRC Light Volumesパッケージが無い環境では、Natane Toon Shaderにバンドルされた<code>LightVolumes.cginc</code>が自動的に使用されます</li>
+    </ul>
+
+    <h2 id="access">アクセス方法</h2>
+    <p>メニュー: <code>Tools &gt; Natane &gt; VRChat &gt; VRC Light Volumes 再検出 Re-detect</code></p>
+    <p>通常はエディタ起動時に自動で実行されるため、手動で実行する必要はありません。パッケージのインストール状況に問題がある場合や、手動で状態を確認したい場合に使用します。</p>
+
+    <h2 id="usage">使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>自動検出（通常の使用）</strong>
+        <p>通常は何もする必要はありません。Unityエディタを起動するだけで、VRC Light Volumesパッケージの有無が自動的に検出され、シェーダーの設定が適切に構成されます。パッケージのインストール・アンインストール時にも自動で設定が更新されます。</p>
+      </li>
+      <li>
+        <strong>手動再検出</strong>
+        <p><code>Tools &gt; Natane &gt; VRChat &gt; VRC Light Volumes 再検出 Re-detect</code> を選択すると、強制的に再検出が実行されます。検出結果はダイアログに表示されます。</p>
+      </li>
+      <li>
+        <strong>結果の確認</strong>
+        <p>検出完了後、以下のいずれかのメッセージがダイアログに表示されます：</p>
+        <ul>
+          <li><strong>検出済み</strong>：「VRC Light Volumes パッケージを検出しました。シェーダーは本物のLight Volumes関数を使用します。」</li>
+          <li><strong>未検出</strong>：「VRC Light Volumes パッケージが見つかりません。シェーダーはバンドル版LightVolumes.cgincを使用します。」</li>
+        </ul>
+      </li>
+    </ol>
+
+    <h2 id="technical">技術的な詳細</h2>
+    <ul class="tool-tips">
+      <li>検出対象パッケージパス: <code>Packages/red.sim.lightvolumes</code></li>
+      <li>検出対象ファイル: <code>Packages/red.sim.lightvolumes/Shaders/LightVolumes.cginc</code></li>
+      <li>生成される設定ファイル: <code>Shaders/NataneToon/Include/Config/NataneToonLVConfig.hlsl</code></li>
+      <li>設定ファイルは自動生成されるため、手動で編集しないでください</li>
+      <li>Consoleログに<code>[NataneToon]</code>プレフィックス付きで検出結果が出力されます</li>
+      <li>LTCGI自動検出とは独立して動作し、両方を同時に使用できます</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

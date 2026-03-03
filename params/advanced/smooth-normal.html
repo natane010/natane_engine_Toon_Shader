@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スムースノーマル - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>スムースノーマル</h1>
+    <p class="page-subtitle">滑らかな法線でアウトラインとシェーディングを改善</p>
+
+    <h2 id="overview">概要</h2>
+    <p>スムースノーマルは、アウトラインの押し出し方向に滑らかな法線を使用することで、ハードエッジのメッシュでもアウトラインの途切れや不自然な突出を防ぐ機能です。頂点カラーまたはベイク済みテクスチャからスムース法線を読み取り、アウトラインの法線として使用します。さらに、シェーディングブレンド機能により、ライティング計算でも滑らかな法線を適用でき、影の境界線をソフトにできます。</p>
+    <p>キーワード <code>_SMOOTH_NORMAL</code> で制御され、無効時はシェーダー命令が生成されません。ローカルキーワード（<code>shader_feature_local</code>）として実装されています。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スムースノーマルを有効化</span>
+        <span class="param-prop">_SmoothNormal</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>スムースノーマル機能の有効/無効を切り替えます。キーワード <code>_SMOOTH_NORMAL</code> でコンパイル時に分岐します。</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スムースノーマルモード</span>
+        <span class="param-prop">_SmoothNormalMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>スムース法線の取得元を選択します。</p>
+        <ul>
+          <li><strong>0 - Vertex Color ObjectSpace</strong>: 頂点カラーRGBにオブジェクト空間の法線が格納されている場合に使用。[0,1]の頂点カラーを[-1,1]にデコードします。</li>
+          <li><strong>1 - Vertex Color TangentSpace</strong>: 頂点カラーRGBにタンジェント空間の法線が格納されている場合に使用。TBN行列で変換します。lilToonと互換性があります。</li>
+          <li><strong>2 - Baked Normal Texture</strong>: テクスチャに焼き込まれた法線を使用。テクスチャからサンプリングしてタンジェント空間から変換します。</li>
+        </ul>
+        <p class="param-default">デフォルト: 0（Vertex Color ObjectSpace）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スムースノーマルテクスチャ</span>
+        <span class="param-prop">_SmoothNormalTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>モード2（Baked Normal Texture）で使用するスムース法線テクスチャです。タンジェント空間の法線が格納されたテクスチャを指定します。</p>
+        <p class="param-default">デフォルト: "bump"</p>
+      </div>
+      <div class="param-tip">モード0・1の場合は使用されません。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">シェーディングブレンド</span>
+        <span class="param-prop">_SmoothNormalShadingBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ライティング計算に使用する法線にスムース法線をブレンドする強さです。0で元の法線のみを使用し、1でスムース法線のみをシェーディングに使用します。アウトラインだけでなく、影の境界線も滑らかにしたい場合に使用します。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">0.3〜0.5で使用すると、影のガタつきを抑えつつ元の形状感を残せます。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <ul>
+        <li>アウトラインの品質改善に最も効果的です。ハードエッジのメッシュ（ローポリモデルや結合されていないメッシュ）で顕著な改善が得られます</li>
+        <li>モード1（Vertex Color TangentSpace）はlilToonのスムース法線と互換性があるため、lilToonからの移行時にそのまま使用できます</li>
+        <li>モード2（Baked Normal Texture）は頂点カラーを他の用途に使用している場合に便利です</li>
+        <li>シェーディングブレンドはアウトライン以外にライティングにも影響するため、控えめな値から調整してください</li>
+        <li>頂点シェーダー（アウトライン方向）とフラグメントシェーダー（シェーディングブレンド）の両方で使用されます</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

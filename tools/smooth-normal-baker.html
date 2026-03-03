@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スムース法線ベイク - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>スムース法線ベイク</h1>
+    <p class="page-subtitle">ハードエッジモデルのアウトライン表示を改善するスムース法線ベイクツール</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; メッシュ Mesh &gt; スムース法線ベイク Smooth Normal Baker</span>
+      <span>カテゴリ: メッシュ</span>
+    </div>
+
+    <h2 id="overview">概要</h2>
+    <p>スムース法線ベイクツールは、ハードエッジを持つモデルのアウトライン描画を改善するために、スムース法線を頂点カラーのRGBチャンネルにベイクするツールです。同一位置の頂点の法線を平均化してスムース法線を計算し、頂点カラーにエンコードして保存します。元のメッシュは変更されない非破壊ワークフローを採用しています。</p>
+
+    <h2 id="access">アクセス方法</h2>
+    <p>メニュー: <code>Tools &gt; Natane &gt; メッシュ Mesh &gt; スムース法線ベイク Smooth Normal Baker</code></p>
+
+    <h2 id="features">機能</h2>
+    <ul>
+      <li><strong>2つのベイクモード</strong>
+        <ul>
+          <li><strong>Tangent Space（推奨）</strong> - スムース法線をタンジェント空間でエンコード。スキニングやブレンドシェイプの変形に追従します</li>
+          <li><strong>Object Space</strong> - スムース法線をオブジェクト空間でエンコード。シンプルで安定しますが、メッシュの変形には追従しません</li>
+        </ul>
+      </li>
+      <li><strong>メッシュ情報表示</strong> - メッシュ名、頂点数、サブメッシュ数、既存の頂点カラー有無を表示</li>
+      <li><strong>自動アサイン</strong> - ベイク後に自動的にメッシュを差し替えるオプション（Undo対応）</li>
+      <li><strong>非破壊ワークフロー</strong> - 元のメッシュは変更されず、新しいメッシュが .asset ファイルとして保存されます</li>
+      <li><strong>タンジェント自動検出</strong> - タンジェント情報がないメッシュの場合、Object Spaceへの自動切り替えを提案</li>
+      <li><strong>位置ベースの頂点グルーピング</strong> - 浮動小数点の誤差を考慮した量子化（精度: 1/10000）で同一位置の頂点をグループ化</li>
+      <li><strong>SkinnedMeshRenderer / MeshFilter 両対応</strong> - スキンメッシュと静的メッシュの両方に対応</li>
+    </ul>
+
+    <h2 id="usage">使い方</h2>
+    <ol class="tool-steps">
+      <li>SkinnedMeshRenderer または MeshFilter を持つGameObjectを「ターゲットオブジェクト」フィールドにドラッグします</li>
+      <li>メッシュ情報（頂点数、サブメッシュ数など）を確認します</li>
+      <li>ベイクモードを選択します（通常は Tangent Space を推奨）</li>
+      <li>「自動アサイン」を有効にすると、ベイク後にメッシュが自動で差し替えられます</li>
+      <li>「ベイク実行」ボタンを押します</li>
+      <li>保存先を選択すると、ベイクされたメッシュが .asset ファイルとして保存されます</li>
+      <li>シェーダーの「スムース法線アウトライン」機能を有効にして結果を確認します</li>
+    </ol>
+
+    <h2 id="technical">技術詳細</h2>
+    <h3>スムース法線の計算</h3>
+    <p>同一位置の頂点（量子化精度 1/10000）をグループ化し、グループ内の法線ベクトルの平均を取ります。この平均化された法線がスムース法線となります。</p>
+
+    <h3>エンコード方式</h3>
+    <ul>
+      <li><strong>Tangent Space</strong>: TBN行列の逆行列を使用してスムース法線をタンジェント空間に変換し、[-1,1]を[0,1]にリマップして頂点カラーRGBに格納</li>
+      <li><strong>Object Space</strong>: オブジェクト空間のスムース法線を直接[-1,1]から[0,1]にリマップして頂点カラーRGBに格納</li>
+    </ul>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>アバターのアウトラインがハードエッジで途切れる場合に特に効果的です</li>
+      <li>既存の頂点カラーがある場合はベイクで上書きされるため注意してください</li>
+      <li>Tangent Spaceモードはスキニングアニメーション中もスムースなアウトラインを維持します</li>
+      <li>ベイク後のメッシュは元のメッシュ名に「_SmoothNormal」サフィックスが付きます</li>
+      <li>同一パスに既存のアセットがある場合は上書き更新されます</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>
