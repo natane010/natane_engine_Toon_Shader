@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Particle Effect Editor - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Particle Effect Editor</h1>
+    <p class="page-subtitle">Preset-based visual particle effect creation tool</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Particle Effect Editor</span>
+      <span>Category: Effects</span>
+    </div>
+
+    <h2 id="overview">Overview</h2>
+    <p>The Particle Effect Editor is an editor window for visually creating and editing particle effects using ScriptableObject-based presets. Quickly create effects from 7 built-in templates (Explosion, Fire, Smoke, Magic Sparkles, Electric, Water Splash, Heal Effect) and fine-tune parameters while previewing in real-time.</p>
+
+    <h2 id="access">Access</h2>
+    <p>Menu: <code>Tools &gt; Natane &gt; Particle Effect Editor</code></p>
+
+    <h2 id="features">Features</h2>
+    <h3>Preset Management</h3>
+    <ul>
+      <li><strong>Create New Preset</strong> - Create a ScriptableObject saved as an .asset file</li>
+      <li><strong>Load Template</strong> - Load settings from 7 built-in templates with one click</li>
+      <li><strong>Edit Preset Info</strong> - Set name, description, category, and preview icon</li>
+      <li><strong>Save</strong> - Save the edited preset as an asset</li>
+    </ul>
+
+    <h3>Editable Parameters</h3>
+    <ul>
+      <li><strong>Main Settings</strong> - Duration, Looping, Start Lifetime, Start Speed, Start Size, Start Color, Gravity, Max Particles</li>
+      <li><strong>Emission</strong> - Rate Over Time, Burst settings (Count, Time)</li>
+      <li><strong>Shape</strong> - Shape Type (Sphere, Cone, etc.), Angle, Radius</li>
+      <li><strong>Color Over Lifetime</strong> - Lifetime color variation using the gradient editor</li>
+      <li><strong>Size Over Lifetime</strong> - Lifetime size variation using the curve editor</li>
+      <li><strong>Velocity Over Lifetime</strong> - Lifetime velocity variation (Vector3)</li>
+      <li><strong>Rotation</strong> - Rotation speed settings</li>
+      <li><strong>Renderer</strong> - Render Mode and material assignment</li>
+      <li><strong>Trails</strong> - Enable trails, Lifetime, Min Vertex Distance, Trail Material</li>
+    </ul>
+
+    <h3>Preview</h3>
+    <ul>
+      <li><strong>Play / Stop / Restart</strong> - Real-time preview playback controls</li>
+      <li><strong>Auto Play on Change</strong> - Automatically replays on parameter changes</li>
+      <li><strong>Particle Count Display</strong> - View current particle count and playback state</li>
+      <li><strong>Scene View Preview</strong> - Preview object is placed in front of the Scene view camera</li>
+    </ul>
+
+    <h3>Apply to Scene</h3>
+    <ul>
+      <li><strong>Apply to Selected Object</strong> - Adds a ParticleSystem to the selected GameObject and applies the preset</li>
+      <li><strong>Create New Object</strong> - When no object is selected, creates a new GameObject with the effect</li>
+    </ul>
+
+    <h2 id="templates">Built-in Templates</h2>
+    <ul>
+      <li><strong>Explosion</strong> - Burst of 100 particles, sphere emission, orange-to-black gradient</li>
+      <li><strong>Fire</strong> - Looping, cone shape, yellow-to-red gradient, negative gravity</li>
+      <li><strong>Smoke</strong> - Looping, gradually expanding, with rotation, semi-transparent gray</li>
+      <li><strong>Magic Sparkles</strong> - Sphere emission, white-to-purple gradient, with rotation</li>
+      <li><strong>Electric</strong> - High emission rate, short lifetime, blue-white color</li>
+      <li><strong>Water Splash</strong> - Burst of 50 particles, cone shape, strong gravity</li>
+      <li><strong>Heal Effect</strong> - Cone shape, green gradient, upward emission</li>
+    </ul>
+
+    <h2 id="usage">How to Use</h2>
+    <ol class="tool-steps">
+      <li>Click "New Preset" in the toolbar to create a new preset, or drag an existing preset into the object field</li>
+      <li>Select a template from "Load Template" to load base settings</li>
+      <li>Adjust parameters in each section (changes are reflected in the preview in real-time)</li>
+      <li>Use the preview controls to verify the effect's appearance</li>
+      <li>Click "Save" to save the preset</li>
+      <li>Click "Apply to Scene" to apply the effect to an object in the scene</li>
+    </ol>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>Customizing from a template is the most efficient way to create effects</li>
+      <li>Enable Auto Play to see preview updates immediately when changing parameters</li>
+      <li>Presets are ScriptableObjects, so they can be shared across projects</li>
+      <li>The preview object is automatically cleaned up when the window is closed</li>
+      <li>Since VRChat does not allow runtime scripts, complete your effect design in the editor</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

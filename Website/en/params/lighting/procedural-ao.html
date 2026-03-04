@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Procedural AO - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Procedural AO</h1>
+    <p class="page-subtitle">Automatic height-based ambient occlusion generation</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Procedural AO (Procedural Ambient Occlusion) automatically generates an AO gradient based on the object-space Y coordinate (height). This allows you to add natural darkening to the lower parts of a model (such as feet, hems, and skirt bottoms) without the need to prepare an AO map texture. It is multiplied with the existing AO map (<code>_AOMap</code>) when both are enabled, allowing you to combine them for richer shadow detail.</p>
+    <p>Controlled by the keyword <code>_PROCEDURAL_AO</code>. When disabled, no shader instructions are generated.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable Procedural AO</span>
+        <span class="param-prop">_ProceduralAO</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Toggles the Procedural AO feature on or off. When enabled, AO is automatically calculated from the object-space height information.</p>
+        <p class="param-default">Default: 0 (disabled)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">AO Height Offset</span>
+        <span class="param-prop">_ProceduralAOHeightOffset</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Offsets the base height of the AO gradient. Positive values expand the AO region upward, while negative values shrink it downward. Adjust according to your model's pivot position and scale.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: -2 to 2</p>
+      </div>
+      <div class="param-tip">If the model's pivot is at the feet, use a positive value to expand the effect range. If the pivot is at the center, use a negative value to apply AO only to the lower half.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">AO Intensity</span>
+        <span class="param-prop">_ProceduralAOIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the strength of the Procedural AO effect. 0 completely disables the effect (everything remains bright), while 1 applies maximum darkening. Internally computed as <code>lerp(1.0, proceduralAO, intensity)</code>.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Recommended: 0.3-0.6. Values that are too high may cause the ground area to appear unnaturally dark. Start conservative and adjust upward.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">AO Softness</span>
+        <span class="param-prop">_ProceduralAOSoftness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the softness of the AO gradient boundary. Higher values create a wider, smoother transition, while lower values create a sharper boundary. Used internally as the range parameter for <code>smoothstep</code>.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0.01 to 2</p>
+      </div>
+      <div class="param-tip">For toon-style rendering, 0.3-0.8 works well. Values close to the minimum (0.01) produce a crisp, cel-shading style AO edge.</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <ul>
+        <li><strong>Texture-free quick AO:</strong> Even for models where baking AO maps is difficult, you can add natural shading based on height. Ideal for low-poly models and quick prototypes.</li>
+        <li><strong>Combining with AO Map:</strong> Since it multiplies with the existing AO map (<code>_AOMap</code>), you can use it to supplement broad environmental occlusion that is difficult to express with texture-based AO alone.</li>
+        <li><strong>Clothing hems and shoes:</strong> Adjust the Height Offset to add natural gradient shadows to skirt hems, boot soles, glove wrists, and similar areas.</li>
+        <li><strong>Performance:</strong> Since no texture sampling is performed, this is lighter than texture-based AO maps. Effective for mobile/Quest platform optimization.</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

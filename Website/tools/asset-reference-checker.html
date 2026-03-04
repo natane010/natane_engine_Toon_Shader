@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アセット参照チェッカー - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>アセット参照チェッカー</h1>
+    <p class="page-subtitle">シーン・プレハブ・マテリアルの欠損/破損参照を検出</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; 最適化 Optimization &gt; アセット参照チェック Asset Reference Checker</span>
+      <span>カテゴリ: 最適化</span>
+    </div>
+
+    <h2 id="overview">概要</h2>
+    <p>アセット参照チェッカーは、シーン、プレハブ、マテリアルに含まれる欠損・破損した参照を包括的に検出するツールです。Missing Script、欠損マテリアル、テクスチャ未設定、シェーダーエラー、null参照などを3つのスキャンモードで検出し、問題の重要度（エラー/警告/情報）別に分類して表示します。</p>
+
+    <h2 id="access">アクセス方法</h2>
+    <p>メニュー: <code>Tools &gt; Natane &gt; 最適化 Optimization &gt; アセット参照チェック Asset Reference Checker</code></p>
+
+    <h2 id="features">機能</h2>
+    <h3>3つのスキャンモード</h3>
+    <ul>
+      <li><strong>シーンモード</strong> - 現在開いているシーン内の全GameObjectをスキャン。非アクティブオブジェクトを含むかどうかを選択可能</li>
+      <li><strong>プレハブモード</strong> - 指定したプレハブ、またはプロジェクト全体のプレハブをスキャン</li>
+      <li><strong>マテリアルモード</strong> - プロジェクト内のマテリアルをスキャン。Natane Toon Shaderのみに絞り込むフィルター付き</li>
+    </ul>
+
+    <h3>検出する問題の種類</h3>
+    <ul>
+      <li><strong>Missing Script</strong>（エラー）- コンポーネントに紐づくスクリプトが見つからない</li>
+      <li><strong>Missing Material</strong>（エラー）- Rendererのマテリアルスロットがnull</li>
+      <li><strong>Missing Shader</strong>（エラー）- マテリアルのシェーダーがnullまたはエラー状態（Hidden/InternalErrorShader）</li>
+      <li><strong>Missing Texture</strong>（警告/情報）- マテリアルのテクスチャプロパティが未設定（_MainTexは警告、その他は情報）</li>
+      <li><strong>Null Reference</strong>（警告）- コンポーネントのオブジェクト参照が破損している</li>
+    </ul>
+
+    <h3>結果表示</h3>
+    <ul>
+      <li><strong>結果サマリー</strong> - エラー/警告/情報の件数をカラー表示</li>
+      <li><strong>フィルタリング</strong> - エラー・警告・情報を個別にフィルタリング</li>
+      <li><strong>詳細展開</strong> - 各問題のコンポーネント名・プロパティ名・アセットパスを確認可能</li>
+      <li><strong>オブジェクト選択</strong> - 「Select」ボタンで問題のあるオブジェクトを直接選択・ハイライト</li>
+      <li><strong>Console出力</strong> - 検出結果をUnity Consoleにエクスポート</li>
+    </ul>
+
+    <h2 id="usage">使い方</h2>
+    <ol class="tool-steps">
+      <li>ツールバーからスキャンモード（シーン/プレハブ/マテリアル）を選択します</li>
+      <li>モード固有の設定を行います：
+        <ul>
+          <li><strong>シーン</strong>: 「非アクティブオブジェクトを含む」の切り替え</li>
+          <li><strong>プレハブ</strong>: ターゲットプレハブの指定、または「プロジェクト全体スキャン」</li>
+          <li><strong>マテリアル</strong>: 「Natane Toon Shaderのみ」フィルターの切り替え</li>
+        </ul>
+      </li>
+      <li>スキャンボタンを押して検出を開始します（進捗バーが表示されます）</li>
+      <li>結果サマリーで問題の全体像を確認します</li>
+      <li>フィルタを使って重要度別に問題を絞り込みます</li>
+      <li>各問題の「Select」ボタンで対象オブジェクトに移動して修正します</li>
+      <li>必要に応じて「Consoleに出力」で結果をログに書き出します</li>
+    </ol>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>VRChatアップロード前にシーンモードでスキャンして、Missing Scriptやnull参照を事前に検出しましょう</li>
+      <li>プレハブモードの「プロジェクト全体スキャン」は大規模プロジェクトでは時間がかかる場合があります</li>
+      <li>マテリアルモードでは_MainTexが未設定の場合は警告、その他のテクスチャは情報レベルで報告されます</li>
+      <li>スキャンは途中でキャンセルできます（進捗バーのキャンセルボタン）</li>
+      <li>Console出力を使えば、検出結果をテキストとして保存・共有できます</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

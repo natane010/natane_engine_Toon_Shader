@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Screen Edge - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Screen Edge</h1>
+    <p class="page-subtitle">Screen-space edge detection outlines</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Screen Edge is a screen-space edge detection feature that uses the camera's depth buffer and normal buffer. It employs a Sobel filter to detect edges from both depth and normal discontinuities, outputting the maximum of both as the final edge strength. This produces illustration-style, post-process-like outlines.</p>
+    <p>Controlled by the keyword <code>_SCREEN_EDGE</code>. When disabled, no shader instructions are generated.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable Screen Edge</span>
+        <span class="param-prop">_UseScreenEdge</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Toggles the Screen Edge feature on/off. Branches at compile time using the keyword <code>_SCREEN_EDGE</code>.</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Edge Color</span>
+        <span class="param-prop">_EdgeColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>Specifies the color used to draw detected edges. Edge areas are blended with this color.</p>
+        <p class="param-default">Default: (0, 0, 0, 1) (black)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Edge Width</span>
+        <span class="param-prop">_EdgeWidth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the Sobel filter sampling interval, affecting the thickness of the edge lines. Higher values produce thicker edges.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0.1 &ndash; 5</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Depth Sensitivity</span>
+        <span class="param-prop">_EdgeDepthSensitivity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sensitivity of edge detection to depth differences. Higher values detect edges even with slight depth variations.</p>
+        <p class="param-default">Default: 10</p>
+        <p class="param-range">Range: 0 &ndash; 50</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Normal Sensitivity</span>
+        <span class="param-prop">_EdgeNormalSensitivity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sensitivity of edge detection to normal differences. Higher values detect edges even with subtle normal changes on smooth surfaces.</p>
+        <p class="param-default">Default: 2</p>
+        <p class="param-range">Range: 0 &ndash; 10</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Edge Blend</span>
+        <span class="param-prop">_EdgeBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls how strongly the detected edges are blended over the original color. 0 means no effect, 1 applies full edge blending.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 &ndash; 1</p>
+      </div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <ul>
+        <li>Ideal for illustration and manga-style rendering. Combine with geometry-based outlines for richer line art</li>
+        <li>Depth edges detect object silhouettes, while normal edges detect surface creases. Adjust both sensitivities for the best balance</li>
+        <li>Requires <code>DepthTextureMode.DepthNormals</code> on the camera. VRChat enables this automatically</li>
+        <li>As a screen-space effect, it only operates in the forward base pass</li>
+        <li>Excessively large edge width may cause artifacts. Keeping values within 1&ndash;2 is recommended</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

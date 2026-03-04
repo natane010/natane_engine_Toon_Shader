@@ -163,7 +163,15 @@ namespace NataneToon.Editor
             texture.Apply();
 
             byte[] bytes = texture.EncodeToPNG();
-            System.IO.File.WriteAllBytes(path, bytes);
+            try
+            {
+                System.IO.File.WriteAllBytes(path, bytes);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[Natane Toon] Failed to write file: {path}\n{e.Message}");
+                return;
+            }
             AssetDatabase.Refresh();
 
             Texture2D savedTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);

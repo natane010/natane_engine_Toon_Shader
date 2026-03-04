@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ヒエラルキー一括編集 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ヒエラルキー一括編集</h1>
+    <p class="page-subtitle">ヒエラルキー配下のNataneToonマテリアルをインスペクターUIで一括編集</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; マテリアル Material &gt; ヒエラルキー一括編集 Hierarchy Batch Editor</span>
+      <span>カテゴリ: マテリアル</span>
+    </div>
+
+    <h2 id="overview">概要</h2>
+    <p>ヒエラルキー一括マテリアル編集ツールは、指定したルートGameObject配下にあるNatane Toon Shaderを使用した全マテリアルを自動検出し、Unityのマテリアルインスペクターと同一のUIで一括編集できるエディタウィンドウです。複数のマテリアルを同時に選択して、リアルタイムで変更を反映させることができます。</p>
+
+    <h2 id="access">アクセス方法</h2>
+    <p>メニュー: <code>Tools &gt; Natane &gt; マテリアル Material &gt; ヒエラルキー一括編集 Hierarchy Batch Editor</code></p>
+
+    <h2 id="features">機能</h2>
+    <ul>
+      <li><strong>ヒエラルキースキャン</strong> - ルートオブジェクト配下の全Rendererからnatane Toon Shaderマテリアルを自動検出</li>
+      <li><strong>重複排除</strong> - 同一マテリアルが複数のRendererで使用されていても1つだけ表示</li>
+      <li><strong>ヒエラルキーパス表示</strong> - 各マテリアルがどのオブジェクトに使用されているかパスで確認可能</li>
+      <li><strong>選択式一括編集</strong> - チェックボックスで編集対象のマテリアルを個別に選択/解除</li>
+      <li><strong>全選択/全解除</strong> - ワンクリックでマテリアルの選択状態を一括変更</li>
+      <li><strong>埋め込みマテリアルエディタ</strong> - NataneToonShaderGUIのフルインスペクターをウィンドウ内に埋め込み表示</li>
+      <li><strong>リアルタイム反映</strong> - 変更はリアルタイムでシーン内の全対象マテリアルに適用</li>
+      <li><strong>マテリアルプレビュー</strong> - 埋め込みエディタのヘッダーにマテリアルプレビュー球を表示</li>
+    </ul>
+
+    <h2 id="usage">使い方</h2>
+    <ol class="tool-steps">
+      <li>ツールウィンドウの「ルートオブジェクト」フィールドに、編集したいアバターやオブジェクトのルートGameObjectをドラッグ&ドロップします</li>
+      <li>「スキャン」ボタンを押して、ヒエラルキー配下のNatane Toon Shaderマテリアルを検索します</li>
+      <li>マテリアル一覧から編集対象のマテリアルをチェックボックスで選択します（デフォルトでは全て選択されています）</li>
+      <li>マテリアルエディタセクションで、通常のインスペクターと同じUIでプロパティを編集します</li>
+      <li>変更はリアルタイムで全ての選択中マテリアルに同時適用されます</li>
+    </ol>
+
+    <h2 id="workflow">ワークフロー例</h2>
+    <h3>アバター全体のシャドウカラーを統一する</h3>
+    <ol>
+      <li>アバターのルートオブジェクトを設定してスキャン</li>
+      <li>全マテリアルが選択された状態でシャドウカラーを変更</li>
+      <li>全マテリアルに一括で同じシャドウカラーが適用される</li>
+    </ol>
+    <h3>特定パーツのみ編集する</h3>
+    <ol>
+      <li>スキャン後、「全て解除」ボタンで選択をリセット</li>
+      <li>編集したいマテリアルだけをチェック</li>
+      <li>選択したマテリアルのみに変更が適用される</li>
+    </ol>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>非アクティブなオブジェクトのマテリアルもスキャン対象に含まれます</li>
+      <li>ルートオブジェクトを変更すると、前回のスキャン結果は自動的にクリアされます</li>
+      <li>ヒエラルキーパスを確認して、どのパーツのマテリアルかを識別できます</li>
+      <li>VRChatアバターの場合、アバターのルートオブジェクトを指定するとボディ・衣装・髪のマテリアルを一括で調整できます</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

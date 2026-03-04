@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fake Reflection - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Fake Reflection</h1>
+    <p class="page-subtitle">Cubemap-free fake environment reflection</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Fake Environment Reflection simulates environment reflections without requiring a cubemap texture. It reflects the view direction around the surface normal and interpolates between sky and ground colors based on the Y component of the reflection vector. A Fresnel effect makes reflections stronger at grazing angles, enabling metallic luster and water-surface-like appearances.</p>
+    <p>Controlled by keyword <code>_FAKE_REFLECTION</code>. When disabled, no shader instructions are generated. Applied only in the ForwardBase pass.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable Fake Reflection</span>
+        <span class="param-prop">_FakeReflection</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Enables or disables the fake environment reflection.</p>
+        <p class="param-default">Default: 0 (Disabled)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Sky Color</span>
+        <span class="param-prop">_FakeReflSkyColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>The color used for the upper (sky) portion of the reflection. This color is applied when the reflection vector points upward.</p>
+        <p class="param-default">Default: (0.5, 0.7, 1.0, 1) Light blue</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Ground Color</span>
+        <span class="param-prop">_FakeReflGroundColor</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>The color used for the lower (ground) portion of the reflection. This color is applied when the reflection vector points downward.</p>
+        <p class="param-default">Default: (0.3, 0.25, 0.2, 1) Warm brown</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Intensity</span>
+        <span class="param-prop">_FakeReflIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the overall brightness of the reflection effect. Higher values make the reflection brighter and more prominent.</p>
+        <p class="param-default">Default: 1.0</p>
+        <p class="param-range">Range: 0 - 3</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Fresnel Power</span>
+        <span class="param-prop">_FakeReflFresnelPower</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the sharpness of the Fresnel effect. Higher values cause the reflection to appear only at grazing angles (near edges), while the reflection is barely visible from the front. Lower values show reflection more uniformly across the surface.</p>
+        <p class="param-default">Default: 3.0</p>
+        <p class="param-range">Range: 0.1 - 10</p>
+      </div>
+      <div class="param-tip">Use 1.0-2.0 for metallic reflections, 3.0-5.0 for glass or water-like surfaces.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Smoothness</span>
+        <span class="param-prop">_FakeReflSmoothness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the sharpness of the gradient between sky and ground colors. Higher values create a sharper boundary between sky and ground, while lower values produce a smoother blend. Internally, this value is multiplied by 5 and applied to the Y component of the reflection vector.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <h2 id="blend">Blend Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_FakeReflBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the overall application amount of the fake reflection. When Distance Fade is enabled, this value is automatically attenuated based on distance.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend Mode</span>
+        <span class="param-prop">_FakeReflBlendMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>Selects how the reflection effect is composited with the base color.</p>
+        <ul>
+          <li><strong>Add (0)</strong> - Additive blending. Adds the reflection color on top.</li>
+          <li><strong>Multiply (1)</strong> - Multiply blending</li>
+          <li><strong>Screen (2)</strong> - Screen blending</li>
+          <li><strong>Overlay (3)</strong> - Overlay blending</li>
+        </ul>
+        <p class="param-default">Default: 0 (Add)</p>
+      </div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <h3>Difference from Cubemap Reflection</h3>
+      <p>Standard cubemap reflection (the Reflection feature) requires a cubemap texture and provides more realistic environment reflections. Fake Reflection achieves a sense of reflectivity without any textures, making it ideal for lightweight VRChat Quest avatars.</p>
+      <h3>Recommended Combinations</h3>
+      <ul>
+        <li><strong>Gems / Minerals</strong>: Sky color as cyan, ground color as purple, Fresnel 2.0, Intensity 1.5</li>
+        <li><strong>Metal Armor</strong>: Sky color as white, ground color as gray, Fresnel 1.5, Intensity 1.0</li>
+        <li><strong>Water / Ice</strong>: Sky color as light blue, ground color as dark blue, Fresnel 4.0, Intensity 0.8</li>
+      </ul>
+      <h3>Performance</h3>
+      <p>No texture sampling is required -- only vector arithmetic is used, so the performance cost is very low.</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

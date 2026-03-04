@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cast Shadow Color - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Cast Shadow Color</h1>
+    <p class="page-subtitle">Apply custom color tinting to cast shadows</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Cast Shadow Color applies a custom color tint specifically to cast shadows (shadows projected by other objects). Unlike the general shadow color, this feature targets only the areas where external objects cast their shadow onto a surface, allowing for expressive anime-style shadow coloring such as purple-tinted hair shadows on a character's face.</p>
+    <p>Internally, a "cast shadow mask" is computed by combining the light attenuation value with NdotL. This detects regions where the surface faces the light but is darkened by external occlusion (i.e., a shadow from another object).</p>
+    <p>Controlled by the keyword <code>_CAST_SHADOW_COLOR</code>. When disabled, no shader instructions are generated.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable Cast Shadow Color</span>
+        <span class="param-prop">_CastShadowColorEnable</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Toggles the Cast Shadow Color feature on or off. When enabled, the tint color is applied to detected cast shadow regions.</p>
+        <p class="param-default">Default: 0 (disabled)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Tint</span>
+        <span class="param-prop">_CastShadowTint</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>The tint color applied to cast shadows. This is multiplied with the existing shadow color. Purple or blue tones produce an anime-style impression for cast shadows.</p>
+        <p class="param-default">Default: (0.5, 0.4, 0.6, 1) &mdash; light purple</p>
+      </div>
+      <div class="param-tip">In warm lighting environments, setting a complementary cool tone (blue-purple to purple) as the tint creates color contrast for a painterly expression.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Shadow Intensity</span>
+        <span class="param-prop">_CastShadowIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the strength of the cast shadow tint effect. 0 disables the tint (original shadow color is preserved), while 1 applies the tint at full strength. This value is multiplied with the cast shadow mask.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">Recommended: 0.3-0.7. Lower values produce a subtle color shift, while higher values create dramatic cast shadow coloring.</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <ul>
+        <li><strong>Anime-style cast shadows:</strong> In Japanese animation, hair shadows falling on a character's face are often rendered with a purple tint. This feature recreates that aesthetic.</li>
+        <li><strong>Distinguishing shadow types:</strong> By coloring cast shadows differently from NdotL-based self-shadows, you can create more informative and visually rich shadow rendering.</li>
+        <li><strong>Scene atmosphere:</strong> Set warm orange tints for sunset scenes and blue-purple tints for nighttime to match the environmental mood.</li>
+        <li><strong>Combining with Shadow Color:</strong> The Shadow Color (<code>_ShadowColor</code>) controls the overall shadow tone, while Cast Shadow Color targets only projected shadows. Combining both allows fine-tuned shadow expression.</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

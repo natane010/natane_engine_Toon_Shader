@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>キャストシャドウカラー - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>キャストシャドウカラー</h1>
+    <p class="page-subtitle">落ち影に独自のカラーティントを適用</p>
+
+    <h2 id="overview">概要</h2>
+    <p>キャストシャドウカラー（Cast Shadow Color）は、他のオブジェクトからの落ち影（キャストシャドウ）に対して、独自の色味（ティント）を適用する機能です。通常の陰色とは別に、落ち影だけを紫がかった色にしたり、寒色系にすることで、アニメ調のリッチなシャドウ表現を実現します。</p>
+    <p>内部的には、ライトの減衰値（attenuation）とNdotLの組み合わせから「キャストシャドウマスク」を算出し、表面がライトを向いているのに暗くなっている領域（＝他のオブジェクトの影が落ちている領域）を検出します。</p>
+    <p>キーワード <code>_CAST_SHADOW_COLOR</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">キャストシャドウカラー有効化</span>
+        <span class="param-prop">_CastShadowColorEnable</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>キャストシャドウカラー機能のオン・オフを切り替えます。有効にすると、落ち影領域に対してティントカラーが適用されます。</p>
+        <p class="param-default">デフォルト: 0（無効）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">シャドウティント</span>
+        <span class="param-prop">_CastShadowTint</span>
+        <span class="param-badge badge-color">color</span>
+      </div>
+      <div class="param-body">
+        <p>落ち影に適用するティントカラーです。既存のシャドウカラーに乗算で合成されます。紫系や青系の色を設定すると、アニメ調の印象的な落ち影になります。</p>
+        <p class="param-default">デフォルト: (0.5, 0.4, 0.6, 1) — 淡い紫</p>
+      </div>
+      <div class="param-tip">暖色系のライティング環境では、補色の寒色系（青紫〜紫）をティントに設定すると、色彩のコントラストが生まれて絵画的な表現になります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">シャドウ強度</span>
+        <span class="param-prop">_CastShadowIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>キャストシャドウティントの効果の強さです。0でティント無効（元のシャドウカラーのまま）、1で最大効果（ティントカラーが完全に適用）になります。キャストシャドウマスクと乗算で適用されます。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">推奨値: 0.3〜0.7。控えめに設定すると自然な色の変化になり、高い値ではドラマチックな落ち影表現になります。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <ul>
+        <li><strong>アニメ調の落ち影:</strong> 日本のアニメでは、キャラクターの顔に落ちる髪の影が紫がかった色で表現されることがあります。この機能でその雰囲気を再現できます。</li>
+        <li><strong>セルフシャドウとの区別:</strong> NdotLベースの自己陰（セルフシャドウ）と、アテニュエーションベースの落ち影を色で区別することで、より情報量の多いシャドウ表現が可能です。</li>
+        <li><strong>シーンの雰囲気演出:</strong> 夕焼けシーンではオレンジ系、夜景では青紫系のティントを設定すると、環境に馴染んだ落ち影になります。</li>
+        <li><strong>シャドウカラーとの併用:</strong> シャドウカラー（<code>_ShadowColor</code>）は陰全体の色を制御しますが、キャストシャドウカラーは落ち影だけに作用するため、組み合わせることで細かな陰の表情を作り込めます。</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

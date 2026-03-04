@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asset Reference Checker - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Asset Reference Checker</h1>
+    <p class="page-subtitle">Detect missing and broken references in scenes, prefabs, and materials</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Optimization &gt; Asset Reference Checker</span>
+      <span>Category: Optimization</span>
+    </div>
+
+    <h2 id="overview">Overview</h2>
+    <p>The Asset Reference Checker comprehensively detects missing and broken references within scenes, prefabs, and materials. It identifies Missing Scripts, missing materials, unassigned textures, shader errors, and null references across three scan modes, classifying issues by severity (Error / Warning / Info).</p>
+
+    <h2 id="access">Access</h2>
+    <p>Menu: <code>Tools &gt; Natane &gt; Optimization &gt; Asset Reference Checker</code></p>
+
+    <h2 id="features">Features</h2>
+    <h3>Three Scan Modes</h3>
+    <ul>
+      <li><strong>Scene Mode</strong> - Scans all GameObjects in the currently open scene. Option to include or exclude inactive objects</li>
+      <li><strong>Prefab Mode</strong> - Scans a specific prefab or all prefabs in the entire project</li>
+      <li><strong>Material Mode</strong> - Scans materials in the project with an optional filter for Natane Toon Shader materials only</li>
+    </ul>
+
+    <h3>Detected Issue Types</h3>
+    <ul>
+      <li><strong>Missing Script</strong> (Error) - A component's script cannot be found</li>
+      <li><strong>Missing Material</strong> (Error) - A Renderer's material slot is null</li>
+      <li><strong>Missing Shader</strong> (Error) - A material's shader is null or in error state (Hidden/InternalErrorShader)</li>
+      <li><strong>Missing Texture</strong> (Warning/Info) - A material's texture property is unassigned (_MainTex triggers Warning; others trigger Info)</li>
+      <li><strong>Null Reference</strong> (Warning) - An object reference on a component is broken</li>
+    </ul>
+
+    <h3>Results Display</h3>
+    <ul>
+      <li><strong>Result Summary</strong> - Color-coded counts of errors, warnings, and info items</li>
+      <li><strong>Filtering</strong> - Filter by Error, Warning, and Info independently</li>
+      <li><strong>Detail Expansion</strong> - Expand each issue to view component name, property name, and asset path</li>
+      <li><strong>Object Selection</strong> - Click "Select" to ping and select the problematic object in the editor</li>
+      <li><strong>Console Export</strong> - Export all detected issues to the Unity Console</li>
+    </ul>
+
+    <h2 id="usage">How to Use</h2>
+    <ol class="tool-steps">
+      <li>Select a scan mode (Scene / Prefab / Material) from the toolbar</li>
+      <li>Configure mode-specific settings:
+        <ul>
+          <li><strong>Scene</strong>: Toggle "Include Inactive Objects"</li>
+          <li><strong>Prefab</strong>: Assign a target prefab, or use "Scan All Project Prefabs"</li>
+          <li><strong>Material</strong>: Toggle the "Natane Toon Shader Only" filter</li>
+        </ul>
+      </li>
+      <li>Press the scan button to start detection (a progress bar will be displayed)</li>
+      <li>Review the result summary for an overview of detected issues</li>
+      <li>Use filters to narrow results by severity level</li>
+      <li>Click the "Select" button on each issue to navigate to the affected object and fix it</li>
+      <li>Optionally, click "Export to Console" to output results to the log</li>
+    </ol>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>Run a Scene scan before uploading to VRChat to catch Missing Scripts and null references early</li>
+      <li>The "Scan All Project Prefabs" option in Prefab mode may take time in large projects</li>
+      <li>In Material mode, _MainTex being unassigned is reported as a Warning while other textures are Info level</li>
+      <li>Scans can be cancelled mid-way using the progress bar's cancel button</li>
+      <li>Use Console export to save and share detection results as text</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

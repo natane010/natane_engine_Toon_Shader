@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スペキュラー強度 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>スペキュラー強度</h1>
+    <p class="page-subtitle">スペキュラーハイライトのグローバル輝度を制御</p>
+
+    <h2 id="overview">概要</h2>
+    <p>スペキュラー強度（Specular Intensity）は、スペキュラーハイライト（光沢反射）の全体的な明るさを制御するグローバル乗数です。スペキュラーカラー（<code>_SpecularColor</code>）、ライトカラー、ライト減衰と組み合わせて最終的なスペキュラー寄与度を決定します。</p>
+    <p>最終的なスペキュラー出力は <code>spec * _SpecularColor.rgb * _SpecularIntensity * lightColor * atten</code> として計算されます。範囲が 0〜5 に設定されているため、通常の1倍を超えるブースト（HDR的な強い光沢）も可能です。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スペキュラー強度</span>
+        <span class="param-prop">_SpecularIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スペキュラーハイライトのグローバル輝度乗数です。0で完全にスペキュラーを消し、1で標準的な強さ、1以上でブースト（より強い光沢）になります。スペキュラーマスク（<code>_SpecularMask</code>）やディザリングの前段階で適用されます。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 5</p>
+      </div>
+      <div class="param-tip">通常のマテリアルでは 0.5〜1.5 が推奨です。金属やジュエリーなどの強い光沢が必要な場合は 2.0〜3.0 に設定できます。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <ul>
+        <li><strong>クイック調整:</strong> スペキュラーの明るさを全体的に調整したい場合、スペキュラーカラーのRGB値を変えるよりも、この値を変える方が直感的です。色味を保ったまま輝度だけを変更できます。</li>
+        <li><strong>HDRブースト:</strong> 値を1以上に設定すると、ブルーム（ポストプロセス）と組み合わせた際に光沢部分が発光して見える効果を得られます。ジュエリーや金属パーツに最適です。</li>
+        <li><strong>ForwardAddパスでの挙動:</strong> ForwardAddパス（追加ライト）では、さらに <code>_AdditionalLightIntensity</code> が乗算されるため、ポイントライトやスポットライトからのスペキュラーも個別に制御可能です。</li>
+        <li><strong>スペキュラーマスクとの関係:</strong> <code>_SpecularIntensity</code> は全体の輝度を制御し、<code>_SpecularMask</code> テクスチャは部位ごとの有無を制御します。両方を組み合わせることで、「全体は控えめだが特定部分だけ光る」という表現が可能です。</li>
+        <li><strong>スペキュラーを無効にする:</strong> 値を0に設定するとスペキュラーの寄与が完全にゼロになりますが、シェーダーの計算自体は行われます。完全に無効にしてパフォーマンスを節約したい場合は、スペキュラー機能自体をオフにしてください。</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

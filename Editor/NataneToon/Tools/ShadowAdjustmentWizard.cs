@@ -696,7 +696,15 @@ namespace NataneToon.Editor
             ramp.Apply();
 
             byte[] bytes = ramp.EncodeToPNG();
-            System.IO.File.WriteAllBytes(path, bytes);
+            try
+            {
+                System.IO.File.WriteAllBytes(path, bytes);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[Natane Toon] Failed to write file: {path}\n{e.Message}");
+                return;
+            }
             AssetDatabase.Refresh();
 
             TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;

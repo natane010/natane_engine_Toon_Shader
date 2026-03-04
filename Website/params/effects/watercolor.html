@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>水彩エフェクト - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>水彩エフェクト</h1>
+    <p class="page-subtitle">エッジの暗化・ウェットエッジ・粒状感・紙テクスチャで水彩画を再現</p>
+
+    <h2 id="overview">概要</h2>
+    <p>水彩エフェクトは、4つの要素を組み合わせて水彩画の質感をシミュレーションするエフェクトです。(1) ddx/ddyの勾配に基づくエッジの暗化、(2) エッジでの彩度上昇によるウェットエッジ効果、(3) テクスチャベースの顔料粒状感、(4) スクリーンスペースの紙テクスチャオーバーレイの4段階で構成されます。</p>
+    <p>キーワード <code>_WATERCOLOR</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+    <p>テクスチャスペースのエフェクトであり、GrabPassは不要です。全バリアント（Lite含む）で使用可能です。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">エッジの暗化</span>
+        <span class="param-prop">_WCEdgeDarkening</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>色の変化が激しいエッジ部分を暗くする強度を制御します。ddx/ddyによるグラデーション変化量で駆動され、水彩画でインクが溜まるエッジの表現を再現します。</p>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+      <div class="param-tip">0.3〜0.7が自然な範囲です。1.0以上にすると強いエッジ効果が得られます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ウェットエッジ</span>
+        <span class="param-prop">_WCWetEdge</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>エッジ付近で彩度を局所的に上昇させる効果の強度です。水彩画で水分が乾燥する際にエッジに顔料が集まる現象を再現します。smoothstepでエッジ強度に基づいて適用されます。</p>
+        <p class="param-default">デフォルト: 0.3</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">粒状感</span>
+        <span class="param-prop">_WCGranulation</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>顔料の粒状感（グラニュレーション）の強度を制御します。影になっている部分ほど粒状感が強調され、暗い領域にテクスチャの凹凸が目立つようになります。</p>
+        <p class="param-default">デフォルト: 0.4</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">粒状感テクスチャ</span>
+        <span class="param-prop">_WCGranulationTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>顔料の粒子感を表現するテクスチャです。Rチャンネルが参照され、UV空間でサンプリングされます。テクスチャのタイリングとオフセットが設定可能です。</p>
+        <p class="param-default">デフォルト: "gray"</p>
+      </div>
+      <div class="param-tip">ノイズテクスチャや紙の繊維パターンなど、不規則な凹凸のあるテクスチャが効果的です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">紙テクスチャ</span>
+        <span class="param-prop">_WCPaperTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>水彩紙の表面質感を再現するテクスチャです。Rチャンネルが参照され、スクリーンスペースでサンプリングされるため、カメラの動きに対して安定した表示になります。</p>
+        <p class="param-default">デフォルト: "white"</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">紙テクスチャの強さ</span>
+        <span class="param-prop">_WCPaperIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>紙テクスチャの影響度を制御します。テクスチャ値は[-1,1]にリマップされて乗算されます。</p>
+        <p class="param-default">デフォルト: 0.3</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">紙テクスチャのタイリング</span>
+        <span class="param-prop">_WCPaperTiling</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>紙テクスチャのスクリーンスペースでのタイリング倍率です。値を大きくすると紙の目が細かくなります。</p>
+        <p class="param-default">デフォルト: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_WCBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>水彩エフェクト全体の適用強度を制御します。マスクと乗算されて最終的なブレンド値になります。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">水彩マスク</span>
+        <span class="param-prop">_WCMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>水彩エフェクトの適用領域を制御するマスクテクスチャです。Rチャンネルが参照されます。タイリングとオフセットが設定可能です。</p>
+        <p class="param-default">デフォルト: "white"（全面適用）</p>
+      </div>
+      <div class="param-tip">白 = 水彩エフェクトあり、黒 = 水彩エフェクトなし。キャラクターの衣装は水彩風、肌はクリーンに保つといった使い分けができます。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <h3>基本的な水彩画セットアップ</h3>
+      <p>エッジの暗化0.5、ウェットエッジ0.3、粒状感0.4がデフォルトのバランス設定です。紙テクスチャに実際の水彩紙のスキャン画像を使うとリアリティが向上します。</p>
+
+      <h3>Color Bleedingとの連携</h3>
+      <p>Color Bleeding（色にじみ）と組み合わせると、より本格的な水彩表現が可能です。水彩エフェクトがテクスチャスペースで質感を、Color Bleedingがスクリーンスペースで色の拡散を担当するため、相補的に機能します。</p>
+
+      <h3>GrabPass不要の軽量設計</h3>
+      <p>他のイラスト風エフェクト（Kuwahara、Color Bleeding等）と異なり、水彩エフェクトはddx/ddyとテクスチャサンプリングのみで動作するため、GrabPassが不要です。そのため、Liteバリアントでも使用可能で、パフォーマンスコストも比較的低いです。</p>
+
+      <h3>粒状感テクスチャの選び方</h3>
+      <p>粒状感の効果は影部分（shadingValue）に比例して強まります。そのため、影の濃い部分に顔料が沈殿する水彩画の物理特性を自然に再現できます。</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

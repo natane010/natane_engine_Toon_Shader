@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ノーマルワープ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ノーマルワープ</h1>
+    <p class="page-subtitle">法線の手続き的変形でシェーディングを制御</p>
+
+    <h2 id="overview">概要</h2>
+    <p>ノーマルワープは、ワールド空間の法線をプロシージャルに変形させることで、トゥーンシェーディングの陰影の付き方を調整する機能です。球状法線へのブレンド（Roundness）とY成分のフラッテン（Flatten Y）の2つの操作を組み合わせて、メッシュの法線を加工します。</p>
+    <p>キーワード <code>_NORMAL_WARP</code> で制御され、無効時はシェーダー命令が生成されません。ローカルキーワード（<code>shader_feature_local</code>）として実装されています。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ノーマルワープを有効化</span>
+        <span class="param-prop">_NormalWarp</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>ノーマルワープ機能の有効/無効を切り替えます。キーワード <code>_NORMAL_WARP</code> でコンパイル時に分岐します。</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Y成分フラッテン</span>
+        <span class="param-prop">_NormalFlattenY</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ワールド空間の法線のY成分（上下方向）を抑制する強さです。値を大きくすると法線のY成分が潰れ、上下方向のシェーディング変化が減少します。キャラクターの顔の陰影を均一にしたい場合に有用です。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">顔のマテリアルでは0.3〜0.7に設定すると、鼻下の影が軽減されます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">球状法線ブレンド</span>
+        <span class="param-prop">_NormalRoundness</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>メッシュの法線をオブジェクト空間の球状法線にブレンドする強さです。球状法線はオブジェクト中心からの方向ベクトルを正規化して生成されます。0で元の法線のまま、1で完全な球状法線に置き換わります。これにより、複雑な形状のメッシュでもシェーディングが均一で丸みを帯びた印象になります。</p>
+        <p class="param-default">デフォルト: 0</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">髪のメッシュで0.2〜0.5に設定すると、シェーディングの分割線が滑らかになります。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <ul>
+        <li>キャラクターの顔の陰影制御に最も効果的です。Y成分フラッテンで鼻や頬の不自然な影を軽減できます</li>
+        <li>球状法線ブレンドは髪や衣装など、ポリゴンの折れ目がシェーディングに悪影響を与えるメッシュに有用です</li>
+        <li>両方のパラメータは組み合わせて使用できます。まず球状法線でベースを整えてから、Y成分フラッテンで微調整するのがおすすめです</li>
+        <li>フラグメントシェーダーで法線を変形するため、ライティング計算前に適用されます。ノーマルマップとも組み合わせ可能です</li>
+        <li>この機能はライティングの法線のみに影響し、頂点位置やアウトラインには影響しません</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

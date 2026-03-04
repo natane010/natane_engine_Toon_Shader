@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eye Parallax - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Eye Parallax</h1>
+    <p class="page-subtitle">Gaze-tracking depth for eye pupils</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Eye Parallax is a lightweight parallax effect that offsets the pupil texture coordinates based on the camera's viewing direction, giving the eyes a sense of depth. Unlike full parallax mapping (<code>_PARALLAX</code>), it does not require a height map or ray marching. Instead, it uses only the XY components of the view direction, achieving a natural eye depth effect at very low cost.</p>
+    <p>Controlled by the keyword <code>_EYE_PARALLAX</code>. When disabled, no shader instructions are generated. If full parallax (<code>_PARALLAX</code>) is also enabled, it takes priority and Eye Parallax is automatically skipped.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable Eye Parallax</span>
+        <span class="param-prop">_EyeParallax</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Toggles the Eye Parallax feature on/off. Branches at compile time using the keyword <code>_EYE_PARALLAX</code>.</p>
+        <p class="param-default">Default: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Eye Depth</span>
+        <span class="param-prop">_EyeParallaxDepth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the parallax offset amount for the pupil. Higher values make the pupil appear deeper, increasing the sense of depth. Values too high may cause unnatural texture shifting.</p>
+        <p class="param-default">Default: 0.1</p>
+        <p class="param-range">Range: 0 &ndash; 0.5</p>
+      </div>
+      <div class="param-tip">Values between 0.05 and 0.15 produce the most natural results.</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <ul>
+        <li>Designed for use on character eye materials</li>
+        <li>Significantly lighter than full parallax mapping (height map based), making it ideal for VRChat avatars</li>
+        <li>Works best when the pupil texture is centered within the UV space</li>
+        <li>Uses the view direction XY components directly as UV offset, so mesh orientation may require adjustment</li>
+        <li>If <code>_PARALLAX</code> (full parallax mapping) is also enabled, it takes priority and this feature is ignored</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSS LUT - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>SSS LUT</h1>
+    <p class="page-subtitle">LUT-based pre-integrated subsurface scattering</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>SSS LUT (Subsurface Scattering Look-Up Table) replaces the standard SSS computation with a LUT texture lookup to achieve physically-based pre-integrated subsurface scattering. It calculates 2D LUT UV coordinates from NdotL (dot product of light direction and normal) and surface curvature, then retrieves scattered light color and intensity via texture lookup. This is well suited for realistic translucent rendering of skin, wax, and similar materials.</p>
+    <p>Controlled by keyword <code>_SSS_LUT</code>. Only active when the SSS feature (<code>_SSS</code>) is also enabled. When disabled, no shader instructions are generated. When SSS LUT is enabled, the LUT-based computation (SubsurfaceScatteringLUT function) is used instead of the standard SSS computation (SubsurfaceScattering function).</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Use SSS LUT</span>
+        <span class="param-prop">_SSSLUT</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Enables or disables the SSS LUT. Only takes effect when the SSS feature (Enable SSS) is enabled.</p>
+        <p class="param-default">Default: 0 (Disabled)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SSS LUT Texture</span>
+        <span class="param-prop">_SSSLUTTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>The pre-integrated SSS look-up table texture. The horizontal axis (U) corresponds to NdotL (remapped to 0-1: ndotl * 0.5 + 0.5), and the vertical axis (V) corresponds to curvature (curvature * (1 - thickness)). The RGB value at each pixel represents the scattered light color for those conditions.</p>
+        <p class="param-default">Default: "white"</p>
+      </div>
+      <div class="param-tip">Pre-integrated skin LUT textures (such as those described in NVIDIA GPU Gems 3) can be used. It is recommended to create the texture in linear color space and import with sRGB disabled.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LUT Scale</span>
+        <span class="param-prop">_SSSLUTScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Multiplied with the scattered light color retrieved from the LUT. Amplifies or attenuates the LUT output to adjust the overall intensity of the SSS effect. SSS Color (_SSSColor) is also multiplied into the final result.</p>
+        <p class="param-default">Default: 1.0</p>
+        <p class="param-range">Range: 0 - 2</p>
+      </div>
+    </div>
+
+    <h2 id="related">Related Parameters (SSS Common)</h2>
+    <div class="feature-section">
+      <p>SSS LUT works in conjunction with the following common SSS parameters:</p>
+      <ul>
+        <li><strong>SSS Color</strong> (<code>_SSSColor</code>) - Scattered light color. Multiplied with the LUT output.</li>
+        <li><strong>Thickness Map</strong> (<code>_ThicknessMap</code> / <code>_ThicknessScale</code>) - Thickness map. Used in the LUT V coordinate calculation as curvature * (1 - thickness). Thicker areas reduce scattering.</li>
+        <li><strong>SSS Mask</strong> (<code>_SSSMask</code>) - SSS application mask. Applied to the result after LUT computation.</li>
+        <li><strong>SSS Blend</strong> (<code>_SSSBlend</code>) / <strong>SSS Blend Mode</strong> (<code>_SSSBlendMode</code>) - Blend settings.</li>
+      </ul>
+    </div>
+
+    <h2 id="technical">Technical Details</h2>
+    <div class="feature-section">
+      <h3>Curvature Calculation</h3>
+      <p>Curvature is computed by dividing the fwidth (screen-space rate of change) of the normal by the fwidth of the world position. This value is clamped to 0-1 and represents how curved the surface is. Areas with high curvature (nose tip, ears, etc.) exhibit stronger scattering.</p>
+      <h3>LUT UV Coordinate Calculation</h3>
+      <p>The LUT texture UV coordinates are computed as follows:</p>
+      <ul>
+        <li><strong>U coordinate</strong>: NdotL * 0.5 + 0.5 (remaps -1 to 1 into 0 to 1)</li>
+        <li><strong>V coordinate</strong>: curvature * (1.0 - thickness) (curvature adjusted by thickness)</li>
+      </ul>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <h3>Comparison with Standard SSS</h3>
+      <p>Standard SSS simulates scattering in real time, while SSS LUT uses a pre-computed look-up table, yielding more physically accurate results at low cost. For skin rendering in particular, SSS LUT often produces a more natural appearance than standard SSS.</p>
+      <h3>Recommended Use Cases</h3>
+      <ul>
+        <li><strong>Realistic skin</strong>: Use a pre-integrated skin LUT for reddish scattered light that expresses skin translucency</li>
+        <li><strong>Wax / Marble</strong>: Use a warm-toned scattering LUT to reproduce the texture of translucent materials</li>
+        <li><strong>Plant leaves</strong>: Use a green-toned scattering LUT to express light transmission when backlit</li>
+      </ul>
+      <h3>Performance</h3>
+      <p>Consists of one texture sample and an fwidth calculation. Since it replaces the standard SSS computation (pow functions, etc.), the performance impact is roughly equivalent or slightly better.</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

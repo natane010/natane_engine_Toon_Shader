@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glitch Stretch - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Glitch Stretch</h1>
+    <p class="page-subtitle">Block-based horizontal stretch glitch</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Glitch Stretch (Stretch Glitch) recreates digital data corruption by horizontally stretching UV coordinates on a per-block basis. Unlike the standard Glitch (UV distortion + RGB split), this effect specializes in horizontal texture stretching. A mask texture can limit where the effect is applied, and since the UV is deformed before the main texture is sampled, the stretch affects the entire rendered surface.</p>
+    <p>Controlled by keyword <code>_GLITCH_STRETCH</code>. When disabled, no shader instructions are generated. Applied only in the ForwardBase pass.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Enable Stretch Glitch</span>
+        <span class="param-prop">_GlitchStretch</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>Enables or disables the stretch glitch effect.</p>
+        <p class="param-default">Default: 0 (Disabled)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Stretch Intensity</span>
+        <span class="param-prop">_GlitchStretchIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the strength of horizontal UV stretching. Higher values cause greater UV displacement. The mask value is multiplied into this, allowing partial intensity control via the mask. Internally, the stretch amount is scaled by a factor of 3.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 5</p>
+      </div>
+      <div class="param-tip">0.1-0.5 produces subtle distortion, while 1.0 and above creates intense stretching.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Stretch Speed</span>
+        <span class="param-prop">_GlitchStretchSpeed</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the animation speed of the stretch effect. Affects the time-based pseudo-random seed; higher values change patterns faster. Internally, _Time.y is multiplied by this value, scaled by 10, and floored for quantization.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Block Size</span>
+        <span class="param-prop">_GlitchStretchBlockSize</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets the height of each stretch block (band). The UV.y coordinate is divided by this value to create blocks, and each block receives a different stretch amount. Smaller values create thinner bands, while larger values produce wider blocks.</p>
+        <p class="param-default">Default: 0.1</p>
+        <p class="param-range">Range: 0.01 - 1</p>
+      </div>
+      <div class="param-tip">0.02-0.05 gives a scanline look, while 0.1-0.3 creates a block-collapse effect.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Stretch Frequency</span>
+        <span class="param-prop">_GlitchStretchFrequency</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Sets how frequently the stretch occurs. Stretching is applied only when each block's random value exceeds this threshold. Additionally, a global trigger prevents the effect from firing unless a time-based random exceeds (1 - frequency).</p>
+        <p class="param-default">Default: 0.3</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+      <div class="param-tip">0.1-0.3 for occasional glitches, 0.5+ for frequent, 0.9+ for nearly constant stretching.</div>
+    </div>
+
+    <h2 id="mask">Mask Settings</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Stretch Glitch Mask</span>
+        <span class="param-prop">_GlitchStretchMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that limits where the stretch is applied. The R channel is used. White (1.0) areas receive the stretch effect, while black (0.0) areas are unaffected. The mask value is multiplied into the stretch intensity.</p>
+        <p class="param-default">Default: "white" (applied everywhere)</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Mask Scale</span>
+        <span class="param-prop">_GlitchStretchMaskScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Amplification factor for the mask value. The R channel of the mask texture is multiplied by this value and clamped via saturate. 1.0 is unity, 5.0 boosts the mask value by 5x. Useful for strengthening the effect of faint masks.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 1 - 5</p>
+      </div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <h3>Combining with Standard Glitch</h3>
+      <p>Use alongside the standard Glitch (_GLITCH) to create a compound effect with UV distortion + RGB split + horizontal stretch. Glitch Stretch deforms the UV before the main texture is sampled, so it operates independently of the standard Glitch.</p>
+      <h3>Recommended Use Cases</h3>
+      <ul>
+        <li><strong>Cyberpunk aesthetics</strong>: Combine with Hologram and Glitch to express instability of a digital avatar</li>
+        <li><strong>Transitions</strong>: Animate intensity over time for appear/disappear transition effects</li>
+        <li><strong>VJ visuals</strong>: Adjust mask and block size for music-synchronized visual effects</li>
+      </ul>
+      <h3>Performance</h3>
+      <p>Requires only one mask texture sample and UV computation, so the performance cost is low. Note that since UVs are deformed before the main texture sample, the effect has a broad impact on the final rendering.</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

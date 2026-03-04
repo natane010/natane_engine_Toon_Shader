@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>パーティクルエフェクトエディタ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>パーティクルエフェクトエディタ</h1>
+    <p class="page-subtitle">プリセットベースのビジュアルパーティクルエフェクト作成ツール</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; パーティクルエフェクトエディタ Particle Effect Editor</span>
+      <span>カテゴリ: エフェクト</span>
+    </div>
+
+    <h2 id="overview">概要</h2>
+    <p>パーティクルエフェクトエディタは、ScriptableObjectベースのプリセットを使用してパーティクルエフェクトを視覚的に作成・編集できるエディタウィンドウです。7種類の組み込みテンプレート（Explosion、Fire、Smoke、Magic Sparkles、Electric、Water Splash、Heal Effect）から素早くエフェクトを作成し、リアルタイムプレビューで確認しながらパラメータを調整できます。</p>
+
+    <h2 id="access">アクセス方法</h2>
+    <p>メニュー: <code>Tools &gt; Natane &gt; パーティクルエフェクトエディタ Particle Effect Editor</code></p>
+
+    <h2 id="features">機能</h2>
+    <h3>プリセット管理</h3>
+    <ul>
+      <li><strong>新規プリセット作成</strong> - ScriptableObjectとして.assetファイルを作成</li>
+      <li><strong>テンプレート読み込み</strong> - 7種類の組み込みテンプレートからワンクリックで設定をロード</li>
+      <li><strong>プリセット情報編集</strong> - 名前、説明、カテゴリ、プレビューアイコンを設定</li>
+      <li><strong>保存</strong> - 編集したプリセットをアセットとして保存</li>
+    </ul>
+
+    <h3>編集可能なパラメータ</h3>
+    <ul>
+      <li><strong>Main Settings</strong> - Duration、Looping、Start Lifetime、Start Speed、Start Size、Start Color、Gravity、Max Particles</li>
+      <li><strong>Emission</strong> - Rate Over Time、Burst設定（Count、Time）</li>
+      <li><strong>Shape</strong> - Shape Type（Sphere、Coneなど）、Angle、Radius</li>
+      <li><strong>Color Over Lifetime</strong> - グラデーションエディタによるライフタイムカラー変化</li>
+      <li><strong>Size Over Lifetime</strong> - カーブエディタによるライフタイムサイズ変化</li>
+      <li><strong>Velocity Over Lifetime</strong> - ライフタイム速度変化（Vector3）</li>
+      <li><strong>Rotation</strong> - 回転速度の設定</li>
+      <li><strong>Renderer</strong> - Render Mode、マテリアルの設定</li>
+      <li><strong>Trails</strong> - トレイルの有効化、Lifetime、Min Vertex Distance、Trail Material</li>
+    </ul>
+
+    <h3>プレビュー機能</h3>
+    <ul>
+      <li><strong>Play / Stop / Restart</strong> - エフェクトのリアルタイムプレビュー操作</li>
+      <li><strong>Auto Play on Change</strong> - パラメータ変更時に自動再生</li>
+      <li><strong>パーティクル数表示</strong> - 現在のパーティクル数と再生状態を確認</li>
+      <li><strong>シーンビュープレビュー</strong> - シーンビューのカメラ前方にプレビューオブジェクトを配置</li>
+    </ul>
+
+    <h3>シーンへの適用</h3>
+    <ul>
+      <li><strong>選択オブジェクトに適用</strong> - 選択中のGameObjectにParticleSystemを追加してプリセットを適用</li>
+      <li><strong>新規オブジェクト作成</strong> - オブジェクト未選択時は新規GameObjectを作成してエフェクトを配置</li>
+    </ul>
+
+    <h2 id="templates">組み込みテンプレート</h2>
+    <ul>
+      <li><strong>Explosion</strong> - 爆発エフェクト。バースト100個、球形放出、オレンジ〜黒グラデーション</li>
+      <li><strong>Fire</strong> - 炎エフェクト。ループ再生、コーン形状、黄→赤グラデーション、負の重力</li>
+      <li><strong>Smoke</strong> - 煙エフェクト。ループ再生、徐々に拡大、回転付き、半透明グレー</li>
+      <li><strong>Magic Sparkles</strong> - 魔法の輝きエフェクト。球形放出、白→青紫グラデーション、回転付き</li>
+      <li><strong>Electric</strong> - 電撃エフェクト。高速放出、短寿命、青白いカラー</li>
+      <li><strong>Water Splash</strong> - 水しぶきエフェクト。バースト50個、コーン形状、強い重力</li>
+      <li><strong>Heal Effect</strong> - 回復エフェクト。コーン形状、緑系グラデーション、上向き放出</li>
+    </ul>
+
+    <h2 id="usage">使い方</h2>
+    <ol class="tool-steps">
+      <li>ツールバーの「New Preset」で新しいプリセットを作成するか、既存のプリセットをオブジェクトフィールドにドラッグします</li>
+      <li>「Load Template」からテンプレートを選択して、基本設定をロードします</li>
+      <li>各セクションのパラメータを調整します（変更はリアルタイムでプレビューに反映されます）</li>
+      <li>プレビューコントロールでエフェクトの見た目を確認します</li>
+      <li>「Save」でプリセットを保存します</li>
+      <li>「Apply to Scene」でシーン内のオブジェクトにエフェクトを適用します</li>
+    </ol>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>テンプレートをベースにカスタマイズすると効率的にエフェクトを作成できます</li>
+      <li>Auto Playを有効にすると、パラメータ変更時にすぐにプレビューが更新されます</li>
+      <li>プリセットはScriptableObjectなので、プロジェクト間で共有できます</li>
+      <li>プレビューオブジェクトはウィンドウを閉じると自動的にクリーンアップされます</li>
+      <li>VRChatではランタイムスクリプトが使えないため、エフェクト設計はエディタ上で完結させましょう</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

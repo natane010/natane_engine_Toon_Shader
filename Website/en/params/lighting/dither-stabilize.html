@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dither Stabilize - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Dither Stabilize</h1>
+    <p class="page-subtitle">Prevent dither pattern sliding when objects move</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>Dither Stabilize locks the dithering pattern relative to the object's pivot position, preventing the visually distracting sliding of dither patterns across the screen when characters or objects move in world space.</p>
+    <p>Normally, dithering is calculated based on screen pixel coordinates, which means the dither pattern appears to slide across the object's surface as it moves. This feature projects the object's pivot into screen space and subtracts that offset from the dither coordinates, effectively anchoring the pattern to the object.</p>
+    <p>This parameter is controlled by a float value rather than a keyword toggle. 0 uses conventional screen-fixed dithering, while 1 uses fully object-relative dithering.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Dither Stabilize</span>
+        <span class="param-prop">_DitherStabilize</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the strength of object-relative dither stabilization. 0 uses screen-coordinate-based dithering (conventional behavior), while 1 uses fully object-pivot-relative dithering (fully stabilized). Intermediate values allow blending between both modes.</p>
+        <p>Internally, the <code>StabilizeDitherCoord()</code> function projects the object's world pivot position into screen space and subtracts it from the dither coordinates.</p>
+        <p class="param-default">Default: 0</p>
+        <p class="param-range">Range: 0 to 1</p>
+      </div>
+      <div class="param-tip">For VRChat characters that walk around, setting this to 1.0 is highly recommended. For static objects, leaving it at 0 is perfectly fine.</div>
+    </div>
+
+    <h2 id="technical">Technical Details</h2>
+    <div class="feature-section">
+      <p>The <code>StabilizeDitherCoord()</code> function operates as follows:</p>
+      <ol>
+        <li>The object's world pivot position (<code>unity_ObjectToWorld._m03_m13_m23</code>) is transformed to clip space</li>
+        <li>Converted to NDC (Normalized Device Coordinates) and then to screen pixel coordinates</li>
+        <li>The pivot's screen coordinates are subtracted from the original screen pixel coordinates</li>
+        <li>A large positive offset (100000.0) is added to prevent negative indices from fmod()</li>
+        <li>The original and stabilized coordinates are blended using the <code>_DitherStabilize</code> value</li>
+      </ol>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <ul>
+        <li><strong>Affected features:</strong> This stabilization applies to all dithering operations in the shader, including quantization dithering, specular dithering, hair highlight dithering, hashed alpha, and dithering alpha.</li>
+        <li><strong>VRChat characters:</strong> Dither pattern "swimming" is highly noticeable on moving avatars, so setting this to 1.0 for character materials is strongly recommended.</li>
+        <li><strong>Performance:</strong> One additional matrix multiplication is performed, but no texture sampling is required. The performance impact is negligible.</li>
+        <li><strong>Camera movement:</strong> When the camera moves, the dither pattern will still shift regardless of this setting. This feature only stabilizes against object movement.</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

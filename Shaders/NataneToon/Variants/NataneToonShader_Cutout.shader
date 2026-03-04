@@ -1360,7 +1360,7 @@ CGPROGRAM
             #pragma shader_feature_local _MATCAP
             #pragma shader_feature_local _GLITTER
             #pragma shader_feature _GLINTS_ADVANCED
-#pragma shader_feature_local _EMISSION
+            #pragma shader_feature_local _EMISSION
             #pragma shader_feature_local _NORMALMAP
             #pragma shader_feature_local _DISSOLVE
             #pragma shader_feature_local _ALPHA_MASK

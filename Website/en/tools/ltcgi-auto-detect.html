@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LTCGI Auto-Detect - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>LTCGI Auto-Detect</h1>
+    <p class="page-subtitle">Automatic detection and shader configuration for LTCGI package integration</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; VRChat &gt; LTCGI 再検出 Re-detect</span>
+      <span>Category: VRChat Integration</span>
+    </div>
+
+    <h2 id="overview">Overview</h2>
+    <p>LTCGI Auto-Detect automatically detects the presence of the <strong>LTCGI (Linearly Transformed Cosines Global Illumination)</strong> package used in VRChat worlds and configures the shader accordingly.</p>
+    <p>It runs automatically on Unity editor startup, package installation/uninstallation, and script recompilation. When the LTCGI package (<code>at.pimaker.ltcgi</code>) is detected, the shader uses real LTCGI.cginc functions. When not detected, it automatically falls back to Unity SH + Reflection Probes.</p>
+    <p>This mechanism ensures no compile errors occur in environments without the LTCGI package, while high-quality area lighting is automatically enabled when LTCGI is available. No manual configuration changes are required.</p>
+
+    <h2 id="features">Key Features</h2>
+    <ul>
+      <li><strong>Automatic Detection on Editor Load</strong> — Using <code>[InitializeOnLoad]</code>, the tool automatically detects the LTCGI package on Unity editor startup, script recompilation, and package changes</li>
+      <li><strong>Auto-Generated Shader Config File</strong> — Based on detection results, generates <code>NataneToonLTCGIConfig.hlsl</code> automatically. When the package is detected, <code>#define NATANE_LTCGI_AVAILABLE</code> is defined, controlling conditional includes in the shader</li>
+      <li><strong>Automatic Shader Reimport</strong> — After configuration changes, related shader files (such as <code>NataneToonLighting.hlsl</code>) are automatically reimported to immediately reflect the changes</li>
+      <li><strong>State Change Tracking</strong> — Uses EditorPrefs to remember the previous detection state and only regenerates the config file and recompiles shaders when the state changes. Prevents unnecessary recompilation</li>
+      <li><strong>Manual Re-detection</strong> — Force re-detection via the menu and view the results in a confirmation dialog</li>
+      <li><strong>Fallback Support</strong> — In environments without the LTCGI package, a fallback implementation using Unity's standard SH (Spherical Harmonics) and Reflection Probes is automatically selected</li>
+    </ul>
+
+    <h2 id="access">How to Access</h2>
+    <p>Menu: <code>Tools &gt; Natane &gt; VRChat &gt; LTCGI 再検出 Re-detect</code></p>
+    <p>Normally runs automatically on editor startup, so manual execution is unnecessary. Use it when there are issues with package installation status or when you want to manually verify the state.</p>
+
+    <h2 id="usage">How to Use</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>Automatic Detection (Normal Usage)</strong>
+        <p>No action required. Simply launching the Unity editor will automatically detect the LTCGI package and configure shader settings appropriately. Settings are also automatically updated when packages are installed or uninstalled.</p>
+      </li>
+      <li>
+        <strong>Manual Re-detection</strong>
+        <p>Select <code>Tools &gt; Natane &gt; VRChat &gt; LTCGI 再検出 Re-detect</code> to force re-detection. The result is displayed in a dialog.</p>
+      </li>
+      <li>
+        <strong>Verify Results</strong>
+        <p>After detection, one of the following messages is displayed in the dialog:</p>
+        <ul>
+          <li><strong>Detected</strong>: "LTCGI package detected. Shaders will use real LTCGI functions."</li>
+          <li><strong>Not Detected</strong>: "LTCGI package not found. Fallback implementation (Unity SH + Reflection Probes) will be used."</li>
+        </ul>
+      </li>
+    </ol>
+
+    <h2 id="technical">Technical Details</h2>
+    <ul class="tool-tips">
+      <li>Detected package path: <code>Packages/at.pimaker.ltcgi</code></li>
+      <li>Detected file: <code>Packages/at.pimaker.ltcgi/Shaders/LTCGI.cginc</code></li>
+      <li>Generated config file: <code>Shaders/NataneToon/Include/Config/NataneToonLTCGIConfig.hlsl</code></li>
+      <li>The config file is auto-generated — do not edit it manually</li>
+      <li>Detection results are output to the Console with the <code>[NataneToon]</code> prefix</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

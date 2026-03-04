@@ -1348,7 +1348,7 @@ Blend [_SrcBlend] [_DstBlend]
             #pragma shader_feature_local _CAST_SHADOW_COLOR
             #pragma shader_feature_local _LIGHT_SNAP
             #pragma shader_feature_local _BLUE_NOISE_DITHER
-#pragma shader_feature_local _SOFT_LIGHTING_MODE
+            #pragma shader_feature_local _SOFT_LIGHTING_MODE
             #pragma shader_feature_local _USE_LIGHT_VOLUME
             #pragma shader_feature _LIGHT_VOLUME_SPECULAR
             #pragma shader_feature_local _SPECULAR

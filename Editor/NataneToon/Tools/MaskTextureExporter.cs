@@ -75,7 +75,15 @@ namespace NataneToon.Editor
                 return null;
             }
 
-            File.WriteAllBytes(fullPath, data);
+            try
+            {
+                File.WriteAllBytes(fullPath, data);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[Natane Toon] Failed to write file: {fullPath}\n{e.Message}");
+                return null;
+            }
             AssetDatabase.Refresh();
 
             // Convert to asset-relative path for TextureImporter

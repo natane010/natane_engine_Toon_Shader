@@ -344,6 +344,7 @@ namespace NataneToon.Editor
             new ShaderPassConfig("Natane/Toon Shader (Background)",       true,  true, true),
             new ShaderPassConfig("Natane/Toon Shader Wirelight",          false, false),
             new ShaderPassConfig("Natane/Eye",                            false, false),
+            new ShaderPassConfig("Natane/Screen FX Overlay",              false, false),
         };
 
         /// <summary>

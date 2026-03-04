@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D LUT - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>3D LUT</h1>
+    <p class="page-subtitle">ルックアップテーブルによるカラーグレーディング</p>
+
+    <h2 id="overview">概要</h2>
+    <p>3D LUT（Look-Up Table）は、最終出力色にカラーグレーディングを適用するポストプロセス的なエフェクトです。ストリップレイアウトの2Dテクスチャ（例: 32x32x32 を 1024x32 に展開したもの）を使用して、入力RGBの各値をLUTで変換します。映画やアニメ風の色調補正、ヴィンテージ風カラー、特定のムードやトーンの演出に活用できます。</p>
+    <p>キーワード <code>_LUT_3D</code> で制御され、無効時はシェーダー命令が生成されません。ForwardBaseパスでのみ適用されます。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">3D LUT 有効化</span>
+        <span class="param-prop">_UseLUT3D</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>3D LUTカラーグレーディングの有効・無効を切り替えます。</p>
+        <p class="param-default">デフォルト: 0（無効）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LUTテクスチャ</span>
+        <span class="param-prop">_LUT3DTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>ストリップレイアウトの3D LUTテクスチャを指定します。一般的な形式は、32x32x32のカラーキューブを横に並べた1024x32ピクセルの画像です。Photoshop、DaVinci Resolve、LUT GeneratorなどでエクスポートしたLUTテクスチャが利用できます。</p>
+        <p class="param-default">デフォルト: "white"（白テクスチャ = 色変換なし）</p>
+      </div>
+      <div class="param-tip">テクスチャのインポート設定で sRGB をオフにし、フィルターを Bilinear に設定すると正確な色再現が得られます。圧縮は None 推奨です。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LUT強度</span>
+        <span class="param-prop">_LUT3DIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>LUTによるカラーグレーディングの適用強度です。0で元の色のまま、1でLUTの色に完全に置き換わります。中間値で元の色とLUT色を線形補間します。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">0.5〜0.8 程度に設定すると、自然なカラーグレーディングになります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LUTグリッドサイズ</span>
+        <span class="param-prop">_LUT3DSize</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>LUTテクスチャの1軸あたりのグリッド数を指定します。使用するLUTテクスチャのサイズに合わせてください。例えば 32x32x32 のLUTなら 32 を、16x16x16 なら 16 を指定します。</p>
+        <p class="param-default">デフォルト: 32</p>
+      </div>
+      <div class="param-tip">LUTテクスチャのサイズと一致しない値を設定すると、色が正しく変換されません。テクスチャの横幅 / 高さ でグリッドサイズを求められます（例: 1024 / 32 = 32）。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <h3>LUTテクスチャの入手方法</h3>
+      <ul>
+        <li><strong>自作</strong>: Photoshopの「カラールックアップの書き出し」やDaVinci Resolveのカラーグレーディングからエクスポートできます。</li>
+        <li><strong>無料配布</strong>: 映画風LUTパックなどがインターネット上で多数配布されています。3D LUT Creator 等のツールでストリップ形式に変換してください。</li>
+        <li><strong>形式</strong>: .cube ファイルを直接読み込むことはできません。ストリップレイアウトのPNG/TGAテクスチャに変換する必要があります。</li>
+      </ul>
+      <h3>推奨設定</h3>
+      <ul>
+        <li><strong>映画風カラー</strong>: LUT強度 0.6〜0.8 で適度に色調補正</li>
+        <li><strong>劇的な色変換</strong>: LUT強度 1.0 でLUTの色をそのまま適用</li>
+        <li><strong>レトロ風</strong>: セピアやヴィンテージ系LUTを強度 0.5 で適用</li>
+      </ul>
+      <h3>パフォーマンス</h3>
+      <p>テクスチャサンプリング2回（Blueスライス補間用）と少量の演算のみで、パフォーマンスコストは非常に低いです。ただし、最終色に対して適用されるため、他のエフェクト（Emission等）の後に処理されます。</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

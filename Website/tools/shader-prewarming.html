@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>シェーダープリウォーミング - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>シェーダープリウォーミング</h1>
+    <p class="page-subtitle">シェーダーバリアントを事前コンパイルしてゲームプレイ中のスタッターを防止</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; Natane &gt; シェーダー Shader &gt; シェーダープリウォーミング Shader Prewarming</span>
+      <span>カテゴリ: シェーダー</span>
+    </div>
+
+    <h2 id="overview">概要</h2>
+    <p>シェーダープリウォーミングは、シェーダーバリアントを事前にコンパイル（ウォームアップ）し、ゲームプレイ中のシェーダーコンパイルによるスタッター（カクつき）を防止するツールです。VRChat対応のエディタ専用プリウォーミングと、非VRChatプロジェクト向けのランタイムプリウォーミングの2つのモードを備えています。</p>
+    <p>Unityでは、シェーダーバリアントが初めて描画される際にコンパイルが発生し、一時的なフレームレートの低下（スタッター）が起こることがあります。このツールは、ビルド前またはエディタ上でシェーダーを事前コンパイルすることで、この問題を解消します。</p>
+    <p>このツールはUnityのビルドパイプラインAPI（<code>IPreprocessBuildWithReport</code>）を実装しており、ビルド前に自動的にプリウォーミングを実行できます。また、ShaderVariantCollectionが空の場合は、プロジェクト内のマテリアルからバリアントを自動収集する機能も備えています。</p>
+
+    <h2 id="features">主な機能</h2>
+    <ul>
+      <li><strong>ビルド前自動プリウォーミング</strong> — <code>IPreprocessBuildWithReport</code>を実装し、ビルド前に自動的にシェーダーをプリウォーム。ShaderVariantCollectionが空の場合はマテリアルから自動収集も実行します</li>
+      <li><strong>ShaderVariantCollectionウォームアップ</strong> — 既存のShaderVariantCollectionを検出し、含まれるすべてのバリアントをウォームアップ。Assets配置とUPMパッケージ配置の両方をサポートします</li>
+      <li><strong>マテリアル自動検索・ウォームアップ</strong> — プロジェクト内のすべてのNatane Toonマテリアルを自動検索し、一時的なShaderVariantCollectionを作成してターゲット指定でウォームアップします</li>
+      <li><strong>マテリアルからの自動バリアント収集</strong> — ShaderVariantCollectionが空の場合、プロジェクト内のマテリアルからキーワードの組み合わせを収集し、ForwardBase/ForwardAdd/ShadowCaster/Metaの各パスタイプに対応するバリアントを自動登録します</li>
+      <li><strong>12種類のシェーダー対応</strong> — Natane Toon Shaderの全バリアント（Toon Shader、Cutout、Transparent、Lite系、Fur系、Background、Wirelight、Eye、Screen FX Overlay）を対象</li>
+      <li><strong>プログレスバー表示</strong> — ウォームアップの進捗状況をプログレスバーで表示。処理時間と処理数も最終レポートで確認できます</li>
+      <li><strong>ランタイムプリウォーミングスクリプト生成</strong> — 非VRChatプロジェクト向けに、ランタイムでシェーダーをウォームアップするMonoBehaviourスクリプトを自動生成・管理できます</li>
+      <li><strong>VRChat完全対応</strong> — エディタ専用モードはランタイムスクリプトを使用しないため、VRChatのスクリプト制限に完全対応しています</li>
+    </ul>
+
+    <h2 id="access">アクセス方法</h2>
+    <p>以下のメニューからアクセスできます：</p>
+    <ul>
+      <li><code>Tools &gt; Natane &gt; シェーダー Shader &gt; シェーダープリウォーミング Shader Prewarming &gt; すべてウォームアップ Prewarm All Shaders</code> — 手動でシェーダーをウォームアップ</li>
+      <li><code>Tools &gt; Natane &gt; シェーダー Shader &gt; シェーダープリウォーミング Shader Prewarming &gt; バリアントコレクションをウォームアップ Prewarm Shader Variant Collection</code> — ShaderVariantCollectionのみをウォームアップ</li>
+      <li><code>Tools &gt; Natane &gt; シェーダー Shader &gt; シェーダープリウォーミング Shader Prewarming &gt; 設定 Settings</code> — 設定ウィンドウを開く</li>
+    </ul>
+
+    <h2 id="usage">使い方</h2>
+    <ol class="tool-steps">
+      <li>
+        <strong>設定ウィンドウを開く</strong>
+        <p><code>Tools &gt; Natane &gt; シェーダー Shader &gt; シェーダープリウォーミング Shader Prewarming &gt; 設定 Settings</code> を選択して設定ウィンドウを開きます。</p>
+      </li>
+      <li>
+        <strong>エディタ専用プリウォーミングの設定（VRChat対応）</strong>
+        <p>以下の設定を調整します：</p>
+        <ul>
+          <li><strong>ビルド時にプリウォーム</strong> — ビルド前に自動的にシェーダーをプリウォームするかどうか。デフォルトは有効です。</li>
+          <li><strong>マテリアルを自動検索</strong> — プロジェクト内のすべてのNatane Toonマテリアルを自動的に検索してプリウォームするかどうか。デフォルトは有効です。</li>
+        </ul>
+      </li>
+      <li>
+        <strong>手動プリウォーミングの実行</strong>
+        <p>「今すぐシェーダーをプリウォーム」ボタンをクリックすると、即座にプリウォーミングが実行されます。処理時間とウォームアップされたバリアント/マテリアル数がダイアログに表示されます。</p>
+      </li>
+      <li>
+        <strong>ランタイムプリウォーミング（非VRChatのみ）</strong>
+        <p>VRChat以外のプロジェクトでランタイムプリウォーミングが必要な場合は、「ランタイムプリウォーミングスクリプトを生成」ボタンでMonoBehaviourスクリプトを生成できます。生成されたスクリプトをシーン内のGameObjectにアタッチし、ShaderVariantCollectionを割り当ててください。</p>
+      </li>
+    </ol>
+
+    <h2 id="runtime">ランタイムプリウォーミングスクリプト</h2>
+    <p>非VRChatプロジェクト向けに自動生成されるランタイムスクリプトの機能：</p>
+    <ul>
+      <li><strong>Awakeでプリウォーム</strong> — ゲーム開始直後にシェーダーをウォームアップ（デフォルト有効）</li>
+      <li><strong>Startでプリウォーム</strong> — Awakeの後にウォームアップを遅延実行</li>
+      <li><strong>デバッグログ</strong> — 処理時間やバリアント数のログ出力を切り替え可能</li>
+      <li><strong>手動呼び出し</strong> — <code>PrewarmShaders()</code>メソッドを任意のタイミングで呼び出し可能</li>
+    </ul>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>VRChatプロジェクトでは、必ずエディタ専用モードを使用してください。ランタイムスクリプトはVRChatでは動作しません</li>
+      <li>シェーダーバリアント収集ツール（Shader Variant Collector）で事前にShaderVariantCollectionを生成しておくと、プリウォーミングがより効率的になります</li>
+      <li>ビルド前プリウォーミングはShaderVariantCollectionが空の場合、マテリアルから自動収集してウォームアップします</li>
+      <li>プリウォーミングの処理時間はプロジェクトのマテリアル数とバリアント数に依存します。大規模プロジェクトではビルド時間が若干長くなる場合があります</li>
+      <li>バリアントストリッピングと併用することで、必要なバリアントのみをプリウォームし、不要なバリアントをビルドから除去する最適な構成が実現できます</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kuwahara Filter - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Kuwahara Filter</h1>
+    <p class="page-subtitle">Screen-space filter for painterly, oil-painting-style rendering</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>The Kuwahara filter is a non-linear image processing filter that produces a painterly, oil-painting look. It divides the area around each pixel into four quadrants, calculates the mean color and variance for each, and selects the mean color of the quadrant with the lowest variance (the most uniform region). This preserves edges while creating smooth, painting-like surfaces.</p>
+    <p>Controlled by the keyword <code>_KUWAHARA_FILTER</code>. No shader instructions are generated when disabled.</p>
+    <p>This is a screen-space effect that requires GrabPass. Not available in Lite variants.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Radius</span>
+        <span class="param-prop">_KuwaharaRadius</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>The kernel radius of the filter. Each quadrant samples this many pixels in each direction. Larger values produce a stronger oil-painting effect but at a higher performance cost (sample count scales with the square of the radius).</p>
+        <ul>
+          <li><strong>1-2</strong> - Subtle smoothing effect</li>
+          <li><strong>3-4</strong> - Moderate oil-painting effect (recommended)</li>
+          <li><strong>5-6</strong> - Strong oil-painting effect (heavy processing)</li>
+        </ul>
+        <p class="param-default">Default: 3</p>
+        <p class="param-range">Range: 1 - 6</p>
+      </div>
+      <div class="param-tip">For VRChat environments, low values of 2-3 are recommended. A radius of 6 results in 144 texture samples per pixel.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_KuwaharaBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the blend ratio between the filtered result and the original image. 0 keeps the original image, 1 applies the filter fully.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+      <div class="param-tip">A value of 0.5-0.7 gives a well-balanced setting that maintains the painterly texture while preserving some detail.</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <h3>Oil Painting Style Illustration</h3>
+      <p>Combine with Color Quantize for a more painterly result. The Kuwahara filter smooths out details while Color Quantize limits the color palette, together producing an impressionist oil-painting style.</p>
+
+      <h3>Anime-Style Backgrounds</h3>
+      <p>Use a small radius (around 2) with a blend of 0.3-0.5 to create a soft, hand-painted texture similar to anime background art.</p>
+
+      <h3>Performance Notes</h3>
+      <p>The Kuwahara filter heavily samples the GrabPass texture in nested loops, making it relatively GPU-intensive. With a radius of 3, it performs 4 quadrants x 9 samples = 36 texture fetches per pixel. Use with caution in VRChat Quest environments.</p>
+
+      <h3>Combining with Other Screen-Space Effects</h3>
+      <p>This effect can be used alongside Soft Filter, Color Bleeding, and Chromatic Aberration, all of which share the same GrabPass. Be aware of the processing order: the Kuwahara filter is applied after Soft Filter and before Screen Edge detection.</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

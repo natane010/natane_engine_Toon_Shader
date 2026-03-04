@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smooth Normal Baker - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Smooth Normal Baker</h1>
+    <p class="page-subtitle">Bake smooth normals into vertex colors for better outlines on hard-edge models</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Mesh &gt; Smooth Normal Baker</span>
+      <span>Category: Mesh</span>
+    </div>
+
+    <h2 id="overview">Overview</h2>
+    <p>The Smooth Normal Baker improves outline rendering on hard-edge models by baking smooth normals into the RGB channels of vertex colors. It groups vertices at the same position, averages their normals to calculate smooth normals, then encodes and saves them to vertex colors. The original mesh remains unmodified, following a non-destructive workflow.</p>
+
+    <h2 id="access">Access</h2>
+    <p>Menu: <code>Tools &gt; Natane &gt; Mesh &gt; Smooth Normal Baker</code></p>
+
+    <h2 id="features">Features</h2>
+    <ul>
+      <li><strong>Two Bake Modes</strong>
+        <ul>
+          <li><strong>Tangent Space (Recommended)</strong> - Encodes smooth normals in tangent space. Follows skinning and blend shape deformation</li>
+          <li><strong>Object Space</strong> - Encodes smooth normals in object space. Simple and stable but does not follow mesh deformation</li>
+        </ul>
+      </li>
+      <li><strong>Mesh Information Display</strong> - Shows mesh name, vertex count, submesh count, and whether existing vertex colors are present</li>
+      <li><strong>Auto Assign</strong> - Option to automatically replace the mesh after baking (with Undo support)</li>
+      <li><strong>Non-destructive Workflow</strong> - The original mesh is not modified; a new mesh is saved as a .asset file</li>
+      <li><strong>Automatic Tangent Detection</strong> - When a mesh lacks tangent data, the tool suggests switching to Object Space mode</li>
+      <li><strong>Position-based Vertex Grouping</strong> - Groups vertices at the same position using quantization (precision: 1/10000) for floating-point tolerance</li>
+      <li><strong>SkinnedMeshRenderer / MeshFilter Support</strong> - Works with both skinned meshes and static meshes</li>
+    </ul>
+
+    <h2 id="usage">How to Use</h2>
+    <ol class="tool-steps">
+      <li>Drag a GameObject with a SkinnedMeshRenderer or MeshFilter into the "Target Object" field</li>
+      <li>Review the mesh information (vertex count, submesh count, etc.)</li>
+      <li>Select a bake mode (Tangent Space is recommended for most cases)</li>
+      <li>Enable "Auto Assign" to have the mesh automatically replaced after baking</li>
+      <li>Press the "Bake" button</li>
+      <li>Choose a save location, and the baked mesh will be saved as a .asset file</li>
+      <li>Enable the "Smooth Normal Outline" feature in the shader to see the result</li>
+    </ol>
+
+    <h2 id="technical">Technical Details</h2>
+    <h3>Smooth Normal Calculation</h3>
+    <p>Vertices at the same position (quantization precision of 1/10000) are grouped together, and the normal vectors within each group are averaged. This averaged normal becomes the smooth normal.</p>
+
+    <h3>Encoding Methods</h3>
+    <ul>
+      <li><strong>Tangent Space</strong>: Uses the inverse TBN matrix to transform smooth normals into tangent space, then remaps from [-1,1] to [0,1] and stores in vertex color RGB</li>
+      <li><strong>Object Space</strong>: Directly remaps object-space smooth normals from [-1,1] to [0,1] and stores in vertex color RGB</li>
+    </ul>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>Especially effective when avatar outlines break at hard edges</li>
+      <li>Be aware that existing vertex colors will be overwritten by the bake</li>
+      <li>Tangent Space mode maintains smooth outlines during skinning animations</li>
+      <li>The baked mesh is named with a "_SmoothNormal" suffix appended to the original mesh name</li>
+      <li>If an asset already exists at the same path, it will be updated in place</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

@@ -58,6 +58,8 @@ namespace NataneToon.Editor
             new ShaderInfo("Natane/Toon Shader Wirelight",         false, false),
             // Eye (ForwardBase only)
             new ShaderInfo("Natane/Eye",                           false, false),
+            // Screen FX Overlay (ForwardBase only)
+            new ShaderInfo("Natane/Screen FX Overlay",             false, false),
         };
 
         private ShaderVariantCollection collection;

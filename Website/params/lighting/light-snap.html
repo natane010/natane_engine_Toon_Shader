@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ライトスナップ - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>ライトスナップ</h1>
+    <p class="page-subtitle">ライト方向を離散化して影のちらつきを抑制</p>
+
+    <h2 id="overview">概要</h2>
+    <p>ライトスナップ（Light Snap）は、ライトの方向ベクトルを指定した角度の倍数にスナップ（量子化）することで、ライトの微小な動きによる影のちらつき（フリッカー）を防止する機能です。リアルタイムライティング環境やVRChatのように、ライト方向が微妙に揺れる環境での安定したシャドウ表現に役立ちます。</p>
+    <p>内部的には、ライト方向を球面座標（phi, theta）に変換し、指定した角度単位に丸めた後、スムーズネスパラメータで元の方向とブレンドします。</p>
+    <p>キーワード <code>_LIGHT_SNAP</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ライトスナップ有効化</span>
+        <span class="param-prop">_LightSnap</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>ライトスナップ機能のオン・オフを切り替えます。有効にすると、ライト方向が離散的な角度にスナップされます。</p>
+        <p class="param-default">デフォルト: 0（無効）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スナップ角度</span>
+        <span class="param-prop">_LightSnapAngle</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>ライト方向をスナップする角度の単位（度数）です。例えば45度に設定すると、ライトは8方向（360/45）のいずれかに量子化されます。小さい値ほど細かいスナップ（滑らかだが安定性は低い）、大きい値ほど粗いスナップ（安定だが不自然になりやすい）になります。</p>
+        <p class="param-default">デフォルト: 45</p>
+        <p class="param-range">範囲: 5 〜 90（度）</p>
+      </div>
+      <div class="param-tip">推奨値: 15〜45度。VRChatのワールドでは30〜45度が安定性と自然さのバランスが良いです。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">スナップスムーズネス</span>
+        <span class="param-prop">_LightSnapSmooth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>スナップの滑らかさを制御します。0で完全にスナップされた方向を使用（最大安定、カクカクした遷移）、1でスナップなし（元のライト方向をそのまま使用）になります。内部的には <code>lerp(lightDir, snappedDir, 1.0 - smooth)</code> でブレンドされます。</p>
+        <p class="param-default">デフォルト: 0.1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">0.05〜0.2 の低い値が推奨です。スナップの安定性を保ちつつ、方向遷移時のカクつきを最小限に抑えます。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <ul>
+        <li><strong>VRChatでの活用:</strong> VRChatのワールドでは、プレイヤーの動きに応じてライト方向がわずかに変化し、トゥーンシャドウの境界がちらつくことがあります。ライトスナップで安定させましょう。</li>
+        <li><strong>セルシェーディングとの相性:</strong> ハードなセルシェーディング（2値陰影）では、わずかなライト変化でも影の境界がパタパタと切り替わりやすいため、この機能が特に効果的です。</li>
+        <li><strong>SDF Shadowとの併用:</strong> SDFベースのフェイスシャドウと組み合わせると、顔のライティングがさらに安定し、キャラクターの表情が崩れにくくなります。</li>
+        <li><strong>注意点:</strong> スナップ角度が大きすぎると、ライトの向きが急に切り替わる際にシャドウがジャンプして見える場合があります。スムーズネスで緩和してください。</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

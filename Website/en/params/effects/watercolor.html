@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Watercolor Effect - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Watercolor Effect</h1>
+    <p class="page-subtitle">Simulate watercolor painting with edge darkening, wet edges, granulation, and paper texture</p>
+
+    <h2 id="overview">Overview</h2>
+    <p>The Watercolor effect simulates the look of watercolor painting by combining four elements: (1) edge darkening driven by ddx/ddy gradient magnitude, (2) wet edge effects that increase saturation at color boundaries, (3) texture-based pigment granulation, and (4) screen-space paper texture overlay. Together these create an authentic watercolor painting aesthetic.</p>
+    <p>Controlled by the keyword <code>_WATERCOLOR</code>. No shader instructions are generated when disabled.</p>
+    <p>This is a texture-space effect that does not require GrabPass. Available in all variants including Lite.</p>
+
+    <h2 id="params">Parameters</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Edge Darkening</span>
+        <span class="param-prop">_WCEdgeDarkening</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of darkening at areas with strong color transitions. Driven by ddx/ddy gradient magnitude, this simulates how watercolor ink accumulates and darkens at edges where colors meet.</p>
+        <p class="param-default">Default: 0.5</p>
+        <p class="param-range">Range: 0 - 2</p>
+      </div>
+      <div class="param-tip">Values of 0.3-0.7 give a natural result. Values above 1.0 produce strong edge effects.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Wet Edge</span>
+        <span class="param-prop">_WCWetEdge</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of local saturation increase at edges. This simulates the phenomenon in watercolor painting where pigment concentrates at the edges as the water dries, creating more vivid color boundaries. Applied using a smoothstep function based on edge strength.</p>
+        <p class="param-default">Default: 0.3</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Granulation</span>
+        <span class="param-prop">_WCGranulation</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the intensity of pigment granulation. The granulation effect is stronger in shadowed areas, simulating how pigment particles settle into the valleys of the paper texture in darker regions.</p>
+        <p class="param-default">Default: 0.4</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Granulation Texture</span>
+        <span class="param-prop">_WCGranulationTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A texture representing pigment particle patterns. The R channel is used, sampled in UV space. Tiling and offset are configurable.</p>
+        <p class="param-default">Default: "gray"</p>
+      </div>
+      <div class="param-tip">Noise textures or paper fiber patterns with irregular bumps work best for this effect.</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Paper Texture</span>
+        <span class="param-prop">_WCPaperTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A texture representing the watercolor paper surface. The R channel is used, sampled in screen space for stable display regardless of camera movement.</p>
+        <p class="param-default">Default: "white"</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Paper Intensity</span>
+        <span class="param-prop">_WCPaperIntensity</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls how strongly the paper texture affects the result. The texture value is remapped from [0,1] to [-1,1] and multiplied into the color.</p>
+        <p class="param-default">Default: 0.3</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Paper Tiling</span>
+        <span class="param-prop">_WCPaperTiling</span>
+        <span class="param-badge badge-float">float</span>
+      </div>
+      <div class="param-body">
+        <p>Screen-space tiling multiplier for the paper texture. Higher values produce finer paper grain.</p>
+        <p class="param-default">Default: 1</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Blend</span>
+        <span class="param-prop">_WCBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>Controls the overall intensity of the watercolor effect. Multiplied with the mask texture value for the final blend amount.</p>
+        <p class="param-default">Default: 1</p>
+        <p class="param-range">Range: 0 - 1</p>
+      </div>
+    </div>
+
+    <h2 id="mask">Mask</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">Watercolor Mask</span>
+        <span class="param-prop">_WCMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>A mask texture that controls the application area of the watercolor effect. The R channel is used. Tiling and offset are configurable.</p>
+        <p class="param-default">Default: "white" (full application)</p>
+      </div>
+      <div class="param-tip">White = watercolor effect applied, Black = no effect. Useful for keeping skin clean while applying the watercolor style to clothing, for example.</div>
+    </div>
+
+    <h2 id="tips">Usage Tips</h2>
+    <div class="feature-section">
+      <h3>Basic Watercolor Setup</h3>
+      <p>The default values (Edge Darkening 0.5, Wet Edge 0.3, Granulation 0.4) provide a well-balanced starting point. Using an actual scanned watercolor paper image as the paper texture greatly enhances realism.</p>
+
+      <h3>Combining with Color Bleeding</h3>
+      <p>Pair with Color Bleeding for a more authentic watercolor look. The Watercolor effect handles texture-space qualities (edge darkening, paper grain) while Color Bleeding handles screen-space color diffusion, creating complementary results.</p>
+
+      <h3>Lightweight Design (No GrabPass Required)</h3>
+      <p>Unlike other illustration-style effects (Kuwahara, Color Bleeding, etc.), the Watercolor effect operates using only ddx/ddy and texture sampling, requiring no GrabPass. This means it works in Lite variants and has relatively low performance cost.</p>
+
+      <h3>Granulation Texture Selection</h3>
+      <p>The granulation effect intensifies proportionally to the shading value (shadow darkness). This naturally reproduces the physical behavior of watercolor paint where pigment settles in darker washed areas.</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../../nav.js"></script>
+</body>
+</html>

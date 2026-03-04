@@ -53,7 +53,7 @@ namespace NataneToon.Editor
             // Settings
             EditorGUILayout.LabelField(L("変換設定", "Conversion Settings"), EditorStyles.boldLabel);
 
-            sourceShaderName = EditorGUILayout.TextField(L("変換元シェーダー名を含む", "Source Shader Contains:"), sourceShaderName);
+            sourceShaderName = EditorGUILayout.TextField(L("変換元シェーダー名", "Source Shader Name:"), sourceShaderName);
             targetShaderPath = EditorGUILayout.TextField(L("変換先シェーダー", "Target Shader:"), targetShaderPath);
 
             EditorGUILayout.Space();
@@ -127,6 +127,36 @@ namespace NataneToon.Editor
             }
         }
 
+        /// <summary>
+        /// シェーダー名が検索文字列と一致するかを判定する。
+        /// 完全一致、またはパス区切り（"/"）で始まるバリアントにマッチする。
+        /// 例: "lilToon" → "lilToon" (一致), "Hidden/lilToon" (末尾一致),
+        ///      "lilToon/Cutout" (先頭一致) にマッチするが、"Wirelight" にはマッチしない。
+        /// </summary>
+        private static bool MatchesShaderName(string shaderName, string source)
+        {
+            if (string.IsNullOrEmpty(shaderName) || string.IsNullOrEmpty(source))
+                return false;
+
+            // 完全一致
+            if (shaderName == source)
+                return true;
+
+            // パス区切りでのプレフィックス一致 (例: "lilToon/Cutout")
+            if (shaderName.StartsWith(source + "/"))
+                return true;
+
+            // パス区切りでのサフィックス一致 (例: "Hidden/lilToon")
+            if (shaderName.EndsWith("/" + source))
+                return true;
+
+            // パス中間に含まれる場合 (例: "Hidden/lilToon/Cutout")
+            if (shaderName.Contains("/" + source + "/"))
+                return true;
+
+            return false;
+        }
+
         private void ScanProject()
         {
             conversionInfos.Clear();
@@ -140,7 +170,7 @@ namespace NataneToon.Editor
                 Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
 
                 if (material != null && material.shader != null &&
-                    material.shader.name.Contains(sourceShaderName))
+                    MatchesShaderName(material.shader.name, sourceShaderName))
                 {
                     var info = new MaterialConversionInfo { material = material };
 

@@ -181,6 +181,7 @@ namespace NataneToon.Editor
                 EditorGUI.BeginDisabledGroup(unpackSource == null);
                 if (GUILayout.Button(L("アンパック R/G/B/A に分割", "Unpack to R/G/B/A"), GUILayout.Height(28)))
                 {
+                    if (unpackSource == null) return;
                     int size = Mathf.Max(unpackSource.width, unpackSource.height);
                     Texture2D[] channels = Unpack(unpackSource, size);
                     if (channels != null)
@@ -276,13 +277,19 @@ namespace NataneToon.Editor
             RenderTexture rt = RenderTexture.GetTemporary(targetSize, targetSize, 0, RenderTextureFormat.ARGB32);
             Graphics.Blit(source, rt);
             RenderTexture prev = RenderTexture.active;
-            RenderTexture.active = rt;
-            Texture2D readable = new Texture2D(targetSize, targetSize, TextureFormat.RGBA32, false);
-            readable.ReadPixels(new Rect(0, 0, targetSize, targetSize), 0, 0);
-            readable.Apply();
-            RenderTexture.active = prev;
-            RenderTexture.ReleaseTemporary(rt);
-            return readable;
+            try
+            {
+                RenderTexture.active = rt;
+                Texture2D readable = new Texture2D(targetSize, targetSize, TextureFormat.RGBA32, false);
+                readable.ReadPixels(new Rect(0, 0, targetSize, targetSize), 0, 0);
+                readable.Apply();
+                return readable;
+            }
+            finally
+            {
+                RenderTexture.active = prev;
+                RenderTexture.ReleaseTemporary(rt);
+            }
         }
 
         /// <summary>
@@ -300,7 +307,15 @@ namespace NataneToon.Editor
             if (string.IsNullOrEmpty(path)) return;
 
             byte[] bytes = texture.EncodeToPNG();
-            System.IO.File.WriteAllBytes(path, bytes);
+            try
+            {
+                System.IO.File.WriteAllBytes(path, bytes);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[Natane Toon] Failed to write file: {path}\n{e.Message}");
+                return;
+            }
             AssetDatabase.Refresh();
 
             EditorUtility.DisplayDialog(

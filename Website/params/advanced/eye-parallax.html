@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アイパララックス - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>アイパララックス</h1>
+    <p class="page-subtitle">視線追従による瞳の立体感表現</p>
+
+    <h2 id="overview">概要</h2>
+    <p>アイパララックスは、カメラの視線方向に応じて瞳のテクスチャ座標をオフセットすることで、瞳に奥行き感を与える軽量な視差効果です。通常のパララックスマッピング（<code>_PARALLAX</code>）とは異なり、高さマップやレイマーチングを必要とせず、ビュー方向のXY成分のみで計算するため、非常に低コストで自然な目の立体感を実現します。</p>
+    <p>キーワード <code>_EYE_PARALLAX</code> で制御され、無効時はシェーダー命令が生成されません。通常のパララックス（<code>_PARALLAX</code>）が有効な場合はそちらが優先され、アイパララックスは自動的にスキップされます。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">アイパララックスを有効化</span>
+        <span class="param-prop">_EyeParallax</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>アイパララックス機能の有効/無効を切り替えます。キーワード <code>_EYE_PARALLAX</code> でコンパイル時に分岐します。</p>
+        <p class="param-default">デフォルト: OFF</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">瞳の奥行き</span>
+        <span class="param-prop">_EyeParallaxDepth</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>瞳の視差オフセット量を制御します。値を大きくするほど瞳が奥にあるように見え、立体感が強くなります。大きすぎるとテクスチャのずれが不自然になるため、控えめな値を推奨します。</p>
+        <p class="param-default">デフォルト: 0.1</p>
+        <p class="param-range">範囲: 0 〜 0.5</p>
+      </div>
+      <div class="param-tip">0.05〜0.15 の範囲で調整すると自然な結果が得られます。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <ul>
+        <li>キャラクターの目のマテリアルに使用することを想定した機能です</li>
+        <li>通常のパララックス（高さマップ使用）より大幅に軽量なため、VRChatアバターに最適です</li>
+        <li>瞳のテクスチャがUVの中心付近に配置されている場合に最も自然な効果が得られます</li>
+        <li>ビュー方向のXY成分をそのままUVオフセットに使用するため、メッシュの向きによっては調整が必要です</li>
+        <li><code>_PARALLAX</code>（通常のパララックスマッピング）と同時に有効にすると、<code>_PARALLAX</code> が優先されこの機能は無視されます</li>
+      </ul>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

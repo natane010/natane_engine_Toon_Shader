@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tool Health Diagnostics - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Tool Health Diagnostics</h1>
+    <p class="page-subtitle">Cross-assembly tool health validator and diagnostics window</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; Natane &gt; Diagnostics</span>
+      <span>Category: Core</span>
+    </div>
+
+    <h2 id="overview">Overview</h2>
+    <p>The Tool Health Diagnostics window (NataneToolHealthValidator) validates the health of all editor tools included in the Natane Toon Shader package. It automatically checks whether tools distributed across multiple assemblies are correctly loaded and launchable from menus. The validator comprehensively verifies assembly load status, type existence, and MenuItem attribute presence, displaying causes and remedies when issues are found.</p>
+
+    <h2 id="access">Access</h2>
+    <p>Menu: <code>Tools &gt; Natane &gt; Diagnostics</code></p>
+
+    <h2 id="features">Features</h2>
+    <h3>Comprehensive Tool Checks</h3>
+    <ul>
+      <li><strong>Assembly Load Verification</strong> - Confirms that the three required assemblies (NataneToon.Editor, NataneToon.Editor.Tools, NataneToon.Editor.Migration) are loaded</li>
+      <li><strong>Type Existence Check</strong> - Verifies that each tool's class exists within its corresponding assembly</li>
+      <li><strong>MenuItem Attribute Check</strong> - Verifies that the [MenuItem] attribute is properly set on tool classes</li>
+      <li><strong>Menu Path Validation</strong> - Confirms the validity of menu paths registered in the tool registry</li>
+    </ul>
+
+    <h3>Validated Tools</h3>
+    <p>Validates over 30 tools organized in the following categories:</p>
+    <ul>
+      <li><strong>Material Tools</strong> - Material Validator, Material Editor, Material Preview, Material Comparison, Makeup Layer Manager</li>
+      <li><strong>Preset Tools</strong> - Material Preset Browser, Color Palette Manager, Default Preset Generator</li>
+      <li><strong>Effects Tools</strong> - Shadow Wizard, MatCap Composer, Dissolve Generator, Rim Light Visualizer, Screen FX Setup</li>
+      <li><strong>Optimization Tools</strong> - Performance Budget, Texture Optimizer, Outline Optimizer, Refraction Balancer, Shader Variant Collector/Stripper, Asset Reference Checker</li>
+      <li><strong>Migration Tools</strong> - lilToon Migration, Batch Material Converter, Prefab Variant Converter</li>
+      <li><strong>Mesh Tools</strong> - Smooth Normal Baker</li>
+      <li><strong>Others</strong> - Dashboard, Help, Particle Effect Editor, VTuber Preset Generator</li>
+    </ul>
+
+    <h3>Diagnostics Results Display</h3>
+    <ul>
+      <li><strong>Summary Display</strong> - Color-coded counts of errors, warnings, and healthy items</li>
+      <li><strong>Problems Only Filter</strong> - Toggle "Problems Only" to hide healthy tools</li>
+      <li><strong>Detailed Information</strong> - Problematic tools show a cause message and remedy suggestions</li>
+      <li><strong>Re-check</strong> - Re-run diagnostics with the "Re-check" button</li>
+    </ul>
+
+    <h3>Validate &amp; Launch API</h3>
+    <ul>
+      <li><strong>ValidateTool()</strong> - Pre-check a single tool by menu path</li>
+      <li><strong>ValidateAndLaunch()</strong> - Validate then launch a tool. On failure, displays a dialog with the cause and remedy, offering to open the diagnostics window</li>
+      <li><strong>GetOverallHealth()</strong> - Lightweight health check for the Dashboard toolbar indicator (Healthy/Warning/Error)</li>
+      <li><strong>RunFullDiagnostics()</strong> - Run comprehensive checks on all registered tools</li>
+    </ul>
+
+    <h2 id="usage">How to Use</h2>
+    <ol class="tool-steps">
+      <li>Open "Tools &gt; Natane &gt; Diagnostics" from the menu</li>
+      <li>The window automatically runs diagnostics on all tools when opened</li>
+      <li>Review the summary to see error, warning, and healthy counts</li>
+      <li>Enable "Problems Only" to show only tools with issues</li>
+      <li>Follow the "Remedy" instructions for each issue to fix problems</li>
+      <li>After fixing, click "Re-check" to re-run diagnostics and confirm the fix</li>
+    </ol>
+
+    <h2 id="severity">Severity Levels</h2>
+    <ul>
+      <li><strong>Error</strong> - Critical issue preventing the tool from launching. Assembly not loaded or type not found</li>
+      <li><strong>Warning</strong> - The tool exists but has partial issues. MenuItem attribute not found, unregistered in registry, etc.</li>
+      <li><strong>OK</strong> - The tool has been successfully validated</li>
+    </ul>
+
+    <h2 id="troubleshooting">Troubleshooting</h2>
+    <h3>Assembly Not Loaded</h3>
+    <p>Verify that the corresponding .asmdef file exists and references are correctly configured. Also check the Unity Editor console for compile errors.</p>
+
+    <h3>Type Not Found</h3>
+    <p>Check whether the class name or namespace has been changed. The ToolRegistry entry must match the actual class's fully-qualified name.</p>
+
+    <h3>MenuItem Attribute Not Found</h3>
+    <p>Verify that the tool class has a static method with the [MenuItem] attribute. The tool may not be launchable from the menu path without it.</p>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>Run diagnostics right after package installation to confirm all tools are loaded correctly</li>
+      <li>The Dashboard toolbar indicator uses GetOverallHealth() for a lightweight check</li>
+      <li>When a tool fails to launch, ValidateAndLaunch() automatically shows the cause</li>
+      <li>When adding new tools, remember to add an entry to the ToolRegistry</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

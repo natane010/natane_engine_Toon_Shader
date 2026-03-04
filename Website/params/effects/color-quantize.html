@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>カラー量子化 - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>カラー量子化</h1>
+    <p class="page-subtitle">色数を制限してポスタリゼーション・イラスト風の表現を実現</p>
+
+    <h2 id="overview">概要</h2>
+    <p>カラー量子化は、出力色の階調数を制限（量子化）することで、ポスタリゼーションやレトロゲーム風・イラスト風の色合いを実現するエフェクトです。RGBモードとHSVモードの2つの量子化方式を選択でき、オプションで4x4ベイヤーマトリクスによるオーダードディザリングを適用して、バンディングを軽減できます。</p>
+    <p>キーワード <code>_COLOR_QUANTIZE</code> で制御され、無効時はシェーダー命令が生成されません。</p>
+    <p>ForwardBaseパスでのみ適用されます。GrabPass不要で全バリアントで使用可能です。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">量子化モード</span>
+        <span class="param-prop">_QuantizeMode</span>
+        <span class="param-badge badge-enum">enum</span>
+      </div>
+      <div class="param-body">
+        <p>色の量子化方式を選択します。</p>
+        <ul>
+          <li><strong>RGB (0)</strong> - R/G/B各チャンネルを均一な階調数で量子化。シンプルなポスタリゼーション</li>
+          <li><strong>HSV (1)</strong> - 色相・彩度・明度を個別の階調数で量子化。より精密な色制御が可能</li>
+        </ul>
+        <p class="param-default">デフォルト: HSV (1)</p>
+      </div>
+      <div class="param-tip">イラスト風の表現にはHSVモードがおすすめです。色相と明度を独立して制御できるため、アニメ塗りのような色合いが作れます。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">量子化レベル（RGB）</span>
+        <span class="param-prop">_QuantizeLevels</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>RGBモード時の各チャンネルの離散化レベル数です。値が小さいほどポスタリゼーションが強くなります。</p>
+        <ul>
+          <li><strong>2〜4</strong> - 極端なレトロ/ドット絵風</li>
+          <li><strong>6〜12</strong> - イラスト/アニメ風（推奨）</li>
+          <li><strong>16〜32</strong> - 微細な色制限</li>
+        </ul>
+        <p class="param-default">デフォルト: 8</p>
+        <p class="param-range">範囲: 2 〜 32</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">色相レベル</span>
+        <span class="param-prop">_QuantizeHueLevels</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>HSVモード時の色相（Hue）の離散化レベル数です。色相環を指定数に分割します。</p>
+        <p class="param-default">デフォルト: 12</p>
+        <p class="param-range">範囲: 2 〜 36</p>
+      </div>
+      <div class="param-tip">12は色相環を30度間隔で分割し、基本的な色のバリエーションを保ちます。6にすると原色中心の表現になります。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">彩度レベル</span>
+        <span class="param-prop">_QuantizeSatLevels</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>HSVモード時の彩度（Saturation）の離散化レベル数です。</p>
+        <p class="param-default">デフォルト: 8</p>
+        <p class="param-range">範囲: 2 〜 16</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">明度レベル</span>
+        <span class="param-prop">_QuantizeValLevels</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>HSVモード時の明度（Value）の離散化レベル数です。アニメ風の影表現では、この値を低く（3〜5）設定すると効果的です。</p>
+        <p class="param-default">デフォルト: 8</p>
+        <p class="param-range">範囲: 2 〜 16</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ディザ量</span>
+        <span class="param-prop">_QuantizeDither</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>4x4ベイヤーマトリクスによるオーダードディザリングの強度です。量子化によるバンディング（色の段差）を軽減します。スクリーンスペースのピクセル座標に基づいて安定したディザパターンを生成します。</p>
+        <ul>
+          <li><strong>0</strong> - ディザなし（はっきりした色の段差）</li>
+          <li><strong>0.3〜0.5</strong> - 適度なディザ（推奨）</li>
+          <li><strong>0.7〜1.0</strong> - 強いディザ（レトロゲーム風）</li>
+        </ul>
+        <p class="param-default">デフォルト: 0.5</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+      <div class="param-tip">ディザは <code>StabilizeDitherCoord</code> 関数により、VRステレオ表示でも安定して動作します。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">ブレンド</span>
+        <span class="param-prop">_QuantizeBlend</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>量子化効果の適用強度を制御します。マスクテクスチャの値と乗算されます。</p>
+        <p class="param-default">デフォルト: 1</p>
+        <p class="param-range">範囲: 0 〜 1</p>
+      </div>
+    </div>
+
+    <h2 id="mask">マスク</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">量子化マスク</span>
+        <span class="param-prop">_QuantizeMask</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>量子化エフェクトの適用領域を制御するマスクテクスチャです。Rチャンネルが参照されます。</p>
+        <p class="param-default">デフォルト: "white"（全面適用）</p>
+      </div>
+      <div class="param-tip">白 = 量子化あり、黒 = 量子化なし。肌はスムーズに保ち、衣装だけイラスト風にするといった使い分けが可能です。</div>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <h3>アニメ風セル塗り表現</h3>
+      <p>HSVモードで明度レベルを3〜4に設定し、ディザを0にすると、アニメのセル塗りのようなパキッとした色分けが実現できます。色相レベルは12〜18で自然な色のバリエーションを保てます。</p>
+
+      <h3>レトロゲーム風表現</h3>
+      <p>RGBモードでレベルを4〜6に設定し、ディザを0.5〜0.8にすると、レトロゲームのような限定色パレット+ディザリングの表現が得られます。</p>
+
+      <h3>Kuwaharaフィルターとの組み合わせ</h3>
+      <p>Color Quantizeで色数を制限した後にKuwaharaフィルターでディテールを平滑化すると、印象派の油絵のようなスタイルになります。Color QuantizeはStage A（色変換）、KuwaharaはStage B（スクリーンスペース）で処理されるため、この順序で自動的に適用されます。</p>
+
+      <h3>パフォーマンスについて</h3>
+      <p>Color Quantizeは軽量なエフェクトです。HSVモードではRGB-HSV変換が追加されますが、GrabPass不要で演算コストのみのため、モバイルGPU（VRChat Quest）でも使用可能です。</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

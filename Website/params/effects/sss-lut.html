@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSS LUT - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>SSS LUT</h1>
+    <p class="page-subtitle">LUTベースの事前積分サブサーフェススキャタリング</p>
+
+    <h2 id="overview">概要</h2>
+    <p>SSS LUT（Subsurface Scattering Look-Up Table）は、通常のSSS計算の代わりにLUTテクスチャを使用して、物理ベースの事前積分サブサーフェススキャタリングを実現する機能です。NdotL（ライト方向と法線の内積）とサーフェスの曲率から2D LUTのUV座標を算出し、テクスチャルックアップで散乱光の色と強度を取得します。肌や蝋のようなリアルな半透明表現に適しています。</p>
+    <p>キーワード <code>_SSS_LUT</code> で制御され、SSS機能（<code>_SSS</code>）が有効な場合にのみ動作します。無効時はシェーダー命令が生成されません。SSS LUTが有効な場合、通常のSSS計算（SubsurfaceScattering関数）の代わりにLUTベースの計算（SubsurfaceScatteringLUT関数）が使用されます。</p>
+
+    <h2 id="params">パラメータ</h2>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SSS LUT 有効化</span>
+        <span class="param-prop">_SSSLUT</span>
+        <span class="param-badge badge-toggle">toggle</span>
+      </div>
+      <div class="param-body">
+        <p>SSS LUTの有効・無効を切り替えます。SSS機能（Enable SSS）が有効な場合にのみ効果があります。</p>
+        <p class="param-default">デフォルト: 0（無効）</p>
+      </div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">SSS LUTテクスチャ</span>
+        <span class="param-prop">_SSSLUTTex</span>
+        <span class="param-badge badge-texture">texture</span>
+      </div>
+      <div class="param-body">
+        <p>事前積分SSSのルックアップテーブルテクスチャです。横軸（U）がNdotL（0〜1にリマップ: ndotl * 0.5 + 0.5）、縦軸（V）が曲率（curvature * (1 - thickness)）に対応します。各ピクセルのRGB値が、その条件での散乱光の色を表します。</p>
+        <p class="param-default">デフォルト: "white"</p>
+      </div>
+      <div class="param-tip">Pre-integrated skin LUTテクスチャ（例: NVIDIA GPU Gems 3で紹介されているもの）が使用できます。テクスチャはリニア色空間で作成し、sRGBをオフにしてインポートすることを推奨します。</div>
+    </div>
+
+    <div class="param-card">
+      <div class="param-header">
+        <span class="param-name">LUTスケール</span>
+        <span class="param-prop">_SSSLUTScale</span>
+        <span class="param-badge badge-range">range</span>
+      </div>
+      <div class="param-body">
+        <p>LUTから取得した散乱光の色にこの値が乗算されます。LUTの出力を増幅または減衰させることで、SSS効果の全体的な強度を調整します。LUTの色には SSS Color（_SSSColor）も乗算されます。</p>
+        <p class="param-default">デフォルト: 1.0</p>
+        <p class="param-range">範囲: 0 〜 2</p>
+      </div>
+    </div>
+
+    <h2 id="related">関連パラメータ（SSS共通）</h2>
+    <div class="feature-section">
+      <p>SSS LUTは以下のSSS共通パラメータと組み合わせて使用されます。</p>
+      <ul>
+        <li><strong>SSS Color</strong> (<code>_SSSColor</code>) - 散乱光の色。LUT出力に乗算されます。</li>
+        <li><strong>Thickness Map</strong> (<code>_ThicknessMap</code> / <code>_ThicknessScale</code>) - 厚さマップ。LUTのV座標計算で curvature * (1 - thickness) として使用されます。厚い部分ほど散乱が抑制されます。</li>
+        <li><strong>SSS Mask</strong> (<code>_SSSMask</code>) - SSS適用マスク。LUT計算後の結果にマスクが適用されます。</li>
+        <li><strong>SSS Blend</strong> (<code>_SSSBlend</code>) / <strong>SSS Blend Mode</strong> (<code>_SSSBlendMode</code>) - ブレンド設定。</li>
+      </ul>
+    </div>
+
+    <h2 id="technical">技術詳細</h2>
+    <div class="feature-section">
+      <h3>曲率の計算</h3>
+      <p>曲率（curvature）は、法線のfwidth（画面空間での変化量）をワールド座標のfwidthで割ることで算出されます。この値は0〜1にクランプされ、表面の曲がり具合を表します。曲率が高い部分（鼻の先端、耳など）でより強い散乱が発生します。</p>
+      <h3>LUT UV座標の計算</h3>
+      <p>LUTテクスチャのUV座標は以下のように算出されます:</p>
+      <ul>
+        <li><strong>U座標</strong>: NdotL * 0.5 + 0.5（-1〜1 を 0〜1 にリマップ）</li>
+        <li><strong>V座標</strong>: curvature * (1.0 - thickness)（曲率を厚さで調整）</li>
+      </ul>
+    </div>
+
+    <h2 id="tips">使い方のヒント</h2>
+    <div class="feature-section">
+      <h3>通常SSSとの比較</h3>
+      <p>通常のSSSはリアルタイム計算で散乱をシミュレートしますが、SSS LUTは事前に計算されたルックアップテーブルを使用するため、より物理的に正確な結果を低コストで得られます。特に肌の表現において、通常SSSよりも自然な見た目になることが多いです。</p>
+      <h3>おすすめの用途</h3>
+      <ul>
+        <li><strong>リアルな肌</strong>: Pre-integrated skin LUTを使用して、赤みのある散乱光で肌の半透明感を表現</li>
+        <li><strong>蝋・大理石</strong>: 温かみのある散乱光のLUTを使用して、半透明素材の質感を再現</li>
+        <li><strong>植物の葉</strong>: 緑系の散乱光LUTで、バックライト時の光の透過を表現</li>
+      </ul>
+      <h3>パフォーマンス</h3>
+      <p>テクスチャサンプリング1回とfwidth計算で構成されます。通常のSSS計算（pow関数等）を置き換えるため、パフォーマンスへの影響はほぼ同等かわずかに良好です。</p>
+    </div>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>
