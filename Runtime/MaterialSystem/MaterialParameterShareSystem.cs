@@ -54,9 +54,15 @@ namespace NataneToon.MaterialSystem
 
             // Create a temporary preset to extract parameters
             var tempPreset = ScriptableObject.CreateInstance<NataneToonMaterialPreset>();
-            tempPreset.CreateFromMaterial(material);
-            data.parameters = tempPreset.parameters;
-            ScriptableObject.DestroyImmediate(tempPreset);
+            try
+            {
+                tempPreset.CreateFromMaterial(material);
+                data.parameters = tempPreset.parameters;
+            }
+            finally
+            {
+                ScriptableObject.DestroyImmediate(tempPreset);
+            }
 
             string json = JsonUtility.ToJson(data, true);
             return json;
@@ -85,9 +91,15 @@ namespace NataneToon.MaterialSystem
 
                 // Create temporary preset and apply
                 var tempPreset = ScriptableObject.CreateInstance<NataneToonMaterialPreset>();
-                tempPreset.parameters = data.parameters;
-                tempPreset.ApplyToMaterial(targetMaterial);
-                ScriptableObject.DestroyImmediate(tempPreset);
+                try
+                {
+                    tempPreset.parameters = data.parameters;
+                    tempPreset.ApplyToMaterial(targetMaterial);
+                }
+                finally
+                {
+                    ScriptableObject.DestroyImmediate(tempPreset);
+                }
 
                 Debug.Log($"[MaterialParameterShareSystem] Successfully imported parameters to '{targetMaterial.name}'\n" +
                          $"Original material: {data.materialName}\n" +

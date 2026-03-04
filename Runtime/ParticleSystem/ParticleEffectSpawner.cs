@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace NataneParticleSystem
@@ -36,13 +37,19 @@ namespace NataneParticleSystem
             {
                 if (spawnDelay > 0)
                 {
-                    Invoke(nameof(SpawnDefaultEffect), spawnDelay);
+                    StartCoroutine(SpawnDefaultEffectDelayed(spawnDelay));
                 }
                 else
                 {
                     SpawnDefaultEffect();
                 }
             }
+        }
+
+        private IEnumerator SpawnDefaultEffectDelayed(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            SpawnDefaultEffect();
         }
 
         /// <summary>

@@ -206,9 +206,10 @@ namespace NataneToon.MaterialSystem
             }
 
             // Verify shader compatibility
-            if (!material.shader.name.Contains("Natane") || !material.shader.name.Contains("Toon"))
+            if (material.shader == null || !material.shader.name.Contains("Natane") || !material.shader.name.Contains("Toon"))
             {
                 Debug.LogWarning($"[NataneToonMaterialPreset] Material '{material.name}' is not using Natane Toon Shader. Some parameters may not apply.");
+                if (material.shader == null) return;
             }
 
             var p = parameters;

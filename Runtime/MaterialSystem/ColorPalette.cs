@@ -23,22 +23,38 @@ namespace NataneToon.MaterialSystem
 
         public List<ColorEntry> colors = new List<ColorEntry>();
 
+        [NonSerialized] private Dictionary<string, ColorEntry> _cache;
+
+        private void RebuildCache()
+        {
+            _cache = new Dictionary<string, ColorEntry>(colors.Count);
+            foreach (var entry in colors)
+            {
+                if (entry != null && !string.IsNullOrEmpty(entry.name))
+                    _cache[entry.name] = entry;
+            }
+        }
+
         public Color GetColor(string colorName)
         {
-            var entry = colors.Find(c => c.name == colorName);
-            return entry != null ? entry.color : Color.white;
+            if (_cache == null) RebuildCache();
+            if (_cache.TryGetValue(colorName, out var entry))
+                return entry.color;
+            return Color.white;
         }
 
         public void SetColor(string colorName, Color color)
         {
-            var entry = colors.Find(c => c.name == colorName);
-            if (entry != null)
+            if (_cache == null) RebuildCache();
+            if (_cache.TryGetValue(colorName, out var entry))
             {
                 entry.color = color;
             }
             else
             {
-                colors.Add(new ColorEntry { name = colorName, color = color });
+                var newEntry = new ColorEntry { name = colorName, color = color };
+                colors.Add(newEntry);
+                _cache[colorName] = newEntry;
             }
         }
     }
