@@ -142,8 +142,9 @@ float2 ParallaxMapping(float2 uv, float3 viewDirTangent)
     float afterDepth = currentDepthMapValue - currentLayerDepth;
     float beforeDepth = tex2D(_ParallaxMap, prevUV).r - currentLayerDepth + layerDepth;
 
-    // Interpolation weight
-    float weight = afterDepth / (afterDepth - beforeDepth);
+    // Interpolation weight (with zero-division protection)
+    float depthDiff = afterDepth - beforeDepth;
+    float weight = saturate(afterDepth / max(abs(depthDiff), 0.0001));
 
     // Final UV coordinates
     float2 finalUV = lerp(currentUV, prevUV, weight);
