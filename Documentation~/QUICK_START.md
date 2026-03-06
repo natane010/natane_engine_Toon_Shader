@@ -111,6 +111,12 @@ MatCap: 有効（金属質感）
 
 より詳しい情報は [README.md](README.md) を参照してください。
 
+### VRChat PCアップロード前チェック
+
+- PC版VRChatアバターへ組み込む前に [VRCHAT_PC_UPLOAD_CHECKLIST.md](VRCHAT_PC_UPLOAD_CHECKLIST.md) を確認してください
+- `推定 Sampler 負荷` が危険寄りのままアップロードしないのが安全です
+- `Light Volume` / `LTCGI` は対応パッケージと使用ワールドが揃っているときだけ有効化するのがよきです
+
 ### さらに学ぶ
 - カスタムランプテクスチャの作成
 - 法線マップの使用

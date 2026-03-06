@@ -5,6 +5,23 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-03-07
+
+### Added
+- **UVアイランド クリック選択**: UVマスクタブでキャンバス上のUVアイランドを色分け表示し、クリックで直接選択/解除可能に。HSVカラーホイールによるアイランド色分け、重心座標法によるヒットテスト、ホバーハイライト対応
+- **ダッシュボード レスポンシブUI**: ツールカードグリッドがウィンドウ幅に追従する動的列数レイアウトに刷新。GUIStyleキャッシュ化によるGC Alloc削減
+- **ダッシュボード 完全ローカライズ**: 全ツール名・説明文・カテゴリ名・検索ラベル・ボタンの日英対応を完了。副名称（日→英 / 英→日）表示を追加
+
+### Fixed
+- **VCC ダッシュボード起動不可修正**: 削除済み VTuberPresetGenerator のゴーストエントリが ToolRegistry/Dashboard/MenuPaths に残存し、HealthValidator が Error を返していた問題を修正
+- **NatanePackagePathResolver**: VCC (Packages/) とUnityPackage (Assets/) 両方のインストールパスを動的解決するリゾルバーを追加
+
+### Changed
+- **ダッシュボード ToolInfo 構造改善**: 日英テキストを分離保持し、言語切替で即時反映される設計に変更
+- **検索機能改善**: 日英両方のツール名・説明文を横断検索可能に
+
+---
+
 ## [1.3.7] - 2026-03-04
 
 ### Added

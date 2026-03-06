@@ -272,6 +272,11 @@ VRChat運用を意識した機能（AudioLink、VRC Light Volumes、LTCGI、最�
 1. `Tools/Natane/エフェクト Effects/スクリーンエフェクト設定 Screen FX Setup` を実行
 2. 生成マテリアルを調整して画面演出を追加
 
+### PC版VRChatアップロード前
+
+- アップロード前の確認項目は [Documentation~/VRCHAT_PC_UPLOAD_CHECKLIST.md](Documentation~/VRCHAT_PC_UPLOAD_CHECKLIST.md) を参照してください
+- 特に `推定 Sampler 負荷`、`Light Volume / LTCGI` の有効状態、`Material Validator` の結果は先に確認するのが安全です
+
 ## 最適化ガイド（要点）
 
 - 不要機能はトグルでOFFにし、キーワード数を抑える
