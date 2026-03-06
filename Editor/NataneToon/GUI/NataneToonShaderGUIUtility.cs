@@ -505,6 +505,34 @@ namespace NataneToon.Editor
             EditorGUILayout.EndVertical();
         }
 
+        public static void DrawCompactPerformanceSummary(Material material)
+        {
+            if (material == null)
+            {
+                return;
+            }
+
+            int activeFeatures = CountActiveFeatures(material);
+            string rating = GetPerformanceRating(activeFeatures);
+            var samplerBudget = NataneToonSamplerBudgetEstimator.Estimate(material);
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(L("パフォーマンス", "Performance"), EditorStyles.boldLabel);
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.LabelField(
+                $"{L("Sampler", "Sampler")}: {samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}",
+                EditorStyles.miniBoldLabel,
+                GUILayout.Width(120));
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.LabelField(
+                $"{L("機能", "Features")}: {activeFeatures} / {L("評価", "Rating")}: {rating} / {L("状態", "Status")}: {GetSamplerBudgetStatus(samplerBudget)}",
+                EditorStyles.wordWrappedMiniLabel);
+            DrawSamplerBudgetBar(samplerBudget);
+            EditorGUILayout.EndVertical();
+        }
+
         private static int CountActiveFeatures(Material material)
         {
             int count = 0;

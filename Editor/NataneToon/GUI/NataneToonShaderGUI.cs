@@ -421,6 +421,8 @@ public class NataneToonShaderGUI : ShaderGUI
 
             // ===== Compact Header =====
             DrawCompactHeader();
+            NataneToonShaderGUIUtility.DrawCompactPerformanceSummary(targetMaterial);
+            EditorGUILayout.Space(SECTION_SPACING);
 
             // ===== Tab Navigation =====
             EditorGUI.BeginChangeCheck();
@@ -458,6 +460,9 @@ public class NataneToonShaderGUI : ShaderGUI
             }
             else
             {
+                DrawSharedInspectorSections();
+                EditorGUILayout.Space(SECTION_SPACING);
+
                 switch (selectedTab)
                 {
                     case 0: // テクスチャ&色
@@ -6301,9 +6306,6 @@ public class NataneToonShaderGUI : ShaderGUI
     /// </summary>
     private void DrawBasicTab()
     {
-        SafeDrawSection(DrawPresetsSection, L("プリセット", "Presets"));
-        SafeDrawSection(DrawFeatureOverviewSection, L("機能一覧", "Feature Overview"));
-        SafeDrawSection(DrawPerformanceSection, L("パフォーマンス", "Performance"));
         SafeDrawSection(DrawQuickSetupSection, L("クイックセットアップ", "Quick Setup")); // 3.2 Quick Setup
         EditorGUILayout.Space(SECTION_SPACING);
 
@@ -6316,6 +6318,12 @@ public class NataneToonShaderGUI : ShaderGUI
         SafeDrawSection(DrawShadowEdgeNoiseSection, L("影エッジノイズ", "Shadow Edge Noise"));
         SafeDrawSection(DrawGradientBaseColorSection, L("グラデーションベースカラー", "Gradient Base Color"));
         SafeDrawSection(DrawShadingSection, L("シェーディング", "Shading"));
+    }
+
+    private void DrawSharedInspectorSections()
+    {
+        SafeDrawSection(DrawPresetsSection, L("プリセット", "Presets"));
+        SafeDrawSection(DrawFeatureOverviewSection, L("機能一覧", "Feature Overview"));
     }
 
     /// <summary>
