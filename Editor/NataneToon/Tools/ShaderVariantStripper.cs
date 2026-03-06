@@ -352,24 +352,7 @@ namespace NataneToon.Editor
 
         private static int CountNataneMaterials()
         {
-            string[] materialGuids = AssetDatabase.FindAssets("t:Material");
-            int count = 0;
-
-            foreach (string guid in materialGuids)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-
-                if (material == null || material.shader == null)
-                    continue;
-
-                if (ShaderVariantCollector.IsNataneToonShader(material.shader.name))
-                {
-                    count++;
-                }
-            }
-
-            return count;
+            return NataneMaterialAssetCache.GetMaterialsByShaderPrefix("Natane/Toon Shader").Count;
         }
 
         private static void ScanAndDisplayKeywords()

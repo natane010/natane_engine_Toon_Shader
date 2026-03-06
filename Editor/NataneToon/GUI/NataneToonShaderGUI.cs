@@ -364,6 +364,12 @@ public class NataneToonShaderGUI : ShaderGUI
 
     // Foldout state initialization tracking
     private int _lastLoadedMaterialInstanceId = -1;
+    private int _lastValidatedMaterialInstanceId = -1;
+    private bool _keywordValidationRequested = true;
+    private bool _hasCachedSamplerBudgetEstimate;
+    private NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate _cachedSamplerBudgetEstimate;
+    private readonly Dictionary<string, NataneToonSamplerBudgetEstimator.ToggleEvaluation> _toggleEvaluationCache =
+        new Dictionary<string, NataneToonSamplerBudgetEstimator.ToggleEvaluation>();
 
     public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties)
     {
@@ -386,8 +392,12 @@ public class NataneToonShaderGUI : ShaderGUI
             {
                 foldoutStates.Clear();
                 _lastLoadedMaterialInstanceId = currentMaterialId;
+                _lastValidatedMaterialInstanceId = -1;
+                _keywordValidationRequested = true;
+                InvalidateInspectorCaches();
             }
             LoadUIState();
+            EnsureKeywordsValidatedForCurrentMaterial();
 
             // ===== Shader Type Dropdown =====
             bool shouldReturn;
@@ -414,14 +424,12 @@ public class NataneToonShaderGUI : ShaderGUI
                 }
             }
 
-            // Validate and fix shader keywords (ensures keywords match property values)
-            ValidateAndFixKeywords();
             DrawDependencyInspectorWarnings();
             DrawSamplerBudgetInspectorWarning();
 
             // ===== Compact Header =====
             DrawCompactHeader();
-            NataneToonShaderGUIUtility.DrawCompactPerformanceSummary(targetMaterial);
+            NataneToonShaderGUIUtility.DrawCompactPerformanceSummary(targetMaterial, GetCurrentSamplerBudgetEstimate());
             EditorGUILayout.Space(SECTION_SPACING);
 
             // ===== Tab Navigation =====
@@ -483,6 +491,11 @@ public class NataneToonShaderGUI : ShaderGUI
                 }
             }
 
+            if (GUI.changed)
+            {
+                SynchronizeKeywordsAndRefreshInspectorCaches();
+            }
+
             // Foldout states are persisted immediately via SetFoldout() - no batch save needed.
         }
         catch (ExitGUIException)
@@ -494,6 +507,61 @@ public class NataneToonShaderGUI : ShaderGUI
             EditorGUILayout.HelpBox(L($"インスペクターの描画中にエラーが発生しました: {e.Message}", $"An error occurred while drawing the inspector: {e.Message}"), MessageType.Error);
             UnityEngine.Debug.LogException(e);
         }
+    }
+
+    private void InvalidateInspectorCaches()
+    {
+        _hasCachedSamplerBudgetEstimate = false;
+        _toggleEvaluationCache.Clear();
+    }
+
+    private NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate GetCurrentSamplerBudgetEstimate()
+    {
+        if (!_hasCachedSamplerBudgetEstimate)
+        {
+            _cachedSamplerBudgetEstimate = NataneToonSamplerBudgetEstimator.Estimate(targetMaterial);
+            _hasCachedSamplerBudgetEstimate = true;
+        }
+
+        return _cachedSamplerBudgetEstimate;
+    }
+
+    private NataneToonSamplerBudgetEstimator.ToggleEvaluation GetCachedToggleEvaluation(string keyword)
+    {
+        if (!_toggleEvaluationCache.TryGetValue(keyword, out NataneToonSamplerBudgetEstimator.ToggleEvaluation evaluation))
+        {
+            evaluation = NataneToonSamplerBudgetEstimator.EvaluateEnable(targetMaterial, keyword);
+            _toggleEvaluationCache[keyword] = evaluation;
+        }
+
+        return evaluation;
+    }
+
+    private void EnsureKeywordsValidatedForCurrentMaterial()
+    {
+        if (targetMaterial == null)
+        {
+            return;
+        }
+
+        int materialId = targetMaterial.GetInstanceID();
+        if (!_keywordValidationRequested && _lastValidatedMaterialInstanceId == materialId)
+        {
+            return;
+        }
+
+        ValidateAndFixKeywords();
+        _lastValidatedMaterialInstanceId = materialId;
+        _keywordValidationRequested = false;
+        InvalidateInspectorCaches();
+    }
+
+    private void SynchronizeKeywordsAndRefreshInspectorCaches()
+    {
+        ValidateAndFixKeywords();
+        _lastValidatedMaterialInstanceId = targetMaterial != null ? targetMaterial.GetInstanceID() : -1;
+        _keywordValidationRequested = false;
+        InvalidateInspectorCaches();
     }
 
     private void SafeDrawSection(System.Action drawAction, string sectionName)
@@ -1441,7 +1509,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawSamplerBudgetInspectorWarning()
     {
-        var estimate = NataneToonSamplerBudgetEstimator.Estimate(targetMaterial);
+        var estimate = GetCurrentSamplerBudgetEstimate();
         if (!estimate.IsWarning && !estimate.HasLightVolumeLtcgiCombo && !estimate.HasCriticalLightingCombo)
         {
             return;
@@ -5613,7 +5681,7 @@ public class NataneToonShaderGUI : ShaderGUI
         }
 
         bool enabled = property.floatValue > FLOAT_COMPARISON_THRESHOLD;
-        var toggleEvaluation = NataneToonSamplerBudgetEstimator.EvaluateEnable(targetMaterial, keyword);
+        var toggleEvaluation = GetCachedToggleEvaluation(keyword);
         bool canEnable = enabled || toggleEvaluation.CanEnable;
         bool changed = false;
         bool newEnabled = enabled;
@@ -6087,7 +6155,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
                 string keyword = features[i][0];
                 bool isEnabled = targetMaterial.IsKeywordEnabled(keyword);
-                var toggleEvaluation = NataneToonSamplerBudgetEstimator.EvaluateEnable(targetMaterial, keyword);
+                var toggleEvaluation = GetCachedToggleEvaluation(keyword);
                 bool canEnable = isEnabled || toggleEvaluation.CanEnable;
                 if (isEnabled) enabledCount++;
 
@@ -6191,7 +6259,7 @@ public class NataneToonShaderGUI : ShaderGUI
         SetFoldout("Performance", DrawBoxedSection(L("パフォーマンス", "Performance"), GetFoldout("Performance"), SectionCategory.Basic));
         if (GetFoldout("Performance"))
         {
-            NataneToonShaderGUIUtility.DrawPerformanceIndicatorWithSamplerBudget(targetMaterial);
+            NataneToonShaderGUIUtility.DrawPerformanceIndicatorWithSamplerBudget(targetMaterial, GetCurrentSamplerBudgetEstimate());
 
             DrawHelpToggle("PerformanceHint",
                 L("ヒント：使用していない機能を無効化するとパフォーマンスが向上します。\n" +
@@ -6267,7 +6335,7 @@ public class NataneToonShaderGUI : ShaderGUI
         // Quick validation button
         if (GUILayout.Button(new GUIContent(L("更新", "Sync"), L("キーワード検証", "Keyword Validation")), GUILayout.Width(40), GUILayout.Height(20)))
         {
-            ValidateAndFixKeywords();
+            SynchronizeKeywordsAndRefreshInspectorCaches();
         }
 
         // Expand/Collapse buttons
@@ -6835,7 +6903,9 @@ public class NataneToonShaderGUI : ShaderGUI
 
         // Validate keywords after shader assignment
         targetMaterial = material;
-        ValidateAndFixKeywords();
+        _keywordValidationRequested = true;
+        InvalidateInspectorCaches();
+        SynchronizeKeywordsAndRefreshInspectorCaches();
     }
 
     /// <summary>

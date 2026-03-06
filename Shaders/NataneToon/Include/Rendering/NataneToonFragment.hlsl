@@ -620,8 +620,13 @@ half4 frag(v2f i) : SV_Target
         // Shadow color texture: lilToon style (multiplicative tinting)
         // _ShadowColorTexStrength で制御（既存Natane方式との互換）
         // デフォルト白テクスチャ + Strength=0 → stIndirectCol = stAlbedo * _ShadowColor.rgb（正常動作）
-        half3 stShadowColorTexSample = tex2D(_ShadowColorTex, uv).rgb;
-        half3 stTintedAlbedo = lerp(stAlbedo, stAlbedo * stShadowColorTexSample, _ShadowColorTexStrength);
+        half shadowColorTexStrength = saturate(_ShadowColorTexStrength);
+        half3 stShadowColorTexSample = half3(1.0, 1.0, 1.0);
+        if (shadowColorTexStrength > 0.001)
+        {
+            stShadowColorTexSample = tex2D(_ShadowColorTex, uv).rgb;
+        }
+        half3 stTintedAlbedo = lerp(stAlbedo, stAlbedo * stShadowColorTexSample, shadowColorTexStrength);
         half3 stIndirectCol = stTintedAlbedo * _ShadowColor.rgb;
 
         // Multi-shadow (lilToon sequential lerp with alpha)
@@ -711,9 +716,13 @@ half4 frag(v2f i) : SV_Target
         shadowColor = MultiToneShadowColor(shadingValue, half3(1.0, 1.0, 1.0));
 
         // Optional texture-driven shadow tinting for richer NPR shadow control
-        half3 shadowColorTex = tex2D(_ShadowColorTex, uv).rgb;
-        half3 texturedShadowColor = shadowColor * shadowColorTex;
-        shadowColor = lerp(shadowColor, texturedShadowColor, saturate(_ShadowColorTexStrength));
+        half shadowColorTexStrength = saturate(_ShadowColorTexStrength);
+        if (shadowColorTexStrength > 0.001)
+        {
+            half3 shadowColorTex = tex2D(_ShadowColorTex, uv).rgb;
+            half3 texturedShadowColor = shadowColor * shadowColorTex;
+            shadowColor = lerp(shadowColor, texturedShadowColor, shadowColorTexStrength);
+        }
 
         // ===== Cast Shadow Color Control =====
         #ifdef _CAST_SHADOW_COLOR
@@ -923,8 +932,7 @@ half4 frag(v2f i) : SV_Target
                 float3 lvAddition = saturate(directLightLV - lighting);
                 lighting += lvAddition;
                 // Indirect as subtle rim
-                float3 viewDirForLV = normalize(_WorldSpaceCameraPos - i.worldPos);
-                float rimFactor = 1.0 - saturate(dot(worldNormal, viewDirForLV));
+                float rimFactor = 1.0 - saturate(dot(worldNormal, viewDir));
                 rimFactor = rimFactor * rimFactor * rimFactor;
                 float3 indirectAddition = saturate(indirectLightLV - lighting);
                 lighting += indirectAddition * rimFactor;
@@ -1142,6 +1150,10 @@ half4 frag(v2f i) : SV_Target
     // → MatCap (1/2/3) → Reflection → Refraction → Emission → Hue Shift
     // → AudioLink → Glitter → Iridescence → Drip → Hologram → Glitch → Decal → Dissolve
     // 各エフェクトは SafeAdditiveBlend で白飛びを防ぎ、距離フェードにも対応する。
+
+    #if defined(UNITY_PASS_FORWARDBASE) && (defined(_MATCAP) || defined(_MATCAP_2) || defined(_MATCAP_3) || defined(_PROCEDURAL_MATCAP))
+        float2 sharedMatCapUV = CalculateMatCapUV(worldNormal, viewDir);
+    #endif
 
     // ===== Specular Highlight =====
     #ifdef _SPECULAR
@@ -1488,8 +1500,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== MatCap (ForwardBase only) =====
     #if defined(_MATCAP) && defined(UNITY_PASS_FORWARDBASE)
-        float2 matcapUV = CalculateMatCapUV(worldNormal, viewDir);
-        half3 matcap = SampleTex2DBlur3(_MatCapTex, matcapUV, _MatCapBlur) * _MatCapIntensity;
+        half3 matcap = SampleTex2DBlur3(_MatCapTex, sharedMatCapUV, _MatCapBlur) * _MatCapIntensity;
 
         // Apply mask texture with soft blending
         half matcapMask = NATANE_SAMPLE_SHARED_R(_MatCapMask, _MatCapTex, uv);
@@ -1534,8 +1545,7 @@ half4 frag(v2f i) : SV_Target
     // ===== MatCap 2 (ForwardBase only) =====
     #ifndef _QUEST_LITE
     #if defined(_MATCAP_2) && defined(UNITY_PASS_FORWARDBASE)
-        float2 matcapUV2 = CalculateMatCapUV(worldNormal, viewDir);
-        half3 matcap2 = SampleTex2DBlur3(_MatCapTex2, matcapUV2, _MatCap2Blur) * _MatCapIntensity2;
+        half3 matcap2 = SampleTex2DBlur3(_MatCapTex2, sharedMatCapUV, _MatCap2Blur) * _MatCapIntensity2;
 
         half matcapMask2 = NATANE_SAMPLE_SHARED_R(_MatCapMask2, _MatCapTex2, uv);
         matcapMask2 = ApplySoftMask(matcapMask2);
@@ -1564,8 +1574,7 @@ half4 frag(v2f i) : SV_Target
     // ===== MatCap 3 (ForwardBase only) =====
     #ifndef _QUEST_LITE
     #if defined(_MATCAP_3) && defined(UNITY_PASS_FORWARDBASE)
-        float2 matcapUV3 = CalculateMatCapUV(worldNormal, viewDir);
-        half3 matcap3 = SampleTex2DBlur3(_MatCapTex3, matcapUV3, _MatCap3Blur) * _MatCapIntensity3;
+        half3 matcap3 = SampleTex2DBlur3(_MatCapTex3, sharedMatCapUV, _MatCap3Blur) * _MatCapIntensity3;
 
         half matcapMask3 = NATANE_SAMPLE_SHARED_R(_MatCapMask3, _MatCapTex3, uv);
         matcapMask3 = ApplySoftMask(matcapMask3);
@@ -1594,9 +1603,8 @@ half4 frag(v2f i) : SV_Target
     // ===== Procedural MatCap (ForwardBase only) =====
     #if defined(_PROCEDURAL_MATCAP) && defined(UNITY_PASS_FORWARDBASE)
     {
-        float2 procMatCapUV = CalculateMatCapUV(worldNormal, viewDir);
         // Spherical gradient from view-space normal
-        half gradient = pow(saturate(1.0 - length(procMatCapUV - 0.5) * 2.0), _ProcMatCapPower);
+        half gradient = pow(saturate(1.0 - length(sharedMatCapUV - 0.5) * 2.0), _ProcMatCapPower);
         // Fresnel rim enhancement
         half procFresnel = pow(1.0 - saturate(dot(worldNormal, viewDir)), _ProcMatCapFresnelPower);
         half3 procMatCap = _ProcMatCapColor.rgb * (gradient + procFresnel) * _ProcMatCapIntensity;

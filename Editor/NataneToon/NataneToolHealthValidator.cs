@@ -433,13 +433,7 @@ namespace NataneToon.Editor
 
         private static List<Material> FindNataneMaterials()
         {
-            return AssetDatabase.FindAssets("t:Material")
-                .Select(AssetDatabase.GUIDToAssetPath)
-                .Select(AssetDatabase.LoadAssetAtPath<Material>)
-                .Where(material => material != null &&
-                                   material.shader != null &&
-                                   material.shader.name.StartsWith(NATANE_SHADER_NAME_PREFIX, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            return NataneMaterialAssetCache.GetMaterialsByShaderPrefix(NATANE_SHADER_NAME_PREFIX).ToList();
         }
 
         private static bool IsMaterialFeatureEnabled(Material material, string propertyName)

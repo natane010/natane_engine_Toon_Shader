@@ -15,6 +15,16 @@ namespace NataneToon.Editor
     {
         private static GUIStyle headerStyle;
         private static GUIStyle boxStyle;
+        private static readonly string[] PerformanceKeywords =
+        {
+            "_SPECULAR", "_RIM_LIGHT", "_SSS", "_MATCAP", "_OUTLINE", "_EMISSION",
+            "_DISSOLVE", "_HUE_SHIFT",
+            "_REFLECTION", "_ENV_RIM", "_PARALLAX", "_REFRACTION",
+            "_IRIDESCENCE", "_GLITTER", "_MATCAP_2", "_MATCAP_3",
+            "_AUDIOLINK", "_HOLOGRAM", "_GLITCH", "_DECAL",
+            "_VAT", "_VERTEX_ANIMATION", "_PIXEL_VERTEX_LIGHTS",
+            "_NORMALMAP"
+        };
 
         /// <summary>
         /// Initialize styles
@@ -507,6 +517,11 @@ namespace NataneToon.Editor
 
         public static void DrawCompactPerformanceSummary(Material material)
         {
+            DrawCompactPerformanceSummary(material, NataneToonSamplerBudgetEstimator.Estimate(material));
+        }
+
+        public static void DrawCompactPerformanceSummary(Material material, NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate samplerBudget)
+        {
             if (material == null)
             {
                 return;
@@ -514,7 +529,6 @@ namespace NataneToon.Editor
 
             int activeFeatures = CountActiveFeatures(material);
             string rating = GetPerformanceRating(activeFeatures);
-            var samplerBudget = NataneToonSamplerBudgetEstimator.Estimate(material);
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.BeginHorizontal();
@@ -537,18 +551,7 @@ namespace NataneToon.Editor
         {
             int count = 0;
 
-            string[] keywords = new[]
-            {
-                "_SPECULAR", "_RIM_LIGHT", "_SSS", "_MATCAP", "_OUTLINE", "_EMISSION",
-                "_DISSOLVE", "_HUE_SHIFT",
-                "_REFLECTION", "_ENV_RIM", "_PARALLAX", "_REFRACTION",
-                "_IRIDESCENCE", "_GLITTER", "_MATCAP_2", "_MATCAP_3",
-                "_AUDIOLINK", "_HOLOGRAM", "_GLITCH", "_DECAL",
-                "_VAT", "_VERTEX_ANIMATION", "_PIXEL_VERTEX_LIGHTS",
-                "_NORMALMAP"
-            };
-
-            foreach (string keyword in keywords)
+            foreach (string keyword in PerformanceKeywords)
             {
                 if (material.IsKeywordEnabled(keyword))
                 {
@@ -585,9 +588,12 @@ namespace NataneToon.Editor
 
         public static void DrawPerformanceIndicatorWithSamplerBudget(Material material)
         {
-            DrawPerformanceIndicator(material);
+            DrawPerformanceIndicatorWithSamplerBudget(material, NataneToonSamplerBudgetEstimator.Estimate(material));
+        }
 
-            var samplerBudget = NataneToonSamplerBudgetEstimator.Estimate(material);
+        public static void DrawPerformanceIndicatorWithSamplerBudget(Material material, NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate samplerBudget)
+        {
+            DrawPerformanceIndicator(material);
 
             EditorGUILayout.Space(4);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
