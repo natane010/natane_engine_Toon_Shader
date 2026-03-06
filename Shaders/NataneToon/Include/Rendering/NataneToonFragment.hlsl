@@ -1,4 +1,4 @@
-﻿#ifndef NATANE_TOON_FRAGMENT_INCLUDED
+#ifndef NATANE_TOON_FRAGMENT_INCLUDED
 #define NATANE_TOON_FRAGMENT_INCLUDED
 
 // ===== Fragment Shader Constants =====
@@ -102,10 +102,11 @@ half4 frag(v2f i) : SV_Target
     #ifdef _2ND_TEXTURE
     {
         float2 _2ndAnimUV = AnimateUVIfNeeded(uv, _2ndTexScrollSpeed.xy, _2ndTexRotateSpeed);
-        col.rgb = ApplyMakeupTexture(col.rgb, _2ndTex, _2ndTexMask, _2ndAnimUV, uv,
+        half4 secondTexSample = tex2D(_2ndTex, _2ndAnimUV);
+        float secondMask = NATANE_SAMPLE_SHARED_R(_2ndTexMask, _2ndTex, uv);
+        col.rgb = ApplyMakeupTexture(col.rgb, secondTexSample, secondMask,
             _2ndTexHueShift, _2ndTexSaturation, _2ndTexValue,
-            _2ndTexIntensity, _2ndTexBlendMode,
-            true
+            _2ndTexIntensity, _2ndTexBlendMode
         );
     }
     #endif
@@ -113,10 +114,11 @@ half4 frag(v2f i) : SV_Target
     #ifdef _3RD_TEXTURE
     {
         float2 _3rdAnimUV = AnimateUVIfNeeded(uv, _3rdTexScrollSpeed.xy, _3rdTexRotateSpeed);
-        col.rgb = ApplyMakeupTexture(col.rgb, _3rdTex, _3rdTexMask, _3rdAnimUV, uv,
+        half4 thirdTexSample = tex2D(_3rdTex, _3rdAnimUV);
+        float thirdMask = NATANE_SAMPLE_SHARED_R(_3rdTexMask, _3rdTex, uv);
+        col.rgb = ApplyMakeupTexture(col.rgb, thirdTexSample, thirdMask,
             _3rdTexHueShift, _3rdTexSaturation, _3rdTexValue,
-            _3rdTexIntensity, _3rdTexBlendMode,
-            true
+            _3rdTexIntensity, _3rdTexBlendMode
         );
     }
     #endif
@@ -124,10 +126,11 @@ half4 frag(v2f i) : SV_Target
     #ifdef _4TH_TEXTURE
     {
         float2 _4thAnimUV = AnimateUVIfNeeded(uv, _4thTexScrollSpeed.xy, _4thTexRotateSpeed);
-        col.rgb = ApplyMakeupTexture(col.rgb, _4thTex, _4thTexMask, _4thAnimUV, uv,
+        half4 fourthTexSample = tex2D(_4thTex, _4thAnimUV);
+        float fourthMask = NATANE_SAMPLE_SHARED_R(_4thTexMask, _4thTex, uv);
+        col.rgb = ApplyMakeupTexture(col.rgb, fourthTexSample, fourthMask,
             _4thTexHueShift, _4thTexSaturation, _4thTexValue,
-            _4thTexIntensity, _4thTexBlendMode,
-            true
+            _4thTexIntensity, _4thTexBlendMode
         );
     }
     #endif
@@ -135,10 +138,11 @@ half4 frag(v2f i) : SV_Target
     #ifdef _5TH_TEXTURE
     {
         float2 _5thAnimUV = AnimateUVIfNeeded(uv, _5thTexScrollSpeed.xy, _5thTexRotateSpeed);
-        col.rgb = ApplyMakeupTexture(col.rgb, _5thTex, _5thTexMask, _5thAnimUV, uv,
+        half4 fifthTexSample = tex2D(_5thTex, _5thAnimUV);
+        float fifthMask = NATANE_SAMPLE_SHARED_R(_5thTexMask, _5thTex, uv);
+        col.rgb = ApplyMakeupTexture(col.rgb, fifthTexSample, fifthMask,
             _5thTexHueShift, _5thTexSaturation, _5thTexValue,
-            _5thTexIntensity, _5thTexBlendMode,
-            true
+            _5thTexIntensity, _5thTexBlendMode
         );
     }
     #endif
@@ -157,7 +161,7 @@ half4 frag(v2f i) : SV_Target
     // ===== Screen-Tone Overlay =====
     #ifdef _SCREEN_TONE
     {
-        half screenToneMask = SampleTex2DBlur1(_ScreenToneMask, uv, _ScreenToneBlur);
+        half screenToneMask = NATANE_SAMPLE_SHARED_BLUR_R(_ScreenToneMask, _MainTex, uv, _ScreenToneBlur);
         screenToneMask = ApplySoftMask(screenToneMask);
         half3 preScreenTone = col.rgb;
         col.rgb = ApplyScreenTone(col.rgb, i.pos.xy, screenToneMask);
@@ -231,7 +235,7 @@ half4 frag(v2f i) : SV_Target
     // Sample shadow mask once and use it for all shadow-related calculations
     half shadowReceiveMask = 0.0; // Default: fully receive shadows (black = receive shadows)
     #ifdef _SHADOW_RECEIVE_MASK
-        shadowReceiveMask = tex2D(_ShadowReceiveMask, uv).r;
+        shadowReceiveMask = NATANE_SAMPLE_SHARED_R(_ShadowReceiveMask, _MainTex, uv);
         shadowReceiveMask = ApplySoftMask(shadowReceiveMask); // Smooth mask transitions
     #endif
 
@@ -563,7 +567,7 @@ half4 frag(v2f i) : SV_Target
     // ===== AO (pre-calculate before shading branch) =====
     half aoEffect = 1.0;
     #ifdef _USE_AO
-        half ao = SampleTex2DBlur1(_AOMap, uv, _AOBlur);
+        half ao = NATANE_SAMPLE_SHARED_BLUR_R(_AOMap, _MainTex, uv, _AOBlur);
         ao = ApplySoftMask(ao);
         aoEffect = lerp(1.0, ao, _AOIntensity);
         aoForIndirect = lerp(1.0, ao, _AOIntensity * AO_INDIRECT_STRENGTH);
@@ -1123,7 +1127,7 @@ half4 frag(v2f i) : SV_Target
 
     #if defined(_HATCHING) && defined(UNITY_PASS_FORWARDBASE)
     {
-        half hMask = tex2D(_HatchingMask, uv).r;
+        half hMask = NATANE_SAMPLE_SHARED_R(_HatchingMask, _MainTex, uv);
         // Use luminance of current color as proxy for shading value
         half hatchShading = dot(col.rgb, half3(0.299, 0.587, 0.114));
         col.rgb = ApplyHatching(col.rgb, uv, hatchShading, hMask,
@@ -1159,7 +1163,7 @@ half4 frag(v2f i) : SV_Target
 
         // Apply mask texture with soft blending
         float2 specMaskUV = AnimateUVIfNeeded(uv, _SpecularMaskScrollSpeed.xy, _SpecularMaskRotateSpeed);
-        half specMask = tex2D(_SpecularMask, specMaskUV).r;
+        half specMask = NATANE_SAMPLE_SHARED_R(_SpecularMask, _MainTex, specMaskUV);
         specMask = ApplySoftMask(specMask); // Smooth mask transitions
         specContrib *= specMask;
 
@@ -1297,7 +1301,7 @@ half4 frag(v2f i) : SV_Target
 
             // Apply mask texture with soft blending
             float2 rimMaskUV = AnimateUVIfNeeded(uv, _RimMaskScrollSpeed.xy, _RimMaskRotateSpeed);
-            half rimMask = tex2D(_RimMask, rimMaskUV).r;
+            half rimMask = NATANE_SAMPLE_SHARED_R(_RimMask, _MainTex, rimMaskUV);
             rimMask = ApplySoftMask(rimMask); // Smooth mask transitions
             rim *= rimMask;
 
@@ -1352,7 +1356,7 @@ half4 frag(v2f i) : SV_Target
 
         // Apply mask texture with soft blending
         float2 rimMask2UV = AnimateUVIfNeeded(uv, _RimMask2ScrollSpeed.xy, _RimMask2RotateSpeed);
-        half rimMask2 = tex2D(_RimMask2, rimMask2UV).r;
+        half rimMask2 = NATANE_SAMPLE_SHARED_R(_RimMask2, _MainTex, rimMask2UV);
         rimMask2 = ApplySoftMask(rimMask2); // Smooth mask transitions
         rim2 *= rimMask2;
 
@@ -1398,7 +1402,7 @@ half4 frag(v2f i) : SV_Target
         half3 offsetRim = OffsetRimLighting(worldNormal, viewDir, lightDir, offsetRimPowerBlurred, _OffsetRimIntensity);
 
         // Apply mask texture
-        half offsetRimMask = tex2D(_OffsetRimMask, uv).r;
+        half offsetRimMask = NATANE_SAMPLE_SHARED_R(_OffsetRimMask, _MainTex, uv);
         offsetRimMask = ApplySoftMask(offsetRimMask);
         offsetRim *= offsetRimMask;
 
@@ -1450,7 +1454,7 @@ half4 frag(v2f i) : SV_Target
         half3 envRim = EnvironmentalRim(worldNormal, viewDir, envRimPowerBlurred);
 
         // Apply mask texture with soft blending
-        half envRimMask = tex2D(_EnvRimMask, uv).r;
+        half envRimMask = NATANE_SAMPLE_SHARED_R(_EnvRimMask, _MainTex, uv);
         envRimMask = ApplySoftMask(envRimMask); // Smooth mask transitions
         envRim *= envRimMask;
 
@@ -1488,7 +1492,7 @@ half4 frag(v2f i) : SV_Target
         half3 matcap = SampleTex2DBlur3(_MatCapTex, matcapUV, _MatCapBlur) * _MatCapIntensity;
 
         // Apply mask texture with soft blending
-        half matcapMask = tex2D(_MatCapMask, uv).r;
+        half matcapMask = NATANE_SAMPLE_SHARED_R(_MatCapMask, _MatCapTex, uv);
         matcapMask = ApplySoftMask(matcapMask); // Smooth mask transitions
         matcap *= matcapMask;
 
@@ -1533,7 +1537,7 @@ half4 frag(v2f i) : SV_Target
         float2 matcapUV2 = CalculateMatCapUV(worldNormal, viewDir);
         half3 matcap2 = SampleTex2DBlur3(_MatCapTex2, matcapUV2, _MatCap2Blur) * _MatCapIntensity2;
 
-        half matcapMask2 = tex2D(_MatCapMask2, uv).r;
+        half matcapMask2 = NATANE_SAMPLE_SHARED_R(_MatCapMask2, _MatCapTex2, uv);
         matcapMask2 = ApplySoftMask(matcapMask2);
         matcap2 *= matcapMask2;
         matcap2 *= _Glossiness;
@@ -1563,7 +1567,7 @@ half4 frag(v2f i) : SV_Target
         float2 matcapUV3 = CalculateMatCapUV(worldNormal, viewDir);
         half3 matcap3 = SampleTex2DBlur3(_MatCapTex3, matcapUV3, _MatCap3Blur) * _MatCapIntensity3;
 
-        half matcapMask3 = tex2D(_MatCapMask3, uv).r;
+        half matcapMask3 = NATANE_SAMPLE_SHARED_R(_MatCapMask3, _MatCapTex3, uv);
         matcapMask3 = ApplySoftMask(matcapMask3);
         matcap3 *= matcapMask3;
         matcap3 *= _Glossiness;
@@ -1612,7 +1616,7 @@ half4 frag(v2f i) : SV_Target
         half3 reflection = CubemapReflection(worldNormal, viewDir, _Smoothness, _Metallic);
 
         // Apply mask texture with soft blending
-        half reflectionMask = tex2D(_ReflectionMask, uv).r;
+        half reflectionMask = NATANE_SAMPLE_SHARED_R(_ReflectionMask, _MainTex, uv);
         reflectionMask = ApplySoftMask(reflectionMask); // Smooth mask transitions
         reflection *= reflectionMask;
 
@@ -1709,7 +1713,7 @@ half4 frag(v2f i) : SV_Target
 
         // Apply mask texture with soft blending
         float2 emMaskUV = AnimateUVIfNeeded(uv, _EmissionMaskScrollSpeed.xy, _EmissionMaskRotateSpeed);
-        half emissionMask = tex2D(_EmissionMask, emMaskUV).r;
+        half emissionMask = NATANE_SAMPLE_SHARED_R(_EmissionMask, _EmissionMap, emMaskUV);
         emissionMask = ApplySoftMask(emissionMask); // Smooth mask transitions
         emission *= emissionMask;
 
@@ -2136,7 +2140,7 @@ half4 frag(v2f i) : SV_Target
     // ===== Alpha Mask =====
     // Apply alpha mask for partial transparency control
     #ifdef _ALPHA_MASK
-        half alphaMask = tex2D(_AlphaMask, uv).r;
+        half alphaMask = NATANE_SAMPLE_SHARED_R(_AlphaMask, _MainTex, uv);
         col.a *= alphaMask;
     #endif
 

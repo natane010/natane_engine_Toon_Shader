@@ -467,26 +467,15 @@ float3 ApplyBlendMode(float3 baseColor, float3 blendTexture, float3 blendColor, 
 // Consolidates 2nd-5th texture blending logic
 half3 ApplyMakeupTexture(
     half3 baseColor,
-    sampler2D tex,
-    sampler2D maskTex,
-    float2 texUV,
-    float2 maskUV,
+    half4 texSample,
+    float externalMask,
     float hueShift,
     float saturation,
     float value,
     float intensity,
-    float blendMode,
-    bool useMask)
+    float blendMode)
 {
-    // Sample texture
-    half4 texSample = tex2D(tex, texUV);
-    float texMask = texSample.a; // Use alpha channel from texture
-
-    // Apply external mask if enabled
-    if (useMask)
-    {
-        texMask *= tex2D(maskTex, maskUV).r;
-    }
+    float texMask = texSample.a * externalMask;
 
     // Apply HSV adjustments (skip if default values for performance)
     half3 texAdjusted = ApplyHSVAdjustment(texSample.rgb, hueShift, saturation, value);
@@ -597,6 +586,32 @@ half SampleTex2DBlur1(sampler2D tex, float2 uv, float blur)
 {
     return SampleTex2DBlur(tex, uv, blur).r;
 }
+
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+half4 SampleTex2DBlurShared(Texture2D tex, SamplerState sharedSampler, float2 uv, float blur)
+{
+    if (blur <= 0.001) return tex.Sample(sharedSampler, uv);
+
+    float2 dx = ddx(uv) * blur * 4.0;
+    float2 dy = ddy(uv) * blur * 4.0;
+
+    half4 col = tex.Sample(sharedSampler, uv) * 0.4;
+    col += tex.Sample(sharedSampler, uv + dx) * 0.15;
+    col += tex.Sample(sharedSampler, uv - dx) * 0.15;
+    col += tex.Sample(sharedSampler, uv + dy) * 0.15;
+    col += tex.Sample(sharedSampler, uv - dy) * 0.15;
+
+    return col;
+}
+#endif
+
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+    #define NATANE_SAMPLE_SHARED_BLUR(tex, samplerTex, coord, blur) SampleTex2DBlurShared(tex, sampler##samplerTex, coord, blur)
+#else
+    #define NATANE_SAMPLE_SHARED_BLUR(tex, samplerTex, coord, blur) SampleTex2DBlur(tex, coord, blur)
+#endif
+
+#define NATANE_SAMPLE_SHARED_BLUR_R(tex, samplerTex, coord, blur) NATANE_SAMPLE_SHARED_BLUR(tex, samplerTex, coord, blur).r
 
 // ===== UV Animation Functions =====
 

@@ -1,4 +1,4 @@
-﻿#ifndef NATANE_TOON_LIGHTING_INCLUDED
+#ifndef NATANE_TOON_LIGHTING_INCLUDED
 #define NATANE_TOON_LIGHTING_INCLUDED
 
 #include "NataneToonThirdPartyLighting.hlsl"
@@ -247,7 +247,7 @@ half3 HairSpecularHighlight(half3 worldNormal, half3 worldTangent, half3 worldBi
     // Sample shift texture if enabled
     half shiftTexValue = 0.0;
     #ifdef _HAIR_SPEC_SHIFT_TEX
-        shiftTexValue = tex2D(_HairSpecShiftTex, uv).r - 0.5;
+        shiftTexValue = NATANE_SAMPLE_SHARED_R(_HairSpecShiftTex, _MainTex, uv) - 0.5;
     #endif
 
     // Shift tangent along normal for each lobe
@@ -263,7 +263,7 @@ half3 HairSpecularHighlight(half3 worldNormal, half3 worldTangent, half3 worldBi
 
     // Apply mask if enabled
     #ifdef _HAIR_SPEC_MASK
-        half mask = tex2D(_HairSpecMask, uv).r;
+        half mask = NATANE_SAMPLE_SHARED_R(_HairSpecMask, _MainTex, uv);
         specular *= mask;
     #endif
 
@@ -568,7 +568,7 @@ half3 GlitterEffect(float2 uv, float3 worldPos, half3 viewDir, half3 normal, hal
         #endif
 
         // Apply user mask
-        half maskValue = tex2D(_GlitterMask, uv).r;
+        half maskValue = NATANE_SAMPLE_SHARED_R(_GlitterMask, _MainTex, uv);
         glitter *= maskValue;
 
         return glitter * _GlitterColor.rgb * _GlitterIntensity;
@@ -606,7 +606,7 @@ half3 IridescenceEffect(half3 normal, half3 viewDir, float2 uv, float sizeOverri
         iridColor *= _IridescenceColor.rgb;
 
         // Apply mask
-        half maskValue = tex2D(_IridescenceMask, uv).r;
+        half maskValue = NATANE_SAMPLE_SHARED_R(_IridescenceMask, _MainTex, uv);
         iridColor *= maskValue;
 
         // Apply intensity and view-dependent falloff

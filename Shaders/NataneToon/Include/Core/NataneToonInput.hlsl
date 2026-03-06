@@ -1,4 +1,4 @@
-﻿#ifndef NATANE_TOON_INPUT_INCLUDED
+#ifndef NATANE_TOON_INPUT_INCLUDED
 #define NATANE_TOON_INPUT_INCLUDED
 
 // Properties and Structures
@@ -979,28 +979,48 @@ float _VRChatMirrorMode; // 0=Normal view, 1=Inside mirror
 // Texture samplers (must be outside CBUFFER per HLSL specification)
 // Main
 sampler2D _MainTex;
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+SamplerState sampler_MainTex;
+#endif
+
+#ifndef NATANE_SAMPLE_SHARED
+#define NATANE_SAMPLE_SHARED(tex, samplerTex, coord) UNITY_SAMPLE_TEX2D_SAMPLER(tex, samplerTex, coord)
+#define NATANE_SAMPLE_SHARED_R(tex, samplerTex, coord) NATANE_SAMPLE_SHARED(tex, samplerTex, coord).r
+#endif
 
 // Makeup Textures
 #if defined(_2ND_TEXTURE)
 sampler2D _2ndTex;
-sampler2D _2ndTexMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_2ndTexMask);
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+SamplerState sampler_2ndTex;
+#endif
 #endif
 #if defined(_3RD_TEXTURE)
 sampler2D _3rdTex;
-sampler2D _3rdTexMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_3rdTexMask);
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+SamplerState sampler_3rdTex;
+#endif
 #endif
 #if defined(_4TH_TEXTURE)
 sampler2D _4thTex;
-sampler2D _4thTexMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_4thTexMask);
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+SamplerState sampler_4thTex;
+#endif
 #endif
 #if defined(_5TH_TEXTURE)
 sampler2D _5thTex;
-sampler2D _5thTexMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_5thTexMask);
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+SamplerState sampler_5thTex;
+#endif
 #endif
 
 // Screen-Tone
 #if defined(_SCREEN_TONE)
-sampler2D _ScreenToneMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ScreenToneMask);
 #endif
 
 // Shading
@@ -1008,7 +1028,7 @@ sampler2D _ScreenToneMask;
 sampler2D _RampTex;
 #endif
 #if defined(_SHADOW_RECEIVE_MASK)
-sampler2D _ShadowReceiveMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowReceiveMask);
 #endif
 sampler2D _ShadowColorTex;
 
@@ -1022,18 +1042,18 @@ sampler2D _ShadingGradeMap;
 
 // Ambient Occlusion
 #if defined(_USE_AO)
-sampler2D _AOMap;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_AOMap);
 #endif
 
 // Specular
 #if defined(_SPECULAR)
-sampler2D _SpecularMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_SpecularMask);
 #endif
 
 // Hair Specular
 #if defined(_HAIR_SPECULAR)
-sampler2D _HairSpecMask;
-sampler2D _HairSpecShiftTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_HairSpecMask);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_HairSpecShiftTex);
 #endif
 
 // Angel Ring
@@ -1044,13 +1064,13 @@ float4 _AngelRingTex_ST;
 
 // Rim Light
 #if defined(_RIM_LIGHT)
-sampler2D _RimMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_RimMask);
 #endif
 #if defined(_RIM_LIGHT_2)
-sampler2D _RimMask2;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_RimMask2);
 #endif
 #if defined(_OFFSET_RIM_LIGHT)
-sampler2D _OffsetRimMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_OffsetRimMask);
 #endif
 #if defined(_SHEEN)
 sampler2D _SheenMask;
@@ -1062,24 +1082,33 @@ float4 _SheenMask_ST;
 sampler2D _MatCapTex;
 #endif
 #if defined(_MATCAP)
-sampler2D _MatCapMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_MatCapMask);
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+SamplerState sampler_MatCapTex;
+#endif
 #endif
 #if defined(_MATCAP_2)
 sampler2D _MatCapTex2;
 #endif
 #if defined(_MATCAP_2)
-sampler2D _MatCapMask2;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_MatCapMask2);
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+SamplerState sampler_MatCapTex2;
+#endif
 #endif
 #if defined(_MATCAP_3)
 sampler2D _MatCapTex3;
 #endif
 #if defined(_MATCAP_3)
-sampler2D _MatCapMask3;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_MatCapMask3);
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+SamplerState sampler_MatCapTex3;
+#endif
 #endif
 
 // Glitter
 #if defined(_GLITTER)
-sampler2D _GlitterMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_GlitterMask);
 #endif
 
 // Outline
@@ -1090,9 +1119,12 @@ sampler2D _OutlineMask;
 // Emission
 #if defined(_EMISSION)
 sampler2D _EmissionMap;
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+SamplerState sampler_EmissionMap;
+#endif
 #endif
 #if defined(_EMISSION)
-sampler2D _EmissionMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_EmissionMask);
 #endif
 
 // Normal Map
@@ -1119,22 +1151,22 @@ sampler2D _DissolveMask;
 
 // Alpha Mask
 #if defined(_ALPHA_MASK)
-sampler2D _AlphaMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_AlphaMask);
 #endif
 
 // Reflection
 #if defined(_REFLECTION)
-sampler2D _ReflectionMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ReflectionMask);
 #endif
 
 // Iridescence
 #if defined(_IRIDESCENCE)
-sampler2D _IridescenceMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_IridescenceMask);
 #endif
 
 // Environmental Rim
 #if defined(_ENV_RIM)
-sampler2D _EnvRimMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_EnvRimMask);
 #endif
 
 // Parallax
@@ -1223,7 +1255,7 @@ sampler2D _LUT3DTex;
 #ifdef _HATCHING
 sampler2D _HatchTex0;
 sampler2D _HatchTex1;
-sampler2D _HatchingMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_HatchingMask);
 #endif
 #ifdef _WATERCOLOR
 sampler2D _WCGranulationTex;
