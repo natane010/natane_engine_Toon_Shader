@@ -25,6 +25,7 @@
 
     <h2 id="access">アクセス方法</h2>
     <p>メニュー: <code>Tools &gt; Natane &gt; 診断 Diagnostics</code></p>
+    <p>表示言語は Natane Toon の言語設定に追従します。日本語設定では「再チェック」「問題のみ表示」「対処法」などの主要 UI が日本語表示になります。</p>
 
     <h2 id="features">機能</h2>
     <h3>包括的ツールチェック</h3>
@@ -51,7 +52,7 @@
     <ul>
       <li><strong>サマリー表示</strong> - エラー/警告/正常の件数をカラーコード付きで表示</li>
       <li><strong>問題のみ表示フィルター</strong> - 「問題のみ表示」トグルで正常なツールを非表示に</li>
-      <li><strong>詳細情報</strong> - 問題のあるツールには原因メッセージと対処法（Remedy）を表示</li>
+      <li><strong>詳細情報</strong> - 問題のあるツールには原因メッセージと対処法を表示</li>
       <li><strong>再チェック</strong> - 「再チェック」ボタンで診断を再実行</li>
     </ul>
 
@@ -59,7 +60,7 @@
     <ul>
       <li><strong>ValidateTool()</strong> - メニューパスで単一ツールを事前チェック</li>
       <li><strong>ValidateAndLaunch()</strong> - チェック後にツールを起動。失敗時はダイアログで原因と対処法を表示し、診断ウィンドウへの遷移を提案</li>
-      <li><strong>GetOverallHealth()</strong> - Dashboard向けの軽量ヘルスチェック（Healthy/Warning/Error）</li>
+      <li><strong>GetOverallHealth()</strong> - Dashboard向けの軽量ヘルスチェック（日本語設定では「正常/警告/異常」表示）</li>
       <li><strong>RunFullDiagnostics()</strong> - 全登録ツールの包括的チェックを実行</li>
     </ul>
 
@@ -69,7 +70,7 @@
       <li>ウィンドウが開くと自動的に全ツールの診断が実行されます</li>
       <li>サマリーでエラー・警告・正常の件数を確認します</li>
       <li>「問題のみ表示」を有効にして、問題のあるツールだけを表示します</li>
-      <li>各問題の「対処法 Remedy」に従って修正します</li>
+      <li>各問題の「対処法」に従って修正します</li>
       <li>修正後、「再チェック」ボタンで診断を再実行して修正を確認します</li>
     </ol>
 
@@ -77,7 +78,7 @@
     <ul>
       <li><strong>エラー（Error）</strong> - ツールが起動できない致命的な問題。アセンブリが未ロード、または型が見つからない</li>
       <li><strong>警告（Warning）</strong> - ツールは存在するが、一部に問題がある。MenuItem属性が見つからない、レジストリ未登録など</li>
-      <li><strong>正常（OK）</strong> - ツールが正常に検証されたことを示す</li>
+      <li><strong>正常（Healthy）</strong> - ツールが正常に検証されたことを示す</li>
     </ul>
 
     <h2 id="troubleshooting">トラブルシューティング</h2>

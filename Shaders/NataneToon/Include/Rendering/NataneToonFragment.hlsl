@@ -1,4 +1,4 @@
-#ifndef NATANE_TOON_FRAGMENT_INCLUDED
+﻿#ifndef NATANE_TOON_FRAGMENT_INCLUDED
 #define NATANE_TOON_FRAGMENT_INCLUDED
 
 // ===== Fragment Shader Constants =====
@@ -861,12 +861,12 @@ half4 frag(v2f i) : SV_Target
         #endif
         additionalResult += backlight * _BacklightColor.rgb * effectiveLightColor * backlightBlendFaded;
 
-        // LTCGI (diffuse → additional, specular → saved for later)
+        // LTCGI (diffuse → additional, specular → applied after base lighting)
         #if defined(_LTCGI)
             float3 ltcgiDiffuse = 0;
             float3 ltcgiSpecular = 0;
-            LTCGI_Contribution(i.worldPos, worldNormal, viewDir,
-                1.0 - _Smoothness, float2(0, 0),
+            NataneLTCGIContribution(i.worldPos, worldNormal, viewDir,
+                1.0 - _Smoothness, i.uv1,
                 ltcgiDiffuse, ltcgiSpecular);
             additionalResult += ltcgiDiffuse * _LTCGIIntensity * _LTCGIBlend;
         #endif
@@ -974,15 +974,6 @@ half4 frag(v2f i) : SV_Target
             #endif
         #endif
 
-        // LTCGI Specular (additive on col after lighting composition)
-        #if defined(_LTCGI)
-        {
-            half3 preLTCGI_col = col.rgb;
-            col.rgb += ltcgiSpecular * _LTCGISpecular * _LTCGIIntensity;
-            col.rgb = ApplyEffectBlendPost(preLTCGI_col, col.rgb, _LTCGIBlend, _LTCGIBlendMode);
-        }
-        #endif
-
     #else
         // ===== ForwardAdd: Additional Light Contribution =====
         #ifdef _STANDARD_TOON
@@ -1066,6 +1057,19 @@ half4 frag(v2f i) : SV_Target
             // Final brightness control (applied before effects so they show properly)
             col.rgb *= _Brightness;
         #endif
+    #endif
+
+    // LTCGI Specular: applied after lighting composition to avoid double-application
+    // in ForwardAdd, and uses SafeAdditiveBlend + MatteQuality for overbright prevention.
+    #if defined(_LTCGI) && defined(UNITY_PASS_FORWARDBASE)
+    {
+        half3 ltcgiSpecularContrib = ltcgiSpecular * _LTCGISpecular * _LTCGIIntensity;
+        ltcgiSpecularContrib = ApplyMatteQuality(ltcgiSpecularContrib, col.rgb, _MatteEffect);
+        half ltcgiSpecularStrength = saturate(length(ltcgiSpecularContrib) * 0.8);
+        half3 preLTCGIColor = col.rgb;
+        col.rgb = SafeAdditiveBlend(col.rgb, ltcgiSpecularContrib, ltcgiSpecularStrength);
+        col.rgb = ApplyEffectBlendPost(preLTCGIColor, col.rgb, _LTCGIBlend, _LTCGIBlendMode);
+    }
     #endif
 
     // ===== Halftone Shadow =====

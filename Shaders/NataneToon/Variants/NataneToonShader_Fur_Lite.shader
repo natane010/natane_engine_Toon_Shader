@@ -849,6 +849,7 @@ Shader "Natane/Toon Shader (Fur Lite)"
     {
         Tags
         {
+            "LTCGI"="ALWAYS"
             "RenderType"="Transparent"
             "Queue"="Transparent"
         }

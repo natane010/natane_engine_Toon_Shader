@@ -922,6 +922,7 @@ Shader "Natane/Toon Shader (Lite)"
     {
         Tags
         {
+            "LTCGI"="ALWAYS"
             "RenderType"="Opaque"
             "Queue"="Geometry"
         }

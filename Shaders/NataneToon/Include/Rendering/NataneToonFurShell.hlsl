@@ -7,6 +7,19 @@
 #include "UnityCG.cginc"
 #include "AutoLight.cginc"
 #include "Lighting.cginc"
+#include "../Utils/NataneToonUtils.hlsl"
+
+#define NATANE_FORCE_LIGHTVOLUME_HELPERS
+#define NATANE_FORCE_LTCGI_HELPERS
+#include "../Lighting/NataneToonThirdPartyLighting.hlsl"
+#undef NATANE_FORCE_LTCGI_HELPERS
+#undef NATANE_FORCE_LIGHTVOLUME_HELPERS
+
+// The shader keyword and the material property share the same identifier.
+// Undefine the keyword macro after helper includes so the runtime float can be declared safely.
+#if defined(_LTCGI)
+    #undef _LTCGI
+#endif
 
 // Shell parameters
 #define FUR_SHELL_COUNT 16
@@ -16,6 +29,7 @@ struct appdata_fur {
     float4 vertex : POSITION;
     float3 normal : NORMAL;
     float2 uv : TEXCOORD0;
+    float2 uv1 : TEXCOORD1;
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
@@ -26,12 +40,20 @@ struct v2f_fur {
     float3 worldPos : TEXCOORD2;
     float furLayer : TEXCOORD3;
     UNITY_FOG_COORDS(4)
+    float2 uv1 : TEXCOORD5;
     UNITY_VERTEX_OUTPUT_STEREO
 };
 
 // Shared samplers and variables (from NataneToonInput.hlsl via the .shader CBUFFER)
 // These are declared in the .shader Pass block that includes this file
 float _MatteEffect;
+float _UseLightVolume;
+float _LightVolumeIntensity;
+float _LTCGI;
+float _LTCGIIntensity;
+float _LTCGISpecular;
+float _LTCGIBlend;
+float _LTCGIBlendMode;
 
 float3 ApplyFurMatteQuality(float3 effect, float3 baseColor, float matteAmount)
 {
@@ -81,6 +103,7 @@ v2f_fur furVert(appdata_fur v)
     float layer = FUR_LAYER;
     o.furLayer = layer;
     o.uv = v.uv;
+    o.uv1 = v.uv1;
 
     // Shell offset along normal
     float3 offset = v.normal * layer * _FurLength;
@@ -152,6 +175,7 @@ fixed4 furFrag(v2f_fur i) : SV_Target
     // Simple toon lighting
     float3 worldNormal = normalize(i.worldNormal);
     float3 lightDir = normalize(UnityWorldSpaceLightDir(i.worldPos));
+    float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
     float NdotL = dot(worldNormal, lightDir);
     float toonShading = smoothstep(-0.1, 0.3, NdotL);
 
@@ -160,17 +184,48 @@ fixed4 furFrag(v2f_fur i) : SV_Target
     toonShading *= selfShadow;
 
     // Apply lighting
-    float3 lightColor = _LightColor0.rgb;
+    float3 directLight = _LightColor0.rgb * toonShading;
     float3 ambient = ShadeSH9(float4(worldNormal, 1.0));
-    finalColor *= (lightColor * toonShading + ambient);
+
+    // Runtime branch: FurShell always compiles LV/LTCGI helpers (via NATANE_FORCE_*),
+    // unlike the main shader which uses shader_feature keywords for compile-time stripping.
+    if (_UseLightVolume > 0.5)
+    {
+        float3 L0, L1r, L1g, L1b;
+        LightVolumeSH(i.worldPos, L0, L1r, L1g, L1b);
+
+        float3 directLightLV = LightVolumeEvaluate(worldNormal, L0, L1r, L1g, L1b);
+        float3 indirectLightLV = LightVolumeEvaluate(-worldNormal, L0, L1r, L1g, L1b);
+
+        directLightLV = min(directLightLV, float3(1.1, 1.1, 1.1)) * _LightVolumeIntensity;
+        indirectLightLV = min(indirectLightLV, float3(1.1, 1.1, 1.1)) * _LightVolumeIntensity;
+
+        directLight = max(directLight, directLightLV * toonShading);
+        ambient = max(ambient, indirectLightLV);
+    }
+
+    finalColor *= (directLight + ambient);
+
+    if (_LTCGI > 0.5)
+    {
+        float3 ltcgiDiffuse = 0;
+        float3 ltcgiSpecular = 0;
+        NataneLTCGIContribution(i.worldPos, worldNormal, viewDir, 1.0, i.uv1, ltcgiDiffuse, ltcgiSpecular);
+
+        half3 preLTCGIColor = finalColor;
+        half3 ltcgiLitColor = finalColor * (1.0 + ltcgiDiffuse * _LTCGIIntensity);
+        finalColor = ApplyEffectBlendPost(preLTCGIColor, ltcgiLitColor, _LTCGIBlend, _LTCGIBlendMode);
+
+        float3 furLTCGISpec = ApplyFurMatteQuality(ltcgiSpecular * _LTCGIIntensity * _LTCGISpecular, finalColor, _MatteEffect);
+        finalColor = SafeAdditiveBlend(finalColor, furLTCGISpec, saturate(length(furLTCGISpec) * 0.5));
+    }
 
     // Specular highlight on fur tips
     if (_FurSpecular > 0.001)
     {
-        float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
         float3 halfDir = normalize(lightDir + viewDir);
         float spec = pow(max(0, dot(worldNormal, halfDir)), 40.0) * _FurSpecular * layer;
-        float3 furSpec = lightColor * spec;
+        float3 furSpec = _LightColor0.rgb * spec;
         furSpec = ApplyFurMatteQuality(furSpec, finalColor, _MatteEffect);
         finalColor += furSpec;
     }
@@ -178,10 +233,9 @@ fixed4 furFrag(v2f_fur i) : SV_Target
     // Rim light
     if (_FurRimLight > 0.001)
     {
-        float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
         float rim = 1.0 - saturate(dot(viewDir, worldNormal));
         rim = pow(rim, 3.0) * _FurRimLight * layer;
-        float3 furRim = lightColor * rim;
+        float3 furRim = _LightColor0.rgb * rim;
         furRim = ApplyFurMatteQuality(furRim, finalColor, _MatteEffect);
         finalColor += furRim;
     }

@@ -924,6 +924,7 @@ Shader "Natane/Toon Shader (Cutout)"
     {
         Tags
         {
+            "LTCGI"="ALWAYS"
             "RenderType"="TransparentCutout"
             "Queue"="AlphaTest"
             "IgnoreProjector"="True"

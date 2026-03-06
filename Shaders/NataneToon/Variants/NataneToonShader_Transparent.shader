@@ -925,6 +925,7 @@ Shader "Natane/Toon Shader (Transparent)"
     {
         Tags
         {
+            "LTCGI"="ALWAYS"
             "RenderType"="Transparent"
             "Queue"="Transparent"
             "IgnoreProjector"="True"

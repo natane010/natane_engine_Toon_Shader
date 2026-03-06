@@ -726,6 +726,7 @@ Shader "Natane/Toon Shader (Background)"
     {
         Tags
         {
+            "LTCGI"="ALWAYS"
             "RenderType"="Opaque"
             "Queue"="Geometry"
             "DisableBatching"="False"
