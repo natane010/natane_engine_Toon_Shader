@@ -10,6 +10,43 @@ namespace NataneToon.Editor
     /// </summary>
     public class NataneToonEyeDrawer : NataneToonShaderGUITab
     {
+        private static GUIStyle _headerStyle;
+        private static GUIStyle HeaderStyle
+        {
+            get
+            {
+                if (_headerStyle == null)
+                {
+                    _headerStyle = new GUIStyle(EditorStyles.boldLabel)
+                    {
+                        fontSize = 16,
+                        alignment = TextAnchor.MiddleCenter
+                    };
+                    _headerStyle.normal.textColor = new Color(0.8f, 0.6f, 1f);
+                }
+
+                return _headerStyle;
+            }
+        }
+
+        private static GUIStyle _footerStyle;
+        private static GUIStyle FooterStyle
+        {
+            get
+            {
+                if (_footerStyle == null)
+                {
+                    _footerStyle = new GUIStyle(EditorStyles.miniLabel)
+                    {
+                        alignment = TextAnchor.MiddleCenter,
+                        wordWrap = true
+                    };
+                }
+
+                return _footerStyle;
+            }
+        }
+
         // Foldout states
         private bool showEyeState = true;
         private bool showMainSettings = true;
@@ -135,15 +172,8 @@ namespace NataneToon.Editor
 
         private void DrawHeader()
         {
-            GUIStyle headerStyle = new GUIStyle(EditorStyles.boldLabel)
-            {
-                fontSize = 16,
-                alignment = TextAnchor.MiddleCenter,
-                normal = { textColor = new Color(0.8f, 0.6f, 1f) }
-            };
-
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField(L("ナタネトゥーン 目シェーダー", "Natane Toon Eye Shader"), headerStyle);
+            EditorGUILayout.LabelField(L("ナタネトゥーン 目シェーダー", "Natane Toon Eye Shader"), HeaderStyle);
             EditorGUILayout.EndVertical();
         }
 
@@ -471,13 +501,8 @@ namespace NataneToon.Editor
         private void DrawFooter()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            GUIStyle footerStyle = new GUIStyle(EditorStyles.miniLabel)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                wordWrap = true
-            };
-            EditorGUILayout.LabelField(L("ナタネ 目シェーダー v1.1", "Natane Eye Shader v1.1"), footerStyle);
-            EditorGUILayout.LabelField(L("5つの瞳状態 + 表情オーバーレイ対応", "5 Eye States + Expression Overlay Support"), footerStyle);
+            EditorGUILayout.LabelField(L("ナタネ 目シェーダー v1.1", "Natane Eye Shader v1.1"), FooterStyle);
+            EditorGUILayout.LabelField(L("5つの瞳状態 + 表情オーバーレイ対応", "5 Eye States + Expression Overlay Support"), FooterStyle);
             EditorGUILayout.EndVertical();
         }
     }

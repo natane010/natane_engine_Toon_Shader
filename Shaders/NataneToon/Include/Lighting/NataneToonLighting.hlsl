@@ -1,54 +1,7 @@
-#ifndef NATANE_TOON_LIGHTING_INCLUDED
+﻿#ifndef NATANE_TOON_LIGHTING_INCLUDED
 #define NATANE_TOON_LIGHTING_INCLUDED
 
-// =============================================================================
-// Third-Party Lighting Integration (Auto-detected)
-// Config files determine whether to use real cginc or fallback
-// =============================================================================
-
-// --- VRC Light Volumes ---
-#include "../Config/NataneToonLVConfig.hlsl"
-
-// --- LTCGI (Realtime Area Lights) ---
-#include "../Config/NataneToonLTCGIConfig.hlsl"
-
-#if defined(_LTCGI)
-    #if defined(NATANE_LTCGI_AVAILABLE)
-        #define LTCGI_AVATAR_MODE
-        #include "Packages/at.pimaker.ltcgi/Shaders/LTCGI.cginc"
-    #else
-        // Fallback: SH + Reflection Probe で LTCGI を近似
-        // 0.3倍スケールでエリアライトの局所性を近似
-        void LTCGI_Contribution(float3 worldPos, float3 worldNormal, float3 viewDir,
-            float roughness, float2 lightmapUV,
-            inout float3 diffuse, inout float3 specular)
-        {
-            float3 shDirect = ShadeSH9(float4(worldNormal, 1.0));
-            float3 shIndirect = ShadeSH9(float4(-worldNormal, 1.0));
-            diffuse = max(0, lerp(shIndirect, shDirect, 0.85)) * 0.3;
-
-            float3 reflDir = reflect(-viewDir, worldNormal);
-            float mipLevel = roughness * 7.0;
-            half4 envSample = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, reflDir, mipLevel);
-            specular = DecodeHDR(envSample, unity_SpecCube0_HDR) * 0.3;
-        }
-    #endif
-#endif
-
-#if defined(_USE_LIGHT_VOLUME)
-    // VRC Light Volumes Integration (lilToon-style bundled approach)
-    // パッケージ版を優先、未インストール時はバンドル版を使用
-    // バンドル版は RED_SIM 氏の MIT License に基づく同梱
-    // See: ThirdParty/VRCLightVolumes/LICENSE.md
-    //
-    // LightVolumes.cginc は内部で _UdonLightVolumeEnabled == 0 の場合に
-    // Unity Light Probes へ自動フォールバックするため、非VRChat環境でも安全
-    #if defined(NATANE_VRCLV_AVAILABLE)
-        #include "Packages/red.sim.lightvolumes/Shaders/LightVolumes.cginc"
-    #else
-        #include "../../ThirdParty/VRCLightVolumes/LightVolumes.cginc"
-    #endif
-#endif
+#include "NataneToonThirdPartyLighting.hlsl"
 
 // Lighting Calculation Functions
 

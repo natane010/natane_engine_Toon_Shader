@@ -1,170 +1,184 @@
-using UnityEngine;
-using UnityEditor;
+﻿using System;
 using System.IO;
+using System.Text;
+using UnityEditor;
+using UnityEngine;
 
 namespace NataneToon.Editor
 {
     /// <summary>
-    /// VRC Light Volumes パッケージ自動検出スクリプト
-    /// Auto-detects VRC Light Volumes package and generates shader config
-    ///
-    /// パッケージのインストール/アンインストール時に自動でシェーダー設定を更新し、
-    /// LightVolumes.cginc の条件付きインクルードを制御する。
+    /// Auto-detects the VRC Light Volumes package and generates shader config.
+    /// Updates the shader config when the package is installed or removed and
+    /// switches LightVolumes.cginc between the package path and the bundled path.
     /// </summary>
     [InitializeOnLoad]
     public static class VRCLightVolumesAutoDetector
     {
-        // Path to the VRC Light Volumes package
+        private const string ConfigFileName = "NataneToonLVConfig.hlsl";
         private const string VRCLV_PACKAGE_PATH = "Packages/red.sim.lightvolumes";
         private const string VRCLV_CGINC_PATH = "Packages/red.sim.lightvolumes/Shaders/LightVolumes.cginc";
-
-        // Path to the auto-generated config file (relative to project root)
-        private static readonly string ConfigFilePath = Path.Combine(
-            "Assets", "natane_engine_Toon_Shader", "Shaders", "NataneToon",
-            "Include", "Config", "NataneToonLVConfig.hlsl");
-
-        // EditorPrefs key to track last known state
         private const string PREFS_KEY = "NataneToon_VRCLV_Detected";
+        private static readonly UTF8Encoding Utf8WithBom = new UTF8Encoding(true);
 
         static VRCLightVolumesAutoDetector()
         {
-            // Run detection on domain reload (covers editor startup, package install/uninstall, script recompile)
             EditorApplication.delayCall += DetectAndConfigure;
         }
 
-        /// <summary>
-        /// Detect VRC Light Volumes package and update shader config
-        /// </summary>
         public static void DetectAndConfigure()
         {
             bool isAvailable = IsPackageInstalled();
             bool wasAvailable = EditorPrefs.GetBool(PREFS_KEY, false);
-
-            // Always ensure config file exists
-            if (!File.Exists(ConfigFilePath))
+            if (!TryResolvePaths(out string configAssetPath, out string configFullPath, out string lightingAssetPath))
             {
-                WriteConfigFile(isAvailable);
-                EditorPrefs.SetBool(PREFS_KEY, isAvailable);
-                ReimportShaders();
-                LogStatus(isAvailable, true);
                 return;
             }
 
-            // Only update if state changed
+            if (!File.Exists(configFullPath))
+            {
+                if (WriteConfigFile(configFullPath, isAvailable))
+                {
+                    EditorPrefs.SetBool(PREFS_KEY, isAvailable);
+                    ReimportShaders(configAssetPath, lightingAssetPath);
+                    LogStatus(isAvailable, true);
+                }
+
+                return;
+            }
+
             if (isAvailable != wasAvailable)
             {
-                WriteConfigFile(isAvailable);
-                EditorPrefs.SetBool(PREFS_KEY, isAvailable);
-                ReimportShaders();
-                LogStatus(isAvailable, true);
+                if (WriteConfigFile(configFullPath, isAvailable))
+                {
+                    EditorPrefs.SetBool(PREFS_KEY, isAvailable);
+                    ReimportShaders(configAssetPath, lightingAssetPath);
+                    LogStatus(isAvailable, true);
+                }
             }
         }
 
-        /// <summary>
-        /// Force re-detection (callable from menu)
-        /// </summary>
-        [MenuItem("Tools/Natane/VRChat/VRC Light Volumes 再検出 Re-detect", false, 62)]
+        [MenuItem("Tools/Natane/VRChat/VRC Light Volumes Re-detect", false, 62)]
         public static void ForceRedetect()
         {
             bool isAvailable = IsPackageInstalled();
-            WriteConfigFile(isAvailable);
+            if (!TryResolvePaths(out string configAssetPath, out string configFullPath, out string lightingAssetPath))
+            {
+                EditorUtility.DisplayDialog("VRC Light Volumes Detection", GetPathResolutionErrorMessage(), "OK");
+                return;
+            }
+
+            if (!WriteConfigFile(configFullPath, isAvailable))
+            {
+                EditorUtility.DisplayDialog("VRC Light Volumes Detection", GetWriteErrorMessage(configFullPath), "OK");
+                return;
+            }
+
             EditorPrefs.SetBool(PREFS_KEY, isAvailable);
-            ReimportShaders();
+            ReimportShaders(configAssetPath, lightingAssetPath);
             LogStatus(isAvailable, true);
 
             string message = isAvailable
-                ? "VRC Light Volumes パッケージを検出しました。\nシェーダーは本物のLight Volumes関数を使用します。\n\nVRC Light Volumes package detected.\nShaders will use real Light Volumes functions."
-                : "VRC Light Volumes パッケージが見つかりません。\nシェーダーはバンドル版LightVolumes.cgincを使用します。\n\nVRC Light Volumes package not found.\nShaders will use bundled LightVolumes.cginc.";
+                ? "VRC Light Volumes package detected.\nShaders will use the package LightVolumes.cginc."
+                : "VRC Light Volumes package not found.\nShaders will use the bundled LightVolumes.cginc.";
 
-            EditorUtility.DisplayDialog("VRC Light Volumes 検出結果", message, "OK");
+            EditorUtility.DisplayDialog("VRC Light Volumes Detection", message, "OK");
         }
 
-        /// <summary>
-        /// Check if VRC Light Volumes package is installed
-        /// </summary>
         public static bool IsPackageInstalled()
         {
-            // Check for the package directory
-            if (!Directory.Exists(VRCLV_PACKAGE_PATH))
+            if (!AssetDatabase.IsValidFolder(VRCLV_PACKAGE_PATH))
+            {
                 return false;
+            }
 
-            // Verify the cginc file exists
-            if (!File.Exists(VRCLV_CGINC_PATH))
-                return false;
-
-            return true;
+            return AssetDatabase.LoadMainAssetAtPath(VRCLV_CGINC_PATH) != null;
         }
 
-        /// <summary>
-        /// Write the shader config file
-        /// </summary>
-        private static void WriteConfigFile(bool isAvailable)
+        private static bool WriteConfigFile(string configFullPath, bool isAvailable)
         {
-            // Ensure directory exists
-            string directory = Path.GetDirectoryName(ConfigFilePath);
-            if (!Directory.Exists(directory))
+            try
             {
-                Directory.CreateDirectory(directory);
-            }
+                string directory = Path.GetDirectoryName(configFullPath);
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
 
-            string content;
-            if (isAvailable)
-            {
-                content =
-                    "// =============================================================================\n" +
-                    "// NataneToon VRC Light Volumes Configuration\n" +
-                    "// Auto-generated by VRCLightVolumesAutoDetector.cs\n" +
-                    "// Do not edit manually - this file is regenerated when packages change\n" +
-                    "// =============================================================================\n" +
-                    "// VRC Light Volumes package: DETECTED\n" +
-                    "// Mode: Real VRC Light Volumes (LightVolumes.cginc)\n" +
-                    "// =============================================================================\n" +
-                    "#define NATANE_VRCLV_AVAILABLE\n";
-            }
-            else
-            {
-                content =
-                    "// =============================================================================\n" +
-                    "// NataneToon VRC Light Volumes Configuration\n" +
-                    "// Auto-generated by VRCLightVolumesAutoDetector.cs\n" +
-                    "// Do not edit manually - this file is regenerated when packages change\n" +
-                    "// =============================================================================\n" +
-                    "// VRC Light Volumes package: NOT DETECTED\n" +
-                    "// Mode: Bundled LightVolumes.cginc\n" +
-                    "// =============================================================================\n";
-            }
+                string content = isAvailable
+                    ? "// =============================================================================\n" +
+                      "// NataneToon VRC Light Volumes Configuration\n" +
+                      "// Auto-generated by VRCLightVolumesAutoDetector.cs\n" +
+                      "// Do not edit manually - this file is regenerated when packages change\n" +
+                      "// =============================================================================\n" +
+                      "// VRC Light Volumes package: DETECTED\n" +
+                      "// Mode: Real VRC Light Volumes (LightVolumes.cginc)\n" +
+                      "// =============================================================================\n" +
+                      "#define NATANE_VRCLV_AVAILABLE\n"
+                    : "// =============================================================================\n" +
+                      "// NataneToon VRC Light Volumes Configuration\n" +
+                      "// Auto-generated by VRCLightVolumesAutoDetector.cs\n" +
+                      "// Do not edit manually - this file is regenerated when packages change\n" +
+                      "// =============================================================================\n" +
+                      "// VRC Light Volumes package: NOT DETECTED\n" +
+                      "// Mode: Bundled LightVolumes.cginc\n" +
+                      "// =============================================================================\n";
 
-            File.WriteAllText(ConfigFilePath, content);
+                File.WriteAllText(configFullPath, content, Utf8WithBom);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[NataneToon] Failed to write {ConfigFileName}.\nPath: {configFullPath}\n{ex}");
+                return false;
+            }
         }
 
-        /// <summary>
-        /// Reimport shaders to pick up config changes
-        /// </summary>
-        private static void ReimportShaders()
+        private static void ReimportShaders(string configAssetPath, string lightingAssetPath)
         {
-            AssetDatabase.ImportAsset(ConfigFilePath, ImportAssetOptions.ForceUpdate);
+            AssetDatabase.ImportAsset(configAssetPath, ImportAssetOptions.ForceUpdate);
 
-            // Reimport the lighting hlsl that includes the config
-            string lightingPath = Path.Combine(
-                "Assets", "natane_engine_Toon_Shader", "Shaders", "NataneToon",
-                "Include", "Lighting", "NataneToonLighting.hlsl");
-            if (File.Exists(lightingPath))
+            if (AssetDatabase.LoadMainAssetAtPath(lightingAssetPath) != null)
             {
-                AssetDatabase.ImportAsset(lightingPath, ImportAssetOptions.ForceUpdate);
+                AssetDatabase.ImportAsset(lightingAssetPath, ImportAssetOptions.ForceUpdate);
             }
 
             AssetDatabase.Refresh();
+        }
+
+        private static bool TryResolvePaths(out string configAssetPath, out string configFullPath, out string lightingAssetPath)
+        {
+            if (NatanePackagePathResolver.TryResolveShaderSupportPaths(
+                ConfigFileName,
+                out configAssetPath,
+                out configFullPath,
+                out lightingAssetPath))
+            {
+                return true;
+            }
+
+            Debug.LogError($"[NataneToon] {GetPathResolutionErrorMessage()}");
+            return false;
+        }
+
+        private static string GetPathResolutionErrorMessage()
+        {
+            return $"Failed to resolve the Natane Toon package root while updating {ConfigFileName}.";
+        }
+
+        private static string GetWriteErrorMessage(string configFullPath)
+        {
+            return $"Failed to update the config file.\n{configFullPath}";
         }
 
         private static void LogStatus(bool isAvailable, bool changed)
         {
             if (isAvailable)
             {
-                Debug.Log("[NataneToon] VRC Light Volumes パッケージを検出しました。シェーダーはLightVolumes.cgincを使用します。");
+                Debug.Log("[NataneToon] VRC Light Volumes package detected. Using the package LightVolumes.cginc.");
             }
             else if (changed)
             {
-                Debug.Log("[NataneToon] VRC Light Volumes パッケージ未検出。バンドル版LightVolumes.cgincを使用します。");
+                Debug.Log("[NataneToon] VRC Light Volumes package not found. Using the bundled LightVolumes.cginc.");
             }
         }
     }

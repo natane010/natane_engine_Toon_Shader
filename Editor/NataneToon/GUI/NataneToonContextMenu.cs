@@ -60,15 +60,12 @@ namespace NataneToon.Editor
                 Debug.LogWarning($"[NataneToon] Window type not found: {typeName}");
 
                 bool openDiagnostics = EditorUtility.DisplayDialog(
-                    "ウィンドウが見つかりません Window Not Found",
-                    $"型 '{typeName}' が見つかりませんでした。\n" +
-                    $"Type '{typeName}' was not found.\n\n" +
-                    "アセンブリが正しくロードされているか確認してください。\n" +
-                    "診断ツールで詳細を確認できます。\n\n" +
-                    "Please verify that the assembly is correctly loaded.\n" +
-                    "You can check details in the Diagnostics tool.",
-                    "診断ツールを開く Open Diagnostics",
-                    "閉じる Close");
+                    NataneToonLocalization.L("ウィンドウが見つかりません", "Window Not Found"),
+                    NataneToonLocalization.L(
+                        $"型 '{typeName}' が見つかりませんでした。\n\nアセンブリが正しくロードされているか確認してください。\n診断ツールで詳細を確認できます。",
+                        $"Type '{typeName}' was not found.\n\nPlease verify that the assembly is correctly loaded.\nYou can check details in the Diagnostics tool."),
+                    NataneToonLocalization.L("診断ツールを開く", "Open Diagnostics"),
+                    NataneToonLocalization.L("閉じる", "Close"));
 
                 if (openDiagnostics)
                 {

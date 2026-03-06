@@ -1,4 +1,4 @@
-#ifndef NATANE_TOON_INPUT_INCLUDED
+﻿#ifndef NATANE_TOON_INPUT_INCLUDED
 #define NATANE_TOON_INPUT_INCLUDED
 
 // Properties and Structures
@@ -1293,8 +1293,8 @@ struct appdata
     float3 normal : NORMAL;
     float4 tangent : TANGENT;
     float2 uv : TEXCOORD0;
-    #if defined(_BACKGROUND_MODE) || defined(_DETAIL_MAP)
-        float2 uv1 : TEXCOORD1;  // Lightmap UV / Detail UV
+    #if defined(_BACKGROUND_MODE) || defined(_DETAIL_MAP) || defined(_LTCGI)
+        float2 uv1 : TEXCOORD1;  // Lightmap UV / Detail UV / LTCGI UV
     #endif
     #if defined(_SMOOTH_NORMAL) || defined(_VERTEX_COLOR_SHADOW)
         float4 color : COLOR;
@@ -1328,7 +1328,7 @@ struct v2f
     #ifdef _BACKGROUND_MODE
         float2 lightmapUV : TEXCOORD11;
     #endif
-    #ifdef _DETAIL_MAP
+    #if defined(_DETAIL_MAP) || defined(_LTCGI)
         float2 uv1 : TEXCOORD12;
     #endif
     #ifdef _VERTEX_COLOR_SHADOW

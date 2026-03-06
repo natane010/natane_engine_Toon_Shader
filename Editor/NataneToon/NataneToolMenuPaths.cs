@@ -50,7 +50,6 @@ namespace NataneToon.Editor
 
         public const string UVTextureGenerator = "Tools/Natane/UVテクスチャ生成 UV Texture Generator";
         public const string ParticleEffectEditor = "Tools/Natane/パーティクルエフェクトエディタ Particle Effect Editor";
-        public const string VTuberPresetGenerator = "Tools/Natane/VTuberプリセット生成 Generate VTuber Presets";
 
         // Not an actual Unity menu path. Used by launchers for direct tab open.
         public const string HelpToolTab = "__NATANE_HELP_TOOL_TAB__";
@@ -75,8 +74,6 @@ namespace NataneToon.Editor
             { "ColorPaletteManager", ColorPaletteManager },
             { "GenerateDefaultPresets", GenerateDefaultPresets },
             { "RegenerateAllPresets", RegenerateAllPresets },
-            { "VTuberPresetGenerator", VTuberPresetGenerator },
-
             // --- Effects ---
             { "ShadowAdjustmentWizard", ShadowAdjustmentWizard },
             { "MatCapLayerComposer", MatCapLayerComposer },
@@ -208,7 +205,7 @@ namespace NataneToon.Editor
                 LilToonMigration, BatchMaterialConverter, PrefabVariantConverter,
                 ShaderVariantCollector, ShaderPrewarming, ShaderVariantStripper, VRCLightVolumesHelper,
                 SmoothNormalBaker,
-                UVTextureGenerator, ParticleEffectEditor, VTuberPresetGenerator,
+                UVTextureGenerator, ParticleEffectEditor,
             };
             return paths;
         }

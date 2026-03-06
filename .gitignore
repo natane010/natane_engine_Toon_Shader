@@ -75,3 +75,23 @@ Assembly-CSharp-Editor.csproj
 
 # Claude Code settings
 .claude/
+
+# Audit reports (development-only)
+AGENTS.md
+AGENTS.md.meta
+EDITOR_TOOLS_AUDIT_REPORT.md
+EDITOR_TOOLS_AUDIT_REPORT.md.meta
+EDITOR_TOOLS_DETAILED_FINDINGS.md
+EDITOR_TOOLS_DETAILED_FINDINGS.md.meta
+QUALITY_AUDIT_COMPREHENSIVE_REPORT.md
+QUALITY_AUDIT_COMPREHENSIVE_REPORT.md.meta
+
+# Temporary working directories
+en/
+en.meta
+Website/
+Website/en.meta
+params/
+params.meta
+handoff.meta
+tools.meta

@@ -28,6 +28,41 @@ namespace NataneToon.Editor
         /// <summary>Target material being edited</summary>
         protected Material targetMaterial;
 
+        private static GUIStyle _categoryHeaderTitleStyle;
+        protected static GUIStyle CategoryHeaderTitleStyle
+        {
+            get
+            {
+                if (_categoryHeaderTitleStyle == null)
+                {
+                    _categoryHeaderTitleStyle = new GUIStyle(EditorStyles.boldLabel)
+                    {
+                        fontSize = 13
+                    };
+                    _categoryHeaderTitleStyle.normal.textColor = new Color(0.7f, 0.9f, 1.0f);
+                }
+
+                return _categoryHeaderTitleStyle;
+            }
+        }
+
+        private static GUIStyle _categoryHeaderDescriptionStyle;
+        protected static GUIStyle CategoryHeaderDescriptionStyle
+        {
+            get
+            {
+                if (_categoryHeaderDescriptionStyle == null)
+                {
+                    _categoryHeaderDescriptionStyle = new GUIStyle(EditorStyles.miniLabel)
+                    {
+                        wordWrap = true
+                    };
+                }
+
+                return _categoryHeaderDescriptionStyle;
+            }
+        }
+
         /// <summary>
         /// Initialize the tab with editor context
         /// </summary>
@@ -125,6 +160,7 @@ namespace NataneToon.Editor
 
             if (EditorGUI.EndChangeCheck())
             {
+                Undo.RecordObject(targetMaterial, L("シェーダー機能を切り替え", "Toggle Shader Feature"));
                 property.floatValue = enabled ? 1.0f : 0.0f;
 
                 // Set shader keyword
@@ -132,6 +168,8 @@ namespace NataneToon.Editor
                     targetMaterial.EnableKeyword(keyword);
                 else
                     targetMaterial.DisableKeyword(keyword);
+
+                EditorUtility.SetDirty(targetMaterial);
             }
 
             return enabled;
@@ -173,22 +211,11 @@ namespace NataneToon.Editor
         protected void DrawCategoryHeader(string title, string description)
         {
             EditorGUILayout.Space(5);
-
-            GUIStyle titleStyle = new GUIStyle(EditorStyles.boldLabel)
-            {
-                fontSize = 13,
-                normal = { textColor = new Color(0.7f, 0.9f, 1.0f) }
-            };
-
-            EditorGUILayout.LabelField(title, titleStyle);
+            EditorGUILayout.LabelField(title, CategoryHeaderTitleStyle);
 
             if (!string.IsNullOrEmpty(description))
             {
-                GUIStyle descStyle = new GUIStyle(EditorStyles.miniLabel)
-                {
-                    wordWrap = true
-                };
-                EditorGUILayout.LabelField(description, descStyle);
+                EditorGUILayout.LabelField(description, CategoryHeaderDescriptionStyle);
             }
 
             EditorGUILayout.Space(3);

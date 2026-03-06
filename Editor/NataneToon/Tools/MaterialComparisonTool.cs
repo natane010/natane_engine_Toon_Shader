@@ -19,7 +19,7 @@ namespace NataneToon.Editor
         private enum ViewMode { SideBySide, Diff, Parameters }
         private ViewMode viewMode = ViewMode.SideBySide;
 
-        private List<string> differentProperties = new List<string>();
+        private readonly List<DifferenceInfo> differences = new List<DifferenceInfo>();
         private static readonly string[][] FloatPropertyAliases =
         {
             new[] { "_ShadowSteps", "_ToonSteps" },
@@ -30,6 +30,21 @@ namespace NataneToon.Editor
             new[] { "_RimIntensity" },
             new[] { "_EmissionGlow", "_EmissionIntensity" }
         };
+        private static readonly string[] ColorProperties =
+        {
+            "_Color", "_BaseColor", "_ShadowColor", "_Shadow1Color", "_Shadow2Color",
+            "_RimColor", "_RimColor2", "_EmissionColor", "_SpecularColor"
+        };
+
+        private class DifferenceInfo
+        {
+            public string Label;
+            public string ValueA;
+            public string ValueB;
+            public bool HasColorPreview;
+            public Color ColorA;
+            public Color ColorB;
+        }
 
         [MenuItem("Tools/Natane/マテリアル Material/マテリアル比較 Material Comparison Tool", false, 14)]
         public static void ShowWindow()
@@ -41,9 +56,8 @@ namespace NataneToon.Editor
 
         private void OnGUI()
         {
-            EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField(L("マテリアル比較ツール", "Material Comparison Tool"), EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox(L("2つのマテリアルを比較", "Compare two materials"), MessageType.Info);
+            NataneToonShaderGUIUtility.DrawToolHeader("マテリアル比較ツール", "Material Comparison Tool", nameof(MaterialComparisonTool));
+            EditorGUILayout.HelpBox(L("2つのマテリアルを比較して、差分やコピー対象を確認します。", "Compare two materials and inspect the differences before copying."), MessageType.Info);
             EditorGUILayout.Space(10);
 
             DrawMaterialSelection();
@@ -128,18 +142,24 @@ namespace NataneToon.Editor
 
         private void DrawSideBySideView()
         {
+            bool stackedLayout = position.width < 780f;
+            float columnWidth = Mathf.Max(250f, (position.width - 32f) * 0.5f);
+
+            if (stackedLayout)
+            {
+                using (new EditorGUILayout.VerticalScope())
+                {
+                    DrawMaterialInfoCard(L("マテリアルA", "Material A"), materialA);
+                    EditorGUILayout.Space(6f);
+                    DrawMaterialInfoCard(L("マテリアルB", "Material B"), materialB);
+                }
+                return;
+            }
+
             EditorGUILayout.BeginHorizontal();
-
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox, GUILayout.Width(position.width / 2 - 10));
-            EditorGUILayout.LabelField(L("マテリアルA", "Material A"), EditorStyles.boldLabel);
-            DrawMaterialInfo(materialA);
-            EditorGUILayout.EndVertical();
-
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox, GUILayout.Width(position.width / 2 - 10));
-            EditorGUILayout.LabelField(L("マテリアルB", "Material B"), EditorStyles.boldLabel);
-            DrawMaterialInfo(materialB);
-            EditorGUILayout.EndVertical();
-
+            DrawMaterialInfoCard(L("マテリアルA", "Material A"), materialA, columnWidth);
+            GUILayout.Space(8f);
+            DrawMaterialInfoCard(L("マテリアルB", "Material B"), materialB, columnWidth);
             EditorGUILayout.EndHorizontal();
         }
 
@@ -148,19 +168,17 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(L("差分", "Differences"), EditorStyles.boldLabel);
 
-            if (differentProperties.Count == 0)
+            if (differences.Count == 0)
             {
                 EditorGUILayout.HelpBox(L("差分がありません - マテリアルは同じ設定です", "No differences - Materials have the same settings"), MessageType.Info);
             }
             else
             {
-                EditorGUILayout.HelpBox(L($"{differentProperties.Count}個の差分が見つかりました", $"{differentProperties.Count} differences found"), MessageType.Warning);
+                EditorGUILayout.HelpBox(L($"{differences.Count}個の差分が見つかりました", $"{differences.Count} differences found"), MessageType.Warning);
 
-                foreach (var prop in differentProperties)
+                foreach (var difference in differences)
                 {
-                    EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-                    EditorGUILayout.LabelField(prop, EditorStyles.boldLabel);
-                    EditorGUILayout.EndHorizontal();
+                    DrawDifferenceEntry(difference);
                 }
             }
 
@@ -185,13 +203,7 @@ namespace NataneToon.Editor
                     string displayName = aliases[0];
 
                     GUI.backgroundColor = isDifferent ? new Color(1f, 0.8f, 0.8f) : Color.white;
-                    EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-                    EditorGUILayout.LabelField(displayName, GUILayout.Width(150));
-                    EditorGUILayout.LabelField($"A: {valueA:F3}", GUILayout.Width(100));
-                    EditorGUILayout.LabelField($"B: {valueB:F3}", GUILayout.Width(100));
-                    if (isDifferent)
-                        EditorGUILayout.LabelField("✗", EditorStyles.boldLabel, GUILayout.Width(20));
-                    EditorGUILayout.EndHorizontal();
+                    DrawValueComparisonRow(displayName, valueA.ToString("F3"), valueB.ToString("F3"), isDifferent);
                     GUI.backgroundColor = Color.white;
                 }
             }
@@ -219,16 +231,28 @@ namespace NataneToon.Editor
             }
         }
 
+        private void DrawMaterialInfoCard(string title, Material mat, float? width = null)
+        {
+            GUILayoutOption[] options = width.HasValue
+                ? new[] { GUILayout.Width(width.Value), GUILayout.MinHeight(160f) }
+                : new[] { GUILayout.MinHeight(160f) };
+
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox, options);
+            EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+            DrawMaterialInfo(mat);
+            EditorGUILayout.EndVertical();
+        }
+
         private void CompareMaterials()
         {
-            differentProperties.Clear();
+            differences.Clear();
 
             if (materialA == null || materialB == null) return;
 
             // Compare shader
             if (materialA.shader != materialB.shader)
             {
-                differentProperties.Add($"{L("シェーダー", "Shader")}: {materialA.shader.name} != {materialB.shader.name}");
+                AddDifference(L("シェーダー", "Shader"), materialA.shader.name, materialB.shader.name);
             }
 
             // Compare float properties
@@ -242,15 +266,13 @@ namespace NataneToon.Editor
                     float valueB = materialB.GetFloat(propB);
                     if (!Mathf.Approximately(valueA, valueB))
                     {
-                        differentProperties.Add($"{aliases[0]}: {valueA:F3} != {valueB:F3}");
+                        AddDifference(aliases[0], valueA.ToString("F3"), valueB.ToString("F3"));
                     }
                 }
             }
 
             // Compare color properties
-            string[] colorProps = { "_Color", "_ShadowColor", "_RimColor", "_EmissionColor" };
-
-            foreach (var prop in colorProps)
+            foreach (var prop in ColorProperties)
             {
                 if (materialA.HasProperty(prop) && materialB.HasProperty(prop))
                 {
@@ -258,7 +280,7 @@ namespace NataneToon.Editor
                     Color colorB = materialB.GetColor(prop);
                     if (colorA != colorB)
                     {
-                        differentProperties.Add($"{prop}: Different colors");
+                        AddColorDifference(prop, colorA, colorB);
                     }
                 }
             }
@@ -313,6 +335,95 @@ namespace NataneToon.Editor
                 L("コピー完了", "Copy Complete"),
                 L("マテリアル設定をコピーしました", "Material settings have been copied"),
                 "OK");
+        }
+
+        private void DrawDifferenceEntry(DifferenceInfo difference)
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                EditorGUILayout.LabelField(difference.Label, EditorStyles.boldLabel);
+                DrawValueComparisonRow(L("比較値", "Compared Values"), difference.ValueA, difference.ValueB, true, difference.HasColorPreview, difference.ColorA, difference.ColorB);
+            }
+        }
+
+        private void DrawValueComparisonRow(string label, string valueA, string valueB, bool isDifferent, bool hasColorPreview = false, Color colorA = default, Color colorB = default)
+        {
+            bool stackedLayout = position.width < 720f;
+
+            if (stackedLayout)
+            {
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.LabelField(label, EditorStyles.miniBoldLabel);
+                DrawValueCell(L("A", "A"), valueA, hasColorPreview, colorA);
+                DrawValueCell(L("B", "B"), valueB, hasColorPreview, colorB);
+                if (isDifferent)
+                {
+                    EditorGUILayout.LabelField(L("差分あり", "Different"), EditorStyles.miniBoldLabel);
+                }
+                EditorGUILayout.EndVertical();
+                return;
+            }
+
+            EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+            EditorGUILayout.LabelField(label, GUILayout.MinWidth(120f), GUILayout.MaxWidth(180f));
+            DrawValueCell(L("A", "A"), valueA, hasColorPreview, colorA, true);
+            DrawValueCell(L("B", "B"), valueB, hasColorPreview, colorB, true);
+            if (isDifferent)
+            {
+                EditorGUILayout.LabelField("✗", EditorStyles.boldLabel, GUILayout.Width(20f));
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void DrawValueCell(string prefix, string value, bool hasColorPreview, Color color, bool inline = false)
+        {
+            if (inline)
+            {
+                EditorGUILayout.BeginHorizontal(GUILayout.MinWidth(120f));
+            }
+            else
+            {
+                EditorGUILayout.BeginHorizontal();
+            }
+
+            EditorGUILayout.LabelField($"{prefix}: {value}", EditorStyles.wordWrappedMiniLabel);
+            if (hasColorPreview)
+            {
+                Color previewColor = GUI.color;
+                GUI.color = color;
+                GUILayout.Box(GUIContent.none, GUILayout.Width(18f), GUILayout.Height(18f));
+                GUI.color = previewColor;
+            }
+
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void AddDifference(string label, string valueA, string valueB)
+        {
+            differences.Add(new DifferenceInfo
+            {
+                Label = label,
+                ValueA = valueA,
+                ValueB = valueB
+            });
+        }
+
+        private void AddColorDifference(string label, Color colorA, Color colorB)
+        {
+            differences.Add(new DifferenceInfo
+            {
+                Label = label,
+                ValueA = FormatColor(colorA),
+                ValueB = FormatColor(colorB),
+                HasColorPreview = true,
+                ColorA = colorA,
+                ColorB = colorB
+            });
+        }
+
+        private static string FormatColor(Color color)
+        {
+            return $"RGBA({color.r:F2}, {color.g:F2}, {color.b:F2}, {color.a:F2})";
         }
 
         private int CountActiveFeatures(Material mat)

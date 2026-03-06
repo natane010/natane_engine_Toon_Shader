@@ -1,4 +1,4 @@
-#ifndef NATANE_TOON_VERTEX_INCLUDED
+﻿#ifndef NATANE_TOON_VERTEX_INCLUDED
 #define NATANE_TOON_VERTEX_INCLUDED
 
 // VAT Helper Functions
@@ -212,8 +212,8 @@ v2f vert(appdata v)
         o.lightmapUV = v.uv1 * unity_LightmapST.xy + unity_LightmapST.zw;
     #endif
 
-    // Detail Map UV1 pass-through
-    #ifdef _DETAIL_MAP
+    // UV1 pass-through for Detail Map / LTCGI
+    #if defined(_DETAIL_MAP) || defined(_LTCGI)
         o.uv1 = v.uv1;
     #endif
 

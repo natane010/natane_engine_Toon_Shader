@@ -1,5 +1,6 @@
 using System;
 using UnityEditor;
+using static NataneToon.Editor.NataneToonLocalization;
 
 namespace NataneToon.Editor
 {
@@ -36,14 +37,15 @@ namespace NataneToon.Editor
             if (health == NataneToolHealthValidator.HealthStatus.Error)
             {
                 bool openDiagnostics = EditorUtility.DisplayDialog(
-                    "Natane Toon Shader - ツール異常検出",
-                    "一部のNatane Toon Shaderツールが正常に動作しない可能性があります。\n" +
-                    "アセンブリまたは型の解決に問題が検出されました。\n\n" +
-                    "Some Natane Toon Shader tools may not function correctly.\n" +
-                    "Assembly or type resolution issues were detected.\n\n" +
-                    "診断ツールで詳細を確認してください。",
-                    "診断ツールを開く Open Diagnostics",
-                    "後で確認する Later");
+                    L("Natane Toon Shader - ツール異常検出", "Natane Toon Shader - Tool Issue Detected"),
+                    L("一部の Natane Toon Shader ツールが正常に動作しない可能性があります。\n" +
+                      "アセンブリまたは型の解決に問題が検出されました。\n\n" +
+                      "診断ウィンドウで詳細を確認してください。",
+                      "Some Natane Toon Shader tools may not function correctly.\n" +
+                      "Assembly or type resolution issues were detected.\n\n" +
+                      "Open Diagnostics to review the details."),
+                    L("診断を開く", "Open Diagnostics"),
+                    L("あとで確認", "Later"));
 
                 if (openDiagnostics)
                 {

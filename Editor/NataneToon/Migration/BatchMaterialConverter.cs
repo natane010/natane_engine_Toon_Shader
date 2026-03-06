@@ -17,8 +17,10 @@ namespace NataneToon.Editor
         private bool searchInScenes = true;
         private bool searchInPrefabs = true;
         private bool updateReferences = true;
+        private Vector2 windowScrollPosition;
         private Vector2 scrollPosition;
         private List<MaterialConversionInfo> conversionInfos = new List<MaterialConversionInfo>();
+        private const float CompactLayoutWidth = 720f;
 
         private class MaterialConversionInfo
         {
@@ -37,6 +39,7 @@ namespace NataneToon.Editor
 
         private void OnGUI()
         {
+            windowScrollPosition = EditorGUILayout.BeginScrollView(windowScrollPosition);
             EditorGUILayout.LabelField(L("一括マテリアル変換ツール", "Batch Material Converter"), EditorStyles.boldLabel);
             EditorGUILayout.Space();
 
@@ -51,6 +54,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space();
 
             // Settings
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(L("変換設定", "Conversion Settings"), EditorStyles.boldLabel);
 
             sourceShaderName = EditorGUILayout.TextField(L("変換元シェーダー名", "Source Shader Name:"), sourceShaderName);
@@ -63,6 +67,8 @@ namespace NataneToon.Editor
             updateReferences = EditorGUILayout.Toggle(L("オブジェクト参照を更新", "Update Object References"), updateReferences);
 
             EditorGUILayout.Space();
+
+            EditorGUILayout.EndVertical();
 
             // Scan button
             if (GUILayout.Button(L("プロジェクトをスキャン", "Scan Project"), GUILayout.Height(30)))
@@ -77,11 +83,11 @@ namespace NataneToon.Editor
             {
                 EditorGUILayout.LabelField(L($"見つかったマテリアル: {conversionInfos.Count}個", $"Found {conversionInfos.Count} Materials"), EditorStyles.boldLabel);
 
-                scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Height(250));
+                scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Height(GetAdaptiveListHeight(160f, 320f, 0.35f)));
 
                 foreach (var info in conversionInfos)
                 {
-                    EditorGUILayout.BeginVertical("box");
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
                     EditorGUILayout.BeginHorizontal();
                     info.willConvert = EditorGUILayout.Toggle(info.willConvert, GUILayout.Width(20));
@@ -114,17 +120,35 @@ namespace NataneToon.Editor
                 EditorGUILayout.Space();
 
                 // Select/Deselect all
-                EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button(L("すべて選択", "Select All")))
+                if (IsCompactLayout())
                 {
-                    conversionInfos.ForEach(i => i.willConvert = true);
+                    if (GUILayout.Button(L("すべて選択", "Select All")))
+                    {
+                        conversionInfos.ForEach(i => i.willConvert = true);
+                    }
+
+                    if (GUILayout.Button(L("すべて解除", "Deselect All")))
+                    {
+                        conversionInfos.ForEach(i => i.willConvert = false);
+                    }
                 }
-                if (GUILayout.Button(L("すべて解除", "Deselect All")))
+                else
                 {
-                    conversionInfos.ForEach(i => i.willConvert = false);
+                    EditorGUILayout.BeginHorizontal();
+                    if (GUILayout.Button(L("すべて選択", "Select All")))
+                    {
+                        conversionInfos.ForEach(i => i.willConvert = true);
+                    }
+
+                    if (GUILayout.Button(L("すべて解除", "Deselect All")))
+                    {
+                        conversionInfos.ForEach(i => i.willConvert = false);
+                    }
+                    EditorGUILayout.EndHorizontal();
                 }
-                EditorGUILayout.EndHorizontal();
             }
+
+            EditorGUILayout.EndScrollView();
         }
 
         /// <summary>
@@ -235,9 +259,9 @@ namespace NataneToon.Editor
             if (!EditorUtility.DisplayDialog(
                 L("マテリアルを変換", "Convert Materials"),
                 L($"{selectedInfos.Count}個のマテリアルを変換してもよろしいですか？\n" +
-                "この操作は元に戻せません。バックアップがあることを確認してください。",
+                "Unity の Undo で戻せますが、プロジェクトのバックアップを推奨します。",
                 $"Are you sure you want to convert {selectedInfos.Count} materials?\n" +
-                "This operation cannot be undone. Please ensure you have a backup."),
+                "You can revert the material changes with Unity Undo, but a project backup is still recommended."),
                 L("変換", "Convert"), L("キャンセル", "Cancel")))
             {
                 return;
@@ -253,39 +277,47 @@ namespace NataneToon.Editor
 
             int successCount = 0;
 
-            for (int i = 0; i < selectedInfos.Count; i++)
+            try
             {
-                var info = selectedInfos[i];
-
-                EditorUtility.DisplayProgressBar(
-                    "Converting Materials",
-                    $"Converting {i + 1}/{selectedInfos.Count}: {info.material.name}",
-                    (float)i / selectedInfos.Count
-                );
-
-                try
+                for (int i = 0; i < selectedInfos.Count; i++)
                 {
-                    // Store original properties
-                    var originalProps = CaptureAllProperties(info.material);
+                    var info = selectedInfos[i];
 
-                    // Change shader
-                    info.material.shader = targetShader;
+                    EditorUtility.DisplayProgressBar(
+                        L("マテリアル変換中", "Converting Materials"),
+                        L($"{i + 1}/{selectedInfos.Count}: {info.material.name} を変換中",
+                          $"Converting {i + 1}/{selectedInfos.Count}: {info.material.name}"),
+                        (float)i / selectedInfos.Count
+                    );
 
-                    // Try to restore compatible properties
-                    RestoreCompatibleProperties(info.material, originalProps);
+                    try
+                    {
+                        Undo.RecordObject(info.material, "Convert Material Shader");
 
-                    EditorUtility.SetDirty(info.material);
-                    successCount++;
+                        // Store original properties
+                        var originalProps = CaptureAllProperties(info.material);
 
-                    Debug.Log($"Converted: {info.material.name}");
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogError($"Failed to convert {info.material.name}: {e.Message}");
+                        // Change shader
+                        info.material.shader = targetShader;
+
+                        // Try to restore compatible properties
+                        RestoreCompatibleProperties(info.material, originalProps);
+
+                        EditorUtility.SetDirty(info.material);
+                        successCount++;
+
+                        Debug.Log($"Converted: {info.material.name}");
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogError($"Failed to convert {info.material.name}: {e.Message}");
+                    }
                 }
             }
-
-            EditorUtility.ClearProgressBar();
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
             AssetDatabase.SaveAssets();
 
             EditorUtility.DisplayDialog(
@@ -386,6 +418,16 @@ namespace NataneToon.Editor
                     }
                 }
             }
+        }
+
+        private bool IsCompactLayout()
+        {
+            return position.width < CompactLayoutWidth;
+        }
+
+        private float GetAdaptiveListHeight(float minHeight, float maxHeight, float ratio)
+        {
+            return Mathf.Clamp(position.height * ratio, minHeight, maxHeight);
         }
 
         private class MaterialProperty

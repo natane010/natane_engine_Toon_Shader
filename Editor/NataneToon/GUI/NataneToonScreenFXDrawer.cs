@@ -10,6 +10,43 @@ namespace NataneToon.Editor
     /// </summary>
     public class NataneToonScreenFXDrawer : NataneToonShaderGUITab
     {
+        private static GUIStyle _headerStyle;
+        private static GUIStyle HeaderStyle
+        {
+            get
+            {
+                if (_headerStyle == null)
+                {
+                    _headerStyle = new GUIStyle(EditorStyles.boldLabel)
+                    {
+                        fontSize = 16,
+                        alignment = TextAnchor.MiddleCenter
+                    };
+                    _headerStyle.normal.textColor = new Color(1f, 0.6f, 0.8f);
+                }
+
+                return _headerStyle;
+            }
+        }
+
+        private static GUIStyle _footerStyle;
+        private static GUIStyle FooterStyle
+        {
+            get
+            {
+                if (_footerStyle == null)
+                {
+                    _footerStyle = new GUIStyle(EditorStyles.miniLabel)
+                    {
+                        alignment = TextAnchor.MiddleCenter,
+                        wordWrap = true
+                    };
+                }
+
+                return _footerStyle;
+            }
+        }
+
         private bool showBlend = true;
         private bool showToonize = true;
         private bool showDistortion = true;
@@ -58,15 +95,8 @@ namespace NataneToon.Editor
 
         private void DrawHeader()
         {
-            GUIStyle headerStyle = new GUIStyle(EditorStyles.boldLabel)
-            {
-                fontSize = 16,
-                alignment = TextAnchor.MiddleCenter,
-                normal = { textColor = new Color(1f, 0.6f, 0.8f) }
-            };
-
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField(L("ナタネ スクリーンFXオーバーレイ", "Natane Screen FX Overlay"), headerStyle);
+            EditorGUILayout.LabelField(L("ナタネ スクリーンFXオーバーレイ", "Natane Screen FX Overlay"), HeaderStyle);
             EditorGUILayout.EndVertical();
         }
 
@@ -160,13 +190,8 @@ namespace NataneToon.Editor
         private void DrawFooter()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            GUIStyle footerStyle = new GUIStyle(EditorStyles.miniLabel)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                wordWrap = true
-            };
-            EditorGUILayout.LabelField(L("ナタネ スクリーンFXオーバーレイ v1.1", "Natane Screen FX Overlay v1.1"), footerStyle);
-            EditorGUILayout.LabelField(L("GrabPassを使用 - パフォーマンスに注意", "Uses GrabPass - watch performance"), footerStyle);
+            EditorGUILayout.LabelField(L("ナタネ スクリーンFXオーバーレイ v1.1", "Natane Screen FX Overlay v1.1"), FooterStyle);
+            EditorGUILayout.LabelField(L("GrabPassを使用 - パフォーマンスに注意", "Uses GrabPass - watch performance"), FooterStyle);
             EditorGUILayout.EndVertical();
         }
     }

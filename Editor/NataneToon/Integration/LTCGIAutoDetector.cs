@@ -1,6 +1,8 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
+using System;
 using System.IO;
+using System.Text;
 
 namespace NataneToon.Editor
 {
@@ -14,14 +16,13 @@ namespace NataneToon.Editor
     [InitializeOnLoad]
     public static class LTCGIAutoDetector
     {
+        private const string ConfigFileName = "NataneToonLTCGIConfig.hlsl";
+
         private const string LTCGI_PACKAGE_PATH = "Packages/at.pimaker.ltcgi";
         private const string LTCGI_CGINC_PATH = "Packages/at.pimaker.ltcgi/Shaders/LTCGI.cginc";
 
-        private static readonly string ConfigFilePath = Path.Combine(
-            "Assets", "natane_engine_Toon_Shader", "Shaders", "NataneToon",
-            "Include", "Config", "NataneToonLTCGIConfig.hlsl");
-
         private const string PREFS_KEY = "NataneToon_LTCGI_Detected";
+        private static readonly UTF8Encoding Utf8WithBom = new UTF8Encoding(true);
 
         static LTCGIAutoDetector()
         {
@@ -32,22 +33,30 @@ namespace NataneToon.Editor
         {
             bool isAvailable = IsPackageInstalled();
             bool wasAvailable = EditorPrefs.GetBool(PREFS_KEY, false);
-
-            if (!File.Exists(ConfigFilePath))
+            if (!TryResolvePaths(out string configAssetPath, out string configFullPath, out string lightingAssetPath))
             {
-                WriteConfigFile(isAvailable);
-                EditorPrefs.SetBool(PREFS_KEY, isAvailable);
-                ReimportShaders();
-                LogStatus(isAvailable, true);
+                return;
+            }
+
+            if (!File.Exists(configFullPath))
+            {
+                if (WriteConfigFile(configFullPath, isAvailable))
+                {
+                    EditorPrefs.SetBool(PREFS_KEY, isAvailable);
+                    ReimportShaders(configAssetPath, lightingAssetPath);
+                    LogStatus(isAvailable, true);
+                }
                 return;
             }
 
             if (isAvailable != wasAvailable)
             {
-                WriteConfigFile(isAvailable);
-                EditorPrefs.SetBool(PREFS_KEY, isAvailable);
-                ReimportShaders();
-                LogStatus(isAvailable, true);
+                if (WriteConfigFile(configFullPath, isAvailable))
+                {
+                    EditorPrefs.SetBool(PREFS_KEY, isAvailable);
+                    ReimportShaders(configAssetPath, lightingAssetPath);
+                    LogStatus(isAvailable, true);
+                }
             }
         }
 
@@ -55,78 +64,119 @@ namespace NataneToon.Editor
         public static void ForceRedetect()
         {
             bool isAvailable = IsPackageInstalled();
-            WriteConfigFile(isAvailable);
+            if (!TryResolvePaths(out string configAssetPath, out string configFullPath, out string lightingAssetPath))
+            {
+                EditorUtility.DisplayDialog("LTCGI 検出結果", GetPathResolutionErrorMessage(), "OK");
+                return;
+            }
+
+            if (!WriteConfigFile(configFullPath, isAvailable))
+            {
+                EditorUtility.DisplayDialog("LTCGI 検出結果", GetWriteErrorMessage(configFullPath), "OK");
+                return;
+            }
+
             EditorPrefs.SetBool(PREFS_KEY, isAvailable);
-            ReimportShaders();
+            ReimportShaders(configAssetPath, lightingAssetPath);
             LogStatus(isAvailable, true);
 
             string message = isAvailable
                 ? "LTCGI パッケージを検出しました。\nシェーダーはLTCGI.cgincを使用します。\n\nLTCGI package detected.\nShaders will use real LTCGI functions."
-                : "LTCGI パッケージが見つかりません。\nフォールバック実装（Unity SH + Reflection Probes）を使用します。\n\nLTCGI package not found.\nFallback implementation (Unity SH + Reflection Probes) will be used.";
+                : "LTCGI パッケージが見つかりません。\nLTCGI は lilToon と同様に無効化されます。\n\nLTCGI package not found.\nLTCGI will stay disabled, matching lilToon behavior.";
 
             EditorUtility.DisplayDialog("LTCGI 検出結果", message, "OK");
         }
 
         public static bool IsPackageInstalled()
         {
-            if (!Directory.Exists(LTCGI_PACKAGE_PATH))
+            if (!AssetDatabase.IsValidFolder(LTCGI_PACKAGE_PATH))
                 return false;
-            if (!File.Exists(LTCGI_CGINC_PATH))
+            if (AssetDatabase.LoadMainAssetAtPath(LTCGI_CGINC_PATH) == null)
                 return false;
             return true;
         }
 
-        private static void WriteConfigFile(bool isAvailable)
+        private static bool WriteConfigFile(string configFullPath, bool isAvailable)
         {
-            string directory = Path.GetDirectoryName(ConfigFilePath);
-            if (!Directory.Exists(directory))
+            try
             {
-                Directory.CreateDirectory(directory);
-            }
+                string directory = Path.GetDirectoryName(configFullPath);
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
 
-            string content;
-            if (isAvailable)
-            {
-                content =
-                    "// =============================================================================\n" +
-                    "// NataneToon LTCGI Configuration\n" +
-                    "// Auto-generated by LTCGIAutoDetector.cs\n" +
-                    "// Do not edit manually - this file is regenerated when packages change\n" +
-                    "// =============================================================================\n" +
-                    "// LTCGI package: DETECTED\n" +
-                    "// Mode: Real LTCGI (LTCGI.cginc)\n" +
-                    "// =============================================================================\n" +
-                    "#define NATANE_LTCGI_AVAILABLE\n";
-            }
-            else
-            {
-                content =
-                    "// =============================================================================\n" +
-                    "// NataneToon LTCGI Configuration\n" +
-                    "// Auto-generated by LTCGIAutoDetector.cs\n" +
-                    "// Do not edit manually - this file is regenerated when packages change\n" +
-                    "// =============================================================================\n" +
-                    "// LTCGI package: NOT DETECTED\n" +
-                    "// Mode: Fallback (Unity SH + Reflection Probes)\n" +
-                    "// =============================================================================\n";
-            }
+                string content;
+                if (isAvailable)
+                {
+                    content =
+                        "// =============================================================================\n" +
+                        "// NataneToon LTCGI Configuration\n" +
+                        "// Auto-generated by LTCGIAutoDetector.cs\n" +
+                        "// Do not edit manually - this file is regenerated when packages change\n" +
+                        "// =============================================================================\n" +
+                        "// LTCGI package: DETECTED\n" +
+                        "// Mode: Real LTCGI (LTCGI.cginc)\n" +
+                        "// =============================================================================\n" +
+                        "#define NATANE_LTCGI_AVAILABLE\n";
+                }
+                else
+                {
+                    content =
+                        "// =============================================================================\n" +
+                        "// NataneToon LTCGI Configuration\n" +
+                        "// Auto-generated by LTCGIAutoDetector.cs\n" +
+                        "// Do not edit manually - this file is regenerated when packages change\n" +
+                        "// =============================================================================\n" +
+                        "// LTCGI package: NOT DETECTED\n" +
+                        "// Mode: Disabled (matches lilToon package-required behavior)\n" +
+                        "// =============================================================================\n";
+                }
 
-            File.WriteAllText(ConfigFilePath, content);
+                File.WriteAllText(configFullPath, content, Utf8WithBom);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[NataneToon] Failed to write {ConfigFileName}.\nPath: {configFullPath}\n{ex}");
+                return false;
+            }
         }
 
-        private static void ReimportShaders()
+        private static void ReimportShaders(string configAssetPath, string lightingAssetPath)
         {
-            AssetDatabase.ImportAsset(ConfigFilePath, ImportAssetOptions.ForceUpdate);
-
-            string lightingPath = Path.Combine(
-                "Assets", "natane_engine_Toon_Shader", "Shaders", "NataneToon",
-                "Include", "Lighting", "NataneToonLighting.hlsl");
-            if (File.Exists(lightingPath))
+            AssetDatabase.ImportAsset(configAssetPath, ImportAssetOptions.ForceUpdate);
+            if (AssetDatabase.LoadMainAssetAtPath(lightingAssetPath) != null)
             {
-                AssetDatabase.ImportAsset(lightingPath, ImportAssetOptions.ForceUpdate);
+                AssetDatabase.ImportAsset(lightingAssetPath, ImportAssetOptions.ForceUpdate);
             }
 
             AssetDatabase.Refresh();
+        }
+
+        private static bool TryResolvePaths(out string configAssetPath, out string configFullPath, out string lightingAssetPath)
+        {
+            if (NatanePackagePathResolver.TryResolveShaderSupportPaths(
+                ConfigFileName,
+                out configAssetPath,
+                out configFullPath,
+                out lightingAssetPath))
+            {
+                return true;
+            }
+
+            Debug.LogError($"[NataneToon] {GetPathResolutionErrorMessage()}");
+            return false;
+        }
+
+        private static string GetPathResolutionErrorMessage()
+        {
+            return $"Failed to resolve the Natane Toon package root while updating {ConfigFileName}.";
+        }
+
+        private static string GetWriteErrorMessage(string configFullPath)
+        {
+            return $"設定ファイルの更新に失敗しました。\n{configFullPath}\n\nFailed to update the config file.";
         }
 
         private static void LogStatus(bool isAvailable, bool changed)
@@ -137,7 +187,7 @@ namespace NataneToon.Editor
             }
             else if (changed)
             {
-                Debug.Log("[NataneToon] LTCGI パッケージ未検出。フォールバック実装（Unity SH + Reflection Probes）を使用します。");
+                Debug.Log("[NataneToon] LTCGI パッケージ未検出。LTCGI は lilToon と同様に無効化されます。");
             }
         }
     }

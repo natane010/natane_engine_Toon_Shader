@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
 using System;
 using System.Collections.Generic;
@@ -127,6 +127,42 @@ public class NataneToonShaderGUI : ShaderGUI
                 _cachedHDRToggleStyle.padding = new RectOffset(2, 2, 1, 1);
             }
             return _cachedHDRToggleStyle;
+        }
+    }
+
+    private static GUIStyle _cachedMakeupBadgeStyleOn;
+    private static GUIStyle CachedMakeupBadgeStyleOn
+    {
+        get
+        {
+            if (_cachedMakeupBadgeStyleOn == null)
+            {
+                _cachedMakeupBadgeStyleOn = new GUIStyle(EditorStyles.miniLabel)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    fontStyle = FontStyle.Bold
+                };
+            }
+
+            return _cachedMakeupBadgeStyleOn;
+        }
+    }
+
+    private static GUIStyle _cachedMakeupBadgeStyleOff;
+    private static GUIStyle CachedMakeupBadgeStyleOff
+    {
+        get
+        {
+            if (_cachedMakeupBadgeStyleOff == null)
+            {
+                _cachedMakeupBadgeStyleOff = new GUIStyle(EditorStyles.miniLabel)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    fontStyle = FontStyle.Normal
+                };
+            }
+
+            return _cachedMakeupBadgeStyleOff;
         }
     }
 
@@ -380,6 +416,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
             // Validate and fix shader keywords (ensures keywords match property values)
             ValidateAndFixKeywords();
+            DrawDependencyInspectorWarnings();
 
             // ===== Compact Header =====
             DrawCompactHeader();
@@ -908,7 +945,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 Rect r = GUILayoutUtility.GetRect(new GUIContent(label), EditorStyles.miniLabel, GUILayout.Height(18));
                 if (Event.current.type == EventType.Repaint) EditorGUI.DrawRect(r, badgeCol);
                 var oc = GUI.contentColor; GUI.contentColor = textCol;
-                GUI.Label(r, label, new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleCenter, fontStyle = layerOn ? FontStyle.Bold : FontStyle.Normal });
+                GUI.Label(r, label, layerOn ? CachedMakeupBadgeStyleOn : CachedMakeupBadgeStyleOff);
                 GUI.contentColor = oc;
             }
             EditorGUILayout.EndHorizontal();
@@ -1295,91 +1332,186 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("AdvancedLighting"));
     }
 
+    // The GUI only needs package presence, so keep this independent from detector side effects.
+    private static bool IsVRCLightVolumesPackageInstalled()
+    {
+        return NataneDependencyStatus.IsInstalled(NataneDependencyStatus.VRCLightVolumes);
+    }
+
+    private static bool IsLTCGIPackageInstalled()
+    {
+        return NataneDependencyStatus.IsInstalled(NataneDependencyStatus.LTCGI);
+    }
+
+    private static bool IsMaterialToggleEnabled(Material material, string propertyName)
+    {
+        return material != null &&
+               material.HasProperty(propertyName) &&
+               material.GetFloat(propertyName) > FLOAT_COMPARISON_THRESHOLD;
+    }
+
+    private static void OpenDependencySetupWindow()
+    {
+        NataneDependencySetupWindow.ShowWindow();
+    }
+
+    private static void DrawDependencyInstallStatus()
+    {
+        if (NataneDependencyInstaller.HasStatusMessage)
+        {
+            EditorGUILayout.HelpBox(NataneDependencyInstaller.StatusMessage, NataneDependencyInstaller.StatusType);
+        }
+    }
+
+    private static void DrawDependencyActionButtons(in NataneDependencyInfo dependency, bool drawStatusMessage = true)
+    {
+        if (drawStatusMessage)
+        {
+            DrawDependencyInstallStatus();
+        }
+
+        EditorGUILayout.LabelField(dependency.DisplayName, EditorStyles.miniBoldLabel);
+
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            if (GUILayout.Button(L("VCC Listing", "VCC Listing"), GUILayout.Height(20)))
+            {
+                NataneDependencyInstaller.OpenVccListing(dependency);
+            }
+
+            using (new EditorGUI.DisabledScope(NataneDependencyInstaller.IsInstallInProgress))
+            {
+                string installLabel = NataneDependencyInstaller.IsInstallInProgress
+                    ? L("インストール中...", "Installing...")
+                    : L("UPM Git で導入", "Install via UPM Git");
+                if (GUILayout.Button(installLabel, GUILayout.Height(20)))
+                {
+                    NataneDependencyInstaller.TryStartInstall(dependency);
+                }
+            }
+        }
+
+        if (GUILayout.Button(L("依存セットアップを開く", "Open Dependency Setup"), GUILayout.Height(20)))
+        {
+            OpenDependencySetupWindow();
+        }
+    }
+
+    private void DrawDependencyInspectorWarnings()
+    {
+        bool missingLightVolumePackage = IsMaterialToggleEnabled(targetMaterial, "_UseLightVolume") &&
+                                         !IsVRCLightVolumesPackageInstalled();
+        bool missingLtcgiPackage = IsMaterialToggleEnabled(targetMaterial, "_LTCGI") &&
+                                   !IsLTCGIPackageInstalled();
+
+        if (!missingLightVolumePackage && !missingLtcgiPackage)
+        {
+            return;
+        }
+
+        DrawDependencyInstallStatus();
+
+        if (missingLightVolumePackage)
+        {
+            EditorGUILayout.HelpBox(
+                L("このマテリアルは Light Volume を有効化しています。VRC Light Volumes パッケージは未導入ですが、同梱版フォールバックで動作は継続します。完全対応に寄せるなら package の導入を推奨します。",
+                  "This material has Light Volume enabled. The VRC Light Volumes package is missing, but the bundled fallback remains active. Install the package if you want full package integration."),
+                MessageType.Warning);
+            DrawDependencyActionButtons(NataneDependencyStatus.VRCLightVolumes, false);
+            EditorGUILayout.Space(4);
+        }
+
+        if (missingLtcgiPackage)
+        {
+            EditorGUILayout.HelpBox(
+                L("このマテリアルは LTCGI を有効化していますが、LTCGI パッケージが未導入です。設定は保持されますが、効果は無効のままです。",
+                  "This material has LTCGI enabled, but the LTCGI package is missing. Settings are preserved, but the effect stays disabled."),
+                MessageType.Warning);
+            DrawDependencyActionButtons(NataneDependencyStatus.LTCGI, false);
+        }
+
+        EditorGUILayout.Space(6);
+    }
+
     private void DrawLightVolumeSection()
     {
         SetFoldout("LightVolume", DrawBoxedSection(L("VRC ライトボリューム", "VRC Light Volumes"), GetFoldout("LightVolume"), SectionCategory.Lighting, "_USE_LIGHT_VOLUME"));
         if (GetFoldout("LightVolume"))
         {
-
-            // Show package detection status
-            bool packageInstalled = NataneToon.Editor.VRCLightVolumesAutoDetector.IsPackageInstalled();
+            bool packageInstalled = IsVRCLightVolumesPackageInstalled();
             if (packageInstalled)
             {
                 EditorGUILayout.HelpBox(
                     L("VRC Light Volumes パッケージ: 検出済み\n" +
-                    "LightVolumes.cginc を使用します（対応ワールドで自動的に動作）",
-                    "VRC Light Volumes Package: Detected\n" +
-                    "Using LightVolumes.cginc (works automatically in compatible worlds)"),
+                      "パッケージ版 LightVolumes.cginc を使用します（対応ワールドで自動的に動作）",
+                      "VRC Light Volumes Package: Detected\n" +
+                      "Using the package LightVolumes.cginc (works automatically in compatible worlds)"),
                     MessageType.Info);
             }
             else
             {
                 EditorGUILayout.HelpBox(
                     L("VRC Light Volumes パッケージ: 未検出\n" +
-                    "バンドル版LightVolumes.cgincで全機能が利用可能です\n\n" +
-                    "パッケージ版を使用する場合:\n" +
-                    "VCC から red.sim.lightvolumes をインストールしてください\n" +
-                    "https://redsim.github.io/vpmlisting/",
-                    "VRC Light Volumes Package: Not Detected\n" +
-                    "All features available via bundled LightVolumes.cginc\n\n" +
-                    "To use the package version:\n" +
-                    "Install red.sim.lightvolumes from VCC\n" +
-                    "https://redsim.github.io/vpmlisting/"),
+                      "同梱版 LightVolumes.cginc を使用します。\n\n" +
+                      "パッケージ版を使うには:\n" +
+                      "VCC から red.sim.lightvolumes をインストール\n" +
+                      "https://redsim.github.io/vpmlisting/",
+                      "VRC Light Volumes Package: Not Detected\n" +
+                      "Using the bundled LightVolumes.cginc.\n\n" +
+                      "To use the package version:\n" +
+                      "Install red.sim.lightvolumes from VCC\n" +
+                      "https://redsim.github.io/vpmlisting/"),
                     MessageType.Info);
+                DrawDependencyActionButtons(NataneDependencyStatus.VRCLightVolumes);
             }
 
             EditorGUILayout.Space(3);
 
             bool enableLightVolume = DrawToggle("_USE_LIGHT_VOLUME", "_UseLightVolume", L("Light Volumeを有効化", "Enable Light Volume"));
-
             if (enableLightVolume)
             {
                 EditorGUI.indentLevel++;
+
                 DrawHelpToggle("LightVolumeIntro",
-                    L("VRC Light Volumesはボクセルベースの次世代ライティングシステムです。\n" +
-                    "対応ワールドで自動的に高品質な部分照明が適用されます。\n",
-                    "VRC Light Volumes is a voxel-based next-generation lighting system.\n" +
-                    "High-quality partial lighting is automatically applied in compatible worlds.\n") +
+                    L("VRC Light Volumes はボクセルベースの次世代ライティングシステムです。\n" +
+                      "対応ワールドでは高品質な局所照明を自動的に受け取れます。\n",
+                      "VRC Light Volumes is a voxel-based next-generation lighting system.\n" +
+                      "High-quality local lighting is applied automatically in compatible worlds.\n") +
                     (packageInstalled
-                        ? L("現在、本物のLightVolumes.cgincが使用されています。", "Currently using the real LightVolumes.cginc.")
-                        : L("パッケージ未検出のため、バンドル版LightVolumes.cgincが使用されます。", "Package not detected; using bundled LightVolumes.cginc.")),
+                        ? L("現在はパッケージ版 LightVolumes.cginc を使用しています。", "Currently using the package LightVolumes.cginc.")
+                        : L("現在は同梱版 LightVolumes.cginc を使用しています。", "Currently using the bundled LightVolumes.cginc.")),
                     MessageType.Info);
 
+                if (!packageInstalled)
+                {
+                    EditorGUILayout.HelpBox(
+                        L("パッケージ未導入のため、現在は同梱版 LightVolumes.cginc を使用しています。対応ワールドでは動作しますが、完全対応に寄せるなら red.sim.lightvolumes の導入を推奨します。",
+                          "The package is not installed, so the bundled LightVolumes.cginc is active. It still works in compatible worlds, but installing red.sim.lightvolumes is recommended for full integration."),
+                        MessageType.Warning);
+                }
+
                 EditorGUILayout.Space();
-                DrawProperty("_LightVolumeIntensity", L("Light Volumeの強さ", "Light Volume Intensity"));
-                DrawHelpToggle("LightVolumeIntensity", L("Light Volumeライティングの強度を制御します。1 = 完全強度、0 = 無効。", "Controls Light Volume lighting intensity. 1 = Full strength, 0 = Disabled."), MessageType.Info);
+                DrawProperty("_LightVolumeIntensity", L("Light Volume 強度", "Light Volume Intensity"));
+                DrawHelpToggle("LightVolumeIntensity",
+                    L("Light Volume ライティングの強度を制御します。\n1 = 完全強度、0 = 無効。",
+                      "Controls Light Volume lighting intensity.\n1 = Full strength, 0 = Disabled."),
+                    MessageType.Info);
 
                 EditorGUILayout.Space();
                 DrawProperty("_LightVolumeBlendMode", L("ブレンドモード", "Blend Mode"));
                 DrawHelpToggle("LightVolumeBlendMode",
-                    L("Light Volumeブレンドモード:\n" +
-                    "• Add(0): 直接光をアンビエントに、間接光をリムライトとして統合\n" +
-                    "  　　　（デフォルト、最も自然）\n" +
-                    "• Multiply(1): 既存のライティングと乗算（暗くなる効果）\n" +
-                    "• Replace(2): Light Volumeで置き換え（完全に制御）\n" +
-                    "• Natural(3): 間接光として max() 合成に参加させます。\n" +
-                    "  　環境光の色がすべてのメッシュに正しく反映されます（推奨）\n\n" +
-                    "Addモード:\n" +
-                    "　Light Volumeの直接光と間接光を分離。\n" +
-                    "　間接光は自然なリム効果として統合され、より立体的な表現に。\n" +
-                    "　Shadow Receive Maskで間接光の影響を制御できます。\n\n" +
-                    "Naturalモード:\n" +
-                    "　Light Volumeの照明を間接光の最低色と max() で合成。\n" +
-                    "　環境色が全メッシュに均一に反映され、色味の統一感が向上します。",
-                    "Light Volume Blend Mode:\n" +
-                    "• Add(0): Integrate direct light to ambient, indirect as rim light\n" +
-                    "  (Default, most natural)\n" +
-                    "• Multiply(1): Multiply with existing lighting (darkening effect)\n" +
-                    "• Replace(2): Replace with Light Volume (full control)\n" +
-                    "• Natural(3): Participate in max() blend as indirect light.\n" +
-                    "  Environment color correctly reflected on all meshes (Recommended)\n\n" +
-                    "Add Mode:\n" +
-                    "  Separates Light Volume direct and indirect light.\n" +
-                    "  Indirect light creates natural rim effect for more dimensional look.\n" +
-                    "  Shadow Receive Mask controls indirect light influence.\n\n" +
-                    "Natural Mode:\n" +
-                    "  Blends Light Volume lighting with indirect light min color via max().\n" +
-                    "  Environment color uniformly reflected on all meshes for color consistency."),
+                    L("Light Volume ブレンドモード:\n" +
+                      "・ Add(0): 直接光を加算し、間接光をリム風に合成\n" +
+                      "・ Multiply(1): 既存ライティングに乗算\n" +
+                      "・ Replace(2): Light Volume の結果で置き換え\n" +
+                      "・ Natural(3): 間接光として max() 合成に参加\n" +
+                      "  環境色を全メッシュへ安定して反映したい場合に推奨",
+                      "Light Volume Blend Mode:\n" +
+                      "- Add(0): Adds direct light and uses indirect light like rim lighting\n" +
+                      "- Multiply(1): Multiplies with existing lighting\n" +
+                      "- Replace(2): Replaces lighting with the Light Volume result\n" +
+                      "- Natural(3): Participates in max() composition as indirect light\n" +
+                      "  Recommended when you want stable environment color across meshes"),
                     MessageType.Info);
 
                 EditorGUILayout.Space();
@@ -1387,25 +1519,30 @@ public class NataneToonShaderGUI : ShaderGUI
                 if (enableSpecular)
                 {
                     DrawHelpToggle("LightVolumeSpecular",
-                        L("Light Volumeからカラースペキュラーを生成します。\n",
-                        "Generates color specular from Light Volume.\n") +
+                        L("Light Volume から色付きスペキュラーを生成します。\n",
+                          "Generates colored specular from Light Volume.\n") +
                         (packageInstalled
-                            ? L("本物のLightVolumeSpecular関数が使用されます。アバターに推奨。", "Using real LightVolumeSpecular function. Recommended for avatars.")
-                            : L("バンドル版LightVolumeSpecularが使用されます。", "Using bundled LightVolumeSpecular.")),
+                            ? L("パッケージ版 LightVolumeSpecular を使用しています。アバター用途に推奨です。",
+                                "Using the package LightVolumeSpecular function. Recommended for avatars.")
+                            : L("同梱版 LightVolumeSpecular を使用しています。",
+                                "Using the bundled LightVolumeSpecular function.")),
                         MessageType.Info);
                 }
 
                 EditorGUILayout.Space();
                 DrawHelpToggle("LightVolumeNotes",
-                    L("注意：\n" +
-                    "• ワールドとアバター両方が対応している必要があります\n" +
-                    "• 非対応環境では自動的にUnityのライトプローブにフォールバックします\n" +
-                    "• ハッシュタグ #VRCLightVolumesReady で対応ワールドを検索できます\n",
-                    "Notes:\n" +
-                    "• Both world and avatar must be compatible\n" +
-                    "• Automatically falls back to Unity light probes in unsupported environments\n" +
-                    "• Search compatible worlds with #VRCLightVolumesReady\n") +
-                    (packageInstalled ? "" : L("• Tools > Natane > VRChat > VRC Light Volumes 再検出 で手動検出も可能です", "• Manual detection available via Tools > Natane > VRChat > VRC Light Volumes Re-detect")),
+                    L("注意:\n" +
+                      "・ワールド側とアバター側の両方が対応している必要があります\n" +
+                      "・非対応環境では LightVolumes.cginc 側で Unity Light Probes に自動フォールバックします\n" +
+                      "・ハッシュタグ #VRCLightVolumesReady で対応ワールドを探せます",
+                      "Notes:\n" +
+                      "- Both the world and avatar must support VRC Light Volumes\n" +
+                      "- In unsupported environments, LightVolumes.cginc falls back to Unity light probes automatically\n" +
+                      "- Search compatible worlds with #VRCLightVolumesReady") +
+                    (packageInstalled
+                        ? string.Empty
+                        : L("\n・Tools > Natane > VRChat > VRC Light Volumes 再検出 から手動検出できます",
+                            "\n- Manual detection is available via Tools > Natane > VRChat > VRC Light Volumes Re-detect")),
                     MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_LightVolumeBlend");
@@ -1420,81 +1557,84 @@ public class NataneToonShaderGUI : ShaderGUI
         SetFoldout("LTCGI", DrawBoxedSection(L("LTCGI（リアルタイムエリアライト）", "LTCGI (Real-time Area Light)"), GetFoldout("LTCGI"), SectionCategory.Lighting, "_LTCGI"));
         if (GetFoldout("LTCGI"))
         {
-
-            // Show package detection status
-            bool packageInstalled = NataneToon.Editor.LTCGIAutoDetector.IsPackageInstalled();
+            bool packageInstalled = IsLTCGIPackageInstalled();
             if (packageInstalled)
             {
                 EditorGUILayout.HelpBox(
                     L("LTCGI パッケージ: 検出済み\n" +
-                    "LTCGI.cginc を使用します（対応ワールドで自動的に動作）",
-                    "LTCGI Package: Detected\n" +
-                    "Using LTCGI.cginc (works automatically in compatible worlds)"),
+                      "LTCGI.cginc を使用します（対応ワールドで自動的に動作）",
+                      "LTCGI Package: Detected\n" +
+                      "Using LTCGI.cginc (works automatically in compatible worlds)"),
                     MessageType.Info);
             }
             else
             {
                 EditorGUILayout.HelpBox(
-                    L("LTCGI パッケージ: 未検出（フォールバック使用中）\n" +
-                    "Unity SH + Reflection Probes による近似ライティングを使用します\n" +
-                    "本物のLTCGIを使用するには: VCC から at.pimaker.ltcgi をインストール",
-                    "LTCGI Package: Not Detected (Fallback in use)\n" +
-                    "Using approximate lighting via Unity SH + Reflection Probes\n" +
-                    "To use real LTCGI: Install at.pimaker.ltcgi from VCC"),
+                    L("LTCGI パッケージ: 未検出\n" +
+                      "lilToon と同様に、パッケージ未導入時は LTCGI 機能は無効です。\n" +
+                      "本物の LTCGI を使うには VCC から at.pimaker.ltcgi をインストールしてください。",
+                      "LTCGI Package: Not Detected\n" +
+                      "LTCGI stays disabled when the package is missing, matching lilToon behavior.\n" +
+                      "Install at.pimaker.ltcgi from VCC to use real LTCGI."),
                     MessageType.Info);
+                DrawDependencyActionButtons(NataneDependencyStatus.LTCGI);
             }
 
             EditorGUILayout.Space(3);
 
             bool enableLTCGI = DrawToggle("_LTCGI", "_LTCGI", L("LTCGIを有効化", "Enable LTCGI"));
-
             if (enableLTCGI)
             {
                 EditorGUI.indentLevel++;
 
-                if (packageInstalled)
+                DrawHelpToggle("LTCGIIntro",
+                    packageInstalled
+                        ? L("LTCGI は Linearly Transformed Cosines によるリアルタイムエリアライトシステムです。\n" +
+                            "対応ワールドではスクリーンやエリアライトからの照明を自動で受け取ります。",
+                            "LTCGI is a real-time area light system based on Linearly Transformed Cosines.\n" +
+                            "Compatible worlds can illuminate the avatar from screens and area lights automatically.")
+                        : L("LTCGI パッケージが未導入のため、lilToon と同様に機能は無効です。\n" +
+                            "設定値は保持されますが、見た目には反映されません。\n\n" +
+                            "本物の LTCGI を使うには at.pimaker.ltcgi をインストールしてください。",
+                            "The LTCGI package is not installed, so the feature stays disabled just like lilToon.\n" +
+                            "Settings are preserved, but no visual effect will appear.\n\n" +
+                            "Install at.pimaker.ltcgi to use real LTCGI."),
+                    MessageType.Info);
+
+                if (!packageInstalled)
                 {
-                    DrawHelpToggle("LTCGIIntro",
-                        L("LTCGI は Linearly Transformed Cosines によるリアルタイムエリアライトシステムです。\n" +
-                        "対応ワールドのスクリーンやエリアライトから自動的に照明を受けます。",
-                        "LTCGI is a real-time area light system using Linearly Transformed Cosines.\n" +
-                        "Automatically receives illumination from screens and area lights in compatible worlds."),
-                        MessageType.Info);
-                }
-                else
-                {
-                    DrawHelpToggle("LTCGIIntro",
-                        L("フォールバックモード:\n" +
-                        "LTCGIパッケージが未インストールのため、Unity SH + Reflection Probes による近似実装を使用しています。\n" +
-                        "エリアライトの局所性は再現されませんが、環境光ベースの照明寄与が得られます。\n\n" +
-                        "本物のLTCGIを使用するには at.pimaker.ltcgi をインストールしてください。",
-                        "Fallback Mode:\n" +
-                        "LTCGI package is not installed, using approximate implementation via Unity SH + Reflection Probes.\n" +
-                        "Area light locality is not reproduced, but ambient-based lighting contribution is available.\n\n" +
-                        "Install at.pimaker.ltcgi to use real LTCGI."),
-                        MessageType.Info);
+                    EditorGUILayout.HelpBox(
+                        L("LTCGI パッケージ未導入のため、現在の設定は見た目に反映されません。at.pimaker.ltcgi を導入するまで LTCGI は無効のままです。",
+                          "The LTCGI package is missing, so the current settings do not affect the rendered result. LTCGI remains disabled until at.pimaker.ltcgi is installed."),
+                        MessageType.Warning);
                 }
 
                 EditorGUILayout.Space();
                 DrawProperty("_LTCGIIntensity", L("LTCGI 強度", "LTCGI Intensity"));
-                DrawHelpToggle("LTCGIIntensity", L("LTCGIライティングの全体的な強度を制御します。\n1 = 完全強度、0 = 無効。", "Controls overall LTCGI lighting intensity.\n1 = Full strength, 0 = Disabled."), MessageType.Info);
+                DrawHelpToggle("LTCGIIntensity",
+                    L("LTCGI ライティング全体の強度を制御します。\n1 = 完全強度、0 = 無効。",
+                      "Controls the overall LTCGI lighting intensity.\n1 = Full strength, 0 = Disabled."),
+                    MessageType.Info);
 
                 EditorGUILayout.Space();
                 DrawProperty("_LTCGISpecular", L("LTCGI スペキュラー", "LTCGI Specular"));
-                DrawHelpToggle("LTCGISpecular", L("LTCGIからのスペキュラー（反射光）の強度を制御します。\nエリアライトの映り込み表現に使用されます。", "Controls specular (reflected light) intensity from LTCGI.\nUsed for area light reflection rendering."), MessageType.Info);
+                DrawHelpToggle("LTCGISpecular",
+                    L("LTCGI 由来のスペキュラー強度を制御します。\nエリアライトの映り込み表現に使います。",
+                      "Controls specular intensity contributed by LTCGI.\nUsed for area-light reflection rendering."),
+                    MessageType.Info);
 
                 EditorGUILayout.Space();
                 DrawHelpToggle("LTCGINotes",
-                    L("注意：\n" +
-                    "• ワールドにLTCGIが設定されている必要があります\n" +
-                    "• LTCGIはスクリーン、エリアライト等のリアルタイム照明に対応\n" +
-                    "• AudioLink対応ワールドでは音楽連動照明も可能\n" +
-                    "• Tools > Natane > VRChat > LTCGI 再検出 で手動検出も可能です",
-                    "Notes:\n" +
-                    "• LTCGI must be set up in the world\n" +
-                    "• LTCGI supports real-time illumination from screens, area lights, etc.\n" +
-                    "• Music-linked lighting is possible in AudioLink-compatible worlds\n" +
-                    "• Manual detection available via Tools > Natane > VRChat > LTCGI Re-detect"),
+                    L("注意:\n" +
+                      "・ワールド側に LTCGI の設定が必要です\n" +
+                      "・スクリーン、エリアライトなどのリアルタイム照明に対応します\n" +
+                      "・AudioLink 対応ワールドでは音連動演出も可能です\n" +
+                      "・Tools > Natane > VRChat > LTCGI 再検出 から手動検出できます",
+                      "Notes:\n" +
+                      "- LTCGI must be configured in the world\n" +
+                      "- Supports real-time illumination from screens, area lights, and similar sources\n" +
+                      "- AudioLink-compatible worlds can drive music-linked lighting\n" +
+                      "- Manual detection is available via Tools > Natane > VRChat > LTCGI Re-detect"),
                     MessageType.Info);
 
                 DrawBlendControls(materialEditor, targetMaterial, "_LTCGIBlend", "_LTCGIBlendMode");
@@ -6336,6 +6476,11 @@ public class NataneToonShaderGUI : ShaderGUI
     {
         EditorGUILayout.Space(SECTION_SPACING);
         EditorGUILayout.LabelField(L("🎨 クイックセットアップ", "🎨 Quick Setup"), EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            L(
+                "最初は 1. ベーススタイル 2. 表面の質感 の順で決めると迷いにくいです。",
+                "Start with 1. base style and 2. surface finish to shape the look quickly."),
+            MessageType.Info);
 
         EditorGUILayout.BeginHorizontal();
 
@@ -6352,6 +6497,8 @@ public class NataneToonShaderGUI : ShaderGUI
         }
 
         EditorGUILayout.EndHorizontal();
+
+        DrawQuickSetupPresetHints();
 
         // Surface finish buttons
         EditorGUILayout.BeginHorizontal();
@@ -6373,7 +6520,46 @@ public class NataneToonShaderGUI : ShaderGUI
         }
 
         EditorGUILayout.EndHorizontal();
+        EditorGUILayout.HelpBox(
+            L(
+                "マット: 落ち着いたアニメ調。グロッシー: 反射感とツヤを強めたいときにおすすめです。",
+                "Matte gives a calm anime look. Glossy is better when you want stronger sheen and reflections."),
+            MessageType.None);
         EditorGUILayout.Space(10);
+    }
+
+    private void DrawQuickSetupPresetHints()
+    {
+        bool narrowLayout = EditorGUIUtility.currentViewWidth < 420f;
+
+        if (narrowLayout)
+        {
+            DrawQuickSetupHint(
+                L("シャープなアニメ調", "Sharp Anime Style"),
+                L("2段影とシャープな境界で、セル調をすぐ作れます。", "Fast cel-style setup with harder shadow borders."));
+            DrawQuickSetupHint(
+                L("柔らかい塗り調", "Soft Painting Style"),
+                L("グラデーション寄りのやわらかい陰影に寄せます。", "Moves the look toward softer gradient shading."));
+            return;
+        }
+
+        EditorGUILayout.BeginHorizontal();
+        DrawQuickSetupHint(
+            L("シャープなアニメ調", "Sharp Anime Style"),
+            L("2段影とシャープな境界で、セル調をすぐ作れます。", "Fast cel-style setup with harder shadow borders."));
+        DrawQuickSetupHint(
+            L("柔らかい塗り調", "Soft Painting Style"),
+            L("グラデーション寄りのやわらかい陰影に寄せます。", "Moves the look toward softer gradient shading."));
+        EditorGUILayout.EndHorizontal();
+    }
+
+    private void DrawQuickSetupHint(string title, string description)
+    {
+        using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+        {
+            EditorGUILayout.LabelField(title, EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(description, EditorStyles.wordWrappedMiniLabel);
+        }
     }
 
     /// <summary>

@@ -292,20 +292,13 @@ namespace NataneToon.Editor
                 return AssetDatabase.GUIDToAssetPath(guids[0]);
             }
 
-            // 2. Check known fallback paths
-            string[] knownPaths = new string[]
+            // 2. Resolve the path relative to the current Natane package root
+            if (NatanePackagePathResolver.TryResolvePackageAssetPath(
+                "ShaderVariants/NataneToonShaderVariants.shadervariants",
+                out string packageVariantPath) &&
+                AssetDatabase.LoadAssetAtPath<ShaderVariantCollection>(packageVariantPath) != null)
             {
-                "Assets/natane_engine_Toon_Shader/ShaderVariants/NataneToonShaderVariants.shadervariants",
-                "Packages/com.natane.toonshader/ShaderVariants/NataneToonShaderVariants.shadervariants",
-                "Assets/ShaderVariants/NataneToonShaderVariants.shadervariants",
-            };
-
-            foreach (string path in knownPaths)
-            {
-                if (AssetDatabase.LoadAssetAtPath<ShaderVariantCollection>(path) != null)
-                {
-                    return path;
-                }
+                return packageVariantPath;
             }
 
             return null;

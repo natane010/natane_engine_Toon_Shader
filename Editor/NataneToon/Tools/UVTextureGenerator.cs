@@ -95,6 +95,9 @@ namespace NataneToon.Editor
         private List<UVIsland> islands = new List<UVIsland>();
         private Vector2 islandScrollPosition;
         private bool islandsFoldout = true;
+        private bool islandSelectMode;
+        private int hoveredIslandIndex = -1;
+        private Color[] islandColors;
 
         // ===== Gradient Parameters =====
         private GradientType gradientType = GradientType.Linear;
@@ -141,6 +144,7 @@ namespace NataneToon.Editor
 
         private void OnEnable()
         {
+            wantsMouseMove = true;
             if (layerStack == null)
                 layerStack = new MaskLayerStack(textureSize, textureSize);
             if (layerStack.Layers.Count == 0)
@@ -423,10 +427,23 @@ namespace NataneToon.Editor
             for (int i = 0; i < islands.Count; i++)
             {
                 var island = islands[i];
+
+                if (islandSelectMode && i == hoveredIslandIndex)
+                {
+                    Rect highlightRect = GUILayoutUtility.GetRect(0, 20, GUILayout.ExpandWidth(true));
+                    EditorGUI.DrawRect(highlightRect, new Color(1f, 1f, 0f, 0.1f));
+                    GUILayout.Space(-20);
+                }
+
+                Color labelColor = (islandColors != null && i < islandColors.Length)
+                    ? islandColors[i] : Color.white;
+                var style = new GUIStyle(EditorStyles.toggle);
+                if (islandSelectMode) style.normal.textColor = labelColor;
+
                 island.selected = EditorGUILayout.ToggleLeft(
                     L($"アイランド #{i}  (\u25B3{island.triangleCount}, 面積: {island.area:F3})",
                       $"Island #{i}  (\u25B3{island.triangleCount}, Area: {island.area:F3})"),
-                    island.selected);
+                    island.selected, style);
             }
 
             EditorGUILayout.EndScrollView();
@@ -491,9 +508,88 @@ namespace NataneToon.Editor
             }
 
             islands = UVIslandDetector.DetectIslands(mesh, uvs);
+            GenerateIslandColors();
+            hoveredIslandIndex = -1;
 
             if (islands.Count == 0)
                 EditorUtility.DisplayDialog(L("情報", "Info"), L("アイランドが検出されませんでした。", "No islands were detected."), "OK");
+        }
+
+        private void GenerateIslandColors()
+        {
+            if (islands == null || islands.Count == 0) { islandColors = null; return; }
+            islandColors = new Color[islands.Count];
+            for (int i = 0; i < islands.Count; i++)
+            {
+                float hue = (float)i / islands.Count;
+                islandColors[i] = Color.HSVToRGB(hue, 0.7f, 0.9f);
+            }
+        }
+
+        private static bool PointInTriangleUV(Vector2 p, Vector2 v0, Vector2 v1, Vector2 v2)
+        {
+            float denom = (v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y);
+            if (Mathf.Abs(denom) < 1e-8f) return false;
+            float invDenom = 1f / denom;
+            float w0 = ((v1.y - v2.y) * (p.x - v2.x) + (v2.x - v1.x) * (p.y - v2.y)) * invDenom;
+            float w1 = ((v2.y - v0.y) * (p.x - v2.x) + (v0.x - v2.x) * (p.y - v2.y)) * invDenom;
+            float w2 = 1f - w0 - w1;
+            return w0 >= 0f && w1 >= 0f && w2 >= 0f;
+        }
+
+        private int FindIslandAtUV(Vector2 uv, Mesh mesh, List<Vector2> uvs)
+        {
+            int[] triangles = mesh.triangles;
+            for (int i = 0; i < islands.Count; i++)
+            {
+                if (!islands[i].uvBounds.Contains(uv)) continue;
+                foreach (int t in islands[i].triangleIndices)
+                {
+                    int i0 = triangles[t * 3 + 0];
+                    int i1 = triangles[t * 3 + 1];
+                    int i2 = triangles[t * 3 + 2];
+                    if (i0 >= uvs.Count || i1 >= uvs.Count || i2 >= uvs.Count) continue;
+                    if (PointInTriangleUV(uv, uvs[i0], uvs[i1], uvs[i2]))
+                        return i;
+                }
+            }
+            return -1;
+        }
+
+        private void HandleIslandClickInput(Rect canvasArea, Rect texRect)
+        {
+            Event e = Event.current;
+            if (!canvasArea.Contains(e.mousePosition)) { hoveredIslandIndex = -1; return; }
+
+            Mesh mesh = ExtractMesh();
+            if (mesh == null || islands.Count == 0) return;
+
+            List<Vector2> uvs = new List<Vector2>();
+            mesh.GetUVs(uvChannel, uvs);
+            if (uvs.Count == 0) return;
+
+            if (e.type == EventType.MouseMove)
+            {
+                Vector2 uv = BrushCanvasInputHandler.MouseToUV(e.mousePosition, texRect);
+                int newHover = FindIslandAtUV(uv, mesh, uvs);
+                if (newHover != hoveredIslandIndex)
+                {
+                    hoveredIslandIndex = newHover;
+                    Repaint();
+                }
+            }
+
+            if (e.type == EventType.MouseDown && e.button == 0 && !e.alt)
+            {
+                Vector2 uv = BrushCanvasInputHandler.MouseToUV(e.mousePosition, texRect);
+                int hitIndex = FindIslandAtUV(uv, mesh, uvs);
+                if (hitIndex >= 0)
+                {
+                    islands[hitIndex].selected = !islands[hitIndex].selected;
+                    e.Use();
+                    Repaint();
+                }
+            }
         }
 
         private Color[] GenerateUVMaskPixels(int size)
@@ -961,9 +1057,24 @@ namespace NataneToon.Editor
                 new GUIContent("UV", L("UVワイヤーフレーム表示", "Show UV wireframe")),
                 EditorStyles.miniButton, GUILayout.Width(30));
 
+            if (currentTab == GeneratorTab.UVMask && islands.Count > 0)
+            {
+                bool prevSelect = islandSelectMode;
+                islandSelectMode = GUILayout.Toggle(islandSelectMode,
+                    new GUIContent("Select", L("クリックでアイランド選択", "Click to select islands")),
+                    EditorStyles.miniButton, GUILayout.Width(50));
+                if (islandSelectMode && !prevSelect) brushEnabled = false;
+            }
+            else
+            {
+                islandSelectMode = false;
+            }
+
+            bool prevBrush = brushEnabled;
             brushEnabled = GUILayout.Toggle(brushEnabled,
                 new GUIContent("Brush", L("ブラシツール有効化", "Enable brush tool")),
                 EditorStyles.miniButton, GUILayout.Width(50));
+            if (brushEnabled && !prevBrush) islandSelectMode = false;
 
             if (GUILayout.Button("Fit", EditorStyles.miniButton, GUILayout.Width(30)))
             {
@@ -1008,7 +1119,17 @@ namespace NataneToon.Editor
                         List<Vector2> uvs = new List<Vector2>();
                         mesh.GetUVs(uvChannel, uvs);
                         if (uvs.Count > 0)
-                            UVWireframeRenderer.DrawWireframe(clippedRect, mesh, uvs);
+                        {
+                            if (islandSelectMode && islands.Count > 0 && islandColors != null)
+                            {
+                                UVWireframeRenderer.DrawIslandFill(clippedRect, mesh, uvs, islands, islandColors);
+                                UVWireframeRenderer.DrawWireframePerIsland(clippedRect, mesh, uvs, islands, islandColors, hoveredIslandIndex);
+                            }
+                            else
+                            {
+                                UVWireframeRenderer.DrawWireframe(clippedRect, mesh, uvs);
+                            }
+                        }
                     }
                 }
 
@@ -1044,6 +1165,10 @@ namespace NataneToon.Editor
                         Color.white);
                     Repaint();
                 }
+
+                // Island click selection
+                if (islandSelectMode && !brushEnabled && islands.Count > 0)
+                    HandleIslandClickInput(canvasArea, texRect);
 
                 // Canvas pan/zoom (only when brush is off)
                 if (!brushEnabled)
@@ -1502,7 +1627,7 @@ namespace NataneToon.Editor
         // UVIsland data class
         // ================================================================
 
-        private class UVIsland
+        internal class UVIsland
         {
             public List<int> triangleIndices = new List<int>();
             public Rect uvBounds;

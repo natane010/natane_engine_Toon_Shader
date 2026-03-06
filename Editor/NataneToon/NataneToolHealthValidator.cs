@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEditor;
+using static NataneToon.Editor.NataneToonLocalization;
 
 namespace NataneToon.Editor
 {
@@ -74,6 +75,8 @@ namespace NataneToon.Editor
         private const string ASSEMBLY_EDITOR = "NataneToon.Editor";
         private const string ASSEMBLY_TOOLS = "NataneToon.Editor.Tools";
         private const string ASSEMBLY_MIGRATION = "NataneToon.Editor.Migration";
+        private const string DEPENDENCY_SETUP_MENU = "Tools/Natane/VRChat/Natane Dependency Setup";
+        private const string NATANE_SHADER_NAME_PREFIX = "Natane/Toon Shader";
 
         private static readonly List<ToolRegistryEntry> ToolRegistry = new List<ToolRegistryEntry>
         {
@@ -160,9 +163,46 @@ namespace NataneToon.Editor
             // --- Other Tools (Editor assembly) ---
             new ToolRegistryEntry("ParticleEffectEditor", "パーティクルエフェクトエディタ Particle Effect Editor",
                 NataneToolMenuPaths.ParticleEffectEditor, "NataneParticleSystemEditor.ParticleEffectEditorWindow", ASSEMBLY_EDITOR),
-            new ToolRegistryEntry("VTuberPresetGenerator", "VTuberプリセット生成 VTuber Preset Generator",
-                NataneToolMenuPaths.VTuberPresetGenerator, "NataneToon.Editor.VTuberPresetGenerator", ASSEMBLY_EDITOR),
         };
+
+        private static string DiagnosticsWindowTitle => L("診断", "Diagnostics");
+
+        private static DiagnosticResult CreateDiagnosticResult(
+            string toolKey,
+            string displayNameJa,
+            string displayNameEn,
+            string menuPath,
+            DiagnosticSeverity severity,
+            string messageJa,
+            string messageEn,
+            string suggestionJa = "",
+            string suggestionEn = "")
+        {
+            return new DiagnosticResult
+            {
+                toolKey = toolKey,
+                displayName = L(displayNameJa, displayNameEn),
+                menuPath = menuPath,
+                severity = severity,
+                message = L(messageJa, messageEn),
+                suggestion = string.IsNullOrEmpty(suggestionJa) && string.IsNullOrEmpty(suggestionEn)
+                    ? string.Empty
+                    : L(suggestionJa, suggestionEn)
+            };
+        }
+
+        private static DiagnosticResult CreateHealthyResult(ToolRegistryEntry entry)
+        {
+            return new DiagnosticResult
+            {
+                toolKey = entry.toolKey,
+                displayName = entry.displayName,
+                menuPath = entry.menuPath,
+                severity = DiagnosticSeverity.OK,
+                message = L("正常", "Healthy"),
+                suggestion = string.Empty
+            };
+        }
 
         // =====================================================================
         // Static Validation API
@@ -177,13 +217,16 @@ namespace NataneToon.Editor
             var entry = ToolRegistry.FirstOrDefault(e => e.menuPath == menuPath);
             if (entry == null)
             {
-                return new DiagnosticResult
-                {
-                    menuPath = menuPath,
-                    severity = DiagnosticSeverity.Warning,
-                    message = "ツールレジストリに登録されていないメニューパスです。\nMenu path is not registered in the tool registry.",
-                    suggestion = "NataneToolHealthValidator.ToolRegistry にエントリを追加してください。"
-                };
+                return CreateDiagnosticResult(
+                    "__unregistered__",
+                    "未登録メニュー",
+                    "Unregistered Menu",
+                    menuPath,
+                    DiagnosticSeverity.Warning,
+                    "ツールレジストリに登録されていないメニューパスです。",
+                    "The menu path is not registered in the tool registry.",
+                    "NataneToolHealthValidator.ToolRegistry にエントリを追加してください。",
+                    "Add an entry to NataneToolHealthValidator.ToolRegistry.");
             }
 
             return ValidateEntry(entry);
@@ -200,12 +243,12 @@ namespace NataneToon.Editor
             if (result != null && result.severity == DiagnosticSeverity.Error)
             {
                 bool openDiagnostics = EditorUtility.DisplayDialog(
-                    "ツール起動エラー Tool Launch Error",
-                    $"ツールを起動できません:\n{displayName}\n\n" +
-                    $"原因 Cause:\n{result.message}\n\n" +
-                    $"対処法 Remedy:\n{result.suggestion}",
-                    "診断ツールを開く Open Diagnostics",
-                    "閉じる Close");
+                    L("ツール起動エラー", "Tool Launch Error"),
+                    $"{L("ツールを起動できません:", "Failed to launch the tool:")}\n{displayName}\n\n" +
+                    $"{L("原因", "Cause")}:\n{result.message}\n\n" +
+                    $"{L("対処法", "Remedy")}:\n{result.suggestion}",
+                    L("診断を開く", "Open Diagnostics"),
+                    L("閉じる", "Close"));
 
                 if (openDiagnostics)
                 {
@@ -219,11 +262,11 @@ namespace NataneToon.Editor
             if (!NataneToolMenuPaths.TryExecute(menuPath))
             {
                 EditorUtility.DisplayDialog(
-                    "ツール起動エラー Tool Launch Error",
-                    $"メニュー項目を実行できませんでした:\n{displayName}\n\n" +
-                    $"Menu path: {menuPath}\n\n" +
-                    "メニューパスが正しいか、または対象アセンブリがロードされているか確認してください。\n" +
-                    "Verify that the menu path is correct and the target assembly is loaded.",
+                    L("ツール起動エラー", "Tool Launch Error"),
+                    $"{L("メニュー項目を実行できませんでした:", "Failed to execute the menu item:")}\n{displayName}\n\n" +
+                    $"{L("メニューパス", "Menu path")}: {menuPath}\n\n" +
+                    L("メニューパスが正しいか、対象アセンブリがロードされているか確認してください。",
+                      "Verify that the menu path is correct and the target assembly is loaded."),
                     "OK");
                 return false;
             }
@@ -292,16 +335,16 @@ namespace NataneToon.Editor
             {
                 if (!loadedAssemblyNames.Contains(asmName))
                 {
-                    results.Add(new DiagnosticResult
-                    {
-                        toolKey = "__assembly__",
-                        displayName = $"アセンブリ Assembly: {asmName}",
-                        menuPath = "",
-                        severity = DiagnosticSeverity.Error,
-                        message = $"アセンブリ '{asmName}' がロードされていません。\nAssembly '{asmName}' is not loaded.",
-                        suggestion = $"対応する .asmdef ファイルが存在し、参照が正しく設定されているか確認してください。\n" +
-                                     $"Verify the .asmdef file exists and references are correctly configured."
-                    });
+                    results.Add(CreateDiagnosticResult(
+                        "__assembly__",
+                        $"アセンブリ: {asmName}",
+                        $"Assembly: {asmName}",
+                        "",
+                        DiagnosticSeverity.Error,
+                        $"アセンブリ '{asmName}' がロードされていません。",
+                        $"Assembly '{asmName}' is not loaded.",
+                        "対応する .asmdef ファイルが存在し、参照が正しく設定されているか確認してください。",
+                        "Verify the .asmdef file exists and references are correctly configured."));
                 }
             }
 
@@ -316,17 +359,12 @@ namespace NataneToon.Editor
                 else
                 {
                     // Add OK result for display purposes
-                    results.Add(new DiagnosticResult
-                    {
-                        toolKey = entry.toolKey,
-                        displayName = entry.displayName,
-                        menuPath = entry.menuPath,
-                        severity = DiagnosticSeverity.OK,
-                        message = "正常 Healthy",
-                        suggestion = ""
-                    });
+                    results.Add(CreateHealthyResult(entry));
                 }
             }
+
+            // 3. Third-party integration dependency checks
+            results.AddRange(RunDependencyDiagnostics());
 
             return results;
         }
@@ -334,6 +372,99 @@ namespace NataneToon.Editor
         // =====================================================================
         // Internal Validation Logic
         // =====================================================================
+
+        private static IEnumerable<DiagnosticResult> RunDependencyDiagnostics()
+        {
+            var results = new List<DiagnosticResult>();
+            bool hasLightVolumePackage = NataneDependencyStatus.IsInstalled(NataneDependencyStatus.VRCLightVolumes);
+            bool hasLtcgiPackage = NataneDependencyStatus.IsInstalled(NataneDependencyStatus.LTCGI);
+
+            if (hasLightVolumePackage && hasLtcgiPackage)
+            {
+                return results;
+            }
+
+            List<Material> nataneMaterials = FindNataneMaterials();
+
+            if (!hasLightVolumePackage)
+            {
+                List<Material> lightVolumeMaterials = nataneMaterials
+                    .Where(material => IsMaterialFeatureEnabled(material, "_UseLightVolume"))
+                    .ToList();
+
+                if (lightVolumeMaterials.Count > 0)
+                {
+                    results.Add(CreateDiagnosticResult(
+                        "__dependency_lightvolume__",
+                        "VRC Light Volumes 依存関係",
+                        "VRC Light Volumes Dependency",
+                        DEPENDENCY_SETUP_MENU,
+                        DiagnosticSeverity.Warning,
+                        $"{lightVolumeMaterials.Count}件のNataneマテリアルで VRC Light Volumes が有効ですが、パッケージがインストールされていません。バンドル済みフォールバックは引き続き有効です。例: {FormatMaterialExamples(lightVolumeMaterials)}",
+                        $"VRC Light Volumes is enabled on {lightVolumeMaterials.Count} Natane material(s), but the package is not installed. The bundled fallback remains active. Examples: {FormatMaterialExamples(lightVolumeMaterials)}",
+                        $"{DEPENDENCY_SETUP_MENU} を開き、パッケージ版も使いたい場合は red.sim.lightvolumes をインストールしてください。",
+                        $"Open {DEPENDENCY_SETUP_MENU} and install red.sim.lightvolumes if you want the package version as well."));
+                }
+            }
+
+            if (!hasLtcgiPackage)
+            {
+                List<Material> ltcgiMaterials = nataneMaterials
+                    .Where(material => IsMaterialFeatureEnabled(material, "_LTCGI"))
+                    .ToList();
+
+                if (ltcgiMaterials.Count > 0)
+                {
+                    results.Add(CreateDiagnosticResult(
+                        "__dependency_ltcgi__",
+                        "LTCGI 依存関係",
+                        "LTCGI Dependency",
+                        DEPENDENCY_SETUP_MENU,
+                        DiagnosticSeverity.Warning,
+                        $"{ltcgiMaterials.Count}件のNataneマテリアルで LTCGI が有効ですが、パッケージがインストールされていません。at.pimaker.ltcgi を追加するまで効果は無効のままです。例: {FormatMaterialExamples(ltcgiMaterials)}",
+                        $"LTCGI is enabled on {ltcgiMaterials.Count} Natane material(s), but the package is not installed. The effect remains disabled until at.pimaker.ltcgi is added. Examples: {FormatMaterialExamples(ltcgiMaterials)}",
+                        $"{DEPENDENCY_SETUP_MENU} を開き、at.pimaker.ltcgi をインストールしてください。",
+                        $"Open {DEPENDENCY_SETUP_MENU} and install at.pimaker.ltcgi."));
+                }
+            }
+
+            return results;
+        }
+
+        private static List<Material> FindNataneMaterials()
+        {
+            return AssetDatabase.FindAssets("t:Material")
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Select(AssetDatabase.LoadAssetAtPath<Material>)
+                .Where(material => material != null &&
+                                   material.shader != null &&
+                                   material.shader.name.StartsWith(NATANE_SHADER_NAME_PREFIX, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        private static bool IsMaterialFeatureEnabled(Material material, string propertyName)
+        {
+            return material != null &&
+                   material.HasProperty(propertyName) &&
+                   material.GetFloat(propertyName) > 0.5f;
+        }
+
+        private static string FormatMaterialExamples(IReadOnlyList<Material> materials)
+        {
+            if (materials == null || materials.Count == 0)
+            {
+                return L("なし", "None");
+            }
+
+            List<string> names = materials
+                .Take(3)
+                .Select(material => material.name)
+                .ToList();
+            string suffix = materials.Count > names.Count
+                ? L($" ほか{materials.Count - names.Count}件", $" (+{materials.Count - names.Count} more)")
+                : string.Empty;
+            return string.Join(", ", names) + suffix;
+        }
 
         private static DiagnosticResult ValidateEntry(ToolRegistryEntry entry)
         {
@@ -347,17 +478,16 @@ namespace NataneToon.Editor
 
             if (targetAssembly == null)
             {
-                return new DiagnosticResult
-                {
-                    toolKey = entry.toolKey,
-                    displayName = entry.displayName,
-                    menuPath = entry.menuPath,
-                    severity = DiagnosticSeverity.Error,
-                    message = $"アセンブリ '{entry.assemblyName}' が見つかりません。\n" +
-                              $"Assembly '{entry.assemblyName}' not found.",
-                    suggestion = $".asmdef ファイルが正しく配置されているか確認してください。\n" +
-                                 $"Verify the .asmdef file is correctly placed."
-                };
+                return CreateDiagnosticResult(
+                    entry.toolKey,
+                    entry.displayName,
+                    entry.displayName,
+                    entry.menuPath,
+                    DiagnosticSeverity.Error,
+                    $"アセンブリ '{entry.assemblyName}' が見つかりません。",
+                    $"Assembly '{entry.assemblyName}' not found.",
+                    ".asmdef ファイルが正しく配置されているか確認してください。",
+                    "Verify the .asmdef file is correctly placed.");
             }
 
             // 2. Check type exists in assembly
@@ -390,17 +520,16 @@ namespace NataneToon.Editor
 
             if (toolType == null)
             {
-                return new DiagnosticResult
-                {
-                    toolKey = entry.toolKey,
-                    displayName = entry.displayName,
-                    menuPath = entry.menuPath,
-                    severity = DiagnosticSeverity.Error,
-                    message = $"型 '{entry.typeName}' がアセンブリ '{entry.assemblyName}' 内に見つかりません。\n" +
-                              $"Type '{entry.typeName}' not found in assembly '{entry.assemblyName}'.",
-                    suggestion = "クラス名または名前空間が変更されていないか確認してください。\n" +
-                                 "Check if the class name or namespace has been changed."
-                };
+                return CreateDiagnosticResult(
+                    entry.toolKey,
+                    entry.displayName,
+                    entry.displayName,
+                    entry.menuPath,
+                    DiagnosticSeverity.Error,
+                    $"型 '{entry.typeName}' がアセンブリ '{entry.assemblyName}' 内に見つかりません。",
+                    $"Type '{entry.typeName}' not found in assembly '{entry.assemblyName}'.",
+                    "クラス名または名前空間が変更されていないか確認してください。",
+                    "Check if the class name or namespace has been changed.");
             }
 
             // 3. Check MenuItem attribute exists (for non-static-class tools)
@@ -411,17 +540,16 @@ namespace NataneToon.Editor
 
                 if (!hasMenuItem)
                 {
-                    return new DiagnosticResult
-                    {
-                        toolKey = entry.toolKey,
-                        displayName = entry.displayName,
-                        menuPath = entry.menuPath,
-                        severity = DiagnosticSeverity.Warning,
-                        message = $"型 '{entry.typeName}' に [MenuItem] 属性が見つかりません。\n" +
-                                  $"No [MenuItem] attribute found on type '{entry.typeName}'.",
-                        suggestion = "メニューパスからの起動ができない可能性があります。\n" +
-                                     "Launching from menu path may not work."
-                    };
+                    return CreateDiagnosticResult(
+                        entry.toolKey,
+                        entry.displayName,
+                        entry.displayName,
+                        entry.menuPath,
+                        DiagnosticSeverity.Warning,
+                        $"型 '{entry.typeName}' に [MenuItem] 属性が見つかりません。",
+                        $"No [MenuItem] attribute found on type '{entry.typeName}'.",
+                        "メニューパスから起動できない可能性があります。",
+                        "Launching from the menu path may not work.");
                 }
             }
 
@@ -439,14 +567,20 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/診断 Diagnostics", false, 2)]
         public static void ShowWindow()
         {
-            var window = GetWindow<NataneToolHealthValidator>("診断 Diagnostics");
+            var window = GetWindow<NataneToolHealthValidator>(DiagnosticsWindowTitle);
             window.minSize = new Vector2(600, 400);
             window.Show();
         }
 
         private void OnEnable()
         {
+            RefreshWindowTitle();
             RunDiagnostics();
+        }
+
+        private void RefreshWindowTitle()
+        {
+            titleContent = new GUIContent(DiagnosticsWindowTitle);
         }
 
         private void RunDiagnostics()
@@ -471,6 +605,7 @@ namespace NataneToon.Editor
                 "ツール診断",
                 "Tool Health Diagnostics",
                 "Diagnostics");
+            RefreshWindowTitle();
         }
 
         private void DrawSummary()
@@ -484,13 +619,13 @@ namespace NataneToon.Editor
             Color oldColor = GUI.color;
 
             GUI.color = errorCount > 0 ? NataneToonColorPalette.Error : Color.white;
-            EditorGUILayout.LabelField($"エラー Errors: {errorCount}", EditorStyles.boldLabel, GUILayout.Width(150));
+            EditorGUILayout.LabelField($"{L("エラー", "Errors")}: {errorCount}", EditorStyles.boldLabel, GUILayout.Width(140));
 
             GUI.color = warningCount > 0 ? NataneToonColorPalette.Warning : Color.white;
-            EditorGUILayout.LabelField($"警告 Warnings: {warningCount}", EditorStyles.boldLabel, GUILayout.Width(160));
+            EditorGUILayout.LabelField($"{L("警告", "Warnings")}: {warningCount}", EditorStyles.boldLabel, GUILayout.Width(150));
 
             GUI.color = NataneToonColorPalette.Success;
-            EditorGUILayout.LabelField($"正常 OK: {okCount}", EditorStyles.boldLabel, GUILayout.Width(120));
+            EditorGUILayout.LabelField($"{L("正常", "Healthy")}: {okCount}", EditorStyles.boldLabel, GUILayout.Width(140));
 
             GUI.color = oldColor;
 
@@ -501,13 +636,13 @@ namespace NataneToon.Editor
         {
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
 
-            if (GUILayout.Button("再チェック Re-check", EditorStyles.toolbarButton, GUILayout.Width(120)))
+            if (GUILayout.Button(L("再チェック", "Re-check"), EditorStyles.toolbarButton, GUILayout.Width(110)))
             {
                 RunDiagnostics();
             }
 
-            showOnlyProblems = GUILayout.Toggle(showOnlyProblems, "問題のみ表示 Problems Only",
-                EditorStyles.toolbarButton, GUILayout.Width(160));
+            showOnlyProblems = GUILayout.Toggle(showOnlyProblems, L("問題のみ表示", "Problems Only"),
+                EditorStyles.toolbarButton, GUILayout.Width(140));
 
             GUILayout.FlexibleSpace();
 
@@ -577,7 +712,7 @@ namespace NataneToon.Editor
                 if (!string.IsNullOrEmpty(result.suggestion))
                 {
                     EditorGUILayout.Space(2);
-                    EditorGUILayout.LabelField("対処法 Remedy:", EditorStyles.miniBoldLabel);
+                    EditorGUILayout.LabelField($"{L("対処法", "Remedy")}:", EditorStyles.miniBoldLabel);
                     EditorGUILayout.LabelField(result.suggestion, EditorStyles.wordWrappedLabel);
                 }
             }

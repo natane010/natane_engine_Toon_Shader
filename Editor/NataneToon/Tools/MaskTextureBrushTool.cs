@@ -279,7 +279,7 @@ namespace NataneToon.Editor
             GL.PopMatrix();
         }
 
-        private static Vector2 UVToCanvas(Vector2 uv, Rect canvasRect)
+        internal static Vector2 UVToCanvas(Vector2 uv, Rect canvasRect)
         {
             return new Vector2(
                 canvasRect.x + uv.x * canvasRect.width,
@@ -287,10 +287,124 @@ namespace NataneToon.Editor
             );
         }
 
-        private static void DrawLineGL(Vector2 a, Vector2 b)
+        internal static void DrawLineGL(Vector2 a, Vector2 b)
         {
             GL.Vertex3(a.x, a.y, 0);
             GL.Vertex3(b.x, b.y, 0);
+        }
+
+        /// <summary>
+        /// Draw UV wireframe with per-island coloring.
+        /// アイランドごとに色分けしたUVワイヤーフレームを描画
+        /// </summary>
+        public static void DrawWireframePerIsland(
+            Rect canvasRect, Mesh mesh, List<Vector2> uvs,
+            IList<UVTextureGenerator.UVIsland> islands, Color[] islandColors, int hoveredIndex)
+        {
+            if (mesh == null || uvs == null || uvs.Count == 0 || islands == null) return;
+
+            EnsureLineMaterial();
+            if (lineMaterial == null) return;
+
+            int[] tris = mesh.triangles;
+
+            GL.PushMatrix();
+            lineMaterial.SetPass(0);
+            GL.Begin(GL.LINES);
+
+            for (int idx = 0; idx < islands.Count; idx++)
+            {
+                var island = islands[idx];
+                Color color = idx < islandColors.Length ? islandColors[idx] : Color.gray;
+                GL.Color(island.selected
+                    ? new Color(color.r, color.g, color.b, 0.8f)
+                    : new Color(color.r * 0.4f, color.g * 0.4f, color.b * 0.4f, 0.15f));
+
+                foreach (int t in island.triangleIndices)
+                {
+                    int i0 = tris[t * 3 + 0];
+                    int i1 = tris[t * 3 + 1];
+                    int i2 = tris[t * 3 + 2];
+                    if (i0 >= uvs.Count || i1 >= uvs.Count || i2 >= uvs.Count) continue;
+
+                    Vector2 a = UVToCanvas(uvs[i0], canvasRect);
+                    Vector2 b = UVToCanvas(uvs[i1], canvasRect);
+                    Vector2 c = UVToCanvas(uvs[i2], canvasRect);
+                    DrawLineGL(a, b);
+                    DrawLineGL(b, c);
+                    DrawLineGL(c, a);
+                }
+            }
+
+            // Hovered island highlight
+            if (hoveredIndex >= 0 && hoveredIndex < islands.Count)
+            {
+                GL.Color(new Color(1f, 1f, 1f, 0.9f));
+                foreach (int t in islands[hoveredIndex].triangleIndices)
+                {
+                    int i0 = tris[t * 3 + 0];
+                    int i1 = tris[t * 3 + 1];
+                    int i2 = tris[t * 3 + 2];
+                    if (i0 >= uvs.Count || i1 >= uvs.Count || i2 >= uvs.Count) continue;
+
+                    Vector2 a = UVToCanvas(uvs[i0], canvasRect);
+                    Vector2 b = UVToCanvas(uvs[i1], canvasRect);
+                    Vector2 c = UVToCanvas(uvs[i2], canvasRect);
+                    DrawLineGL(a, b);
+                    DrawLineGL(b, c);
+                    DrawLineGL(c, a);
+                }
+            }
+
+            GL.End();
+            GL.PopMatrix();
+        }
+
+        /// <summary>
+        /// Draw filled triangles for selected islands.
+        /// 選択アイランドの三角形を半透明塗りつぶしで描画
+        /// </summary>
+        public static void DrawIslandFill(
+            Rect canvasRect, Mesh mesh, List<Vector2> uvs,
+            IList<UVTextureGenerator.UVIsland> islands, Color[] islandColors)
+        {
+            if (mesh == null || uvs == null || uvs.Count == 0 || islands == null) return;
+
+            EnsureLineMaterial();
+            if (lineMaterial == null) return;
+
+            int[] tris = mesh.triangles;
+
+            GL.PushMatrix();
+            lineMaterial.SetPass(0);
+            GL.Begin(GL.TRIANGLES);
+
+            for (int idx = 0; idx < islands.Count; idx++)
+            {
+                var island = islands[idx];
+                if (!island.selected) continue;
+
+                Color color = idx < islandColors.Length ? islandColors[idx] : Color.gray;
+                GL.Color(new Color(color.r, color.g, color.b, 0.2f));
+
+                foreach (int t in island.triangleIndices)
+                {
+                    int i0 = tris[t * 3 + 0];
+                    int i1 = tris[t * 3 + 1];
+                    int i2 = tris[t * 3 + 2];
+                    if (i0 >= uvs.Count || i1 >= uvs.Count || i2 >= uvs.Count) continue;
+
+                    Vector2 a = UVToCanvas(uvs[i0], canvasRect);
+                    Vector2 b = UVToCanvas(uvs[i1], canvasRect);
+                    Vector2 c = UVToCanvas(uvs[i2], canvasRect);
+                    GL.Vertex3(a.x, a.y, 0);
+                    GL.Vertex3(b.x, b.y, 0);
+                    GL.Vertex3(c.x, c.y, 0);
+                }
+            }
+
+            GL.End();
+            GL.PopMatrix();
         }
     }
 

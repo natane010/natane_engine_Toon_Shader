@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
+using static NataneToon.Editor.NataneToonLocalization;
 
 namespace NataneToon.Editor
 {
@@ -16,6 +17,8 @@ namespace NataneToon.Editor
     /// </summary>
     public class UnifiedHelpSystem : EditorWindow
     {
+        private static string HelpWindowTitle => L("Natane統合ヘルプ", "Natane Unified Help");
+
         private Vector2 scrollPosition;
         private Vector2 toolListScroll;
         private int selectedMainTab = 0;
@@ -53,6 +56,10 @@ namespace NataneToon.Editor
         private GUIStyle subHeaderStyle;
         private GUIStyle bodyStyle;
         private GUIStyle tipBoxStyle;
+        private GUIStyle toolListButtonStyle;
+        private GUIStyle selectedToolListButtonStyle;
+        private Texture2D selectedToolListBackground;
+        private bool cachedProSkin;
 
         private class Tutorial
         {
@@ -65,7 +72,7 @@ namespace NataneToon.Editor
         [MenuItem(NataneToolMenuPaths.HelpWindow, false, 2)]
         public static void ShowWindow()
         {
-            var window = GetWindow<UnifiedHelpSystem>("Natane統合ヘルプ Unified Help");
+            var window = GetWindow<UnifiedHelpSystem>(HelpWindowTitle);
             window.minSize = new Vector2(900, 650);
             window.Show();
         }
@@ -76,7 +83,7 @@ namespace NataneToon.Editor
         /// </summary>
         public static void ShowTab(int tabIndex)
         {
-            var window = GetWindow<UnifiedHelpSystem>("Natane統合ヘルプ");
+            var window = GetWindow<UnifiedHelpSystem>(HelpWindowTitle);
             window.selectedMainTab = tabIndex;
             window.minSize = new Vector2(900, 650);
             window.Show();
@@ -88,7 +95,7 @@ namespace NataneToon.Editor
         /// </summary>
         public static void ShowToolHelp(string toolKey)
         {
-            var window = GetWindow<UnifiedHelpSystem>("Natane統合ヘルプ");
+            var window = GetWindow<UnifiedHelpSystem>(HelpWindowTitle);
             window.selectedMainTab = 1; // Tool Help tab
             window.selectedTool = toolKey;
             window.minSize = new Vector2(900, 650);
@@ -101,7 +108,7 @@ namespace NataneToon.Editor
         /// </summary>
         public static void ShowHelp(string topic)
         {
-            var window = GetWindow<UnifiedHelpSystem>("Natane統合ヘルプ");
+            var window = GetWindow<UnifiedHelpSystem>(HelpWindowTitle);
             window.selectedMainTab = 2; // Glossary tab
             window.searchQuery = topic;
             window.minSize = new Vector2(900, 650);
@@ -114,7 +121,7 @@ namespace NataneToon.Editor
         /// </summary>
         public static void ShowTutorial(string tutorialId)
         {
-            var window = GetWindow<UnifiedHelpSystem>("Natane統合ヘルプ");
+            var window = GetWindow<UnifiedHelpSystem>(HelpWindowTitle);
             window.selectedMainTab = 3; // Tutorials tab
             window.minSize = new Vector2(900, 650);
             window.Show();
@@ -122,57 +129,99 @@ namespace NataneToon.Editor
 
         private void OnEnable()
         {
+            RefreshWindowTitle();
+            InitializeStyles();
             InitializeGlossary();
             InitializeTutorials();
         }
 
+        private void OnDisable()
+        {
+            ReleaseToolListBackground();
+            headerStyle = null;
+            subHeaderStyle = null;
+            bodyStyle = null;
+            tipBoxStyle = null;
+            toolListButtonStyle = null;
+            selectedToolListButtonStyle = null;
+        }
+
+        private void RefreshWindowTitle()
+        {
+            titleContent = new GUIContent(HelpWindowTitle);
+        }
+
         private void InitializeStyles()
         {
-            if (headerStyle == null)
+            bool skinChanged = cachedProSkin != EditorGUIUtility.isProSkin;
+            bool stylesMissing = headerStyle == null ||
+                                 subHeaderStyle == null ||
+                                 bodyStyle == null ||
+                                 tipBoxStyle == null ||
+                                 toolListButtonStyle == null ||
+                                 selectedToolListButtonStyle == null ||
+                                 selectedToolListBackground == null;
+
+            if (!skinChanged && !stylesMissing)
             {
-                headerStyle = new GUIStyle(EditorStyles.boldLabel)
-                {
-                    fontSize = 16,
-                    margin = new RectOffset(0, 0, 10, 10)
-                };
+                return;
             }
 
-            if (subHeaderStyle == null)
-            {
-                subHeaderStyle = new GUIStyle(EditorStyles.boldLabel)
-                {
-                    fontSize = 13,
-                    margin = new RectOffset(0, 0, 8, 5)
-                };
-            }
+            cachedProSkin = EditorGUIUtility.isProSkin;
 
-            if (bodyStyle == null)
+            headerStyle = new GUIStyle(EditorStyles.boldLabel)
             {
-                bodyStyle = new GUIStyle(EditorStyles.label)
-                {
-                    wordWrap = true,
-                    richText = true
-                };
-            }
+                fontSize = 16,
+                margin = new RectOffset(0, 0, 10, 10)
+            };
 
-            if (tipBoxStyle == null)
+            subHeaderStyle = new GUIStyle(EditorStyles.boldLabel)
             {
-                tipBoxStyle = new GUIStyle(EditorStyles.helpBox)
-                {
-                    padding = new RectOffset(10, 10, 10, 10),
-                    margin = new RectOffset(0, 0, 5, 5)
-                };
-            }
+                fontSize = 13,
+                margin = new RectOffset(0, 0, 8, 5)
+            };
+
+            bodyStyle = new GUIStyle(EditorStyles.label)
+            {
+                wordWrap = true,
+                richText = true
+            };
+
+            tipBoxStyle = new GUIStyle(EditorStyles.helpBox)
+            {
+                padding = new RectOffset(10, 10, 10, 10),
+                margin = new RectOffset(0, 0, 5, 5)
+            };
+
+            toolListButtonStyle = new GUIStyle(GUI.skin.button)
+            {
+                alignment = TextAnchor.MiddleLeft,
+                wordWrap = true,
+                padding = new RectOffset(10, 10, 6, 6)
+            };
+
+            ReleaseToolListBackground();
+            selectedToolListBackground = CreateSolidTexture(
+                EditorGUIUtility.isProSkin
+                    ? new Color(0.28f, 0.46f, 0.74f, 0.55f)
+                    : new Color(0.30f, 0.54f, 0.82f, 0.24f));
+
+            selectedToolListButtonStyle = new GUIStyle(toolListButtonStyle)
+            {
+                fontStyle = FontStyle.Bold
+            };
+            ApplyBackground(selectedToolListButtonStyle, selectedToolListBackground);
         }
 
         private void OnGUI()
         {
             InitializeStyles();
+            RefreshWindowTitle();
 
             // ヘッダー
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("✨ Natane Toon Shader - 統合ヘルプシステム Unified Help System", headerStyle);
-            EditorGUILayout.LabelField("すべての機能、ツール、チュートリアルを1か所で確認 Access all features, tools, and tutorials in one place", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(L("✨ Natane Toon Shader - 統合ヘルプシステム", "✨ Natane Toon Shader - Unified Help System"), headerStyle);
+            EditorGUILayout.LabelField(L("すべての機能、ツール、チュートリアルを1か所で確認", "Access all features, tools, and tutorials in one place"), EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
 
             EditorGUILayout.Space(5);
@@ -292,7 +341,7 @@ namespace NataneToon.Editor
 
         private void DrawToolList()
         {
-            EditorGUILayout.LabelField("🛠️ ツール一覧 Tool List", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("🛠️ ツール一覧", "🛠️ Tool List"), EditorStyles.boldLabel);
 
             // 検索バー
             EditorGUILayout.BeginHorizontal();
@@ -319,13 +368,7 @@ namespace NataneToon.Editor
             foreach (var kvp in filteredDocs)
             {
                 bool isSelected = selectedTool == kvp.Key;
-
-                GUIStyle buttonStyle = isSelected
-                    ? new GUIStyle(GUI.skin.button) {
-                        fontStyle = FontStyle.Bold,
-                        normal = { background = MakeTex(2, 2, new Color(0.3f, 0.5f, 0.8f, 0.3f)) }
-                    }
-                    : GUI.skin.button;
+                GUIStyle buttonStyle = isSelected ? selectedToolListButtonStyle : toolListButtonStyle;
 
                 if (GUILayout.Button($"{kvp.Value.toolNameJP}\n{kvp.Value.toolName}", buttonStyle, GUILayout.Height(45)))
                 {
@@ -336,7 +379,9 @@ namespace NataneToon.Editor
             EditorGUILayout.EndScrollView();
 
             EditorGUILayout.Space(3);
-            EditorGUILayout.LabelField($"表示: {filteredDocs.Count} / {allDocs.Count} ツール", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(
+                L($"表示: {filteredDocs.Count} / {allDocs.Count} ツール", $"{filteredDocs.Count} / {allDocs.Count} tools"),
+                EditorStyles.miniLabel);
         }
 
         private bool FilterTool(NataneToonToolsDocumentation.ToolDocumentation doc)
@@ -838,17 +883,35 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(5);
         }
 
-        private Texture2D MakeTex(int width, int height, Color col)
+        private void ReleaseToolListBackground()
         {
-            Color[] pix = new Color[width * height];
-            for (int i = 0; i < pix.Length; i++)
-                pix[i] = col;
+            if (selectedToolListBackground == null)
+            {
+                return;
+            }
 
-            Texture2D result = new Texture2D(width, height);
-            result.SetPixels(pix);
-            result.Apply();
+            DestroyImmediate(selectedToolListBackground);
+            selectedToolListBackground = null;
+        }
 
-            return result;
+        private static Texture2D CreateSolidTexture(Color color)
+        {
+            var texture = new Texture2D(1, 1, TextureFormat.RGBA32, false)
+            {
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            texture.SetPixel(0, 0, color);
+            texture.Apply();
+
+            return texture;
+        }
+
+        private static void ApplyBackground(GUIStyle style, Texture2D background)
+        {
+            style.normal.background = background;
+            style.hover.background = background;
+            style.active.background = background;
+            style.focused.background = background;
         }
 
         private void OpenDocumentationFile(string filename)

@@ -246,18 +246,24 @@ namespace NataneToon.Editor
         {
             EditorGUILayout.Space(5);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("Material Actions", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("マテリアル操作", "Material Actions"), EditorStyles.boldLabel);
 
             EditorGUILayout.BeginHorizontal();
 
             // Preset Browser
-            if (GUILayout.Button(new GUIContent("Preset Browser", "Open Material Preset Browser"), GUILayout.Height(25)))
+            if (GUILayout.Button(new GUIContent(
+                L("プリセットブラウザ", "Preset Browser"),
+                L("マテリアルプリセットブラウザを開く", "Open Material Preset Browser")),
+                GUILayout.Height(25)))
             {
                 MaterialPresetBrowser.ShowWindow();
             }
 
             // Create Preset
-            if (GUILayout.Button(new GUIContent("Save as Preset", "Create preset from this material"), GUILayout.Height(25)))
+            if (GUILayout.Button(new GUIContent(
+                L("プリセットとして保存", "Save as Preset"),
+                L("このマテリアルからプリセットを作成", "Create preset from this material")),
+                GUILayout.Height(25)))
             {
                 CreatePresetFromMaterial(material);
             }
@@ -267,13 +273,19 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginHorizontal();
 
             // Export to File
-            if (GUILayout.Button(new GUIContent("Export to File", "Export parameters to file"), GUILayout.Height(25)))
+            if (GUILayout.Button(new GUIContent(
+                L("ファイルへ書き出し", "Export to File"),
+                L("パラメータをファイルへ書き出す", "Export parameters to file")),
+                GUILayout.Height(25)))
             {
                 ExportMaterialToFile(material);
             }
 
             // Copy to Clipboard
-            if (GUILayout.Button(new GUIContent("Copy", "Copy parameters to clipboard"), GUILayout.Height(25)))
+            if (GUILayout.Button(new GUIContent(
+                L("コピー", "Copy"),
+                L("パラメータをクリップボードへコピー", "Copy parameters to clipboard")),
+                GUILayout.Height(25)))
             {
                 CopyToClipboard(material);
             }
@@ -282,7 +294,10 @@ namespace NataneToon.Editor
             bool clipboardValid = MaterialParameterShareSystem.IsClipboardValid();
             using (new EditorGUI.DisabledScope(!clipboardValid))
             {
-                if (GUILayout.Button(new GUIContent("Paste", "Paste parameters from clipboard"), GUILayout.Height(25)))
+                if (GUILayout.Button(new GUIContent(
+                    L("貼り付け", "Paste"),
+                    L("クリップボードからパラメータを貼り付け", "Paste parameters from clipboard")),
+                    GUILayout.Height(25)))
                 {
                     PasteFromClipboard(material);
                 }
@@ -468,19 +483,25 @@ namespace NataneToon.Editor
         {
             int activeFeatures = CountActiveFeatures(material);
             string rating = GetPerformanceRating(activeFeatures);
-            Color ratingColor = GetRatingColor(rating);
+            Color ratingColor = GetRatingColor(activeFeatures);
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.BeginHorizontal();
 
-            EditorGUILayout.LabelField("Performance Rating:", GUILayout.Width(130));
+            EditorGUILayout.LabelField(L("パフォーマンス評価", "Performance Rating") + ":", GUILayout.Width(130));
 
             Color oldColor = GUI.color;
             GUI.color = ratingColor;
-            EditorGUILayout.LabelField($"{rating} ({activeFeatures} features)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(rating, EditorStyles.boldLabel);
             GUI.color = oldColor;
 
             EditorGUILayout.EndHorizontal();
+            EditorGUILayout.LabelField(
+                $"{L("有効機能数", "Active Features")}: {activeFeatures}",
+                EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(
+                $"{L("推定コスト", "Estimated Cost")}: {GetEstimatedCostLabel(activeFeatures)}",
+                EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
         }
 
@@ -512,17 +533,25 @@ namespace NataneToon.Editor
 
         private static string GetPerformanceRating(int featureCount)
         {
-            if (featureCount <= 3) return "Excellent (A)";
-            if (featureCount <= 6) return "Good (B)";
-            if (featureCount <= 9) return "Fair (C)";
-            return "Heavy (D)";
+            if (featureCount <= 3) return L("軽量 (A)", "Excellent (A)");
+            if (featureCount <= 6) return L("良好 (B)", "Good (B)");
+            if (featureCount <= 9) return L("標準 (C)", "Fair (C)");
+            return L("重い (D)", "Heavy (D)");
         }
 
-        private static Color GetRatingColor(string rating)
+        private static string GetEstimatedCostLabel(int featureCount)
         {
-            if (rating.StartsWith("Excellent")) return Color.green;
-            if (rating.StartsWith("Good")) return Color.cyan;
-            if (rating.StartsWith("Fair")) return Color.yellow;
+            if (featureCount <= 3) return L("低", "Low");
+            if (featureCount <= 6) return L("中", "Medium");
+            if (featureCount <= 9) return L("やや高い", "Moderate");
+            return L("高い", "High");
+        }
+
+        private static Color GetRatingColor(int featureCount)
+        {
+            if (featureCount <= 3) return Color.green;
+            if (featureCount <= 6) return Color.cyan;
+            if (featureCount <= 9) return Color.yellow;
             return new Color(1f, 0.5f, 0f); // Orange
         }
 

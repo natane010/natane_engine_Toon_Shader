@@ -22,7 +22,7 @@ namespace NataneToon.Editor
         private EditorMode currentMode = EditorMode.Batch;
 
         // ========== Common State ==========
-        private Vector2 scrollPosition;
+        private Vector2 windowScrollPosition;
         private List<Material> selectedMaterials = new List<Material>();
         private Material currentMaterial;
 
@@ -62,7 +62,7 @@ namespace NataneToon.Editor
                                            "_DETAIL_MAP", "_TRIPLANAR", "_HEIGHT_FOG",
                                            "_SURFACE_COVER", "_MIRROR_CONTROL", "_QUEST_LITE",
                                            "_WATER_DRIP", "_VIDEO_TEXTURE", "_INTERSECTION_FADE" };
-        private bool[] featureStates = new bool[20];
+        private bool[] featureStates;
 
         // Variant conversion (Batch Mode)
         private enum ShaderVariant { Opaque, Cutout, Transparent }
@@ -84,6 +84,8 @@ namespace NataneToon.Editor
         // ========== Common Settings ==========
         private bool filterNataneToonOnly = true;
         private string searchFilter = "";
+        private const float CompactLayoutWidth = 720f;
+        private const float NarrowLayoutWidth = 600f;
 
         [MenuItem("Tools/Natane/マテリアル Material/マテリアルエディタ Material Editor", false, 12)]
         public static void ShowWindow()
@@ -96,6 +98,8 @@ namespace NataneToon.Editor
         private void OnEnable()
         {
             // Scene Mode用のイベント登録
+            featureStates = new bool[features.Length];
+
             SceneView.duringSceneGui += OnSceneGUI;
             Selection.selectionChanged += OnSelectionChanged;
             OnSelectionChanged();
@@ -119,6 +123,7 @@ namespace NataneToon.Editor
 
         private void OnGUI()
         {
+            windowScrollPosition = EditorGUILayout.BeginScrollView(windowScrollPosition);
             DrawHeader();
             EditorGUILayout.Space(5);
 
@@ -133,6 +138,8 @@ namespace NataneToon.Editor
             {
                 DrawSceneMode();
             }
+
+            EditorGUILayout.EndScrollView();
         }
 
         // ========== Header & Mode Selection ==========
@@ -148,24 +155,43 @@ namespace NataneToon.Editor
 
         private void DrawModeSelector()
         {
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField(L("モード:", "Mode:"), GUILayout.Width(100));
+            bool compactLayout = IsCompactLayout();
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField(L("モード", "Mode"), EditorStyles.boldLabel);
 
             EditorGUI.BeginChangeCheck();
-            if (GUILayout.Toggle(currentMode == EditorMode.Batch, L("Batch Mode 一括処理", "Batch Mode"), EditorStyles.miniButtonLeft))
+            if (compactLayout)
             {
-                currentMode = EditorMode.Batch;
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Toggle(currentMode == EditorMode.Batch, L("一括処理", "Batch Mode"), EditorStyles.miniButtonLeft))
+                {
+                    currentMode = EditorMode.Batch;
+                }
+                if (GUILayout.Toggle(currentMode == EditorMode.Scene, L("シーン編集", "Scene Mode"), EditorStyles.miniButtonRight))
+                {
+                    currentMode = EditorMode.Scene;
+                }
+                EditorGUILayout.EndHorizontal();
             }
-            if (GUILayout.Toggle(currentMode == EditorMode.Scene, L("Scene Mode シーン編集", "Scene Mode"), EditorStyles.miniButtonRight))
+            else
             {
-                currentMode = EditorMode.Scene;
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Toggle(currentMode == EditorMode.Batch, L("Batch Mode 一括処理", "Batch Mode"), EditorStyles.miniButtonLeft))
+                {
+                    currentMode = EditorMode.Batch;
+                }
+                if (GUILayout.Toggle(currentMode == EditorMode.Scene, L("Scene Mode シーン編集", "Scene Mode"), EditorStyles.miniButtonRight))
+                {
+                    currentMode = EditorMode.Scene;
+                }
+                EditorGUILayout.EndHorizontal();
             }
             if (EditorGUI.EndChangeCheck())
             {
                 OnModeChanged();
             }
 
-            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndVertical();
         }
 
         private void OnModeChanged()
@@ -205,30 +231,7 @@ namespace NataneToon.Editor
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(L("マテリアル選択", "Material Selection"), EditorStyles.boldLabel);
-
-            EditorGUILayout.BeginHorizontal();
-
-            if (GUILayout.Button(L("選択を追加", "Add Selected"), GUILayout.Height(25)))
-            {
-                AddSelectedMaterials();
-            }
-
-            if (GUILayout.Button(L("全Natane Toon追加", "Add All"), GUILayout.Height(25)))
-            {
-                AddAllNataneToonMaterials();
-            }
-
-            if (GUILayout.Button(L("名前で追加", "By Name"), GUILayout.Height(25)))
-            {
-                ShowAddByNameDialog();
-            }
-
-            if (GUILayout.Button(L("クリア", "Clear"), GUILayout.Height(25)))
-            {
-                selectedMaterials.Clear();
-            }
-
-            EditorGUILayout.EndHorizontal();
+            DrawBatchSelectionButtons();
 
             EditorGUILayout.Space(5);
 
@@ -236,7 +239,7 @@ namespace NataneToon.Editor
             {
                 EditorGUILayout.LabelField(L($"選択中: {selectedMaterials.Count} マテリアル", $"Selected: {selectedMaterials.Count} materials"), EditorStyles.boldLabel);
 
-                materialListScroll = EditorGUILayout.BeginScrollView(materialListScroll, GUILayout.Height(100));
+                materialListScroll = EditorGUILayout.BeginScrollView(materialListScroll, GUILayout.Height(GetAdaptiveListHeight(100f, 220f, 0.2f)));
                 for (int i = selectedMaterials.Count - 1; i >= 0; i--)
                 {
                     if (selectedMaterials[i] == null)
@@ -261,13 +264,20 @@ namespace NataneToon.Editor
 
         private void DrawTabs()
         {
-            selectedTab = GUILayout.Toolbar(selectedTab, GetTabs(), GUILayout.Height(25));
+            string[] tabs = GetTabs();
+            if (IsCompactLayout())
+            {
+                int columns = position.width < NarrowLayoutWidth ? 2 : 3;
+                selectedTab = GUILayout.SelectionGrid(selectedTab, tabs, columns, EditorStyles.miniButton);
+            }
+            else
+            {
+                selectedTab = GUILayout.Toolbar(selectedTab, tabs, GUILayout.Height(25));
+            }
         }
 
         private void DrawBatchTabContent()
         {
-            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
-
             switch (selectedTab)
             {
                 case 0: DrawParameterAdjust(); break;
@@ -276,8 +286,6 @@ namespace NataneToon.Editor
                 case 3: DrawFeatureToggle(); break;
                 case 4: DrawVariantConvert(); break;
             }
-
-            EditorGUILayout.EndScrollView();
         }
 
         // ========== Scene Mode UI ==========
@@ -299,8 +307,6 @@ namespace NataneToon.Editor
                 return;
             }
 
-            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
-
             DrawObjectInfo();
             EditorGUILayout.Space(10);
 
@@ -311,23 +317,27 @@ namespace NataneToon.Editor
             {
                 DrawSceneMaterialEditor();
             }
-
-            EditorGUILayout.EndScrollView();
         }
 
         private void DrawSceneToolbar()
         {
+            bool compactLayout = IsCompactLayout();
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
 
-            if (GUILayout.Button(L("更新", "Refresh"), EditorStyles.toolbarButton, GUILayout.Width(100)))
+            if (GUILayout.Button(L("更新", "Refresh"), EditorStyles.toolbarButton))
             {
                 RefreshSceneMaterials();
             }
 
-            GUILayout.FlexibleSpace();
+            if (!compactLayout)
+            {
+                GUILayout.FlexibleSpace();
+            }
 
             EditorGUI.BeginChangeCheck();
-            filterNataneToonOnly = GUILayout.Toggle(filterNataneToonOnly, L("Nataneのみ", "Natane Only"), EditorStyles.toolbarButton, GUILayout.Width(100));
+            filterNataneToonOnly = GUILayout.Toggle(filterNataneToonOnly, L("Nataneのみ", "Natane Only"), EditorStyles.toolbarButton);
             if (EditorGUI.EndChangeCheck())
             {
                 RefreshSceneMaterials();
@@ -335,16 +345,23 @@ namespace NataneToon.Editor
 
             EditorGUILayout.EndHorizontal();
 
-            // 検索フィルター
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField(L("検索:", "Search:"), GUILayout.Width(80));
+            EditorGUILayout.LabelField(L("検索", "Search") + ":", GUILayout.Width(compactLayout ? 55f : 80f));
             EditorGUI.BeginChangeCheck();
             searchFilter = EditorGUILayout.TextField(searchFilter);
+            if (GUILayout.Button(L("クリア", "Clear"), GUILayout.Width(60f)))
+            {
+                searchFilter = "";
+                RefreshSceneMaterials();
+                GUI.FocusControl(null);
+            }
             if (EditorGUI.EndChangeCheck())
             {
                 RefreshSceneMaterials();
             }
             EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.EndVertical();
         }
 
         private void DrawObjectInfo()
@@ -488,21 +505,40 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(10);
 
             // 操作ボタン
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button(L("プリセットを適用", "Apply Preset")))
+            if (IsCompactLayout())
             {
-                ShowPresetMenu();
-            }
-            if (GUILayout.Button(L("初期値に戻す", "Reset")))
-            {
-                if (EditorUtility.DisplayDialog(L("確認", "Confirm"),
-                    L("マテリアルを初期値に戻しますか？", "Reset material to default values?"),
-                    L("はい", "Yes"), L("いいえ", "No")))
+                if (GUILayout.Button(L("プリセットを適用", "Apply Preset")))
                 {
-                    ResetMaterialToDefault();
+                    ShowPresetMenu();
+                }
+                if (GUILayout.Button(L("初期値に戻す", "Reset")))
+                {
+                    if (EditorUtility.DisplayDialog(L("確認", "Confirm"),
+                        L("マテリアルを初期値に戻しますか？", "Reset material to default values?"),
+                        L("はい", "Yes"), L("いいえ", "No")))
+                    {
+                        ResetMaterialToDefault();
+                    }
                 }
             }
-            EditorGUILayout.EndHorizontal();
+            else
+            {
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button(L("プリセットを適用", "Apply Preset")))
+                {
+                    ShowPresetMenu();
+                }
+                if (GUILayout.Button(L("初期値に戻す", "Reset")))
+                {
+                    if (EditorUtility.DisplayDialog(L("確認", "Confirm"),
+                        L("マテリアルを初期値に戻しますか？", "Reset material to default values?"),
+                        L("はい", "Yes"), L("いいえ", "No")))
+                    {
+                        ResetMaterialToDefault();
+                    }
+                }
+                EditorGUILayout.EndHorizontal();
+            }
         }
 
         // ========== Batch Mode: Parameter Adjustment ==========
@@ -864,6 +900,48 @@ namespace NataneToon.Editor
             Rect rect = EditorGUILayout.GetControlRect(false, 1);
             EditorGUI.DrawRect(rect, new Color(0.5f, 0.5f, 0.5f, 1));
             EditorGUILayout.Space(5);
+        }
+
+        private void DrawBatchSelectionButtons()
+        {
+            if (IsCompactLayout())
+            {
+                EditorGUILayout.BeginHorizontal();
+                DrawBatchSelectionButton(L("選択を追加", "Add Selected"), AddSelectedMaterials);
+                DrawBatchSelectionButton(L("全Natane Toon追加", "Add All"), AddAllNataneToonMaterials);
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUILayout.BeginHorizontal();
+                DrawBatchSelectionButton(L("名前で追加", "By Name"), ShowAddByNameDialog);
+                DrawBatchSelectionButton(L("クリア", "Clear"), () => selectedMaterials.Clear());
+                EditorGUILayout.EndHorizontal();
+                return;
+            }
+
+            EditorGUILayout.BeginHorizontal();
+            DrawBatchSelectionButton(L("選択を追加", "Add Selected"), AddSelectedMaterials);
+            DrawBatchSelectionButton(L("全Natane Toon追加", "Add All"), AddAllNataneToonMaterials);
+            DrawBatchSelectionButton(L("名前で追加", "By Name"), ShowAddByNameDialog);
+            DrawBatchSelectionButton(L("クリア", "Clear"), () => selectedMaterials.Clear());
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void DrawBatchSelectionButton(string label, System.Action action)
+        {
+            if (GUILayout.Button(label, GUILayout.Height(25)))
+            {
+                action?.Invoke();
+            }
+        }
+
+        private bool IsCompactLayout()
+        {
+            return position.width < CompactLayoutWidth;
+        }
+
+        private float GetAdaptiveListHeight(float minHeight, float maxHeight, float ratio)
+        {
+            return Mathf.Clamp(position.height * ratio, minHeight, maxHeight);
         }
 
         // ========== Material Management ==========
