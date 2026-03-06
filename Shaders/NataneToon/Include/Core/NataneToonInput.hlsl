@@ -981,14 +981,22 @@ float _VRChatMirrorMode; // 0=Normal view, 1=Inside mirror
 sampler2D _MainTex;
 
 // Makeup Textures
+#if defined(_2ND_TEXTURE)
 sampler2D _2ndTex;
 sampler2D _2ndTexMask;
+#endif
+#if defined(_3RD_TEXTURE)
 sampler2D _3rdTex;
 sampler2D _3rdTexMask;
+#endif
+#if defined(_4TH_TEXTURE)
 sampler2D _4thTex;
 sampler2D _4thTexMask;
+#endif
+#if defined(_5TH_TEXTURE)
 sampler2D _5thTex;
 sampler2D _5thTexMask;
+#endif
 
 // Screen-Tone
 #if defined(_SCREEN_TONE)
@@ -996,16 +1004,26 @@ sampler2D _ScreenToneMask;
 #endif
 
 // Shading
+#if defined(_USE_RAMP)
 sampler2D _RampTex;
+#endif
+#if defined(_SHADOW_RECEIVE_MASK)
 sampler2D _ShadowReceiveMask;
+#endif
 sampler2D _ShadowColorTex;
 
 // SDF & Grade Maps
+#if defined(_SDF_MAP)
 sampler2D _SDFMap;
+#endif
+#if defined(_SHADING_GRADE_MAP)
 sampler2D _ShadingGradeMap;
+#endif
 
 // Ambient Occlusion
+#if defined(_USE_AO)
 sampler2D _AOMap;
+#endif
 
 // Specular
 #if defined(_SPECULAR)

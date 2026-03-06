@@ -159,11 +159,13 @@ float DitheringPattern(float2 screenPos, float scale)
 
 // Ramp Texture Shading
 // Uses a gradient texture to control shadow colors
+#if defined(_USE_RAMP)
 float3 RampShading(float ndotl)
 {
     float2 rampUV = float2(saturate(ndotl + _ShadowOffset), 0.5);
     return tex2D(_RampTex, rampUV).rgb;
 }
+#endif
 
 // Multi-tone Shadow Colors
 // Applies multiple shadow color tones based on lighting intensity

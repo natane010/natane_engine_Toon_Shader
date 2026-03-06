@@ -1,4 +1,4 @@
-// ===== NataneToon Shader - Opaque Variant =====
+﻿// ===== NataneToon Shader - Opaque Variant =====
 // Render Type: Opaque
 // Queue: Geometry
 // 特徴: 不透明レンダリング。アルファなし。最高のパフォーマンス。
@@ -961,14 +961,14 @@ Shader "Natane/Toon Shader"
             #pragma vertex vert
             #pragma fragment frag
             #pragma shader_feature_local _OUTLINE
-            #pragma shader_feature _OUTLINE_TEXTURE_COLOR
-            #pragma shader_feature _OUTLINE_WIDTH_MAP
-            #pragma shader_feature _OUTLINE_MULTI_COLOR
-            #pragma shader_feature _OUTLINE_MASK
+            #pragma shader_feature_local _OUTLINE_TEXTURE_COLOR
+            #pragma shader_feature_local _OUTLINE_WIDTH_MAP
+            #pragma shader_feature_local _OUTLINE_MULTI_COLOR
+            #pragma shader_feature_local _OUTLINE_MASK
             #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma shader_feature_local _SMEAR
             #pragma shader_feature_local _HEIGHT_FADE
-            #pragma shader_feature _OUTLINE_HAND_DRAWN
+            #pragma shader_feature_local _OUTLINE_HAND_DRAWN
             #pragma shader_feature_local _PERSPECTIVE_FLAT
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
@@ -1327,7 +1327,7 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature_local _3RD_TEXTURE
             #pragma shader_feature_local _4TH_TEXTURE
             #pragma shader_feature_local _5TH_TEXTURE
-            #pragma shader_feature _SCREEN_TONE
+            #pragma shader_feature_local _SCREEN_TONE
             #pragma shader_feature_local _HALFTONE_SHADOW
             #pragma shader_feature_local _GRADIENT_BASE_COLOR
             #pragma shader_feature_local _USE_RAMP
@@ -1335,7 +1335,7 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature_local _USE_MULTI_SHADOW
             #pragma shader_feature_local _SHADOW_RECEIVE_MASK
             #pragma shader_feature_local _SDF_MAP
-            #pragma shader_feature _FACE_SDF_ROTATION
+            #pragma shader_feature_local _FACE_SDF_ROTATION
             #pragma shader_feature_local _SHADING_GRADE_MAP
             #pragma shader_feature_local _USE_AO
             #pragma shader_feature_local _PROCEDURAL_AO
@@ -1347,69 +1347,69 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature_local _BLUE_NOISE_DITHER
             #pragma shader_feature_local _SOFT_LIGHTING_MODE
             #pragma shader_feature_local _USE_LIGHT_VOLUME
-            #pragma shader_feature _LIGHT_VOLUME_SPECULAR
+            #pragma shader_feature_local _LIGHT_VOLUME_SPECULAR
             #pragma shader_feature_local _SPECULAR
-            #pragma shader_feature _SPECULAR_AA
-            #pragma shader_feature _SPECULAR_DITHER
+            #pragma shader_feature_local _SPECULAR_AA
+            #pragma shader_feature_local _SPECULAR_DITHER
             #pragma shader_feature_local _HAIR_SPECULAR
-            #pragma shader_feature _ANGEL_RING
+            #pragma shader_feature_local _ANGEL_RING
             #pragma shader_feature_local _RIM_LIGHT
-            #pragma shader_feature _RIM_LIGHT_2
-            #pragma shader_feature _OFFSET_RIM_LIGHT
-            #pragma shader_feature _SHEEN
+            #pragma shader_feature_local _RIM_LIGHT_2
+            #pragma shader_feature_local _OFFSET_RIM_LIGHT
+            #pragma shader_feature_local _SHEEN
             #pragma shader_feature_local _SSS
-            #pragma shader_feature _SSS_LUT
+            #pragma shader_feature_local _SSS_LUT
             #pragma shader_feature_local _MATCAP
             #pragma shader_feature_local _GLITTER
-            #pragma shader_feature _GLINTS_ADVANCED
+            #pragma shader_feature_local _GLINTS_ADVANCED
             #pragma shader_feature_local _EMISSION
             #pragma shader_feature_local _NORMALMAP
             #pragma shader_feature_local _DISSOLVE
             #pragma shader_feature_local _ALPHA_MASK
             #pragma shader_feature_local _HUE_SHIFT
             #pragma shader_feature_local _REFLECTION
-            #pragma shader_feature _FAKE_REFLECTION
-            #pragma shader_feature _IRIDESCENCE
+            #pragma shader_feature_local _FAKE_REFLECTION
+            #pragma shader_feature_local _IRIDESCENCE
             #pragma shader_feature_local _ENV_RIM
             #pragma shader_feature_local _PARALLAX
-            #pragma shader_feature _EYE_PARALLAX
+            #pragma shader_feature_local _EYE_PARALLAX
             #pragma shader_feature_local _REFRACTION
             #pragma shader_feature_local _MATCAP_2
             #pragma shader_feature_local _MATCAP_3
-            #pragma shader_feature _PROCEDURAL_MATCAP
-            #pragma shader_feature _AUDIOLINK
+            #pragma shader_feature_local _PROCEDURAL_MATCAP
+            #pragma shader_feature_local _AUDIOLINK
             #pragma shader_feature_local _HEIGHT_FADE
             #pragma shader_feature_local _INTERSECTION_FADE
             #pragma shader_feature_local _DISTANCE_FADE
             #pragma shader_feature_local _VERTEX_ANIMATION
             #pragma shader_feature_local _HOLOGRAM
             #pragma shader_feature_local _GLITCH
-            #pragma shader_feature _GLITCH_STRETCH
-            #pragma shader_feature _COLOR_QUANTIZE
-            #pragma shader_feature _LUT_3D
-            #pragma shader_feature _HATCHING
-            #pragma shader_feature _WATERCOLOR
-            #pragma shader_feature _SOFT_FILTER
-            #pragma shader_feature _KUWAHARA_FILTER
-            #pragma shader_feature _SCREEN_EDGE
-            #pragma shader_feature _COLOR_BLEEDING
-            #pragma shader_feature _CHROMATIC_ABERRATION
-            #pragma shader_feature _HOLOGRAM_NOISE
+            #pragma shader_feature_local _GLITCH_STRETCH
+            #pragma shader_feature_local _COLOR_QUANTIZE
+            #pragma shader_feature_local _LUT_3D
+            #pragma shader_feature_local _HATCHING
+            #pragma shader_feature_local _WATERCOLOR
+            #pragma shader_feature_local _SOFT_FILTER
+            #pragma shader_feature_local _KUWAHARA_FILTER
+            #pragma shader_feature_local _SCREEN_EDGE
+            #pragma shader_feature_local _COLOR_BLEEDING
+            #pragma shader_feature_local _CHROMATIC_ABERRATION
+            #pragma shader_feature_local _HOLOGRAM_NOISE
             #pragma shader_feature_local _DECAL
-            #pragma shader_feature _BACKFACE_TEXTURE
-            #pragma shader_feature _VIDEO_TEXTURE
-            #pragma shader_feature _LTCGI
+            #pragma shader_feature_local _BACKFACE_TEXTURE
+            #pragma shader_feature_local _VIDEO_TEXTURE
+            #pragma shader_feature_local _LTCGI
             #pragma shader_feature_local _WATER_DRIP
             #pragma shader_feature_local _SMEAR
             #pragma shader_feature_local _DITHERING_ALPHA
             #pragma shader_feature_local _HASHED_ALPHA
             #pragma shader_feature_local _VAT
-            #pragma shader_feature _VAT_NORMAL
+            #pragma shader_feature_local _VAT_NORMAL
             #pragma shader_feature_local _PIXEL_VERTEX_LIGHTS
             #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma shader_feature_local _VERTEX_COLOR_SHADOW
             #pragma shader_feature_local _TESSELLATION
-            #pragma shader_feature _TESS_DISPLACEMENT
+            #pragma shader_feature_local _TESS_DISPLACEMENT
             #pragma shader_feature_local _PCSS
             #pragma shader_feature_local _PERSPECTIVE_FLAT
             #pragma shader_feature_local _DEPTH_COLOR_FADE
@@ -1444,7 +1444,7 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature_local _3RD_TEXTURE
             #pragma shader_feature_local _4TH_TEXTURE
             #pragma shader_feature_local _5TH_TEXTURE
-            #pragma shader_feature _SCREEN_TONE
+            #pragma shader_feature_local _SCREEN_TONE
             #pragma shader_feature_local _GRADIENT_BASE_COLOR
             #pragma shader_feature_local _USE_RAMP
             #pragma shader_feature_local _STANDARD_TOON
@@ -1462,12 +1462,12 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature_local _BLUE_NOISE_DITHER
             #pragma shader_feature_local _SOFT_LIGHTING_MODE
             #pragma shader_feature_local _SPECULAR
-            #pragma shader_feature _SPECULAR_AA
-            #pragma shader_feature _SPECULAR_DITHER
+            #pragma shader_feature_local _SPECULAR_AA
+            #pragma shader_feature_local _SPECULAR_DITHER
             #pragma shader_feature_local _HAIR_SPECULAR
             #pragma shader_feature_local _RIM_LIGHT
-            #pragma shader_feature _RIM_LIGHT_2
-            #pragma shader_feature _OFFSET_RIM_LIGHT
+            #pragma shader_feature_local _RIM_LIGHT_2
+            #pragma shader_feature_local _OFFSET_RIM_LIGHT
             #pragma shader_feature_local _ENV_RIM
             #pragma shader_feature_local _SSS
             #pragma shader_feature_local _NORMALMAP
@@ -1481,11 +1481,11 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature_local _DITHERING_ALPHA
             #pragma shader_feature_local _HASHED_ALPHA
             #pragma shader_feature_local _VAT
-            #pragma shader_feature _VAT_NORMAL
+            #pragma shader_feature_local _VAT_NORMAL
             #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma shader_feature_local _VERTEX_COLOR_SHADOW
             #pragma shader_feature_local _TESSELLATION
-            #pragma shader_feature _TESS_DISPLACEMENT
+            #pragma shader_feature_local _TESS_DISPLACEMENT
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Include/Core/NataneToonCore.hlsl"
@@ -1544,3 +1544,4 @@ Shader "Natane/Toon Shader"
     CustomEditor "NataneToonShaderGUI"
     FallBack "Diffuse"
 }
+
