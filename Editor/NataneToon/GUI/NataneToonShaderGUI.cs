@@ -417,6 +417,7 @@ public class NataneToonShaderGUI : ShaderGUI
             // Validate and fix shader keywords (ensures keywords match property values)
             ValidateAndFixKeywords();
             DrawDependencyInspectorWarnings();
+            DrawSamplerBudgetInspectorWarning();
 
             // ===== Compact Header =====
             DrawCompactHeader();
@@ -1431,6 +1432,44 @@ public class NataneToonShaderGUI : ShaderGUI
         }
 
         EditorGUILayout.Space(6);
+    }
+
+    private void DrawSamplerBudgetInspectorWarning()
+    {
+        var estimate = NataneToonSamplerBudgetEstimator.Estimate(targetMaterial);
+        if (!estimate.IsWarning && !estimate.HasLightVolumeLtcgiCombo && !estimate.HasCriticalLightingCombo)
+        {
+            return;
+        }
+
+        if (estimate.IsOverLimit)
+        {
+            EditorGUILayout.HelpBox(
+                L(
+                    $"このマテリアルは推定 Sampler 上限を超えています ({estimate.EstimatedSamplers}/{estimate.Limit})。\n見た目は保持されますが、新しい重い機能は有効化できません。不要な機能を無効化して上限内に戻してください。",
+                    $"This material is over the estimated sampler limit ({estimate.EstimatedSamplers}/{estimate.Limit}).\nThe current look is preserved, but new heavy features cannot be enabled. Disable some features to get back under the limit."),
+                MessageType.Warning);
+            return;
+        }
+
+        if (estimate.IsNearLimit || estimate.HasCriticalLightingCombo)
+        {
+            EditorGUILayout.HelpBox(
+                L(
+                    $"推定 Sampler 数が上限付近です ({estimate.EstimatedSamplers}/{estimate.Limit})。Light Volume や LTCGI などの重い機能は、組み合わせ次第で有効化できなくなります。",
+                    $"Estimated sampler usage is near the limit ({estimate.EstimatedSamplers}/{estimate.Limit}). Heavy features such as Light Volume and LTCGI may become unavailable depending on the combination."),
+                MessageType.Warning);
+            return;
+        }
+
+        if (estimate.HasLightVolumeLtcgiCombo)
+        {
+            EditorGUILayout.HelpBox(
+                L(
+                    "Light Volume と LTCGI を同時に使う場合は Sampler 予算に注意してください。さらに重い機能を足すと追加できなくなることがあります。",
+                    "When using Light Volume and LTCGI together, watch the sampler budget closely. Adding more heavy features may be blocked."),
+                MessageType.Info);
+        }
     }
 
     private void DrawLightVolumeSection()
@@ -5568,18 +5607,25 @@ public class NataneToonShaderGUI : ShaderGUI
             return false;
         }
 
-        EditorGUI.BeginChangeCheck();
         bool enabled = property.floatValue > FLOAT_COMPARISON_THRESHOLD;
+        var toggleEvaluation = NataneToonSamplerBudgetEstimator.EvaluateEnable(targetMaterial, keyword);
+        bool canEnable = enabled || toggleEvaluation.CanEnable;
+        bool changed = false;
+        bool newEnabled = enabled;
 
-        // Create a horizontal layout for toggle with visual indicator
         EditorGUILayout.BeginHorizontal();
 
-        // Draw toggle
-        enabled = EditorGUILayout.Toggle(label, enabled);
+        using (new EditorGUI.DisabledScope(!canEnable))
+        {
+            EditorGUI.BeginChangeCheck();
+            newEnabled = EditorGUILayout.Toggle(label, enabled);
+            changed = EditorGUI.EndChangeCheck();
+        }
 
-        // Visual indicator
-        string statusIcon = enabled ? "✓" : "✗";
-        Color statusColor = enabled ? new Color(0.3f, 0.8f, 0.3f) : new Color(0.6f, 0.6f, 0.6f);
+        string statusIcon = newEnabled ? "✓" : (canEnable ? "✗" : "!");
+        Color statusColor = newEnabled
+            ? new Color(0.3f, 0.8f, 0.3f)
+            : (canEnable ? new Color(0.6f, 0.6f, 0.6f) : new Color(0.9f, 0.6f, 0.2f));
 
         var oldColor = GUI.color;
         GUI.color = statusColor;
@@ -5588,18 +5634,37 @@ public class NataneToonShaderGUI : ShaderGUI
 
         EditorGUILayout.EndHorizontal();
 
-        if (EditorGUI.EndChangeCheck())
+        if (!enabled && !canEnable)
         {
-            property.floatValue = enabled ? 1.0f : 0.0f;
+            DrawSamplerBlockHint(toggleEvaluation);
+        }
 
-            // Set shader keyword
-            if (enabled)
+        if (changed)
+        {
+            Undo.RecordObject(targetMaterial, L("シェーダー機能を切り替え", "Toggle Shader Feature"));
+            property.floatValue = newEnabled ? 1.0f : 0.0f;
+
+            if (newEnabled)
                 targetMaterial.EnableKeyword(keyword);
             else
                 targetMaterial.DisableKeyword(keyword);
+
+            EditorUtility.SetDirty(targetMaterial);
         }
 
-        return enabled;
+        return newEnabled;
+    }
+
+    private void DrawSamplerBlockHint(NataneToonSamplerBudgetEstimator.ToggleEvaluation evaluation)
+    {
+        Color oldColor = GUI.color;
+        GUI.color = new Color(0.92f, 0.66f, 0.22f);
+        EditorGUILayout.LabelField(
+            L(
+                $"Sampler 制限のため有効化できません (+{evaluation.AddedSamplers}, 推定 {evaluation.AfterEnable.EstimatedSamplers}/{evaluation.AfterEnable.Limit})",
+                $"Cannot enable because of the sampler limit (+{evaluation.AddedSamplers}, estimated {evaluation.AfterEnable.EstimatedSamplers}/{evaluation.AfterEnable.Limit})"),
+            EditorStyles.wordWrappedMiniLabel);
+        GUI.color = oldColor;
     }
 
     /// <summary>
@@ -6015,13 +6080,23 @@ public class NataneToonShaderGUI : ShaderGUI
                 if (i % columns == 0)
                     EditorGUILayout.BeginHorizontal();
 
-                bool isEnabled = targetMaterial.IsKeywordEnabled(features[i][0]);
+                string keyword = features[i][0];
+                bool isEnabled = targetMaterial.IsKeywordEnabled(keyword);
+                var toggleEvaluation = NataneToonSamplerBudgetEstimator.EvaluateEnable(targetMaterial, keyword);
+                bool canEnable = isEnabled || toggleEvaluation.CanEnable;
                 if (isEnabled) enabledCount++;
 
-                Color badgeColor = isEnabled ? new Color(0.2f, 0.7f, 0.3f, 0.9f) : new Color(0.4f, 0.4f, 0.4f, 0.4f);
-                Color textColor = isEnabled ? Color.white : new Color(0.6f, 0.6f, 0.6f);
+                Color badgeColor = isEnabled
+                    ? new Color(0.2f, 0.7f, 0.3f, 0.9f)
+                    : (canEnable ? new Color(0.4f, 0.4f, 0.4f, 0.4f) : new Color(0.85f, 0.55f, 0.2f, 0.75f));
+                Color textColor = isEnabled ? Color.white : (canEnable ? new Color(0.6f, 0.6f, 0.6f) : Color.white);
 
-                Rect btnRect = GUILayoutUtility.GetRect(new GUIContent(features[i][1]), EditorStyles.miniButton, GUILayout.Height(20));
+                string tooltip = !isEnabled && !canEnable
+                    ? L(
+                        $"Sampler 制限のため有効化できません (+{toggleEvaluation.AddedSamplers}, 推定 {toggleEvaluation.AfterEnable.EstimatedSamplers}/{toggleEvaluation.AfterEnable.Limit})",
+                        $"Cannot enable because of the sampler limit (+{toggleEvaluation.AddedSamplers}, estimated {toggleEvaluation.AfterEnable.EstimatedSamplers}/{toggleEvaluation.AfterEnable.Limit})")
+                    : string.Empty;
+                Rect btnRect = GUILayoutUtility.GetRect(new GUIContent(features[i][1], tooltip), EditorStyles.miniButton, GUILayout.Height(20));
 
                 if (Event.current.type == EventType.Repaint)
                 {
@@ -6030,7 +6105,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
                 var oldColor = GUI.contentColor;
                 GUI.contentColor = textColor;
-                GUI.Label(btnRect, features[i][1], new GUIStyle(EditorStyles.miniLabel)
+                GUI.Label(btnRect, new GUIContent(features[i][1], tooltip), new GUIStyle(EditorStyles.miniLabel)
                 {
                     alignment = TextAnchor.MiddleCenter,
                     fontStyle = isEnabled ? FontStyle.Bold : FontStyle.Normal
@@ -6040,22 +6115,28 @@ public class NataneToonShaderGUI : ShaderGUI
                 // クリックでトグル
                 if (features[i].Length > 2 && !string.IsNullOrEmpty(features[i][2]))
                 {
-                    EditorGUIUtility.AddCursorRect(btnRect, MouseCursor.Link);
+                    if (canEnable || isEnabled)
+                    {
+                        EditorGUIUtility.AddCursorRect(btnRect, MouseCursor.Link);
+                    }
+
                     if (Event.current.type == EventType.MouseDown && btnRect.Contains(Event.current.mousePosition))
                     {
                         string propName = features[i][2];
-                        string keyword = features[i][0];
                         MaterialProperty prop = FindProperty(propName, properties, false);
                         if (prop != null)
                         {
-                            Undo.RecordObject(targetMaterial, "Toggle " + keyword);
                             bool newState = !(prop.floatValue > 0.5f);
-                            prop.floatValue = newState ? 1.0f : 0.0f;
-                            if (newState)
-                                targetMaterial.EnableKeyword(keyword);
-                            else
-                                targetMaterial.DisableKeyword(keyword);
-                            EditorUtility.SetDirty(targetMaterial);
+                            if (!newState || canEnable)
+                            {
+                                Undo.RecordObject(targetMaterial, "Toggle " + keyword);
+                                prop.floatValue = newState ? 1.0f : 0.0f;
+                                if (newState)
+                                    targetMaterial.EnableKeyword(keyword);
+                                else
+                                    targetMaterial.DisableKeyword(keyword);
+                                EditorUtility.SetDirty(targetMaterial);
+                            }
                         }
                         Event.current.Use();
                     }
@@ -6105,7 +6186,7 @@ public class NataneToonShaderGUI : ShaderGUI
         SetFoldout("Performance", DrawBoxedSection(L("パフォーマンス", "Performance"), GetFoldout("Performance"), SectionCategory.Basic));
         if (GetFoldout("Performance"))
         {
-            NataneToonShaderGUIUtility.DrawPerformanceIndicator(targetMaterial);
+            NataneToonShaderGUIUtility.DrawPerformanceIndicatorWithSamplerBudget(targetMaterial);
 
             DrawHelpToggle("PerformanceHint",
                 L("ヒント：使用していない機能を無効化するとパフォーマンスが向上します。\n" +

@@ -138,18 +138,25 @@ namespace NataneToon.Editor
                 return false;
             }
 
-            EditorGUI.BeginChangeCheck();
             bool enabled = property.floatValue > FLOAT_COMPARISON_THRESHOLD;
+            var toggleEvaluation = NataneToonSamplerBudgetEstimator.EvaluateEnable(targetMaterial, keyword);
+            bool canEnable = enabled || toggleEvaluation.CanEnable;
+            bool changed = false;
+            bool newEnabled = enabled;
 
-            // Create a horizontal layout for toggle with visual indicator
             EditorGUILayout.BeginHorizontal();
 
-            // Draw toggle
-            enabled = EditorGUILayout.Toggle(label, enabled);
+            using (new EditorGUI.DisabledScope(!canEnable))
+            {
+                EditorGUI.BeginChangeCheck();
+                newEnabled = EditorGUILayout.Toggle(label, enabled);
+                changed = EditorGUI.EndChangeCheck();
+            }
 
-            // Visual indicator
-            string statusIcon = enabled ? "✓" : "✗";
-            Color statusColor = enabled ? new Color(0.3f, 0.8f, 0.3f) : new Color(0.6f, 0.6f, 0.6f);
+            string statusIcon = newEnabled ? "✓" : (canEnable ? "✗" : "!");
+            Color statusColor = newEnabled
+                ? new Color(0.3f, 0.8f, 0.3f)
+                : (canEnable ? new Color(0.6f, 0.6f, 0.6f) : new Color(0.9f, 0.6f, 0.2f));
 
             var oldColor = GUI.color;
             GUI.color = statusColor;
@@ -158,13 +165,24 @@ namespace NataneToon.Editor
 
             EditorGUILayout.EndHorizontal();
 
-            if (EditorGUI.EndChangeCheck())
+            if (!enabled && !canEnable)
+            {
+                Color oldHintColor = GUI.color;
+                GUI.color = new Color(0.92f, 0.66f, 0.22f);
+                EditorGUILayout.LabelField(
+                    L(
+                        $"Sampler 制限のため有効化できません (+{toggleEvaluation.AddedSamplers}, 推定 {toggleEvaluation.AfterEnable.EstimatedSamplers}/{toggleEvaluation.AfterEnable.Limit})",
+                        $"Cannot enable because of the sampler limit (+{toggleEvaluation.AddedSamplers}, estimated {toggleEvaluation.AfterEnable.EstimatedSamplers}/{toggleEvaluation.AfterEnable.Limit})"),
+                    EditorStyles.wordWrappedMiniLabel);
+                GUI.color = oldHintColor;
+            }
+
+            if (changed)
             {
                 Undo.RecordObject(targetMaterial, L("シェーダー機能を切り替え", "Toggle Shader Feature"));
-                property.floatValue = enabled ? 1.0f : 0.0f;
+                property.floatValue = newEnabled ? 1.0f : 0.0f;
 
-                // Set shader keyword
-                if (enabled)
+                if (newEnabled)
                     targetMaterial.EnableKeyword(keyword);
                 else
                     targetMaterial.DisableKeyword(keyword);
@@ -172,7 +190,7 @@ namespace NataneToon.Editor
                 EditorUtility.SetDirty(targetMaterial);
             }
 
-            return enabled;
+            return newEnabled;
         }
 
         /// <summary>

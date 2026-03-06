@@ -555,6 +555,124 @@ namespace NataneToon.Editor
             return new Color(1f, 0.5f, 0f); // Orange
         }
 
+        public static void DrawPerformanceIndicatorWithSamplerBudget(Material material)
+        {
+            DrawPerformanceIndicator(material);
+
+            var samplerBudget = NataneToonSamplerBudgetEstimator.Estimate(material);
+
+            EditorGUILayout.Space(4);
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField(L("推定 Sampler 負荷", "Estimated Sampler Budget"), EditorStyles.boldLabel);
+            DrawSamplerBudgetBar(samplerBudget);
+            EditorGUILayout.LabelField(
+                $"{L("ベース", "Base")}: {samplerBudget.BaseSamplers} / {L("追加", "Optional")}: {samplerBudget.OptionalSamplers}",
+                EditorStyles.miniLabel);
+
+            string contributorSummary = GetContributorSummary(samplerBudget, 4);
+            if (!string.IsNullOrEmpty(contributorSummary))
+            {
+                EditorGUILayout.LabelField(
+                    $"{L("主な負荷", "Top Contributors")}: {contributorSummary}",
+                    EditorStyles.wordWrappedMiniLabel);
+            }
+
+            if (samplerBudget.IsOverLimit)
+            {
+                EditorGUILayout.HelpBox(
+                    L(
+                        $"推定 Sampler 数が上限を超えています ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit})。見た目は保持されますが、新しい重い機能は有効化できません。",
+                        $"Estimated sampler usage is over the limit ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}). The current look is preserved, but new heavy features cannot be enabled."),
+                    MessageType.Warning);
+            }
+            else if (samplerBudget.IsNearLimit)
+            {
+                EditorGUILayout.HelpBox(
+                    L(
+                        $"推定 Sampler 数が上限付近です ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit})。重い機能を追加する前に構成を見直すのが安全です。",
+                        $"Estimated sampler usage is close to the limit ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}). Review the current setup before enabling more heavy features."),
+                    MessageType.Warning);
+            }
+            else if (samplerBudget.IsWarning)
+            {
+                EditorGUILayout.HelpBox(
+                    L(
+                        $"推定 Sampler 数は注意域です ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit})。Light Volume や LTCGI などの追加時は上限に注意してください。",
+                        $"Estimated sampler usage is in the caution range ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}). Be careful when adding features such as Light Volume or LTCGI."),
+                    MessageType.Info);
+            }
+
+            if (samplerBudget.HasCriticalLightingCombo)
+            {
+                EditorGUILayout.HelpBox(
+                    L(
+                        "Light Volume + LTCGI + ハッチング は Sampler 使用数が急増しやすい組み合わせです。D3D11 では特に注意してください。",
+                        "Light Volume + LTCGI + Hatching is a high-risk sampler combination. Be especially careful on D3D11."),
+                    MessageType.Warning);
+            }
+            else if (samplerBudget.HasLightVolumeLtcgiCombo)
+            {
+                EditorGUILayout.HelpBox(
+                    L(
+                        "Light Volume と LTCGI の同時使用は Sampler 上限に近づきやすいです。他の重い機能と併用する場合は注意してください。",
+                        "Using Light Volume and LTCGI together can quickly approach the sampler limit. Be careful when combining them with other heavy features."),
+                    MessageType.Info);
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private static void DrawSamplerBudgetBar(NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate estimate)
+        {
+            Rect rect = GUILayoutUtility.GetRect(18, 18f);
+            float fill = Mathf.Clamp01((float)estimate.EstimatedSamplers / estimate.Limit);
+            Color color = GetSamplerBudgetColor(estimate);
+
+            if (Event.current.type == EventType.Repaint)
+            {
+                EditorGUI.DrawRect(rect, new Color(0.2f, 0.2f, 0.2f, 0.45f));
+                EditorGUI.DrawRect(new Rect(rect.x, rect.y, rect.width * fill, rect.height), color);
+            }
+
+            EditorGUI.ProgressBar(
+                rect,
+                fill,
+                $"{estimate.EstimatedSamplers} / {estimate.Limit} ({GetSamplerBudgetStatus(estimate)})");
+        }
+
+        private static Color GetSamplerBudgetColor(NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate estimate)
+        {
+            if (estimate.IsOverLimit) return new Color(0.86f, 0.42f, 0.18f);
+            if (estimate.IsNearLimit) return new Color(0.95f, 0.65f, 0.2f);
+            if (estimate.IsWarning) return new Color(0.95f, 0.82f, 0.24f);
+            return new Color(0.32f, 0.78f, 0.44f);
+        }
+
+        private static string GetSamplerBudgetStatus(NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate estimate)
+        {
+            if (estimate.IsOverLimit) return L("上限超過", "Over Limit");
+            if (estimate.IsNearLimit) return L("上限付近", "Near Limit");
+            if (estimate.IsWarning) return L("注意", "Caution");
+            return L("安全", "Safe");
+        }
+
+        private static string GetContributorSummary(NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate estimate, int maxCount)
+        {
+            if (estimate.Contributors == null || estimate.Contributors.Length == 0 || maxCount <= 0)
+            {
+                return string.Empty;
+            }
+
+            int count = Mathf.Min(maxCount, estimate.Contributors.Length);
+            string[] parts = new string[count];
+            for (int i = 0; i < count; i++)
+            {
+                parts[i] = NataneToonSamplerBudgetEstimator.FormatContributor(estimate.Contributors[i]);
+            }
+
+            return string.Join(" / ", parts);
+        }
+
         /// <summary>
         /// Draw unified tool header with help button
         /// ヘルプボタン付き統一ツールヘッダーを描画
