@@ -541,7 +541,8 @@ namespace NataneToon.Editor
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.LabelField(
-                $"{L("機能", "Features")}: {activeFeatures} / {L("評価", "Rating")}: {rating} / {L("状態", "Status")}: {GetSamplerBudgetStatus(samplerBudget)}",
+                $"{L("機能", "Features")}: {activeFeatures} / {L("評価", "Rating")}: {rating} / {L("状態", "Status")}: {GetSamplerBudgetStatus(samplerBudget)}" +
+                (samplerBudget.ExtraPassCount > 0 ? $" / {L("追加パス", "Extra Pass")}: +{samplerBudget.ExtraPassCount}" : string.Empty),
                 EditorStyles.wordWrappedMiniLabel);
             DrawSamplerBudgetBar(samplerBudget);
             EditorGUILayout.EndVertical();
@@ -602,6 +603,12 @@ namespace NataneToon.Editor
             EditorGUILayout.LabelField(
                 $"{L("ベース", "Base")}: {samplerBudget.BaseSamplers} / {L("追加", "Optional")}: {samplerBudget.OptionalSamplers}",
                 EditorStyles.miniLabel);
+            if (samplerBudget.ExtraPassCount > 0)
+            {
+                EditorGUILayout.LabelField(
+                    $"{L("追加パス", "Extra Pass")}: +{samplerBudget.ExtraPassCount} ({L("Screen Edge 分離", "Screen Edge Split")})",
+                    EditorStyles.miniLabel);
+            }
 
             string contributorSummary = GetContributorSummary(samplerBudget, 4);
             if (!string.IsNullOrEmpty(contributorSummary))
@@ -644,12 +651,29 @@ namespace NataneToon.Editor
                         "Light Volume + LTCGI + Hatching is a high-risk sampler combination. Be especially careful on D3D11."),
                     MessageType.Warning);
             }
+            else if (samplerBudget.HasScreenSpaceLightingCombo)
+            {
+                EditorGUILayout.HelpBox(
+                    L(
+                        "Light Volume + LTCGI + Screen Edge は Sampler 上限に届きやすい組み合わせです。追加テクスチャや髪表現を重ねる前に構成を見直してください。",
+                        "Light Volume + LTCGI + Screen Edge can hit the sampler limit quickly. Review the setup before layering more texture-heavy effects."),
+                    MessageType.Warning);
+            }
             else if (samplerBudget.HasLightVolumeLtcgiCombo)
             {
                 EditorGUILayout.HelpBox(
                     L(
                         "Light Volume と LTCGI の同時使用は Sampler 上限に近づきやすいです。他の重い機能と併用する場合は注意してください。",
                         "Using Light Volume and LTCGI together can quickly approach the sampler limit. Be careful when combining them with other heavy features."),
+                    MessageType.Info);
+            }
+
+            if (samplerBudget.UsesScreenEdgeSplitVariant)
+            {
+                EditorGUILayout.HelpBox(
+                    L(
+                        "このマテリアルは Screen Edge 分離バリアントです。Sampler 負荷は下がりますが、追加パスのぶんドローコールは 1 つ増えます。",
+                        "This material uses the Screen Edge split variant. Sampler pressure is lower, but the extra pass adds one draw call."),
                     MessageType.Info);
             }
 

@@ -489,6 +489,21 @@ namespace NataneToon.Editor
                         "Review Hatching or third-party lighting before adding more heavy texture features.")
                 });
             }
+            else if (samplerEstimate.HasScreenSpaceLightingCombo)
+            {
+                validationResults.Add(new ValidationResult
+                {
+                    material = material,
+                    category = "Performance",
+                    severity = ValidationSeverity.Warning,
+                    issue = L(
+                        "Light Volume + LTCGI + Screen Edge は Sampler 制限に届きやすい危険な組み合わせです",
+                        "Light Volume + LTCGI + Screen Edge is a high-risk sampler combination"),
+                    suggestion = L(
+                        $"Screen Edge か第三者ライティングの構成を見直してください。主な要因: {samplerSummary}",
+                        $"Review Screen Edge or third-party lighting. Main contributors: {samplerSummary}")
+                });
+            }
             else if (samplerEstimate.HasLightVolumeLtcgiCombo)
             {
                 validationResults.Add(new ValidationResult

@@ -36,6 +36,7 @@ namespace NataneToon.Editor
         private static readonly HashSet<string> NataneShaderNames = new HashSet<string>
         {
             "Natane/Toon Shader",
+            "Natane/Toon Shader (ScreenEdge Split)",
             "Natane/Toon Shader (Cutout)",
             "Natane/Toon Shader (Transparent)",
             "Natane/Toon Shader (Lite)",

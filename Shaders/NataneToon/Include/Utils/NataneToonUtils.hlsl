@@ -104,6 +104,15 @@ float2 CalculateDissolve(float2 uv, float dissolveAmount, float edgeWidth)
 // Creates the illusion of depth by offsetting texture coordinates based on height map
 // Returns adjusted UV coordinates
 #if defined(_PARALLAX)
+float NataneSampleParallaxHeight(float2 uv, float2 uvDx, float2 uvDy)
+{
+    #if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+        return _ParallaxMap.SampleGrad(sampler_MainTex, uv, uvDx, uvDy).r;
+    #else
+        return tex2Dgrad(_ParallaxMap, uv, uvDx, uvDy).r;
+    #endif
+}
+
 float2 ParallaxMapping(float2 uv, float3 viewDirTangent)
 {
     // Calculate number of layers based on view angle
@@ -121,7 +130,9 @@ float2 ParallaxMapping(float2 uv, float3 viewDirTangent)
 
     // Initial values
     float2 currentUV = uv;
-    float currentDepthMapValue = tex2D(_ParallaxMap, currentUV).r;
+    float2 uvDx = ddx(uv);
+    float2 uvDy = ddy(uv);
+    float currentDepthMapValue = NataneSampleParallaxHeight(currentUV, uvDx, uvDy);
 
     // Parallax Occlusion Mapping loop
     [loop]
@@ -131,7 +142,7 @@ float2 ParallaxMapping(float2 uv, float3 viewDirTangent)
         currentUV -= deltaUV;
 
         // Get depth value at current UV
-        currentDepthMapValue = tex2D(_ParallaxMap, currentUV).r;
+        currentDepthMapValue = NataneSampleParallaxHeight(currentUV, uvDx, uvDy);
 
         // Get depth of next layer
         currentLayerDepth += layerDepth;
@@ -140,7 +151,7 @@ float2 ParallaxMapping(float2 uv, float3 viewDirTangent)
     // Interpolation for smoother result (steep parallax mapping)
     float2 prevUV = currentUV + deltaUV;
     float afterDepth = currentDepthMapValue - currentLayerDepth;
-    float beforeDepth = tex2D(_ParallaxMap, prevUV).r - currentLayerDepth + layerDepth;
+    float beforeDepth = NataneSampleParallaxHeight(prevUV, uvDx, uvDy) - currentLayerDepth + layerDepth;
 
     // Interpolation weight (with zero-division protection)
     float depthDiff = afterDepth - beforeDepth;
@@ -559,14 +570,15 @@ half ApplyEffectBlendPostAlpha(half baseAlpha, half effectAlpha, float blend)
 // blur=0 で早期リターン（追加コストなし）
 half4 SampleTex2DBlur(sampler2D tex, float2 uv, float blur)
 {
-    if (blur <= 0.001) return tex2D(tex, uv);
+    half4 center = tex2D(tex, uv);
+    if (blur <= 0.001) return center;
 
     // ddx/ddy でスクリーン空間のテクセルサイズを自動取得
     float2 dx = ddx(uv) * blur * 4.0;
     float2 dy = ddy(uv) * blur * 4.0;
 
     // 5点クロスパターン（中心+上下左右）
-    half4 col = tex2D(tex, uv) * 0.4;
+    half4 col = center * 0.4;
     col += tex2D(tex, uv + dx) * 0.15;
     col += tex2D(tex, uv - dx) * 0.15;
     col += tex2D(tex, uv + dy) * 0.15;
@@ -590,12 +602,13 @@ half SampleTex2DBlur1(sampler2D tex, float2 uv, float blur)
 #if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
 half4 SampleTex2DBlurShared(Texture2D tex, SamplerState sharedSampler, float2 uv, float blur)
 {
-    if (blur <= 0.001) return tex.Sample(sharedSampler, uv);
+    half4 center = tex.Sample(sharedSampler, uv);
+    if (blur <= 0.001) return center;
 
     float2 dx = ddx(uv) * blur * 4.0;
     float2 dy = ddy(uv) * blur * 4.0;
 
-    half4 col = tex.Sample(sharedSampler, uv) * 0.4;
+    half4 col = center * 0.4;
     col += tex.Sample(sharedSampler, uv + dx) * 0.15;
     col += tex.Sample(sharedSampler, uv - dx) * 0.15;
     col += tex.Sample(sharedSampler, uv + dy) * 0.15;
@@ -1691,14 +1704,14 @@ half SobelEdgeNormal(float2 screenUV, float sensitivity)
 {
     float2 texel = GetScreenEdgeTexelSize();
 
-    half3 n00 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(-texel.x, -texel.y)));
-    half3 n10 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(0, -texel.y)));
-    half3 n20 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(texel.x, -texel.y)));
-    half3 n01 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(-texel.x, 0)));
-    half3 n21 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(texel.x, 0)));
-    half3 n02 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(-texel.x, texel.y)));
-    half3 n12 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(0, texel.y)));
-    half3 n22 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(texel.x, texel.y)));
+    half3 n00 = DecodeViewNormalStereo(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_CameraDepthNormalsTexture, screenUV + float2(-texel.x, -texel.y)));
+    half3 n10 = DecodeViewNormalStereo(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_CameraDepthNormalsTexture, screenUV + float2(0, -texel.y)));
+    half3 n20 = DecodeViewNormalStereo(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_CameraDepthNormalsTexture, screenUV + float2(texel.x, -texel.y)));
+    half3 n01 = DecodeViewNormalStereo(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_CameraDepthNormalsTexture, screenUV + float2(-texel.x, 0)));
+    half3 n21 = DecodeViewNormalStereo(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_CameraDepthNormalsTexture, screenUV + float2(texel.x, 0)));
+    half3 n02 = DecodeViewNormalStereo(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_CameraDepthNormalsTexture, screenUV + float2(-texel.x, texel.y)));
+    half3 n12 = DecodeViewNormalStereo(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_CameraDepthNormalsTexture, screenUV + float2(0, texel.y)));
+    half3 n22 = DecodeViewNormalStereo(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_CameraDepthNormalsTexture, screenUV + float2(texel.x, texel.y)));
 
     half3 sobelX = -n00 - 2.0*n01 - n02 + n20 + 2.0*n21 + n22;
     half3 sobelY = -n00 - 2.0*n10 - n20 + n02 + 2.0*n12 + n22;

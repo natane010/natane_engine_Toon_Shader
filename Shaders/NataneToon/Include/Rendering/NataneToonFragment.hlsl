@@ -906,7 +906,7 @@ half4 frag(v2f i) : SV_Target
             // Indirect specular (reflection probes)
             half3 indirectSpec = NatanePBRIndirectSpecular(worldNormal, viewDir, i.worldPos,
                 roughness, F0);
-            half pbrOcclusion = tex2D(_PBR_OcclusionMap, uv).r;
+            half pbrOcclusion = NATANE_SAMPLE_SHARED_R(_PBR_OcclusionMap, _PBR_MetallicGlossMap, uv);
             pbrOcclusion = lerp(1.0, pbrOcclusion, _PBR_OcclusionStrength);
             indirectSpec *= pbrOcclusion * _PBR_ReflectionIntensity;
             additionalResult += indirectSpec;
@@ -1109,7 +1109,7 @@ half4 frag(v2f i) : SV_Target
 
     #if defined(_COLOR_QUANTIZE) && defined(UNITY_PASS_FORWARDBASE)
     {
-        half qMask = tex2D(_QuantizeMask, uv).r;
+        half qMask = NATANE_SAMPLE_SHARED_R(_QuantizeMask, _MainTex, uv);
         half3 quantized;
         if (_QuantizeMode > 0.5)
         {
@@ -1265,7 +1265,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Subsurface Scattering =====
     #ifdef _SSS
-        half thickness = tex2D(_ThicknessMap, uv).r * _ThicknessScale;
+        half thickness = NATANE_SAMPLE_SHARED_R(_ThicknessMap, _MainTex, uv) * _ThicknessScale;
 
         #if defined(_SSS_LUT)
             half3 sss = SubsurfaceScatteringLUT(ndotl, worldNormal, i.worldPos, thickness);
@@ -1275,7 +1275,7 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         // Apply mask texture with soft blending
-        half sssMask = tex2D(_SSSMask, uv).r;
+        half sssMask = NATANE_SAMPLE_SHARED_R(_SSSMask, _MainTex, uv);
         sssMask = ApplySoftMask(sssMask); // Smooth mask transitions
         sss *= sssMask;
 
@@ -1671,7 +1671,7 @@ half4 frag(v2f i) : SV_Target
         float2 screenUV = i.screenPos.xy / i.screenPos.w;
 
         // Apply refraction mask
-        float refractionMask = tex2D(_RefractionMask, uv).r;
+        float refractionMask = NATANE_SAMPLE_SHARED_R(_RefractionMask, _MainTex, uv);
         refractionMask = ApplySoftMask(refractionMask);
 
         // Calculate distorted UV based on surface normal and refraction settings
@@ -2051,7 +2051,7 @@ half4 frag(v2f i) : SV_Target
             half dissolveMaskValue = 1.0;
 
             // Apply mask texture
-            dissolveMaskValue = tex2D(_DissolveMask, uv).r;
+            dissolveMaskValue = NATANE_SAMPLE_SHARED_R(_DissolveMask, _MainTex, uv);
 
             float dissolveEdgeBlurred = _DissolveEdgeWidth + _DissolveBlur * 0.15;
             float2 dissolveUV = AnimateUVIfNeeded(uv, _DissolveTexScrollSpeed.xy, _DissolveTexRotateSpeed);

@@ -1134,8 +1134,8 @@ sampler2D _BumpMap;
 
 // Subsurface Scattering
 #if defined(_SSS)
-sampler2D _ThicknessMap;
-sampler2D _SSSMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ThicknessMap);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_SSSMask);
 #endif
 
 // SSS LUT
@@ -1146,7 +1146,7 @@ sampler2D _SSSLUTTex;
 // Dissolve
 #if defined(_DISSOLVE)
 sampler2D _DissolveTex;
-sampler2D _DissolveMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_DissolveMask);
 #endif
 
 // Alpha Mask
@@ -1171,12 +1171,12 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_EnvRimMask);
 
 // Parallax
 #if defined(_PARALLAX)
-sampler2D _ParallaxMap;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ParallaxMap);
 #endif
 
 // Refraction
 #if defined(_REFRACTION)
-sampler2D _RefractionMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_RefractionMask);
 #endif
 
 // Decal
@@ -1218,7 +1218,7 @@ sampler2D _FurMask;
 // PBR
 #if defined(_PBR)
 sampler2D _PBR_MetallicGlossMap;
-sampler2D _PBR_OcclusionMap;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_PBR_OcclusionMap);
 #endif
 
 // Smooth Normal Texture (for Mode 2: Baked Normal Texture)
@@ -1247,7 +1247,7 @@ sampler2D _GlitchStretchMask;
 
 // Illustration Style Textures
 #ifdef _COLOR_QUANTIZE
-sampler2D _QuantizeMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_QuantizeMask);
 #endif
 #ifdef _LUT_3D
 sampler2D _LUT3DTex;
@@ -1263,7 +1263,7 @@ sampler2D _WCPaperTex;
 sampler2D _WCMask;
 #endif
 #ifdef _SCREEN_EDGE
-UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthNormalsTexture);
+UNITY_DECLARE_SCREENSPACE_TEXTURE(_CameraDepthNormalsTexture);
 #endif
 #ifdef _OUTLINE_HAND_DRAWN
 sampler2D _OutlineNoiseTex;

@@ -23,6 +23,7 @@ namespace NataneToon.Editor
         private static readonly string[] ToonShaderNames = new string[]
         {
             "Natane/Toon Shader",
+            "Natane/Toon Shader (ScreenEdge Split)",
             "Natane/Toon Shader (Cutout)",
             "Natane/Toon Shader (Transparent)",
             "Natane/Toon Shader (Fur)",

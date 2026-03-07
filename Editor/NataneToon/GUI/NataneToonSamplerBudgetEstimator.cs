@@ -11,13 +11,15 @@ namespace NataneToon.Editor
     /// </summary>
     public static class NataneToonSamplerBudgetEstimator
     {
+        public const string ScreenEdgeSplitShaderName = "Natane/Toon Shader (ScreenEdge Split)";
         public const int BaseSamplerCount = 5;
         public const int SamplerLimit = 16;
         public const int WarningThreshold = 13;
         public const int NearLimitThreshold = 15;
 
-        private const int LightVolumeLtcgiReserve = 2;
+        private const int LightVolumeLtcgiReserve = 3;
         private const int CriticalLightingReserve = 1;
+        private const int ScreenSpaceLightingReserve = 2;
 
         public readonly struct FeatureCost
         {
@@ -43,6 +45,9 @@ namespace NataneToon.Editor
             public readonly FeatureCost[] Contributors;
             public readonly bool HasLightVolumeLtcgiCombo;
             public readonly bool HasCriticalLightingCombo;
+            public readonly bool HasScreenSpaceLightingCombo;
+            public readonly bool UsesScreenEdgeSplitVariant;
+            public readonly int ExtraPassCount;
 
             public SamplerBudgetEstimate(
                 int baseSamplers,
@@ -50,7 +55,10 @@ namespace NataneToon.Editor
                 int limit,
                 FeatureCost[] contributors,
                 bool hasLightVolumeLtcgiCombo,
-                bool hasCriticalLightingCombo)
+                bool hasCriticalLightingCombo,
+                bool hasScreenSpaceLightingCombo,
+                bool usesScreenEdgeSplitVariant,
+                int extraPassCount)
             {
                 BaseSamplers = baseSamplers;
                 EstimatedSamplers = estimatedSamplers;
@@ -58,6 +66,9 @@ namespace NataneToon.Editor
                 Contributors = contributors ?? new FeatureCost[0];
                 HasLightVolumeLtcgiCombo = hasLightVolumeLtcgiCombo;
                 HasCriticalLightingCombo = hasCriticalLightingCombo;
+                HasScreenSpaceLightingCombo = hasScreenSpaceLightingCombo;
+                UsesScreenEdgeSplitVariant = usesScreenEdgeSplitVariant;
+                ExtraPassCount = extraPassCount;
             }
 
             public int OptionalSamplers => Mathf.Max(0, EstimatedSamplers - BaseSamplers);
@@ -104,15 +115,15 @@ namespace NataneToon.Editor
             new FeatureCost("_OUTLINE", "Outline", "Outline", 1),
             new FeatureCost("_EMISSION", "Emission", "Emission", 1),
             new FeatureCost("_NORMALMAP", "Normal Map", "Normal Map", 1),
-            new FeatureCost("_SSS", "SSS", "SSS", 2),
+            new FeatureCost("_SSS", "SSS", "SSS", 0),
             new FeatureCost("_SSS_LUT", "SSS LUT", "SSS LUT", 1),
-            new FeatureCost("_DISSOLVE", "Dissolve", "Dissolve", 2),
+            new FeatureCost("_DISSOLVE", "Dissolve", "Dissolve", 1),
             new FeatureCost("_ALPHA_MASK", "Alpha Mask", "Alpha Mask", 0),
             new FeatureCost("_REFLECTION", "Reflection", "Reflection", 1),
             new FeatureCost("_IRIDESCENCE", "Iridescence", "Iridescence", 0),
             new FeatureCost("_ENV_RIM", "Environmental Rim", "Environmental Rim", 1),
-            new FeatureCost("_PARALLAX", "Parallax", "Parallax", 1),
-            new FeatureCost("_REFRACTION", "Refraction", "Refraction", 2),
+            new FeatureCost("_PARALLAX", "Parallax", "Parallax", 0),
+            new FeatureCost("_REFRACTION", "Refraction", "Refraction", 1),
             new FeatureCost("_DECAL", "Decal", "Decal", 1),
             new FeatureCost("_BACKFACE_TEXTURE", "Backface Texture", "Backface Texture", 1),
             new FeatureCost("_VIDEO_TEXTURE", "Video Texture", "Video Texture", 1),
@@ -120,17 +131,17 @@ namespace NataneToon.Editor
             new FeatureCost("_WATER_DRIP", "Water Drip", "Water Drip", 1),
             new FeatureCost("_SMEAR", "Smear", "Smear", 1),
             new FeatureCost("_FUR", "Fur", "Fur", 2),
-            new FeatureCost("_PBR", "PBR", "PBR", 2),
+            new FeatureCost("_PBR", "PBR", "PBR", 1),
             new FeatureCost("_SMOOTH_NORMAL", "Smooth Normal", "Smooth Normal", 1),
             new FeatureCost("_HOLOGRAM", "Hologram", "Hologram", 1),
             new FeatureCost("_HOLOGRAM_NOISE", "Hologram Noise", "Hologram Noise", 1),
             new FeatureCost("_GLITCH", "Glitch", "Glitch", 2),
             new FeatureCost("_GLITCH_STRETCH", "Stretch Glitch", "Stretch Glitch", 1),
-            new FeatureCost("_COLOR_QUANTIZE", "Color Quantize", "Color Quantize", 1),
+            new FeatureCost("_COLOR_QUANTIZE", "Color Quantize", "Color Quantize", 0),
             new FeatureCost("_LUT_3D", "LUT", "LUT", 1),
             new FeatureCost("_HATCHING", "Hatching", "Hatching", 2),
             new FeatureCost("_WATERCOLOR", "Watercolor", "Watercolor", 3),
-            new FeatureCost("_SCREEN_EDGE", "Screen Edge", "Screen Edge", 1),
+            new FeatureCost("_SCREEN_EDGE", "Screen Edge", "Screen Edge", 2),
             new FeatureCost("_INTERSECTION_FADE", "Intersection Fade", "Intersection Fade", 1),
             new FeatureCost("_DETAIL_MAP", "Detail Map", "Detail Map", 2),
             new FeatureCost("_SURFACE_COVER", "Surface Cover", "Surface Cover", 2),
@@ -147,6 +158,9 @@ namespace NataneToon.Editor
         private static readonly FeatureCost CriticalLightingReserveCost =
             new FeatureCost("__CRITICAL_LIGHTING_RESERVE", "Critical Lighting Reserve", "Critical Lighting Reserve", CriticalLightingReserve);
 
+        private static readonly FeatureCost ScreenSpaceLightingReserveCost =
+            new FeatureCost("__SCREEN_SPACE_LIGHTING_RESERVE", "Screen Edge Reserve", "Screen Edge Reserve", ScreenSpaceLightingReserve);
+
         public static SamplerBudgetEstimate Estimate(Material material)
         {
             return Estimate(material, null, false);
@@ -156,11 +170,13 @@ namespace NataneToon.Editor
         {
             if (material == null)
             {
-                return new SamplerBudgetEstimate(0, 0, SamplerLimit, new FeatureCost[0], false, false);
+                return new SamplerBudgetEstimate(0, 0, SamplerLimit, new FeatureCost[0], false, false, false, false, 0);
             }
 
             int total = BaseSamplerCount;
             var contributors = new List<FeatureCost>();
+            bool usesScreenEdgeSplitVariant = material.shader != null &&
+                material.shader.name == ScreenEdgeSplitShaderName;
 
             for (int i = 0; i < FeatureCosts.Length; i++)
             {
@@ -169,6 +185,11 @@ namespace NataneToon.Editor
                 if (!string.IsNullOrEmpty(overrideKeyword) && feature.Keyword == overrideKeyword)
                 {
                     isEnabled = overrideEnabled;
+                }
+
+                if (usesScreenEdgeSplitVariant && feature.Keyword == "_SCREEN_EDGE")
+                {
+                    isEnabled = false;
                 }
 
                 if (!isEnabled || feature.SamplerCost <= 0)
@@ -183,9 +204,12 @@ namespace NataneToon.Editor
             bool hasLightVolume = IsKeywordEnabled(material, "_USE_LIGHT_VOLUME", overrideKeyword, overrideEnabled);
             bool hasLtcgi = IsKeywordEnabled(material, "_LTCGI", overrideKeyword, overrideEnabled);
             bool hasHatching = IsKeywordEnabled(material, "_HATCHING", overrideKeyword, overrideEnabled);
+            bool hasScreenEdge = IsKeywordEnabled(material, "_SCREEN_EDGE", overrideKeyword, overrideEnabled);
+            int extraPassCount = usesScreenEdgeSplitVariant ? 1 : 0;
 
             bool hasLightVolumeLtcgiCombo = hasLightVolume && hasLtcgi;
             bool hasCriticalLightingCombo = hasLightVolumeLtcgiCombo && hasHatching;
+            bool hasScreenSpaceLightingCombo = hasLightVolumeLtcgiCombo && hasScreenEdge && !usesScreenEdgeSplitVariant;
 
             if (hasLightVolumeLtcgiCombo)
             {
@@ -197,6 +221,12 @@ namespace NataneToon.Editor
             {
                 total += CriticalLightingReserve;
                 contributors.Add(CriticalLightingReserveCost);
+            }
+
+            if (hasScreenSpaceLightingCombo)
+            {
+                total += ScreenSpaceLightingReserve;
+                contributors.Add(ScreenSpaceLightingReserveCost);
             }
 
             contributors.Sort((left, right) =>
@@ -211,7 +241,10 @@ namespace NataneToon.Editor
                 SamplerLimit,
                 contributors.ToArray(),
                 hasLightVolumeLtcgiCombo,
-                hasCriticalLightingCombo);
+                hasCriticalLightingCombo,
+                hasScreenSpaceLightingCombo,
+                usesScreenEdgeSplitVariant,
+                extraPassCount);
         }
 
         public static ToggleEvaluation EvaluateEnable(Material material, string keyword)
@@ -230,7 +263,13 @@ namespace NataneToon.Editor
 
             SamplerBudgetEstimate afterEnable = Estimate(material, keyword, true);
             bool canEnable = afterEnable.EstimatedSamplers <= SamplerLimit;
-            return new ToggleEvaluation(canEnable, feature.SamplerCost, current, afterEnable);
+            int addedSamplers = feature.SamplerCost;
+            if (current.UsesScreenEdgeSplitVariant && keyword == "_SCREEN_EDGE")
+            {
+                addedSamplers = 0;
+            }
+
+            return new ToggleEvaluation(canEnable, addedSamplers, current, afterEnable);
         }
 
         public static bool TryGetFeatureCost(string keyword, out FeatureCost feature)

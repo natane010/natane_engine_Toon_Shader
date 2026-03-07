@@ -197,7 +197,11 @@ namespace NataneToon.Editor
             int currentCost = CalculateCurrentCost();
             int budget = PlatformBudgets[targetPlatform];
             bool showGpuAdvice = currentCost > budget;
-            bool showSamplerAdvice = samplerEstimate.IsWarning || samplerEstimate.HasLightVolumeLtcgiCombo;
+            bool showSamplerAdvice =
+                samplerEstimate.IsWarning ||
+                samplerEstimate.HasLightVolumeLtcgiCombo ||
+                samplerEstimate.HasCriticalLightingCombo ||
+                samplerEstimate.HasScreenSpaceLightingCombo;
 
             if (!showGpuAdvice && !showSamplerAdvice)
             {
@@ -231,6 +235,14 @@ namespace NataneToon.Editor
                         "Light Volume + LTCGI + Hatching is a high-risk combination. Review it before adding more layered effects."),
                     MessageType.Warning);
             }
+            else if (samplerEstimate.HasScreenSpaceLightingCombo)
+            {
+                EditorGUILayout.HelpBox(
+                    L(
+                        "Light Volume + LTCGI + Screen Edge は危険な組み合わせです。追加テクスチャや髪表現を盛る前に見直してください。",
+                        "Light Volume + LTCGI + Screen Edge is a high-risk combination. Review it before adding more texture-heavy effects."),
+                    MessageType.Warning);
+            }
             else if (samplerEstimate.HasLightVolumeLtcgiCombo)
             {
                 EditorGUILayout.HelpBox(
@@ -246,6 +258,15 @@ namespace NataneToon.Editor
                         $"推定 Sampler 数が上限付近です ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})",
                         $"Estimated sampler usage is near the limit ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})"),
                     MessageType.Warning);
+            }
+
+            if (samplerEstimate.ExtraPassCount > 0)
+            {
+                EditorGUILayout.HelpBox(
+                    L(
+                        $"Screen Edge 分離バリアントにより追加パスが {samplerEstimate.ExtraPassCount} つあります。Sampler 負荷は下がりますが、ドローコールは増えます。",
+                        $"The Screen Edge split variant adds {samplerEstimate.ExtraPassCount} extra pass. Sampler pressure is lower, but draw calls increase."),
+                    MessageType.Info);
             }
 
             EditorGUILayout.LabelField(L("見直し候補:", "Review Candidates:"));

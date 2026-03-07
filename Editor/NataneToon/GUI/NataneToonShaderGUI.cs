@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using System;
 using System.Collections.Generic;
@@ -41,6 +41,18 @@ public class NataneToonShaderGUI : ShaderGUI
 
     /// <summary>Minimum value to consider a parameter active (avoid floating point issues)</summary>
     private const float MIN_PARAMETER_VALUE = 0.001f;
+    private const string DefaultOpaqueShaderName = "Natane/Toon Shader";
+    private const string ScreenEdgeSplitShaderName = "Natane/Toon Shader (ScreenEdge Split)";
+
+    private static readonly string[] ScreenEdgeSplitUnsupportedKeywords =
+    {
+        "_ALPHA_MASK",
+        "_HEIGHT_FADE",
+        "_INTERSECTION_FADE",
+        "_DISTANCE_FADE",
+        "_DITHERING_ALPHA",
+        "_HASHED_ALPHA"
+    };
 
     // ===== CACHED GUI STYLES =====
     private static GUIStyle _cachedHeaderTitleStyle;
@@ -1510,7 +1522,7 @@ public class NataneToonShaderGUI : ShaderGUI
     private void DrawSamplerBudgetInspectorWarning()
     {
         var estimate = GetCurrentSamplerBudgetEstimate();
-        if (!estimate.IsWarning && !estimate.HasLightVolumeLtcgiCombo && !estimate.HasCriticalLightingCombo)
+        if (!estimate.IsWarning && !estimate.HasLightVolumeLtcgiCombo && !estimate.HasCriticalLightingCombo && !estimate.HasScreenSpaceLightingCombo)
         {
             return;
         }
@@ -1525,12 +1537,12 @@ public class NataneToonShaderGUI : ShaderGUI
             return;
         }
 
-        if (estimate.IsNearLimit || estimate.HasCriticalLightingCombo)
+        if (estimate.IsNearLimit || estimate.HasCriticalLightingCombo || estimate.HasScreenSpaceLightingCombo)
         {
             EditorGUILayout.HelpBox(
                 L(
-                    $"推定 Sampler 数が上限付近です ({estimate.EstimatedSamplers}/{estimate.Limit})。Light Volume や LTCGI などの重い機能は、組み合わせ次第で有効化できなくなります。",
-                    $"Estimated sampler usage is near the limit ({estimate.EstimatedSamplers}/{estimate.Limit}). Heavy features such as Light Volume and LTCGI may become unavailable depending on the combination."),
+                    $"推定 Sampler 数が上限付近です ({estimate.EstimatedSamplers}/{estimate.Limit})。Light Volume / LTCGI / Screen Edge などの重い機能は、組み合わせ次第で有効化できなくなります。",
+                    $"Estimated sampler usage is near the limit ({estimate.EstimatedSamplers}/{estimate.Limit}). Heavy features such as Light Volume, LTCGI, or Screen Edge may become unavailable depending on the combination."),
                 MessageType.Warning);
             return;
         }
@@ -3370,10 +3382,110 @@ public class NataneToonShaderGUI : ShaderGUI
                       "• Use with regular Outline for 'thick contour + thin detail lines'\n" +
                       "• Combine with Hatching for manga look\n" +
                       "• High normal sensitivity only = 'modeling wireframe' style\n" +
-                      "• High depth sensitivity only = foreground/background separation lines\n" +
-                      "⚡ Performance: Medium (Sobel 3x3 kernel × 2 passes: depth + normal)"),
+                       "• High depth sensitivity only = foreground/background separation lines\n" +
+                       "⚡ Performance: Medium (Sobel 3x3 kernel × 2 passes: depth + normal)"),
                     MessageType.Info);
+
+                bool isSplitShader = IsScreenEdgeSplitShader(targetMaterial);
+                bool canUseSplit = CanUseScreenEdgeSplitVariant(targetMaterial, out string splitReason);
+
+                EditorGUILayout.Space(4);
+                if (isSplitShader)
+                {
+                    EditorGUILayout.HelpBox(
+                        L(
+                            "現在は Screen Edge 分離バリアントを使用中です。Base pass の Sampler 負荷は下がりますが、描画パスは 1 つ増えます。",
+                            "The material is currently using the Screen Edge split variant. This lowers base-pass sampler pressure, but adds one extra draw pass."),
+                        MessageType.Info);
+
+                    if (!canUseSplit)
+                    {
+                        EditorGUILayout.HelpBox(
+                            L(
+                                $"現在の構成では分離バリアントを安全に維持できません。通常 Opaque へ戻すことをおすすめします。\n理由: {splitReason}",
+                                $"The current configuration is no longer safe for the split variant. Switching back to the standard opaque shader is recommended.\nReason: {splitReason}"),
+                            MessageType.Warning);
+                    }
+
+                    if (GUILayout.Button(L("通常 Opaque シェーダーに戻す", "Switch Back to Standard Opaque")))
+                    {
+                        if (SetScreenEdgeSplitVariant(false))
+                        {
+                            return;
+                        }
+                    }
+                }
+                else if (canUseSplit)
+                {
+                    EditorGUILayout.HelpBox(
+                        L(
+                            "Screen Edge を分離バリアントへ逃がすと、Base pass の Sampler 負荷を下げやすくなります。代わりに描画パスは 1 つ増えます。",
+                            "Moving Screen Edge to the split variant lowers base-pass sampler pressure, but adds one extra draw pass."),
+                        MessageType.Info);
+
+                    if (GUILayout.Button(L("Screen Edge 分離バリアントに切替", "Switch to Screen Edge Split Variant")))
+                    {
+                        if (SetScreenEdgeSplitVariant(true))
+                        {
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox(
+                        L(
+                            $"現在の構成では Screen Edge 分離バリアントを使えません。\n理由: {splitReason}",
+                            $"The current configuration cannot use the Screen Edge split variant.\nReason: {splitReason}"),
+                        MessageType.Warning);
+                }
                 EditorGUI.indentLevel--;
+            }
+            else if (IsScreenEdgeSplitShader(targetMaterial))
+            {
+                EditorGUILayout.HelpBox(
+                    L(
+                        "Screen Edge は無効ですが、分離バリアントの追加パスは残っています。不要なら通常 Opaque シェーダーへ戻してください。",
+                        "Screen Edge is disabled, but the split variant still keeps its extra pass. Switch back to the standard opaque shader if you no longer need it."),
+                    MessageType.Info);
+
+                if (GUILayout.Button(L("通常 Opaque シェーダーに戻す", "Switch Back to Standard Opaque")))
+                {
+                    if (SetScreenEdgeSplitVariant(false))
+                    {
+                        return;
+                    }
+                }
+            }
+            else
+            {
+                bool canUseSplit = CanUseScreenEdgeSplitVariant(targetMaterial, out string splitReason);
+                NataneToonSamplerBudgetEstimator.ToggleEvaluation edgeToggleEvaluation = GetCachedToggleEvaluation("_SCREEN_EDGE");
+
+                if (!edgeToggleEvaluation.CanEnable && canUseSplit)
+                {
+                    EditorGUILayout.HelpBox(
+                        L(
+                            $"通常 Opaque シェーダーでは Screen Edge を有効化できません ({edgeToggleEvaluation.AfterEnable.EstimatedSamplers}/{edgeToggleEvaluation.AfterEnable.Limit})。先に分離バリアントへ切り替えると有効化できる可能性があります。",
+                            $"Screen Edge cannot be enabled on the standard opaque shader ({edgeToggleEvaluation.AfterEnable.EstimatedSamplers}/{edgeToggleEvaluation.AfterEnable.Limit}). Switching to the split variant first may allow it."),
+                        MessageType.Info);
+
+                    if (GUILayout.Button(L("先に Screen Edge 分離バリアントへ切替", "Switch to Screen Edge Split Variant First")))
+                    {
+                        if (SetScreenEdgeSplitVariant(true))
+                        {
+                            return;
+                        }
+                    }
+                }
+                else if (!edgeToggleEvaluation.CanEnable && !string.IsNullOrEmpty(splitReason))
+                {
+                    EditorGUILayout.HelpBox(
+                        L(
+                            $"現在の構成では Screen Edge を通常 shader でも分離バリアントでも安全に追加できません。\n理由: {splitReason}",
+                            $"The current configuration cannot safely add Screen Edge on either the standard shader or the split variant.\nReason: {splitReason}"),
+                        MessageType.Warning);
+                }
             }
 
             EditorGUILayout.Space(SECTION_SPACING);
@@ -5446,6 +5558,105 @@ public class NataneToonShaderGUI : ShaderGUI
     }
 
     /// <summary>
+    /// Screen Edge 分離バリアントを使用中か判定
+    /// </summary>
+    private static bool IsScreenEdgeSplitShader(Material material)
+    {
+        return material != null &&
+               material.shader != null &&
+               material.shader.name == ScreenEdgeSplitShaderName;
+    }
+
+    /// <summary>
+    /// Screen Edge 分離バリアントへ安全に切り替えられるか判定
+    /// </summary>
+    private bool CanUseScreenEdgeSplitVariant(Material material, out string reason)
+    {
+        reason = null;
+
+        if (material == null || material.shader == null)
+        {
+            reason = L("マテリアルまたはシェーダーが見つかりません。", "Material or shader is missing.");
+            return false;
+        }
+
+        string shaderName = material.shader.name;
+        bool isAlreadySplit = shaderName == ScreenEdgeSplitShaderName;
+        if (!isAlreadySplit && shaderName != DefaultOpaqueShaderName)
+        {
+            reason = L(
+                "現在の分離バリアントは通常 Opaque シェーダー専用です。Cutout / Transparent / Fur / Lite / Background では使えません。",
+                "The current split variant only supports the standard opaque shader. It cannot be used with Cutout, Transparent, Fur, Lite, or Background.");
+            return false;
+        }
+
+        for (int i = 0; i < ScreenEdgeSplitUnsupportedKeywords.Length; i++)
+        {
+            string keyword = ScreenEdgeSplitUnsupportedKeywords[i];
+            if (!material.IsKeywordEnabled(keyword))
+            {
+                continue;
+            }
+
+            reason = L(
+                $"{keyword} が有効なため、安全に分離できません。アルファやクリップに影響する機能を無効化してから切り替えてください。",
+                $"{keyword} is enabled, so the split variant would not be safe. Disable alpha or clip related features before switching.");
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Screen Edge 分離バリアントへ切り替え / 復帰
+    /// </summary>
+    private bool SetScreenEdgeSplitVariant(bool enable)
+    {
+        if (targetMaterial == null)
+        {
+            NataneToon.Editor.NataneToonErrorDialog.ShowNullMaterialError(L("Screen Edge 分離バリアントの切り替え", "Toggle Screen Edge Split Variant"));
+            return false;
+        }
+
+        if (enable && !CanUseScreenEdgeSplitVariant(targetMaterial, out string reason))
+        {
+            EditorUtility.DisplayDialog(
+                L("切り替え不可", "Cannot Switch"),
+                reason,
+                "OK");
+            return false;
+        }
+
+        string newShaderName = enable ? ScreenEdgeSplitShaderName : DefaultOpaqueShaderName;
+        Shader newShader = Shader.Find(newShaderName);
+        if (newShader == null)
+        {
+            Debug.LogError($"[NataneToonShaderGUI] Shader not found: {newShaderName}");
+            NataneToon.Editor.NataneToonErrorDialog.ShowShaderNotFoundError(newShaderName);
+            return false;
+        }
+
+        if (targetMaterial.shader == newShader)
+        {
+            return true;
+        }
+
+        Undo.RecordObject(targetMaterial, enable ? "Enable Screen Edge Split Variant" : "Disable Screen Edge Split Variant");
+        targetMaterial.shader = newShader;
+        targetMaterial.SetFloat("_ZWrite", 1f);
+        targetMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Geometry;
+
+        EditorUtility.SetDirty(targetMaterial);
+        InvalidateInspectorCaches();
+        if (materialEditor != null)
+        {
+            materialEditor.Repaint();
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Get current rendering mode based on shader name
     /// </summary>
     private RenderingMode GetCurrentRenderingMode()
@@ -5479,7 +5690,7 @@ public class NataneToonShaderGUI : ShaderGUI
         }
 
         // Get base shader name
-        string baseShaderName = "Natane/Toon Shader";
+        string baseShaderName = DefaultOpaqueShaderName;
         string newShaderName = baseShaderName;
 
         // Determine shader variant based on mode

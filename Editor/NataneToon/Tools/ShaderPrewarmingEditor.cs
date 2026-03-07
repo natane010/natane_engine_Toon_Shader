@@ -30,6 +30,7 @@ namespace NataneToon.Editor
         private static readonly HashSet<string> NataneShaderNames = new HashSet<string>
         {
             "Natane/Toon Shader",
+            "Natane/Toon Shader (ScreenEdge Split)",
             "Natane/Toon Shader (Cutout)",
             "Natane/Toon Shader (Transparent)",
             "Natane/Toon Shader (Lite)",
@@ -314,19 +315,22 @@ namespace NataneToon.Editor
             public bool hasForwardAdd;
             public bool hasShadowCaster;
             public bool hasMeta;
+            public bool hasNormalPass;
 
-            public ShaderPassConfig(string name, bool hasForwardAdd, bool hasShadowCaster, bool hasMeta = false)
+            public ShaderPassConfig(string name, bool hasForwardAdd, bool hasShadowCaster, bool hasMeta = false, bool hasNormalPass = false)
             {
                 this.name = name;
                 this.hasForwardAdd = hasForwardAdd;
                 this.hasShadowCaster = hasShadowCaster;
                 this.hasMeta = hasMeta;
+                this.hasNormalPass = hasNormalPass;
             }
         }
 
         private static readonly ShaderPassConfig[] AllShaderConfigs = new ShaderPassConfig[]
         {
             new ShaderPassConfig("Natane/Toon Shader",                   true,  true),
+            new ShaderPassConfig("Natane/Toon Shader (ScreenEdge Split)", true,  true, false, true),
             new ShaderPassConfig("Natane/Toon Shader (Cutout)",           true,  true),
             new ShaderPassConfig("Natane/Toon Shader (Transparent)",      true,  false),
             new ShaderPassConfig("Natane/Toon Shader (Lite)",             true,  true),
@@ -409,10 +413,14 @@ namespace NataneToon.Editor
                     totalAdded += AddVariantSafe(collection, shader, PassType.ForwardBase, keywords);
                     if (config.hasForwardAdd)
                         totalAdded += AddVariantSafe(collection, shader, PassType.ForwardAdd, keywords);
+                    if (config.hasNormalPass)
+                        totalAdded += AddVariantSafe(collection, shader, PassType.Normal, keywords);
                 }
 
                 if (config.hasShadowCaster)
                     totalAdded += AddVariantSafe(collection, shader, PassType.ShadowCaster, new string[] { });
+                if (config.hasNormalPass)
+                    totalAdded += AddVariantSafe(collection, shader, PassType.Normal, new string[] { });
                 if (config.hasMeta)
                     totalAdded += AddVariantSafe(collection, shader, PassType.Meta, new string[] { });
             }

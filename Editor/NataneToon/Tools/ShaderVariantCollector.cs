@@ -25,13 +25,15 @@ namespace NataneToon.Editor
             public bool hasForwardAdd;
             public bool hasShadowCaster;
             public bool hasMeta;
+            public bool hasNormalPass;
 
-            public ShaderInfo(string name, bool hasForwardAdd, bool hasShadowCaster, bool hasMeta = false)
+            public ShaderInfo(string name, bool hasForwardAdd, bool hasShadowCaster, bool hasMeta = false, bool hasNormalPass = false)
             {
                 this.name = name;
                 this.hasForwardAdd = hasForwardAdd;
                 this.hasShadowCaster = hasShadowCaster;
                 this.hasMeta = hasMeta;
+                this.hasNormalPass = hasNormalPass;
             }
         }
 
@@ -43,6 +45,7 @@ namespace NataneToon.Editor
         {
             // Standard variants (ForwardBase + ForwardAdd + ShadowCaster)
             new ShaderInfo("Natane/Toon Shader",                  true,  true),
+            new ShaderInfo("Natane/Toon Shader (ScreenEdge Split)", true,  true, false, true),
             new ShaderInfo("Natane/Toon Shader (Cutout)",          true,  true),
             new ShaderInfo("Natane/Toon Shader (Lite)",            true,  true),
             new ShaderInfo("Natane/Toon Shader (Cutout Lite)",     true,  true),
@@ -336,6 +339,11 @@ namespace NataneToon.Editor
                             AddVariant(shader, PassType.ForwardAdd, keywords);
                             totalVariants++;
                         }
+                        if (info.hasNormalPass)
+                        {
+                            AddVariant(shader, PassType.Normal, keywords);
+                            totalVariants++;
+                        }
                     }
                 }
 
@@ -345,6 +353,11 @@ namespace NataneToon.Editor
                     if (info.hasShadowCaster)
                     {
                         AddVariant(shader, PassType.ShadowCaster, new string[] { });
+                        totalVariants++;
+                    }
+                    if (info.hasNormalPass)
+                    {
+                        AddVariant(shader, PassType.Normal, new string[] { });
                         totalVariants++;
                     }
                     if (info.hasMeta)
@@ -464,12 +477,22 @@ namespace NataneToon.Editor
                         AddVariant(shader, PassType.ForwardAdd, keywords);
                         totalVariants++;
                     }
+                    if (info.hasNormalPass)
+                    {
+                        AddVariant(shader, PassType.Normal, keywords);
+                        totalVariants++;
+                    }
                 }
 
                 // ShadowCaster and Meta with empty keywords
                 if (info.hasShadowCaster)
                 {
                     AddVariant(shader, PassType.ShadowCaster, new string[] { });
+                    totalVariants++;
+                }
+                if (info.hasNormalPass)
+                {
+                    AddVariant(shader, PassType.Normal, new string[] { });
                     totalVariants++;
                 }
                 if (info.hasMeta)
@@ -557,6 +580,7 @@ namespace NataneToon.Editor
                 return false;
 
             return shaderName == "Natane/Toon Shader" ||
+                   shaderName == "Natane/Toon Shader (ScreenEdge Split)" ||
                    shaderName == "Natane/Toon Shader (Cutout)" ||
                    shaderName == "Natane/Toon Shader (Transparent)" ||
                    shaderName == "Natane/Toon Shader (Lite)" ||
