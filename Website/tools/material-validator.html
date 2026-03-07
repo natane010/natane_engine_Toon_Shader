@@ -16,18 +16,20 @@
     <p class="page-subtitle">VRChat最適化とパフォーマンスの自動チェック</p>
 
     <div class="tool-meta">
-      <span>メニュー: Tools &gt; Natane &gt; Material Validator</span>
+      <span>メニュー: Tools &gt; Natane &gt; マテリアル Material &gt; マテリアル検証 Material Validator</span>
       <span>カテゴリ: マテリアル</span>
     </div>
 
     <h2>概要</h2>
-    <p>マテリアル検証ツールは、Natane Toon Shaderを使用したマテリアルのVRChat最適化とパフォーマンスを自動的に検証します。テクスチャサイズ、有効化されている機能数、パフォーマンスレーティングなどを包括的にチェックし、問題がある場合は自動修正の提案も行います。</p>
+    <p>マテリアル検証ツールは、Natane Toon Shaderを使用したマテリアルのVRChat最適化、GPU負荷、推定Sampler負荷を自動的に検証します。テクスチャサイズや有効機能数だけでなく、Light Volume / LTCGI の依存状態や、D3D11で詰まりやすいSampler組み合わせも確認できます。</p>
 
     <h2>主な機能</h2>
     <ul>
       <li>VRChat最適化チェック（Quest/PC両対応）</li>
       <li>テクスチャサイズの検証と推奨サイズの提案</li>
-      <li>パフォーマンス評価（A/B/C/D レーティング）</li>
+      <li>パフォーマンス評価（GPU負荷の目安）</li>
+      <li>推定Sampler負荷と危険な組み合わせの警告</li>
+      <li>Light Volume / LTCGI 依存パッケージの検出確認</li>
       <li>自動修正提案と一括適用</li>
       <li>複数マテリアルの一括検証</li>
     </ul>
@@ -36,7 +38,7 @@
     <ol class="tool-steps">
       <li>マテリアルをドラッグ&ドロップするか「選択したマテリアルを追加」をクリックして検証対象を追加します</li>
       <li>必要に応じて検証項目を有効/無効化します</li>
-      <li>「マテリアルを検証」をクリックして検証を開始します</li>
+      <li>「すべて検証」をクリックして検証を開始します</li>
       <li>重要度別（エラー/警告/情報）に問題を確認します</li>
       <li>「自動修正」ボタンで提案された修正を適用します</li>
     </ol>
@@ -44,9 +46,11 @@
     <h2>検証項目</h2>
     <h3>パフォーマンス</h3>
     <ul>
-      <li>有効化されている機能数によるレーティング（A: 0-3, B: 4-6, C: 7-9, D: 10+）</li>
+      <li>有効化されている機能数によるGPU負荷の目安</li>
+      <li>推定Sampler上限超過、上限付近、危険な組み合わせの検出</li>
+      <li>Light Volume + LTCGI + Hatching のような高リスク構成の警告</li>
       <li>テクスチャ合計メモリ使用量</li>
-      <li>シェーダーキーワード数</li>
+      <li>シェーダーキーワード数の多い構成の可視化</li>
     </ul>
     <h3>テクスチャ</h3>
     <ul>
@@ -57,12 +61,13 @@
     <h3>VRChat固有</h3>
     <ul>
       <li>Quest対応チェック（レーティングB以上推奨）</li>
-      <li>フォールバックシェーダーの互換性</li>
+      <li>Light Volume / LTCGI の依存パッケージ未検出チェック</li>
     </ul>
 
     <h2>Tips</h2>
     <ul class="tool-tips">
       <li>VRChatアップロード前に検証を実行しましょう</li>
+      <li>Inspector 上部の「推定 Sampler 負荷」と合わせて見ると、重い組み合わせを見落としにくいです</li>
       <li>アバター互換性のため「VRChat最適化」をチェック</li>
       <li>最良の結果のため、警告より先にエラーを修正してください</li>
     </ul>

@@ -62,14 +62,16 @@ namespace NataneToon.Editor
             {
                 toolName = "Material Validator",
                 toolNameJP = "マテリアル検証",
-                description = "Validates materials for VRChat optimization and performance",
-                descriptionJP = "マテリアルのVRChat最適化とパフォーマンスを検証します",
+                description = "Validates materials for VRChat optimization, GPU load, and sampler risk",
+                descriptionJP = "マテリアルのVRChat最適化、GPU負荷、Samplerリスクを検証します",
                 category = "Quality",
                 features = new List<string>
                 {
                     "VRChat optimization checks",
                     "Texture size validation",
-                    "Performance rating",
+                    "GPU performance rating",
+                    "Estimated sampler budget warnings",
+                    "Light Volume / LTCGI dependency checks",
                     "Auto-fix suggestions",
                     "Batch validation"
                 },
@@ -77,7 +79,9 @@ namespace NataneToon.Editor
                 {
                     "VRChat最適化チェック",
                     "テクスチャサイズの検証",
-                    "パフォーマンス評価",
+                    "GPU負荷評価",
+                    "推定Sampler負荷警告",
+                    "Light Volume / LTCGI依存確認",
                     "自動修正提案",
                     "一括検証"
                 },
@@ -101,8 +105,8 @@ namespace NataneToon.Editor
                     {
                         title = "Run Validation",
                         titleJP = "検証を実行",
-                        description = "Click 'Validate Materials' to start checking",
-                        descriptionJP = "「マテリアルを検証」をクリックして検証開始"
+                        description = "Click 'Validate All' to start checking",
+                        descriptionJP = "「すべて検証」をクリックして検証開始"
                     },
                     new UsageStep
                     {
@@ -123,12 +127,14 @@ namespace NataneToon.Editor
                 {
                     "Run validation before uploading to VRChat",
                     "Check 'VRChat Optimization' for avatar compatibility",
+                    "Fix sampler limit issues before VRChat upload",
                     "Fix all errors before warnings for best results"
                 },
                 tipsJP = new List<string>
                 {
                     "VRChatアップロード前に検証を実行しましょう",
                     "アバター互換性のため「VRChat最適化」をチェック",
+                    "Sampler上限や危険な組み合わせは先に解消",
                     "最良の結果のため、警告より先にエラーを修正"
                 }
             };
@@ -586,11 +592,13 @@ namespace NataneToon.Editor
             {
                 toolName = "Performance Budget Tool",
                 toolNameJP = "パフォーマンスバジェット",
-                description = "Track and manage material performance budget",
-                descriptionJP = "マテリアルのパフォーマンスバジェットを追跡・管理",
+                description = "Track material GPU cost and sampler risk together",
+                descriptionJP = "マテリアルのGPUコストとSamplerリスクをまとめて管理",
                 category = "Optimization",
-                featuresJP = new List<string> { "プラットフォーム別予算", "機能コスト計算", "リアルタイム追跡" },
-                tipsJP = new List<string> { "Quest向けは40ポイント以下を目標", "不要な機能は無効化" }
+                features = new List<string> { "Platform-specific GPU budgets", "Per-feature GPU cost", "Sampler budget integration", "Direct disable buttons for active features" },
+                featuresJP = new List<string> { "プラットフォーム別GPU予算", "機能ごとのGPUコスト", "Sampler予算統合表示", "有効機能の直接無効化" },
+                tips = new List<string> { "Keep Quest targets under 40 GPU points", "Watch Light Volume + LTCGI combinations", "Use the sampler section for D3D11 risk" },
+                tipsJP = new List<string> { "Quest向けは40ポイント以下を目標", "Light Volume + LTCGI の併用に注意", "D3D11向けはSampler欄も確認" }
             };
 
             // ===== VRCライトボリューム =====

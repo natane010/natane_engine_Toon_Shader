@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using System.Collections.Generic;
 using static NataneToon.Editor.NataneToonLocalization;
 
 namespace NataneToon.Editor
@@ -27,6 +28,9 @@ namespace NataneToon.Editor
 
         /// <summary>Target material being edited</summary>
         protected Material targetMaterial;
+        private readonly Dictionary<string, NataneToonSamplerBudgetEstimator.ToggleEvaluation> toggleEvaluationCache =
+            new Dictionary<string, NataneToonSamplerBudgetEstimator.ToggleEvaluation>();
+        private int cachedMaterialInstanceId;
 
         private static GUIStyle _categoryHeaderTitleStyle;
         protected static GUIStyle CategoryHeaderTitleStyle
@@ -71,6 +75,13 @@ namespace NataneToon.Editor
             this.materialEditor = materialEditor;
             this.properties = properties;
             this.targetMaterial = targetMaterial;
+
+            int materialInstanceId = targetMaterial != null ? targetMaterial.GetInstanceID() : 0;
+            if (materialInstanceId != cachedMaterialInstanceId)
+            {
+                toggleEvaluationCache.Clear();
+                cachedMaterialInstanceId = materialInstanceId;
+            }
         }
 
         /// <summary>
@@ -139,7 +150,7 @@ namespace NataneToon.Editor
             }
 
             bool enabled = property.floatValue > FLOAT_COMPARISON_THRESHOLD;
-            var toggleEvaluation = NataneToonSamplerBudgetEstimator.EvaluateEnable(targetMaterial, keyword);
+            var toggleEvaluation = GetToggleEvaluation(keyword);
             bool canEnable = enabled || toggleEvaluation.CanEnable;
             bool changed = false;
             bool newEnabled = enabled;
@@ -188,9 +199,21 @@ namespace NataneToon.Editor
                     targetMaterial.DisableKeyword(keyword);
 
                 EditorUtility.SetDirty(targetMaterial);
+                toggleEvaluationCache.Clear();
             }
 
             return newEnabled;
+        }
+
+        protected NataneToonSamplerBudgetEstimator.ToggleEvaluation GetToggleEvaluation(string keyword)
+        {
+            if (!toggleEvaluationCache.TryGetValue(keyword, out NataneToonSamplerBudgetEstimator.ToggleEvaluation evaluation))
+            {
+                evaluation = NataneToonSamplerBudgetEstimator.EvaluateEnable(targetMaterial, keyword);
+                toggleEvaluationCache[keyword] = evaluation;
+            }
+
+            return evaluation;
         }
 
         /// <summary>

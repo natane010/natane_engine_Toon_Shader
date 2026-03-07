@@ -17,13 +17,13 @@ namespace NataneToon.Editor
         private static GUIStyle boxStyle;
         private static readonly string[] PerformanceKeywords =
         {
-            "_SPECULAR", "_RIM_LIGHT", "_SSS", "_MATCAP", "_OUTLINE", "_EMISSION",
-            "_DISSOLVE", "_HUE_SHIFT",
+            "_SPECULAR", "_HAIR_SPECULAR", "_RIM_LIGHT", "_RIM_LIGHT_2", "_OFFSET_RIM_LIGHT", "_SSS", "_MATCAP", "_OUTLINE", "_EMISSION",
+            "_DISSOLVE", "_HUE_SHIFT", "_SCREEN_TONE", "_SCREEN_EDGE", "_HATCHING",
             "_REFLECTION", "_ENV_RIM", "_PARALLAX", "_REFRACTION",
             "_IRIDESCENCE", "_GLITTER", "_MATCAP_2", "_MATCAP_3",
             "_AUDIOLINK", "_HOLOGRAM", "_GLITCH", "_DECAL",
             "_VAT", "_VERTEX_ANIMATION", "_PIXEL_VERTEX_LIGHTS",
-            "_NORMALMAP"
+            "_NORMALMAP", "_USE_LIGHT_VOLUME", "_LTCGI", "_WATERCOLOR", "_BACKFACE_TEXTURE", "_SMEAR"
         };
 
         /// <summary>

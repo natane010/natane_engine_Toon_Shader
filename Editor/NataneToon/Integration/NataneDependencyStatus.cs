@@ -37,7 +37,7 @@ namespace NataneToon.Editor
         public string UpmGitUrl { get; }
     }
 
-    internal static class NataneDependencyStatus
+    public static class NataneDependencyStatus
     {
         internal static readonly NataneDependencyInfo VRCLightVolumes = new NataneDependencyInfo(
             "VRC Light Volumes",
@@ -76,6 +76,16 @@ namespace NataneToon.Editor
             }
 
             return false;
+        }
+
+        public static bool IsVRCLightVolumesInstalled()
+        {
+            return IsInstalled(VRCLightVolumes);
+        }
+
+        public static bool IsLTCGIInstalled()
+        {
+            return IsInstalled(LTCGI);
         }
 
         internal static NataneInstallRecommendation GetRecommendedInstallMethod()

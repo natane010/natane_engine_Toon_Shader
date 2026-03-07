@@ -1659,11 +1659,16 @@ half3 ApplyKuwaharaFilter(float2 grabUV, int radius, float blend, half3 baseColo
 // DecodeViewNormalStereo is provided by UnityCG.cginc (already included).
 #ifdef _SCREEN_EDGE
 
+float2 GetScreenEdgeTexelSize()
+{
+    return 1.0 / max(_ScreenParams.xy, float2(1.0, 1.0));
+}
+
 // Sobel edge detection on depth buffer.
 // Returns 0..1 edge strength (1 = strong edge).
 half SobelEdgeDepth(float2 screenUV, float sensitivity)
 {
-    float2 texel = _CameraDepthTexture_TexelSize.xy;
+    float2 texel = GetScreenEdgeTexelSize();
 
     float d00 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenUV + float2(-texel.x, -texel.y)));
     float d10 = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screenUV + float2(0, -texel.y)));
@@ -1684,7 +1689,7 @@ half SobelEdgeDepth(float2 screenUV, float sensitivity)
 // Returns 0..1 edge strength (1 = strong normal discontinuity).
 half SobelEdgeNormal(float2 screenUV, float sensitivity)
 {
-    float2 texel = _CameraDepthTexture_TexelSize.xy;
+    float2 texel = GetScreenEdgeTexelSize();
 
     half3 n00 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(-texel.x, -texel.y)));
     half3 n10 = DecodeViewNormalStereo(tex2D(_CameraDepthNormalsTexture, screenUV + float2(0, -texel.y)));

@@ -15,6 +15,44 @@ namespace NataneToon.Editor
     /// </summary>
     public class MaterialValidator : EditorWindow
     {
+        private const string NataneShaderPrefix = "Natane/Toon Shader";
+
+        private static readonly string[] VrchatTextureProperties =
+        {
+            "_MainTex", "_BumpMap", "_EmissionMap", "_MatCapTex", "_MatCapTex2", "_MatCapTex3", "_RampTex",
+            "_DissolveTex", "_DissolveMap", "_ThicknessMap", "_SpecularMask", "_RimMask",
+            "_SSSMask", "_MatCapMask", "_EmissionMask", "_DissolveMask",
+            "_ReflectionMask", "_EnvRimMask", "_ParallaxMap", "_RefractionMask"
+        };
+
+        private static readonly string[] TextureSizeProperties =
+        {
+            "_MainTex", "_BumpMap", "_EmissionMap", "_MatCapTex", "_MatCapTex2", "_MatCapTex3", "_RampTex", "_ParallaxMap"
+        };
+
+        private static readonly string[] ActiveFeatureKeywords =
+        {
+            "_SPECULAR", "_RIM_LIGHT", "_RIM_LIGHT_2", "_OFFSET_RIM_LIGHT", "_SSS", "_MATCAP", "_OUTLINE", "_EMISSION",
+            "_DISSOLVE", "_HUE_SHIFT", "_NORMALMAP", "_REFLECTION", "_ENV_RIM", "_PARALLAX", "_REFRACTION",
+            "_IRIDESCENCE", "_GLITTER", "_MATCAP_2", "_MATCAP_3", "_AUDIOLINK", "_HOLOGRAM", "_GLITCH",
+            "_HOLOGRAM_NOISE", "_DECAL", "_VAT", "_VERTEX_ANIMATION", "_PIXEL_VERTEX_LIGHTS", "_DETAIL_MAP",
+            "_TRIPLANAR", "_HEIGHT_FOG", "_SURFACE_COVER", "_MIRROR_CONTROL", "_QUEST_LITE", "_WATER_DRIP",
+            "_VIDEO_TEXTURE", "_INTERSECTION_FADE", "_SCREEN_TONE", "_SCREEN_EDGE", "_HATCHING", "_USE_LIGHT_VOLUME",
+            "_LTCGI", "_HAIR_SPECULAR", "_WATERCOLOR", "_SMEAR", "_BACKFACE_TEXTURE", "_FUR"
+        };
+
+        private static readonly Dictionary<string, string[]> UnusedFeatureTextureRequirements = new Dictionary<string, string[]>
+        {
+            { "_MATCAP", new[] { "_MatCapTex" } },
+            { "_MATCAP_2", new[] { "_MatCapTex2" } },
+            { "_MATCAP_3", new[] { "_MatCapTex3" } },
+            { "_NORMALMAP", new[] { "_BumpMap" } },
+            { "_EMISSION", new[] { "_EmissionMap" } },
+            { "_DISSOLVE", new[] { "_DissolveTex", "_DissolveMap" } },
+            { "_SSS", new[] { "_ThicknessMap" } },
+            { "_PARALLAX", new[] { "_ParallaxMap" } }
+        };
+
         private Vector2 scrollPosition;
         private List<Material> materialsToValidate = new List<Material>();
         private List<ValidationResult> validationResults = new List<ValidationResult>();
@@ -289,21 +327,11 @@ namespace NataneToon.Editor
 
         private void AddAllNataneToonMaterials()
         {
-            string[] guids = AssetDatabase.FindAssets("t:Material");
-            foreach (string guid in guids)
+            foreach (Material material in NataneMaterialAssetCache.GetMaterialsByShaderPrefix(NataneShaderPrefix))
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-
-                if (material != null && material.shader != null)
+                if (material != null && !materialsToValidate.Contains(material))
                 {
-                    if (material.shader.name.Contains("Natane") && material.shader.name.Contains("Toon"))
-                    {
-                        if (!materialsToValidate.Contains(material))
-                        {
-                            materialsToValidate.Add(material);
-                        }
-                    }
+                    materialsToValidate.Add(material);
                 }
             }
 
@@ -333,15 +361,13 @@ namespace NataneToon.Editor
 
         private void ValidateVRChatOptimization(Material material)
         {
+            ValidateDependencyPackages(material);
+
             // Check texture memory usage
             long totalMemory = 0;
             var countedTextures = new HashSet<Texture2D>();
-            var textures = new[] { "_MainTex", "_BumpMap", "_EmissionMap", "_MatCapTex", "_MatCapTex2", "_MatCapTex3", "_RampTex",
-                                   "_DissolveTex", "_DissolveMap", "_ThicknessMap", "_SpecularMask", "_RimMask",
-                                   "_SSSMask", "_MatCapMask", "_EmissionMask", "_DissolveMask",
-                                   "_ReflectionMask", "_EnvRimMask", "_ParallaxMap", "_RefractionMask" };
 
-            foreach (var texProp in textures)
+            foreach (string texProp in VrchatTextureProperties)
             {
                 if (material.HasProperty(texProp))
                 {
@@ -388,9 +414,7 @@ namespace NataneToon.Editor
 
         private void ValidateTextureSize(Material material)
         {
-            var textures = new[] { "_MainTex", "_BumpMap", "_EmissionMap", "_MatCapTex", "_MatCapTex2", "_MatCapTex3", "_RampTex", "_ParallaxMap" };
-
-            foreach (var texProp in textures)
+            foreach (string texProp in TextureSizeProperties)
             {
                 if (material.HasProperty(texProp))
                 {
@@ -430,47 +454,122 @@ namespace NataneToon.Editor
         private void ValidatePerformance(Material material)
         {
             int activeFeatures = CountActiveFeatures(material);
+            NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate samplerEstimate =
+                NataneToonSamplerBudgetEstimator.Estimate(material);
 
-            if (activeFeatures > 10)
+            string samplerSummary = BuildSamplerContributorSummary(samplerEstimate, 4);
+
+            if (samplerEstimate.IsOverLimit)
+            {
+                validationResults.Add(new ValidationResult
+                {
+                    material = material,
+                    category = "Performance",
+                    severity = ValidationSeverity.Error,
+                    issue = L(
+                        $"推定 Sampler 上限を超えています ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})",
+                        $"Estimated sampler usage exceeds the limit ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})"),
+                    suggestion = L(
+                        $"重い機能を無効化して上限内に戻してください。主な要因: {samplerSummary}",
+                        $"Disable heavy features to get back under the limit. Main contributors: {samplerSummary}")
+                });
+            }
+            else if (samplerEstimate.HasCriticalLightingCombo)
             {
                 validationResults.Add(new ValidationResult
                 {
                     material = material,
                     category = "Performance",
                     severity = ValidationSeverity.Warning,
-                    issue = $"{activeFeatures} features enabled - Heavy performance impact (Rating: D)",
-                    suggestion = "Disable unused features to improve performance"
+                    issue = L(
+                        "Light Volume + LTCGI + Hatching は Sampler 制限に引っかかりやすい危険な組み合わせです",
+                        "Light Volume + LTCGI + Hatching is a high-risk sampler combination"),
+                    suggestion = L(
+                        "髪や追加テクスチャを盛る前に、Hatching か第三者ライティング機能の構成を見直してください。",
+                        "Review Hatching or third-party lighting before adding more heavy texture features.")
                 });
             }
-            else if (activeFeatures > 6)
+            else if (samplerEstimate.HasLightVolumeLtcgiCombo)
+            {
+                validationResults.Add(new ValidationResult
+                {
+                    material = material,
+                    category = "Performance",
+                    severity = ValidationSeverity.Warning,
+                    issue = L(
+                        $"Light Volume と LTCGI を同時使用しています (推定 {samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})",
+                        $"Light Volume and LTCGI are enabled together (estimated {samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})"),
+                    suggestion = L(
+                        $"他の重い機能を追加する前に Sampler 余裕を確認してください。主な要因: {samplerSummary}",
+                        $"Check sampler headroom before enabling more heavy features. Main contributors: {samplerSummary}")
+                });
+            }
+            else if (samplerEstimate.IsNearLimit)
+            {
+                validationResults.Add(new ValidationResult
+                {
+                    material = material,
+                    category = "Performance",
+                    severity = ValidationSeverity.Warning,
+                    issue = L(
+                        $"推定 Sampler 数が上限付近です ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})",
+                        $"Estimated sampler usage is near the limit ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})"),
+                    suggestion = L(
+                        $"新しい重い機能を追加する前に構成を見直してください。主な要因: {samplerSummary}",
+                        $"Review the current setup before enabling more heavy features. Main contributors: {samplerSummary}")
+                });
+            }
+            else if (samplerEstimate.IsWarning)
             {
                 validationResults.Add(new ValidationResult
                 {
                     material = material,
                     category = "Performance",
                     severity = ValidationSeverity.Info,
-                    issue = $"{activeFeatures} features enabled - Moderate performance impact (Rating: C)",
-                    suggestion = "Consider disabling less important features for mobile/VR"
+                    issue = L(
+                        $"推定 Sampler 数は注意域です ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})",
+                        $"Estimated sampler usage is in the caution range ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})"),
+                    suggestion = L(
+                        $"Light Volume や LTCGI を追加する前に現在の構成を確認してください。主な要因: {samplerSummary}",
+                        $"Check the current setup before enabling Light Volume or LTCGI. Main contributors: {samplerSummary}")
+                });
+            }
+
+            if (activeFeatures > 12)
+            {
+                validationResults.Add(new ValidationResult
+                {
+                    material = material,
+                    category = "Performance",
+                    severity = ValidationSeverity.Warning,
+                    issue = L(
+                        $"{activeFeatures} 個の機能が有効です。GPU負荷が高めです (Rating: D)",
+                        $"{activeFeatures} features are enabled. GPU cost is heavy (Rating: D)"),
+                    suggestion = L(
+                        "使っていない機能を無効化し、Quest や VR 向けなら構成を簡素化してください。",
+                        "Disable unused features and simplify the setup for Quest or VR targets.")
+                });
+            }
+            else if (activeFeatures > 8 && !samplerEstimate.IsWarning)
+            {
+                validationResults.Add(new ValidationResult
+                {
+                    material = material,
+                    category = "Performance",
+                    severity = ValidationSeverity.Info,
+                    issue = L(
+                        $"{activeFeatures} 個の機能が有効です。中程度のGPU負荷です (Rating: C)",
+                        $"{activeFeatures} features are enabled. GPU cost is moderate (Rating: C)"),
+                    suggestion = L(
+                        "必要性の低い機能はオフにすると、モバイルやVR向けに余裕ができます。",
+                        "Disabling less important features will add headroom for mobile or VR.")
                 });
             }
         }
 
         private void ValidateUnusedFeatures(Material material)
         {
-            // Check for enabled features without required textures
-            var featureChecks = new Dictionary<string, string[]>
-            {
-                { "_MATCAP", new[] { "_MatCapTex" } },
-                { "_MATCAP_2", new[] { "_MatCapTex2" } },
-                { "_MATCAP_3", new[] { "_MatCapTex3" } },
-                { "_NORMALMAP", new[] { "_BumpMap" } },
-                { "_EMISSION", new[] { "_EmissionMap" } },
-                { "_DISSOLVE", new[] { "_DissolveTex", "_DissolveMap" } },
-                { "_SSS", new[] { "_ThicknessMap" } },
-                { "_PARALLAX", new[] { "_ParallaxMap" } }
-            };
-
-            foreach (var check in featureChecks)
+            foreach (KeyValuePair<string, string[]> check in UnusedFeatureTextureRequirements)
             {
                 if (material.IsKeywordEnabled(check.Key))
                 {
@@ -606,20 +705,8 @@ namespace NataneToon.Editor
         private int CountActiveFeatures(Material material)
         {
             int count = 0;
-            string[] keywords = new[]
-            {
-                "_SPECULAR", "_RIM_LIGHT", "_SSS", "_MATCAP", "_OUTLINE", "_EMISSION",
-                "_DISSOLVE", "_HUE_SHIFT", "_NORMALMAP",
-                "_REFLECTION", "_ENV_RIM", "_PARALLAX", "_REFRACTION",
-                "_IRIDESCENCE", "_GLITTER", "_MATCAP_2", "_MATCAP_3",
-                "_AUDIOLINK", "_HOLOGRAM", "_GLITCH", "_HOLOGRAM_NOISE", "_DECAL",
-                "_VAT", "_VERTEX_ANIMATION", "_PIXEL_VERTEX_LIGHTS",
-                "_DETAIL_MAP", "_TRIPLANAR", "_HEIGHT_FOG",
-                "_SURFACE_COVER", "_MIRROR_CONTROL", "_QUEST_LITE",
-                "_WATER_DRIP", "_VIDEO_TEXTURE", "_INTERSECTION_FADE"
-            };
 
-            foreach (string keyword in keywords)
+            foreach (string keyword in ActiveFeatureKeywords)
             {
                 if (material.IsKeywordEnabled(keyword))
                 {
@@ -633,6 +720,63 @@ namespace NataneToon.Editor
         private bool IsPowerOfTwo(int value)
         {
             return value > 0 && (value & (value - 1)) == 0;
+        }
+
+        private void ValidateDependencyPackages(Material material)
+        {
+            if (material.IsKeywordEnabled("_USE_LIGHT_VOLUME") &&
+                !NataneDependencyStatus.IsVRCLightVolumesInstalled())
+            {
+                validationResults.Add(new ValidationResult
+                {
+                    material = material,
+                    category = "VRChat",
+                    severity = ValidationSeverity.Warning,
+                    issue = L(
+                        "Light Volume が有効ですが、VRC Light Volumes パッケージが検出されていません",
+                        "Light Volume is enabled, but the VRC Light Volumes package is not detected"),
+                    suggestion = L(
+                        "Tools > Natane > VRChat > VRC Light Volumes 再検出 を実行するか、不要なら Light Volume を無効化してください。",
+                        "Run Tools > Natane > VRChat > VRC Light Volumes Re-detect, or disable Light Volume if you do not need it.")
+                });
+            }
+
+            if (material.IsKeywordEnabled("_LTCGI") &&
+                !NataneDependencyStatus.IsLTCGIInstalled())
+            {
+                validationResults.Add(new ValidationResult
+                {
+                    material = material,
+                    category = "VRChat",
+                    severity = ValidationSeverity.Warning,
+                    issue = L(
+                        "LTCGI が有効ですが、LTCGI パッケージが検出されていません",
+                        "LTCGI is enabled, but the LTCGI package is not detected"),
+                    suggestion = L(
+                        "Tools > Natane > VRChat > LTCGI 再検出 を実行するか、不要なら LTCGI を無効化してください。",
+                        "Run Tools > Natane > VRChat > LTCGI Re-detect, or disable LTCGI if you do not need it.")
+                });
+            }
+        }
+
+        private string BuildSamplerContributorSummary(
+            NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate estimate,
+            int maxCount)
+        {
+            if (estimate.Contributors == null || estimate.Contributors.Length == 0)
+            {
+                return L("主要因なし", "No major contributors");
+            }
+
+            int count = Mathf.Min(maxCount, estimate.Contributors.Length);
+            string[] parts = new string[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                parts[i] = NataneToonSamplerBudgetEstimator.FormatContributor(estimate.Contributors[i]);
+            }
+
+            return string.Join(", ", parts);
         }
     }
 }
