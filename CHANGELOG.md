@@ -5,6 +5,30 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.2] - 2026-03-08
+
+### Optimized
+- **サンプラースロット最適化**: 7テクスチャを `UNITY_DECLARE_TEX2D_NOSAMPLER` に移行し、サンプラー使用数を7個削減（DX11上限16個に対するマージン拡大）
+  - SSS: `_ThicknessMap`, `_SSSMask` → `_MainTex` サンプラー共有
+  - Parallax: `_ParallaxMap` → `_MainTex` サンプラー共有 + `tex2Dgrad` 移行
+  - Dissolve: `_DissolveMask` → `_MainTex` サンプラー共有
+  - Refraction: `_RefractionMask` → `_MainTex` サンプラー共有
+  - PBR: `_PBR_OcclusionMap` → `_PBR_MetallicGlossMap` サンプラー共有
+  - Illustration: `_QuantizeMask` → `_MainTex` サンプラー共有
+- **Parallax Occlusion Mapping 品質改善**: ループ内の `tex2D` を `tex2Dgrad` に移行し、動的ループ内の gradient 不定問題を解消。遠距離でのmipレベル選択が正確になり、テクスチャちらつきを抑制
+- **SampleTex2DBlur 最適化**: 中心テクスチャサンプリングをキャッシュして重複フェッチを削減（blur有効時に呼び出しごとに1テクスチャフェッチ削減）
+
+### Fixed
+- **VR Single Pass Instanced (SPI) 対応**: `_CameraDepthNormalsTexture` の宣言を `UNITY_DECLARE_SCREENSPACE_TEXTURE` に修正し、SobelEdgeNormal のサンプリングを `UNITY_SAMPLE_SCREENSPACE_TEXTURE` に統一。VR環境での右目エッジ検出が正確に動作するように
+
+### Added
+- **Screen Edge Split Variant**: サンプラー予算超過時にScreen Edgeを分離パスで描画する新シェーダーバリアント `Natane/Toon Shader (ScreenEdge Split)` を追加。エディターGUIにワンクリック切替UIを実装
+- **サンプラー予算見積り改善**: SamplerBudgetEstimator のコスト値をNOSAMPLER化に合わせて更新。ScreenSpace Lighting コンボ検出・警告を追加
+- **MaterialValidator 拡張**: ScreenSpace Lighting コンボに対する警告バリデーションを追加
+- **ShaderVariant ツール拡張**: ShaderVariantCollector/Prewarming/Stripper に ScreenEdge Split バリアントの Normal パス収集を追加
+
+---
+
 ## [1.4.1] - 2026-03-07
 
 ### Fixed
