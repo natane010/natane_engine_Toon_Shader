@@ -5,6 +5,18 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.5] - 2026-03-10
+
+### Fixed
+- **VRChat whiteout reduction**: Reworked diffuse lighting composition to compress over-bright direct/additional light before it washes albedo to white in bright worlds.
+- **Light Volume natural blend stability**: Reduced double-counting risk in VRC Light Volume environments by treating Light Volume as softer environment fill instead of a hard brightness floor.
+- **ForwardAdd overbright accumulation**: Limited additional-light pass output and disabled repeated rim/SSS-style buildup from extra lights to stabilize multi-light VRChat worlds.
+- **Brightest vertex light fallback**: Corrected the fallback vertex-light color to use attenuated light color instead of the unattenuated source color.
+
+### Changed
+- **Safer default lighting values**: Lowered default peak-lighting values for GI, light color max, additional light intensity, and specular intensity across the main shader and major packaged variants.
+- **VRChat validation support**: Added a dedicated whiteout checklist document for bright-world, Light Volume, LTCGI, and multi-light verification.
+
 ## [1.4.4] - 2026-03-10
 
 ### Fixed

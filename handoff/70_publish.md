@@ -1,12 +1,12 @@
-# Natane Toon Shader v1.4.4 Publish Checklist
+# Natane Toon Shader v1.4.5 Publish Checklist
 
 ## Goal
 
-Prepare and publish `com.natane.toonshader` version `1.4.4` to the VCC/VPM listing.
+Prepare and publish `com.natane.toonshader` version `1.4.5` to the VCC/VPM listing.
 
 ## Preconditions
 
-- `package.json` version is `1.4.4`
+- `package.json` version is `1.4.5`
 - Working tree is clean
 - The branch to release from is pushed
 - GitHub Actions is enabled for this repository
@@ -23,28 +23,28 @@ Prepare and publish `com.natane.toonshader` version `1.4.4` to the VCC/VPM listi
    ```
 3. Create the release tag:
    ```powershell
-   git tag v1.4.4
+   git tag v1.4.5
    ```
 4. Push the tag:
    ```powershell
-   git push origin v1.4.4
+   git push origin v1.4.5
    ```
 5. Confirm GitHub Actions `Build VPM Listing` completes successfully.
-6. Confirm the GitHub Release contains `com.natane.toonshader-1.4.4.zip`.
-7. Confirm the VPM listing shows `1.4.4`:
+6. Confirm the GitHub Release contains `com.natane.toonshader-1.4.5.zip`.
+7. Confirm the VPM listing shows `1.4.5`:
    - `https://natanetoon.com/index.json`
 
 ## Expected Output
 
-- GitHub Release: `v1.4.4`
-- Release zip: `com.natane.toonshader-1.4.4.zip`
-- Updated VPM listing entry for `1.4.4`
+- GitHub Release: `v1.4.5`
+- Release zip: `com.natane.toonshader-1.4.5.zip`
+- Updated VPM listing entry for `1.4.5`
 
 ## Rollback Notes
 
 - If the tag was pushed by mistake:
   ```powershell
-  git tag -d v1.4.4
-  git push origin :refs/tags/v1.4.4
+  git tag -d v1.4.5
+  git push origin :refs/tags/v1.4.5
   ```
 - If the workflow fails after tagging, fix the issue and recreate the tag only after confirming the old tag has been removed.
