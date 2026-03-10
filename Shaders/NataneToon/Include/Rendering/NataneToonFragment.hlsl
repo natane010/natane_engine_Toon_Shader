@@ -861,7 +861,7 @@ half4 frag(v2f i) : SV_Target
         // Vertex Lights
         #if defined(_PIXEL_VERTEX_LIGHTS) && defined(VERTEXLIGHT_ON)
             additionalResult += CalculateVertexLightsPixelPrecision(
-                i.worldPos, worldNormal, _ShadowSteps, _ShadowSharpness);
+                i.worldPos, worldNormal, _ShadowSteps, _ShadowSharpness, _ShadingMode, _ShadingGradientWidth);
         #elif defined(VERTEXLIGHT_ON)
             additionalResult += i.vertexLightColor;
         #endif

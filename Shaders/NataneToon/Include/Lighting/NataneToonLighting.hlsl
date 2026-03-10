@@ -104,7 +104,14 @@ float GradientShading(float ndotl, float gradientWidth)
 
 // Toon-style vertex light calculation at pixel precision
 // Provides higher quality per-pixel toon shading for vertex lights (ForwardBase 4 point lights)
-half3 CalculateVertexLightsPixelPrecision(float3 worldPos, half3 worldNormal, float shadowSteps, float shadowSharpness)
+// while keeping a clear directional falloff so point lights do not behave like a flat color wash.
+half3 CalculateVertexLightsPixelPrecision(
+    float3 worldPos,
+    half3 worldNormal,
+    float shadowSteps,
+    float shadowSharpness,
+    float shadingMode,
+    float gradientWidth)
 {
     half3 totalLight = 0;
     UNITY_UNROLL
@@ -116,8 +123,12 @@ half3 CalculateVertexLightsPixelPrecision(float3 worldPos, half3 worldNormal, fl
         half3 lightDir = toLight * rsqrt(distSq);
         half ndotl = max(0, dot(worldNormal, lightDir));
         half toonLight = ToonShading(ndotl, shadowSteps, shadowSharpness);
+        half gradientLight = GradientShading(ndotl, gradientWidth);
+        half useGradient = step(HALF_VALUE, shadingMode) * (1.0 - step(1.5, shadingMode));
+        half shapedLight = lerp(toonLight, gradientLight, useGradient);
+        shapedLight *= ndotl;
         float atten = 1.0 / (1.0 + distSq * unity_4LightAtten0[i]);
-        totalLight += unity_LightColor[i].rgb * toonLight * atten;
+        totalLight += unity_LightColor[i].rgb * shapedLight * atten;
     }
     return totalLight;
 }
