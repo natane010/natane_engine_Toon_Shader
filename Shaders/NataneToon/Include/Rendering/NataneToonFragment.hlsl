@@ -246,6 +246,7 @@ half4 frag(v2f i) : SV_Target
     // → 3) SH Light Probe の順に最適な光源を選択する。
     half3 lightDir;
     half3 effectiveLightColor;
+    int primaryVertexLightIndex = -1;
 
     #ifdef UNITY_PASS_FORWARDBASE
     {
@@ -261,7 +262,7 @@ half4 frag(v2f i) : SV_Target
             // ディレクショナルライトなし: フォールバックチェーン
             // 2. ポイント/スポットライトから方向を取得（ForwardBase vertex light 配列）
             half3 vlDir, vlColor;
-            GetBrightestVertexLight(i.worldPos, vlDir, vlColor);
+            primaryVertexLightIndex = GetBrightestVertexLightIndex(i.worldPos, vlDir, vlColor);
             half vlLum = CALC_LUMINANCE(vlColor);
 
             if (vlLum > 0.01)
@@ -861,7 +862,7 @@ half4 frag(v2f i) : SV_Target
         // Vertex Lights
         #if defined(_PIXEL_VERTEX_LIGHTS) && defined(VERTEXLIGHT_ON)
             additionalResult += CalculateVertexLightsPixelPrecision(
-                i.worldPos, worldNormal, _ShadowSteps, _ShadowSharpness, _ShadingMode, _ShadingGradientWidth);
+                i.worldPos, worldNormal, _ShadowSteps, _ShadowSharpness, _ShadingMode, _ShadingGradientWidth, primaryVertexLightIndex);
         #elif defined(VERTEXLIGHT_ON)
             additionalResult += i.vertexLightColor;
         #endif

@@ -1324,9 +1324,10 @@ float ApplyHashedAlpha(float alpha, float2 screenPos, float2 worldPosXZ, float s
 
 // ForwardBase の vertex light 配列から最も明るいライトの方向と色を取得
 // ポイントライト/スポットライトのみの環境で機能する
-void GetBrightestVertexLight(float3 worldPos, out half3 outDir, out half3 outColor)
+int GetBrightestVertexLightIndex(float3 worldPos, out half3 outDir, out half3 outColor)
 {
     half maxLum = 0;
+    int outIndex = -1;
     outDir = half3(0, 1, 0);
     outColor = half3(0, 0, 0);
 
@@ -1343,10 +1344,18 @@ void GetBrightestVertexLight(float3 worldPos, out half3 outDir, out half3 outCol
         if (lum > maxLum)
         {
             maxLum = lum;
+            outIndex = idx;
             outDir = toLight * rsqrt(distSq);
             outColor = color;
         }
     }
+
+    return outIndex;
+}
+
+void GetBrightestVertexLight(float3 worldPos, out half3 outDir, out half3 outColor)
+{
+    GetBrightestVertexLightIndex(worldPos, outDir, outColor);
 }
 
 // SH L1 帯域から優勢光源方向を抽出（Light Probe ベース）

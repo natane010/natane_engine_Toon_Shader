@@ -111,12 +111,18 @@ half3 CalculateVertexLightsPixelPrecision(
     float shadowSteps,
     float shadowSharpness,
     float shadingMode,
-    float gradientWidth)
+    float gradientWidth,
+    int excludedLightIndex)
 {
     half3 totalLight = 0;
     UNITY_UNROLL
     for (int i = 0; i < 4; i++)
     {
+        if (i == excludedLightIndex)
+        {
+            continue;
+        }
+
         float3 lightPos = float3(unity_4LightPosX0[i], unity_4LightPosY0[i], unity_4LightPosZ0[i]);
         float3 toLight = lightPos - worldPos;
         float distSq = max(dot(toLight, toLight), 0.000001);
