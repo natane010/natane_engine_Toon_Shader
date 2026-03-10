@@ -5,6 +5,12 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.6] - 2026-03-10
+
+### Fixed
+- **Pixel-precision vertex light directionality**: Adjusted pixel-precision point/spot light shaping so additional vertex lights respect surface direction more clearly instead of tinting the whole material uniformly.
+- **StandardToon compatibility for pixel vertex lights**: Kept the pixel-precision vertex light path aligned with Toon/Gradient mode selection without unintentionally pushing StandardToon materials toward gradient-style response.
+
 ## [1.4.5] - 2026-03-10
 
 ### Fixed
