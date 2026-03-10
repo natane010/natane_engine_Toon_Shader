@@ -197,7 +197,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _LightIntensity ("Light Intensity Global", Range(0, 5)) = 1
         _IndirectLightIntensity ("Indirect Light Intensity", Range(0, 2)) = 1
         [Header(Environment Reflection Control)]
-        _GIIntensity ("GI Intensity (環境反射強度)", Range(0, 1)) = 0.5
+        _GIIntensity ("GI Intensity (環境反射強度)", Range(0, 1)) = 0.45
         _LightColorInfluence ("Light Color Influence", Range(0, 1)) = 1
         _ShadowReceive ("Shadow Receive", Range(0, 1)) = 1
         _ShadowSmoothing ("Shadow Map Smoothing", Range(0, 1)) = 0
@@ -214,7 +214,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _PCSSBlur ("PCSS Blur", Range(0, 1)) = 0
         _ShadowMaxDarkness ("Shadow Max Darkness", Range(0, 1)) = 0
         _LightColorMin ("Light Color Min (ライト色下限)", Range(0, 1)) = 0
-        _LightColorMax ("Light Color Max (ライト色上限)", Range(0, 10)) = 1
+        _LightColorMax ("Light Color Max (ライト色上限)", Range(0, 10)) = 0.9
         _MonochromeLighting ("Monochrome Lighting (モノクロライト)", Range(0, 1)) = 0
         _LightMinInfluence ("Light Min Influence", Range(0, 1)) = 0
         _LightMaxInfluence ("Light Max Influence", Range(1, 5)) = 2
@@ -225,7 +225,7 @@ Shader "Natane/Toon Shader (Cutout)"
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _BacklightBlendMode ("Backlight Blend Mode", Float) = 0
         _BacklightBlend ("Backlight Blend", Range(0, 1)) = 1
         _BacklightBlur ("Backlight Blur", Range(0, 1)) = 0
-        _AdditionalLightIntensity ("Additional Light Intensity", Range(0, 1)) = 0.5
+        _AdditionalLightIntensity ("Additional Light Intensity", Range(0, 1)) = 0.35
         _IndirectLightMinColor ("Indirect Light Min Color (間接光最低色)", Color) = (0.1, 0.1, 0.1, 1)
         _ShadowEnvStrength ("Shadow Env Strength (影への環境色反映)", Range(0, 1)) = 0
         [Toggle(_PIXEL_VERTEX_LIGHTS)] _UsePixelVertexLights("Pixel Vertex Lights", Float) = 0
@@ -248,7 +248,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _SpecularColor ("Specular Color", Color) = (1,1,1,1)
         _SpecularSize ("Specular Size", Range(0, 1)) = 0.1
         _SpecularSoftness ("Specular Softness", Range(0.001, 1)) = 0.05
-        _SpecularIntensity ("Specular Intensity", Range(0, 5)) = 1
+        _SpecularIntensity ("Specular Intensity", Range(0, 5)) = 0.8
         [Toggle(_SPECULAR_MASK)] _UseSpecularMask ("Use Specular Mask", Float) = 0
         _SpecularMask ("Specular Mask", 2D) = "white" {}
         _SpecularMaskScrollSpeed ("Specular Mask Scroll Speed XY", Vector) = (0,0,0,0)

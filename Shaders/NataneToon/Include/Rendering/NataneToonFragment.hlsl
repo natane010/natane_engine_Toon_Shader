@@ -923,7 +923,7 @@ half4 frag(v2f i) : SV_Target
             {
                 half3 stResult = lerp(stIndirectCol, stDirectCol, shadingValue);
                 stResult += additionalResult * col.rgb;
-                lighting = stResult;
+                lighting = CompressLightingForSafeRange(stResult, 0.95, 1.08);
             }
             #else
             if (_LightVolumeBlendMode < 0.5) // Add (Legacy)
@@ -937,23 +937,28 @@ half4 frag(v2f i) : SV_Target
                 float3 indirectAddition = saturate(indirectLightLV - lighting);
                 lighting += indirectAddition * rimFactor;
                 lighting += indirectResult;
+                lighting = CompressLightingForSafeRange(lighting, 0.95, 1.08);
             }
             else if (_LightVolumeBlendMode < 1.5) // Multiply
             {
                 lighting = directResult + additionalResult;
                 lighting *= lerp(float3(1, 1, 1), directLightLV, 1.0);
                 lighting += indirectResult;
+                lighting = CompressLightingForSafeRange(lighting, 0.95, 1.08);
             }
             else if (_LightVolumeBlendMode < 2.5) // Replace
             {
                 lighting = lerp(directResult + additionalResult, directLightLV, 1.0);
                 lighting += indirectResult;
+                lighting = CompressLightingForSafeRange(lighting, 0.95, 1.08);
             }
             else // Natural (>= 2.5) — DEFAULT
             {
-                // LV is treated as indirect light; max() ensures environment color is always visible
-                half3 totalIndirect = max(indirectResult, directLightLV);
-                lighting = max(totalIndirect, directResult + additionalResult);
+                // Treat Light Volume as environment fill first, then add only a modest direct contribution.
+                half3 lvIndirectNatural = CompressLightingForSafeRange(indirectLightLV, 0.75, 0.95);
+                half3 lvDirectNatural = CompressLightingForSafeRange(directLightLV, 0.8, 0.9) * 0.35;
+                half3 totalIndirect = max(indirectResult, lvIndirectNatural);
+                lighting = CombineDiffuseLightingSafe(totalIndirect, directResult + lvDirectNatural, additionalResult, half3(0, 0, 0));
             }
             #endif
 
@@ -976,13 +981,12 @@ half4 frag(v2f i) : SV_Target
                 half3 stResult = lerp(stIndirectCol, stDirectCol, shadingValue);
 
                 // Add additional lights (vertex lights, backlight, LTCGI) scaled by albedo
-                lighting = stResult + additionalResult * col.rgb;
+                lighting = CompressLightingForSafeRange(stResult + additionalResult * col.rgb, 0.95, 1.08);
                 // Note: 'lighting' here already includes albedo for StandardToon
                 // 黒防止は _LightColorMin (= lilToon _LightMinLimit) で保証
             #else
-                // Non-LV: max() composition + directional ambient
-                lighting = max(indirectResult, directResult + additionalResult);
-                lighting += ambient;
+                // Non-LV: keep indirect visibility while compressing direct/additional blowout.
+                lighting = CombineDiffuseLightingSafe(indirectResult, directResult, additionalResult, ambient);
             #endif
         #endif
 
@@ -1002,6 +1006,7 @@ half4 frag(v2f i) : SV_Target
             lighting *= max(0.0, _LightIntensity);
             lighting *= max(0.0, _AdditionalLightIntensity);
         #endif
+        lighting = CompressLightingForSafeRange(lighting, 0.75, 0.9);
     #endif
 
     // Store original texture color before lighting application
@@ -1020,6 +1025,7 @@ half4 frag(v2f i) : SV_Target
             #endif
             col.rgb += originalAlbedo * backlight * _BacklightColor.rgb * _LightColor0.rgb * atten * _AdditionalLightIntensity * backlightBlendFaded_add;
         }
+        col.rgb = CompressLightingForSafeRange(col.rgb, 0.75, 0.9);
     #else
         #ifdef _STANDARD_TOON
             // StandardToon v2: lighting already includes albedo (computed in STEP 5)
@@ -1264,7 +1270,7 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== Subsurface Scattering =====
-    #ifdef _SSS
+    #if defined(_SSS) && defined(UNITY_PASS_FORWARDBASE)
         half thickness = NATANE_SAMPLE_SHARED_R(_ThicknessMap, _MainTex, uv) * _ThicknessScale;
 
         #if defined(_SSS_LUT)
@@ -1296,12 +1302,12 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== Rim Light Direction (pre-calculate for both Rim Light 1 & 2) =====
-    #if defined(_RIM_LIGHT) || defined(_RIM_LIGHT_2)
+    #if defined(UNITY_PASS_FORWARDBASE) && (defined(_RIM_LIGHT) || defined(_RIM_LIGHT_2))
         half3 rimDirNormalized = normalize(_RimLightDirection.xyz);
     #endif
 
     // ===== Rim Light =====
-    #if defined(_RIM_LIGHT)
+    #if defined(_RIM_LIGHT) && defined(UNITY_PASS_FORWARDBASE)
         {
             float rimPowerBlurred = max(0.1, _RimPower * (1.0 - _RimBlur * 0.8));
             half rimSpreadPower = lerp(rimPowerBlurred, max(0.5, rimPowerBlurred * 0.3), _RimSpread);
@@ -1354,7 +1360,7 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== Rim Light 2 =====
-    #if defined(_RIM_LIGHT_2)
+    #if defined(_RIM_LIGHT_2) && defined(UNITY_PASS_FORWARDBASE)
         float rim2PowerBlurred = max(0.1, _RimPower2 * (1.0 - _Rim2Blur * 0.8));
         half rim2SpreadPower = lerp(rim2PowerBlurred, max(0.5, rim2PowerBlurred * 0.3), _RimSpread2);
 
@@ -1407,7 +1413,7 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== Offset Rim Light =====
-    #if defined(_OFFSET_RIM_LIGHT)
+    #if defined(_OFFSET_RIM_LIGHT) && defined(UNITY_PASS_FORWARDBASE)
         float offsetRimPowerBlurred = max(0.1, _OffsetRimPower * (1.0 - _OffsetRimBlur * 0.8));
 
         // Offset rim uses lightDir for light direction linking
@@ -1459,7 +1465,7 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== Environmental Rim =====
-    #if defined(_ENV_RIM)
+    #if defined(_ENV_RIM) && defined(UNITY_PASS_FORWARDBASE)
         float envRimPowerBlurred = max(0.1, _EnvRimPower * (1.0 - _EnvRimBlur * 0.8));
 
         // Fresnel + cubemap rim (same for both passes)

@@ -353,6 +353,43 @@ half3 ApplyFinalColorBlending(half3 color)
     return min(color, 1.05);
 }
 
+// Compress bright diffuse lighting before it turns into flat white.
+// This is intentionally conservative so VRChat multi-light worlds keep color separation.
+half3 CompressLightingForSafeRange(half3 lightingColor, half shoulderStart, half maxLuminance)
+{
+    half3 safeColor = max(lightingColor, 0.0);
+    half safeLum = CALC_LUMINANCE(safeColor);
+
+    if (safeLum <= shoulderStart)
+    {
+        return safeColor;
+    }
+
+    half overLum = safeLum - shoulderStart;
+    half compressedLum = shoulderStart + overLum / (1.0 + overLum * 2.0);
+    compressedLum = min(compressedLum, maxLuminance);
+    return safeColor * (compressedLum / max(safeLum, 0.0001));
+}
+
+// Safe diffuse composition for VRChat worlds with strong SH, Light Volumes, or many point lights.
+// Indirect remains visible, but direct/additional light is compressed before it can blow out albedo.
+half3 CombineDiffuseLightingSafe(half3 indirectLight, half3 directLight, half3 additionalLight, half3 ambientLight)
+{
+    half3 safeIndirect = CompressLightingForSafeRange(max(indirectLight, 0.0), 0.75, 0.95);
+    half3 safeDirect = max(directLight, 0.0);
+    half3 safeAdditional = max(additionalLight, 0.0);
+    half3 safeAmbient = max(ambientLight, 0.0);
+
+    half directLum = CALC_LUMINANCE(safeDirect);
+    half additionalWeight = lerp(0.4, 1.0, saturate(1.0 - directLum * 0.65));
+    half3 combinedDirect = safeDirect + safeAdditional * additionalWeight;
+    combinedDirect = CompressLightingForSafeRange(combinedDirect, 0.8, 1.0);
+
+    half3 total = max(safeIndirect, combinedDirect);
+    total += safeAmbient * 0.5;
+    return CompressLightingForSafeRange(total, 0.95, 1.08);
+}
+
 // Safe additive blending - prevents harsh white spots while preserving effect colors
 // Balanced compression: allows effect colors to show through on bright surfaces
 half3 SafeAdditiveBlend(half3 baseColor, half3 additiveColor, half strength)
@@ -362,9 +399,9 @@ half3 SafeAdditiveBlend(half3 baseColor, half3 additiveColor, half strength)
 
     // Gentle compression: reduce strength as brightness increases
     // but keep enough headroom for effect colors to remain visible
-    half compressionFactor = saturate(1.0 - baseLum * 0.25);
+    half compressionFactor = saturate(1.0 - baseLum * 0.5);
     half darknessFactor = smoothstep(0.0, 0.05, baseLum);
-    half finalStrength = strength * max(compressionFactor * darknessFactor, 0.25);
+    half finalStrength = strength * max(compressionFactor * darknessFactor, 0.08);
 
     // For dark colored surfaces, lightly tint additive towards base hue
     half3 tintedAdditive = additiveColor;
@@ -380,11 +417,11 @@ half3 SafeAdditiveBlend(half3 baseColor, half3 additiveColor, half strength)
 
     // Hue-preserving soft clamp: compress luminance while keeping color direction
     half resultLum = CALC_LUMINANCE(result);
-    if (resultLum > 1.05)
+    if (resultLum > 0.95)
     {
-        half compression = smoothstep(1.05, 1.4, resultLum);
+        half compression = smoothstep(0.95, 1.2, resultLum);
         half3 resultDir = result / max(resultLum, 0.01);
-        half clampedLum = lerp(resultLum, 1.05, compression * 0.4);
+        half clampedLum = lerp(resultLum, 1.0, compression * 0.65);
         result = resultDir * clampedLum;
     }
 
@@ -397,8 +434,8 @@ half3 SafeAdditiveBlend(half3 baseColor, half3 additiveColor, half strength)
 half3 SafeAdditiveBlendFast(half3 baseColor, half3 additiveColor, half strength)
 {
     half baseLum = CALC_LUMINANCE(baseColor);
-    half compression = saturate(1.0 - baseLum * 0.25);
-    return baseColor + additiveColor * strength * max(compression, 0.25);
+    half compression = saturate(1.0 - baseLum * 0.5);
+    return baseColor + additiveColor * strength * max(compression, 0.08);
 }
 
 // ===== Matte Material Quality =====
@@ -1307,7 +1344,7 @@ void GetBrightestVertexLight(float3 worldPos, out half3 outDir, out half3 outCol
         {
             maxLum = lum;
             outDir = toLight * rsqrt(distSq);
-            outColor = unity_LightColor[idx].rgb;
+            outColor = color;
         }
     }
 }
