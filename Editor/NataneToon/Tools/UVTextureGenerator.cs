@@ -20,10 +20,13 @@ namespace NataneToon.Editor
         private enum FillMode { Solid, BoundaryGradient }
         private enum GradientDirection { Inward, Outward }
         private enum CombineMode { Multiply, MaskOnly }
+        private const float LeftPanelWidth = 320f;
+        private const float RightPanelWidth = 340f;
 
         // ===== Tab State =====
         private GeneratorTab currentTab = GeneratorTab.Noise;
         private Vector2 scrollPosition;
+        private Vector2 rightPanelScrollPosition;
 
         // ===== Canvas State =====
         private Texture2D previewTexture;
@@ -59,6 +62,11 @@ namespace NataneToon.Editor
         private BrushSettings brushSettings = new BrushSettings();
         private MaskTextureBrush brush;
         private bool brushEnabled;
+        private MaskTextureHistory brushHistory = new MaskTextureHistory();
+        private MaskTextureShortcutProfile shortcutProfile = new MaskTextureShortcutProfile();
+        private MaskTextureShortcutState shortcutState = new MaskTextureShortcutState();
+        private MaskTextureBrushStabilizer brushStabilizer = new MaskTextureBrushStabilizer();
+        private string interactionStatus;
 
         // ===== Material Assignment =====
         private Material targetMaterial;
@@ -138,7 +146,7 @@ namespace NataneToon.Editor
         public static void ShowWindow()
         {
             var window = GetWindow<UVTextureGenerator>(L("UVテクスチャ生成", "UV Texture Generator"));
-            window.minSize = new Vector2(580, 700);
+            window.minSize = new Vector2(1260, 760);
             window.Show();
         }
 
@@ -149,11 +157,21 @@ namespace NataneToon.Editor
                 layerStack = new MaskLayerStack(textureSize, textureSize);
             if (layerStack.Layers.Count == 0)
                 layerStack.AddLayer("Base Layer");
+            if (brushHistory == null)
+                brushHistory = new MaskTextureHistory();
+            if (shortcutProfile == null)
+                shortcutProfile = new MaskTextureShortcutProfile();
+            if (shortcutState == null)
+                shortcutState = new MaskTextureShortcutState();
+            if (brushStabilizer == null)
+                brushStabilizer = new MaskTextureBrushStabilizer();
             brush = new MaskTextureBrush(brushSettings);
         }
 
         private void OnDisable()
         {
+            shortcutState?.ResetTransient();
+            brushStabilizer?.Reset();
             preview3D?.Dispose();
             preview3D = null;
         }
@@ -166,12 +184,21 @@ namespace NataneToon.Editor
             preview3D = null;
         }
 
+        private void OnLostFocus()
+        {
+            shortcutState?.ResetTransient();
+            brushStabilizer?.Reset();
+            isDraggingCanvas = false;
+        }
+
         // ================================================================
         // Main GUI
         // ================================================================
 
         private void OnGUI()
         {
+            HandleGlobalInput(Event.current);
+
             EditorGUILayout.Space(10);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             NataneToonShaderGUIUtility.DrawHeaderWithHelp("UVテクスチャ生成", "UV Texture Generator", "UVTextureGenerator");
@@ -181,7 +208,19 @@ namespace NataneToon.Editor
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(5);
 
-            currentTab = (GeneratorTab)GUILayout.Toolbar((int)currentTab, tabLabels);
+            DrawStudioToolbar();
+            EditorGUILayout.Space(6);
+
+            EditorGUILayout.BeginHorizontal();
+            DrawLeftStudioPanel();
+            EditorGUILayout.Space(6);
+            DrawCenterStudioPanel();
+            EditorGUILayout.Space(6);
+            DrawRightStudioPanel();
+            EditorGUILayout.EndHorizontal();
+            return;
+
+            /*
             EditorGUILayout.Space(5);
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
@@ -249,6 +288,152 @@ namespace NataneToon.Editor
             DrawMaterialAssignment();
 
             EditorGUILayout.EndScrollView();
+            */
+        }
+
+        private void DrawStudioToolbar()
+        {
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+            EditorGUILayout.LabelField("Workspace", EditorStyles.boldLabel, GUILayout.Width(80));
+            GUILayout.FlexibleSpace();
+            GUILayout.Label(GetCurrentTabDisplayName(), EditorStyles.miniBoldLabel, GUILayout.Width(110));
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.LabelField(
+                "Illustration-style layout: left tool settings, center canvas, right layers and output.",
+                EditorStyles.miniLabel);
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawLeftStudioPanel()
+        {
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox, GUILayout.Width(LeftPanelWidth), GUILayout.ExpandHeight(true));
+            EditorGUILayout.LabelField("Sub Tool", EditorStyles.boldLabel);
+            DrawSubToolList();
+            EditorGUILayout.Space(6);
+            EditorGUILayout.LabelField("Tool Property", EditorStyles.boldLabel);
+
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.ExpandHeight(true));
+            DrawCurrentToolPanel();
+            EditorGUILayout.EndScrollView();
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawCenterStudioPanel()
+        {
+            EditorGUILayout.BeginVertical(GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+            DrawCanvas();
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawRightStudioPanel()
+        {
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox, GUILayout.Width(RightPanelWidth), GUILayout.ExpandHeight(true));
+            rightPanelScrollPosition = EditorGUILayout.BeginScrollView(rightPanelScrollPosition, GUILayout.ExpandHeight(true));
+
+            layerPanelFoldout = NataneToonShaderGUIUtility.DrawFoldoutHeader(
+                L("レイヤー", "Layers"), layerPanelFoldout);
+            if (layerPanelFoldout)
+            {
+                bool layerChanged = MaskLayerPanelUI.DrawLayerPanel(layerStack, ref layerScrollPosition);
+                if (layerChanged)
+                    RefreshPreviewFromLayers();
+            }
+
+            if (brushEnabled)
+            {
+                EditorGUILayout.Space(6);
+                EditorGUILayout.LabelField("Tool Detail", EditorStyles.boldLabel);
+                BrushSettingsUI.DrawBrushSettingsUI(brushSettings);
+            }
+
+            EditorGUILayout.Space(6);
+            DrawFilterPanel();
+
+            EditorGUILayout.Space(6);
+            Draw3DPreviewSection();
+
+            EditorGUILayout.Space(6);
+            EditorGUILayout.LabelField("Export", EditorStyles.boldLabel);
+            MaskTextureExporter.DrawExportUI(previewTexture);
+
+            EditorGUILayout.Space(6);
+            DrawMaterialAssignment();
+
+            EditorGUILayout.EndScrollView();
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawSubToolList()
+        {
+            for (int i = 0; i < tabLabels.Length; i++)
+            {
+                bool isSelected = (int)currentTab == i;
+                Color previous = GUI.backgroundColor;
+                if (isSelected)
+                    GUI.backgroundColor = new Color(0.45f, 0.67f, 0.96f);
+
+                if (GUILayout.Toggle(isSelected, GetStudioTabDisplayName((GeneratorTab)i), "Button", GUILayout.Height(28)))
+                    currentTab = (GeneratorTab)i;
+
+                GUI.backgroundColor = previous;
+            }
+        }
+
+        private void DrawCurrentToolPanel()
+        {
+            switch (currentTab)
+            {
+                case GeneratorTab.Noise:
+                    DrawNoiseTab();
+                    break;
+                case GeneratorTab.UVMask:
+                    DrawUVMaskTab();
+                    break;
+                case GeneratorTab.Gradient:
+                    DrawGradientTab();
+                    break;
+                case GeneratorTab.MeshInfo:
+                    DrawMeshInfoTab();
+                    break;
+                case GeneratorTab.Combined:
+                    DrawCombinedTab();
+                    break;
+                case GeneratorTab.Templates:
+                    DrawTemplatesTab();
+                    break;
+                case GeneratorTab.ChannelPack:
+                    DrawChannelPackTab();
+                    break;
+            }
+        }
+
+        private string GetCurrentTabDisplayName()
+        {
+            return GetStudioTabDisplayName(currentTab);
+        }
+
+        private static string GetStudioTabDisplayName(GeneratorTab tab)
+        {
+            switch (tab)
+            {
+                case GeneratorTab.Noise:
+                    return "Noise";
+                case GeneratorTab.UVMask:
+                    return "UV Mask";
+                case GeneratorTab.Gradient:
+                    return "Gradient";
+                case GeneratorTab.MeshInfo:
+                    return "Mesh Info";
+                case GeneratorTab.Combined:
+                    return "Combine";
+                case GeneratorTab.Templates:
+                    return "Templates";
+                case GeneratorTab.ChannelPack:
+                    return "Channel Pack";
+                default:
+                    return "Tool";
+            }
         }
 
         // ================================================================
@@ -1082,13 +1267,33 @@ namespace NataneToon.Editor
                 canvasPan = Vector2.zero;
             }
 
+            GUI.enabled = brushHistory != null && brushHistory.CanUndo;
+            if (GUILayout.Button("Undo", EditorStyles.miniButton, GUILayout.Width(40)))
+            {
+                UndoBrushStroke();
+            }
+
+            GUI.enabled = brushHistory != null && brushHistory.CanRedo;
+            if (GUILayout.Button("Redo", EditorStyles.miniButton, GUILayout.Width(40)))
+            {
+                RedoBrushStroke();
+            }
+            GUI.enabled = true;
+
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(3);
 
             // Canvas area
-            float canvasDisplaySize = 300f;
-            Rect canvasArea = GUILayoutUtility.GetRect(canvasDisplaySize, canvasDisplaySize);
+            float availableWidth = Mathf.Max(360f, position.width - LeftPanelWidth - RightPanelWidth - 72f);
+            float availableHeight = Mathf.Max(360f, position.height - 190f);
+            float canvasDisplaySize = Mathf.Clamp(Mathf.Min(availableWidth, availableHeight), 360f, 960f);
+            Rect canvasRow = GUILayoutUtility.GetRect(10f, canvasDisplaySize, GUILayout.ExpandWidth(true), GUILayout.Height(canvasDisplaySize));
+            Rect canvasArea = new Rect(
+                canvasRow.x + Mathf.Max(0f, (canvasRow.width - canvasDisplaySize) * 0.5f),
+                canvasRow.y,
+                canvasDisplaySize,
+                canvasDisplaySize);
 
             // Background with checkerboard pattern for transparency visualization
             EditorGUI.DrawRect(canvasArea, new Color(0.15f, 0.15f, 0.15f));
@@ -1135,27 +1340,38 @@ namespace NataneToon.Editor
 
                 GUI.EndClip();
 
+                MaskTextureLayer activeLayer = layerStack != null ? layerStack.ActiveLayer : null;
+                HandleCanvasShortcuts(canvasArea, texRect, activeLayer);
+
                 // Brush input handling
-                if (brushEnabled && layerStack != null && layerStack.ActiveLayer != null)
+                if (brushEnabled && activeLayer != null && Event.current.type != EventType.Used)
                 {
-                    var activeLayer = layerStack.ActiveLayer;
                     if (activeLayer.pixels != null && !activeLayer.locked)
                     {
                         bool modified;
-                        // canvasArea = hit test area, texRect = coordinate mapping (zoom/pan aware)
+                        BrushStrokeCommit strokeCommit;
                         BrushCanvasInputHandler.HandleBrushInput(
                             canvasArea, texRect, brush, brushSettings,
                             activeLayer.pixels, activeLayer.width, activeLayer.height,
-                            out modified);
+                            activeLayer.lockTransparentPixels,
+                            brushStabilizer,
+                            out modified,
+                            out strokeCommit);
                         if (modified)
                         {
                             activeLayer.sourceType = MaskTextureLayer.SourceType.Paint;
                             RefreshPreviewFromLayers();
                         }
+
+                        if (strokeCommit.HasValue)
+                        {
+                            brushHistory.Record(activeLayer, strokeCommit.BeforePixels, strokeCommit.AfterPixels, "Brush Stroke");
+                            SetLineAnchor(strokeCommit.LastPixelPosition);
+                        }
                     }
                 }
 
-                // Brush cursor
+                // Brush cursor / line preview
                 if (brushEnabled && canvasArea.Contains(Event.current.mousePosition))
                 {
                     float cursorRadius = brushSettings.size * canvasZoom *
@@ -1163,16 +1379,22 @@ namespace NataneToon.Editor
                     BrushCursorRenderer.DrawCursorWithHardness(
                         Event.current.mousePosition, cursorRadius, brushSettings.hardness,
                         Color.white);
+
+                    if (shortcutState.hasLineAnchor && Event.current.shift && activeLayer != null)
+                    {
+                        Vector2 lineStart = BrushCanvasInputHandler.PixelToCanvasPos(
+                            shortcutState.lineAnchorPixel, texRect, activeLayer.width, activeLayer.height);
+                        BrushCursorRenderer.DrawLineGuide(lineStart, Event.current.mousePosition, new Color(1f, 1f, 0f, 0.8f));
+                    }
+
+                    if (shortcutState.isAdjustingBrush)
+                        DrawBrushAdjustOverlay(Event.current.mousePosition);
                     Repaint();
                 }
 
                 // Island click selection
                 if (islandSelectMode && !brushEnabled && islands.Count > 0)
                     HandleIslandClickInput(canvasArea, texRect);
-
-                // Canvas pan/zoom (only when brush is off)
-                if (!brushEnabled)
-                    HandleCanvasInput(canvasArea);
             }
             else
             {
@@ -1184,23 +1406,28 @@ namespace NataneToon.Editor
 
             // Zoom info
             EditorGUILayout.LabelField($"Zoom: {canvasZoom:F1}x", EditorStyles.miniLabel);
+            if (!string.IsNullOrEmpty(interactionStatus))
+                EditorGUILayout.LabelField(interactionStatus, EditorStyles.miniLabel);
+            if (brushEnabled)
+                EditorGUILayout.LabelField("Wheel=Size | Ctrl/Cmd+Wheel=Zoom | MMB/Space+Drag=Pan | Ctrl/Cmd+Click=Pick | Shift+Click=Line", EditorStyles.miniLabel);
 
             EditorGUILayout.EndVertical();
         }
 
-        private void HandleCanvasInput(Rect canvasArea)
+        private bool HandleCanvasInput(Rect canvasArea)
         {
             Event e = Event.current;
-            if (!canvasArea.Contains(e.mousePosition) && !isDraggingCanvas) return;
+            if (!canvasArea.Contains(e.mousePosition) && !isDraggingCanvas) return false;
 
             switch (e.type)
             {
                 case EventType.MouseDown:
-                    if (e.button == 2 || (e.button == 0 && e.alt))
+                    if (MaskTextureShortcutUtility.IsPanEvent(e, shortcutProfile, shortcutState))
                     {
                         isDraggingCanvas = true;
                         lastCanvasMousePos = e.mousePosition;
                         e.Use();
+                        return true;
                     }
                     break;
                 case EventType.MouseDrag:
@@ -1210,6 +1437,7 @@ namespace NataneToon.Editor
                         lastCanvasMousePos = e.mousePosition;
                         e.Use();
                         Repaint();
+                        return true;
                     }
                     break;
                 case EventType.MouseUp:
@@ -1217,18 +1445,225 @@ namespace NataneToon.Editor
                     {
                         isDraggingCanvas = false;
                         e.Use();
+                        return true;
                     }
                     break;
                 case EventType.ScrollWheel:
-                    if (canvasArea.Contains(e.mousePosition))
+                    if (canvasArea.Contains(e.mousePosition) && MaskTextureShortcutUtility.IsZoomWheelEvent(e, shortcutProfile))
                     {
                         float zoomDelta = -e.delta.y * 0.05f;
-                        canvasZoom = Mathf.Clamp(canvasZoom + zoomDelta * canvasZoom, 0.1f, 10f);
+                        ZoomCanvasAt(canvasArea, e.mousePosition, zoomDelta);
                         e.Use();
                         Repaint();
+                        return true;
                     }
                     break;
             }
+
+            return false;
+        }
+
+        private void HandleGlobalInput(Event e)
+        {
+            MaskTextureShortcutUtility.UpdateKeyState(e, shortcutProfile, shortcutState);
+
+            if (e == null || e.type != EventType.KeyDown || EditorGUIUtility.editingTextField || !MaskTextureShortcutUtility.IsActionKey(e))
+                return;
+
+            if (e.keyCode == KeyCode.Z)
+            {
+                if (e.shift)
+                    RedoBrushStroke();
+                else
+                    UndoBrushStroke();
+                e.Use();
+            }
+            else if (e.keyCode == KeyCode.Y)
+            {
+                RedoBrushStroke();
+                e.Use();
+            }
+        }
+
+        private void HandleCanvasShortcuts(Rect canvasArea, Rect textureRect, MaskTextureLayer activeLayer)
+        {
+            if (HandleBrushAdjustShortcut(canvasArea))
+                return;
+
+            if (HandleCanvasInput(canvasArea))
+                return;
+
+            if (!brushEnabled || activeLayer == null || activeLayer.pixels == null || activeLayer.locked)
+                return;
+
+            if (HandlePickerShortcut(canvasArea, textureRect, activeLayer))
+                return;
+
+            HandleLineShortcut(canvasArea, textureRect, activeLayer);
+        }
+
+        private bool HandleBrushAdjustShortcut(Rect canvasArea)
+        {
+            Event e = Event.current;
+            if ((!canvasArea.Contains(e.mousePosition) && !shortcutState.isAdjustingBrush) || e == null)
+                return false;
+
+            switch (e.type)
+            {
+                case EventType.MouseDown:
+                    if (MaskTextureShortcutUtility.IsBrushAdjustStart(e, shortcutProfile))
+                    {
+                        shortcutState.isAdjustingBrush = true;
+                        shortcutState.adjustStartMousePosition = e.mousePosition;
+                        shortcutState.adjustStartSize = brushSettings.size;
+                        shortcutState.adjustStartOpacity = brushSettings.opacity;
+                        interactionStatus = "Adjust Brush: X=Size / Y=Opacity";
+                        e.Use();
+                        Repaint();
+                        return true;
+                    }
+                    break;
+                case EventType.MouseDrag:
+                    if (shortcutState.isAdjustingBrush)
+                    {
+                        Vector2 delta = e.mousePosition - shortcutState.adjustStartMousePosition;
+                        brushSettings.size = Mathf.Clamp(
+                            shortcutState.adjustStartSize + delta.x * shortcutProfile.brushSizeDragSensitivity,
+                            1f, 100f);
+                        brushSettings.opacity = Mathf.Clamp01(
+                            shortcutState.adjustStartOpacity - delta.y * shortcutProfile.brushOpacityDragSensitivity);
+                        e.Use();
+                        Repaint();
+                        return true;
+                    }
+                    break;
+                case EventType.MouseUp:
+                    if (shortcutState.isAdjustingBrush && e.button == 1)
+                    {
+                        shortcutState.isAdjustingBrush = false;
+                        interactionStatus = $"Brush: {brushSettings.size:F0}px / Opacity {brushSettings.opacity:P0}";
+                        e.Use();
+                        Repaint();
+                        return true;
+                    }
+                    break;
+            }
+
+            return false;
+        }
+
+        private bool HandlePickerShortcut(Rect canvasArea, Rect textureRect, MaskTextureLayer activeLayer)
+        {
+            Event e = Event.current;
+            if (e.type != EventType.MouseDown || !canvasArea.Contains(e.mousePosition))
+                return false;
+
+            if (!MaskTextureShortcutUtility.IsPickerEvent(e, shortcutProfile))
+                return false;
+
+            Vector2 pixelPosition = BrushCanvasInputHandler.MouseToPixelPos(
+                e.mousePosition, textureRect, activeLayer.width, activeLayer.height);
+            Color sampled = activeLayer.GetPixel(Mathf.RoundToInt(pixelPosition.x), Mathf.RoundToInt(pixelPosition.y));
+            brushSettings.strength = sampled.r;
+            brushSettings.paintAlpha = sampled.a;
+            SetLineAnchor(pixelPosition);
+            interactionStatus = $"Picked Value: {sampled.r:F2} / Alpha {sampled.a:F2}";
+            e.Use();
+            Repaint();
+            return true;
+        }
+
+        private bool HandleLineShortcut(Rect canvasArea, Rect textureRect, MaskTextureLayer activeLayer)
+        {
+            Event e = Event.current;
+            if (e.type != EventType.MouseDown || !canvasArea.Contains(e.mousePosition))
+                return false;
+
+            if (!MaskTextureShortcutUtility.IsLineEvent(e, shortcutProfile))
+                return false;
+
+            Vector2 pixelPosition = BrushCanvasInputHandler.MouseToPixelPos(
+                e.mousePosition, textureRect, activeLayer.width, activeLayer.height);
+
+            if (!shortcutState.hasLineAnchor)
+            {
+                SetLineAnchor(pixelPosition);
+                interactionStatus = "Line anchor set";
+                e.Use();
+                Repaint();
+                return true;
+            }
+
+            Color[] beforePixels = MaskTextureHistory.ClonePixels(activeLayer.pixels);
+            brush.PaintStraightLine(
+                shortcutState.lineAnchorPixel,
+                pixelPosition,
+                activeLayer.pixels,
+                activeLayer.width,
+                activeLayer.height,
+                activeLayer.lockTransparentPixels);
+            Color[] afterPixels = MaskTextureHistory.ClonePixels(activeLayer.pixels);
+            brushHistory.Record(activeLayer, beforePixels, afterPixels, "Line Stroke");
+            activeLayer.sourceType = MaskTextureLayer.SourceType.Paint;
+            SetLineAnchor(pixelPosition);
+            interactionStatus = "Line stroke";
+            RefreshPreviewFromLayers();
+            e.Use();
+            Repaint();
+            return true;
+        }
+
+        private void DrawBrushAdjustOverlay(Vector2 mousePosition)
+        {
+            Rect overlayRect = new Rect(mousePosition.x + 16f, mousePosition.y + 16f, 170f, 42f);
+            GUI.Box(overlayRect, GUIContent.none, EditorStyles.helpBox);
+            GUI.Label(
+                new Rect(overlayRect.x + 8f, overlayRect.y + 6f, overlayRect.width - 16f, 16f),
+                $"Size: {brushSettings.size:F0}px",
+                EditorStyles.miniBoldLabel);
+            GUI.Label(
+                new Rect(overlayRect.x + 8f, overlayRect.y + 22f, overlayRect.width - 16f, 16f),
+                $"Opacity: {brushSettings.opacity:P0}",
+                EditorStyles.miniLabel);
+        }
+
+        private void SetLineAnchor(Vector2 pixelPosition)
+        {
+            shortcutState.hasLineAnchor = true;
+            shortcutState.lineAnchorPixel = pixelPosition;
+        }
+
+        private void UndoBrushStroke()
+        {
+            if (brushHistory != null && brushHistory.Undo(layerStack))
+            {
+                interactionStatus = "Undo Brush Stroke";
+                RefreshPreviewFromLayers();
+            }
+        }
+
+        private void RedoBrushStroke()
+        {
+            if (brushHistory != null && brushHistory.Redo(layerStack))
+            {
+                interactionStatus = "Redo Brush Stroke";
+                RefreshPreviewFromLayers();
+            }
+        }
+
+        private void ZoomCanvasAt(Rect canvasArea, Vector2 mousePosition, float zoomDelta)
+        {
+            float oldZoom = canvasZoom;
+            float newZoom = Mathf.Clamp(canvasZoom + zoomDelta * canvasZoom, 0.1f, 10f);
+            if (Mathf.Approximately(oldZoom, newZoom))
+                return;
+
+            Vector2 canvasCenter = canvasArea.center;
+            Vector2 offsetFromTextureCenter = mousePosition - canvasCenter - canvasPan;
+            float ratio = newZoom / oldZoom;
+            canvasPan += offsetFromTextureCenter * (1f - ratio);
+            canvasZoom = newZoom;
+            interactionStatus = $"Zoom: {canvasZoom:F1}x";
         }
 
         /// <summary>

@@ -24,7 +24,25 @@ namespace NataneToon.Editor
         public float opacity = 1f;
         public float strength = 1f;
         public float paintAlpha = 1f;
+        public bool eraseRgb = true;
+        public float alphaEpsilon = 0.001f;
         public BrushMode mode = BrushMode.Paint;
+        public BrushStabilizerSettings stabilizer = new BrushStabilizerSettings();
+    }
+
+    internal readonly struct BrushStrokeCommit
+    {
+        public BrushStrokeCommit(Color[] beforePixels, Color[] afterPixels, Vector2 lastPixelPosition)
+        {
+            BeforePixels = beforePixels;
+            AfterPixels = afterPixels;
+            LastPixelPosition = lastPixelPosition;
+        }
+
+        public Color[] BeforePixels { get; }
+        public Color[] AfterPixels { get; }
+        public Vector2 LastPixelPosition { get; }
+        public bool HasValue => BeforePixels != null && AfterPixels != null;
     }
 
     /// <summary>
@@ -63,6 +81,16 @@ namespace NataneToon.Editor
         /// </summary>
         public void StartStroke(Vector2 position, Color[] pixels)
         {
+            StartStroke(position, pixels, 0, 0, false);
+        }
+
+        public void StartStroke(
+            Vector2 position,
+            Color[] pixels,
+            int width,
+            int height,
+            bool lockTransparentPixels)
+        {
             isStroking = true;
             lastStrokePosition = position;
             if (pixels != null)
@@ -70,7 +98,7 @@ namespace NataneToon.Editor
                 undoSnapshot = new Color[pixels.Length];
                 System.Array.Copy(pixels, undoSnapshot, pixels.Length);
             }
-            ApplyStamp(position, pixels, settings, 0, 0);
+            ApplyStamp(position, pixels, settings, width, height, lockTransparentPixels);
         }
 
         /// <summary>
@@ -91,6 +119,16 @@ namespace NataneToon.Editor
         /// </summary>
         public void StrokeToPosition(Vector2 newPosition, Color[] pixels, int width, int height)
         {
+            StrokeToPosition(newPosition, pixels, width, height, false);
+        }
+
+        public void StrokeToPosition(
+            Vector2 newPosition,
+            Color[] pixels,
+            int width,
+            int height,
+            bool lockTransparentPixels)
+        {
             if (!isStroking) return;
 
             float spacing = Mathf.Max(settings.size * 0.25f, 1f);
@@ -99,7 +137,7 @@ namespace NataneToon.Editor
 
             if (distance < 0.5f)
             {
-                ApplyStamp(newPosition, pixels, settings, width, height);
+                ApplyStamp(newPosition, pixels, settings, width, height, lockTransparentPixels);
                 lastStrokePosition = newPosition;
                 return;
             }
@@ -113,19 +151,52 @@ namespace NataneToon.Editor
                 if (traveled > distance) traveled = distance;
 
                 Vector2 stampPos = lastStrokePosition + direction * traveled;
-                ApplyStamp(stampPos, pixels, settings, width, height);
+                ApplyStamp(stampPos, pixels, settings, width, height, lockTransparentPixels);
             }
 
             lastStrokePosition = newPosition;
         }
 
         public bool IsStroking => isStroking;
+        public Vector2 LastStrokePosition => lastStrokePosition;
+
+        public void PaintStraightLine(
+            Vector2 startPosition,
+            Vector2 endPosition,
+            Color[] pixels,
+            int width,
+            int height,
+            bool lockTransparentPixels)
+        {
+            float distance = Vector2.Distance(startPosition, endPosition);
+            if (distance <= 0.001f)
+            {
+                ApplyStamp(endPosition, pixels, settings, width, height, lockTransparentPixels);
+                return;
+            }
+
+            float spacing = Mathf.Max(settings.size * 0.25f, 1f);
+            Vector2 direction = (endPosition - startPosition).normalized;
+
+            for (float traveled = 0f; traveled <= distance; traveled += spacing)
+            {
+                ApplyStamp(startPosition + direction * traveled, pixels, settings, width, height, lockTransparentPixels);
+            }
+
+            ApplyStamp(endPosition, pixels, settings, width, height, lockTransparentPixels);
+        }
 
         /// <summary>
         /// Apply a single brush stamp at the given pixel position.
         /// 指定ピクセル位置にブラシスタンプを適用
         /// </summary>
-        private static void ApplyStamp(Vector2 center, Color[] pixels, BrushSettings settings, int width, int height)
+        private static void ApplyStamp(
+            Vector2 center,
+            Color[] pixels,
+            BrushSettings settings,
+            int width,
+            int height,
+            bool lockTransparentPixels)
         {
             if (pixels == null || width <= 0 || height <= 0) return;
 
@@ -145,48 +216,65 @@ namespace NataneToon.Editor
 
                     int idx = y * width + x;
                     Color current = pixels[idx];
+                    if (!CanModifyPixel(current, lockTransparentPixels, settings.alphaEpsilon))
+                        continue;
+
                     float alpha = falloff * settings.opacity;
 
                     switch (settings.mode)
                     {
                         case BrushMode.Paint:
-                        {
-                            float target = settings.strength;
-                            float targetA = settings.paintAlpha;
-                            float r = Mathf.Lerp(current.r, target, alpha);
-                            float g = Mathf.Lerp(current.g, target, alpha);
-                            float b = Mathf.Lerp(current.b, target, alpha);
-                            float a2 = Mathf.Lerp(current.a, targetA, alpha);
-                            pixels[idx] = new Color(r, g, b, a2);
+                            pixels[idx] = ApplyPaint(current, alpha, settings);
                             break;
-                        }
                         case BrushMode.Erase:
-                        {
-                            float r = Mathf.Lerp(current.r, 0f, alpha);
-                            float g = Mathf.Lerp(current.g, 0f, alpha);
-                            float b = Mathf.Lerp(current.b, 0f, alpha);
-                            pixels[idx] = new Color(r, g, b, current.a);
+                            pixels[idx] = ApplyErase(current, alpha, settings.eraseRgb);
                             break;
-                        }
                         case BrushMode.Smooth:
-                        {
-                            Color avg = GetAverageNeighbors(pixels, x, y, width, height);
-                            float r = Mathf.Lerp(current.r, avg.r, alpha);
-                            float g = Mathf.Lerp(current.g, avg.g, alpha);
-                            float b = Mathf.Lerp(current.b, avg.b, alpha);
-                            float a2 = Mathf.Lerp(current.a, avg.a, alpha);
-                            pixels[idx] = new Color(r, g, b, a2);
+                            pixels[idx] = ApplySmooth(current, GetAverageNeighbors(pixels, x, y, width, height), alpha);
                             break;
-                        }
                         case BrushMode.EraseAlpha:
-                        {
-                            float a2 = Mathf.Lerp(current.a, 0f, alpha);
-                            pixels[idx] = new Color(current.r, current.g, current.b, a2);
+                            pixels[idx] = ApplyErase(current, alpha, false);
                             break;
-                        }
                     }
                 }
             }
+        }
+
+        private static bool CanModifyPixel(Color current, bool lockTransparentPixels, float alphaEpsilon)
+        {
+            return !lockTransparentPixels || current.a > alphaEpsilon;
+        }
+
+        private static Color ApplyPaint(Color current, float alpha, BrushSettings settings)
+        {
+            float target = settings.strength;
+            float targetA = settings.paintAlpha;
+            float r = Mathf.Lerp(current.r, target, alpha);
+            float g = Mathf.Lerp(current.g, target, alpha);
+            float b = Mathf.Lerp(current.b, target, alpha);
+            float a2 = Mathf.Lerp(current.a, targetA, alpha);
+            return new Color(r, g, b, a2);
+        }
+
+        private static Color ApplyErase(Color current, float alpha, bool eraseRgb)
+        {
+            float a2 = Mathf.Lerp(current.a, 0f, alpha);
+            if (!eraseRgb)
+                return new Color(current.r, current.g, current.b, a2);
+
+            float r = Mathf.Lerp(current.r, 0f, alpha);
+            float g = Mathf.Lerp(current.g, 0f, alpha);
+            float b = Mathf.Lerp(current.b, 0f, alpha);
+            return new Color(r, g, b, a2);
+        }
+
+        private static Color ApplySmooth(Color current, Color avg, float alpha)
+        {
+            float r = Mathf.Lerp(current.r, avg.r, alpha);
+            float g = Mathf.Lerp(current.g, avg.g, alpha);
+            float b = Mathf.Lerp(current.b, avg.b, alpha);
+            float a2 = Mathf.Lerp(current.a, avg.a, alpha);
+            return new Color(r, g, b, a2);
         }
 
         /// <summary>
@@ -215,7 +303,7 @@ namespace NataneToon.Editor
                 }
             }
 
-            if (count == 0) return Color.black;
+            if (count == 0) return Color.clear;
             return new Color(r / count, g / count, b / count, a / count);
         }
     }
@@ -447,6 +535,12 @@ namespace NataneToon.Editor
                 DrawCursor(center, radius * hardness, innerColor);
             }
         }
+
+        public static void DrawLineGuide(Vector2 start, Vector2 end, Color color)
+        {
+            Handles.color = color;
+            Handles.DrawAAPolyLine(2f, new Vector3(start.x, start.y, 0f), new Vector3(end.x, end.y, 0f));
+        }
     }
 
     /// <summary>
@@ -505,10 +599,31 @@ namespace NataneToon.Editor
                         new GUIContent(L("アルファ", "Alpha"), L("ペイントアルファ値（0=透明, 1=不透明）", "Paint alpha value (0=transparent, 1=opaque)")),
                         settings.paintAlpha, 0f, 1f);
                 }
+                else if (settings.mode == BrushMode.Erase)
+                {
+                    settings.eraseRgb = EditorGUILayout.Toggle(
+                        new GUIContent("Clear RGB", "Also clear RGB while erasing"),
+                        settings.eraseRgb);
+                }
+
+                EditorGUILayout.Space(4);
+                settings.stabilizer.mode = (BrushStabilizerMode)EditorGUILayout.EnumPopup(
+                    new GUIContent(L("手ブレ補正", "Stabilizer"), L("ストローク入力を安定化", "Stabilize stroke input")),
+                    settings.stabilizer.mode);
+
+                if (settings.stabilizer.mode != BrushStabilizerMode.Off)
+                {
+                    settings.stabilizer.strength = EditorGUILayout.Slider(
+                        new GUIContent(L("補正強度", "Stabilizer Strength"), L("大きいほど補正を強くします", "Higher values stabilize more")),
+                        settings.stabilizer.strength, 0f, 1f);
+                }
 
                 EditorGUILayout.Space(2);
                 EditorGUILayout.LabelField(
                     L("ショートカット: スクロール=サイズ変更", "Shortcut: Scroll=Size"),
+                    EditorStyles.miniLabel);
+                EditorGUILayout.LabelField(
+                    "Ctrl+Click=Pick / Shift+Click=Line / Alt+RMB=Size+Opacity",
                     EditorStyles.miniLabel);
             }
         }
@@ -542,7 +657,42 @@ namespace NataneToon.Editor
             int height,
             out bool textureModified)
         {
+            BrushStrokeCommit strokeCommit;
+            return HandleBrushInput(
+                canvasRect, textureRect, brush, settings, pixels, width, height, false, null, out textureModified, out strokeCommit);
+        }
+
+        public static bool HandleBrushInput(
+            Rect canvasRect,
+            Rect textureRect,
+            MaskTextureBrush brush,
+            BrushSettings settings,
+            Color[] pixels,
+            int width,
+            int height,
+            bool lockTransparentPixels,
+            out bool textureModified)
+        {
+            BrushStrokeCommit strokeCommit;
+            return HandleBrushInput(
+                canvasRect, textureRect, brush, settings, pixels, width, height, lockTransparentPixels, null, out textureModified, out strokeCommit);
+        }
+
+        public static bool HandleBrushInput(
+            Rect canvasRect,
+            Rect textureRect,
+            MaskTextureBrush brush,
+            BrushSettings settings,
+            Color[] pixels,
+            int width,
+            int height,
+            bool lockTransparentPixels,
+            MaskTextureBrushStabilizer stabilizer,
+            out bool textureModified,
+            out BrushStrokeCommit strokeCommit)
+        {
             textureModified = false;
+            strokeCommit = default;
             if (brush == null || settings == null || pixels == null) return false;
 
             Event e = Event.current;
@@ -550,14 +700,17 @@ namespace NataneToon.Editor
                 return false;
 
             // Use textureRect for coordinate mapping (zoom/pan aware)
-            Vector2 canvasPos = MouseToPixelPos(e.mousePosition, textureRect, width, height);
+            Vector2 rawCanvasPos = MouseToPixelPos(e.mousePosition, textureRect, width, height);
+            Vector2 canvasPos = FilterBrushPosition(rawCanvasPos, settings, stabilizer);
 
             switch (e.type)
             {
                 case EventType.MouseDown:
                     if (e.button == 0 && canvasRect.Contains(e.mousePosition))
                     {
-                        brush.StartStroke(canvasPos, pixels);
+                        stabilizer?.Reset();
+                        canvasPos = FilterBrushPosition(rawCanvasPos, settings, stabilizer);
+                        brush.StartStroke(canvasPos, pixels, width, height, lockTransparentPixels);
                         textureModified = true;
                         e.Use();
                         RequestRepaint();
@@ -568,7 +721,7 @@ namespace NataneToon.Editor
                 case EventType.MouseDrag:
                     if (e.button == 0 && brush.IsStroking)
                     {
-                        brush.StrokeToPosition(canvasPos, pixels, width, height);
+                        brush.StrokeToPosition(canvasPos, pixels, width, height, lockTransparentPixels);
                         textureModified = true;
                         e.Use();
                         RequestRepaint();
@@ -579,7 +732,9 @@ namespace NataneToon.Editor
                 case EventType.MouseUp:
                     if (e.button == 0 && brush.IsStroking)
                     {
-                        brush.EndStroke();
+                        Color[] beforePixels = brush.EndStroke();
+                        strokeCommit = CreateStrokeCommit(beforePixels, pixels, rawCanvasPos);
+                        stabilizer?.Reset();
                         e.Use();
                         RequestRepaint();
                         return true;
@@ -614,7 +769,9 @@ namespace NataneToon.Editor
             int height,
             out bool textureModified)
         {
-            return HandleBrushInput(canvasRect, canvasRect, brush, settings, pixels, width, height, out textureModified);
+            BrushStrokeCommit strokeCommit;
+            return HandleBrushInput(
+                canvasRect, canvasRect, brush, settings, pixels, width, height, false, null, out textureModified, out strokeCommit);
         }
 
         /// <summary>
@@ -641,10 +798,45 @@ namespace NataneToon.Editor
             return new Vector2(u, v);
         }
 
+        public static Vector2 PixelToCanvasPos(Vector2 pixelPos, Rect canvasRect, int width, int height)
+        {
+            float u = width > 0 ? pixelPos.x / Mathf.Max(1f, width) : 0f;
+            float v = height > 0 ? 1f - (pixelPos.y / Mathf.Max(1f, height)) : 1f;
+            return new Vector2(
+                canvasRect.x + u * canvasRect.width,
+                canvasRect.y + v * canvasRect.height);
+        }
+
         private static void RequestRepaint()
         {
             if (EditorWindow.focusedWindow != null)
                 EditorWindow.focusedWindow.Repaint();
+        }
+
+        private static Vector2 FilterBrushPosition(Vector2 rawCanvasPos, BrushSettings settings, MaskTextureBrushStabilizer stabilizer)
+        {
+            if (stabilizer == null)
+                return rawCanvasPos;
+
+            return stabilizer.Filter(rawCanvasPos, settings.stabilizer);
+        }
+
+        private static BrushStrokeCommit CreateStrokeCommit(Color[] beforePixels, Color[] pixels, Vector2 lastPixelPosition)
+        {
+            if (beforePixels == null || pixels == null)
+                return default;
+
+            return new BrushStrokeCommit(beforePixels, ClonePixels(pixels), lastPixelPosition);
+        }
+
+        private static Color[] ClonePixels(Color[] pixels)
+        {
+            if (pixels == null)
+                return null;
+
+            Color[] clone = new Color[pixels.Length];
+            System.Array.Copy(pixels, clone, pixels.Length);
+            return clone;
         }
     }
 }

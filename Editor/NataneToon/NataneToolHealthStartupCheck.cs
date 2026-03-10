@@ -1,12 +1,13 @@
 using System;
 using UnityEditor;
+using UnityEngine;
 using static NataneToon.Editor.NataneToonLocalization;
 
 namespace NataneToon.Editor
 {
     /// <summary>
     /// Startup health check for Natane tool assemblies.
-    /// エディタ起動時のNataneツール アセンブリ健全性チェック。
+    /// 繧ｨ繝・ぅ繧ｿ襍ｷ蜍墓凾縺ｮNatane繝・・繝ｫ 繧｢繧ｻ繝ｳ繝悶Μ蛛･蜈ｨ諤ｧ繝√ぉ繝・け縲・
     ///
     /// Runs once per day via [InitializeOnLoad] + EditorApplication.delayCall.
     /// Only shows a dialog when critical errors are detected.
@@ -23,6 +24,9 @@ namespace NataneToon.Editor
 
         private static void RunStartupCheck()
         {
+            if (Application.isBatchMode)
+                return;
+
             // Run once per day only
             string today = DateTime.Now.ToString("yyyy-MM-dd");
             string lastCheck = EditorPrefs.GetString(PREFS_KEY, "");
@@ -37,15 +41,12 @@ namespace NataneToon.Editor
             if (health == NataneToolHealthValidator.HealthStatus.Error)
             {
                 bool openDiagnostics = EditorUtility.DisplayDialog(
-                    L("Natane Toon Shader - ツール異常検出", "Natane Toon Shader - Tool Issue Detected"),
-                    L("一部の Natane Toon Shader ツールが正常に動作しない可能性があります。\n" +
-                      "アセンブリまたは型の解決に問題が検出されました。\n\n" +
-                      "診断ウィンドウで詳細を確認してください。",
-                      "Some Natane Toon Shader tools may not function correctly.\n" +
+                    L("Natane Toon Shader - Tool Issue Detected", "Natane Toon Shader - Tool Issue Detected"),
+                    L("Some Natane Toon Shader tools may not function correctly.\n", "Some Natane Toon Shader tools may not function correctly.\n" +
                       "Assembly or type resolution issues were detected.\n\n" +
                       "Open Diagnostics to review the details."),
-                    L("診断を開く", "Open Diagnostics"),
-                    L("あとで確認", "Later"));
+                    L("Open Diagnostics", "Open Diagnostics"),
+                    L("Later", "Later"));
 
                 if (openDiagnostics)
                 {

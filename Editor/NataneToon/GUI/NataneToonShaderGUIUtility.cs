@@ -8,8 +8,8 @@ namespace NataneToon.Editor
     /// <summary>
     /// Utility class for Natane Toon Shader GUI operations
     /// Provides reusable UI components and helper functions
-    /// Natane Toon Shader GUI操作用のユーティリティクラス
-    /// 再利用可能なUIコンポーネントとヘルパー関数を提供
+    /// Natane Toon Shader GUI謫堺ｽ懃畑縺ｮ繝ｦ繝ｼ繝・ぅ繝ｪ繝・ぅ繧ｯ繝ｩ繧ｹ
+    /// 蜀榊茜逕ｨ蜿ｯ閭ｽ縺ｪUI繧ｳ繝ｳ繝昴・繝阪Φ繝医→繝倥Ν繝代・髢｢謨ｰ繧呈署萓・
     /// </summary>
     public static class NataneToonShaderGUIUtility
     {
@@ -28,7 +28,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Initialize styles
-        /// スタイルを初期化
+        /// 繧ｹ繧ｿ繧､繝ｫ繧貞・譛溷喧
         /// </summary>
         public static void InitializeStyles()
         {
@@ -52,7 +52,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw a section header with foldout
-        /// 折りたたみ機能付きセクションヘッダーを描画
+        /// 謚倥ｊ縺溘◆縺ｿ讖溯・莉倥″繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ繝倥ャ繝繝ｼ繧呈緒逕ｻ
         /// </summary>
         public static bool DrawFoldoutHeader(string title, bool foldout)
         {
@@ -63,7 +63,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw a property with optional tooltip
-        /// オプションのツールチップ付きでプロパティを描画
+        /// 繧ｪ繝励す繝ｧ繝ｳ縺ｮ繝・・繝ｫ繝√ャ繝嶺ｻ倥″縺ｧ繝励Ο繝代ユ繧｣繧呈緒逕ｻ
         /// </summary>
         public static void DrawProperty(MaterialEditor editor, MaterialProperty prop, string label = null, string tooltip = null)
         {
@@ -82,7 +82,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw a color property with HDR support check
-        /// HDRサポートチェック付きでカラープロパティを描画
+        /// HDR繧ｵ繝昴・繝医メ繧ｧ繝・け莉倥″縺ｧ繧ｫ繝ｩ繝ｼ繝励Ο繝代ユ繧｣繧呈緒逕ｻ
         /// </summary>
         public static void DrawColorProperty(MaterialEditor editor, MaterialProperty prop, string label = null, string tooltip = null, bool hdr = false)
         {
@@ -113,7 +113,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw a toggle with keyword enable/disable
-        /// キーワードの有効/無効化機能付きトグルを描画
+        /// 繧ｭ繝ｼ繝ｯ繝ｼ繝峨・譛牙柑/辟｡蜉ｹ蛹匁ｩ溯・莉倥″繝医げ繝ｫ繧呈緒逕ｻ
         /// </summary>
         public static bool DrawToggleWithKeyword(Material material, MaterialProperty prop, string keyword, string label = null, string tooltip = null)
         {
@@ -149,11 +149,11 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw help button for tool window
-        /// ツールウィンドウ用のヘルプボタンを描画
+        /// 繝・・繝ｫ繧ｦ繧｣繝ｳ繝峨え逕ｨ縺ｮ繝倥Ν繝励・繧ｿ繝ｳ繧呈緒逕ｻ
         /// </summary>
         public static void DrawHelpButton(string toolKey)
         {
-            if (GUILayout.Button(L("❓ ヘルプ", "❓ Help"), GUILayout.Width(100), GUILayout.Height(25)))
+            if (GUILayout.Button(L("Help", "Help"), GUILayout.Width(100), GUILayout.Height(25)))
             {
                 UnifiedHelpSystem.ShowToolHelp(toolKey);
             }
@@ -161,7 +161,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw header with help button
-        /// ヘルプボタン付きヘッダーを描画
+        /// 繝倥Ν繝励・繧ｿ繝ｳ莉倥″繝倥ャ繝繝ｼ繧呈緒逕ｻ
         /// </summary>
         public static void DrawHeaderWithHelp(string titleJP, string titleEN, string toolKey)
         {
@@ -175,7 +175,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw texture property with tiling/offset
-        /// タイリング/オフセット付きテクスチャプロパティを描画
+        /// 繧ｿ繧､繝ｪ繝ｳ繧ｰ/繧ｪ繝輔そ繝・ヨ莉倥″繝・け繧ｹ繝√Ε繝励Ο繝代ユ繧｣繧呈緒逕ｻ
         /// </summary>
         public static void DrawTextureProperty(MaterialEditor editor, MaterialProperty texProp, bool showScaleOffset = true)
         {
@@ -202,7 +202,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw a category divider with centered label
-        /// カテゴリ区切り線（中央ラベル付き）
+        /// 繧ｫ繝・ざ繝ｪ蛹ｺ蛻・ｊ邱夲ｼ井ｸｭ螟ｮ繝ｩ繝吶Ν莉倥″・・
         /// </summary>
         public static void DrawCategoryDivider(string label)
         {
@@ -256,14 +256,14 @@ namespace NataneToon.Editor
         {
             EditorGUILayout.Space(5);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField(L("マテリアル操作", "Material Actions"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Material Actions", "Material Actions"), EditorStyles.boldLabel);
 
             EditorGUILayout.BeginHorizontal();
 
             // Preset Browser
             if (GUILayout.Button(new GUIContent(
-                L("プリセットブラウザ", "Preset Browser"),
-                L("マテリアルプリセットブラウザを開く", "Open Material Preset Browser")),
+                L("Preset Browser", "Preset Browser"),
+                L("Open Material Preset Browser", "Open Material Preset Browser")),
                 GUILayout.Height(25)))
             {
                 MaterialPresetBrowser.ShowWindow();
@@ -271,8 +271,8 @@ namespace NataneToon.Editor
 
             // Create Preset
             if (GUILayout.Button(new GUIContent(
-                L("プリセットとして保存", "Save as Preset"),
-                L("このマテリアルからプリセットを作成", "Create preset from this material")),
+                L("Save as Preset", "Save as Preset"),
+                L("Create preset from this material", "Create preset from this material")),
                 GUILayout.Height(25)))
             {
                 CreatePresetFromMaterial(material);
@@ -284,8 +284,8 @@ namespace NataneToon.Editor
 
             // Export to File
             if (GUILayout.Button(new GUIContent(
-                L("ファイルへ書き出し", "Export to File"),
-                L("パラメータをファイルへ書き出す", "Export parameters to file")),
+                L("Export to File", "Export to File"),
+                L("Export parameters to file", "Export parameters to file")),
                 GUILayout.Height(25)))
             {
                 ExportMaterialToFile(material);
@@ -293,8 +293,8 @@ namespace NataneToon.Editor
 
             // Copy to Clipboard
             if (GUILayout.Button(new GUIContent(
-                L("コピー", "Copy"),
-                L("パラメータをクリップボードへコピー", "Copy parameters to clipboard")),
+                L("Copy", "Copy"),
+                L("Copy parameters to clipboard", "Copy parameters to clipboard")),
                 GUILayout.Height(25)))
             {
                 CopyToClipboard(material);
@@ -305,8 +305,8 @@ namespace NataneToon.Editor
             using (new EditorGUI.DisabledScope(!clipboardValid))
             {
                 if (GUILayout.Button(new GUIContent(
-                    L("貼り付け", "Paste"),
-                    L("クリップボードからパラメータを貼り付け", "Paste parameters from clipboard")),
+                    L("Paste", "Paste"),
+                    L("Paste parameters from clipboard", "Paste parameters from clipboard")),
                     GUILayout.Height(25)))
                 {
                     PasteFromClipboard(material);
@@ -340,7 +340,6 @@ namespace NataneToon.Editor
 
                 AssetDatabase.CreateAsset(preset, path);
                 AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
 
                 EditorGUIUtility.PingObject(preset);
 
@@ -498,7 +497,7 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.BeginHorizontal();
 
-            EditorGUILayout.LabelField(L("パフォーマンス評価", "Performance Rating") + ":", GUILayout.Width(130));
+            EditorGUILayout.LabelField(L("Performance Rating", "Performance Rating") + ":", GUILayout.Width(130));
 
             Color oldColor = GUI.color;
             GUI.color = ratingColor;
@@ -507,10 +506,10 @@ namespace NataneToon.Editor
 
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.LabelField(
-                $"{L("有効機能数", "Active Features")}: {activeFeatures}",
+                $"{L("Active Features", "Active Features")}: {activeFeatures}",
                 EditorStyles.miniLabel);
             EditorGUILayout.LabelField(
-                $"{L("推定コスト", "Estimated Cost")}: {GetEstimatedCostLabel(activeFeatures)}",
+                $"{L("Estimated Cost", "Estimated Cost")}: {GetEstimatedCostLabel(activeFeatures)}",
                 EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
         }
@@ -532,7 +531,7 @@ namespace NataneToon.Editor
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField(L("パフォーマンス", "Performance"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Performance", "Performance"), EditorStyles.boldLabel);
             GUILayout.FlexibleSpace();
             EditorGUILayout.LabelField(
                 $"{L("Sampler", "Sampler")}: {samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}",
@@ -541,8 +540,8 @@ namespace NataneToon.Editor
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.LabelField(
-                $"{L("機能", "Features")}: {activeFeatures} / {L("評価", "Rating")}: {rating} / {L("状態", "Status")}: {GetSamplerBudgetStatus(samplerBudget)}" +
-                (samplerBudget.ExtraPassCount > 0 ? $" / {L("追加パス", "Extra Pass")}: +{samplerBudget.ExtraPassCount}" : string.Empty),
+                $"{L("Features", "Features")}: {activeFeatures} / {L("Rating", "Rating")}: {rating} / {L("Status", "Status")}: {GetSamplerBudgetStatus(samplerBudget)}" +
+                (samplerBudget.ExtraPassCount > 0 ? $" / {L("Extra Pass", "Extra Pass")}: +{samplerBudget.ExtraPassCount}" : string.Empty),
                 EditorStyles.wordWrappedMiniLabel);
             DrawSamplerBudgetBar(samplerBudget);
             EditorGUILayout.EndVertical();
@@ -565,18 +564,18 @@ namespace NataneToon.Editor
 
         private static string GetPerformanceRating(int featureCount)
         {
-            if (featureCount <= 3) return L("軽量 (A)", "Excellent (A)");
-            if (featureCount <= 6) return L("良好 (B)", "Good (B)");
-            if (featureCount <= 9) return L("標準 (C)", "Fair (C)");
-            return L("重い (D)", "Heavy (D)");
+            if (featureCount <= 3) return L("Excellent (A)", "Excellent (A)");
+            if (featureCount <= 6) return L("Good (B)", "Good (B)");
+            if (featureCount <= 9) return L("Fair (C)", "Fair (C)");
+            return L("Heavy (D)", "Heavy (D)");
         }
 
         private static string GetEstimatedCostLabel(int featureCount)
         {
-            if (featureCount <= 3) return L("低", "Low");
-            if (featureCount <= 6) return L("中", "Medium");
-            if (featureCount <= 9) return L("やや高い", "Moderate");
-            return L("高い", "High");
+            if (featureCount <= 3) return L("Low", "Low");
+            if (featureCount <= 6) return L("Medium", "Medium");
+            if (featureCount <= 9) return L("Moderate", "Moderate");
+            return L("High", "High");
         }
 
         private static Color GetRatingColor(int featureCount)
@@ -598,15 +597,15 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space(4);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField(L("推定 Sampler 負荷", "Estimated Sampler Budget"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Estimated Sampler Budget", "Estimated Sampler Budget"), EditorStyles.boldLabel);
             DrawSamplerBudgetBar(samplerBudget);
             EditorGUILayout.LabelField(
-                $"{L("ベース", "Base")}: {samplerBudget.BaseSamplers} / {L("追加", "Optional")}: {samplerBudget.OptionalSamplers}",
+                $"{L("Base", "Base")}: {samplerBudget.BaseSamplers} / {L("Optional", "Optional")}: {samplerBudget.OptionalSamplers}",
                 EditorStyles.miniLabel);
             if (samplerBudget.ExtraPassCount > 0)
             {
                 EditorGUILayout.LabelField(
-                    $"{L("追加パス", "Extra Pass")}: +{samplerBudget.ExtraPassCount} ({L("Screen Edge 分離", "Screen Edge Split")})",
+                    $"{L("Extra Pass", "Extra Pass")}: +{samplerBudget.ExtraPassCount} ({L("Screen Edge Split", "Screen Edge Split")})",
                     EditorStyles.miniLabel);
             }
 
@@ -614,66 +613,52 @@ namespace NataneToon.Editor
             if (!string.IsNullOrEmpty(contributorSummary))
             {
                 EditorGUILayout.LabelField(
-                    $"{L("主な負荷", "Top Contributors")}: {contributorSummary}",
+                    $"{L("Top Contributors", "Top Contributors")}: {contributorSummary}",
                     EditorStyles.wordWrappedMiniLabel);
             }
 
             if (samplerBudget.IsOverLimit)
             {
                 EditorGUILayout.HelpBox(
-                    L(
-                        $"推定 Sampler 数が上限を超えています ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit})。見た目は保持されますが、新しい重い機能は有効化できません。",
-                        $"Estimated sampler usage is over the limit ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}). The current look is preserved, but new heavy features cannot be enabled."),
+                    L($"Estimated sampler usage is over the limit ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}). The current look is preserved, but new heavy features cannot be enabled.", $"Estimated sampler usage is over the limit ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}). The current look is preserved, but new heavy features cannot be enabled."),
                     MessageType.Warning);
             }
             else if (samplerBudget.IsNearLimit)
             {
                 EditorGUILayout.HelpBox(
-                    L(
-                        $"推定 Sampler 数が上限付近です ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit})。重い機能を追加する前に構成を見直すのが安全です。",
-                        $"Estimated sampler usage is close to the limit ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}). Review the current setup before enabling more heavy features."),
+                    L($"Estimated sampler usage is close to the limit ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}). Review the current setup before enabling more heavy features.", $"Estimated sampler usage is close to the limit ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}). Review the current setup before enabling more heavy features."),
                     MessageType.Warning);
             }
             else if (samplerBudget.IsWarning)
             {
                 EditorGUILayout.HelpBox(
-                    L(
-                        $"推定 Sampler 数は注意域です ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit})。Light Volume や LTCGI などの追加時は上限に注意してください。",
-                        $"Estimated sampler usage is in the caution range ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}). Be careful when adding features such as Light Volume or LTCGI."),
+                    L($"Estimated sampler usage is in the caution range ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}). Be careful when adding features such as Light Volume or LTCGI.", $"Estimated sampler usage is in the caution range ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}). Be careful when adding features such as Light Volume or LTCGI."),
                     MessageType.Info);
             }
 
             if (samplerBudget.HasCriticalLightingCombo)
             {
                 EditorGUILayout.HelpBox(
-                    L(
-                        "Light Volume + LTCGI + ハッチング は Sampler 使用数が急増しやすい組み合わせです。D3D11 では特に注意してください。",
-                        "Light Volume + LTCGI + Hatching is a high-risk sampler combination. Be especially careful on D3D11."),
+                    L("Light Volume + LTCGI + Hatching is a high-risk sampler combination. Be especially careful on D3D11.", "Light Volume + LTCGI + Hatching is a high-risk sampler combination. Be especially careful on D3D11."),
                     MessageType.Warning);
             }
             else if (samplerBudget.HasScreenSpaceLightingCombo)
             {
                 EditorGUILayout.HelpBox(
-                    L(
-                        "Light Volume + LTCGI + Screen Edge は Sampler 上限に届きやすい組み合わせです。追加テクスチャや髪表現を重ねる前に構成を見直してください。",
-                        "Light Volume + LTCGI + Screen Edge can hit the sampler limit quickly. Review the setup before layering more texture-heavy effects."),
+                    L("Light Volume + LTCGI + Screen Edge can hit the sampler limit quickly. Review the setup before layering more texture-heavy effects.", "Light Volume + LTCGI + Screen Edge can hit the sampler limit quickly. Review the setup before layering more texture-heavy effects."),
                     MessageType.Warning);
             }
             else if (samplerBudget.HasLightVolumeLtcgiCombo)
             {
                 EditorGUILayout.HelpBox(
-                    L(
-                        "Light Volume と LTCGI の同時使用は Sampler 上限に近づきやすいです。他の重い機能と併用する場合は注意してください。",
-                        "Using Light Volume and LTCGI together can quickly approach the sampler limit. Be careful when combining them with other heavy features."),
+                    L("Using Light Volume and LTCGI together can quickly approach the sampler limit. Be careful when combining them with other heavy features.", "Using Light Volume and LTCGI together can quickly approach the sampler limit. Be careful when combining them with other heavy features."),
                     MessageType.Info);
             }
 
             if (samplerBudget.UsesScreenEdgeSplitVariant)
             {
                 EditorGUILayout.HelpBox(
-                    L(
-                        "このマテリアルは Screen Edge 分離バリアントです。Sampler 負荷は下がりますが、追加パスのぶんドローコールは 1 つ増えます。",
-                        "This material uses the Screen Edge split variant. Sampler pressure is lower, but the extra pass adds one draw call."),
+                    L("This material uses the Screen Edge split variant. Sampler pressure is lower, but the extra pass adds one draw call.", "This material uses the Screen Edge split variant. Sampler pressure is lower, but the extra pass adds one draw call."),
                     MessageType.Info);
             }
 
@@ -708,10 +693,10 @@ namespace NataneToon.Editor
 
         private static string GetSamplerBudgetStatus(NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate estimate)
         {
-            if (estimate.IsOverLimit) return L("上限超過", "Over Limit");
-            if (estimate.IsNearLimit) return L("上限付近", "Near Limit");
-            if (estimate.IsWarning) return L("注意", "Caution");
-            return L("安全", "Safe");
+            if (estimate.IsOverLimit) return L("Over Limit", "Over Limit");
+            if (estimate.IsNearLimit) return L("Near Limit", "Near Limit");
+            if (estimate.IsWarning) return L("Caution", "Caution");
+            return L("Safe", "Safe");
         }
 
         private static string GetContributorSummary(NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate estimate, int maxCount)
@@ -733,7 +718,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw unified tool header with help button
-        /// ヘルプボタン付き統一ツールヘッダーを描画
+        /// 繝倥Ν繝励・繧ｿ繝ｳ莉倥″邨ｱ荳繝・・繝ｫ繝倥ャ繝繝ｼ繧呈緒逕ｻ
         /// </summary>
         public static void DrawToolHeader(string titleJP, string titleEN, string toolKey)
         {
@@ -755,7 +740,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw JP/EN language toggle button
-        /// JP/EN 言語切り替えボタンを描画
+        /// JP/EN 險隱槫・繧頑崛縺医・繧ｿ繝ｳ繧呈緒逕ｻ
         /// </summary>
         public static void DrawLanguageToggleButton()
         {
@@ -768,7 +753,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw primary action button
-        /// プライマリアクションボタンを描画
+        /// 繝励Λ繧､繝槭Μ繧｢繧ｯ繧ｷ繝ｧ繝ｳ繝懊ち繝ｳ繧呈緒逕ｻ
         /// </summary>
         public static bool DrawPrimaryButton(string label, float width = 150, float height = 30)
         {
@@ -778,7 +763,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw secondary action button
-        /// セカンダリアクションボタンを描画
+        /// 繧ｻ繧ｫ繝ｳ繝繝ｪ繧｢繧ｯ繧ｷ繝ｧ繝ｳ繝懊ち繝ｳ繧呈緒逕ｻ
         /// </summary>
         public static bool DrawSecondaryButton(string label, float width = 150, float height = 25)
         {
@@ -787,7 +772,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw foldout section with unified style
-        /// 統一スタイルのフォールドアウトセクションを描画
+        /// 邨ｱ荳繧ｹ繧ｿ繧､繝ｫ縺ｮ繝輔か繝ｼ繝ｫ繝峨い繧ｦ繝医そ繧ｯ繧ｷ繝ｧ繝ｳ繧呈緒逕ｻ
         /// </summary>
         public static bool DrawFoldoutSection(string title, bool foldout, System.Action content)
         {
@@ -805,7 +790,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw success message box
-        /// 成功メッセージボックスを描画
+        /// 謌仙粥繝｡繝・そ繝ｼ繧ｸ繝懊ャ繧ｯ繧ｹ繧呈緒逕ｻ
         /// </summary>
         public static void DrawSuccessBox(string message)
         {
@@ -817,7 +802,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw warning message box
-        /// 警告メッセージボックスを描画
+        /// 隴ｦ蜻翫Γ繝・そ繝ｼ繧ｸ繝懊ャ繧ｯ繧ｹ繧呈緒逕ｻ
         /// </summary>
         public static void DrawWarningBox(string message)
         {
@@ -826,7 +811,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw error message box
-        /// エラーメッセージボックスを描画
+        /// 繧ｨ繝ｩ繝ｼ繝｡繝・そ繝ｼ繧ｸ繝懊ャ繧ｯ繧ｹ繧呈緒逕ｻ
         /// </summary>
         public static void DrawErrorBox(string message)
         {
@@ -834,4 +819,3 @@ namespace NataneToon.Editor
         }
     }
 }
-

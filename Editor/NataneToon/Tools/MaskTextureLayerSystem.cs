@@ -26,6 +26,7 @@ namespace NataneToon.Editor
         public Color[] pixels;
         public int width, height;
         public bool locked;
+        public bool lockTransparentPixels;
 
         public enum SourceType { Empty, Noise, UVMask, Gradient, MeshInfo, Paint, Import }
         public SourceType sourceType;
@@ -37,7 +38,7 @@ namespace NataneToon.Editor
             this.height = Mathf.Max(1, height);
             this.pixels = new Color[this.width * this.height];
             for (int i = 0; i < pixels.Length; i++)
-                pixels[i] = Color.black;
+                pixels[i] = Color.clear;
         }
 
         public MaskTextureLayer Clone()
@@ -47,6 +48,7 @@ namespace NataneToon.Editor
             clone.opacity = opacity;
             clone.blendMode = blendMode;
             clone.locked = locked;
+            clone.lockTransparentPixels = lockTransparentPixels;
             clone.sourceType = sourceType;
             if (pixels != null && pixels.Length > 0)
             {
@@ -72,7 +74,17 @@ namespace NataneToon.Editor
         /// </summary>
         public void Fill(float value)
         {
-            Fill(new Color(value, value, value, 1f));
+            Fill(value, 1f);
+        }
+
+        public void Fill(float value, float alpha)
+        {
+            Fill(new Color(value, value, value, alpha));
+        }
+
+        public void Clear()
+        {
+            Fill(Color.clear);
         }
 
         /// <summary>
@@ -98,7 +110,7 @@ namespace NataneToon.Editor
         /// </summary>
         public Color SampleBilinear(float u, float v)
         {
-            if (pixels == null || pixels.Length == 0) return Color.black;
+            if (pixels == null || pixels.Length == 0) return Color.clear;
 
             u = Mathf.Clamp01(u);
             v = Mathf.Clamp01(v);
@@ -139,7 +151,7 @@ namespace NataneToon.Editor
         /// </summary>
         public Color GetPixel(int x, int y)
         {
-            if (pixels == null) return Color.black;
+            if (pixels == null) return Color.clear;
             x = Mathf.Clamp(x, 0, width - 1);
             y = Mathf.Clamp(y, 0, height - 1);
             return pixels[y * width + x];
@@ -272,7 +284,7 @@ namespace NataneToon.Editor
             for (int i = 0; i < w * h; i++)
             {
                 Color topPixel = (upper.width == w && upper.height == h && upper.pixels != null)
-                    ? upper.pixels[i] : Color.black;
+                    ? upper.pixels[i] : Color.clear;
                 lower.pixels[i] = BlendPixels(lower.pixels[i], topPixel, upper.blendMode, upper.opacity);
             }
             Layers.RemoveAt(index);
@@ -342,47 +354,61 @@ namespace NataneToon.Editor
         /// </summary>
         internal static Color BlendPixels(Color bottom, Color top, MaskBlendMode mode, float opacity)
         {
-            Color blended;
+            float effectiveAlpha = Mathf.Clamp01(top.a * opacity);
+            if (effectiveAlpha <= 0.0001f)
+                return bottom;
+
+            Color blendedRgb = BlendRgb(bottom, top, mode);
+            return CompositeAlpha(bottom, blendedRgb, effectiveAlpha);
+        }
+
+        private static Color BlendRgb(Color bottom, Color top, MaskBlendMode mode)
+        {
             switch (mode)
             {
                 case MaskBlendMode.Normal:
-                    blended = top;
-                    break;
+                    return new Color(top.r, top.g, top.b, 1f);
                 case MaskBlendMode.Multiply:
-                    blended = new Color(
+                    return new Color(
                         bottom.r * top.r,
                         bottom.g * top.g,
-                        bottom.b * top.b, top.a);
-                    break;
+                        bottom.b * top.b, 1f);
                 case MaskBlendMode.Add:
-                    blended = new Color(
+                    return new Color(
                         Mathf.Clamp01(bottom.r + top.r),
                         Mathf.Clamp01(bottom.g + top.g),
-                        Mathf.Clamp01(bottom.b + top.b), top.a);
-                    break;
+                        Mathf.Clamp01(bottom.b + top.b), 1f);
                 case MaskBlendMode.Subtract:
-                    blended = new Color(
+                    return new Color(
                         Mathf.Clamp01(bottom.r - top.r),
                         Mathf.Clamp01(bottom.g - top.g),
-                        Mathf.Clamp01(bottom.b - top.b), top.a);
-                    break;
+                        Mathf.Clamp01(bottom.b - top.b), 1f);
                 case MaskBlendMode.Overlay:
-                    blended = new Color(
+                    return new Color(
                         OverlayChannel(bottom.r, top.r),
                         OverlayChannel(bottom.g, top.g),
-                        OverlayChannel(bottom.b, top.b), top.a);
-                    break;
+                        OverlayChannel(bottom.b, top.b), 1f);
                 case MaskBlendMode.Screen:
-                    blended = new Color(
+                    return new Color(
                         1f - (1f - bottom.r) * (1f - top.r),
                         1f - (1f - bottom.g) * (1f - top.g),
-                        1f - (1f - bottom.b) * (1f - top.b), top.a);
-                    break;
+                        1f - (1f - bottom.b) * (1f - top.b), 1f);
                 default:
-                    blended = top;
-                    break;
+                    return new Color(top.r, top.g, top.b, 1f);
             }
-            return Color.Lerp(bottom, blended, opacity);
+        }
+
+        private static Color CompositeAlpha(Color bottom, Color topRgb, float topAlpha)
+        {
+            float bottomAlpha = Mathf.Clamp01(bottom.a);
+            float outAlpha = topAlpha + bottomAlpha * (1f - topAlpha);
+            if (outAlpha <= 0.0001f)
+                return Color.clear;
+
+            float outR = ((topRgb.r * topAlpha) + (bottom.r * bottomAlpha * (1f - topAlpha))) / outAlpha;
+            float outG = ((topRgb.g * topAlpha) + (bottom.g * bottomAlpha * (1f - topAlpha))) / outAlpha;
+            float outB = ((topRgb.b * topAlpha) + (bottom.b * bottomAlpha * (1f - topAlpha))) / outAlpha;
+            return new Color(outR, outG, outB, outAlpha);
         }
 
         private static float OverlayChannel(float a, float b)
@@ -543,6 +569,17 @@ namespace NataneToon.Editor
             if (GUILayout.Button(new GUIContent(lockLabel, lockTooltip), GUILayout.Width(22)))
             {
                 layer.locked = !layer.locked;
+                changed = true;
+            }
+
+            // Keep alpha lock text ASCII-only to avoid editor-side mojibake in this file.
+            string alphaLockLabel = layer.lockTransparentPixels ? "TP" : "--";
+            string alphaLockTooltip = layer.lockTransparentPixels
+                ? "Unlock transparent pixels"
+                : "Lock transparent pixels";
+            if (GUILayout.Button(new GUIContent(alphaLockLabel, alphaLockTooltip), GUILayout.Width(30)))
+            {
+                layer.lockTransparentPixels = !layer.lockTransparentPixels;
                 changed = true;
             }
 

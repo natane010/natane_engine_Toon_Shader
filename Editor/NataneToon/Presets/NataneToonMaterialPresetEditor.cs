@@ -49,16 +49,8 @@ namespace NataneToon.Editor
         /// </summary>
         private static void ForceInspectorRefresh(Material material)
         {
-            // Mark material as dirty
             EditorUtility.SetDirty(material);
 
-            // Save assets to ensure changes are persisted
-            AssetDatabase.SaveAssets();
-
-            // Refresh the asset database
-            AssetDatabase.Refresh();
-
-            // Force reselection to refresh inspector cache
             var currentSelection = Selection.activeObject;
             Selection.activeObject = null;
             EditorApplication.delayCall += () =>
@@ -73,25 +65,17 @@ namespace NataneToon.Editor
         /// </summary>
         private static void ForceInspectorRefresh(Material material, MaterialEditor materialEditor)
         {
-            // Mark material as dirty
             EditorUtility.SetDirty(material);
 
-            // Notify MaterialEditor about property changes
             if (materialEditor != null)
             {
-                // Update serialized object
                 var serializedObject = new SerializedObject(material);
                 serializedObject.UpdateIfRequiredOrScript();
 
-                // Force MaterialEditor to refresh
                 materialEditor.Repaint();
                 materialEditor.PropertiesChanged();
             }
 
-            // Save assets to ensure changes are persisted
-            AssetDatabase.SaveAssets();
-
-            // Repaint all views
             UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
         }
 

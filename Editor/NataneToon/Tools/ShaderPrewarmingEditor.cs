@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEditor;
@@ -12,11 +13,11 @@ namespace NataneToon.Editor
 
     /// <summary>
     /// Editor-only Shader Prewarming for Natane Toon Shader
-    /// Natane Toon Shader用のエディタ専用シェーダープリウォーミング
+    /// Natane Toon Shader逕ｨ縺ｮ繧ｨ繝・ぅ繧ｿ蟆ら畑繧ｷ繧ｧ繝ｼ繝繝ｼ繝励Μ繧ｦ繧ｩ繝ｼ繝溘Φ繧ｰ
     /// Automatically warms up shader variants before build to prevent runtime compilation stutters
-    /// ビルド前にシェーダーバリアントを自動的にウォームアップし、実行時のコンパイルのスタッターを防止
+    /// 繝薙Ν繝牙燕縺ｫ繧ｷ繧ｧ繝ｼ繝繝ｼ繝舌Μ繧｢繝ｳ繝医ｒ閾ｪ蜍慕噪縺ｫ繧ｦ繧ｩ繝ｼ繝繧｢繝・・縺励∝ｮ溯｡梧凾縺ｮ繧ｳ繝ｳ繝代う繝ｫ縺ｮ繧ｹ繧ｿ繝・ち繝ｼ繧帝亟豁｢
     /// Safe for VRChat - no runtime scripts required
-    /// VRChat対応 - ランタイムスクリプト不要
+    /// VRChat蟇ｾ蠢・- 繝ｩ繝ｳ繧ｿ繧､繝繧ｹ繧ｯ繝ｪ繝励ヨ荳崎ｦ・
     /// </summary>
     public class ShaderPrewarmingEditor : IPreprocessBuildWithReport
     {
@@ -26,43 +27,25 @@ namespace NataneToon.Editor
         private const string PREWARM_ENABLED_KEY = "NataneToon_PrewarmOnBuild";
         private const string AUTO_FIND_ENABLED_KEY = "NataneToon_AutoFindVariants";
 
-        // Natane shader names for filtering
-        private static readonly HashSet<string> NataneShaderNames = new HashSet<string>
-        {
-            "Natane/Toon Shader",
-            "Natane/Toon Shader (ScreenEdge Split)",
-            "Natane/Toon Shader (Cutout)",
-            "Natane/Toon Shader (Transparent)",
-            "Natane/Toon Shader (Lite)",
-            "Natane/Toon Shader (Cutout Lite)",
-            "Natane/Toon Shader (Transparent Lite)",
-            "Natane/Toon Shader (Fur)",
-            "Natane/Toon Shader (Fur Lite)",
-            "Natane/Toon Shader (Background)",
-            "Natane/Toon Shader Wirelight",
-            "Natane/Eye",
-            "Natane/Screen FX Overlay"
-        };
-
         /// <summary>
         /// Automatically prewarm shaders before build.
         /// Also auto-collects variants if the collection is empty.
-        /// ビルド前にシェーダーを自動プリウォーム。
-        /// コレクションが空の場合は自動収集も実行。
+        /// 繝薙Ν繝牙燕縺ｫ繧ｷ繧ｧ繝ｼ繝繝ｼ繧定・蜍輔・繝ｪ繧ｦ繧ｩ繝ｼ繝縲・
+        /// 繧ｳ繝ｬ繧ｯ繧ｷ繝ｧ繝ｳ縺檎ｩｺ縺ｮ蝣ｴ蜷医・閾ｪ蜍募庶髮・ｂ螳溯｡後・
         /// </summary>
         public void OnPreprocessBuild(BuildReport report)
         {
             if (!EditorPrefs.GetBool(PREWARM_ENABLED_KEY, true))
                 return;
 
+            NataneBuildPreparationService.PrepareForBuild(forceRefresh: false, logSummary: false);
             Debug.Log("[Natane Toon] Pre-build shader prewarming started...");
 
             // Auto-collect if collection is empty
             ShaderVariantCollection collection = FindShaderVariantCollection();
             if (collection != null && collection.variantCount == 0)
             {
-                Debug.Log("[Natane Toon] コレクションが空です。マテリアルから自動収集します... " +
-                          "Collection is empty. Auto-collecting from materials...");
+                Debug.Log("[Natane Toon] Collection is empty. Auto-collecting from materials...");
                 AutoCollectVariantsFromMaterials(collection);
             }
 
@@ -80,13 +63,13 @@ namespace NataneToon.Editor
             // PrewarmShaders(false);
         }
 
-        [MenuItem("Tools/Natane/シェーダー Shader/シェーダープリウォーミング Shader Prewarming/すべてウォームアップ Prewarm All Shaders", false, 72)]
+        [MenuItem("Tools/Natane/Shader/Shader Prewarming/Prewarm All Shaders", false, 72)]
         private static void PrewarmShadersMenu()
         {
             PrewarmShaders(true);
         }
 
-        [MenuItem("Tools/Natane/シェーダー Shader/シェーダープリウォーミング Shader Prewarming/バリアントコレクションをウォームアップ Prewarm Shader Variant Collection", false, 721)]
+        [MenuItem("Tools/Natane/Shader/Shader Prewarming/Prewarm Shader Variant Collection", false, 721)]
         private static void PrewarmShaderVariantCollectionMenu()
         {
             ShaderVariantCollection collection = FindShaderVariantCollection();
@@ -96,7 +79,7 @@ namespace NataneToon.Editor
             }
         }
 
-        [MenuItem("Tools/Natane/シェーダー Shader/シェーダープリウォーミング Shader Prewarming/設定 Settings", false, 722)]
+        [MenuItem("Tools/Natane/Shader/Shader Prewarming/Settings", false, 722)]
         private static void ShowSettings()
         {
             ShaderPrewarmingSettingsWindow.ShowWindow();
@@ -104,7 +87,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Main prewarming logic with progress bar support.
-        /// プログレスバー対応のメインプリウォーミングロジック。
+        /// 繝励Ο繧ｰ繝ｬ繧ｹ繝舌・蟇ｾ蠢懊・繝｡繧､繝ｳ繝励Μ繧ｦ繧ｩ繝ｼ繝溘Φ繧ｰ繝ｭ繧ｸ繝・け縲・
         /// </summary>
         private static void PrewarmShaders(bool showDialog)
         {
@@ -113,19 +96,20 @@ namespace NataneToon.Editor
 
             try
             {
+                NataneBuildPreparationService.PrepareForBuild(forceRefresh: showDialog, logSummary: false);
+
                 // Stage 1: Prewarm ShaderVariantCollection if exists
                 EditorUtility.DisplayProgressBar(
-                    L("シェーダープリウォーミング", "Shader Prewarming"),
-                    L("ShaderVariantCollectionを検索中...", "Finding ShaderVariantCollection..."),
+                    L("Shader Prewarming", "Shader Prewarming"),
+                    L("Finding ShaderVariantCollection...", "Finding ShaderVariantCollection..."),
                     0.1f);
 
                 ShaderVariantCollection collection = FindShaderVariantCollection();
                 if (collection != null)
                 {
                     EditorUtility.DisplayProgressBar(
-                        L("シェーダープリウォーミング", "Shader Prewarming"),
-                        L($"コレクションをウォームアップ中... ({collection.variantCount} variants)...",
-                        $"Warming up collection ({collection.variantCount} variants)..."),
+                        L("Shader Prewarming", "Shader Prewarming"),
+                        L($"Warming up collection ({collection.variantCount} variants)...", $"Warming up collection ({collection.variantCount} variants)..."),
                         0.3f);
 
                     PrewarmShaderVariantCollection(collection);
@@ -136,8 +120,8 @@ namespace NataneToon.Editor
                 if (EditorPrefs.GetBool(AUTO_FIND_ENABLED_KEY, true))
                 {
                     EditorUtility.DisplayProgressBar(
-                        L("シェーダープリウォーミング", "Shader Prewarming"),
-                        L("Natane Toonマテリアルをウォームアップ中...", "Warming up Natane Toon materials..."),
+                        L("Shader Prewarming", "Shader Prewarming"),
+                        L("Warming up Natane Toon materials...", "Warming up Natane Toon materials..."),
                         0.6f);
 
                     int materialCount = PrewarmAllNataneToonMaterials();
@@ -145,8 +129,8 @@ namespace NataneToon.Editor
                 }
 
                 EditorUtility.DisplayProgressBar(
-                    L("シェーダープリウォーミング", "Shader Prewarming"),
-                    L("完了", "Complete!"),
+                    L("Shader Prewarming", "Shader Prewarming"),
+                    L("Complete!", "Complete!"),
                     1.0f);
             }
             finally
@@ -165,7 +149,7 @@ namespace NataneToon.Editor
             if (showDialog)
             {
                 EditorUtility.DisplayDialog(
-                    L("シェーダープリウォーミング完了", "Shader Prewarming Complete"),
+                    L("Shader Prewarming Complete", "Shader Prewarming Complete"),
                     message,
                     "OK");
             }
@@ -188,62 +172,68 @@ namespace NataneToon.Editor
         /// <summary>
         /// Find all materials using Natane Toon Shader and prewarm them
         /// using a temporary ShaderVariantCollection (targeted, not Shader.WarmupAllShaders).
-        /// Natane Toon Shaderを使用する全マテリアルを一時ShaderVariantCollectionで
-        /// ターゲット指定でプリウォームします。
+        /// Natane Toon Shader繧剃ｽｿ逕ｨ縺吶ｋ蜈ｨ繝槭ユ繝ｪ繧｢繝ｫ繧剃ｸ譎４haderVariantCollection縺ｧ
+        /// 繧ｿ繝ｼ繧ｲ繝・ヨ謖・ｮ壹〒繝励Μ繧ｦ繧ｩ繝ｼ繝縺励∪縺吶・
         /// </summary>
         private static int PrewarmAllNataneToonMaterials()
         {
-            string[] materialGUIDs = AssetDatabase.FindAssets("t:Material");
-            int materialCount = 0;
-            HashSet<string> uniqueShaderNames = new HashSet<string>();
-
-            // Create a temporary ShaderVariantCollection for targeted warmup
+            Dictionary<string, List<string[]>> shaderKeywordSets = NataneBuildPreparationService.LoadShaderKeywordSets();
             ShaderVariantCollection tempCollection = new ShaderVariantCollection();
+            int uniqueShaderCount = 0;
 
-            foreach (string guid in materialGUIDs)
+            for (int i = 0; i < NataneShaderCatalog.ShaderConfigs.Length; i++)
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-
-                if (material == null || material.shader == null)
-                    continue;
-
-                if (!NataneShaderNames.Contains(material.shader.name))
-                    continue;
-
-                materialCount++;
-                uniqueShaderNames.Add(material.shader.name);
-
-                // Add base variant for this shader
-                var variant = new ShaderVariantCollection.ShaderVariant
+                NataneShaderCatalog.ShaderPassConfig config = NataneShaderCatalog.ShaderConfigs[i];
+                Shader shader = Shader.Find(config.name);
+                if (shader == null)
                 {
-                    shader = material.shader,
-                    passType = PassType.ForwardBase,
-                    keywords = new string[] { }
-                };
+                    continue;
+                }
 
-                if (!tempCollection.Contains(variant))
+                uniqueShaderCount++;
+                if (!shaderKeywordSets.TryGetValue(config.name, out List<string[]> keywordSets) || keywordSets.Count == 0)
                 {
-                    tempCollection.Add(variant);
+                    keywordSets = new List<string[]> { Array.Empty<string>() };
+                }
+
+                for (int j = 0; j < keywordSets.Count; j++)
+                {
+                    string[] keywords = keywordSets[j];
+                    AddVariantSafe(tempCollection, shader, PassType.ForwardBase, keywords);
+                    if (config.hasForwardAdd)
+                    {
+                        AddVariantSafe(tempCollection, shader, PassType.ForwardAdd, keywords);
+                    }
+                    if (config.hasNormalPass)
+                    {
+                        AddVariantSafe(tempCollection, shader, PassType.Normal, keywords);
+                    }
+                }
+
+                if (config.hasShadowCaster)
+                {
+                    AddVariantSafe(tempCollection, shader, PassType.ShadowCaster, Array.Empty<string>());
+                }
+                if (config.hasMeta)
+                {
+                    AddVariantSafe(tempCollection, shader, PassType.Meta, Array.Empty<string>());
                 }
             }
 
-            // Warm up only Natane Toon shader variants
-            if (materialCount > 0)
+            if (tempCollection.variantCount > 0)
             {
                 tempCollection.WarmUp();
-                Debug.Log($"[Natane Toon] Prewarmed {materialCount} Natane Toon materials " +
-                          $"across {uniqueShaderNames.Count} shaders (targeted warmup)");
+                Debug.Log($"[Natane Toon] Prewarmed {tempCollection.variantCount} manifest variants across {uniqueShaderCount} shaders");
             }
 
-            return materialCount;
+            return tempCollection.variantCount;
         }
 
         /// <summary>
         /// Dynamically find the ShaderVariantCollection asset.
         /// Searches multiple known paths to support both Assets and UPM package layouts.
-        /// ShaderVariantCollectionアセットを動的に検索します。
-        /// Assets配置とUPMパッケージ配置の両方をサポートします。
+        /// ShaderVariantCollection繧｢繧ｻ繝・ヨ繧貞虚逧・↓讀懃ｴ｢縺励∪縺吶・
+        /// Assets驟咲ｽｮ縺ｨUPM繝代ャ繧ｱ繝ｼ繧ｸ驟咲ｽｮ縺ｮ荳｡譁ｹ繧偵し繝昴・繝医＠縺ｾ縺吶・
         /// </summary>
         private static ShaderVariantCollection FindShaderVariantCollection()
         {
@@ -281,8 +271,8 @@ namespace NataneToon.Editor
         /// <summary>
         /// Dynamically resolve the ShaderVariantCollection file path.
         /// Checks AssetDatabase search first, then known fallback paths.
-        /// ShaderVariantCollectionファイルパスを動的に解決します。
-        /// まずAssetDatabase検索、次に既知のフォールバックパスを確認します。
+        /// ShaderVariantCollection繝輔ぃ繧､繝ｫ繝代せ繧貞虚逧・↓隗｣豎ｺ縺励∪縺吶・
+        /// 縺ｾ縺哂ssetDatabase讀懃ｴ｢縲∵ｬ｡縺ｫ譌｢遏･縺ｮ繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ繝代せ繧堤｢ｺ隱阪＠縺ｾ縺吶・
         /// </summary>
         private static string FindShaderVariantPath()
         {
@@ -307,7 +297,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Shader pass type configuration for auto-collection.
-        /// 自動収集用のシェーダーパスタイプ設定。
+        /// 閾ｪ蜍募庶髮・畑縺ｮ繧ｷ繧ｧ繝ｼ繝繝ｼ繝代せ繧ｿ繧､繝苓ｨｭ螳壹・
         /// </summary>
         private struct ShaderPassConfig
         {
@@ -347,44 +337,15 @@ namespace NataneToon.Editor
         /// <summary>
         /// Auto-collect variants from project materials into the given collection.
         /// Runs when the collection is empty at build time.
-        /// プロジェクトマテリアルからバリアントを自動収集します。
-        /// ビルド時にコレクションが空の場合に実行されます。
+        /// 繝励Ο繧ｸ繧ｧ繧ｯ繝医・繝・Μ繧｢繝ｫ縺九ｉ繝舌Μ繧｢繝ｳ繝医ｒ閾ｪ蜍募庶髮・＠縺ｾ縺吶・
+        /// 繝薙Ν繝画凾縺ｫ繧ｳ繝ｬ繧ｯ繧ｷ繝ｧ繝ｳ縺檎ｩｺ縺ｮ蝣ｴ蜷医↓螳溯｡後＆繧後∪縺吶・
         /// </summary>
         private static void AutoCollectVariantsFromMaterials(ShaderVariantCollection collection)
         {
             if (collection == null) return;
 
-            // Collect per-shader keyword sets from project materials
-            string[] materialGuids = AssetDatabase.FindAssets("t:Material");
-            var perShaderKeywordSets = new Dictionary<string, HashSet<string>>();
-            int nataneMaterialCount = 0;
-
-            foreach (string guid in materialGuids)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-
-                if (material == null || material.shader == null)
-                    continue;
-
-                string shaderName = material.shader.name;
-                if (!NataneShaderNames.Contains(shaderName))
-                    continue;
-
-                nataneMaterialCount++;
-
-                string[] keywords = material.shaderKeywords
-                    .Where(k => !string.IsNullOrEmpty(k))
-                    .Distinct()
-                    .OrderBy(k => k)
-                    .ToArray();
-
-                string key = string.Join(";", keywords);
-                if (!perShaderKeywordSets.ContainsKey(shaderName))
-                    perShaderKeywordSets[shaderName] = new HashSet<string>();
-
-                perShaderKeywordSets[shaderName].Add(key);
-            }
+            Dictionary<string, List<string[]>> perShaderKeywordSets = NataneBuildPreparationService.LoadShaderKeywordSets();
+            int nataneMaterialCount = perShaderKeywordSets.Sum(pair => pair.Value.Count);
 
             int totalAdded = 0;
             int uniqueKeywordSets = 0;
@@ -397,12 +358,12 @@ namespace NataneToon.Editor
                 // Always include base variant
                 var keywordSets = new List<string[]> { new string[] { } };
 
-                if (perShaderKeywordSets.ContainsKey(config.name))
+                if (perShaderKeywordSets.TryGetValue(config.name, out List<string[]> loadedKeywordSets))
                 {
-                    foreach (string keySet in perShaderKeywordSets[config.name])
+                    foreach (string[] loadedKeywordSet in loadedKeywordSets)
                     {
-                        if (!string.IsNullOrEmpty(keySet))
-                            keywordSets.Add(keySet.Split(';'));
+                        if (loadedKeywordSet.Length > 0)
+                            keywordSets.Add(loadedKeywordSet);
                     }
                 }
 
@@ -432,9 +393,6 @@ namespace NataneToon.Editor
                       $"({uniqueKeywordSets} unique keyword sets across all shaders)");
         }
 
-        /// <summary>
-        /// Safely add a variant to a collection. Returns 1 if added, 0 if skipped.
-        /// </summary>
         private static int AddVariantSafe(ShaderVariantCollection collection, Shader shader,
             PassType passType, string[] keywords)
         {
@@ -444,7 +402,7 @@ namespace NataneToon.Editor
             {
                 shader = shader,
                 passType = passType,
-                keywords = keywords
+                keywords = keywords ?? Array.Empty<string>()
             };
 
             if (!collection.Contains(variant))
@@ -459,7 +417,7 @@ namespace NataneToon.Editor
 
     /// <summary>
     /// Settings window for Shader Prewarming
-    /// シェーダープリウォーミング設定ウィンドウ
+    /// 繧ｷ繧ｧ繝ｼ繝繝ｼ繝励Μ繧ｦ繧ｩ繝ｼ繝溘Φ繧ｰ險ｭ螳壹え繧｣繝ｳ繝峨え
     /// </summary>
     public class ShaderPrewarmingSettingsWindow : EditorWindow
     {
@@ -474,7 +432,7 @@ namespace NataneToon.Editor
 
         public static void ShowWindow()
         {
-            var window = GetWindow<ShaderPrewarmingSettingsWindow>(L("シェーダープリウォーミング設定", "Shader Prewarming Settings"));
+            var window = GetWindow<ShaderPrewarmingSettingsWindow>(L("Shader Prewarming Settings", "Shader Prewarming Settings"));
             window.minSize = new Vector2(450, 400);
             window.Show();
         }
@@ -496,28 +454,26 @@ namespace NataneToon.Editor
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
 
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField(L("Natane Toon シェーダープリウォーミング設定", "Natane Toon Shader Prewarming Settings"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Natane Toon Shader Prewarming Settings", "Natane Toon Shader Prewarming Settings"), EditorStyles.boldLabel);
             EditorGUILayout.Space(10);
 
             EditorGUILayout.HelpBox(
-                L("シェーダープリウォーミングはシェーダーバリアントを事前にコンパイルしてゲームプレイ中のスタッターを防ぎます。\n" +
-                "これはVRChatワールドやアバターにとって特に重要です。",
-                "Shader prewarming compiles shader variants in advance to prevent stuttering during gameplay.\n" +
+                L("Shader prewarming compiles shader variants in advance to prevent stuttering during gameplay.\n", "Shader prewarming compiles shader variants in advance to prevent stuttering during gameplay.\n" +
                 "This is especially important for VRChat worlds and avatars."),
                 MessageType.Info);
 
             EditorGUILayout.Space(10);
 
             // === Editor-Only Prewarming Section ===
-            EditorGUILayout.LabelField(L("エディタ専用プリウォーミング (VRChat対応)", "Editor-Only Prewarming (VRChat Safe)"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Editor-Only Prewarming (VRChat Safe)", "Editor-Only Prewarming (VRChat Safe)"), EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
 
             // Prewarm on build setting
             EditorGUI.BeginChangeCheck();
             prewarmOnBuild = EditorGUILayout.Toggle(
                 new GUIContent(
-                    L("ビルド時にプリウォーム", "Prewarm on Build"),
-                    L("ビルド前に自動的にシェーダーをプリウォーム", "Automatically prewarm shaders before building")),
+                    L("Prewarm on Build", "Prewarm on Build"),
+                    L("Automatically prewarm shaders before building", "Automatically prewarm shaders before building")),
                 prewarmOnBuild);
 
             if (EditorGUI.EndChangeCheck())
@@ -531,8 +487,8 @@ namespace NataneToon.Editor
             EditorGUI.BeginChangeCheck();
             autoFindMaterials = EditorGUILayout.Toggle(
                 new GUIContent(
-                    L("マテリアルを自動検索", "Auto-Find Materials"),
-                    L("プロジェクト内のすべてのNatane Toonマテリアルを自動的に検索してプリウォーム", "Automatically find and prewarm all Natane Toon materials in the project")),
+                    L("Auto-Find Materials", "Auto-Find Materials"),
+                    L("Automatically find and prewarm all Natane Toon materials in the project", "Automatically find and prewarm all Natane Toon materials in the project")),
                 autoFindMaterials);
 
             if (EditorGUI.EndChangeCheck())
@@ -543,7 +499,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(20);
 
             // Manual prewarm button
-            if (GUILayout.Button(L("今すぐシェーダーをプリウォーム", "Prewarm Shaders Now"), GUILayout.Height(30)))
+            if (GUILayout.Button(L("Prewarm Shaders Now", "Prewarm Shaders Now"), GUILayout.Height(30)))
             {
                 EditorApplication.delayCall += () =>
                 {
@@ -558,8 +514,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(10);
 
             EditorGUILayout.HelpBox(
-                L("注意: このシステムはUnityエディタでのみ実行され、ランタイムでは実行されないため、VRChatに対応しています。",
-                "Note: This system is VRChat-safe as it only runs in the Unity Editor, not at runtime."),
+                L("Note: This system is VRChat-safe as it only runs in the Unity Editor, not at runtime.", "Note: This system is VRChat-safe as it only runs in the Unity Editor, not at runtime."),
                 MessageType.None);
 
             EditorGUILayout.Space(20);
@@ -567,13 +522,11 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(20);
 
             // === Runtime Prewarming Section ===
-            EditorGUILayout.LabelField(L("ランタイムプリウォーミング (VRChat以外のみ)", "Runtime Prewarming (Non-VRChat Only)"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Runtime Prewarming (Non-VRChat Only)", "Runtime Prewarming (Non-VRChat Only)"), EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
 
             EditorGUILayout.HelpBox(
-                L("警告: ランタイムプリウォーミングスクリプトはVRChatでは動作しません！\n" +
-                "ランタイムシェーダープリウォーミングが必要な非VRChatプロジェクトのみで有効にしてください。",
-                "WARNING: Runtime prewarming scripts DO NOT work in VRChat!\n" +
+                L("WARNING: Runtime prewarming scripts DO NOT work in VRChat!\n", "WARNING: Runtime prewarming scripts DO NOT work in VRChat!\n" +
                 "Only enable this for non-VRChat projects where you need runtime shader prewarming."),
                 MessageType.Warning);
 
@@ -585,14 +538,14 @@ namespace NataneToon.Editor
             if (runtimeScriptExists)
             {
                 EditorGUILayout.HelpBox(
-                    L("ランタイムプリウォーミングスクリプトが有効です", "Runtime prewarming script is ENABLED") + "\n" +
-                    L("場所", "Location") + ": " + RUNTIME_SCRIPT_PATH,
+                    L("Runtime prewarming script is ENABLED", "Runtime prewarming script is ENABLED") + "\n" +
+                    L("Location", "Location") + ": " + RUNTIME_SCRIPT_PATH,
                     MessageType.Info);
             }
             else
             {
                 EditorGUILayout.HelpBox(
-                    L("ランタイムプリウォーミングスクリプトが無効です", "Runtime prewarming script is DISABLED"),
+                    L("Runtime prewarming script is DISABLED", "Runtime prewarming script is DISABLED"),
                     MessageType.None);
             }
 
@@ -601,7 +554,7 @@ namespace NataneToon.Editor
             // Generate/Delete buttons
             using (new EditorGUI.DisabledScope(runtimeScriptExists))
             {
-                if (GUILayout.Button(L("ランタイムプリウォーミングスクリプトを生成", "Generate Runtime Prewarming Script"), GUILayout.Height(30)))
+                if (GUILayout.Button(L("Generate Runtime Prewarming Script", "Generate Runtime Prewarming Script"), GUILayout.Height(30)))
                 {
                     GenerateRuntimeScript();
                 }
@@ -611,15 +564,14 @@ namespace NataneToon.Editor
 
             using (new EditorGUI.DisabledScope(!runtimeScriptExists))
             {
-                if (GUILayout.Button(L("ランタイムプリウォーミングスクリプトを削除", "Delete Runtime Prewarming Script"), GUILayout.Height(30)))
+                if (GUILayout.Button(L("Delete Runtime Prewarming Script", "Delete Runtime Prewarming Script"), GUILayout.Height(30)))
                 {
                     if (EditorUtility.DisplayDialog(
-                        L("ランタイムスクリプトを削除", "Delete Runtime Script"),
-                        L("ランタイムプリウォーミングスクリプトを削除してもよろしいですか？",
-                        "Are you sure you want to delete the runtime prewarming script?") + "\n\n" +
-                        L("削除するファイル", "This will remove") + ": " + RUNTIME_SCRIPT_PATH,
-                        L("削除", "Delete"),
-                        L("キャンセル", "Cancel")))
+                        L("Delete Runtime Script", "Delete Runtime Script"),
+                        L("Are you sure you want to delete the runtime prewarming script?", "Are you sure you want to delete the runtime prewarming script?") + "\n\n" +
+                        L("This will remove", "This will remove") + ": " + RUNTIME_SCRIPT_PATH,
+                        L("Delete", "Delete"),
+                        L("Cancel", "Cancel")))
                     {
                         DeleteRuntimeScript();
                     }
@@ -631,8 +583,7 @@ namespace NataneToon.Editor
             if (runtimeScriptExists)
             {
                 EditorGUILayout.HelpBox(
-                    L("使用方法: シーン内のGameObjectにRuntimeShaderPrewarmingコンポーネントを追加し、ShaderVariantCollectionを割り当ててください。",
-                    "Usage: Add the RuntimeShaderPrewarming component to a GameObject in your scene and assign the ShaderVariantCollection."),
+                    L("Usage: Add the RuntimeShaderPrewarming component to a GameObject in your scene and assign the ShaderVariantCollection.", "Usage: Add the RuntimeShaderPrewarming component to a GameObject in your scene and assign the ShaderVariantCollection."),
                     MessageType.Info);
             }
 
@@ -741,12 +692,10 @@ public class RuntimeShaderPrewarming : MonoBehaviour
 
                 Debug.Log($"[Natane Toon] Runtime prewarming script generated at: {RUNTIME_SCRIPT_PATH}");
                 EditorUtility.DisplayDialog(
-                    L("スクリプトを生成しました", "Script Generated"),
-                    L("ランタイムプリウォーミングスクリプトが正常に生成されました！",
-                    "Runtime prewarming script has been generated successfully!") + "\n\n" +
-                    L("場所", "Location") + ": " + RUNTIME_SCRIPT_PATH + "\n\n" +
-                    L("使用方法: シーン内のGameObjectにこのコンポーネントを追加し、ShaderVariantCollectionを割り当ててください。",
-                    "Usage: Add this component to a GameObject in your scene and assign the ShaderVariantCollection."),
+                    L("Script Generated", "Script Generated"),
+                    L("Runtime prewarming script has been generated successfully!", "Runtime prewarming script has been generated successfully!") + "\n\n" +
+                    L("Location", "Location") + ": " + RUNTIME_SCRIPT_PATH + "\n\n" +
+                    L("Usage: Add this component to a GameObject in your scene and assign the ShaderVariantCollection.", "Usage: Add this component to a GameObject in your scene and assign the ShaderVariantCollection."),
                     "OK");
 
                 CheckRuntimeScriptExists();
@@ -765,8 +714,8 @@ public class RuntimeShaderPrewarming : MonoBehaviour
             {
                 Debug.LogError($"[Natane Toon] Failed to generate runtime script: {ex.Message}");
                 EditorUtility.DisplayDialog(
-                    L("エラー", "Error"),
-                    L("ランタイムスクリプトの生成に失敗しました:", "Failed to generate runtime script:") + "\n" + ex.Message,
+                    L("Error", "Error"),
+                    L("Failed to generate runtime script:", "Failed to generate runtime script:") + "\n" + ex.Message,
                     "OK");
             }
         }
@@ -783,9 +732,8 @@ public class RuntimeShaderPrewarming : MonoBehaviour
 
                     Debug.Log($"[Natane Toon] Runtime prewarming script deleted: {RUNTIME_SCRIPT_PATH}");
                     EditorUtility.DisplayDialog(
-                        L("スクリプトを削除しました", "Script Deleted"),
-                        L("ランタイムプリウォーミングスクリプトが正常に削除されました。",
-                        "Runtime prewarming script has been deleted successfully."),
+                        L("Script Deleted", "Script Deleted"),
+                        L("Runtime prewarming script has been deleted successfully.", "Runtime prewarming script has been deleted successfully."),
                         "OK");
 
                     CheckRuntimeScriptExists();
@@ -795,8 +743,8 @@ public class RuntimeShaderPrewarming : MonoBehaviour
             {
                 Debug.LogError($"[Natane Toon] Failed to delete runtime script: {ex.Message}");
                 EditorUtility.DisplayDialog(
-                    L("エラー", "Error"),
-                    L("ランタイムスクリプトの削除に失敗しました:", "Failed to delete runtime script:") + "\n" + ex.Message,
+                    L("Error", "Error"),
+                    L("Failed to delete runtime script:", "Failed to delete runtime script:") + "\n" + ex.Message,
                     "OK");
             }
         }

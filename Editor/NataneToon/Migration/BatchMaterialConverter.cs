@@ -1,17 +1,19 @@
-using UnityEngine;
-using UnityEditor;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
+using UnityEngine;
 
 namespace NataneToon.Editor
 {
-    using static NataneToonLocalization;
-
     /// <summary>
-    /// プロジェクト全体のマテリアルを一括変換するツール
+    /// Batch converts materials that match a source shader name.
     /// </summary>
     public class BatchMaterialConverter : EditorWindow
     {
+        private const float CompactLayoutWidth = 720f;
+        private const int ResultsPerPage = 100;
+
         private string sourceShaderName = "lilToon";
         private string targetShaderPath = "Natane/Toon Shader";
         private bool searchInScenes = true;
@@ -19,20 +21,31 @@ namespace NataneToon.Editor
         private bool updateReferences = true;
         private Vector2 windowScrollPosition;
         private Vector2 scrollPosition;
-        private List<MaterialConversionInfo> conversionInfos = new List<MaterialConversionInfo>();
-        private const float CompactLayoutWidth = 720f;
+        private int currentPage;
+        private readonly List<MaterialConversionInfo> conversionInfos = new List<MaterialConversionInfo>();
 
-        private class MaterialConversionInfo
+        private sealed class MaterialConversionInfo
         {
-            public Material material;
-            public List<GameObject> affectedObjects = new List<GameObject>();
+            public MaterialIndexEntry materialEntry;
+            public Material cachedMaterial;
+            public int affectedObjectCount;
             public bool willConvert = true;
+
+            public Material LoadMaterial()
+            {
+                if (cachedMaterial == null && materialEntry != null)
+                {
+                    cachedMaterial = NataneAssetIndexService.LoadMaterial(materialEntry);
+                }
+
+                return cachedMaterial;
+            }
         }
 
-        [MenuItem("Tools/Natane/移行 Migration/一括マテリアル変換 Batch Material Converter", false, 53)]
+        [MenuItem("Tools/Natane/Migration/Batch Material Converter", false, 53)]
         public static void ShowWindow()
         {
-            var window = GetWindow<BatchMaterialConverter>(L("一括マテリアル変換", "Batch Material Converter"));
+            var window = GetWindow<BatchMaterialConverter>("Batch Material Converter");
             window.minSize = new Vector2(600, 500);
             window.Show();
         }
@@ -40,238 +53,307 @@ namespace NataneToon.Editor
         private void OnGUI()
         {
             windowScrollPosition = EditorGUILayout.BeginScrollView(windowScrollPosition);
-            EditorGUILayout.LabelField(L("一括マテリアル変換ツール", "Batch Material Converter"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Batch Material Converter", EditorStyles.boldLabel);
             EditorGUILayout.Space();
 
             EditorGUILayout.HelpBox(
-                L("このツールはプロジェクト全体から特定のシェーダーを使用しているマテリアルを検索し、\n" +
-                "別のシェーダーに変換します。シーンやPrefabの参照も更新できます。",
-                "This tool finds and converts materials from one shader to another across your entire project.\n" +
-                "It can also update references in scenes and prefabs."),
-                MessageType.Info
-            );
+                "This tool finds and converts materials from one shader to another across your project.\n" +
+                "Prefab dependencies are resolved from the indexed asset graph to avoid full-project rescans.",
+                MessageType.Info);
 
             EditorGUILayout.Space();
+            DrawSettings();
 
-            // Settings
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField(L("変換設定", "Conversion Settings"), EditorStyles.boldLabel);
-
-            sourceShaderName = EditorGUILayout.TextField(L("変換元シェーダー名", "Source Shader Name:"), sourceShaderName);
-            targetShaderPath = EditorGUILayout.TextField(L("変換先シェーダー", "Target Shader:"), targetShaderPath);
-
-            EditorGUILayout.Space();
-
-            searchInScenes = EditorGUILayout.Toggle(L("シーン内を検索", "Search in Scenes"), searchInScenes);
-            searchInPrefabs = EditorGUILayout.Toggle(L("Prefab内を検索", "Search in Prefabs"), searchInPrefabs);
-            updateReferences = EditorGUILayout.Toggle(L("オブジェクト参照を更新", "Update Object References"), updateReferences);
-
-            EditorGUILayout.Space();
-
-            EditorGUILayout.EndVertical();
-
-            // Scan button
-            if (GUILayout.Button(L("プロジェクトをスキャン", "Scan Project"), GUILayout.Height(30)))
+            if (GUILayout.Button("Scan Project", GUILayout.Height(30)))
             {
                 ScanProject();
             }
 
             EditorGUILayout.Space();
 
-            // Results
             if (conversionInfos.Count > 0)
             {
-                EditorGUILayout.LabelField(L($"見つかったマテリアル: {conversionInfos.Count}個", $"Found {conversionInfos.Count} Materials"), EditorStyles.boldLabel);
-
-                scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Height(GetAdaptiveListHeight(160f, 320f, 0.35f)));
-
-                foreach (var info in conversionInfos)
-                {
-                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-
-                    EditorGUILayout.BeginHorizontal();
-                    info.willConvert = EditorGUILayout.Toggle(info.willConvert, GUILayout.Width(20));
-                    EditorGUILayout.ObjectField(info.material, typeof(Material), false);
-                    EditorGUILayout.EndHorizontal();
-
-                    if (info.affectedObjects.Count > 0)
-                    {
-                        EditorGUILayout.LabelField(L($"{info.affectedObjects.Count}個のオブジェクトが使用", $"Used by {info.affectedObjects.Count} objects"), EditorStyles.miniLabel);
-                    }
-
-                    EditorGUILayout.EndVertical();
-                }
-
-                EditorGUILayout.EndScrollView();
-
-                EditorGUILayout.Space();
-
-                // Convert button
-                int selectedCount = conversionInfos.Count(i => i.willConvert);
-                GUI.enabled = selectedCount > 0;
-
-                if (GUILayout.Button(L($"選択した{selectedCount}個を変換", $"Convert {selectedCount} Selected Materials"), GUILayout.Height(40)))
-                {
-                    ConvertSelectedMaterials();
-                }
-
-                GUI.enabled = true;
-
-                EditorGUILayout.Space();
-
-                // Select/Deselect all
-                if (IsCompactLayout())
-                {
-                    if (GUILayout.Button(L("すべて選択", "Select All")))
-                    {
-                        conversionInfos.ForEach(i => i.willConvert = true);
-                    }
-
-                    if (GUILayout.Button(L("すべて解除", "Deselect All")))
-                    {
-                        conversionInfos.ForEach(i => i.willConvert = false);
-                    }
-                }
-                else
-                {
-                    EditorGUILayout.BeginHorizontal();
-                    if (GUILayout.Button(L("すべて選択", "Select All")))
-                    {
-                        conversionInfos.ForEach(i => i.willConvert = true);
-                    }
-
-                    if (GUILayout.Button(L("すべて解除", "Deselect All")))
-                    {
-                        conversionInfos.ForEach(i => i.willConvert = false);
-                    }
-                    EditorGUILayout.EndHorizontal();
-                }
+                DrawResults();
             }
 
             EditorGUILayout.EndScrollView();
         }
 
-        /// <summary>
-        /// シェーダー名が検索文字列と一致するかを判定する。
-        /// 完全一致、またはパス区切り（"/"）で始まるバリアントにマッチする。
-        /// 例: "lilToon" → "lilToon" (一致), "Hidden/lilToon" (末尾一致),
-        ///      "lilToon/Cutout" (先頭一致) にマッチするが、"Wirelight" にはマッチしない。
-        /// </summary>
+        private void DrawSettings()
+        {
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField("Conversion Settings", EditorStyles.boldLabel);
+
+            sourceShaderName = EditorGUILayout.TextField("Source Shader Name", sourceShaderName);
+            targetShaderPath = EditorGUILayout.TextField("Target Shader", targetShaderPath);
+
+            EditorGUILayout.Space();
+
+            searchInScenes = EditorGUILayout.Toggle("Search in Scenes", searchInScenes);
+            searchInPrefabs = EditorGUILayout.Toggle("Search in Prefabs", searchInPrefabs);
+            updateReferences = EditorGUILayout.Toggle("Update Object References", updateReferences);
+
+            if (updateReferences)
+            {
+                EditorGUILayout.HelpBox(
+                    "This tool converts materials in place, so object references stay valid. " +
+                    "The toggle is kept for workflow compatibility.",
+                    MessageType.None);
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawResults()
+        {
+            EditorGUILayout.LabelField($"Found {conversionInfos.Count} materials", EditorStyles.boldLabel);
+
+            int totalPages = Mathf.Max(1, Mathf.CeilToInt(conversionInfos.Count / (float)ResultsPerPage));
+            currentPage = Mathf.Clamp(currentPage, 0, totalPages - 1);
+            DrawPageControls(totalPages);
+
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Height(GetAdaptiveListHeight(160f, 320f, 0.35f)));
+
+            IEnumerable<MaterialConversionInfo> pageItems = conversionInfos
+                .Skip(currentPage * ResultsPerPage)
+                .Take(ResultsPerPage);
+
+            foreach (MaterialConversionInfo info in pageItems)
+            {
+                Material material = info.LoadMaterial();
+
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.BeginHorizontal();
+                info.willConvert = EditorGUILayout.Toggle(info.willConvert, GUILayout.Width(20));
+                EditorGUILayout.ObjectField(material, typeof(Material), false);
+                EditorGUILayout.EndHorizontal();
+
+                if (info.affectedObjectCount > 0)
+                {
+                    EditorGUILayout.LabelField($"Used by {info.affectedObjectCount} objects", EditorStyles.miniLabel);
+                }
+
+                EditorGUILayout.EndVertical();
+            }
+
+            EditorGUILayout.EndScrollView();
+
+            EditorGUILayout.Space();
+
+            int selectedCount = conversionInfos.Count(info => info.willConvert);
+            GUI.enabled = selectedCount > 0;
+            if (GUILayout.Button($"Convert {selectedCount} Selected Materials", GUILayout.Height(40)))
+            {
+                ConvertSelectedMaterials();
+            }
+
+            GUI.enabled = true;
+            EditorGUILayout.Space();
+
+            if (IsCompactLayout())
+            {
+                if (GUILayout.Button("Select All"))
+                {
+                    conversionInfos.ForEach(info => info.willConvert = true);
+                }
+
+                if (GUILayout.Button("Deselect All"))
+                {
+                    conversionInfos.ForEach(info => info.willConvert = false);
+                }
+            }
+            else
+            {
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Select All"))
+                {
+                    conversionInfos.ForEach(info => info.willConvert = true);
+                }
+
+                if (GUILayout.Button("Deselect All"))
+                {
+                    conversionInfos.ForEach(info => info.willConvert = false);
+                }
+
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+
+        private void DrawPageControls(int totalPages)
+        {
+            EditorGUILayout.BeginHorizontal();
+            GUI.enabled = currentPage > 0;
+            if (GUILayout.Button("<", GUILayout.Width(32)))
+            {
+                currentPage--;
+            }
+
+            GUI.enabled = currentPage < totalPages - 1;
+            if (GUILayout.Button(">", GUILayout.Width(32)))
+            {
+                currentPage++;
+            }
+
+            GUI.enabled = true;
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.LabelField($"{currentPage + 1}/{totalPages}", GUILayout.Width(60));
+            EditorGUILayout.EndHorizontal();
+        }
+
         private static bool MatchesShaderName(string shaderName, string source)
         {
             if (string.IsNullOrEmpty(shaderName) || string.IsNullOrEmpty(source))
+            {
                 return false;
+            }
 
-            // 完全一致
-            if (shaderName == source)
+            if (string.Equals(shaderName, source, StringComparison.OrdinalIgnoreCase))
+            {
                 return true;
+            }
 
-            // パス区切りでのプレフィックス一致 (例: "lilToon/Cutout")
-            if (shaderName.StartsWith(source + "/"))
+            if (shaderName.StartsWith(source + "/", StringComparison.OrdinalIgnoreCase))
+            {
                 return true;
+            }
 
-            // パス区切りでのサフィックス一致 (例: "Hidden/lilToon")
-            if (shaderName.EndsWith("/" + source))
+            if (shaderName.EndsWith("/" + source, StringComparison.OrdinalIgnoreCase))
+            {
                 return true;
+            }
 
-            // パス中間に含まれる場合 (例: "Hidden/lilToon/Cutout")
-            if (shaderName.Contains("/" + source + "/"))
-                return true;
-
-            return false;
+            return shaderName.IndexOf("/" + source + "/", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void ScanProject()
         {
             conversionInfos.Clear();
+            currentPage = 0;
 
-            // Find all materials with source shader
-            string[] materialGUIDs = AssetDatabase.FindAssets("t:Material");
+            List<MaterialIndexEntry> matchingMaterials = NataneAssetIndexService
+                .EnumerateMaterialEntries(entry => MatchesShaderName(entry.shaderName, sourceShaderName))
+                .OrderBy(entry => entry.name, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(entry => entry.path, StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
-            foreach (string guid in materialGUIDs)
+            var matchingGuids = new HashSet<string>(matchingMaterials.Select(entry => entry.guid), StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, int> affectedObjectCounts = BuildAffectedObjectCounts(matchingGuids);
+
+            for (int i = 0; i < matchingMaterials.Count; i++)
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-
-                if (material != null && material.shader != null &&
-                    MatchesShaderName(material.shader.name, sourceShaderName))
+                MaterialIndexEntry entry = matchingMaterials[i];
+                conversionInfos.Add(new MaterialConversionInfo
                 {
-                    var info = new MaterialConversionInfo { material = material };
-
-                    // Find objects using this material
-                    if (searchInScenes || searchInPrefabs)
-                    {
-                        FindObjectsUsingMaterial(material, info);
-                    }
-
-                    conversionInfos.Add(info);
-                }
+                    materialEntry = entry,
+                    affectedObjectCount = affectedObjectCounts.TryGetValue(entry.guid, out int count) ? count : 0
+                });
             }
 
-            Debug.Log($"Scan complete. Found {conversionInfos.Count} materials.");
+            Debug.Log($"[Batch Material Converter] Scan complete. Found {conversionInfos.Count} matching materials.");
         }
 
-        private void FindObjectsUsingMaterial(Material material, MaterialConversionInfo info)
+        private Dictionary<string, int> BuildAffectedObjectCounts(HashSet<string> matchingMaterialGuids)
         {
-            // Search in prefabs
+            var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+            if (matchingMaterialGuids == null || matchingMaterialGuids.Count == 0)
+            {
+                return counts;
+            }
+
             if (searchInPrefabs)
             {
-                string[] prefabGUIDs = AssetDatabase.FindAssets("t:Prefab");
-
-                foreach (string guid in prefabGUIDs)
+                List<PrefabDependencyEntry> prefabs = NataneAssetIndexService.GetPrefabsUsingMaterialGuids(matchingMaterialGuids);
+                for (int i = 0; i < prefabs.Count; i++)
                 {
-                    string path = AssetDatabase.GUIDToAssetPath(guid);
-                    GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-
-                    if (prefab != null)
+                    PrefabDependencyEntry prefab = prefabs[i];
+                    for (int j = 0; j < prefab.materialGuids.Count; j++)
                     {
-                        var renderers = prefab.GetComponentsInChildren<Renderer>(true);
-                        foreach (var renderer in renderers)
+                        string materialGuid = prefab.materialGuids[j];
+                        if (!matchingMaterialGuids.Contains(materialGuid))
                         {
-                            if (renderer.sharedMaterials.Contains(material))
-                            {
-                                info.affectedObjects.Add(prefab);
-                                break;
-                            }
+                            continue;
                         }
+
+                        counts[materialGuid] = counts.TryGetValue(materialGuid, out int count) ? count + 1 : 1;
                     }
                 }
             }
 
-            // Search in current scene
             if (searchInScenes)
             {
-                var allRenderers = GameObject.FindObjectsOfType<Renderer>(true);
-                foreach (var renderer in allRenderers)
+                Renderer[] renderers = GameObject.FindObjectsOfType<Renderer>(true);
+                var sceneObjectIdsByMaterialGuid = new Dictionary<string, HashSet<int>>(StringComparer.OrdinalIgnoreCase);
+
+                for (int i = 0; i < renderers.Length; i++)
                 {
-                    if (renderer.sharedMaterials.Contains(material))
+                    Renderer renderer = renderers[i];
+                    Material[] sharedMaterials = renderer.sharedMaterials;
+                    if (sharedMaterials == null || sharedMaterials.Length == 0)
                     {
-                        info.affectedObjects.Add(renderer.gameObject);
+                        continue;
+                    }
+
+                    var rendererMaterialGuids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    for (int j = 0; j < sharedMaterials.Length; j++)
+                    {
+                        Material material = sharedMaterials[j];
+                        if (material == null)
+                        {
+                            continue;
+                        }
+
+                        string materialPath = AssetDatabase.GetAssetPath(material);
+                        string materialGuid = AssetDatabase.AssetPathToGUID(materialPath);
+                        if (!string.IsNullOrEmpty(materialGuid) && matchingMaterialGuids.Contains(materialGuid))
+                        {
+                            rendererMaterialGuids.Add(materialGuid);
+                        }
+                    }
+
+                    foreach (string materialGuid in rendererMaterialGuids)
+                    {
+                        if (!sceneObjectIdsByMaterialGuid.TryGetValue(materialGuid, out HashSet<int> ids))
+                        {
+                            ids = new HashSet<int>();
+                            sceneObjectIdsByMaterialGuid.Add(materialGuid, ids);
+                        }
+
+                        ids.Add(renderer.gameObject.GetInstanceID());
                     }
                 }
+
+                foreach (KeyValuePair<string, HashSet<int>> pair in sceneObjectIdsByMaterialGuid)
+                {
+                    counts[pair.Key] = counts.TryGetValue(pair.Key, out int count) ? count + pair.Value.Count : pair.Value.Count;
+                }
             }
+
+            return counts;
         }
 
         private void ConvertSelectedMaterials()
         {
-            var selectedInfos = conversionInfos.Where(i => i.willConvert).ToList();
-
-            if (!EditorUtility.DisplayDialog(
-                L("マテリアルを変換", "Convert Materials"),
-                L($"{selectedInfos.Count}個のマテリアルを変換してもよろしいですか？\n" +
-                "Unity の Undo で戻せますが、プロジェクトのバックアップを推奨します。",
-                $"Are you sure you want to convert {selectedInfos.Count} materials?\n" +
-                "You can revert the material changes with Unity Undo, but a project backup is still recommended."),
-                L("変換", "Convert"), L("キャンセル", "Cancel")))
+            List<MaterialConversionInfo> selectedInfos = conversionInfos.Where(info => info.willConvert).ToList();
+            if (selectedInfos.Count == 0)
             {
                 return;
             }
 
-            // Find target shader
+            if (!EditorUtility.DisplayDialog(
+                "Convert Materials",
+                $"Are you sure you want to convert {selectedInfos.Count} materials?\n" +
+                "You can revert the material changes with Unity Undo, but a project backup is still recommended.",
+                "Convert",
+                "Cancel"))
+            {
+                return;
+            }
+
             Shader targetShader = Shader.Find(targetShaderPath);
             if (targetShader == null)
             {
-                EditorUtility.DisplayDialog(L("エラー", "Error"), L($"変換先シェーダー '{targetShaderPath}' が見つかりません！", $"Target shader '{targetShaderPath}' not found!"), "OK");
+                EditorUtility.DisplayDialog("Error", $"Target shader '{targetShaderPath}' not found!", "OK");
                 return;
             }
 
@@ -281,36 +363,30 @@ namespace NataneToon.Editor
             {
                 for (int i = 0; i < selectedInfos.Count; i++)
                 {
-                    var info = selectedInfos[i];
+                    MaterialConversionInfo info = selectedInfos[i];
+                    Material material = info.LoadMaterial();
+                    if (material == null)
+                    {
+                        continue;
+                    }
 
                     EditorUtility.DisplayProgressBar(
-                        L("マテリアル変換中", "Converting Materials"),
-                        L($"{i + 1}/{selectedInfos.Count}: {info.material.name} を変換中",
-                          $"Converting {i + 1}/{selectedInfos.Count}: {info.material.name}"),
-                        (float)i / selectedInfos.Count
-                    );
+                        "Converting Materials",
+                        $"Converting {i + 1}/{selectedInfos.Count}: {material.name}",
+                        (float)i / selectedInfos.Count);
 
                     try
                     {
-                        Undo.RecordObject(info.material, "Convert Material Shader");
-
-                        // Store original properties
-                        var originalProps = CaptureAllProperties(info.material);
-
-                        // Change shader
-                        info.material.shader = targetShader;
-
-                        // Try to restore compatible properties
-                        RestoreCompatibleProperties(info.material, originalProps);
-
-                        EditorUtility.SetDirty(info.material);
+                        Undo.RecordObject(material, "Convert Material Shader");
+                        Dictionary<string, MaterialPropertyData> originalProps = CaptureAllProperties(material);
+                        material.shader = targetShader;
+                        RestoreCompatibleProperties(material, originalProps);
+                        EditorUtility.SetDirty(material);
                         successCount++;
-
-                        Debug.Log($"Converted: {info.material.name}");
                     }
-                    catch (System.Exception e)
+                    catch (Exception ex)
                     {
-                        Debug.LogError($"Failed to convert {info.material.name}: {e.Message}");
+                        Debug.LogError($"[Batch Material Converter] Failed to convert {material.name}: {ex.Message}");
                     }
                 }
             }
@@ -318,23 +394,20 @@ namespace NataneToon.Editor
             {
                 EditorUtility.ClearProgressBar();
             }
+
             AssetDatabase.SaveAssets();
 
             EditorUtility.DisplayDialog(
-                L("変換完了", "Conversion Complete"),
-                L($"{successCount}/{selectedInfos.Count}個のマテリアルを正常に変換しました。",
-                $"Successfully converted {successCount}/{selectedInfos.Count} materials."),
-                "OK"
-            );
+                "Conversion Complete",
+                $"Successfully converted {successCount}/{selectedInfos.Count} materials.",
+                "OK");
 
-            // Rescan
             ScanProject();
         }
 
-        private Dictionary<string, MaterialProperty> CaptureAllProperties(Material material)
+        private Dictionary<string, MaterialPropertyData> CaptureAllProperties(Material material)
         {
-            var properties = new Dictionary<string, MaterialProperty>();
-
+            var properties = new Dictionary<string, MaterialPropertyData>();
             Shader shader = material.shader;
             int propertyCount = ShaderUtil.GetPropertyCount(shader);
 
@@ -342,10 +415,8 @@ namespace NataneToon.Editor
             {
                 string propName = ShaderUtil.GetPropertyName(shader, i);
                 ShaderUtil.ShaderPropertyType propType = ShaderUtil.GetPropertyType(shader, i);
-
-                var prop = new MaterialProperty
+                var property = new MaterialPropertyData
                 {
-                    name = propName,
                     type = propType
                 };
 
@@ -354,32 +425,32 @@ namespace NataneToon.Editor
                     switch (propType)
                     {
                         case ShaderUtil.ShaderPropertyType.Color:
-                            prop.colorValue = material.GetColor(propName);
+                            property.colorValue = material.GetColor(propName);
                             break;
                         case ShaderUtil.ShaderPropertyType.Float:
                         case ShaderUtil.ShaderPropertyType.Range:
-                            prop.floatValue = material.GetFloat(propName);
+                            property.floatValue = material.GetFloat(propName);
                             break;
                         case ShaderUtil.ShaderPropertyType.TexEnv:
-                            prop.textureValue = material.GetTexture(propName);
+                            property.textureValue = material.GetTexture(propName);
                             break;
                         case ShaderUtil.ShaderPropertyType.Vector:
-                            prop.vectorValue = material.GetVector(propName);
+                            property.vectorValue = material.GetVector(propName);
                             break;
                     }
 
-                    properties[propName] = prop;
+                    properties[propName] = property;
                 }
                 catch
                 {
-                    // Property might not be set
+                    // Ignore properties that cannot be read on this shader.
                 }
             }
 
             return properties;
         }
 
-        private void RestoreCompatibleProperties(Material material, Dictionary<string, MaterialProperty> originalProps)
+        private void RestoreCompatibleProperties(Material material, Dictionary<string, MaterialPropertyData> originalProps)
         {
             Shader shader = material.shader;
             int propertyCount = ShaderUtil.GetPropertyCount(shader);
@@ -387,35 +458,37 @@ namespace NataneToon.Editor
             for (int i = 0; i < propertyCount; i++)
             {
                 string propName = ShaderUtil.GetPropertyName(shader, i);
-
-                if (originalProps.ContainsKey(propName))
+                if (!originalProps.TryGetValue(propName, out MaterialPropertyData originalProp))
                 {
-                    var originalProp = originalProps[propName];
+                    continue;
+                }
 
-                    try
+                try
+                {
+                    switch (originalProp.type)
                     {
-                        switch (originalProp.type)
-                        {
-                            case ShaderUtil.ShaderPropertyType.Color:
-                                material.SetColor(propName, originalProp.colorValue);
-                                break;
-                            case ShaderUtil.ShaderPropertyType.Float:
-                            case ShaderUtil.ShaderPropertyType.Range:
-                                material.SetFloat(propName, originalProp.floatValue);
-                                break;
-                            case ShaderUtil.ShaderPropertyType.TexEnv:
-                                if (originalProp.textureValue != null)
-                                    material.SetTexture(propName, originalProp.textureValue);
-                                break;
-                            case ShaderUtil.ShaderPropertyType.Vector:
-                                material.SetVector(propName, originalProp.vectorValue);
-                                break;
-                        }
+                        case ShaderUtil.ShaderPropertyType.Color:
+                            material.SetColor(propName, originalProp.colorValue);
+                            break;
+                        case ShaderUtil.ShaderPropertyType.Float:
+                        case ShaderUtil.ShaderPropertyType.Range:
+                            material.SetFloat(propName, originalProp.floatValue);
+                            break;
+                        case ShaderUtil.ShaderPropertyType.TexEnv:
+                            if (originalProp.textureValue != null)
+                            {
+                                material.SetTexture(propName, originalProp.textureValue);
+                            }
+
+                            break;
+                        case ShaderUtil.ShaderPropertyType.Vector:
+                            material.SetVector(propName, originalProp.vectorValue);
+                            break;
                     }
-                    catch
-                    {
-                        // Type mismatch or other error
-                    }
+                }
+                catch
+                {
+                    // Ignore incompatible properties between the source and target shaders.
                 }
             }
         }
@@ -430,9 +503,8 @@ namespace NataneToon.Editor
             return Mathf.Clamp(position.height * ratio, minHeight, maxHeight);
         }
 
-        private class MaterialProperty
+        private sealed class MaterialPropertyData
         {
-            public string name;
             public ShaderUtil.ShaderPropertyType type;
             public Color colorValue;
             public float floatValue;

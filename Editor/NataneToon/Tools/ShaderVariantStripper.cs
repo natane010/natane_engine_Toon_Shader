@@ -1,211 +1,109 @@
-using UnityEngine;
-using UnityEngine.Rendering;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Rendering;
-using System.Collections.Generic;
-using System.Linq;
+using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace NataneToon.Editor
 {
-    using static NataneToonLocalization;
-
     /// <summary>
-    /// Build-time Shader Variant Stripper for Natane Toon Shader
-    /// Natane Toon Shader用のビルド時シェーダーバリアントストリッパー
-    ///
-    /// Implements IPreprocessShaders to automatically strip unused shader variants at build time.
-    /// IPreprocessShadersを実装し、ビルド時に未使用のシェーダーバリアントを自動的に除去します。
-    ///
-    /// Only keyword combinations actually used by project materials are kept.
-    /// プロジェクト内のマテリアルが実際に使用しているキーワード組み合わせのみを保持します。
+    /// Build-time shader variant stripper for Natane Toon shaders.
     /// </summary>
     public class ShaderVariantStripper : IPreprocessShaders
     {
-        /// <summary>
-        /// Execute after Unity's standard stripping (callbackOrder = 100).
-        /// Unity標準のストリッピング後に実行 (callbackOrder = 100)。
-        /// </summary>
-        public int callbackOrder => 100;
-
-        // --- EditorPrefs keys ---
         private const string STRIP_ENABLED_KEY = "NataneToon_VariantStrippingEnabled";
         private const string STRIP_LOG_KEY = "NataneToon_VariantStrippingLog";
 
-        // --- Natane shader names ---
-        private static readonly HashSet<string> NataneShaderNames = new HashSet<string>
-        {
-            "Natane/Toon Shader",
-            "Natane/Toon Shader (ScreenEdge Split)",
-            "Natane/Toon Shader (Cutout)",
-            "Natane/Toon Shader (Transparent)",
-            "Natane/Toon Shader (Lite)",
-            "Natane/Toon Shader (Cutout Lite)",
-            "Natane/Toon Shader (Transparent Lite)",
-            "Natane/Toon Shader (Fur)",
-            "Natane/Toon Shader (Fur Lite)",
-            "Natane/Toon Shader (Background)",
-            "Natane/Toon Shader Wirelight",
-            "Natane/Eye",
-            "Natane/Screen FX Overlay"
-        };
+        private static HashSet<string> whitelistedKeywordSets;
+        private static bool initialized;
+        private static int strippedCount;
+        private static int keptCount;
 
-        // --- Per-build session cache ---
-        private static HashSet<string> _whitelistedKeywordSets;
-        private static bool _initialized;
-        private static int _strippedCount;
-        private static int _keptCount;
-
-        // =====================================================================
-        // IPreprocessShaders
-        // =====================================================================
+        public int callbackOrder => 100;
 
         public void OnProcessShader(Shader shader, ShaderSnippetData snippet, IList<ShaderCompilerData> data)
         {
-            // Check if stripping is enabled
             if (!EditorPrefs.GetBool(STRIP_ENABLED_KEY, false))
+            {
                 return;
+            }
 
-            // Only process Natane Toon Shaders
-            if (!NataneShaderNames.Contains(shader.name))
+            if (!NataneShaderCatalog.IsNataneShader(shader.name))
+            {
                 return;
+            }
 
-            // Initialize whitelist once per build session
-            if (!_initialized)
+            if (!initialized)
             {
                 InitializeKeywordWhitelist();
-                _initialized = true;
-                _strippedCount = 0;
-                _keptCount = 0;
+                initialized = true;
+                strippedCount = 0;
+                keptCount = 0;
             }
 
             bool logEnabled = EditorPrefs.GetBool(STRIP_LOG_KEY, true);
 
-            // Iterate backwards to safely remove items
             for (int i = data.Count - 1; i >= 0; i--)
             {
                 string keywordSetKey = GetKeywordSetKey(data[i].shaderKeywordSet);
-
-                if (_whitelistedKeywordSets.Contains(keywordSetKey))
+                if (whitelistedKeywordSets.Contains(keywordSetKey))
                 {
-                    _keptCount++;
+                    keptCount++;
                 }
                 else
                 {
                     data.RemoveAt(i);
-                    _strippedCount++;
+                    strippedCount++;
                 }
             }
 
-            if (logEnabled && (_strippedCount + _keptCount) > 0)
+            if (logEnabled && (strippedCount + keptCount) > 0)
             {
-                Debug.Log($"[Natane Toon Stripper] {shader.name} ({snippet.passType}): " +
-                          $"kept={_keptCount}, stripped={_strippedCount}");
+                Debug.Log($"[Natane Toon Stripper] {shader.name} ({snippet.passType}): kept={keptCount}, stripped={strippedCount}");
             }
         }
 
-        // =====================================================================
-        // Whitelist Construction
-        // =====================================================================
-
-        /// <summary>
-        /// Scan all project materials using Natane shaders and build a whitelist
-        /// of keyword combinations that are actually in use.
-        /// Natane系シェーダーを使用するプロジェクト内の全マテリアルを走査し、
-        /// 実際に使用されているキーワード組み合わせのホワイトリストを構築します。
-        /// </summary>
         private static void InitializeKeywordWhitelist()
         {
-            _whitelistedKeywordSets = new HashSet<string>();
-
-            // Always whitelist the empty (base) variant
-            _whitelistedKeywordSets.Add(string.Empty);
-
-            // 1. Collect keyword sets from project materials
-            string[] materialGuids = AssetDatabase.FindAssets("t:Material");
-            int count = 0;
-
-            foreach (string guid in materialGuids)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-
-                if (material == null || material.shader == null)
-                    continue;
-
-                if (!NataneShaderNames.Contains(material.shader.name))
-                    continue;
-
-                string[] keywords = material.shaderKeywords
-                    .Where(k => !string.IsNullOrEmpty(k) && k.StartsWith("_"))
-                    .Distinct()
-                    .OrderBy(k => k)
-                    .ToArray();
-
-                string key = string.Join(";", keywords);
-                _whitelistedKeywordSets.Add(key);
-                count++;
-            }
-
-            // 2. Also whitelist variants from any existing ShaderVariantCollection
+            NataneBuildPreparationService.PrepareForBuild(forceRefresh: false, logSummary: false);
+            whitelistedKeywordSets = NataneBuildPreparationService.LoadKeywordWhitelist();
             AddVariantsFromCollections();
 
-            bool logEnabled = EditorPrefs.GetBool(STRIP_LOG_KEY, true);
-            if (logEnabled)
+            if (EditorPrefs.GetBool(STRIP_LOG_KEY, true))
             {
-                Debug.Log($"[Natane Toon Stripper] Whitelist initialized: " +
-                          $"{count} materials scanned, " +
-                          $"{_whitelistedKeywordSets.Count} unique keyword sets whitelisted");
+                Debug.Log($"[Natane Toon Stripper] Whitelist initialized: {CountNataneMaterials()} indexed materials, {whitelistedKeywordSets.Count} unique keyword sets whitelisted");
             }
         }
 
-        /// <summary>
-        /// Add keyword sets found in ShaderVariantCollections to the whitelist.
-        /// ShaderVariantCollectionに含まれるキーワードセットもホワイトリストに追加します。
-        /// </summary>
         private static void AddVariantsFromCollections()
         {
             string[] collectionGuids = AssetDatabase.FindAssets("t:ShaderVariantCollection");
-
-            foreach (string guid in collectionGuids)
+            for (int i = 0; i < collectionGuids.Length; i++)
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                ShaderVariantCollection collection =
-                    AssetDatabase.LoadAssetAtPath<ShaderVariantCollection>(path);
-
+                string path = AssetDatabase.GUIDToAssetPath(collectionGuids[i]);
+                ShaderVariantCollection collection = AssetDatabase.LoadAssetAtPath<ShaderVariantCollection>(path);
                 if (collection == null || !path.Contains("NataneToon"))
-                    continue;
-
-                // We cannot enumerate variants in a ShaderVariantCollection directly,
-                // but its presence indicates curated variants exist.
-                // The collection-based prewarming ensures these variants are compiled.
-                // Log for awareness.
-                bool logEnabled = EditorPrefs.GetBool(STRIP_LOG_KEY, true);
-                if (logEnabled)
                 {
-                    Debug.Log($"[Natane Toon Stripper] Found ShaderVariantCollection: {path} " +
-                              $"({collection.variantCount} variants)");
+                    continue;
+                }
+
+                if (EditorPrefs.GetBool(STRIP_LOG_KEY, true))
+                {
+                    Debug.Log($"[Natane Toon Stripper] Found ShaderVariantCollection: {path} ({collection.variantCount} variants)");
                 }
             }
         }
 
-        /// <summary>
-        /// Extract a deterministic key from a ShaderKeywordSet.
-        /// Filters to Natane-specific keywords (starting with _), sorts, and joins.
-        /// ShaderKeywordSetから決定論的なキーを抽出します。
-        /// Natane固有のキーワード(_で始まる)のみフィルタ、ソート、結合します。
-        /// </summary>
         private static string GetKeywordSetKey(ShaderKeywordSet keywordSet)
         {
             var keywords = new List<string>();
-
-            // Unity 2019.4+ : iterate global and local keywords
-            foreach (var keyword in keywordSet.GetShaderKeywords())
+            foreach (ShaderKeyword keyword in keywordSet.GetShaderKeywords())
             {
-                string name = keyword.name;
-                if (!string.IsNullOrEmpty(name) && name.StartsWith("_"))
+                if (!string.IsNullOrEmpty(keyword.name) && keyword.name.StartsWith("_"))
                 {
-                    keywords.Add(name);
+                    keywords.Add(keyword.name);
                 }
             }
 
@@ -213,31 +111,21 @@ namespace NataneToon.Editor
             return string.Join(";", keywords);
         }
 
-        // =====================================================================
-        // Build Session Cleanup
-        // =====================================================================
+        private static int CountNataneMaterials()
+        {
+            return NataneAssetIndexService.EnumerateMaterialEntries(entry => entry.isNataneShader).Count();
+        }
 
-        /// <summary>
-        /// Reset static state at the start of each build session.
-        /// Unity calls IPreprocessShaders for each shader, so we reset via
-        /// the _initialized flag and log summary at the end.
-        /// ビルドセッション開始時に静的状態をリセットします。
-        /// </summary>
         [InitializeOnLoadMethod]
         private static void ResetBuildSessionState()
         {
-            // Reset on domain reload (which happens before each build)
-            _initialized = false;
-            _whitelistedKeywordSets = null;
-            _strippedCount = 0;
-            _keptCount = 0;
+            initialized = false;
+            whitelistedKeywordSets = null;
+            strippedCount = 0;
+            keptCount = 0;
         }
 
-        // =====================================================================
-        // Settings Window (Menu Item)
-        // =====================================================================
-
-        [MenuItem("Tools/Natane/シェーダー Shader/バリアントストリッピング設定 Variant Stripping Settings", false, 73)]
+        [MenuItem("Tools/Natane/Shader/Variant Stripping Settings", false, 73)]
         public static void ShowSettingsWindow()
         {
             ShaderVariantStripperSettingsWindow.ShowWindow();
@@ -245,8 +133,7 @@ namespace NataneToon.Editor
     }
 
     /// <summary>
-    /// Settings window for Shader Variant Stripper.
-    /// シェーダーバリアントストリッパー設定ウィンドウ。
+    /// Settings window for shader variant stripping.
     /// </summary>
     public class ShaderVariantStripperSettingsWindow : EditorWindow
     {
@@ -258,8 +145,7 @@ namespace NataneToon.Editor
 
         public static void ShowWindow()
         {
-            var window = GetWindow<ShaderVariantStripperSettingsWindow>(
-                L("バリアントストリッピング設定", "Variant Stripping Settings"));
+            var window = GetWindow<ShaderVariantStripperSettingsWindow>("Variant Stripping Settings");
             window.minSize = new Vector2(450, 320);
             window.Show();
         }
@@ -273,28 +159,20 @@ namespace NataneToon.Editor
         private void OnGUI()
         {
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField(
-                L("Natane Toon バリアントストリッピング設定", "Natane Toon Variant Stripping Settings"),
-                EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Natane Toon Variant Stripping Settings", EditorStyles.boldLabel);
             EditorGUILayout.Space(10);
 
             EditorGUILayout.HelpBox(
-                L("ビルド時にプロジェクト内のマテリアルが使用していないシェーダーバリアントを自動的に除去します。\n" +
-                "これによりビルドサイズが大幅に削減されます。",
-                "Automatically strips unused shader variants at build time based on project materials.\n" +
-                "This significantly reduces build size."),
+                "Automatically strips unused shader variants at build time based on indexed materials.\n" +
+                "This significantly reduces build size.",
                 MessageType.Info);
 
             EditorGUILayout.Space(10);
 
-            // Stripping enabled toggle
             EditorGUI.BeginChangeCheck();
             strippingEnabled = EditorGUILayout.Toggle(
-                new GUIContent(
-                    L("バリアントストリッピングを有効化", "Enable Variant Stripping"),
-                    L("ビルド時に未使用バリアントを自動除去", "Automatically strip unused variants at build time")),
+                new GUIContent("Enable Variant Stripping", "Automatically strip unused variants at build time"),
                 strippingEnabled);
-
             if (EditorGUI.EndChangeCheck())
             {
                 EditorPrefs.SetBool(STRIP_ENABLED_KEY, strippingEnabled);
@@ -302,50 +180,31 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space(5);
 
-            // Log toggle
             EditorGUI.BeginChangeCheck();
             logEnabled = EditorGUILayout.Toggle(
-                new GUIContent(
-                    L("ログ出力を有効化", "Enable Log Output"),
-                    L("ストリッピング結果をConsoleに出力", "Output stripping results to Console")),
+                new GUIContent("Enable Log Output", "Output stripping results to the Console"),
                 logEnabled);
-
             if (EditorGUI.EndChangeCheck())
             {
                 EditorPrefs.SetBool(STRIP_LOG_KEY, logEnabled);
             }
 
             EditorGUILayout.Space(20);
-
-            // Status section
-            EditorGUILayout.LabelField(L("現在の状態", "Current Status"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Current Status", EditorStyles.boldLabel);
             EditorGUILayout.Space(5);
 
-            // Count Natane materials
             int materialCount = CountNataneMaterials();
-            EditorGUILayout.LabelField($"{L("Natane Toon マテリアル数", "Natane Toon Material Count")}: {materialCount}");
+            EditorGUILayout.LabelField($"Natane Toon Material Count: {materialCount}");
 
             EditorGUILayout.Space(10);
-
-            if (strippingEnabled)
-            {
-                EditorGUILayout.HelpBox(
-                    L("ストリッピングが有効です。次回のビルド時に自動的に実行されます。",
-                    "Stripping is enabled. It will run automatically on the next build."),
-                    MessageType.Info);
-            }
-            else
-            {
-                EditorGUILayout.HelpBox(
-                    L("ストリッピングが無効です。ビルドサイズが大きくなる可能性があります。",
-                    "Stripping is disabled. Build size may be larger than necessary."),
-                    MessageType.Warning);
-            }
+            EditorGUILayout.HelpBox(
+                strippingEnabled
+                    ? "Stripping is enabled. It will run automatically on the next build."
+                    : "Stripping is disabled. Build size may be larger than necessary.",
+                strippingEnabled ? MessageType.Info : MessageType.Warning);
 
             EditorGUILayout.Space(10);
-
-            // Scan button
-            if (GUILayout.Button(L("マテリアルキーワードをスキャン", "Scan Material Keywords"), GUILayout.Height(30)))
+            if (GUILayout.Button("Scan Material Keywords", GUILayout.Height(30)))
             {
                 ScanAndDisplayKeywords();
             }
@@ -353,68 +212,48 @@ namespace NataneToon.Editor
 
         private static int CountNataneMaterials()
         {
-            return NataneMaterialAssetCache.GetMaterialsByShaderPrefix("Natane/Toon Shader").Count;
+            return NataneAssetIndexService.EnumerateMaterialEntries(entry => entry.isNataneShader).Count();
         }
 
         private static void ScanAndDisplayKeywords()
         {
-            string[] materialGuids = AssetDatabase.FindAssets("t:Material");
+            int materialCount = CountNataneMaterials();
+            NataneBuildPreparationService.PrepareForBuild(forceRefresh: false, logSummary: false);
+            Dictionary<string, List<string[]>> perShaderKeywordSets = NataneBuildPreparationService.LoadShaderKeywordSets();
             var uniqueSets = new HashSet<string>();
-            int materialCount = 0;
+            var reportLines = new List<string>();
 
-            try
+            for (int i = 0; i < NataneShaderCatalog.ShaderConfigs.Length; i++)
             {
-                for (int i = 0; i < materialGuids.Length; i++)
+                NataneShaderCatalog.ShaderPassConfig config = NataneShaderCatalog.ShaderConfigs[i];
+                if (!perShaderKeywordSets.TryGetValue(config.name, out List<string[]> keywordSets) || keywordSets == null || keywordSets.Count == 0)
                 {
-                    if (i % 50 == 0)
-                    {
-                        EditorUtility.DisplayProgressBar(
-                            L("マテリアルスキャン", "Material Scan"),
-                            L($"スキャン中... ({i}/{materialGuids.Length})",
-                            $"Scanning... ({i}/{materialGuids.Length})"),
-                            (float)i / materialGuids.Length);
-                    }
-
-                    string path = AssetDatabase.GUIDToAssetPath(materialGuids[i]);
-                    Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-
-                    if (material == null || material.shader == null)
-                        continue;
-
-                    if (!ShaderVariantCollector.IsNataneToonShader(material.shader.name))
-                        continue;
-
-                    materialCount++;
-
-                    string[] keywords = material.shaderKeywords
-                        .Where(k => !string.IsNullOrEmpty(k))
-                        .OrderBy(k => k)
-                        .ToArray();
-
-                    string key = keywords.Length > 0 ? string.Join(", ", keywords) : "(base variant)";
-                    uniqueSets.Add(key);
+                    continue;
                 }
-            }
-            finally
-            {
-                EditorUtility.ClearProgressBar();
+
+                reportLines.Add(config.name);
+                for (int j = 0; j < keywordSets.Count; j++)
+                {
+                    string[] keywords = keywordSets[j];
+                    string key = keywords == null || keywords.Length == 0
+                        ? "(base variant)"
+                        : string.Join(", ", keywords.OrderBy(keyword => keyword));
+                    uniqueSets.Add(key);
+                    reportLines.Add($"  - {key}");
+                }
+
+                reportLines.Add(string.Empty);
             }
 
-            string report = $"Natane Toon マテリアル: {materialCount}\n" +
-                           $"ユニークキーワードセット: {uniqueSets.Count}\n\n";
-
-            foreach (string set in uniqueSets.OrderBy(s => s))
-            {
-                report += $"  - {set}\n";
-            }
+            string report = $"Natane Toon materials: {materialCount}\n" +
+                           $"Unique keyword sets: {uniqueSets.Count}\n\n" +
+                           string.Join("\n", reportLines);
 
             Debug.Log($"[Natane Toon Stripper] Keyword scan results:\n{report}");
 
             EditorUtility.DisplayDialog(
-                L("スキャン結果", "Scan Results"),
-                $"{L("マテリアル数", "Materials")}: {materialCount}\n" +
-                $"{L("ユニークキーワードセット", "Unique Keyword Sets")}: {uniqueSets.Count}\n\n" +
-                L("詳細はConsoleを確認してください。", "See Console for details."),
+                "Scan Results",
+                $"Materials: {materialCount}\nUnique Keyword Sets: {uniqueSets.Count}\n\nSee Console for details.",
                 "OK");
         }
     }
