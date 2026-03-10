@@ -5,6 +5,15 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.4] - 2026-03-10
+
+### Fixed
+- **Editor localization consistency**: Normalized Japanese UI labels across batch conversion, migration, preset browser, asset checking, shader tools, and unified material editing windows.
+- **Preset browser layout consistency**: Kept the material action area visible in a consistent layout even when no material is selected, using disabled controls instead of switching to a different panel layout.
+
+### Changed
+- **Package version**: Prepared the package metadata for the next VCC/VPM release as `1.4.4`.
+
 ## [1.4.3] - 2026-03-10
 
 ### Added
