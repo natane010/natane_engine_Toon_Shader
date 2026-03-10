@@ -295,12 +295,13 @@ namespace NataneToon.Editor
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-            EditorGUILayout.LabelField("Workspace", EditorStyles.boldLabel, GUILayout.Width(80));
+            EditorGUILayout.LabelField(L("ワークスペース", "Workspace"), EditorStyles.boldLabel, GUILayout.Width(100));
             GUILayout.FlexibleSpace();
             GUILayout.Label(GetCurrentTabDisplayName(), EditorStyles.miniBoldLabel, GUILayout.Width(110));
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.LabelField(
-                "Illustration-style layout: left tool settings, center canvas, right layers and output.",
+                L("イラスト向け配置: 左にツール設定、中央にキャンバス、右にレイヤーと出力。",
+                  "Illustration-style layout: left tool settings, center canvas, right layers and output."),
                 EditorStyles.miniLabel);
             EditorGUILayout.EndVertical();
         }
@@ -308,10 +309,10 @@ namespace NataneToon.Editor
         private void DrawLeftStudioPanel()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox, GUILayout.Width(LeftPanelWidth), GUILayout.ExpandHeight(true));
-            EditorGUILayout.LabelField("Sub Tool", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("サブツール", "Sub Tool"), EditorStyles.boldLabel);
             DrawSubToolList();
             EditorGUILayout.Space(6);
-            EditorGUILayout.LabelField("Tool Property", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("ツールプロパティ", "Tool Property"), EditorStyles.boldLabel);
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.ExpandHeight(true));
             DrawCurrentToolPanel();
@@ -343,7 +344,7 @@ namespace NataneToon.Editor
             if (brushEnabled)
             {
                 EditorGUILayout.Space(6);
-                EditorGUILayout.LabelField("Tool Detail", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField(L("ツール詳細", "Tool Detail"), EditorStyles.boldLabel);
                 BrushSettingsUI.DrawBrushSettingsUI(brushSettings);
             }
 
@@ -354,7 +355,7 @@ namespace NataneToon.Editor
             Draw3DPreviewSection();
 
             EditorGUILayout.Space(6);
-            EditorGUILayout.LabelField("Export", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("書き出し", "Export"), EditorStyles.boldLabel);
             MaskTextureExporter.DrawExportUI(previewTexture);
 
             EditorGUILayout.Space(6);
@@ -418,21 +419,21 @@ namespace NataneToon.Editor
             switch (tab)
             {
                 case GeneratorTab.Noise:
-                    return "Noise";
+                    return L("ノイズ", "Noise");
                 case GeneratorTab.UVMask:
-                    return "UV Mask";
+                    return L("UVマスク", "UV Mask");
                 case GeneratorTab.Gradient:
-                    return "Gradient";
+                    return L("グラデーション", "Gradient");
                 case GeneratorTab.MeshInfo:
-                    return "Mesh Info";
+                    return L("メッシュ情報", "Mesh Info");
                 case GeneratorTab.Combined:
-                    return "Combine";
+                    return L("合成", "Combine");
                 case GeneratorTab.Templates:
-                    return "Templates";
+                    return L("テンプレート", "Templates");
                 case GeneratorTab.ChannelPack:
-                    return "Channel Pack";
+                    return L("チャンネルパック", "Channel Pack");
                 default:
-                    return "Tool";
+                    return L("ツール", "Tool");
             }
         }
 
@@ -1261,20 +1262,20 @@ namespace NataneToon.Editor
                 EditorStyles.miniButton, GUILayout.Width(50));
             if (brushEnabled && !prevBrush) islandSelectMode = false;
 
-            if (GUILayout.Button("Fit", EditorStyles.miniButton, GUILayout.Width(30)))
+            if (GUILayout.Button(L("全体", "Fit"), EditorStyles.miniButton, GUILayout.Width(40)))
             {
                 canvasZoom = 1f;
                 canvasPan = Vector2.zero;
             }
 
             GUI.enabled = brushHistory != null && brushHistory.CanUndo;
-            if (GUILayout.Button("Undo", EditorStyles.miniButton, GUILayout.Width(40)))
+            if (GUILayout.Button(L("戻す", "Undo"), EditorStyles.miniButton, GUILayout.Width(44)))
             {
                 UndoBrushStroke();
             }
 
             GUI.enabled = brushHistory != null && brushHistory.CanRedo;
-            if (GUILayout.Button("Redo", EditorStyles.miniButton, GUILayout.Width(40)))
+            if (GUILayout.Button(L("やり直し", "Redo"), EditorStyles.miniButton, GUILayout.Width(64)))
             {
                 RedoBrushStroke();
             }
@@ -1409,7 +1410,10 @@ namespace NataneToon.Editor
             if (!string.IsNullOrEmpty(interactionStatus))
                 EditorGUILayout.LabelField(interactionStatus, EditorStyles.miniLabel);
             if (brushEnabled)
-                EditorGUILayout.LabelField("Wheel=Size | Ctrl/Cmd+Wheel=Zoom | MMB/Space+Drag=Pan | Ctrl/Cmd+Click=Pick | Shift+Click=Line", EditorStyles.miniLabel);
+                EditorGUILayout.LabelField(
+                    L("ホイール=サイズ | Ctrl/Cmd+ホイール=ズーム | MMB/Space+ドラッグ=パン | Ctrl/Cmd+クリック=色取得 | Shift+クリック=直線",
+                      "Wheel=Size | Ctrl/Cmd+Wheel=Zoom | MMB/Space+Drag=Pan | Ctrl/Cmd+Click=Pick | Shift+Click=Line"),
+                    EditorStyles.miniLabel);
 
             EditorGUILayout.EndVertical();
         }
@@ -1637,7 +1641,7 @@ namespace NataneToon.Editor
         {
             if (brushHistory != null && brushHistory.Undo(layerStack))
             {
-                interactionStatus = "Undo Brush Stroke";
+                interactionStatus = L("ブラシストロークを元に戻しました", "Undo Brush Stroke");
                 RefreshPreviewFromLayers();
             }
         }
@@ -1646,7 +1650,7 @@ namespace NataneToon.Editor
         {
             if (brushHistory != null && brushHistory.Redo(layerStack))
             {
-                interactionStatus = "Redo Brush Stroke";
+                interactionStatus = L("ブラシストロークをやり直しました", "Redo Brush Stroke");
                 RefreshPreviewFromLayers();
             }
         }

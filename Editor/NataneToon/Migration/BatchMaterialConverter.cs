@@ -6,6 +6,8 @@ using UnityEngine;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Batch converts materials that match a source shader name.
     /// </summary>
@@ -42,10 +44,10 @@ namespace NataneToon.Editor
             }
         }
 
-        [MenuItem("Tools/Natane/Migration/Batch Material Converter", false, 53)]
+        [MenuItem("Tools/Natane/Migration/一括マテリアル変換 Batch Material Converter", false, 53)]
         public static void ShowWindow()
         {
-            var window = GetWindow<BatchMaterialConverter>("Batch Material Converter");
+            var window = GetWindow<BatchMaterialConverter>(L("一括マテリアル変換", "Batch Material Converter"));
             window.minSize = new Vector2(600, 500);
             window.Show();
         }
@@ -53,18 +55,20 @@ namespace NataneToon.Editor
         private void OnGUI()
         {
             windowScrollPosition = EditorGUILayout.BeginScrollView(windowScrollPosition);
-            EditorGUILayout.LabelField("Batch Material Converter", EditorStyles.boldLabel);
+            NataneToonShaderGUIUtility.DrawToolHeader("一括マテリアル変換", "Batch Material Converter", nameof(BatchMaterialConverter));
             EditorGUILayout.Space();
 
             EditorGUILayout.HelpBox(
-                "This tool finds and converts materials from one shader to another across your project.\n" +
-                "Prefab dependencies are resolved from the indexed asset graph to avoid full-project rescans.",
+                L("このツールは、プロジェクト全体から対象マテリアルを見つけて別シェーダーへ一括変換します。\n" +
+                  "プレハブ依存はインデックス済みアセットグラフから解決し、全件再スキャンを避けます。",
+                  "This tool finds and converts materials from one shader to another across your project.\n" +
+                  "Prefab dependencies are resolved from the indexed asset graph to avoid full-project rescans."),
                 MessageType.Info);
 
             EditorGUILayout.Space();
             DrawSettings();
 
-            if (GUILayout.Button("Scan Project", GUILayout.Height(30)))
+            if (GUILayout.Button(L("プロジェクトをスキャン", "Scan Project"), GUILayout.Height(30)))
             {
                 ScanProject();
             }
@@ -82,22 +86,24 @@ namespace NataneToon.Editor
         private void DrawSettings()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField("Conversion Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("変換設定", "Conversion Settings"), EditorStyles.boldLabel);
 
-            sourceShaderName = EditorGUILayout.TextField("Source Shader Name", sourceShaderName);
-            targetShaderPath = EditorGUILayout.TextField("Target Shader", targetShaderPath);
+            sourceShaderName = EditorGUILayout.TextField(L("変換元シェーダー名", "Source Shader Name"), sourceShaderName);
+            targetShaderPath = EditorGUILayout.TextField(L("変換先シェーダー", "Target Shader"), targetShaderPath);
 
             EditorGUILayout.Space();
 
-            searchInScenes = EditorGUILayout.Toggle("Search in Scenes", searchInScenes);
-            searchInPrefabs = EditorGUILayout.Toggle("Search in Prefabs", searchInPrefabs);
-            updateReferences = EditorGUILayout.Toggle("Update Object References", updateReferences);
+            searchInScenes = EditorGUILayout.Toggle(L("シーンを検索", "Search in Scenes"), searchInScenes);
+            searchInPrefabs = EditorGUILayout.Toggle(L("プレハブを検索", "Search in Prefabs"), searchInPrefabs);
+            updateReferences = EditorGUILayout.Toggle(L("オブジェクト参照を更新", "Update Object References"), updateReferences);
 
             if (updateReferences)
             {
                 EditorGUILayout.HelpBox(
-                    "This tool converts materials in place, so object references stay valid. " +
-                    "The toggle is kept for workflow compatibility.",
+                    L("このツールはマテリアルをその場で変換するため、オブジェクト参照は維持されます。"
+                      + " このトグルは既存ワークフロー互換のため残しています。",
+                      "This tool converts materials in place, so object references stay valid. " +
+                      "The toggle is kept for workflow compatibility."),
                     MessageType.None);
             }
 
@@ -106,7 +112,7 @@ namespace NataneToon.Editor
 
         private void DrawResults()
         {
-            EditorGUILayout.LabelField($"Found {conversionInfos.Count} materials", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L($"{conversionInfos.Count} 個のマテリアルが見つかりました", $"Found {conversionInfos.Count} materials"), EditorStyles.boldLabel);
 
             int totalPages = Mathf.Max(1, Mathf.CeilToInt(conversionInfos.Count / (float)ResultsPerPage));
             currentPage = Mathf.Clamp(currentPage, 0, totalPages - 1);
@@ -130,7 +136,7 @@ namespace NataneToon.Editor
 
                 if (info.affectedObjectCount > 0)
                 {
-                    EditorGUILayout.LabelField($"Used by {info.affectedObjectCount} objects", EditorStyles.miniLabel);
+                    EditorGUILayout.LabelField(L($"{info.affectedObjectCount} 個のオブジェクトで使用", $"Used by {info.affectedObjectCount} objects"), EditorStyles.miniLabel);
                 }
 
                 EditorGUILayout.EndVertical();
@@ -142,7 +148,7 @@ namespace NataneToon.Editor
 
             int selectedCount = conversionInfos.Count(info => info.willConvert);
             GUI.enabled = selectedCount > 0;
-            if (GUILayout.Button($"Convert {selectedCount} Selected Materials", GUILayout.Height(40)))
+            if (GUILayout.Button(L($"選択中の {selectedCount} 個を変換", $"Convert {selectedCount} Selected Materials"), GUILayout.Height(40)))
             {
                 ConvertSelectedMaterials();
             }
@@ -152,12 +158,12 @@ namespace NataneToon.Editor
 
             if (IsCompactLayout())
             {
-                if (GUILayout.Button("Select All"))
+                if (GUILayout.Button(L("すべて選択", "Select All")))
                 {
                     conversionInfos.ForEach(info => info.willConvert = true);
                 }
 
-                if (GUILayout.Button("Deselect All"))
+                if (GUILayout.Button(L("すべて解除", "Deselect All")))
                 {
                     conversionInfos.ForEach(info => info.willConvert = false);
                 }
@@ -165,12 +171,12 @@ namespace NataneToon.Editor
             else
             {
                 EditorGUILayout.BeginHorizontal();
-                if (GUILayout.Button("Select All"))
+                if (GUILayout.Button(L("すべて選択", "Select All")))
                 {
                     conversionInfos.ForEach(info => info.willConvert = true);
                 }
 
-                if (GUILayout.Button("Deselect All"))
+                if (GUILayout.Button(L("すべて解除", "Deselect All")))
                 {
                     conversionInfos.ForEach(info => info.willConvert = false);
                 }
@@ -341,11 +347,13 @@ namespace NataneToon.Editor
             }
 
             if (!EditorUtility.DisplayDialog(
-                "Convert Materials",
-                $"Are you sure you want to convert {selectedInfos.Count} materials?\n" +
-                "You can revert the material changes with Unity Undo, but a project backup is still recommended.",
-                "Convert",
-                "Cancel"))
+                L("マテリアル変換", "Convert Materials"),
+                L($"{selectedInfos.Count} 個のマテリアルを変換しますか？\n" +
+                  "Unity の Undo で変更は戻せますが、プロジェクトのバックアップも推奨します。",
+                  $"Are you sure you want to convert {selectedInfos.Count} materials?\n" +
+                  "You can revert the material changes with Unity Undo, but a project backup is still recommended."),
+                L("変換", "Convert"),
+                L("キャンセル", "Cancel")))
             {
                 return;
             }
@@ -353,7 +361,10 @@ namespace NataneToon.Editor
             Shader targetShader = Shader.Find(targetShaderPath);
             if (targetShader == null)
             {
-                EditorUtility.DisplayDialog("Error", $"Target shader '{targetShaderPath}' not found!", "OK");
+                EditorUtility.DisplayDialog(
+                    L("エラー", "Error"),
+                    L($"変換先シェーダー '{targetShaderPath}' が見つかりません。", $"Target shader '{targetShaderPath}' not found!"),
+                    "OK");
                 return;
             }
 
@@ -371,8 +382,8 @@ namespace NataneToon.Editor
                     }
 
                     EditorUtility.DisplayProgressBar(
-                        "Converting Materials",
-                        $"Converting {i + 1}/{selectedInfos.Count}: {material.name}",
+                        L("マテリアル変換中", "Converting Materials"),
+                        L($"{i + 1}/{selectedInfos.Count} を変換中: {material.name}", $"Converting {i + 1}/{selectedInfos.Count}: {material.name}"),
                         (float)i / selectedInfos.Count);
 
                     try
@@ -398,8 +409,8 @@ namespace NataneToon.Editor
             AssetDatabase.SaveAssets();
 
             EditorUtility.DisplayDialog(
-                "Conversion Complete",
-                $"Successfully converted {successCount}/{selectedInfos.Count} materials.",
+                L("変換完了", "Conversion Complete"),
+                L($"{successCount}/{selectedInfos.Count} 個のマテリアルを正常に変換しました。", $"Successfully converted {successCount}/{selectedInfos.Count} materials."),
                 "OK");
 
             ScanProject();

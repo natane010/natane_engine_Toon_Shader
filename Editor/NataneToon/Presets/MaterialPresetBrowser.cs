@@ -33,7 +33,7 @@ namespace NataneToon.Editor
         private static bool presetCacheDirty = true;
         private static bool presetCacheSubscribed;
 
-        private static string WindowTitle => L("Material Presets", "Material Presets");
+        private static string WindowTitle => L("マテリアルプリセット", "Material Presets");
 
         private static GUIStyle _vtuberToolbarButtonStyle;
         private static GUIStyle VtuberToolbarButtonStyle
@@ -72,7 +72,7 @@ namespace NataneToon.Editor
             }
         }
 
-        [MenuItem("Tools/Natane/Material Presets/Material Preset Browser _p", false, 21)]
+        [MenuItem("Tools/Natane/Presets/マテリアルプリセットブラウザ Material Preset Browser _p", false, 21)]
         public static void ShowWindow()
         {
             var window = GetWindow<MaterialPresetBrowser>(WindowTitle);
@@ -93,7 +93,7 @@ namespace NataneToon.Editor
 
         private void OnGUI()
         {
-            NataneToonShaderGUIUtility.DrawToolHeader("Material Preset Browser", "Material Preset Browser", "MaterialPresetBrowser");
+            NataneToonShaderGUIUtility.DrawToolHeader("マテリアルプリセットブラウザ", "Material Preset Browser", "MaterialPresetBrowser");
             EditorGUILayout.Space(5);
             DrawToolbar();
             EditorGUILayout.Space(5);
@@ -111,12 +111,12 @@ namespace NataneToon.Editor
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button(L("Refresh", "Refresh"), EditorStyles.toolbarButton))
+                if (GUILayout.Button(L("更新", "Refresh"), EditorStyles.toolbarButton))
                 {
                     RefreshPresetList(forceRefresh: true);
                 }
 
-                if (GUILayout.Button(L("Create Preset", "Create Preset"), EditorStyles.toolbarButton))
+                if (GUILayout.Button(L("プリセット作成", "Create Preset"), EditorStyles.toolbarButton))
                 {
                     ShowCreatePresetDialog();
                 }
@@ -124,21 +124,21 @@ namespace NataneToon.Editor
                 if (!compactToolbar &&
                     GUILayout.Button(
                         new GUIContent(
-                            L("Generate VTuber Presets", "Generate VTuber Presets"),
-                            L("Generate VTuber-optimized material presets", "Generate VTuber-optimized material presets")),
+                            L("VTuberプリセット生成", "Generate VTuber Presets"),
+                            L("VTuber向けに最適化されたマテリアルプリセットを生成します", "Generate VTuber-optimized material presets")),
                         VtuberToolbarButtonStyle))
                 {
                     GenerateVTuberPresets();
                 }
 
-                if (GUILayout.Button(L("Import from File", "Import from File"), EditorStyles.toolbarButton))
+                if (GUILayout.Button(L("ファイルから読み込み", "Import from File"), EditorStyles.toolbarButton))
                 {
                     ImportMaterialFromFile();
                 }
 
                 GUILayout.FlexibleSpace();
 
-                if (GUILayout.Button(L("Help", "Help"), EditorStyles.toolbarButton, GUILayout.MinWidth(60f)))
+                if (GUILayout.Button(L("ヘルプ", "Help"), EditorStyles.toolbarButton, GUILayout.MinWidth(60f)))
                 {
                     ShowHelp();
                 }
@@ -151,8 +151,8 @@ namespace NataneToon.Editor
                     GUILayout.FlexibleSpace();
                     if (GUILayout.Button(
                         new GUIContent(
-                            L("Generate VTuber Presets", "Generate VTuber Presets"),
-                            L("Generate VTuber-optimized material presets", "Generate VTuber-optimized material presets")),
+                            L("VTuberプリセット生成", "Generate VTuber Presets"),
+                            L("VTuber向けに最適化されたマテリアルプリセットを生成します", "Generate VTuber-optimized material presets")),
                         VtuberToolbarButtonStyle,
                         GUILayout.MinWidth(220f)))
                     {
@@ -168,7 +168,7 @@ namespace NataneToon.Editor
         private void DrawMaterialSelection()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField(L("Target Material", "Target Material"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("対象マテリアル", "Target Material"), EditorStyles.boldLabel);
 
             EditorGUI.BeginChangeCheck();
             selectedMaterial = (Material)EditorGUILayout.ObjectField(
@@ -179,79 +179,63 @@ namespace NataneToon.Editor
 
             if (EditorGUI.EndChangeCheck() && selectedMaterial != null)
             {
-                // Validate shader
                 if (!selectedMaterial.shader.name.Contains("Natane") || !selectedMaterial.shader.name.Contains("Toon"))
                 {
                     EditorUtility.DisplayDialog(
-                        L("Warning", "Warning"),
-                        L($"Selected material '{selectedMaterial.name}' is not using Natane Toon Shader.\n\nPresets may not apply correctly.", $"Selected material '{selectedMaterial.name}' is not using Natane Toon Shader.\n\nPresets may not apply correctly."),
+                        L("警告", "Warning"),
+                        L($"選択したマテリアル '{selectedMaterial.name}' は Natane Toon Shader を使用していません。\n\nプリセットが正しく適用されない可能性があります。", $"Selected material '{selectedMaterial.name}' is not using Natane Toon Shader.\n\nPresets may not apply correctly."),
                         "OK");
                 }
             }
 
-            if (selectedMaterial == null)
-            {
-                EditorGUILayout.HelpBox(L("Select a material to apply presets", "Select a material to apply presets"), MessageType.Info);
-            }
-            else
-            {
-                bool compactActions = position.width < 760f;
-
-                if (compactActions)
-                {
-                    if (GUILayout.Button(L("Create Preset from This Material", "Create Preset from This Material"), GUILayout.Height(25)))
-                    {
-                        CreatePresetFromMaterial(selectedMaterial);
-                    }
-
-                    if (GUILayout.Button(L("Export to File", "Export to File"), GUILayout.Height(25)))
-                    {
-                        ExportMaterialToFile(selectedMaterial);
-                    }
-
-                    if (GUILayout.Button(L("Copy to Clipboard", "Copy to Clipboard"), GUILayout.Height(25)))
-                    {
-                        CopyMaterialToClipboard(selectedMaterial);
-                    }
-
-                    if (GUILayout.Button(L("Paste from Clipboard", "Paste from Clipboard"), GUILayout.Height(25)))
-                    {
-                        PasteMaterialFromClipboard(selectedMaterial);
-                    }
-                }
-                else
-                {
-                    EditorGUILayout.BeginHorizontal();
-
-                    if (GUILayout.Button(L("Create Preset from This Material", "Create Preset from This Material"), GUILayout.Height(25)))
-                    {
-                        CreatePresetFromMaterial(selectedMaterial);
-                    }
-
-                    if (GUILayout.Button(L("Export to File", "Export to File"), GUILayout.Height(25)))
-                    {
-                        ExportMaterialToFile(selectedMaterial);
-                    }
-
-                    if (GUILayout.Button(L("Copy to Clipboard", "Copy to Clipboard"), GUILayout.Height(25)))
-                    {
-                        CopyMaterialToClipboard(selectedMaterial);
-                    }
-
-                    EditorGUILayout.EndHorizontal();
-
-                    EditorGUILayout.BeginHorizontal();
-
-                    if (GUILayout.Button(L("Paste from Clipboard", "Paste from Clipboard"), GUILayout.Height(25)))
-                    {
-                        PasteMaterialFromClipboard(selectedMaterial);
-                    }
-
-                    EditorGUILayout.EndHorizontal();
-                }
-            }
+            DrawMaterialActionButtons(position.width < 760f);
+            DrawMaterialSelectionStatus();
 
             EditorGUILayout.EndVertical();
+        }
+
+        private void DrawMaterialActionButtons(bool compactActions)
+        {
+            using (new EditorGUI.DisabledScope(selectedMaterial == null))
+            {
+                if (compactActions)
+                {
+                    DrawMaterialActionButton(L("このマテリアルからプリセット作成", "Create Preset from This Material"), () => CreatePresetFromMaterial(selectedMaterial));
+                    DrawMaterialActionButton(L("ファイルへ書き出し", "Export to File"), () => ExportMaterialToFile(selectedMaterial));
+                    DrawMaterialActionButton(L("クリップボードへコピー", "Copy to Clipboard"), () => CopyMaterialToClipboard(selectedMaterial));
+                    DrawMaterialActionButton(L("クリップボードから貼り付け", "Paste from Clipboard"), () => PasteMaterialFromClipboard(selectedMaterial));
+                    return;
+                }
+
+                EditorGUILayout.BeginHorizontal();
+                DrawMaterialActionButton(L("このマテリアルからプリセット作成", "Create Preset from This Material"), () => CreatePresetFromMaterial(selectedMaterial));
+                DrawMaterialActionButton(L("ファイルへ書き出し", "Export to File"), () => ExportMaterialToFile(selectedMaterial));
+                DrawMaterialActionButton(L("クリップボードへコピー", "Copy to Clipboard"), () => CopyMaterialToClipboard(selectedMaterial));
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUILayout.BeginHorizontal();
+                DrawMaterialActionButton(L("クリップボードから貼り付け", "Paste from Clipboard"), () => PasteMaterialFromClipboard(selectedMaterial));
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+
+        private void DrawMaterialActionButton(string label, System.Action action)
+        {
+            if (GUILayout.Button(label, GUILayout.Height(25)))
+            {
+                action?.Invoke();
+            }
+        }
+
+        private void DrawMaterialSelectionStatus()
+        {
+            if (selectedMaterial == null)
+            {
+                EditorGUILayout.HelpBox(L("プリセット適用先のマテリアルを選択してください", "Select a material to apply presets"), MessageType.Info);
+                return;
+            }
+
+            EditorGUILayout.HelpBox(L($"選択中: {selectedMaterial.name}", $"Selected: {selectedMaterial.name}"), MessageType.Info);
         }
 
         private void DrawFilterBar()
@@ -261,7 +245,7 @@ namespace NataneToon.Editor
             using (new EditorGUILayout.HorizontalScope())
             {
                 EditorGUI.BeginChangeCheck();
-                showAllCategories = GUILayout.Toggle(showAllCategories, L("All", "All"), EditorStyles.toolbarButton, GUILayout.MinWidth(50f));
+                showAllCategories = GUILayout.Toggle(showAllCategories, L("すべて", "All"), EditorStyles.toolbarButton, GUILayout.MinWidth(50f));
                 if (EditorGUI.EndChangeCheck())
                 {
                     FilterPresets();
@@ -269,7 +253,7 @@ namespace NataneToon.Editor
 
                 using (new EditorGUI.DisabledScope(showAllCategories))
                 {
-                    EditorGUILayout.LabelField(L("Category", "Category") + ":", GUILayout.Width(70));
+                    EditorGUILayout.LabelField(L("カテゴリ", "Category") + ":", GUILayout.Width(70));
                     EditorGUI.BeginChangeCheck();
                     selectedCategory = (PresetCategory)EditorGUILayout.EnumPopup(selectedCategory, GUILayout.MinWidth(position.width < 760f ? 150f : 220f));
                     if (EditorGUI.EndChangeCheck())
@@ -282,7 +266,7 @@ namespace NataneToon.Editor
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                EditorGUILayout.LabelField(L("Search", "Search") + ":", GUILayout.Width(55));
+                EditorGUILayout.LabelField(L("検索", "Search") + ":", GUILayout.Width(55));
                 EditorGUI.BeginChangeCheck();
                 searchQuery = EditorGUILayout.TextField(searchQuery, EditorStyles.toolbarSearchField);
                 if (EditorGUI.EndChangeCheck())
@@ -290,7 +274,7 @@ namespace NataneToon.Editor
                     FilterPresets();
                 }
 
-                if (GUILayout.Button(L("Clear", "Clear"), GUILayout.MinWidth(65f)))
+                if (GUILayout.Button(L("クリア", "Clear"), GUILayout.MinWidth(65f)))
                 {
                     searchQuery = "";
                     showAllCategories = true;
@@ -308,7 +292,7 @@ namespace NataneToon.Editor
         {
             if (filteredPresets.Count == 0)
             {
-                EditorGUILayout.HelpBox(L("No presets found. Create one or adjust filters.", "No presets found. Create one or adjust filters."), MessageType.Info);
+                EditorGUILayout.HelpBox(L("プリセットが見つかりません。作成するかフィルター条件を調整してください。", "No presets found. Create one or adjust filters."), MessageType.Info);
                 return;
             }
 
@@ -363,7 +347,7 @@ namespace NataneToon.Editor
             else
             {
                 EditorGUI.DrawRect(thumbnailRect, new Color(0.2f, 0.2f, 0.2f));
-                GUI.Label(thumbnailRect, L("No Preview", "No Preview"), EditorStyles.centeredGreyMiniLabel);
+                GUI.Label(thumbnailRect, L("プレビューなし", "No Preview"), EditorStyles.centeredGreyMiniLabel);
             }
 
             // Preset name
@@ -375,7 +359,7 @@ namespace NataneToon.Editor
             bool canApply = selectedMaterial != null;
             using (new EditorGUI.DisabledScope(!canApply))
             {
-                if (GUILayout.Button(L("Apply", "Apply"), GUILayout.Height(24)))
+                if (GUILayout.Button(L("適用", "Apply"), GUILayout.Height(24)))
                 {
                     ApplyPreset(preset);
                 }
@@ -457,7 +441,7 @@ namespace NataneToon.Editor
             NataneToonMaterialPresetEditor.ApplyPresetWithUIUpdate(preset, selectedMaterial);
 
             EditorUtility.DisplayDialog(
-                L("Preset Applied", "Preset Applied"),
+                L("プリセット適用完了", "Preset Applied"),
                 L($"Successfully applied preset '{preset.presetName}' to material '{selectedMaterial.name}'\n", $"Successfully applied preset '{preset.presetName}' to material '{selectedMaterial.name}'\n" +
                 $"Inspector UI has been updated to show active features."),
                 "OK");
@@ -466,10 +450,10 @@ namespace NataneToon.Editor
         private void ShowCreatePresetDialog()
         {
             string path = EditorUtility.SaveFilePanelInProject(
-                L("Create Material Preset", "Create Material Preset"),
-                L("New Material Preset", "New Material Preset"),
+                L("マテリアルプリセットを作成", "Create Material Preset"),
+                L("新しいマテリアルプリセット", "New Material Preset"),
                 "asset",
-                L("Choose where to save the preset", "Choose where to save the preset"));
+                L("プリセットの保存先を選択してください", "Choose where to save the preset"));
 
             if (!string.IsNullOrEmpty(path))
             {
@@ -491,10 +475,10 @@ namespace NataneToon.Editor
         {
             string defaultName = $"{material.name}_Preset";
             string path = EditorUtility.SaveFilePanelInProject(
-                L("Create Preset from Material", "Create Preset from Material"),
+                L("??????????????", "Create Preset from Material"),
                 defaultName,
                 "asset",
-                L("Choose where to save the preset", "Choose where to save the preset"));
+                L("??????????????????", "Choose where to save the preset"));
 
             if (!string.IsNullOrEmpty(path))
             {
@@ -510,8 +494,8 @@ namespace NataneToon.Editor
                 RefreshPresetList(forceRefresh: true);
 
                 EditorUtility.DisplayDialog(
-                    L("Preset Created", "Preset Created"),
-                    L($"Created preset '{preset.presetName}' from material '{material.name}'", $"Created preset '{preset.presetName}' from material '{material.name}'"),
+                    L("?????????", "Preset Created"),
+                    L($"????? '{material.name}' ??????? '{preset.presetName}' ???????", $"Created preset '{preset.presetName}' from material '{material.name}'"),
                     "OK");
             }
         }
@@ -523,7 +507,7 @@ namespace NataneToon.Editor
             string extension = MaterialParameterShareSystem.GetFileExtension();
 
             string path = EditorUtility.SaveFilePanel(
-                L("Export Material Parameters", "Export Material Parameters"),
+                L("???????????????", "Export Material Parameters"),
                 defaultFolder,
                 defaultName,
                 extension.TrimStart('.'));
@@ -534,8 +518,8 @@ namespace NataneToon.Editor
                 if (!string.IsNullOrEmpty(result))
                 {
                     EditorUtility.DisplayDialog(
-                        L("Export Successful", "Export Successful"),
-                        L($"Material parameters exported to:\n{result}", $"Material parameters exported to:\n{result}"),
+                        L("??????", "Export Successful"),
+                        L($"??????????????????:\n{result}", $"Material parameters exported to:\n{result}"),
                         "OK");
                 }
             }
@@ -546,8 +530,8 @@ namespace NataneToon.Editor
             if (selectedMaterial == null)
             {
                 EditorUtility.DisplayDialog(
-                    L("No Material Selected", "No Material Selected"),
-                    L("Please select a target material first", "Please select a target material first"),
+                    L("マテリアル未選択", "No Material Selected"),
+                    L("先に対象マテリアルを選択してください", "Please select a target material first"),
                     "OK");
                 return;
             }
@@ -556,7 +540,7 @@ namespace NataneToon.Editor
             string extension = MaterialParameterShareSystem.GetFileExtension();
 
             string path = EditorUtility.OpenFilePanel(
-                L("Import Material Parameters", "Import Material Parameters"),
+                L("???????????????", "Import Material Parameters"),
                 defaultFolder,
                 extension.TrimStart('.'));
 
@@ -569,8 +553,8 @@ namespace NataneToon.Editor
                 {
                     EditorUtility.SetDirty(selectedMaterial);
                     EditorUtility.DisplayDialog(
-                        L("Import Successful", "Import Successful"),
-                        L($"Material parameters imported to '{selectedMaterial.name}'", $"Material parameters imported to '{selectedMaterial.name}'"),
+                        L("??????", "Import Successful"),
+                        L($"'{selectedMaterial.name}' ???????????????????", $"Material parameters imported to '{selectedMaterial.name}'"),
                         "OK");
                 }
             }
@@ -582,8 +566,8 @@ namespace NataneToon.Editor
             if (success)
             {
                 EditorUtility.DisplayDialog(
-                    L("Copied to Clipboard", "Copied to Clipboard"),
-                    L($"Material '{material.name}' parameters copied to clipboard.\n\nYou can now paste these parameters to another material or share with others.", $"Material '{material.name}' parameters copied to clipboard.\n\nYou can now paste these parameters to another material or share with others."),
+                    L("???????????????", "Copied to Clipboard"),
+                    L($"????? '{material.name}' ???????????????????????\n\n?????????????????????????", $"Material '{material.name}' parameters copied to clipboard.\n\nYou can now paste these parameters to another material or share with others."),
                     "OK");
             }
         }
@@ -593,18 +577,18 @@ namespace NataneToon.Editor
             if (!MaterialParameterShareSystem.IsClipboardValid())
             {
                 EditorUtility.DisplayDialog(
-                    L("Invalid Clipboard", "Invalid Clipboard"),
-                    L("Clipboard does not contain valid material parameter data.", "Clipboard does not contain valid material parameter data."),
+                    L("無効なクリップボード", "Invalid Clipboard"),
+                    L("クリップボードに有効なマテリアルパラメータが含まれていません。", "Clipboard does not contain valid material parameter data."),
                     "OK");
                 return;
             }
 
             var info = MaterialParameterShareSystem.GetClipboardInfo();
             bool proceed = EditorUtility.DisplayDialog(
-                L("Paste Material Parameters", "Paste Material Parameters"),
+                L("マテリアルパラメータを貼り付け", "Paste Material Parameters"),
                 L($"Paste parameters from:\n\nMaterial: {info.materialName}\nExported by: {info.exportedBy}\nExport date: {info.exportDate}\nNotes: {info.notes}\n\nThis will overwrite current settings of '{material.name}'", $"Paste parameters from:\n\nMaterial: {info.materialName}\nExported by: {info.exportedBy}\nExport date: {info.exportDate}\nNotes: {info.notes}\n\nThis will overwrite current settings of '{material.name}'"),
-                L("Paste", "Paste"),
-                L("Cancel", "Cancel"));
+                  L("貼り付け", "Paste"),
+                  L("キャンセル", "Cancel"));
 
             if (proceed)
             {
@@ -621,7 +605,7 @@ namespace NataneToon.Editor
         private void ShowHelp()
         {
             EditorUtility.DisplayDialog(
-                L("Material Preset Browser - Help", "Material Preset Browser - Help"),
+                L("マテリアルプリセットブラウザ - ヘルプ", "Material Preset Browser - Help"),
                 L("Features:\n", "Features:\n" +
                     "遯ｶ・｢ Browse and apply material presets visually\n" +
                     "遯ｶ・｢ Filter by category and search by name\n" +
@@ -644,7 +628,7 @@ namespace NataneToon.Editor
         {
             // Show confirmation dialog
             bool proceed = EditorUtility.DisplayDialog(
-                L("Generate VTuber Presets", "Generate VTuber Presets"),
+                L("VTuber プリセット生成", "Generate VTuber Presets"),
                 L("Generate high-quality VTuber material presets.\n\n", "Generate high-quality VTuber material presets.\n\n" +
                 "The following 5 presets will be created:\n" +
                 "1. Character Skin - Soft cell shading with SSS\n" +
@@ -654,8 +638,8 @@ namespace NataneToon.Editor
                 "5. Live Performance - Lightweight & high performance\n\n" +
                 "Location: Assets/NataneToon/Runtime/Presets/VTuber/\n\n" +
                 "Generate?"),
-                L("Generate", "Generate"),
-                L("Cancel", "Cancel"));
+                L("??", "Generate"),
+                L("?????", "Cancel"));
 
             if (!proceed) return;
 
@@ -678,7 +662,7 @@ namespace NataneToon.Editor
                 {
                     Debug.LogError($"[MaterialPresetBrowser] Failed to create directory: {e.Message}");
                     EditorUtility.DisplayDialog(
-                        L("Error", "Error"),
+                        L("???", "Error"),
                         L($"Failed to create directory:\n{e.Message}\n\n", $"Failed to create directory:\n{e.Message}\n\n" +
                         $"Please manually create the directory:\n{presetPath}"),
                         "OK");
@@ -707,7 +691,7 @@ namespace NataneToon.Editor
 
             // Show completion dialog
             EditorUtility.DisplayDialog(
-                L("Complete", "Complete"),
+                L("完了", "Complete"),
                 L($"VTuber preset generation complete!\n\n", $"VTuber preset generation complete!\n\n" +
                 $"Presets created: {presetsCreated}\n" +
                 $"Location: {presetPath}\n\n" +

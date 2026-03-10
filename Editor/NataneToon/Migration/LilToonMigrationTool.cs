@@ -27,14 +27,14 @@ namespace NataneToon.Editor
         private enum ConversionMode { VisualMatch, MinimalSafe }
         private ConversionMode conversionMode = ConversionMode.VisualMatch;
         private string[] conversionModeNames => new[] {
-            L("Visual Match (Recommended)", "Visual Match (Recommended)"),
-            L("Minimal Safe (Legacy)", "Minimal Safe (Legacy)")
+            L("見た目優先（推奨）", "Visual Match (Recommended)"),
+            L("最小安全（旧来互換）", "Minimal Safe (Legacy)")
         };
 
         // 郢晢ｽ｢郢晢ｽｼ郢晉甥繝ｻ隴厄ｽｿ
         private enum MigrationMode { Project, Prefab }
         private MigrationMode currentMode = MigrationMode.Project;
-        private string[] modeNames => new[] { L("Project", "Project"), L("Avatar/Prefab", "Avatar/Prefab") };
+        private string[] modeNames => new[] { L("プロジェクト", "Project"), L("アバター/プレハブ", "Avatar/Prefab") };
 
         // 郢晏干ﾎ樒ｹ昜ｸ翫Ω郢晢ｽ｢郢晢ｽｼ郢晁・逡醍ｹ晁ｼ斐≦郢晢ｽｼ郢晢ｽｫ郢昴・
         private GameObject targetPrefab = null;
@@ -72,10 +72,10 @@ namespace NataneToon.Editor
             public float convertedOutlineWidth;
         }
 
-        [MenuItem("Tools/Natane/Migration/lilToon Migration Tool", false, 51)]
+        [MenuItem("Tools/Natane/Migration/lilToon 移行ツール lilToon Migration Tool", false, 51)]
         public static void ShowWindow()
         {
-            var window = GetWindow<LilToonMigrationTool>(L("lilToon Migration", "lilToon Migration"));
+            var window = GetWindow<LilToonMigrationTool>(L("lilToon 移行", "lilToon Migration"));
             window.minSize = new Vector2(500, 400);
             window.Show();
         }
@@ -91,47 +91,55 @@ namespace NataneToon.Editor
         private void OnGUI()
         {
             windowScrollPosition = EditorGUILayout.BeginScrollView(windowScrollPosition);
-            NataneToonShaderGUIUtility.DrawToolHeader("lilToon Migration Tool", "lilToon Migration Tool", nameof(LilToonMigrationTool));
+            NataneToonShaderGUIUtility.DrawToolHeader("lilToon 移行ツール", "lilToon Migration Tool", nameof(LilToonMigrationTool));
             EditorGUILayout.Space();
 
             if (!hasScannedProjectMaterials)
             {
                 EditorGUILayout.HelpBox(
-                    "Project-wide material scan is manual so opening the tool stays responsive on large projects.",
+                    L("大規模プロジェクトでも開いた直後の応答性を保つため、プロジェクト全体のマテリアル走査は手動実行です。",
+                      "Project-wide material scan is manual so opening the tool stays responsive on large projects."),
                     MessageType.Info);
             }
 
             EditorGUILayout.HelpBox(
-                L("This tool automatically converts lilToon materials to Natane Toon Shader.\n", "This tool automatically converts lilToon materials to Natane Toon Shader.\n" +
-                "Visual Match mode: Converts and enables all active lilToon features (rim light, outline, emission, etc.).\n" +
-                "Minimal Safe mode: Only basic settings enabled. Property values are preserved for manual activation."),
+                L("このツールは lilToon マテリアルを Natane Toon Shader へ自動変換します。\n" +
+                  "見た目優先: 有効な lilToon 機能をできるだけ見た目維持で変換します。\n" +
+                  "最小安全: 基本設定のみ有効化し、他機能の値は保持したまま OFF で移行します。",
+                  "This tool automatically converts lilToon materials to Natane Toon Shader.\n" +
+                  "Visual Match mode: Converts and enables all active lilToon features (rim light, outline, emission, etc.).\n" +
+                  "Minimal Safe mode: Only basic settings enabled. Property values are preserved for manual activation."),
                 MessageType.Info
             );
 
             EditorGUILayout.Space();
 
             // Options
-            EditorGUILayout.LabelField(L("Options", "Options"), EditorStyles.boldLabel);
-            createBackup = EditorGUILayout.Toggle(L("Create Backup", "Create Backup"), createBackup);
-            replaceOriginal = EditorGUILayout.Toggle(L("Replace Original (Destructive)", "Replace Original (Destructive)"), replaceOriginal);
-            showPreview = EditorGUILayout.Toggle(L("Show Preview After Conversion", "Show Preview After Conversion"), showPreview);
+            EditorGUILayout.LabelField(L("オプション", "Options"), EditorStyles.boldLabel);
+            createBackup = EditorGUILayout.Toggle(L("バックアップを作成", "Create Backup"), createBackup);
+            replaceOriginal = EditorGUILayout.Toggle(L("元マテリアルを置換（破壊的）", "Replace Original (Destructive)"), replaceOriginal);
+            showPreview = EditorGUILayout.Toggle(L("変換後にプレビューを表示", "Show Preview After Conversion"), showPreview);
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField(L("Conversion Mode", "Conversion Mode"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("変換モード", "Conversion Mode"), EditorStyles.boldLabel);
             conversionMode = DrawResponsiveSelection(conversionMode, conversionModeNames);
             if (conversionMode == ConversionMode.VisualMatch)
             {
                 EditorGUILayout.HelpBox(
-                    L("All active lilToon features (rim light, outline, emission, MatCap, specular, etc.) will be converted and enabled.\n", "All active lilToon features (rim light, outline, emission, MatCap, specular, etc.) will be converted and enabled.\n" +
-                    "The result will visually match the original material immediately after conversion."),
+                    L("有効な lilToon 機能（リムライト、アウトライン、エミッション、MatCap、スペキュラーなど）を変換して有効化します。\n" +
+                      "変換直後の見た目が元マテリアルに近くなるようにします。",
+                      "All active lilToon features (rim light, outline, emission, MatCap, specular, etc.) will be converted and enabled.\n" +
+                      "The result will visually match the original material immediately after conversion."),
                     MessageType.Info
                 );
             }
             else
             {
                 EditorGUILayout.HelpBox(
-                    L("Only basic settings (texture, color, shadow) are enabled. Other features are migrated in OFF state.\n", "Only basic settings (texture, color, shadow) are enabled. Other features are migrated in OFF state.\n" +
-                    "Property values are preserved, so you can enable features individually after migration."),
+                    L("基本設定（テクスチャ、色、影）のみ有効化します。他機能は値を保持したまま OFF で移行します。\n" +
+                      "移行後に必要な機能だけ個別に有効化できます。",
+                      "Only basic settings (texture, color, shadow) are enabled. Other features are migrated in OFF state.\n" +
+                      "Property values are preserved, so you can enable features individually after migration."),
                     MessageType.Info
                 );
             }
@@ -141,8 +149,10 @@ namespace NataneToon.Editor
             if (replaceOriginal)
             {
                 EditorGUILayout.HelpBox(
-                    L("WARNING: This will permanently modify your original materials!\n", "WARNING: This will permanently modify your original materials!\n" +
-                    "Make sure you have a backup of your project."),
+                    L("警告: 元のマテリアルを直接変更します。\n" +
+                      "必ずプロジェクトのバックアップを確認してください。",
+                      "WARNING: This will permanently modify your original materials!\n" +
+                      "Make sure you have a backup of your project."),
                     MessageType.Warning
                 );
             }
@@ -172,7 +182,7 @@ namespace NataneToon.Editor
         private void DrawProjectMode()
         {
             // Scan button
-            if (GUILayout.Button(L("Scan for lilToon Materials", "Scan for lilToon Materials"), GUILayout.Height(30)))
+            if (GUILayout.Button(L("lilToon マテリアルをスキャン", "Scan for lilToon Materials"), GUILayout.Height(30)))
             {
                 ScanForLilToonMaterials();
             }
@@ -184,7 +194,7 @@ namespace NataneToon.Editor
             }
 
             // Materials list
-            EditorGUILayout.LabelField(L($"Found {lilToonMaterials.Count} lilToon Materials", $"Found {lilToonMaterials.Count} lilToon Materials"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L($"lilToon マテリアルが {lilToonMaterials.Count} 件見つかりました", $"Found {lilToonMaterials.Count} lilToon Materials"), EditorStyles.boldLabel);
 
             DrawProjectPageControls();
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Height(GetAdaptiveListHeight(180f, 340f, 0.35f)));
@@ -196,7 +206,7 @@ namespace NataneToon.Editor
                     EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                     EditorGUILayout.ObjectField(material, typeof(Material), false);
 
-                    if (GUILayout.Button(L("Convert", "Convert"), GUILayout.Height(24f)))
+                    if (GUILayout.Button(L("変換", "Convert"), GUILayout.Height(24f)))
                     {
                         var report = ConvertMaterialWithReport(material);
                         if (report.success)
@@ -214,7 +224,7 @@ namespace NataneToon.Editor
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.ObjectField(material, typeof(Material), false);
 
-                    if (GUILayout.Button(L("Convert", "Convert"), GUILayout.Width(80)))
+                    if (GUILayout.Button(L("変換", "Convert"), GUILayout.Width(80)))
                     {
                         var report = ConvertMaterialWithReport(material);
                         if (report.success)
@@ -235,7 +245,7 @@ namespace NataneToon.Editor
 
             // Convert all button
             GUI.enabled = lilToonMaterials.Count > 0;
-            if (GUILayout.Button(L("Convert All Materials", "Convert All Materials"), GUILayout.Height(40)))
+            if (GUILayout.Button(L("すべてのマテリアルを変換", "Convert All Materials"), GUILayout.Height(40)))
             {
                 ConvertAllMaterials();
             }
@@ -274,10 +284,10 @@ namespace NataneToon.Editor
         private void DrawPrefabMode()
         {
             // 郢ｧ・ｻ郢ｧ・ｯ郢ｧ・ｷ郢晢ｽｧ郢晢ｽｳ1: 郢晏干ﾎ樒ｹ昜ｸ翫Ω鬩包ｽｸ隰壹・
-            EditorGUILayout.LabelField(L("Prefab Selection", "Prefab Selection"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("プレハブ選択", "Prefab Selection"), EditorStyles.boldLabel);
             EditorGUI.BeginChangeCheck();
             targetPrefab = (GameObject)EditorGUILayout.ObjectField(
-                L("Target Prefab", "Target Prefab"),
+                L("対象プレハブ", "Target Prefab"),
                 targetPrefab,
                 typeof(GameObject),
                 true // allowSceneObjects - 郢ｧ・ｷ郢晢ｽｼ郢晢ｽｳ闕ｳ鄙ｫ繝ｻ郢ｧ・､郢晢ｽｳ郢ｧ・ｹ郢ｧ・ｿ郢晢ｽｳ郢ｧ・ｹ郢ｧ繝ｻ&D陷ｿ・ｯ髢ｭ・ｽ
@@ -290,7 +300,7 @@ namespace NataneToon.Editor
             if (targetPrefab == null)
             {
                 EditorGUILayout.HelpBox(
-                    L("Drag & drop a prefab or scene avatar here to scan for lilToon materials.", "Drag & drop a prefab or scene avatar here to scan for lilToon materials."),
+                    L("ここにプレハブまたはシーン内アバターをドラッグ&ドロップして lilToon マテリアルを走査します。", "Drag & drop a prefab or scene avatar here to scan for lilToon materials."),
                     MessageType.Info
                 );
                 return;
@@ -299,11 +309,11 @@ namespace NataneToon.Editor
             EditorGUILayout.Space();
 
             // 郢ｧ・ｻ郢ｧ・ｯ郢ｧ・ｷ郢晢ｽｧ郢晢ｽｳ2: 郢晏干ﾎ樒ｹ昜ｸ翫Ω髫ｪ・ｭ陞ｳ繝ｻ
-            EditorGUILayout.LabelField(L("Prefab Settings", "Prefab Settings"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("プレハブ設定", "Prefab Settings"), EditorStyles.boldLabel);
 
             // 髫阪・・｣・ｽ郢晢ｽ｢郢晢ｽｼ郢昜ｼ夲ｽｼ莠･繝ｻ邵ｺ・ｮ郢晏干ﾎ樒ｹ昜ｸ翫Ω郢ｧ蝣､・ｶ・ｭ隰悶・・ｼ繝ｻ
             duplicateInHierarchy = EditorGUILayout.Toggle(
-                L("Create Duplicate in Hierarchy", "Create Duplicate in Hierarchy"),
+                L("Hierarchy に複製を作成", "Create Duplicate in Hierarchy"),
                 duplicateInHierarchy
             );
             if (duplicateInHierarchy)
@@ -319,7 +329,7 @@ namespace NataneToon.Editor
             using (new EditorGUI.DisabledScope(duplicateInHierarchy))
             {
                 updatePrefabReferences = EditorGUILayout.Toggle(
-                    L("Auto-update References", "Auto-update References"),
+                    L("参照を自動更新", "Auto-update References"),
                     updatePrefabReferences
                 );
             }
@@ -331,14 +341,14 @@ namespace NataneToon.Editor
             else if (updatePrefabReferences && !replaceOriginal)
             {
                 EditorGUILayout.HelpBox(
-                    L("After conversion, Renderer references in the prefab will be automatically updated to new materials.", "After conversion, Renderer references in the prefab will be automatically updated to new materials."),
+                    L("変換後、プレハブ内の Renderer 参照は新しいマテリアルへ自動更新されます。", "After conversion, Renderer references in the prefab will be automatically updated to new materials."),
                     MessageType.Info
                 );
             }
             else if (replaceOriginal)
             {
                 EditorGUILayout.HelpBox(
-                    L("In 'Replace Original' mode, the original material is modified in-place, so reference updates are unnecessary.", "In 'Replace Original' mode, the original material is modified in-place, so reference updates are unnecessary."),
+                    L("「元マテリアルを置換」モードでは、元マテリアルをその場で変更するため参照更新は不要です。", "In 'Replace Original' mode, the original material is modified in-place, so reference updates are unnecessary."),
                     MessageType.Info
                 );
             }
@@ -346,7 +356,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space();
 
             // 郢ｧ・ｹ郢ｧ・ｭ郢晢ｽ｣郢晢ｽｳ郢晄㈱縺｡郢晢ｽｳ
-            if (GUILayout.Button(L("Rescan Materials", "Rescan Materials"), GUILayout.Height(25)))
+            if (GUILayout.Button(L("マテリアルを再スキャン", "Rescan Materials"), GUILayout.Height(25)))
             {
                 ScanPrefabMaterials();
             }
@@ -357,14 +367,14 @@ namespace NataneToon.Editor
             if (prefabMaterials.Count == 0)
             {
                 EditorGUILayout.HelpBox(
-                    L("No lilToon materials found in this prefab.", "No lilToon materials found in this prefab."),
+                    L("このプレハブでは lilToon マテリアルが見つかりませんでした。", "No lilToon materials found in this prefab."),
                     MessageType.Warning
                 );
                 return;
             }
 
             EditorGUILayout.LabelField(
-                L($"Found {prefabMaterials.Select(m => m.original).Distinct().Count()} lilToon Materials", $"Found {prefabMaterials.Select(m => m.original).Distinct().Count()} lilToon Materials"),
+                L($"lilToon マテリアルが {prefabMaterials.Select(m => m.original).Distinct().Count()} 件見つかりました", $"Found {prefabMaterials.Select(m => m.original).Distinct().Count()} lilToon Materials"),
                 EditorStyles.boldLabel
             );
 
@@ -397,7 +407,7 @@ namespace NataneToon.Editor
                         EditorGUILayout.EndHorizontal();
                     }
 
-                    if (GUILayout.Button(L("Convert", "Convert"), GUILayout.Height(24f)))
+                    if (GUILayout.Button(L("変換", "Convert"), GUILayout.Height(24f)))
                     {
                         ConvertSinglePrefabMaterial(mat);
                     }
@@ -414,7 +424,7 @@ namespace NataneToon.Editor
                         EditorGUILayout.ObjectField(entries[0].converted, typeof(Material), false);
                     }
 
-                    if (GUILayout.Button(L("Convert", "Convert"), GUILayout.Width(100)))
+                    if (GUILayout.Button(L("変換", "Convert"), GUILayout.Width(100)))
                     {
                         ConvertSinglePrefabMaterial(mat);
                     }
@@ -476,9 +486,9 @@ namespace NataneToon.Editor
                 EditorGUILayout.Space(5);
                 if (IsCompactLayout())
                 {
-                    EditorGUILayout.LabelField(L("Last Duplicate", "Last Duplicate"), EditorStyles.boldLabel);
+                    EditorGUILayout.LabelField(L("最後に作成した複製", "Last Duplicate"), EditorStyles.boldLabel);
                     EditorGUILayout.ObjectField(lastDuplicatedObject, typeof(GameObject), true);
-                    if (GUILayout.Button(L("Select", "Select"), GUILayout.Height(24f)))
+                    if (GUILayout.Button(L("選択", "Select"), GUILayout.Height(24f)))
                     {
                         Selection.activeGameObject = lastDuplicatedObject;
                     }
@@ -486,9 +496,9 @@ namespace NataneToon.Editor
                 else
                 {
                     EditorGUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField(L("Last Duplicate:", "Last Duplicate:"), GUILayout.Width(100));
+                    EditorGUILayout.LabelField(L("最後の複製:", "Last Duplicate:"), GUILayout.Width(100));
                     EditorGUILayout.ObjectField(lastDuplicatedObject, typeof(GameObject), true);
-                    if (GUILayout.Button(L("Select", "Select"), GUILayout.Width(60)))
+                    if (GUILayout.Button(L("選択", "Select"), GUILayout.Width(60)))
                     {
                         Selection.activeGameObject = lastDuplicatedObject;
                     }
@@ -578,9 +588,9 @@ namespace NataneToon.Editor
                 .ToList();
 
             if (!EditorUtility.DisplayDialog(
-                L("Convert All Materials", "Convert All Materials"),
-                L($"Are you sure you want to convert {lilToonMaterials.Count} materials?", $"Are you sure you want to convert {lilToonMaterials.Count} materials?"),
-                L("Yes", "Yes"), L("Cancel", "Cancel")))
+                L("????????????", "Convert All Materials"),
+                L($"{lilToonMaterials.Count} ???????????????", $"Are you sure you want to convert {lilToonMaterials.Count} materials?"),
+                L("はい", "Yes"), L("キャンセル", "Cancel")))
             {
                 return;
             }
@@ -599,7 +609,7 @@ namespace NataneToon.Editor
                     }
 
                     EditorUtility.DisplayProgressBar(
-                        L("Converting Materials", "Converting Materials"),
+                        L("マテリアル変換中", "Converting Materials"),
                         L($"Converting {i + 1}/{lilToonMaterials.Count}: {lilToonMaterials[i].name}", $"Converting {i + 1}/{lilToonMaterials.Count}: {lilToonMaterials[i].name}"),
                         (float)i / lilToonMaterials.Count
                     );
@@ -1578,13 +1588,13 @@ namespace NataneToon.Editor
             if (materialsToConvert.Count == 0) return;
 
             string dialogMessage = duplicateInHierarchy
-                ? L($"Create a duplicate of '{targetPrefab.name}' and convert {materialsToConvert.Count} materials?\nThe original prefab will not be modified.", $"Create a duplicate of '{targetPrefab.name}' and convert {materialsToConvert.Count} materials?\nThe original prefab will not be modified.")
-                : L($"Are you sure you want to convert {materialsToConvert.Count} materials in '{targetPrefab.name}'?", $"Are you sure you want to convert {materialsToConvert.Count} materials in '{targetPrefab.name}'?");
+                ? L($"'{targetPrefab.name}' ???????? {materialsToConvert.Count} ???????????????\n???????????????", $"Create a duplicate of '{targetPrefab.name}' and convert {materialsToConvert.Count} materials?\nThe original prefab will not be modified.")
+                : L($"'{targetPrefab.name}' ?? {materialsToConvert.Count} ???????????????", $"Are you sure you want to convert {materialsToConvert.Count} materials in '{targetPrefab.name}'?");
 
             if (!EditorUtility.DisplayDialog(
-                L("Convert Prefab Materials", "Convert Prefab Materials"),
+                L("?????????????", "Convert Prefab Materials"),
                 dialogMessage,
-                L("Yes", "Yes"), L("Cancel", "Cancel")))
+                L("はい", "Yes"), L("キャンセル", "Cancel")))
             {
                 return;
             }
@@ -1604,7 +1614,7 @@ namespace NataneToon.Editor
                     Material sourceMat = materialsToConvert[i];
 
                 EditorUtility.DisplayProgressBar(
-                    L("Converting Prefab Materials", "Converting Prefab Materials"),
+                    L("プレハブ内マテリアル変換中", "Converting Prefab Materials"),
                     L($"Converting {i + 1}/{materialsToConvert.Count}: {sourceMat.name}", $"Converting {i + 1}/{materialsToConvert.Count}: {sourceMat.name}"),
                     (float)i / materialsToConvert.Count
                 );
@@ -1897,7 +1907,7 @@ namespace NataneToon.Editor
         private void ShowConversionReport(List<ConversionReport> reports, int successCount)
         {
             StringBuilder reportText = new StringBuilder();
-            reportText.AppendLine(L($"Conversion Complete: Successfully converted {successCount}/{reports.Count} materials.", $"Conversion Complete: Successfully converted {successCount}/{reports.Count} materials."));
+            reportText.AppendLine(L($"????: {reports.Count} ?? {successCount} ?????????????????", $"Conversion Complete: Successfully converted {successCount}/{reports.Count} materials."));
             reportText.AppendLine();
 
             int warningCount = 0;
@@ -1906,7 +1916,7 @@ namespace NataneToon.Editor
             {
                 if (!report.success)
                 {
-                    reportText.AppendLine($"x {report.materialName}: {L("Failed", "Failed")}");
+                    reportText.AppendLine($"x {report.materialName}: {L("失敗", "Failed")}");
                     foreach (var warning in report.warnings)
                     {
                         reportText.AppendLine($"   ! {warning}");
@@ -1932,7 +1942,7 @@ namespace NataneToon.Editor
                 // 鬩･蟠趣ｽｦ竏壺・隲繝ｻ・ｰ・ｱ邵ｺ・ｮ邵ｺ・ｿ髯ｦ・ｨ驕会ｽｺ繝ｻ繝ｻutline髫ｱ・ｿ隰ｨ・ｴ邵ｺ・ｪ邵ｺ・ｩ繝ｻ繝ｻ
                 if (report.outlineWidthAdjusted)
                 {
-                    reportText.AppendLine(L($"   > Outline Width Adjusted: {report.originalOutlineWidth:F2} -> {report.convertedOutlineWidth:F4}", $"   > Outline Width Adjusted: {report.originalOutlineWidth:F2} -> {report.convertedOutlineWidth:F4}"));
+                    reportText.AppendLine(L($"   > ??????????: {report.originalOutlineWidth:F2} -> {report.convertedOutlineWidth:F4}", $"   > Outline Width Adjusted: {report.originalOutlineWidth:F2} -> {report.convertedOutlineWidth:F4}"));
                 }
                 if (report.hasMultipleShadowLayers)
                 {
@@ -1942,7 +1952,7 @@ namespace NataneToon.Editor
                 reportText.AppendLine();
             }
 
-            reportText.AppendLine(L("=== Summary ===", "=== Summary ==="));
+            reportText.AppendLine(L("=== サマリー ===", "=== Summary ==="));
             reportText.AppendLine(L($"Success: {successCount}", $"Success: {successCount}"));
             reportText.AppendLine(L($"Failed: {reports.Count - successCount}", $"Failed: {reports.Count - successCount}"));
             reportText.AppendLine(L($"Warnings: {warningCount}", $"Warnings: {warningCount}"));
@@ -1962,7 +1972,7 @@ namespace NataneToon.Editor
             }
 
             EditorUtility.DisplayDialog(
-                L("Conversion Report", "Conversion Report"),
+                L("変換レポート", "Conversion Report"),
                 reportText.ToString(),
                 "OK"
             );
@@ -1971,10 +1981,10 @@ namespace NataneToon.Editor
             if (warningCount > 0)
             {
                 bool openConsole = EditorUtility.DisplayDialog(
-                    L("Warnings Detected", "Warnings Detected"),
+                    L("警告を検出", "Warnings Detected"),
                     L($"{warningCount} warnings detected.\nCheck the console log for details.\n\nOpen Console?", $"{warningCount} warnings detected.\nCheck the console log for details.\n\nOpen Console?"),
-                    L("Open Console", "Open Console"),
-                    L("Close", "Close")
+                    L("コンソールを開く", "Open Console"),
+                    L("閉じる", "Close")
                 );
 
                 if (openConsole)

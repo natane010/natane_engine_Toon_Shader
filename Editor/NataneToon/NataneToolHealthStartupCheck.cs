@@ -41,12 +41,15 @@ namespace NataneToon.Editor
             if (health == NataneToolHealthValidator.HealthStatus.Error)
             {
                 bool openDiagnostics = EditorUtility.DisplayDialog(
-                    L("Natane Toon Shader - Tool Issue Detected", "Natane Toon Shader - Tool Issue Detected"),
-                    L("Some Natane Toon Shader tools may not function correctly.\n", "Some Natane Toon Shader tools may not function correctly.\n" +
+                    L("Natane Toon Shader - ツール異常を検出", "Natane Toon Shader - Tool Issue Detected"),
+                    L("一部の Natane Toon Shader ツールが正しく動作しない可能性があります。\n" +
+                      "アセンブリまたは型解決の問題を検出しました。\n\n" +
+                      "詳細確認のため診断を開きますか？",
+                      "Some Natane Toon Shader tools may not function correctly.\n" +
                       "Assembly or type resolution issues were detected.\n\n" +
                       "Open Diagnostics to review the details."),
-                    L("Open Diagnostics", "Open Diagnostics"),
-                    L("Later", "Later"));
+                    L("診断を開く", "Open Diagnostics"),
+                    L("あとで", "Later"));
 
                 if (openDiagnostics)
                 {

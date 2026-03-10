@@ -8,6 +8,8 @@ using UnityEngine.Rendering;
 
 namespace NataneToon.Editor
 {
+    using static NataneToonLocalization;
+
     /// <summary>
     /// Build-time shader variant stripper for Natane Toon shaders.
     /// </summary>
@@ -125,7 +127,7 @@ namespace NataneToon.Editor
             keptCount = 0;
         }
 
-        [MenuItem("Tools/Natane/Shader/Variant Stripping Settings", false, 73)]
+        [MenuItem("Tools/Natane/Shader/バリアントストリッピング設定 Variant Stripping Settings", false, 73)]
         public static void ShowSettingsWindow()
         {
             ShaderVariantStripperSettingsWindow.ShowWindow();
@@ -145,7 +147,7 @@ namespace NataneToon.Editor
 
         public static void ShowWindow()
         {
-            var window = GetWindow<ShaderVariantStripperSettingsWindow>("Variant Stripping Settings");
+            var window = GetWindow<ShaderVariantStripperSettingsWindow>(L("バリアントストリッピング設定", "Variant Stripping Settings"));
             window.minSize = new Vector2(450, 320);
             window.Show();
         }
@@ -159,19 +161,21 @@ namespace NataneToon.Editor
         private void OnGUI()
         {
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField("Natane Toon Variant Stripping Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Natane Toon バリアントストリッピング設定", "Natane Toon Variant Stripping Settings"), EditorStyles.boldLabel);
             EditorGUILayout.Space(10);
 
             EditorGUILayout.HelpBox(
-                "Automatically strips unused shader variants at build time based on indexed materials.\n" +
-                "This significantly reduces build size.",
+                L("インデックス済みマテリアルを基準に、未使用シェーダーバリアントをビルド時に自動除去します。\n" +
+                  "これによりビルドサイズを大きく削減できます。",
+                  "Automatically strips unused shader variants at build time based on indexed materials.\n" +
+                  "This significantly reduces build size."),
                 MessageType.Info);
 
             EditorGUILayout.Space(10);
 
             EditorGUI.BeginChangeCheck();
             strippingEnabled = EditorGUILayout.Toggle(
-                new GUIContent("Enable Variant Stripping", "Automatically strip unused variants at build time"),
+                new GUIContent(L("バリアントストリッピングを有効化", "Enable Variant Stripping"), L("ビルド時に未使用バリアントを自動除去します", "Automatically strip unused variants at build time")),
                 strippingEnabled);
             if (EditorGUI.EndChangeCheck())
             {

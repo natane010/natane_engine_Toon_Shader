@@ -63,13 +63,13 @@ namespace NataneToon.Editor
             // PrewarmShaders(false);
         }
 
-        [MenuItem("Tools/Natane/Shader/Shader Prewarming/Prewarm All Shaders", false, 72)]
+        [MenuItem("Tools/Natane/Shader/シェーダープリウォーム Shader Prewarming/すべてプリウォーム Prewarm All Shaders", false, 72)]
         private static void PrewarmShadersMenu()
         {
             PrewarmShaders(true);
         }
 
-        [MenuItem("Tools/Natane/Shader/Shader Prewarming/Prewarm Shader Variant Collection", false, 721)]
+        [MenuItem("Tools/Natane/Shader/シェーダープリウォーム Shader Prewarming/バリアントコレクションをプリウォーム Prewarm Shader Variant Collection", false, 721)]
         private static void PrewarmShaderVariantCollectionMenu()
         {
             ShaderVariantCollection collection = FindShaderVariantCollection();
@@ -79,7 +79,7 @@ namespace NataneToon.Editor
             }
         }
 
-        [MenuItem("Tools/Natane/Shader/Shader Prewarming/Settings", false, 722)]
+        [MenuItem("Tools/Natane/Shader/シェーダープリウォーム Shader Prewarming/設定 Settings", false, 722)]
         private static void ShowSettings()
         {
             ShaderPrewarmingSettingsWindow.ShowWindow();
@@ -432,7 +432,7 @@ namespace NataneToon.Editor
 
         public static void ShowWindow()
         {
-            var window = GetWindow<ShaderPrewarmingSettingsWindow>(L("Shader Prewarming Settings", "Shader Prewarming Settings"));
+            var window = GetWindow<ShaderPrewarmingSettingsWindow>(L("シェーダープリウォーム設定", "Shader Prewarming Settings"));
             window.minSize = new Vector2(450, 400);
             window.Show();
         }
@@ -454,7 +454,7 @@ namespace NataneToon.Editor
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
 
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField(L("Natane Toon Shader Prewarming Settings", "Natane Toon Shader Prewarming Settings"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Natane Toon Shader プリウォーム設定", "Natane Toon Shader Prewarming Settings"), EditorStyles.boldLabel);
             EditorGUILayout.Space(10);
 
             EditorGUILayout.HelpBox(
@@ -538,7 +538,7 @@ namespace NataneToon.Editor
             if (runtimeScriptExists)
             {
                 EditorGUILayout.HelpBox(
-                    L("Runtime prewarming script is ENABLED", "Runtime prewarming script is ENABLED") + "\n" +
+                    L("ランタイムプリウォームスクリプトは有効です", "Runtime prewarming script is ENABLED") + "\n" +
                     L("Location", "Location") + ": " + RUNTIME_SCRIPT_PATH,
                     MessageType.Info);
             }
