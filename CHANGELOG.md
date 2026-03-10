@@ -5,6 +5,20 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.3] - 2026-03-10
+
+### Added
+- **Texture Generator workflow improvements**: Added stroke history, shortcut profile, brush stabilizer, line drawing assist, value picker, and brush-active canvas navigation to improve parity with dedicated paint tools.
+- **Asset indexing and build preparation**: Added Natane asset index services, shader catalog support, and build preparation settings/hooks to reduce editor-side asset lookup cost and standardize pre-build checks.
+- **Release handoff documents**: Added research, implementation, validation, and publish notes under `handoff/` for repeatable release preparation.
+
+### Fixed
+- **Unified Material Editor compile recovery**: Restored missing helper methods and preset type resolution so the editor window can compile again after text cleanup.
+- **Editor text readability**: Normalized several mojibake-affected menu labels and tool headers in editor tooling to readable UTF-8 strings.
+
+### Changed
+- **Package version**: Prepared the package metadata for the next VCC/VPM release as `1.4.3`.
+
 ## [1.4.2] - 2026-03-08
 
 ### Optimized
