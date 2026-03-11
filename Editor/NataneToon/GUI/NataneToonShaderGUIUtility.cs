@@ -8,8 +8,6 @@ namespace NataneToon.Editor
     /// <summary>
     /// Utility class for Natane Toon Shader GUI operations
     /// Provides reusable UI components and helper functions
-    /// Natane Toon Shader GUI謫堺ｽ懃畑縺ｮ繝ｦ繝ｼ繝・ぅ繝ｪ繝・ぅ繧ｯ繝ｩ繧ｹ
-    /// 蜀榊茜逕ｨ蜿ｯ閭ｽ縺ｪUI繧ｳ繝ｳ繝昴・繝阪Φ繝医→繝倥Ν繝代・髢｢謨ｰ繧呈署萓・
     /// </summary>
     public static class NataneToonShaderGUIUtility
     {
@@ -28,7 +26,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Initialize styles
-        /// 繧ｹ繧ｿ繧､繝ｫ繧貞・譛溷喧
         /// </summary>
         public static void InitializeStyles()
         {
@@ -52,7 +49,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw a section header with foldout
-        /// 謚倥ｊ縺溘◆縺ｿ讖溯・莉倥″繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ繝倥ャ繝繝ｼ繧呈緒逕ｻ
         /// </summary>
         public static bool DrawFoldoutHeader(string title, bool foldout)
         {
@@ -63,7 +59,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw a property with optional tooltip
-        /// 繧ｪ繝励す繝ｧ繝ｳ縺ｮ繝・・繝ｫ繝√ャ繝嶺ｻ倥″縺ｧ繝励Ο繝代ユ繧｣繧呈緒逕ｻ
         /// </summary>
         public static void DrawProperty(MaterialEditor editor, MaterialProperty prop, string label = null, string tooltip = null)
         {
@@ -82,7 +77,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw a color property with HDR support check
-        /// HDR繧ｵ繝昴・繝医メ繧ｧ繝・け莉倥″縺ｧ繧ｫ繝ｩ繝ｼ繝励Ο繝代ユ繧｣繧呈緒逕ｻ
         /// </summary>
         public static void DrawColorProperty(MaterialEditor editor, MaterialProperty prop, string label = null, string tooltip = null, bool hdr = false)
         {
@@ -113,7 +107,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw a toggle with keyword enable/disable
-        /// 繧ｭ繝ｼ繝ｯ繝ｼ繝峨・譛牙柑/辟｡蜉ｹ蛹匁ｩ溯・莉倥″繝医げ繝ｫ繧呈緒逕ｻ
         /// </summary>
         public static bool DrawToggleWithKeyword(Material material, MaterialProperty prop, string keyword, string label = null, string tooltip = null)
         {
@@ -149,7 +142,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw help button for tool window
-        /// 繝・・繝ｫ繧ｦ繧｣繝ｳ繝峨え逕ｨ縺ｮ繝倥Ν繝励・繧ｿ繝ｳ繧呈緒逕ｻ
         /// </summary>
         public static void DrawHelpButton(string toolKey)
         {
@@ -161,7 +153,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw header with help button
-        /// 繝倥Ν繝励・繧ｿ繝ｳ莉倥″繝倥ャ繝繝ｼ繧呈緒逕ｻ
         /// </summary>
         public static void DrawHeaderWithHelp(string titleJP, string titleEN, string toolKey)
         {
@@ -175,7 +166,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw texture property with tiling/offset
-        /// 繧ｿ繧､繝ｪ繝ｳ繧ｰ/繧ｪ繝輔そ繝・ヨ莉倥″繝・け繧ｹ繝√Ε繝励Ο繝代ユ繧｣繧呈緒逕ｻ
         /// </summary>
         public static void DrawTextureProperty(MaterialEditor editor, MaterialProperty texProp, bool showScaleOffset = true)
         {
@@ -202,7 +192,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw a category divider with centered label
-        /// 繧ｫ繝・ざ繝ｪ蛹ｺ蛻・ｊ邱夲ｼ井ｸｭ螟ｮ繝ｩ繝吶Ν莉倥″・・
         /// </summary>
         public static void DrawCategoryDivider(string label)
         {
@@ -718,7 +707,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw unified tool header with help button
-        /// 繝倥Ν繝励・繧ｿ繝ｳ莉倥″邨ｱ荳繝・・繝ｫ繝倥ャ繝繝ｼ繧呈緒逕ｻ
         /// </summary>
         public static void DrawToolHeader(string titleJP, string titleEN, string toolKey)
         {
@@ -740,7 +728,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw JP/EN language toggle button
-        /// JP/EN 險隱槫・繧頑崛縺医・繧ｿ繝ｳ繧呈緒逕ｻ
         /// </summary>
         public static void DrawLanguageToggleButton()
         {
@@ -753,7 +740,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw primary action button
-        /// 繝励Λ繧､繝槭Μ繧｢繧ｯ繧ｷ繝ｧ繝ｳ繝懊ち繝ｳ繧呈緒逕ｻ
         /// </summary>
         public static bool DrawPrimaryButton(string label, float width = 150, float height = 30)
         {
@@ -763,7 +749,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw secondary action button
-        /// 繧ｻ繧ｫ繝ｳ繝繝ｪ繧｢繧ｯ繧ｷ繝ｧ繝ｳ繝懊ち繝ｳ繧呈緒逕ｻ
         /// </summary>
         public static bool DrawSecondaryButton(string label, float width = 150, float height = 25)
         {
@@ -772,7 +757,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw foldout section with unified style
-        /// 邨ｱ荳繧ｹ繧ｿ繧､繝ｫ縺ｮ繝輔か繝ｼ繝ｫ繝峨い繧ｦ繝医そ繧ｯ繧ｷ繝ｧ繝ｳ繧呈緒逕ｻ
         /// </summary>
         public static bool DrawFoldoutSection(string title, bool foldout, System.Action content)
         {
@@ -790,7 +774,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw success message box
-        /// 謌仙粥繝｡繝・そ繝ｼ繧ｸ繝懊ャ繧ｯ繧ｹ繧呈緒逕ｻ
         /// </summary>
         public static void DrawSuccessBox(string message)
         {
@@ -802,7 +785,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw warning message box
-        /// 隴ｦ蜻翫Γ繝・そ繝ｼ繧ｸ繝懊ャ繧ｯ繧ｹ繧呈緒逕ｻ
         /// </summary>
         public static void DrawWarningBox(string message)
         {
@@ -811,7 +793,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Draw error message box
-        /// 繧ｨ繝ｩ繝ｼ繝｡繝・そ繝ｼ繧ｸ繝懊ャ繧ｯ繧ｹ繧呈緒逕ｻ
         /// </summary>
         public static void DrawErrorBox(string message)
         {

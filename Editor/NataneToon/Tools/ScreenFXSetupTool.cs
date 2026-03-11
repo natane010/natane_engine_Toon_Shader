@@ -1,4 +1,4 @@
-﻿using UnityEditor;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -16,16 +16,16 @@ namespace NataneToon.Editor
         private const string MaterialFolderRoot = "Assets/NataneToon";
         private const string MaterialFolder = "Assets/NataneToon/ScreenFX";
 
-        [MenuItem(NataneToolMenuPaths.ScreenFXSetup, false, 45)]
+        // Temporarily disabled while ScreenFX support is on hold.
+        // [MenuItem(NataneToolMenuPaths.ScreenFXSetup, false, 45)]
         private static void CreateScreenFxOverlay()
         {
             var camera = ResolveTargetCamera();
             if (camera == null)
             {
                 EditorUtility.DisplayDialog(
-                    L("カメラが見つかりません", "Camera Not Found"),
-                    L("シーンにカメラが見つかりませんでした。\nカメラオブジェクトを選択するか、MainCameraタグを設定して再試行してください。",
-                      "No camera was found in the scene.\nSelect a camera object, or set the MainCamera tag and try again."),
+                    L("Camera Not Found", "Camera Not Found"),
+                    L("No camera was found in the scene.\nSelect a camera object, or set the MainCamera tag and try again.", "No camera was found in the scene.\nSelect a camera object, or set the MainCamera tag and try again."),
                     "OK");
                 return;
             }
@@ -34,9 +34,8 @@ namespace NataneToon.Editor
             if (shader == null)
             {
                 EditorUtility.DisplayDialog(
-                    L("シェーダーが見つかりません", "Shader Not Found"),
-                    L($"シェーダー '{ScreenFxShaderName}' が見つかりませんでした。",
-                      $"Shader '{ScreenFxShaderName}' was not found."),
+                    L("Shader Not Found", "Shader Not Found"),
+                    L($"Shader '{ScreenFxShaderName}' was not found.", $"Shader '{ScreenFxShaderName}' was not found."),
                     "OK");
                 return;
             }
@@ -70,17 +69,8 @@ namespace NataneToon.Editor
             Selection.activeGameObject = overlay;
 
             EditorUtility.DisplayDialog(
-                L("Screen FX Overlay 作成完了", "Screen FX Overlay Created"),
-                L($"作成完了\n- Camera: {camera.name}\n- Overlay: {overlay.name}\n- Material: {materialPath}\n\n" +
-                  "ヒント\n" +
-                  "1) Overlayをカメラ直下で微調整\n" +
-                  "2) 必要に応じて描画レイヤー/カリングマスクを調整\n" +
-                  "3) MaterialでPosterize/Edge/Vignetteを調整",
-                  $"Created successfully\n- Camera: {camera.name}\n- Overlay: {overlay.name}\n- Material: {materialPath}\n\n" +
-                  "Tips\n" +
-                  "1) Fine-tune the Overlay under the camera\n" +
-                  "2) Adjust render layer/culling mask as needed\n" +
-                  "3) Adjust Posterize/Edge/Vignette in the Material"),
+                L("Screen FX Overlay Created", "Screen FX Overlay Created"),
+                L("A Screen FX overlay quad was created, parented to the target camera, and assigned a new material asset.", "A Screen FX overlay quad was created, parented to the target camera, and assigned a new material asset."),
                 "OK");
         }
 

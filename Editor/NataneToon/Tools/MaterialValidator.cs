@@ -9,9 +9,7 @@ namespace NataneToon.Editor
 
     /// <summary>
     /// Material validation and optimization checker
-    /// マテリアル検証と最適化チェッカー
     /// Provides VRChat optimization checks, performance ratings, and auto-fix suggestions
-    /// VRChat最適化チェック、パフォーマンス評価、自動修正提案を提供
     /// </summary>
     public class MaterialValidator : EditorWindow
     {
@@ -19,7 +17,7 @@ namespace NataneToon.Editor
 
         private static readonly string[] VrchatTextureProperties =
         {
-            "_MainTex", "_BumpMap", "_EmissionMap", "_MatCapTex", "_MatCapTex2", "_MatCapTex3", "_RampTex",
+            "_MainTex", "_BumpMap", "_MicroNormalMap", "_ClearCoatMask", "_ClearCoatNormalMap", "_CavityMap", "_TransmissionMask", "_SkinSpecMask", "_HairStrandDirectionMap", "_HairTransmissionMask", "_EmissionMap", "_MatCapTex", "_MatCapTex2", "_MatCapTex3", "_RampTex",
             "_DissolveTex", "_DissolveMap", "_ThicknessMap", "_SpecularMask", "_RimMask",
             "_SSSMask", "_MatCapMask", "_EmissionMask", "_DissolveMask",
             "_ReflectionMask", "_EnvRimMask", "_ParallaxMap", "_RefractionMask"
@@ -27,7 +25,7 @@ namespace NataneToon.Editor
 
         private static readonly string[] TextureSizeProperties =
         {
-            "_MainTex", "_BumpMap", "_EmissionMap", "_MatCapTex", "_MatCapTex2", "_MatCapTex3", "_RampTex", "_ParallaxMap"
+            "_MainTex", "_BumpMap", "_MicroNormalMap", "_ClearCoatMask", "_ClearCoatNormalMap", "_CavityMap", "_TransmissionMask", "_SkinSpecMask", "_HairStrandDirectionMap", "_HairTransmissionMask", "_EmissionMap", "_MatCapTex", "_MatCapTex2", "_MatCapTex3", "_RampTex", "_ParallaxMap"
         };
 
         private static readonly string[] ActiveFeatureKeywords =
@@ -39,6 +37,20 @@ namespace NataneToon.Editor
             "_TRIPLANAR", "_HEIGHT_FOG", "_SURFACE_COVER", "_MIRROR_CONTROL", "_QUEST_LITE", "_WATER_DRIP",
             "_VIDEO_TEXTURE", "_INTERSECTION_FADE", "_SCREEN_TONE", "_SCREEN_EDGE", "_HATCHING", "_USE_LIGHT_VOLUME",
             "_LTCGI", "_HAIR_SPECULAR", "_WATERCOLOR", "_SMEAR", "_BACKFACE_TEXTURE", "_FUR"
+        };
+
+        private static readonly string[] LookMixerNprKeywords =
+        {
+            "_COLOR_QUANTIZE",
+            "_LUT_3D",
+            "_HATCHING",
+            "_WATERCOLOR",
+            "_SOFT_FILTER",
+            "_KUWAHARA_FILTER",
+            "_SCREEN_EDGE",
+            "_COLOR_BLEEDING",
+            "_CHROMATIC_ABERRATION",
+            "_OUTLINE_HAND_DRAWN"
         };
 
         private static readonly Dictionary<string, string[]> UnusedFeatureTextureRequirements = new Dictionary<string, string[]>
@@ -82,10 +94,10 @@ namespace NataneToon.Editor
             public string category;
         }
 
-        [MenuItem("Tools/Natane/マテリアル Material/マテリアル検証 Material Validator _m", false, 11)]
+        [MenuItem(NataneToolMenuPaths.MaterialValidator, false, 11)]
         public static void ShowWindow()
         {
-            var window = GetWindow<MaterialValidator>(L("マテリアル検証", "Material Validator"));
+            var window = GetWindow<MaterialValidator>(L("Material Validator", "Material Validator"));
             window.minSize = new Vector2(600, 400);
             window.Show();
         }
@@ -105,29 +117,28 @@ namespace NataneToon.Editor
         {
             NataneToonShaderGUIUtility.DrawToolHeader("マテリアル検証&最適化", "Material Validator & Optimizer", "MaterialValidator");
             EditorGUILayout.HelpBox(
-                L("VRChat最適化、パフォーマンス問題、一般的な問題についてマテリアルを検証します。\n可能な場合は自動修正の提案が提供されます。",
-                  "Validates materials for VRChat optimization, performance issues, and common problems.\nAuto-fix suggestions provided where possible."),
+                L("Validates materials for VRChat optimization, performance issues, and common problems.\nAuto-fix suggestions provided where possible.", "Validates materials for VRChat optimization, performance issues, and common problems.\nAuto-fix suggestions provided where possible."),
                 MessageType.Info);
         }
 
         private void DrawMaterialSelection()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField(L("検証するマテリアル", "Materials to Validate"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Materials to Validate", "Materials to Validate"), EditorStyles.boldLabel);
 
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button(L("選択マテリアルを追加", "Add Selected Materials"), GUILayout.Height(25)))
+            if (GUILayout.Button(L("Add Selected Materials", "Add Selected Materials"), GUILayout.Height(25)))
             {
                 AddSelectedMaterials();
             }
 
-            if (GUILayout.Button(L("全Natane Toonマテリアルを追加", "Add All Natane Toon Materials"), GUILayout.Height(25)))
+            if (GUILayout.Button(L("Add All Natane Toon Materials", "Add All Natane Toon Materials"), GUILayout.Height(25)))
             {
                 AddAllNataneToonMaterials();
             }
 
-            if (GUILayout.Button(L("リストをクリア", "Clear List"), GUILayout.Height(25)))
+            if (GUILayout.Button(L("Clear List", "Clear List"), GUILayout.Height(25)))
             {
                 materialsToValidate.Clear();
                 validationResults.Clear();
@@ -141,13 +152,12 @@ namespace NataneToon.Editor
             if (materialsToValidate.Count == 0)
             {
                 EditorGUILayout.HelpBox(
-                    L("マテリアルが選択されていません。上のボタンを使用してマテリアルを追加してください。",
-                      "No materials selected. Use the buttons above to add materials."),
+                    L("No materials selected. Use the buttons above to add materials.", "No materials selected. Use the buttons above to add materials."),
                     MessageType.Info);
             }
             else
             {
-                EditorGUILayout.LabelField(L($"選択マテリアル ({materialsToValidate.Count}):", $"Selected Materials ({materialsToValidate.Count}):"), EditorStyles.miniLabel);
+                EditorGUILayout.LabelField(L($"Selected Materials ({materialsToValidate.Count}):", $"Selected Materials ({materialsToValidate.Count}):"), EditorStyles.miniLabel);
 
                 scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.Height(100));
                 for (int i = materialsToValidate.Count - 1; i >= 0; i--)
@@ -160,7 +170,7 @@ namespace NataneToon.Editor
 
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.ObjectField(materialsToValidate[i], typeof(Material), false);
-                    if (GUILayout.Button("×", GUILayout.Width(20)))
+                    if (GUILayout.Button("X", GUILayout.Width(20)))
                     {
                         materialsToValidate.RemoveAt(i);
                     }
@@ -175,26 +185,26 @@ namespace NataneToon.Editor
         private void DrawValidationSettings()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField(L("検証設定", "Validation Settings"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Validation Settings", "Validation Settings"), EditorStyles.boldLabel);
 
-            checkVRChatOptimization = EditorGUILayout.ToggleLeft(L("VRChat最適化チェック", "VRChat Optimization Check"), checkVRChatOptimization);
-            checkTextureSize = EditorGUILayout.ToggleLeft(L("テクスチャサイズチェック", "Texture Size Check"), checkTextureSize);
-            checkPerformance = EditorGUILayout.ToggleLeft(L("パフォーマンス評価チェック", "Performance Rating Check"), checkPerformance);
-            checkUnusedFeatures = EditorGUILayout.ToggleLeft(L("未使用機能チェック", "Unused Features Check"), checkUnusedFeatures);
-            checkTextureCompression = EditorGUILayout.ToggleLeft(L("テクスチャ圧縮チェック", "Texture Compression Check"), checkTextureCompression);
+            checkVRChatOptimization = EditorGUILayout.ToggleLeft(L("VRChat Optimization Check", "VRChat Optimization Check"), checkVRChatOptimization);
+            checkTextureSize = EditorGUILayout.ToggleLeft(L("Texture Size Check", "Texture Size Check"), checkTextureSize);
+            checkPerformance = EditorGUILayout.ToggleLeft(L("Performance Rating Check", "Performance Rating Check"), checkPerformance);
+            checkUnusedFeatures = EditorGUILayout.ToggleLeft(L("Unused Features Check", "Unused Features Check"), checkUnusedFeatures);
+            checkTextureCompression = EditorGUILayout.ToggleLeft(L("Texture Compression Check", "Texture Compression Check"), checkTextureCompression);
 
             EditorGUILayout.Space(5);
 
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button(L("すべて検証", "Validate All"), GUILayout.Height(30)))
+            if (GUILayout.Button(L("Validate All", "Validate All"), GUILayout.Height(30)))
             {
                 ValidateAllMaterials();
             }
 
             using (new EditorGUI.DisabledScope(!autoFixAvailable))
             {
-                if (GUILayout.Button(L("すべての問題を自動修正", "Auto-Fix All Issues"), GUILayout.Height(30)))
+                if (GUILayout.Button(L("Auto-Fix All Issues", "Auto-Fix All Issues"), GUILayout.Height(30)))
                 {
                     AutoFixAllIssues();
                 }
@@ -210,7 +220,7 @@ namespace NataneToon.Editor
             if (validationResults.Count == 0) return;
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField(L("検証結果", "Validation Results"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Validation Results", "Validation Results"), EditorStyles.boldLabel);
 
             // Summary
             int errors = validationResults.Count(r => r.severity == ValidationSeverity.Error);
@@ -219,11 +229,11 @@ namespace NataneToon.Editor
 
             EditorGUILayout.BeginHorizontal();
             GUI.color = errors > 0 ? Color.red : Color.white;
-            EditorGUILayout.LabelField(L($"エラー: {errors}", $"Errors: {errors}"), EditorStyles.boldLabel, GUILayout.Width(150));
+            EditorGUILayout.LabelField(L($"Errors: {errors}", $"Errors: {errors}"), EditorStyles.boldLabel, GUILayout.Width(150));
             GUI.color = warnings > 0 ? Color.yellow : Color.white;
-            EditorGUILayout.LabelField(L($"警告: {warnings}", $"Warnings: {warnings}"), EditorStyles.boldLabel, GUILayout.Width(150));
+            EditorGUILayout.LabelField(L($"Warnings: {warnings}", $"Warnings: {warnings}"), EditorStyles.boldLabel, GUILayout.Width(150));
             GUI.color = Color.white;
-            EditorGUILayout.LabelField(L($"情報: {infos}", $"Info: {infos}"), EditorStyles.boldLabel, GUILayout.Width(120));
+            EditorGUILayout.LabelField(L($"Info: {infos}", $"Info: {infos}"), EditorStyles.boldLabel, GUILayout.Width(120));
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(5);
@@ -264,15 +274,16 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginHorizontal();
 
             // Severity icon
-            string icon = result.severity == ValidationSeverity.Error ? "⛔" :
-                         result.severity == ValidationSeverity.Warning ? "⚠️" : "ℹ️";
+            string icon = result.severity == ValidationSeverity.Error ? "!"
+                         : result.severity == ValidationSeverity.Warning ? "!"
+                         : "i";
             EditorGUILayout.LabelField(icon, GUILayout.Width(20));
 
             // Category and material
             EditorGUILayout.LabelField($"[{result.category}] {result.material.name}", EditorStyles.boldLabel);
 
             // Ping button
-            if (GUILayout.Button("→", GUILayout.Width(30)))
+            if (GUILayout.Button("Ping", GUILayout.Width(40)))
             {
                 EditorGUIUtility.PingObject(result.material);
                 Selection.activeObject = result.material;
@@ -281,14 +292,14 @@ namespace NataneToon.Editor
             EditorGUILayout.EndHorizontal();
 
             // Issue description
-            EditorGUILayout.LabelField(L("問題:", "Issue:"), EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(L("Issue:", "Issue:"), EditorStyles.miniBoldLabel);
             EditorGUILayout.LabelField(result.issue, EditorStyles.wordWrappedLabel);
 
             // Suggestion
             if (!string.IsNullOrEmpty(result.suggestion))
             {
                 EditorGUILayout.Space(3);
-                EditorGUILayout.LabelField(L("提案:", "Suggestion:"), EditorStyles.miniBoldLabel);
+                EditorGUILayout.LabelField(L("Suggestion:", "Suggestion:"), EditorStyles.miniBoldLabel);
                 EditorGUILayout.LabelField(result.suggestion, EditorStyles.wordWrappedLabel);
             }
 
@@ -296,13 +307,12 @@ namespace NataneToon.Editor
             if (result.autoFixAction != null)
             {
                 EditorGUILayout.Space(3);
-                if (GUILayout.Button(L("自動修正", "Auto-Fix"), GUILayout.Height(20)))
+                if (GUILayout.Button(L("Auto-Fix", "Auto-Fix"), GUILayout.Height(20)))
                 {
                     result.autoFixAction.Invoke();
                     EditorUtility.DisplayDialog(
-                        L("自動修正を適用しました", "Auto-Fix Applied"),
-                        L($"マテリアルの問題を修正しました: {result.material.name}",
-                          $"Fixed issue for material: {result.material.name}"),
+                        L("Auto-Fix Applied", "Auto-Fix Applied"),
+                        L($"Fixed issue for material: {result.material.name}", $"Fixed issue for material: {result.material.name}"),
                         "OK");
                 }
             }
@@ -352,6 +362,7 @@ namespace NataneToon.Editor
                 if (checkPerformance) ValidatePerformance(material);
                 if (checkUnusedFeatures) ValidateUnusedFeatures(material);
                 if (checkTextureCompression) ValidateTextureCompression(material);
+                ValidateLookMixer(material);
             }
 
             autoFixAvailable = validationResults.Any(r => r.autoFixAction != null);
@@ -466,12 +477,8 @@ namespace NataneToon.Editor
                     material = material,
                     category = "Performance",
                     severity = ValidationSeverity.Error,
-                    issue = L(
-                        $"推定 Sampler 上限を超えています ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})",
-                        $"Estimated sampler usage exceeds the limit ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})"),
-                    suggestion = L(
-                        $"重い機能を無効化して上限内に戻してください。主な要因: {samplerSummary}",
-                        $"Disable heavy features to get back under the limit. Main contributors: {samplerSummary}")
+                    issue = L($"Estimated sampler usage exceeds the limit ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})", $"Estimated sampler usage exceeds the limit ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})"),
+                    suggestion = L($"Disable heavy features to get back under the limit. Main contributors: {samplerSummary}", $"Disable heavy features to get back under the limit. Main contributors: {samplerSummary}")
                 });
             }
             else if (samplerEstimate.HasCriticalLightingCombo)
@@ -481,12 +488,8 @@ namespace NataneToon.Editor
                     material = material,
                     category = "Performance",
                     severity = ValidationSeverity.Warning,
-                    issue = L(
-                        "Light Volume + LTCGI + Hatching は Sampler 制限に引っかかりやすい危険な組み合わせです",
-                        "Light Volume + LTCGI + Hatching is a high-risk sampler combination"),
-                    suggestion = L(
-                        "髪や追加テクスチャを盛る前に、Hatching か第三者ライティング機能の構成を見直してください。",
-                        "Review Hatching or third-party lighting before adding more heavy texture features.")
+                    issue = L("Light Volume + LTCGI + Hatching is a high-risk sampler combination", "Light Volume + LTCGI + Hatching is a high-risk sampler combination"),
+                    suggestion = L("Review Hatching or third-party lighting before adding more heavy texture features.", "Review Hatching or third-party lighting before adding more heavy texture features.")
                 });
             }
             else if (samplerEstimate.HasScreenSpaceLightingCombo)
@@ -496,12 +499,8 @@ namespace NataneToon.Editor
                     material = material,
                     category = "Performance",
                     severity = ValidationSeverity.Warning,
-                    issue = L(
-                        "Light Volume + LTCGI + Screen Edge は Sampler 制限に届きやすい危険な組み合わせです",
-                        "Light Volume + LTCGI + Screen Edge is a high-risk sampler combination"),
-                    suggestion = L(
-                        $"Screen Edge か第三者ライティングの構成を見直してください。主な要因: {samplerSummary}",
-                        $"Review Screen Edge or third-party lighting. Main contributors: {samplerSummary}")
+                    issue = L("Light Volume + LTCGI + Screen Edge is a high-risk sampler combination", "Light Volume + LTCGI + Screen Edge is a high-risk sampler combination"),
+                    suggestion = L($"Review Screen Edge or third-party lighting. Main contributors: {samplerSummary}", $"Review Screen Edge or third-party lighting. Main contributors: {samplerSummary}")
                 });
             }
             else if (samplerEstimate.HasLightVolumeLtcgiCombo)
@@ -511,12 +510,8 @@ namespace NataneToon.Editor
                     material = material,
                     category = "Performance",
                     severity = ValidationSeverity.Warning,
-                    issue = L(
-                        $"Light Volume と LTCGI を同時使用しています (推定 {samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})",
-                        $"Light Volume and LTCGI are enabled together (estimated {samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})"),
-                    suggestion = L(
-                        $"他の重い機能を追加する前に Sampler 余裕を確認してください。主な要因: {samplerSummary}",
-                        $"Check sampler headroom before enabling more heavy features. Main contributors: {samplerSummary}")
+                    issue = L($"Light Volume and LTCGI are enabled together (estimated {samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})", $"Light Volume and LTCGI are enabled together (estimated {samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})"),
+                    suggestion = L($"Check sampler headroom before enabling more heavy features. Main contributors: {samplerSummary}", $"Check sampler headroom before enabling more heavy features. Main contributors: {samplerSummary}")
                 });
             }
             else if (samplerEstimate.IsNearLimit)
@@ -526,12 +521,8 @@ namespace NataneToon.Editor
                     material = material,
                     category = "Performance",
                     severity = ValidationSeverity.Warning,
-                    issue = L(
-                        $"推定 Sampler 数が上限付近です ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})",
-                        $"Estimated sampler usage is near the limit ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})"),
-                    suggestion = L(
-                        $"新しい重い機能を追加する前に構成を見直してください。主な要因: {samplerSummary}",
-                        $"Review the current setup before enabling more heavy features. Main contributors: {samplerSummary}")
+                    issue = L($"Estimated sampler usage is near the limit ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})", $"Estimated sampler usage is near the limit ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})"),
+                    suggestion = L($"Review the current setup before enabling more heavy features. Main contributors: {samplerSummary}", $"Review the current setup before enabling more heavy features. Main contributors: {samplerSummary}")
                 });
             }
             else if (samplerEstimate.IsWarning)
@@ -541,12 +532,8 @@ namespace NataneToon.Editor
                     material = material,
                     category = "Performance",
                     severity = ValidationSeverity.Info,
-                    issue = L(
-                        $"推定 Sampler 数は注意域です ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})",
-                        $"Estimated sampler usage is in the caution range ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})"),
-                    suggestion = L(
-                        $"Light Volume や LTCGI を追加する前に現在の構成を確認してください。主な要因: {samplerSummary}",
-                        $"Check the current setup before enabling Light Volume or LTCGI. Main contributors: {samplerSummary}")
+                    issue = L($"Estimated sampler usage is in the caution range ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})", $"Estimated sampler usage is in the caution range ({samplerEstimate.EstimatedSamplers}/{samplerEstimate.Limit})"),
+                    suggestion = L($"Check the current setup before enabling Light Volume or LTCGI. Main contributors: {samplerSummary}", $"Check the current setup before enabling Light Volume or LTCGI. Main contributors: {samplerSummary}")
                 });
             }
 
@@ -557,12 +544,8 @@ namespace NataneToon.Editor
                     material = material,
                     category = "Performance",
                     severity = ValidationSeverity.Warning,
-                    issue = L(
-                        $"{activeFeatures} 個の機能が有効です。GPU負荷が高めです (Rating: D)",
-                        $"{activeFeatures} features are enabled. GPU cost is heavy (Rating: D)"),
-                    suggestion = L(
-                        "使っていない機能を無効化し、Quest や VR 向けなら構成を簡素化してください。",
-                        "Disable unused features and simplify the setup for Quest or VR targets.")
+                    issue = L($"{activeFeatures} features are enabled. GPU cost is heavy (Rating: D)", $"{activeFeatures} features are enabled. GPU cost is heavy (Rating: D)"),
+                    suggestion = L("Disable unused features and simplify the setup for Quest or VR targets.", "Disable unused features and simplify the setup for Quest or VR targets.")
                 });
             }
             else if (activeFeatures > 8 && !samplerEstimate.IsWarning)
@@ -572,12 +555,8 @@ namespace NataneToon.Editor
                     material = material,
                     category = "Performance",
                     severity = ValidationSeverity.Info,
-                    issue = L(
-                        $"{activeFeatures} 個の機能が有効です。中程度のGPU負荷です (Rating: C)",
-                        $"{activeFeatures} features are enabled. GPU cost is moderate (Rating: C)"),
-                    suggestion = L(
-                        "必要性の低い機能はオフにすると、モバイルやVR向けに余裕ができます。",
-                        "Disabling less important features will add headroom for mobile or VR.")
+                    issue = L($"{activeFeatures} features are enabled. GPU cost is moderate (Rating: C)", $"{activeFeatures} features are enabled. GPU cost is moderate (Rating: C)"),
+                    suggestion = L("Disabling less important features will add headroom for mobile or VR.", "Disabling less important features will add headroom for mobile or VR.")
                 });
             }
         }
@@ -616,6 +595,65 @@ namespace NataneToon.Editor
                         });
                     }
                 }
+            }
+        }
+
+        private void ValidateLookMixer(Material material)
+        {
+            if (!material.HasProperty("_LookMode") ||
+                !material.HasProperty("_ToonWeight") ||
+                !material.HasProperty("_NprWeight") ||
+                !material.HasProperty("_PbrWeight") ||
+                material.GetFloat("_LookMode") <= 0.5f)
+            {
+                return;
+            }
+
+            float toonWeight = material.GetFloat("_ToonWeight");
+            float nprWeight = material.GetFloat("_NprWeight");
+            float pbrWeight = material.GetFloat("_PbrWeight");
+
+            if (toonWeight <= 0.01f && pbrWeight <= 0.01f)
+            {
+                validationResults.Add(new ValidationResult
+                {
+                    material = material,
+                    category = "Look Mixer",
+                    severity = ValidationSeverity.Warning,
+                    issue = L("Both Toon Weight and PBR Weight are near zero. The base shading may become weaker than intended.", "Both Toon Weight and PBR Weight are near zero. The base shading may become weaker than intended."),
+                    suggestion = L("Raise either Toon or PBR a bit so the material keeps a clear base response.", "Raise either Toon or PBR a bit so the material keeps a clear base response.")
+                });
+            }
+
+            if (pbrWeight > 0.6f)
+            {
+                float smoothness = material.HasProperty("_Smoothness") ? material.GetFloat("_Smoothness") : 0f;
+                float metallic = material.HasProperty("_Metallic") ? material.GetFloat("_Metallic") : 0f;
+                bool hasReflection = material.IsKeywordEnabled("_REFLECTION") || material.IsKeywordEnabled("_PBR");
+
+                if (smoothness < 0.15f && metallic < 0.1f && !hasReflection)
+                {
+                    validationResults.Add(new ValidationResult
+                    {
+                        material = material,
+                        category = "Look Mixer",
+                        severity = ValidationSeverity.Warning,
+                        issue = L("PBR Weight is high, but smoothness / metallic / reflection are still very weak.", "PBR Weight is high, but smoothness / metallic / reflection are still very weak."),
+                        suggestion = L("Review Smoothness, Metallic, and Reflection so the PBR-heavy look reads more clearly.", "Review Smoothness, Metallic, and Reflection so the PBR-heavy look reads more clearly.")
+                    });
+                }
+            }
+
+            if (nprWeight > 0.5f && !LookMixerNprKeywords.Any(material.IsKeywordEnabled))
+            {
+                validationResults.Add(new ValidationResult
+                {
+                    material = material,
+                    category = "Look Mixer",
+                    severity = ValidationSeverity.Info,
+                    issue = L("NPR Weight is high, but no illustration-style NPR keywords are currently enabled.", "NPR Weight is high, but no illustration-style NPR keywords are currently enabled."),
+                    suggestion = L("Enable Hatching, Watercolor, Color Quantize, or other NPR features so the NPR slider has visible impact.", "Enable Hatching, Watercolor, Color Quantize, or other NPR features so the NPR slider has visible impact.")
+                });
             }
         }
 
@@ -675,9 +713,8 @@ namespace NataneToon.Editor
             }
 
             EditorUtility.DisplayDialog(
-                L("自動修正完了", "Auto-Fix Complete"),
-                L($"{fixedCount}個の問題を自動的に修正しました。\n残りの問題は手動での対処が必要です。",
-                  $"Fixed {fixedCount} issues automatically.\nRemaining issues require manual intervention."),
+                L("Auto-Fix Complete", "Auto-Fix Complete"),
+                L($"Fixed {fixedCount} issues automatically.\nRemaining issues require manual intervention.", $"Fixed {fixedCount} issues automatically.\nRemaining issues require manual intervention."),
                 "OK");
 
             // Re-validate
@@ -747,12 +784,8 @@ namespace NataneToon.Editor
                     material = material,
                     category = "VRChat",
                     severity = ValidationSeverity.Warning,
-                    issue = L(
-                        "Light Volume が有効ですが、VRC Light Volumes パッケージが検出されていません",
-                        "Light Volume is enabled, but the VRC Light Volumes package is not detected"),
-                    suggestion = L(
-                        "Tools > Natane > VRChat > VRC Light Volumes 再検出 を実行するか、不要なら Light Volume を無効化してください。",
-                        "Run Tools > Natane > VRChat > VRC Light Volumes Re-detect, or disable Light Volume if you do not need it.")
+                    issue = L("Light Volume is enabled, but the VRC Light Volumes package is not detected", "Light Volume is enabled, but the VRC Light Volumes package is not detected"),
+                    suggestion = L("Run Tools > Natane > VRChat > VRC Light Volumes Re-detect, or disable Light Volume if you do not need it.", "Run Tools > Natane > VRChat > VRC Light Volumes Re-detect, or disable Light Volume if you do not need it.")
                 });
             }
 
@@ -764,12 +797,8 @@ namespace NataneToon.Editor
                     material = material,
                     category = "VRChat",
                     severity = ValidationSeverity.Warning,
-                    issue = L(
-                        "LTCGI が有効ですが、LTCGI パッケージが検出されていません",
-                        "LTCGI is enabled, but the LTCGI package is not detected"),
-                    suggestion = L(
-                        "Tools > Natane > VRChat > LTCGI 再検出 を実行するか、不要なら LTCGI を無効化してください。",
-                        "Run Tools > Natane > VRChat > LTCGI Re-detect, or disable LTCGI if you do not need it.")
+                    issue = L("LTCGI is enabled, but the LTCGI package is not detected", "LTCGI is enabled, but the LTCGI package is not detected"),
+                    suggestion = L("Run Tools > Natane > VRChat > LTCGI Re-detect, or disable LTCGI if you do not need it.", "Run Tools > Natane > VRChat > LTCGI Re-detect, or disable LTCGI if you do not need it.")
                 });
             }
         }
@@ -780,7 +809,7 @@ namespace NataneToon.Editor
         {
             if (estimate.Contributors == null || estimate.Contributors.Length == 0)
             {
-                return L("主要因なし", "No major contributors");
+                return L("No major contributors", "No major contributors");
             }
 
             int count = Mathf.Min(maxCount, estimate.Contributors.Length);

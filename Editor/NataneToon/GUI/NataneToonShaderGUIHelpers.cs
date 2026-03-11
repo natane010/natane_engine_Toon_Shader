@@ -1,32 +1,23 @@
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 using static NataneToon.Editor.NataneToonLocalization;
 
 namespace NataneToon.Editor
 {
     /// <summary>
-    /// Helper methods for NataneToonShaderGUI
-    /// NataneToonShaderGUIのヘルパーメソッド集
-    /// Extracted from main ShaderGUI to reduce file size and improve maintainability
+    /// Helper methods for NataneToonShaderGUI.
     /// </summary>
     public static class NataneToonShaderGUIHelpers
     {
-        // ===== CONSTANTS =====
-        private const float FLOAT_COMPARISON_THRESHOLD = 0.5f;
+        private const float GRADIENT_MODE_THRESHOLD = 0.5f;
+        private const float STANDARD_TOON_MODE_THRESHOLD = 1.5f;
 
-        // ===== COMMON DELEGATE TYPES =====
         public delegate bool DrawToggleDelegate(string keyword, string propertyName, string label);
         public delegate void DrawPropertyDelegate(string propertyName, string label);
         public delegate bool DrawHelpToggleDelegate(string sectionKey, string helpText, MessageType messageType = MessageType.Info);
         public delegate void SaveFoldoutStatesDelegate();
         public delegate MaterialProperty FindPropertyDelegate(string propertyName, MaterialProperty[] properties, bool propertyIsMandatory);
 
-        // ===== MAIN SECTION DRAWING =====
-
-        /// <summary>
-        /// Draw the complete Shading section
-        /// シェーディングセクション全体を描画
-        /// </summary>
         public static void DrawShadingSection(
             ref bool showShading,
             MaterialProperty[] properties,
@@ -36,14 +27,11 @@ namespace NataneToon.Editor
             SaveFoldoutStatesDelegate saveFoldoutStates,
             FindPropertyDelegate findProperty)
         {
-            // Content only (foldout/boxed section handled by caller)
+            _ = showShading;
+            _ = saveFoldoutStates;
             DrawShadingSectionContent(properties, drawToggle, drawProperty, drawHelpToggle, findProperty);
         }
 
-        /// <summary>
-        /// Draw shading section content without foldout wrapper
-        /// フォルダウトなしでシェーディングセクションの内容を描画（呼び出し元がBoxedSectionを管理）
-        /// </summary>
         public static void DrawShadingSectionContent(
             MaterialProperty[] properties,
             DrawToggleDelegate drawToggle,
@@ -52,49 +40,37 @@ namespace NataneToon.Editor
             FindPropertyDelegate findProperty,
             System.Func<string, bool> isSectionAvailable = null)
         {
-            drawHelpToggle("ShadingSection",
-                L("アニメ調セルシェーディング - クリーンで明瞭な陰影境界を実現します。",
-                  "Anime-style cel shading - Achieves clean and clear shadow boundaries."),
+            drawHelpToggle(
+                "ShadingSection",
+                L("Anime-style cel shading with clean and controllable shadow transitions.",
+                  "Anime-style cel shading with clean and controllable shadow transitions."),
                 MessageType.None);
 
             EditorGUILayout.Space(5);
-
-            // Main shading controls (Ramp or Toon/Gradient mode)
             DrawShadingModeControls(properties, drawToggle, drawProperty, drawHelpToggle, findProperty);
 
             EditorGUILayout.Space(10);
-
-            // Shadow Receive Mask
             DrawShadowReceiveMaskControls(drawToggle, drawProperty, drawHelpToggle);
 
             EditorGUILayout.Space(10);
+            EditorGUILayout.HelpBox(
+                L("AO and dithering settings have been moved to the Light & Shadow tab.",
+                  "AO and dithering settings have been moved to the Light & Shadow tab."),
+                MessageType.None);
 
-            // AO・ディザリング設定は「ライト&影」タブに移動
-            EditorGUILayout.Space(5);
-            EditorGUILayout.HelpBox(L("AO・ディザリング設定は「ライト&影」タブに移動しました。", "AO and dithering settings have been moved to the \"Light & Shadow\" tab."), MessageType.None);
-            EditorGUILayout.Space(5);
-
-            // SDF Shadow Map (Background バリアントでは非表示)
             if (isSectionAvailable == null || isSectionAvailable("SDFMap"))
             {
+                EditorGUILayout.Space(10);
                 DrawSDFShadowMapControls(drawToggle, drawProperty, drawHelpToggle);
             }
 
             EditorGUILayout.Space(10);
-
-            // Shading Grade Map
             DrawShadingGradeMapControls(drawToggle, drawProperty, drawHelpToggle);
 
             EditorGUILayout.Space(10);
-
-            // Shadow Color Texture
             DrawShadowColorTextureControls(drawToggle, drawProperty, drawHelpToggle);
         }
 
-        /// <summary>
-        /// Draw shading mode controls (Ramp texture or Toon/Gradient mode)
-        /// シェーディングモード制御（ランプテクスチャまたはToon/Gradientモード）
-        /// </summary>
         public static void DrawShadingModeControls(
             MaterialProperty[] properties,
             DrawToggleDelegate drawToggle,
@@ -102,72 +78,55 @@ namespace NataneToon.Editor
             DrawHelpToggleDelegate drawHelpToggle,
             FindPropertyDelegate findProperty)
         {
-            // Shadow softness guide (shown when help mode is active)
-            drawHelpToggle("ShadowSoftnessGuide",
-                L("🎨 影をソフトにしたい場合:\n" +
-                  "① まず「影のなじませ」を 0.3〜0.5 に設定\n" +
-                  "② 全体を柔らかくしたい場合は「ライト部分のソフトネス」を調整\n" +
-                  "③ 高度な調整は「高度なライティング」タブへ",
-                  "🎨 To soften shadows:\n" +
-                  "① First set \"Shadow Blend\" to 0.3-0.5\n" +
-                  "② To soften overall, adjust \"Lit Softness\"\n" +
-                  "③ For advanced adjustments, go to the \"Advanced Lighting\" tab"),
+            drawHelpToggle(
+                "ShadowSoftnessGuide",
+                L("To soften shadows, start with Shadow Blend around 0.3 to 0.5, then adjust Lit Softness if needed.",
+                  "To soften shadows, start with Shadow Blend around 0.3 to 0.5, then adjust Lit Softness if needed."),
                 MessageType.None);
 
-            bool useRamp = drawToggle("_USE_RAMP", "_UseRamp", L("ランプテクスチャを使用", "Use Ramp Texture"));
-
+            bool useRamp = drawToggle("_USE_RAMP", "_UseRamp", L("Use Ramp Texture", "Use Ramp Texture"));
             if (useRamp)
             {
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField(L("ランプテクスチャ設定", "Ramp Texture Settings"), EditorStyles.boldLabel);
-                drawProperty("_RampTex", L("ランプテクスチャ", "Ramp Texture"));
-                drawHelpToggle("RampTexture",
-                    L("ランプテクスチャは暗い色（左）から明るい色（右）へのグラデーションにしてください。\n" +
-                      "カスタムグラデーションで独自の影の色合いを作成できます。",
-                      "The ramp texture should be a gradient from dark (left) to bright (right).\n" +
-                      "You can create custom shadow tones using a custom gradient."),
+                EditorGUILayout.LabelField(L("Ramp Texture Settings", "Ramp Texture Settings"), EditorStyles.boldLabel);
+                drawProperty("_RampTex", L("Ramp Texture", "Ramp Texture"));
+                drawHelpToggle(
+                    "RampTexture",
+                    L("The ramp texture should run from dark on the left to bright on the right.",
+                      "The ramp texture should run from dark on the left to bright on the right."),
                     MessageType.Info);
             }
             else
             {
-                EditorGUILayout.Space(5);
-
-                // Get current shading mode value (before drawing UI)
                 MaterialProperty shadingModeProp = findProperty("_ShadingMode", properties, false);
                 float shadingModeValue = shadingModeProp != null ? shadingModeProp.floatValue : 0f;
-                bool isStandardToon = shadingModeValue >= 1.5f;
+                bool isStandardToon = shadingModeValue >= STANDARD_TOON_MODE_THRESHOLD;
+                bool isGradientMode = !isStandardToon && shadingModeValue >= GRADIENT_MODE_THRESHOLD;
 
-                // ShaderType が StandardToon の場合、モード選択は不要（常に StandardToon 固定）
-                // Toon ShaderType 選択時のみモードドロップダウンを表示
+                EditorGUILayout.Space(5);
+
                 if (!isStandardToon)
                 {
-                    EditorGUILayout.LabelField(L("シェーディングモード", "Shading Mode"), EditorStyles.boldLabel);
-                    drawProperty("_ShadingMode", L("モード", "Mode"));
-                    drawHelpToggle("ShadingMode",
-                        L("🎨 シェーディングモード:\n" +
-                          "• Toon: 階段状のセルシェーディング（クラシックなアニメ調）\n" +
-                          "• Gradient: 滑らかなグラデーションシェーディング（柔らかい印象）\n" +
-                          "• StandardToon: lilToon互換のシェーディング（移行時に使用）",
-                          "🎨 Shading Mode:\n" +
-                          "• Toon: Stepped cel shading (classic anime style)\n" +
-                          "• Gradient: Smooth gradient shading (soft impression)\n" +
-                          "• StandardToon: lilToon-compatible shading (for migration)"),
+                    EditorGUILayout.LabelField(L("Shading Mode", "Shading Mode"), EditorStyles.boldLabel);
+                    drawProperty("_ShadingMode", L("Mode", "Mode"));
+                    drawHelpToggle(
+                        "ShadingMode",
+                        L("Toon gives stepped cel shading. Gradient gives softer transitions. StandardToon is used for lilToon-compatible migrated materials.",
+                          "Toon gives stepped cel shading. Gradient gives softer transitions. StandardToon is used for lilToon-compatible migrated materials."),
                         MessageType.None);
                 }
                 else
                 {
-                    EditorGUILayout.LabelField(L("StandardToon モード (lilToon互換)", "StandardToon Mode (lilToon Compatible)"), EditorStyles.boldLabel);
+                    EditorGUILayout.LabelField(
+                        L("StandardToon Mode", "StandardToon Mode"),
+                        EditorStyles.boldLabel);
                     EditorGUILayout.HelpBox(
-                        L("⚠️ lilToonから移行したマテリアルです。\n" +
-                          "Toon/Gradientモードに変更するには、上部の「シェーダータイプ」を「Toon」に切り替えてください。",
-                          "⚠️ This material was migrated from lilToon.\n" +
-                          "To switch to Toon/Gradient mode, change the \"Shader Type\" dropdown above to \"Toon\"."),
+                        L("This material appears to be using the lilToon-compatible StandardToon mode.",
+                          "This material appears to be using the lilToon-compatible StandardToon mode."),
                         MessageType.Warning);
                 }
 
                 EditorGUILayout.Space(5);
-                bool isGradientMode = !isStandardToon && shadingModeValue >= FLOAT_COMPARISON_THRESHOLD;
-
                 if (isStandardToon)
                 {
                     DrawStandardToonSettings(drawProperty, drawHelpToggle, drawToggle);
@@ -182,129 +141,74 @@ namespace NataneToon.Editor
                 }
             }
 
-            // Shadow Color HSV Shift (common to all shading modes)
             EditorGUILayout.Space(5);
-            drawProperty("_ShadowHueShift", L("影の色相シフト", "Shadow Hue Shift"));
-            drawProperty("_ShadowSaturation", L("影の彩度", "Shadow Saturation"));
-            drawHelpToggle("ShadowHSVShift",
-                L("🎨 影の色相/彩度シフト:\n" +
-                  "影の色をHSVで調整します。\n" +
-                  "• 色相シフト: 影の色味を変更（-0.5〜0.5）\n" +
-                  "• 彩度: 影の鮮やかさを調整（0=グレー、1=そのまま、2=2倍）\n\n" +
-                  "💡 紫がかった影や青みのある影を作るのに最適です。",
-                  "🎨 Shadow Hue/Saturation Shift:\n" +
-                  "Adjusts shadow color in HSV space.\n" +
-                  "• Hue Shift: Changes shadow hue (-0.5 to 0.5)\n" +
-                  "• Saturation: Adjusts shadow vividness (0=gray, 1=unchanged, 2=double)\n\n" +
-                  "💡 Great for creating purple-tinted or blue-tinted shadows."),
-                MessageType.Info);
-
-            // Common controls for all shading modes
-            EditorGUILayout.Space(5);
-            drawProperty("_ShadowOffset", L("影のオフセット", "Shadow Offset"));
-            drawHelpToggle("ShadowOffset",
-                L("影の境界を調整します。正の値で影を明るく、負の値で影を暗くします。",
-                  "Adjusts the shadow boundary. Positive values brighten shadows, negative values darken them."),
-                MessageType.Info);
-
-            drawProperty("_WrapAmount", L("ラップ量（光の回り込み）", "Wrap Amount (Light Wraparound)"));
-            drawHelpToggle("WrapAmount",
-                L("🌙 ラップドディフューズ:\n" +
-                  "光が物体の裏側に回り込む量を制御します。\n" +
-                  "• 0 = Lambert（標準ライティング）\n" +
-                  "• 0.5 = Half-Lambert相当\n" +
-                  "• 1.0 = 全面均一ライティング\n\n" +
-                  "💡 StandardToonモードでは適用されません（Half-Lambert固定）。",
-                  "🌙 Wrapped Diffuse:\n" +
-                  "Controls how much light wraps around objects.\n" +
-                  "• 0 = Lambert (standard lighting)\n" +
-                  "• 0.5 = Equivalent to Half-Lambert\n" +
-                  "• 1.0 = Uniform lighting\n\n" +
-                  "💡 Not applied in StandardToon mode (fixed Half-Lambert)."),
+            drawProperty("_ShadowHueShift", L("Shadow Hue Shift", "Shadow Hue Shift"));
+            drawProperty("_ShadowSaturation", L("Shadow Saturation", "Shadow Saturation"));
+            drawHelpToggle(
+                "ShadowHSVShift",
+                L("Adjust shadow hue and saturation in HSV space.",
+                  "Adjust shadow hue and saturation in HSV space."),
                 MessageType.Info);
 
             EditorGUILayout.Space(5);
-            drawProperty("_LitSoftness", L("ライト部分のソフトネス", "Lit Softness"));
-            drawHelpToggle("LitSoftness",
-                L("✨ ライト部分のなじませ調整:\n" +
-                  "光の当たっている部分を周囲となじませます。\n" +
-                  "• 0 = シャープな境界（デフォルト）\n" +
-                  "• 0.3-0.5 = 適度な柔らかさ\n" +
-                  "• 1.0 = 最大のなじませ効果\n\n" +
-                  "💡 使い方: 光の当たり方が強すぎる場合や、\n" +
-                  "より滑らかなグラデーションが欲しい場合に調整してください。",
-                  "✨ Lit Softness Adjustment:\n" +
-                  "Blends the lit areas with their surroundings.\n" +
-                  "• 0 = Sharp boundary (default)\n" +
-                  "• 0.3-0.5 = Moderate softness\n" +
-                  "• 1.0 = Maximum blending\n\n" +
-                  "💡 Usage: Adjust when lighting is too harsh or\n" +
-                  "when you want a smoother gradient."),
+            drawProperty("_ShadowOffset", L("Shadow Offset", "Shadow Offset"));
+            drawHelpToggle(
+                "ShadowOffset",
+                L("Positive values brighten the shadow boundary. Negative values deepen it.",
+                  "Positive values brighten the shadow boundary. Negative values deepen it."),
+                MessageType.Info);
+
+            drawProperty("_WrapAmount", L("Wrap Amount", "Wrap Amount"));
+            drawHelpToggle(
+                "WrapAmount",
+                L("Controls how much light wraps around the form.",
+                  "Controls how much light wraps around the form."),
+                MessageType.Info);
+
+            EditorGUILayout.Space(5);
+            drawProperty("_LitSoftness", L("Lit Softness", "Lit Softness"));
+            drawHelpToggle(
+                "LitSoftness",
+                L("Softens transitions on lit areas.",
+                  "Softens transitions on lit areas."),
                 MessageType.Info);
 
             EditorGUILayout.Space(5);
             DrawBlendParameter(
                 "_ShadowBlend",
-                L("影のなじませ（柔らかさ）", "Shadow Blend (Softness)"),
-                L("✨ 影のなじませ調整:\n" +
-                  "影の境界（特に多段階影の境目）を周囲となじませて、\n" +
-                  "より柔らかく美しい印象にします。\n\n" +
-                  "• 0 = シャープな境界（デフォルト）\n" +
-                  "• 0.2-0.4 = 適度な柔らかさ（推奨）\n" +
-                  "• 0.5-0.7 = かなり柔らかい境界\n" +
-                  "• 0.8-1.0 = 非常に広いフェード（水彩風）\n\n" +
-                  "💡 多段階影の境目がパっきり出る場合:\n" +
-                  "この値を0.3〜0.5に設定すると自然になじみます。",
-                  "✨ Shadow Blend Adjustment:\n" +
-                  "Blends shadow boundaries (especially multi-tone shadow edges)\n" +
-                  "with their surroundings for a softer, more beautiful look.\n\n" +
-                  "• 0 = Sharp boundary (default)\n" +
-                  "• 0.2-0.4 = Moderate softness (recommended)\n" +
-                  "• 0.5-0.7 = Fairly soft boundary\n" +
-                  "• 0.8-1.0 = Very wide fade (watercolor style)\n\n" +
-                  "💡 If multi-tone shadow edges appear too sharp:\n" +
-                  "Set this value to 0.3-0.5 for a natural blend."),
+                L("Shadow Blend", "Shadow Blend"),
+                L("Higher values soften and widen the shadow transition.",
+                  "Higher values soften and widen the shadow transition."),
                 drawProperty);
 
-            // Show warning when shadow blend is very high
             MaterialProperty shadowBlendProp = findProperty("_ShadowBlend", properties, false);
             if (shadowBlendProp != null && shadowBlendProp.floatValue > 0.7f)
             {
                 EditorGUILayout.HelpBox(
-                    L("影のなじませが高い値に設定されています。必要に応じて「高度なライティング」タブの他のソフトネスパラメーターも調整してください。",
-                      "Shadow blend is set to a high value. Consider adjusting other softness parameters in the \"Advanced Lighting\" tab as needed."),
+                    L("Shadow Blend is set high. Check other softness values if the result feels too soft.",
+                      "Shadow Blend is set high. Check other softness values if the result feels too soft."),
                     MessageType.Info);
             }
 
-            // Vertex Color Shadow Threshold
             EditorGUILayout.Space(10);
-            bool vcShadow = drawToggle("_VERTEX_COLOR_SHADOW", "_VertexColorShadow", L("頂点カラーシャドウ閾値", "Vertex Color Shadow Threshold"));
-            if (vcShadow)
+            bool vertexColorShadow = drawToggle(
+                "_VERTEX_COLOR_SHADOW",
+                "_VertexColorShadow",
+                L("Vertex Color Shadow Threshold", "Vertex Color Shadow Threshold"));
+            if (vertexColorShadow)
             {
                 EditorGUI.indentLevel++;
-                drawProperty("_VCShadowThreshold", L("シャドウ閾値", "Shadow Threshold"));
-                drawProperty("_VCShadowPush", L("シャドウプッシュ", "Shadow Push"));
-                drawHelpToggle("VertexColorShadow",
-                    L("🎮 頂点カラーシャドウ閾値（Arc System Works方式）:\n" +
-                      "頂点カラーのR値でNdotLをオフセットし、部位別の影制御を行います。\n" +
-                      "テクスチャ不要で、モデラーが頂点ペイントで影を調整できます。\n\n" +
-                      "• 閾値: R値の中心（0.5 = デフォルト）\n" +
-                      "• プッシュ: 全体の影オフセット\n\n" +
-                      "💡 R=0.5がニュートラル、R>0.5で明るく、R<0.5で暗くなります。",
-                      "🎮 Vertex Color Shadow Threshold (Arc System Works style):\n" +
-                      "Offsets NdotL using vertex color R channel for per-part shadow control.\n" +
-                      "No textures needed - modelers can adjust shadows via vertex painting.\n\n" +
-                      "• Threshold: R value center (0.5 = default)\n" +
-                      "• Push: Global shadow offset\n\n" +
-                      "💡 R=0.5 is neutral, R>0.5 brightens, R<0.5 darkens."),
+                drawProperty("_VCShadowThreshold", L("Shadow Threshold", "Shadow Threshold"));
+                drawProperty("_VCShadowPush", L("Shadow Push", "Shadow Push"));
+                drawHelpToggle(
+                    "VertexColorShadow",
+                    L("Uses vertex color R to offset the shadow threshold per area.",
+                      "Uses vertex color R to offset the shadow threshold per area."),
                     MessageType.Info);
                 EditorGUI.indentLevel--;
             }
         }
 
-        /// <summary>
-        /// Draw a blend/softness parameter with help text
-        /// </summary>
         public static void DrawBlendParameter(
             string propertyName,
             string label,
@@ -315,523 +219,308 @@ namespace NataneToon.Editor
             EditorGUILayout.HelpBox(helpText, MessageType.Info);
         }
 
-        /// <summary>
-        /// Draw gradient mode specific settings
-        /// </summary>
         public static void DrawGradientModeSettings(
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            EditorGUILayout.LabelField(L("グラデーション設定", "Gradient Settings"), EditorStyles.boldLabel);
-            drawProperty("_ShadowColor", L("影の色", "Shadow Color"));
-            drawProperty("_ShadingGradientWidth", L("グラデーション幅", "Gradient Width"));
-            drawHelpToggle("ShadingGradientWidth",
-                L("✨ グラデーション幅:\n" +
-                  "影と光の境界の滑らかさを調整します。\n" +
-                  "• 0.1 = 狭いグラデーション（シャープな境界）\n" +
-                  "• 0.2-0.3 = 標準的なグラデーション（推奨）\n" +
-                  "• 0.5+ = 広いグラデーション（非常に柔らかい）\n\n" +
-                  "💡 柔らかい印象を与えるために、0.2以上の値がおすすめです。",
-                  "✨ Gradient Width:\n" +
-                  "Adjusts the smoothness of the shadow-light boundary.\n" +
-                  "• 0.1 = Narrow gradient (sharp boundary)\n" +
-                  "• 0.2-0.3 = Standard gradient (recommended)\n" +
-                  "• 0.5+ = Wide gradient (very soft)\n\n" +
-                  "💡 Values of 0.2 or higher are recommended for a soft impression."),
+            EditorGUILayout.LabelField(L("Gradient Settings", "Gradient Settings"), EditorStyles.boldLabel);
+            drawProperty("_ShadowColor", L("Shadow Color", "Shadow Color"));
+            drawProperty("_ShadingGradientWidth", L("Gradient Width", "Gradient Width"));
+            drawHelpToggle(
+                "ShadingGradientWidth",
+                L("Controls how soft the light-to-shadow transition is.",
+                  "Controls how soft the light-to-shadow transition is."),
                 MessageType.Info);
         }
 
-        /// <summary>
-        /// Draw StandardToon mode specific settings (lilToon-compatible)
-        /// </summary>
         public static void DrawStandardToonSettings(
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle,
             DrawToggleDelegate drawToggle)
         {
-            EditorGUILayout.LabelField(L("StandardToon設定 (lilToon互換)", "StandardToon Settings (lilToon Compatible)"), EditorStyles.boldLabel);
-            drawProperty("_STShadowBorder", L("影の境界", "Shadow Border"));
-            drawProperty("_STShadowBlur", L("影のぼかし", "Shadow Blur"));
-            drawProperty("_STShadowStrength", L("影の強さ", "Shadow Strength"));
-            drawProperty("_ShadowColor", L("影の色 (1段目)", "Shadow Color (1st)"));
+            EditorGUILayout.LabelField(L("StandardToon Settings", "StandardToon Settings"), EditorStyles.boldLabel);
+            drawProperty("_STShadowBorder", L("Shadow Border", "Shadow Border"));
+            drawProperty("_STShadowBlur", L("Shadow Blur", "Shadow Blur"));
+            drawProperty("_STShadowStrength", L("Shadow Strength", "Shadow Strength"));
+            drawProperty("_ShadowColor", L("Shadow Color (1st)", "Shadow Color (1st)"));
 
-            // Multi-tone shadow colors (shared with Toon mode)
             EditorGUILayout.Space();
             DrawMultiToneShadowSettings(drawToggle, drawProperty, drawHelpToggle);
 
             EditorGUILayout.Space();
-            drawProperty("_STAsUnlit", L("アンライト度", "As Unlit"));
-            drawProperty("_STShadowEnvStrength", L("影の環境光リフト", "Shadow Env Strength"));
-
-            drawHelpToggle("StandardToon",
-                L("🎨 StandardToon v2モード:\n" +
-                  "lilToon と完全に同一の計算パスを通り、シェーダー切り替えだけで見た目が一致します。\n\n" +
-                  "• Half-Lambert NdotL（影の位置がlilToonと一致）\n" +
-                  "• リニア補間 + fwidth AA（滑らかな影境界）\n" +
-                  "• lightColor = MAINLIGHT + SHToon（SH直接合算）\n" +
-                  "• lerp(indirectCol, directCol, toon) 一発合成\n" +
-                  "• AsUnlit を lightColor に直接適用\n" +
-                  "• ShadowEnvStrength で間接光による影持ち上げ\n" +
-                  "• min(indirectCol, directCol) 安全クランプ\n\n" +
-                  "💡 lilToonからの移行時に自動で選択されます。",
-                  "🎨 StandardToon v2 Mode:\n" +
-                  "Uses the exact same calculation path as lilToon for perfect visual parity.\n\n" +
-                  "• Half-Lambert NdotL (shadow position matches lilToon)\n" +
-                  "• Linear interpolation + fwidth AA (smooth shadow edges)\n" +
-                  "• lightColor = MAINLIGHT + SHToon (SH merged into direct)\n" +
-                  "• lerp(indirectCol, directCol, toon) single-pass composition\n" +
-                  "• AsUnlit applied directly to lightColor\n" +
-                  "• ShadowEnvStrength for indirect light shadow lift\n" +
-                  "• min(indirectCol, directCol) safety clamp\n\n" +
-                  "💡 Automatically selected when migrating from lilToon."),
+            drawProperty("_STAsUnlit", L("As Unlit", "As Unlit"));
+            drawProperty("_STShadowEnvStrength", L("Shadow Env Strength", "Shadow Env Strength"));
+            drawHelpToggle(
+                "StandardToon",
+                L("StandardToon is the lilToon-compatible shading path used by migrated materials.",
+                  "StandardToon is the lilToon-compatible shading path used by migrated materials."),
                 MessageType.None);
         }
 
-        /// <summary>
-        /// Draw multi-tone shadow settings
-        /// </summary>
         public static void DrawMultiToneShadowSettings(
             DrawToggleDelegate drawToggle,
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool useMultiShadow = drawToggle("_USE_MULTI_SHADOW", "_UseMultiShadow", L("多段階影を使用", "Use Multi-Tone Shadow"));
-            if (useMultiShadow)
+            bool useMultiShadow = drawToggle(
+                "_USE_MULTI_SHADOW",
+                "_UseMultiShadow",
+                L("Use Multi-Tone Shadow", "Use Multi-Tone Shadow"));
+            if (!useMultiShadow)
             {
-                EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField(L("多段階影設定", "Multi-Tone Shadow Settings"), EditorStyles.boldLabel);
-
-                // 2nd shadow level
-                drawProperty("_Shadow2ndColor", L("影の色 (2段目)", "Shadow Color (2nd)"));
-                drawProperty("_Shadow2ndBorder", L("2段目の境界", "2nd Border"));
-                drawHelpToggle("Shadow2ndBorder",
-                    L("💡 2段目の境界:\n" +
-                      "この値より暗い部分に2段目の影色が適用されます。\n" +
-                      "• 0.5 = 半分より暗い部分\n" +
-                      "• 0.3 = やや暗い部分（推奨）\n" +
-                      "• 0.1 = 最も暗い部分のみ",
-                      "💡 2nd Border:\n" +
-                      "The 2nd shadow color is applied to areas darker than this value.\n" +
-                      "• 0.5 = Darker than half\n" +
-                      "• 0.3 = Slightly dark areas (recommended)\n" +
-                      "• 0.1 = Darkest areas only"),
-                    MessageType.None);
-
-                EditorGUILayout.Space();
-
-                // 3rd shadow level
-                drawProperty("_Shadow3rdColor", L("影の色 (3段目)", "Shadow Color (3rd)"));
-                drawProperty("_Shadow3rdBorder", L("3段目の境界", "3rd Border"));
-                drawHelpToggle("Shadow3rdBorder",
-                    L("💡 3段目の境界:\n" +
-                      "この値より暗い部分に3段目の影色（最も濃い影）が適用されます。\n" +
-                      "• 0.15-0.2 = 標準的な最暗部（推奨）\n" +
-                      "• 0.05-0.1 = 非常に暗い部分のみ",
-                      "💡 3rd Border:\n" +
-                      "The 3rd shadow color (deepest shadow) is applied to areas darker than this value.\n" +
-                      "• 0.15-0.2 = Standard darkest areas (recommended)\n" +
-                      "• 0.05-0.1 = Very dark areas only"),
-                    MessageType.None);
-
-                EditorGUILayout.Space();
-                drawHelpToggle("MultiShadowUsage",
-                    L("🎨 多段階影の使い方:\n" +
-                      "より細かな諧調表現が可能になります。\n" +
-                      "• 1段目: メインの影色（明るい影）\n" +
-                      "• 2段目: 中間の影色\n" +
-                      "• 3段目: 最も濃い影色（深い影）\n\n" +
-                      "境界値は 1段目 > 2段目 > 3段目 の順に設定してください。",
-                      "🎨 How to use multi-tone shadows:\n" +
-                      "Enables finer tonal expression.\n" +
-                      "• 1st: Main shadow color (light shadow)\n" +
-                      "• 2nd: Mid-tone shadow color\n" +
-                      "• 3rd: Deepest shadow color\n\n" +
-                      "Set border values in order: 1st > 2nd > 3rd."),
-                    MessageType.Info);
+                return;
             }
+
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField(L("Multi-Tone Shadow Settings", "Multi-Tone Shadow Settings"), EditorStyles.boldLabel);
+
+            drawProperty("_Shadow2ndColor", L("Shadow Color (2nd)", "Shadow Color (2nd)"));
+            drawProperty("_Shadow2ndBorder", L("2nd Border", "2nd Border"));
+            drawHelpToggle(
+                "Shadow2ndBorder",
+                L("Sets where the second shadow tone begins.",
+                  "Sets where the second shadow tone begins."),
+                MessageType.None);
+
+            EditorGUILayout.Space();
+            drawProperty("_Shadow3rdColor", L("Shadow Color (3rd)", "Shadow Color (3rd)"));
+            drawProperty("_Shadow3rdBorder", L("3rd Border", "3rd Border"));
+            drawHelpToggle(
+                "Shadow3rdBorder",
+                L("Sets where the deepest shadow tone begins.",
+                  "Sets where the deepest shadow tone begins."),
+                MessageType.None);
+
+            EditorGUILayout.Space();
+            drawHelpToggle(
+                "MultiShadowUsage",
+                L("Use descending border values: 1st > 2nd > 3rd.",
+                  "Use descending border values: 1st > 2nd > 3rd."),
+                MessageType.Info);
         }
 
-        /// <summary>
-        /// Draw toon mode specific settings
-        /// </summary>
         public static void DrawToonModeSettings(
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle,
             DrawToggleDelegate drawToggle)
         {
-            EditorGUILayout.LabelField(L("セルシェーディング設定", "Cel Shading Settings"), EditorStyles.boldLabel);
-            drawProperty("_ShadowColor", L("影の色 (1段目)", "Shadow Color (1st)"));
+            EditorGUILayout.LabelField(L("Cel Shading Settings", "Cel Shading Settings"), EditorStyles.boldLabel);
+            drawProperty("_ShadowColor", L("Shadow Color (1st)", "Shadow Color (1st)"));
 
-            // Multi-tone shadow colors
             EditorGUILayout.Space();
             DrawMultiToneShadowSettings(drawToggle, drawProperty, drawHelpToggle);
 
             EditorGUILayout.Space();
-            drawProperty("_ShadowSteps", L("影のステップ数", "Shadow Steps"));
-            drawHelpToggle("ShadowSteps",
-                L("推奨値: 2-3（アニメ調）、より多いステップでグラデーション効果",
-                  "Recommended: 2-3 (anime style), more steps for gradient effect"),
+            drawProperty("_ShadowSteps", L("Shadow Steps", "Shadow Steps"));
+            drawHelpToggle(
+                "ShadowSteps",
+                L("Recommended values are usually 2 to 3 steps.",
+                  "Recommended values are usually 2 to 3 steps."),
                 MessageType.Info);
 
-            drawProperty("_ShadowSharpness", L("影のシャープネス", "Shadow Sharpness"));
-            drawHelpToggle("ShadowSharpness",
-                L("低い値: シャープな境界（アニメ調）\n" +
-                  "高い値: 柔らかい境界（イラスト調）\n" +
-                  "アニメ調推奨: 0.05-0.15",
-                  "Low values: Sharp boundary (anime style)\n" +
-                  "High values: Soft boundary (illustration style)\n" +
-                  "Anime recommended: 0.05-0.15"),
+            drawProperty("_ShadowSharpness", L("Shadow Sharpness", "Shadow Sharpness"));
+            drawHelpToggle(
+                "ShadowSharpness",
+                L("Lower values sharpen the border. Higher values soften it.",
+                  "Lower values sharpen the border. Higher values soften it."),
                 MessageType.Info);
 
-            drawProperty("_StepBorderSmooth", L("段階境界のなじみ", "Step Border Smoothing"));
-            drawHelpToggle("StepBorderSmooth",
-                L("🎨 段階境界のなじみ:\n" +
-                  "多段階影のステップ間の境界をなじませます。\n\n" +
-                  "• 0 = シャープな境界（デフォルト）\n" +
-                  "• 0.1-0.3 = 軽いなじみ（推奨）\n" +
-                  "• 0.4-0.7 = 柔らかい境界\n" +
-                  "• 0.8-1.0 = ほぼグラデーション\n\n" +
-                  "💡 「影のシャープネス」とは独立して動作します。\n" +
-                  "多段階影の色の遷移にも適用されます。",
-                  "🎨 Step Border Smoothing:\n" +
-                  "Smooths the boundaries between multi-tone shadow steps.\n\n" +
-                  "• 0 = Sharp boundary (default)\n" +
-                  "• 0.1-0.3 = Light smoothing (recommended)\n" +
-                  "• 0.4-0.7 = Soft boundary\n" +
-                  "• 0.8-1.0 = Nearly gradient\n\n" +
-                  "💡 Works independently from \"Shadow Sharpness\".\n" +
-                  "Also applies to multi-tone shadow color transitions."),
+            drawProperty("_StepBorderSmooth", L("Step Border Smoothing", "Step Border Smoothing"));
+            drawHelpToggle(
+                "StepBorderSmooth",
+                L("Smooths the borders between multi-tone shadow steps.",
+                  "Smooths the borders between multi-tone shadow steps."),
                 MessageType.Info);
         }
 
-        /// <summary>
-        /// Draw shadow receive mask controls
-        /// </summary>
         public static void DrawShadowReceiveMaskControls(
             DrawToggleDelegate drawToggle,
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool useShadowReceiveMask = drawToggle("_SHADOW_RECEIVE_MASK", "_UseShadowReceiveMask", L("シャドー受け取りマスクを使用", "Use Shadow Receive Mask"));
-
-            if (useShadowReceiveMask)
+            bool useShadowReceiveMask = drawToggle(
+                "_SHADOW_RECEIVE_MASK",
+                "_UseShadowReceiveMask",
+                L("Use Shadow Receive Mask", "Use Shadow Receive Mask"));
+            if (!useShadowReceiveMask)
             {
-                EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField(L("シャドー受け取りマスク設定", "Shadow Receive Mask Settings"), EditorStyles.boldLabel);
-                drawProperty("_ShadowReceiveMask", L("シャドー受け取りマスク", "Shadow Receive Mask"));
-                drawHelpToggle("ShadowReceiveMask",
-                    L("🎭 シャドー受け取りマスク（髪の影問題解決）:\n" +
-                      "• 白 = 影を受けない（明るく保つ、シェーディングも無効化）\n" +
-                      "• 黒 = 影を完全に受ける（通常の影とシェーディング）\n" +
-                      "• グレー = 影を部分的に受ける\n\n" +
-                      "💡 使い方：\n" +
-                      "顔が髪の影で暗くなる場合、顔部分を白く塗ったマスクを使用することで\n" +
-                      "顔に影がかからないようにできます。VRChatアバターでよく使われるテクニックです。\n\n" +
-                      "🌟 Light Volumeとの統合：\n" +
-                      "マスクはLight Volumeの間接光（リム効果）も制御します。\n" +
-                      "白い部分は暗いワールドでも明るく保たれます。",
-                      "🎭 Shadow Receive Mask (solves hair shadow issue):\n" +
-                      "• White = Does not receive shadows (stays bright, disables shading)\n" +
-                      "• Black = Fully receives shadows (normal shadows and shading)\n" +
-                      "• Gray = Partially receives shadows\n\n" +
-                      "💡 Usage:\n" +
-                      "When the face gets darkened by hair shadows, use a mask with white painted on the face area\n" +
-                      "to prevent shadows from falling on the face. A common technique for VRChat avatars.\n\n" +
-                      "🌟 Light Volume Integration:\n" +
-                      "The mask also controls Light Volume indirect light (rim effect).\n" +
-                      "White areas stay bright even in dark worlds."),
-                    MessageType.Info);
+                return;
             }
+
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField(L("Shadow Receive Mask Settings", "Shadow Receive Mask Settings"), EditorStyles.boldLabel);
+            drawProperty("_ShadowReceiveMask", L("Shadow Receive Mask", "Shadow Receive Mask"));
+            drawHelpToggle(
+                "ShadowReceiveMask",
+                L("White areas receive less shadow. Black areas receive full shadow.",
+                  "White areas receive less shadow. Black areas receive full shadow."),
+                MessageType.Info);
         }
 
-        /// <summary>
-        /// Draw ambient occlusion controls
-        /// </summary>
         public static void DrawAmbientOcclusionControls(
             DrawToggleDelegate drawToggle,
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool useAO = drawToggle("_USE_AO", "_UseAO", L("アンビエントオクルージョン（AO）を使用", "Use Ambient Occlusion (AO)"));
-
-            if (useAO)
+            bool useAO = drawToggle("_USE_AO", "_UseAO", L("Use Ambient Occlusion (AO)", "Use Ambient Occlusion (AO)"));
+            if (!useAO)
             {
-                EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField(L("AO設定", "AO Settings"), EditorStyles.boldLabel);
-                drawProperty("_AOMap", L("AOマップ", "AO Map"));
-                drawProperty("_AOIntensity", L("AO強度", "AO Intensity"));
-                drawHelpToggle("AmbientOcclusion",
-                    L("🌑 アンビエントオクルージョン（AO）:\n" +
-                      "隙間や窪みなど、環境光が届きにくい部分を暗くして\n" +
-                      "より立体的で柔らかい印象を与えます。\n\n" +
-                      "• AOマップ: 白 = 明るい、黒 = 暗い\n" +
-                      "• AO強度: 0 = 効果なし、1 = 最大効果\n\n" +
-                      "💡 使い方:\n" +
-                      "衣服の折り目、髪の毛の重なり、耳の内側など\n" +
-                      "自然な陰影を加えたい部分にAOマップで指定します。\n" +
-                      "推奨強度: 0.5-0.8",
-                      "🌑 Ambient Occlusion (AO):\n" +
-                      "Darkens areas where ambient light is hard to reach, such as gaps and crevices,\n" +
-                      "giving a more three-dimensional and soft impression.\n\n" +
-                      "• AO Map: White = bright, Black = dark\n" +
-                      "• AO Intensity: 0 = no effect, 1 = maximum effect\n\n" +
-                      "💡 Usage:\n" +
-                      "Use the AO map to add natural shading to areas like\n" +
-                      "clothing folds, hair overlaps, and inner ears.\n" +
-                      "Recommended intensity: 0.5-0.8"),
-                    MessageType.Info);
+                return;
             }
+
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField(L("AO Settings", "AO Settings"), EditorStyles.boldLabel);
+            drawProperty("_AOMap", L("AO Map", "AO Map"));
+            drawProperty("_AOIntensity", L("AO Intensity", "AO Intensity"));
+            drawHelpToggle(
+                "AmbientOcclusion",
+                L("Darkens creases and recessed areas using an AO map.",
+                  "Darkens creases and recessed areas using an AO map."),
+                MessageType.Info);
         }
 
-        /// <summary>
-        /// Draw dithering controls
-        /// </summary>
         public static void DrawDitheringControls(
             DrawToggleDelegate drawToggle,
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool useDithering = drawToggle("_USE_DITHERING", "_UseDithering", L("ディザリング（ハーフトーン）を使用", "Use Dithering (Halftone)"));
-
-            if (useDithering)
+            bool useDithering = drawToggle("_USE_DITHERING", "_UseDithering", L("Use Dithering (Halftone)", "Use Dithering (Halftone)"));
+            if (!useDithering)
             {
-                EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField(L("ディザリング設定", "Dithering Settings"), EditorStyles.boldLabel);
-                drawProperty("_DitheringScale", L("ディザリングスケール", "Dithering Scale"));
-                drawProperty("_DitheringStrength", L("ディザリング強度", "Dithering Strength"));
-                drawHelpToggle("Dithering",
-                    L("🎨 ディザリング（ハーフトーン）:\n" +
-                      "影の境界にドットパターンを追加して、\n" +
-                      "より柔らかく芸術的な印象を与えます。\n\n" +
-                      "• スケール: パターンの細かさ（推奨: 5-20）\n" +
-                      "  　小さい値 = 細かいパターン\n" +
-                      "  　大きい値 = 粗いパターン\n" +
-                      "• 強度: 効果の強さ（推奨: 0.3-0.7）\n" +
-                      "  　0 = 効果なし、1 = 最大効果\n\n" +
-                      "💡 使い方:\n" +
-                      "印刷物やマンガ風の柔らかい影の表現に最適です。",
-                      "🎨 Dithering (Halftone):\n" +
-                      "Adds a dot pattern to shadow boundaries\n" +
-                      "for a softer, more artistic impression.\n\n" +
-                      "• Scale: Pattern fineness (recommended: 5-20)\n" +
-                      "   Small values = Fine pattern\n" +
-                      "   Large values = Coarse pattern\n" +
-                      "• Strength: Effect intensity (recommended: 0.3-0.7)\n" +
-                      "   0 = No effect, 1 = Maximum effect\n\n" +
-                      "💡 Usage:\n" +
-                      "Ideal for print-style or manga-style soft shadow expressions."),
-                    MessageType.Info);
+                return;
             }
+
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField(L("Dithering Settings", "Dithering Settings"), EditorStyles.boldLabel);
+            drawProperty("_DitheringScale", L("Dithering Scale", "Dithering Scale"));
+            drawProperty("_DitheringStrength", L("Dithering Strength", "Dithering Strength"));
+            drawHelpToggle(
+                "Dithering",
+                L("Adds a halftone-like pattern to shadow transitions.",
+                  "Adds a halftone-like pattern to shadow transitions."),
+                MessageType.Info);
         }
 
-        /// <summary>
-        /// Draw SDF Shadow Map controls
-        /// </summary>
         public static void DrawSDFShadowMapControls(
             DrawToggleDelegate drawToggle,
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool useSDFMap = drawToggle("_SDF_MAP", "_UseSDFMap", L("SDF Shadow Mapを使用", "Use SDF Shadow Map"));
-
+            bool useSDFMap = drawToggle("_SDF_MAP", "_UseSDFMap", L("Use SDF Shadow Map", "Use SDF Shadow Map"));
             if (useSDFMap)
             {
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField(L("SDF Shadow Map設定", "SDF Shadow Map Settings"), EditorStyles.boldLabel);
-                drawProperty("_SDFMap", L("SDFマップ", "SDF Map"));
-                drawProperty("_SDFIntensity", L("SDF強度", "SDF Intensity"));
-                drawProperty("_SDFSoftness", L("SDFソフトネス", "SDF Softness"));
-                drawProperty("_SDFOffset", L("SDFオフセット", "SDF Offset"));
-                drawHelpToggle("SDFShadowMap",
-                    L("📍 SDF Shadow Map（距離場シャドウマップ）:\n" +
-                      "テクスチャベースで影の位置を正確にコントロールできる高度な機能です。\n\n" +
-                      "• SDFマップ: 白 = 明るい、黒 = 影\n" +
-                      "• 強度: 影の強さ（0-1）\n" +
-                      "• ソフトネス: 影の境界の柔らかさ\n" +
-                      "• オフセット: 影の位置調整\n\n" +
-                      "💡 使い方:\n" +
-                      "顔の影を細かく制御したい場合や、特定の場所に常に影を落としたい場合に使用します。",
-                      "📍 SDF Shadow Map (Signed Distance Field Shadow Map):\n" +
-                      "An advanced feature for precise texture-based shadow position control.\n\n" +
-                      "• SDF Map: White = bright, Black = shadow\n" +
-                      "• Intensity: Shadow strength (0-1)\n" +
-                      "• Softness: Shadow boundary softness\n" +
-                      "• Offset: Shadow position adjustment\n\n" +
-                      "💡 Usage:\n" +
-                      "Use when you need fine control over face shadows or want shadows in specific locations."),
+                EditorGUILayout.LabelField(L("SDF Shadow Map Settings", "SDF Shadow Map Settings"), EditorStyles.boldLabel);
+                drawProperty("_SDFMap", L("SDF Map", "SDF Map"));
+                drawProperty("_SDFIntensity", L("SDF Intensity", "SDF Intensity"));
+                drawProperty("_SDFSoftness", L("SDF Softness", "SDF Softness"));
+                drawProperty("_SDFOffset", L("SDF Offset", "SDF Offset"));
+                drawHelpToggle(
+                    "SDFShadowMap",
+                    L("Controls shadow placement using an SDF texture.",
+                      "Controls shadow placement using an SDF texture."),
                     MessageType.Info);
             }
 
-            // Face SDF Rotation (Genshin/AK:EF style)
-            bool faceSDFRotation = drawToggle("_FACE_SDF_ROTATION", "_FaceSDFRotation", L("Face SDF回転追従を有効化", "Enable Face SDF Rotation Tracking"));
-            if (faceSDFRotation)
+            bool faceSDFRotation = drawToggle(
+                "_FACE_SDF_ROTATION",
+                "_FaceSDFRotation",
+                L("Enable Face SDF Rotation Tracking", "Enable Face SDF Rotation Tracking"));
+            if (!faceSDFRotation)
             {
-                EditorGUI.indentLevel++;
-                drawProperty("_FaceForwardDirection", L("顔の正面方向", "Face Forward Direction"));
-                drawProperty("_FaceRightDirection", L("顔の右方向", "Face Right Direction"));
-                drawHelpToggle("FaceSDFRotation",
-                    L("🔄 Face SDF回転追従:\n" +
-                      "SDF影がライトの方向に追従して回転します。\n" +
-                      "Genshin Impact / アークナイツ：エンドフィールド スタイルの\n" +
-                      "顔影表現を実現します。\n\n" +
-                      "• 正面方向: キャラの顔が向いている方向（オブジェクト空間）\n" +
-                      "• 右方向: キャラの顔の右側の方向（オブジェクト空間）\n\n" +
-                      "💡 使い方:\n" +
-                      "顔のSDF影がライトの方向に応じて自動的に回転し、\n" +
-                      "どの角度からでも自然な影表現を維持します。",
-                      "🔄 Face SDF Rotation Tracking:\n" +
-                      "SDF shadows rotate to follow the light direction.\n" +
-                      "Achieves Genshin Impact / Arknights: Endfield style\n" +
-                      "face shadow expressions.\n\n" +
-                      "• Forward Direction: Direction the character's face is facing (object space)\n" +
-                      "• Right Direction: Right side direction of the character's face (object space)\n\n" +
-                      "💡 Usage:\n" +
-                      "Face SDF shadows automatically rotate based on light direction,\n" +
-                      "maintaining natural shadow expression from any angle."),
-                    MessageType.Info);
-                EditorGUI.indentLevel--;
+                return;
             }
+
+            EditorGUI.indentLevel++;
+            drawProperty("_FaceForwardDirection", L("Face Forward Direction", "Face Forward Direction"));
+            drawProperty("_FaceRightDirection", L("Face Right Direction", "Face Right Direction"));
+            drawHelpToggle(
+                "FaceSDFRotation",
+                L("Lets face SDF shadows rotate with light direction.",
+                  "Lets face SDF shadows rotate with light direction."),
+                MessageType.Info);
+            EditorGUI.indentLevel--;
         }
 
-        /// <summary>
-        /// Draw Shading Grade Map controls
-        /// </summary>
         public static void DrawShadingGradeMapControls(
             DrawToggleDelegate drawToggle,
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool useShadingGradeMap = drawToggle("_SHADING_GRADE_MAP", "_UseGradeMap", L("Shading Grade Mapを使用", "Use Shading Grade Map"));
-
-            if (useShadingGradeMap)
+            bool useShadingGradeMap = drawToggle(
+                "_SHADING_GRADE_MAP",
+                "_UseGradeMap",
+                L("Use Shading Grade Map", "Use Shading Grade Map"));
+            if (!useShadingGradeMap)
             {
-                EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField(L("Shading Grade Map設定", "Shading Grade Map Settings"), EditorStyles.boldLabel);
-                drawProperty("_ShadingGradeMap", "Shading Grade Map");
-                drawProperty("_ShadingGradeScale", L("グレードスケール", "Grade Scale"));
-                drawHelpToggle("ShadingGradeMap",
-                    L("🎭 Shading Grade Map:\n" +
-                      "影の濃さを部分的に調整できる機能です。\n\n" +
-                      "• 白 = 明るく（影が薄くなる）\n" +
-                      "• 黒 = 暗く（影が濃くなる）\n" +
-                      "• グレー = 中間\n" +
-                      "• スケール: -1（暗く）～ 0（変化なし）～ 1（明るく）\n\n" +
-                      "💡 使い方:\n" +
-                      "顔は明るく、服は暗くなど、部位ごとに影の濃さを変えたい場合に使用します。",
-                      "🎭 Shading Grade Map:\n" +
-                      "A feature to partially adjust shadow intensity.\n\n" +
-                      "• White = Brighter (lighter shadows)\n" +
-                      "• Black = Darker (deeper shadows)\n" +
-                      "• Gray = Intermediate\n" +
-                      "• Scale: -1 (darker) to 0 (no change) to 1 (brighter)\n\n" +
-                      "💡 Usage:\n" +
-                      "Use when you want different shadow intensities per area, e.g., bright face, dark clothing."),
-                    MessageType.Info);
+                return;
             }
+
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField(L("Shading Grade Map Settings", "Shading Grade Map Settings"), EditorStyles.boldLabel);
+            drawProperty("_ShadingGradeMap", "Shading Grade Map");
+            drawProperty("_ShadingGradeScale", L("Grade Scale", "Grade Scale"));
+            drawHelpToggle(
+                "ShadingGradeMap",
+                L("Adjusts shadow strength locally using a texture map.",
+                  "Adjusts shadow strength locally using a texture map."),
+                MessageType.Info);
         }
 
-        /// <summary>
-        /// Draw PCSS (Percentage Closer Soft Shadows) controls
-        /// PCSS設定UIを描画
-        /// </summary>
         public static void DrawPCSSControls(
             DrawToggleDelegate drawToggle,
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool usePCSS = drawToggle("_PCSS", "_UsePCSS",
-                L("PCSSソフトシャドウを使用", "Use PCSS Soft Shadows"));
-
-            if (usePCSS)
+            bool usePCSS = drawToggle("_PCSS", "_UsePCSS", L("Use PCSS Soft Shadows", "Use PCSS Soft Shadows"));
+            if (!usePCSS)
             {
-                EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField(
-                    L("PCSS設定", "PCSS Settings"), EditorStyles.boldLabel);
-                drawProperty("_PCSSLightSize", L("光源サイズ", "Light Size"));
-                drawProperty("_PCSSSoftness", L("ソフトネス", "Softness"));
-                drawProperty("_PCSSBlockerSearchRadius",
-                    L("ブロッカー探索半径", "Blocker Search Radius"));
-                drawProperty("_PCSSMinFilterRadius",
-                    L("最小フィルタ半径", "Min Filter Radius"));
-                drawProperty("_PCSSMaxFilterRadius",
-                    L("最大フィルタ半径", "Max Filter Radius"));
-                drawProperty("_PCSSSampleCount",
-                    L("サンプル品質", "Sample Quality"));
-
-                EditorGUILayout.Space(5);
-                drawProperty("_PCSSBlendMode",
-                    L("ブレンドモード", "Blend Mode"));
-                drawProperty("_PCSSBlend",
-                    L("ブレンド", "Blend"));
-                drawProperty("_PCSSBlur",
-                    L("ブラー", "Blur"));
-
-                drawHelpToggle("PCSS",
-                    L("PCSS (Percentage Closer Soft Shadows):\n" +
-                      "光源サイズに基づいた物理ベースのソフトシャドウです。\n" +
-                      "遮蔽物に近い影はシャープに、遠い影はソフトになります。\n\n" +
-                      "• 光源サイズ: 大きいほど全体的にソフト\n" +
-                      "• ソフトネス: ペナンブラの拡大係数\n" +
-                      "• ブロッカー探索半径: 遮蔽物検出の範囲\n" +
-                      "• フィルタ半径: PCFフィルタの最小/最大サイズ\n" +
-                      "• サンプル品質: 高いほど滑らかだがGPU負荷増加\n\n" +
-                      "【ブレンド設定】\n" +
-                      "• ブレンドモード: Normal/Soft/Screen/Overlay\n" +
-                      "• ブレンド: 0=元の影そのまま、1=PCSS完全適用\n" +
-                      "• ブラー: フィルタ半径を追加拡張し影をよりぼかす\n\n" +
-                      "注意: ディレクショナルライトのみ対応です。\n" +
-                      "「影のスムージング」とは排他的に動作します（PCSS有効時はスムージング無視）。",
-                      "PCSS (Percentage Closer Soft Shadows):\n" +
-                      "Physically-based soft shadows using light source size.\n" +
-                      "Shadows near occluder are sharp, far shadows are soft.\n\n" +
-                      "• Light Size: Larger = softer overall\n" +
-                      "• Softness: Penumbra scale factor\n" +
-                      "• Blocker Search Radius: Occluder detection range\n" +
-                      "• Filter Radius: Min/Max PCF filter size\n" +
-                      "• Sample Quality: Higher = smoother but more GPU cost\n\n" +
-                      "[Blend Settings]\n" +
-                      "• Blend Mode: Normal/Soft/Screen/Overlay\n" +
-                      "• Blend: 0 = original shadow, 1 = full PCSS\n" +
-                      "• Blur: Expands filter radius for extra softness\n\n" +
-                      "Note: Directional light only.\n" +
-                      "Mutually exclusive with Shadow Smoothing (PCSS overrides when enabled)."),
-                    MessageType.Info);
+                return;
             }
+
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField(L("PCSS Settings", "PCSS Settings"), EditorStyles.boldLabel);
+            drawProperty("_PCSSLightSize", L("Light Size", "Light Size"));
+            drawProperty("_PCSSSoftness", L("Softness", "Softness"));
+            drawProperty("_PCSSBlockerSearchRadius", L("Blocker Search Radius", "Blocker Search Radius"));
+            drawProperty("_PCSSMinFilterRadius", L("Min Filter Radius", "Min Filter Radius"));
+            drawProperty("_PCSSMaxFilterRadius", L("Max Filter Radius", "Max Filter Radius"));
+            drawProperty("_PCSSSampleCount", L("Sample Quality", "Sample Quality"));
+
+            EditorGUILayout.Space(5);
+            drawProperty("_PCSSBlendMode", L("Blend Mode", "Blend Mode"));
+            drawProperty("_PCSSBlend", L("Blend", "Blend"));
+            drawProperty("_PCSSBlur", L("Blur", "Blur"));
+            drawHelpToggle(
+                "PCSS",
+                L("PCSS adds softer, distance-aware shadows for directional lights.",
+                  "PCSS adds softer, distance-aware shadows for directional lights."),
+                MessageType.Info);
         }
 
-        /// <summary>
-        /// Draw Shadow Color Texture controls
-        /// </summary>
         public static void DrawShadowColorTextureControls(
             DrawToggleDelegate drawToggle,
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
-            bool useShadowColorTex = drawToggle("_SHADOW_COLOR_TEX", "_UseShadowColorTex", L("影色テクスチャを使用", "Use Shadow Color Texture"));
-
-            if (useShadowColorTex)
+            bool useShadowColorTex = drawToggle(
+                "_SHADOW_COLOR_TEX",
+                "_UseShadowColorTex",
+                L("Use Shadow Color Texture", "Use Shadow Color Texture"));
+            if (!useShadowColorTex)
             {
-                EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField(L("Shadow Color Texture設定", "Shadow Color Texture Settings"), EditorStyles.boldLabel);
-                drawProperty("_ShadowColorTex", "Shadow Color Texture");
-                drawProperty("_ShadowColorTexStrength", L("適用強度", "Apply Strength"));
-                drawHelpToggle("ShadowColorTexture",
-                    L("🌈 Shadow Color Texture:\n" +
-                      "影の色をテクスチャで指定できる高度な機能です。\n\n" +
-                      "• テクスチャの色が影色として使用されます\n" +
-                      "• 強度: テクスチャの影響度（0 = 使わない、1 = フル適用）\n\n" +
-                      "💡 使い方:\n" +
-                      "服の影を青っぽく、肌の影を赤っぽくなど、\n" +
-                      "部位ごとに異なる影色を設定したい場合に使用します。",
-                      "🌈 Shadow Color Texture:\n" +
-                      "An advanced feature to specify shadow colors using a texture.\n\n" +
-                      "• The texture colors are used as shadow colors\n" +
-                      "• Strength: Texture influence (0 = not used, 1 = fully applied)\n\n" +
-                      "💡 Usage:\n" +
-                      "Use when you want different shadow colors per area,\n" +
-                      "e.g., bluish shadows for clothing, reddish shadows for skin."),
-                    MessageType.Info);
+                return;
             }
+
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField(L("Shadow Color Texture Settings", "Shadow Color Texture Settings"), EditorStyles.boldLabel);
+            drawProperty("_ShadowColorTex", "Shadow Color Texture");
+            drawProperty("_ShadowColorTexStrength", L("Apply Strength", "Apply Strength"));
+            drawHelpToggle(
+                "ShadowColorTexture",
+                L("Uses a texture to control shadow colors. Apply Strength controls how strongly the texture affects the result.",
+                  "Uses a texture to control shadow colors. Apply Strength controls how strongly the texture affects the result."),
+                MessageType.Info);
         }
     }
 }

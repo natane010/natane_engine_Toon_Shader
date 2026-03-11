@@ -9,12 +9,11 @@ namespace NataneToon.Editor
     using static NataneToonLocalization;
 
     /// <summary>
-    /// 鬩搾ｽｨ繝ｻ・ｱ髯ｷ・ｷ陋ｹ・ｻ郢晢ｽｻ驛｢譏ｴ繝ｻ・取㏍・ｹ・ｧ繝ｻ・｢驛｢譎｢・ｽ・ｫ驛｢・ｧ繝ｻ・ｨ驛｢譏ｴ繝ｻ邵ｺ繝ｻ・ｹ・ｧ繝ｻ・ｿ - BatchMaterialProcessor驍ｵ・ｺ繝ｻ・ｨSceneMaterialEditor驍ｵ・ｺ繝ｻ・ｮ髫ｶ蛹・ｽｺ・ｯ郢晢ｽｻ驛｢・ｧ陜｣・､繝ｻ・ｵ繝ｻ・ｱ髯ｷ・ｷ郢晢ｽｻ
     /// Unified Material Editor - Integrates BatchMaterialProcessor and SceneMaterialEditor functionality
     ///
-    /// 2驍ｵ・ｺ繝ｻ・､驍ｵ・ｺ繝ｻ・ｮ髯ｷ繝ｻ・ｽ・ｦ鬨ｾ繝ｻ繝ｻ・守坩・ｹ譎｢・ｽ・ｼ驛｢譎擾ｽｳ・ｨ繝ｻ螳夲ｽｬ・ｰ髯應ｼ夲ｽｽ・ｾ郢晢ｽｻ
-    /// - Batch Mode: 鬮ｫ髦ｪ繝ｻ霎溷､ゑｽｹ譎・ｽｧ・ｭ郢晢ｽｦ驛｢譎｢・ｽ・ｪ驛｢・ｧ繝ｻ・｢驛｢譎｢・ｽ・ｫ驍ｵ・ｺ繝ｻ・ｮ髣包ｽｳ・つ髫ｲ・｡繝ｻ・ｬ髯ｷ繝ｻ・ｽ・ｦ鬨ｾ繝ｻ繝ｻ
-    /// - Scene Mode: 驛｢・ｧ繝ｻ・ｷ驛｢譎｢・ｽ・ｼ驛｢譎｢・ｽ・ｳ髣包ｽｳ驗呻ｽｫ郢晢ｽｻ驛｢・ｧ繝ｻ・ｪ驛｢譎・§邵ｺ螟ゑｽｹ・ｧ繝ｻ・ｧ驛｢・ｧ繝ｻ・ｯ驛｢譎冗樟郢晢ｽｻ驛｢譎｢・ｽ・ｪ驛｢・ｧ繝ｻ・｢驛｢譎｢・ｽ・ｫ驛｢・ｧ繝ｻ・ｿ驛｢・ｧ繝ｻ・､驛｢譎｢・｣・ｰ鬩搾ｽｱ繝ｻ・ｨ鬯ｮ・ｮ郢晢ｽｻ
+    /// Provides two workflows in one window:
+    /// - Batch Mode: edit shared values across many materials at once.
+    /// - Scene Mode: inspect the selected renderer material and adjust supported properties.
     /// </summary>
     public class UnifiedMaterialEditor : EditorWindow
     {
@@ -73,7 +72,6 @@ namespace NataneToon.Editor
         private GameObject selectedObject;
         private int selectedMaterialIndex = 0;
 
-        // UI髫ｰ螢ｼﾂ・･繝ｻ鬘費ｽｸ・ｺ雋・ｪ陞ｺ驍ｵ・ｺ繝ｻ・ｿ髴托ｽ･繝ｻ・ｶ髫ｲ・ｷ郢晢ｽｻ(Scene Mode)
         private bool showBasicSettings = true;
         private bool showShadingSettings = true;
         private bool showSpecularSettings = false;
@@ -98,7 +96,6 @@ namespace NataneToon.Editor
 
         private void OnEnable()
         {
-            // Scene Mode鬨ｾ蛹・ｽｽ・ｨ驍ｵ・ｺ繝ｻ・ｮ驛｢・ｧ繝ｻ・､驛｢譎冗函・趣ｽｦ驛｢譎√＃陋ｹ・ｳ鬯ｪ・ｭ繝ｻ・ｲ
             featureStates = new bool[features.Length];
 
             SceneView.duringSceneGui += OnSceneGUI;
@@ -108,7 +105,6 @@ namespace NataneToon.Editor
 
         private void OnDisable()
         {
-            // Scene Mode鬨ｾ蛹・ｽｽ・ｨ驍ｵ・ｺ繝ｻ・ｮ驛｢・ｧ繝ｻ・､驛｢譎冗函・趣ｽｦ驛｢譎槭Γ繝ｻ・ｧ繝ｻ・｣鬯ｮ・ｯ繝ｻ・､
             SceneView.duringSceneGui -= OnSceneGUI;
             Selection.selectionChanged -= OnSelectionChanged;
         }
@@ -196,14 +192,12 @@ namespace NataneToon.Editor
 
         private void OnModeChanged()
         {
-            // 驛｢譎｢・ｽ・｢驛｢譎｢・ｽ・ｼ驛｢譎臥櫨郢晢ｽｻ驛｢・ｧ鬯・､ｧ・ｴ蟶ｷ・ｸ・ｺ陜捺ｺｷ繝ｻ驍ｵ・ｺ繝ｻ・ｮ髯具ｽｻ隴弱・・・刹・ｹ鬮｢ﾂ郢晢ｽｻ鬨ｾ繝ｻ繝ｻ
             if (currentMode == EditorMode.Scene)
             {
                 OnSelectionChanged();
             }
             else
             {
-                // Batch Mode驍ｵ・ｺ繝ｻ・ｫ髯具ｽｻ郢晢ｽｻ繝ｻ鬘假ｽｭ蜴・ｽｽ・ｿ驍ｵ・ｺ陜捺ｺｷ繝ｻ驍ｵ・ｲ郢晢ｽｾcene Mode驍ｵ・ｺ繝ｻ・ｧ鬩搾ｽｱ繝ｻ・ｨ鬯ｮ・ｮ郢晢ｽｻ繝ｻ・ｰ驍ｵ・ｺ繝ｻ・ｦ驍ｵ・ｺ郢晢ｽｻ隨ｳ繝ｻ・ｹ譎・ｽｧ・ｭ郢晢ｽｦ驛｢譎｢・ｽ・ｪ驛｢・ｧ繝ｻ・｢驛｢譎｢・ｽ・ｫ驛｢・ｧ陋幢ｽｵ邵ｺ驢搾ｽｹ譎｢・ｽ・ｪ驛｢・ｧ繝ｻ・｢
                 currentMaterial = null;
             }
         }
@@ -408,14 +402,12 @@ namespace NataneToon.Editor
 
         private void DrawSceneMaterialEditor()
         {
-            // 髯憺屮・ｽ・ｺ髫ｴ蟷｢・ｽ・ｬ鬮ｫ・ｪ繝ｻ・ｭ髯橸ｽｳ郢晢ｽｻ
             showBasicSettings = DrawFoldoutSection(L("基本設定", "Basic Settings"), showBasicSettings, () =>
             {
                 DrawColorProperty("_Color", L("メインカラー", "Main Color"));
                 DrawFloatProperty("_Alpha", L("アルファ", "Alpha"), 0f, 1f);
             });
 
-            // 驛｢・ｧ繝ｻ・ｷ驛｢・ｧ繝ｻ・ｧ驛｢譎｢・ｽ・ｼ驛｢譏ｴ繝ｻ邵ｺ繝ｻ・ｹ譎｢・ｽ・ｳ驛｢・ｧ繝ｻ・ｰ鬮ｫ・ｪ繝ｻ・ｭ髯橸ｽｳ郢晢ｽｻ
             showShadingSettings = DrawFoldoutSection(L("陰影", "Shading"), showShadingSettings, () =>
             {
                 DrawColorProperty("_ShadowColor", L("影色", "Shadow Color"));
@@ -424,7 +416,6 @@ namespace NataneToon.Editor
                 DrawFloatProperty("_ShadowReceive", L("影受け", "Shadow Receive"), 0f, 1f);
             });
 
-            // 驛｢・ｧ繝ｻ・ｹ驛｢譎擾ｽ｣・ｹ邵ｺ蜀暦ｽｹ譎｢・ｽ・･驛｢譎｢・ｽ・ｩ驛｢譎｢・ｽ・ｼ鬮ｫ・ｪ繝ｻ・ｭ髯橸ｽｳ郢晢ｽｻ
             showSpecularSettings = DrawFoldoutSection(L("スペキュラー", "Specular"), showSpecularSettings, () =>
             {
                 if (currentMaterial.HasProperty("_Specular"))
@@ -442,7 +433,6 @@ namespace NataneToon.Editor
                 }
             });
 
-            // 驛｢譎｢・ｽ・ｪ驛｢譎｢・｣・ｰ驛｢譎｢・ｽ・ｩ驛｢・ｧ繝ｻ・､驛｢譎槭Γ繝ｻ・ｨ繝ｻ・ｭ髯橸ｽｳ郢晢ｽｻ
             showRimLightSettings = DrawFoldoutSection(L("リムライト", "Rim Light"), showRimLightSettings, () =>
             {
                 if (currentMaterial.HasProperty("_RimLight"))
@@ -459,7 +449,6 @@ namespace NataneToon.Editor
                 }
             });
 
-            // 驛｢・ｧ繝ｻ・｢驛｢・ｧ繝ｻ・ｦ驛｢譎冗樟・主ｸｷ・ｹ・ｧ繝ｻ・､驛｢譎｢・ｽ・ｳ鬮ｫ・ｪ繝ｻ・ｭ髯橸ｽｳ郢晢ｽｻ
             showOutlineSettings = DrawFoldoutSection(L("アウトライン", "Outline"), showOutlineSettings, () =>
             {
                 if (currentMaterial.HasProperty("_Outline"))
@@ -475,7 +464,6 @@ namespace NataneToon.Editor
                 }
             });
 
-            // 驛｢・ｧ繝ｻ・ｨ驛｢譎・ｽｺ蛟･ﾎ暮Δ・ｧ繝ｻ・ｷ驛｢譎｢・ｽ・ｧ驛｢譎｢・ｽ・ｳ鬮ｫ・ｪ繝ｻ・ｭ髯橸ｽｳ郢晢ｽｻ
             showEmissionSettings = DrawFoldoutSection(L("エミッション", "Emission"), showEmissionSettings, () =>
             {
                 if (currentMaterial.HasProperty("_Emission"))
@@ -491,7 +479,6 @@ namespace NataneToon.Editor
                 }
             });
 
-            // 鬯ｯ・ｮ闔ｨ諛ｶ・ｽ・ｺ繝ｻ・ｦ驍ｵ・ｺ繝ｻ・ｪ鬮ｫ・ｪ繝ｻ・ｭ髯橸ｽｳ郢晢ｽｻ
             showAdvancedSettings = DrawFoldoutSection(L("高度な設定", "Advanced"), showAdvancedSettings, () =>
             {
                 DrawFloatProperty("_Metallic", L("メタリック", "Metallic"), 0f, 1f);
@@ -504,7 +491,6 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space(10);
 
-            // 髫ｰ・ｫ陜｣・ｺ繝ｻ・ｽ隲帷ｿｫ繝ｻ驛｢・ｧ繝ｻ・ｿ驛｢譎｢・ｽ・ｳ
             if (IsCompactLayout())
             {
                 if (GUILayout.Button(L("プリセット適用", "Apply Preset")))
@@ -1468,7 +1454,6 @@ namespace NataneToon.Editor
 
     /// <summary>
     /// Simple input dialog helper
-    /// 驛｢・ｧ繝ｻ・ｷ驛｢譎｢・ｽ・ｳ驛｢譎丞ｹｲ・取刮・ｸ・ｺ繝ｻ・ｪ髯ｷ闌ｨ・ｽ・･髯ｷ迚呻ｽｸ蜷ｶﾎ帝Δ・ｧ繝ｻ・､驛｢・ｧ繝ｻ・｢驛｢譎｢・ｽ・ｭ驛｢・ｧ繝ｻ・ｰ驛｢譎渉・･・取刮・ｹ譏懶ｽｻ・｣郢晢ｽｻ
     /// </summary>
     public static class EditorInputDialog
     {

@@ -13,11 +13,8 @@ namespace NataneToon.Editor
 
     /// <summary>
     /// Editor-only Shader Prewarming for Natane Toon Shader
-    /// Natane Toon Shader逕ｨ縺ｮ繧ｨ繝・ぅ繧ｿ蟆ら畑繧ｷ繧ｧ繝ｼ繝繝ｼ繝励Μ繧ｦ繧ｩ繝ｼ繝溘Φ繧ｰ
     /// Automatically warms up shader variants before build to prevent runtime compilation stutters
-    /// 繝薙Ν繝牙燕縺ｫ繧ｷ繧ｧ繝ｼ繝繝ｼ繝舌Μ繧｢繝ｳ繝医ｒ閾ｪ蜍慕噪縺ｫ繧ｦ繧ｩ繝ｼ繝繧｢繝・・縺励∝ｮ溯｡梧凾縺ｮ繧ｳ繝ｳ繝代う繝ｫ縺ｮ繧ｹ繧ｿ繝・ち繝ｼ繧帝亟豁｢
     /// Safe for VRChat - no runtime scripts required
-    /// VRChat蟇ｾ蠢・- 繝ｩ繝ｳ繧ｿ繧､繝繧ｹ繧ｯ繝ｪ繝励ヨ荳崎ｦ・
     /// </summary>
     public class ShaderPrewarmingEditor : IPreprocessBuildWithReport
     {
@@ -30,8 +27,6 @@ namespace NataneToon.Editor
         /// <summary>
         /// Automatically prewarm shaders before build.
         /// Also auto-collects variants if the collection is empty.
-        /// 繝薙Ν繝牙燕縺ｫ繧ｷ繧ｧ繝ｼ繝繝ｼ繧定・蜍輔・繝ｪ繧ｦ繧ｩ繝ｼ繝縲・
-        /// 繧ｳ繝ｬ繧ｯ繧ｷ繝ｧ繝ｳ縺檎ｩｺ縺ｮ蝣ｴ蜷医・閾ｪ蜍募庶髮・ｂ螳溯｡後・
         /// </summary>
         public void OnPreprocessBuild(BuildReport report)
         {
@@ -87,7 +82,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Main prewarming logic with progress bar support.
-        /// 繝励Ο繧ｰ繝ｬ繧ｹ繝舌・蟇ｾ蠢懊・繝｡繧､繝ｳ繝励Μ繧ｦ繧ｩ繝ｼ繝溘Φ繧ｰ繝ｭ繧ｸ繝・け縲・
         /// </summary>
         private static void PrewarmShaders(bool showDialog)
         {
@@ -172,8 +166,6 @@ namespace NataneToon.Editor
         /// <summary>
         /// Find all materials using Natane Toon Shader and prewarm them
         /// using a temporary ShaderVariantCollection (targeted, not Shader.WarmupAllShaders).
-        /// Natane Toon Shader繧剃ｽｿ逕ｨ縺吶ｋ蜈ｨ繝槭ユ繝ｪ繧｢繝ｫ繧剃ｸ譎４haderVariantCollection縺ｧ
-        /// 繧ｿ繝ｼ繧ｲ繝・ヨ謖・ｮ壹〒繝励Μ繧ｦ繧ｩ繝ｼ繝縺励∪縺吶・
         /// </summary>
         private static int PrewarmAllNataneToonMaterials()
         {
@@ -232,8 +224,6 @@ namespace NataneToon.Editor
         /// <summary>
         /// Dynamically find the ShaderVariantCollection asset.
         /// Searches multiple known paths to support both Assets and UPM package layouts.
-        /// ShaderVariantCollection繧｢繧ｻ繝・ヨ繧貞虚逧・↓讀懃ｴ｢縺励∪縺吶・
-        /// Assets驟咲ｽｮ縺ｨUPM繝代ャ繧ｱ繝ｼ繧ｸ驟咲ｽｮ縺ｮ荳｡譁ｹ繧偵し繝昴・繝医＠縺ｾ縺吶・
         /// </summary>
         private static ShaderVariantCollection FindShaderVariantCollection()
         {
@@ -271,8 +261,6 @@ namespace NataneToon.Editor
         /// <summary>
         /// Dynamically resolve the ShaderVariantCollection file path.
         /// Checks AssetDatabase search first, then known fallback paths.
-        /// ShaderVariantCollection繝輔ぃ繧､繝ｫ繝代せ繧貞虚逧・↓隗｣豎ｺ縺励∪縺吶・
-        /// 縺ｾ縺哂ssetDatabase讀懃ｴ｢縲∵ｬ｡縺ｫ譌｢遏･縺ｮ繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ繝代せ繧堤｢ｺ隱阪＠縺ｾ縺吶・
         /// </summary>
         private static string FindShaderVariantPath()
         {
@@ -297,7 +285,6 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Shader pass type configuration for auto-collection.
-        /// 閾ｪ蜍募庶髮・畑縺ｮ繧ｷ繧ｧ繝ｼ繝繝ｼ繝代せ繧ｿ繧､繝苓ｨｭ螳壹・
         /// </summary>
         private struct ShaderPassConfig
         {
@@ -337,8 +324,6 @@ namespace NataneToon.Editor
         /// <summary>
         /// Auto-collect variants from project materials into the given collection.
         /// Runs when the collection is empty at build time.
-        /// 繝励Ο繧ｸ繧ｧ繧ｯ繝医・繝・Μ繧｢繝ｫ縺九ｉ繝舌Μ繧｢繝ｳ繝医ｒ閾ｪ蜍募庶髮・＠縺ｾ縺吶・
-        /// 繝薙Ν繝画凾縺ｫ繧ｳ繝ｬ繧ｯ繧ｷ繝ｧ繝ｳ縺檎ｩｺ縺ｮ蝣ｴ蜷医↓螳溯｡後＆繧後∪縺吶・
         /// </summary>
         private static void AutoCollectVariantsFromMaterials(ShaderVariantCollection collection)
         {
@@ -417,7 +402,6 @@ namespace NataneToon.Editor
 
     /// <summary>
     /// Settings window for Shader Prewarming
-    /// 繧ｷ繧ｧ繝ｼ繝繝ｼ繝励Μ繧ｦ繧ｩ繝ｼ繝溘Φ繧ｰ險ｭ螳壹え繧｣繝ｳ繝峨え
     /// </summary>
     public class ShaderPrewarmingSettingsWindow : EditorWindow
     {

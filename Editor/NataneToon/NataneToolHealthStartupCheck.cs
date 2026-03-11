@@ -7,7 +7,6 @@ namespace NataneToon.Editor
 {
     /// <summary>
     /// Startup health check for Natane tool assemblies.
-    /// 繧ｨ繝・ぅ繧ｿ襍ｷ蜍墓凾縺ｮNatane繝・・繝ｫ 繧｢繧ｻ繝ｳ繝悶Μ蛛･蜈ｨ諤ｧ繝√ぉ繝・け縲・
     ///
     /// Runs once per day via [InitializeOnLoad] + EditorApplication.delayCall.
     /// Only shows a dialog when critical errors are detected.

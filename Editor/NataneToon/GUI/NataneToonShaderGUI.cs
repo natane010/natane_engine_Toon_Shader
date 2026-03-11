@@ -54,6 +54,51 @@ public class NataneToonShaderGUI : ShaderGUI
         "_HASHED_ALPHA"
     };
 
+    private enum LookMode
+    {
+        Legacy = 0,
+        Toon = 1,
+        NPR = 2,
+        PBR = 3,
+        Hybrid = 4
+    }
+
+    private enum LilToonMigrationMode
+    {
+        Unknown = 0,
+        ExactCompatibility = 1,
+        VisualMatch = 2,
+        MinimalSafe = 3
+    }
+
+    [System.Flags]
+    private enum LilToonParityFlags
+    {
+        None = 0,
+        RimShadeUnsupported = 1 << 0,
+        Emission2ndUnsupported = 1 << 1,
+        ShadowBorderRangeUnsupported = 1 << 2,
+        ShadowMaskTypeUnsupported = 1 << 3,
+        BackfaceForceShadowUnsupported = 1 << 4,
+        ShadowPostAOUnsupported = 1 << 5,
+        MatCapNeedsReview = 1 << 6,
+        OutlineNeedsReview = 1 << 7
+    }
+
+    private static readonly string[] LookMixerNprKeywords =
+    {
+        "_COLOR_QUANTIZE",
+        "_LUT_3D",
+        "_HATCHING",
+        "_WATERCOLOR",
+        "_SOFT_FILTER",
+        "_KUWAHARA_FILTER",
+        "_SCREEN_EDGE",
+        "_COLOR_BLEEDING",
+        "_CHROMATIC_ABERRATION",
+        "_OUTLINE_HAND_DRAWN"
+    };
+
     // ===== CACHED GUI STYLES =====
     private static GUIStyle _cachedHeaderTitleStyle;
     private static GUIStyle CachedHeaderTitleStyle
@@ -187,6 +232,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
     /// <summary>Target material being edited</summary>
     private Material targetMaterial;
+    private bool showLilToonParityDetails;
 
     // ===== RENDERING MODE =====
     public enum RenderingMode
@@ -200,11 +246,11 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private static string[] RenderingModeLabels => new string[]
     {
-        L("不透明", "Opaque"),
-        L("カットアウト", "Cutout"),
-        L("半透明", "Transparent"),
-        L("ファー", "Fur"),
-        L("背景 (Background)", "Background")
+        L("Opaque", "Opaque"),
+        L("Cutout", "Cutout"),
+        L("Transparent", "Transparent"),
+        L("Fur", "Fur"),
+        L("Background", "Background")
     };
 
     // ===== UI STATE =====
@@ -212,79 +258,79 @@ public class NataneToonShaderGUI : ShaderGUI
     private int selectedTab = 0;
     private string[] TabNames => new string[]
     {
-        L("テクスチャ&色", "Texture & Color"), L("ライト&影", "Light & Shadow"), L("エフェクト", "Effects"), L("環境&反射", "Environment & Reflection"), L("詳細設定", "Advanced")
+        L("Texture & Color", "Texture & Color"), L("Light & Shadow", "Light & Shadow"), L("Effects", "Effects"), L("Environment & Reflection", "Environment & Reflection"), L("Advanced", "Advanced")
     };
 
     // ===== SEARCH STATE =====
     private string searchQuery = "";
     /// <summary>
-    /// Section search data: pairs of (Japanese name, English keywords) for search matching
+    /// Section search data: pairs of (display name, keywords) used for search matching.
     /// </summary>
     private static readonly string[][] sectionSearchData = new string[][]
     {
-        // { drawMethodSuffix, japanese, english }
-        new[] { "MainTexture", "メインテクスチャ", "main texture color" },
-        new[] { "MakeupTextures", "追加テクスチャ メイクアップ 2nd 3rd 4th 5th", "makeup texture layer" },
-        new[] { "ScreenTone", "スクリーントーン 網点 ドット トーン", "screen tone halftone dot pattern overlay" },
-        new[] { "Shading", "シェーディング トゥーン 影 陰", "shading toon shadow" },
-        new[] { "AdvancedLighting", "ライティング詳細 光源", "advanced lighting" },
-        new[] { "AO", "アンビエントオクルージョン AO", "ambient occlusion ao" },
-        new[] { "Dithering", "ディザリング スクリーントーン", "dithering screen tone" },
-        new[] { "LightVolume", "VRC ライトボリューム", "vrc light volume" },
-        new[] { "LTCGI", "LTCGI リアルタイムエリアライト", "ltcgi area light" },
-        new[] { "Specular", "スペキュラー反射", "specular reflection" },
-        new[] { "HairSpecular", "ヘアハイライト ヘアスペキュラー", "hair specular highlight kajiya" },
-        new[] { "RimLight", "リムライト 輪郭光 オフセットリム", "rim light edge offset" },
-        new[] { "SSS", "半透明 SSS サブサーフェス", "sss subsurface scattering translucent" },
-        new[] { "MatCap", "マットキャップ MatCap", "matcap sphere map" },
-        new[] { "Glitter", "グリッター ラメ", "glitter sparkle" },
-        new[] { "Drip", "雫 エフェクト ドリップ", "drip water drop" },
-        new[] { "Smear", "スミア 残像 ストレッチ トレイル グロー", "smear afterimage stretch trail glow" },
-        new[] { "Hologram", "ホログラム グリッチ", "hologram glitch" },
-        new[] { "Decal", "デカール 貼り付け", "decal sticker" },
-        new[] { "Outline", "アウトライン 輪郭線 スムース法線", "outline contour smooth normal" },
-        new[] { "Emission", "エミッション 発光", "emission glow" },
-        new[] { "VirtualExpression", "バーチャル表現 ディゾルブ", "virtual expression dissolve" },
-        new[] { "AudioLink", "AudioLink 音楽連動", "audiolink music reactive" },
-        new[] { "Reflection", "反射 リフレクション キューブマップ", "reflection cubemap" },
-        new[] { "Iridescence", "イリデッセンス 玉虫色", "iridescence" },
-        new[] { "EnvironmentalRim", "環境リム", "environmental rim" },
-        new[] { "Refraction", "屈折 リフラクション", "refraction ior" },
-        new[] { "NormalMap", "ノーマルマップ 法線", "normal map bump" },
-        new[] { "Parallax", "視差マッピング パララックス", "parallax height map" },
-        new[] { "VertexAnimation", "頂点アニメーション 風 呼吸 脈動", "vertex animation wind breath pulse" },
-        new[] { "VAT", "VAT 頂点アニメーション Houdini", "vat vertex animation texture houdini" },
-        new[] { "Tessellation", "テッセレーション 曲面 スムージング", "tessellation smoothing phong" },
-        new[] { "Backface", "裏面テクスチャ", "backface texture back" },
-        new[] { "Video", "ビデオテクスチャ", "video texture render" },
-        new[] { "GradientBaseColor", "グラデーション ベースカラー 位置", "gradient base color position tint" },
-        new[] { "HeightFade", "高さフェード ハイトフェード ローカル", "height fade local position transparency" },
-        new[] { "IntersectionFade", "交差フェード 交差点 深度", "intersection fade depth contact" },
-        new[] { "DistanceFade", "距離フェード", "distance fade lod" },
-        new[] { "Stencil", "ステンシル マスク", "stencil mask buffer" },
-        new[] { "Fur", "ファー 毛皮 シェル 毛 ケモ", "fur shell hair strand pelt" },
-        new[] { "BackgroundLightmap", "ライトマップ 背景 ベイク GI", "lightmap background bake gi" },
-        new[] { "PBR", "PBR 物理 メタリック スムーズネス 反射", "pbr metallic smoothness reflection probe" },
-        new[] { "Rendering", "レンダリング設定 描画タイプ", "rendering mode opaque cutout transparent" },
-        new[] { "DetailMap", "ディテールマップ セカンダリUV 詳細", "detail map secondary uv close-up" },
-        new[] { "Triplanar", "トライプレーナー 3軸投影 UV不要", "triplanar projection no uv rock terrain" },
-        new[] { "HeightFog", "ハイトフォグ 高さ霧 マテリアルフォグ", "height fog material fog mist atmosphere" },
-        new[] { "SurfaceCover", "サーフェスカバー 雪 砂 堆積", "surface cover snow sand accumulation" },
-        new[] { "MirrorControl", "ミラー VRChat 鏡", "mirror control vrchat reflection" },
-        new[] { "QuestLite", "Quest軽量 モバイル パフォーマンス", "quest lite mobile performance optimization" },
-            new[] { "ShadowEdgeNoise", "影エッジノイズ 手描き風 アナログ", "shadow edge noise hand-drawn analog" },
-            new[] { "CastShadowColor", "キャストシャドウ 落ち影 色", "cast shadow color tint intensity" },
-            new[] { "LightSnap", "ライト方向スナップ 安定化 ちらつき", "light snap direction stabilize flicker" },
-            new[] { "ProceduralMatCap", "プロシージャルMatCap テクスチャ不要 数学的生成", "procedural matcap texture-free mathematical gradient fresnel" },
-            new[] { "FakeReflection", "フェイクリフレクション 疑似環境反射 キューブマップ不要", "fake reflection environment sky ground cubemap-free lightweight" },
-            new[] { "PerspectiveFlat", "パースフラット 遠近圧縮 2D風 奥行き", "perspective flat flatten depth compression 2d illustration" },
-            new[] { "DepthColorFade", "深度カラーフェード 空気遠近法 大気 彩度", "depth color fade aerial perspective atmosphere desaturation distance" },
+        // { drawMethodSuffix, displayName, keywords }
+        new[] { "MainTexture", "Main Texture", "main texture color" },
+        new[] { "MakeupTextures", "Makeup Textures", "makeup texture layer 2nd 3rd 4th 5th" },
+        new[] { "ScreenTone", "Screen Tone", "screen tone halftone dot pattern overlay" },
+        new[] { "Shading", "Shading", "shading toon shadow" },
+        new[] { "AdvancedLighting", "Advanced Lighting", "advanced lighting" },
+        new[] { "AO", "Ambient Occlusion", "ambient occlusion ao" },
+        new[] { "Dithering", "Dithering", "dithering screen tone" },
+        new[] { "LightVolume", "VRC Light Volume", "vrc light volume" },
+        new[] { "LTCGI", "LTCGI", "ltcgi area light" },
+        new[] { "Specular", "Specular", "specular reflection" },
+        new[] { "HairSpecular", "Hair Specular", "hair specular highlight kajiya" },
+        new[] { "RimLight", "Rim Light", "rim light edge offset" },
+        new[] { "SSS", "Subsurface Scattering", "sss subsurface scattering translucent" },
+        new[] { "MatCap", "MatCap", "matcap sphere map" },
+        new[] { "Glitter", "Glitter", "glitter sparkle" },
+        new[] { "Drip", "Drip", "drip water drop" },
+        new[] { "Smear", "Smear", "smear afterimage stretch trail glow" },
+        new[] { "Hologram", "Hologram", "hologram glitch" },
+        new[] { "Decal", "Decal", "decal sticker" },
+        new[] { "Outline", "Outline", "outline contour smooth normal" },
+        new[] { "Emission", "Emission", "emission glow" },
+        new[] { "VirtualExpression", "Virtual Expression", "virtual expression dissolve" },
+        new[] { "AudioLink", "AudioLink", "audiolink music reactive" },
+        new[] { "Reflection", "Reflection", "reflection cubemap" },
+        new[] { "Iridescence", "Iridescence", "iridescence" },
+        new[] { "EnvironmentalRim", "Environmental Rim", "environmental rim" },
+        new[] { "Refraction", "Refraction", "refraction ior" },
+        new[] { "NormalMap", "Normal Map", "normal map bump" },
+        new[] { "Parallax", "Parallax", "parallax height map" },
+        new[] { "VertexAnimation", "Vertex Animation", "vertex animation wind breath pulse" },
+        new[] { "VAT", "VAT", "vat vertex animation texture houdini" },
+        new[] { "Tessellation", "Tessellation", "tessellation smoothing phong" },
+        new[] { "Backface", "Backface", "backface texture back" },
+        new[] { "Video", "Video", "video texture render" },
+        new[] { "GradientBaseColor", "Gradient Base Color", "gradient base color position tint" },
+        new[] { "HeightFade", "Height Fade", "height fade local position transparency" },
+        new[] { "IntersectionFade", "Intersection Fade", "intersection fade depth contact" },
+        new[] { "DistanceFade", "Distance Fade", "distance fade lod" },
+        new[] { "Stencil", "Stencil", "stencil mask buffer" },
+        new[] { "Fur", "Fur", "fur shell hair strand pelt" },
+        new[] { "BackgroundLightmap", "Background Lightmap", "lightmap background bake gi" },
+        new[] { "PBR", "PBR", "pbr metallic smoothness reflection probe" },
+        new[] { "Rendering", "Rendering", "rendering mode opaque cutout transparent" },
+        new[] { "DetailMap", "Detail Map", "detail map secondary uv close-up" },
+        new[] { "Triplanar", "Triplanar", "triplanar projection no uv rock terrain" },
+        new[] { "HeightFog", "Height Fog", "height fog material fog mist atmosphere" },
+        new[] { "SurfaceCover", "Surface Cover", "surface cover snow sand accumulation" },
+        new[] { "MirrorControl", "Mirror Control", "mirror control vrchat reflection" },
+        new[] { "QuestLite", "Quest Lite", "quest lite mobile performance optimization" },
+        new[] { "ShadowEdgeNoise", "Shadow Edge Noise", "shadow edge noise hand-drawn analog" },
+        new[] { "CastShadowColor", "Cast Shadow Color", "cast shadow color tint intensity" },
+        new[] { "LightSnap", "Light Snap", "light snap direction stabilize flicker" },
+        new[] { "ProceduralMatCap", "Procedural MatCap", "procedural matcap texture-free mathematical gradient fresnel" },
+        new[] { "FakeReflection", "Fake Reflection", "fake reflection environment sky ground cubemap-free lightweight" },
+        new[] { "PerspectiveFlat", "Perspective Flat", "perspective flat flatten depth compression 2d illustration" },
+        new[] { "DepthColorFade", "Depth Color Fade", "depth color fade aerial perspective atmosphere desaturation distance" },
     };
 
     // ===== SHADER TYPE DRAWER INSTANCES =====
     private NataneToon.Editor.NataneToonEyeDrawer eyeDrawer;
     private NataneToon.Editor.NataneToonWirelightDrawer wirelightDrawer;
-    private NataneToon.Editor.NataneToonScreenFXDrawer screenFXDrawer;
+    // private NataneToon.Editor.NataneToonScreenFXDrawer screenFXDrawer;
 
     // ===== FOLDOUT STATE MANAGEMENT =====
     // Foldout states are per-material and persisted using EditorPrefs via Dictionary
@@ -394,7 +440,7 @@ public class NataneToonShaderGUI : ShaderGUI
             // Validate that we have valid references
             if (this.materialEditor == null || this.properties == null || this.targetMaterial == null)
             {
-                EditorGUILayout.HelpBox(L("マテリアルエディタの初期化に失敗しました。", "Failed to initialize material editor."), MessageType.Error);
+                EditorGUILayout.HelpBox(L("Failed to initialize material editor.", "Failed to initialize material editor."), MessageType.Error);
                 return;
             }
 
@@ -429,7 +475,7 @@ public class NataneToonShaderGUI : ShaderGUI
             {
                 RenderingMode currentMode = GetCurrentRenderingMode();
                 EditorGUI.BeginChangeCheck();
-                int newIndex = EditorGUILayout.Popup(L("描画タイプ", "Rendering Type"), (int)currentMode, RenderingModeLabels);
+                int newIndex = EditorGUILayout.Popup(L("Rendering Type", "Rendering Type"), (int)currentMode, RenderingModeLabels);
                 if (EditorGUI.EndChangeCheck())
                 {
                     SetRenderingMode((RenderingMode)newIndex);
@@ -463,9 +509,9 @@ public class NataneToonShaderGUI : ShaderGUI
             // ===== Search Bar =====
             EditorGUILayout.Space(4);
             EditorGUILayout.BeginHorizontal();
-            GUILayout.Label(L("検索:", "Search:"), GUILayout.Width(35));
+            GUILayout.Label(L("Search:", "Search:"), GUILayout.Width(35));
             searchQuery = EditorGUILayout.TextField(searchQuery, EditorStyles.toolbarSearchField);
-            if (!string.IsNullOrEmpty(searchQuery) && GUILayout.Button("✕", EditorStyles.miniButton, GUILayout.Width(20)))
+            if (!string.IsNullOrEmpty(searchQuery) && GUILayout.Button("X", EditorStyles.miniButton, GUILayout.Width(20)))
             {
                 searchQuery = "";
                 GUI.FocusControl(null);
@@ -485,19 +531,19 @@ public class NataneToonShaderGUI : ShaderGUI
 
                 switch (selectedTab)
                 {
-                    case 0: // テクスチャ&色
+                    case 0:
                         DrawBasicTab();
                         break;
-                    case 1: // ライト&影
+                    case 1:
                         DrawLightingTab();
                         break;
-                    case 2: // エフェクト
+                    case 2:
                         DrawEffectsTab();
                         break;
-                    case 3: // 環境&反射
+                    case 3:
                         DrawEnvironmentTab();
                         break;
-                    case 4: // 詳細設定
+                    case 4:
                         DrawAdvancedTab();
                         break;
                 }
@@ -516,7 +562,7 @@ public class NataneToonShaderGUI : ShaderGUI
         }
         catch (System.Exception e)
         {
-            EditorGUILayout.HelpBox(L($"インスペクターの描画中にエラーが発生しました: {e.Message}", $"An error occurred while drawing the inspector: {e.Message}"), MessageType.Error);
+            EditorGUILayout.HelpBox(L($"An error occurred while drawing the inspector: {e.Message}", $"An error occurred while drawing the inspector: {e.Message}"), MessageType.Error);
             UnityEngine.Debug.LogException(e);
         }
     }
@@ -588,7 +634,7 @@ public class NataneToonShaderGUI : ShaderGUI
         }
         catch (System.Exception e)
         {
-            EditorGUILayout.HelpBox(L($"{sectionName}セクションの描画中にエラーが発生しました: {e.Message}", $"Error drawing {sectionName} section: {e.Message}"), MessageType.Warning);
+            EditorGUILayout.HelpBox(L($"Error drawing {sectionName} section: {e.Message}", $"Error drawing {sectionName} section: {e.Message}"), MessageType.Warning);
             UnityEngine.Debug.LogWarning($"[NataneToonShaderGUI] Error drawing {sectionName} section: {e.Message}");
         }
     }
@@ -745,280 +791,102 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawMainTextureSection()
     {
-        SetFoldout("MainTexture", DrawBoxedSection(L("メインテクスチャ", "Main Texture"), GetFoldout("MainTexture"), SectionCategory.Basic));
+        SetFoldout("MainTexture", DrawBoxedSection(L("Main Texture", "Main Texture"), GetFoldout("MainTexture"), SectionCategory.Basic));
         if (GetFoldout("MainTexture"))
         {
-            DrawProperty("_MainTex", L("メインテクスチャ", "Main Texture"));
-            DrawColorProperty("_Color", L("カラー", "Color"));
+            DrawProperty("_MainTex", L("Main Texture", "Main Texture"));
+            DrawColorProperty("_Color", L("Color", "Color"));
 
-            // Main Texture Animation
             EditorGUILayout.Space(SECTION_SPACING);
-            bool mainTexAnim = DrawToggle("_MAIN_TEX_ANIMATION", "_MainTexAnimation", L("メインテクスチャアニメーション", "Main Texture Animation"));
+            bool mainTexAnim = DrawToggle("_MAIN_TEX_ANIMATION", "_MainTexAnimation", L("Main Texture Animation", "Main Texture Animation"));
             if (mainTexAnim)
             {
-                DrawUVAnimationSettings("_MainTexScrollSpeed", "_MainTexRotateSpeed", L("メインテクスチャ", "Main Texture"));
-                DrawHelpToggle("MainTexAnimation",
-                    L("📌 メインテクスチャアニメーション:\n" +
-                    "メインテクスチャのUV座標をスクロール・回転させます。\n\n" +
-                    "• スクロール速度 XY: X方向とY方向のスクロール速度\n" +
-                    "• 回転速度: UV座標の回転速度（ラジアン/秒）\n\n" +
-                    "💡 流水表現やホログラムパターンの移動に使用できます。",
-                    "📌 Main Texture Animation:\n" +
-                    "Scrolls and rotates the main texture UV coordinates.\n\n" +
-                    "• Scroll Speed XY: Scroll speed in X and Y directions\n" +
-                    "• Rotation Speed: UV rotation speed (radians/sec)\n\n" +
-                    "💡 Useful for flowing water or moving hologram patterns."),
+                DrawUVAnimationSettings("_MainTexScrollSpeed", "_MainTexRotateSpeed", L("Main Texture", "Main Texture"));
+                DrawHelpToggle(
+                    "MainTexAnimation",
+                    L("Scrolls and rotates the main texture UVs.",
+                      "Scrolls and rotates the main texture UVs."),
                     MessageType.Info);
             }
 
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField(L("カラー保持・強化設定", "Color Preservation & Enhancement"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Color Preservation & Enhancement", "Color Preservation & Enhancement"), EditorStyles.boldLabel);
 
-            DrawProperty("_AlbedoPreservation", L("テクスチャカラー保持", "Texture Color Preservation"));
-            DrawHelpToggle("AlbedoPreservation",
-                L("🎨 テクスチャカラー保持（改善版・色相維持）:\n" +
-                "テクスチャの元の色を保持しながら、ライティングの明暗効果を適用します。\n" +
-                "ライティングで「白くなる」のではなく「本来の色のまま明るくなる」表現を実現。\n\n" +
-                "✨ 新機能:\n" +
-                "　・黒などの暗い色が光で白くなる問題を解決\n" +
-                "　・色相・彩度を保持したまま明るさだけを調整\n" +
-                "　・スペキュラーやリムライトも色に応じて自然に\n\n" +
-                "🎛️ 推奨設定:\n" +
-                "• 0 = 従来のライティング（色が変わりやすい）\n" +
-                "• 0.7-0.9 = 強い色保持（黒や暗い色も自然に）★推奨\n" +
-                "• 1.0 = 完全な色保持（最も自然な色）\n\n" +
-                "💡 効果:\n" +
-                "　・黒い服が光で灰色/白っぽくならない\n" +
-                "　・赤い服が光でピンク/白にならない\n" +
-                "　・暗い色が本来の色相を保ったまま明るくなる\n" +
-                "　・影やシェーディングの明暗は完全に維持\n" +
-                "　・Light Volumeの白飛び問題も解決\n\n" +
-                "⚠️ 注意:\n" +
-                "値を上げすぎると、ライトカラーの影響が減ります。\n" +
-                "青いライトで青く照らしたい場合は0.5程度に。",
-                "🎨 Texture Color Preservation (Improved, Hue-Preserving):\n" +
-                "Preserves original texture colors while applying lighting brightness.\n" +
-                "Instead of colors 'washing out to white', they 'brighten naturally'.\n\n" +
-                "✨ Features:\n" +
-                "  - Prevents dark colors from turning white under light\n" +
-                "  - Adjusts only brightness while preserving hue & saturation\n" +
-                "  - Specular and rim light respond naturally to color\n\n" +
-                "🎛️ Recommended:\n" +
-                "• 0 = Traditional lighting (colors shift easily)\n" +
-                "• 0.7-0.9 = Strong preservation (dark colors stay natural) ★Recommended\n" +
-                "• 1.0 = Full preservation (most natural colors)\n\n" +
-                "💡 Effects:\n" +
-                "  - Black clothes won't turn gray/white under light\n" +
-                "  - Red clothes won't turn pink/white under light\n" +
-                "  - Dark colors brighten while keeping their hue\n" +
-                "  - Shadow/shading brightness fully maintained\n" +
-                "  - Fixes Light Volume white-out issues\n\n" +
-                "⚠️ Note:\n" +
-                "High values reduce light color influence.\n" +
-                "Use ~0.5 if you want colored lights to affect the material."),
+            DrawProperty("_AlbedoPreservation", L("Texture Color Preservation", "Texture Color Preservation"));
+            DrawHelpToggle(
+                "AlbedoPreservation",
+                L("Preserves the original texture color while applying lighting brightness.",
+                  "Preserves the original texture color while applying lighting brightness."),
                 MessageType.Info);
 
             EditorGUILayout.Space();
-            DrawProperty("_Saturation", L("彩度", "Saturation"));
-            DrawHelpToggle("Saturation",
-                L("✨ 彩度調整:\n" +
-                "最終カラーの彩度（色の鮮やかさ）を調整します。\n" +
-                "• 0 = モノクロ（グレースケール）\n" +
-                "• 1 = デフォルト（元の彩度）\n" +
-                "• 1.5-2.0 = 鮮やかな色合い",
-                "✨ Saturation Adjustment:\n" +
-                "Adjusts the saturation (color vividness) of the final color.\n" +
-                "• 0 = Monochrome (grayscale)\n" +
-                "• 1 = Default (original saturation)\n" +
-                "• 1.5-2.0 = Vivid colors"),
+            DrawProperty("_Saturation", L("Saturation", "Saturation"));
+            DrawHelpToggle(
+                "Saturation",
+                L("Adjusts final color vividness.",
+                  "Adjusts final color vividness."),
                 MessageType.Info);
 
             EditorGUILayout.Space();
-            DrawProperty("_Brightness", L("全体明度", "Overall Brightness"));
-            DrawHelpToggle("Brightness",
-                L("💡 全体明度調整:\n" +
-                "最終的な明るさを調整します。\n" +
-                "• 0.5-0.9 = 暗めに\n" +
-                "• 1.0 = デフォルト\n" +
-                "• 1.1-2.0 = 明るめに\n" +
-                "• 2.0-5.0 = 大幅に明るく（移行マテリアル補正用）",
-                "💡 Overall Brightness:\n" +
-                "Adjusts the final brightness.\n" +
-                "• 0.5-0.9 = Darker\n" +
-                "• 1.0 = Default\n" +
-                "• 1.1-2.0 = Brighter\n" +
-                "• 2.0-5.0 = Much brighter (for migration material correction)"),
+            DrawProperty("_Brightness", L("Overall Brightness", "Overall Brightness"));
+            DrawHelpToggle(
+                "Brightness",
+                L("Adjusts the final output brightness.",
+                  "Adjusts the final output brightness."),
                 MessageType.Info);
 
-            // 3.1 Parameter Interaction Warning: Color Preservation System
-            float albedoPreservation = targetMaterial.GetFloat("_AlbedoPreservation");
-            float saturation = targetMaterial.GetFloat("_Saturation");
-
-            if (albedoPreservation > 0.7f && saturation > 1.3f)
-            {
-                EditorGUILayout.HelpBox(
-                    L("⚠️ パラメータ相互作用の警告\n\n" +
-                    "「テクスチャカラー保持」と「彩度」が両方とも高い値です。\n" +
-                    "色が非常に鮮やかになりすぎる可能性があります。\n\n" +
-                    "推奨:\n" +
-                    "• カラー保持 > 0.7 なら、彩度は 0.8-1.2 に\n" +
-                    "• 彩度 > 1.3 なら、カラー保持は 0.3-0.6 に",
-                    "⚠️ Parameter Interaction Warning\n\n" +
-                    "Both 'Albedo Preservation' and 'Saturation' are set to high values.\n" +
-                    "This may result in overly vivid colors.\n\n" +
-                    "Recommended:\n" +
-                    "• If Albedo Preservation > 0.7, set Saturation to 0.8-1.2\n" +
-                    "• If Saturation > 1.3, set Albedo Preservation to 0.3-0.6"),
-                    MessageType.Warning);
-            }
-
-            // Final Color Blending Section
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField(L("最終カラーブレンディング", "Final Color Blending"), EditorStyles.boldLabel);
-            DrawHelpToggle("FinalColorBlending",
-                L("🎨 最終なじませ処理（白飛び・黒つぶれ防止）:\n" +
-                "すべてのエフェクト適用後の最終段階で、明るすぎる部分と暗すぎる部分を\n" +
-                "周囲となじませて、より自然で滑らかな見た目にします。",
-                "🎨 Final Blending (Prevent Blow-out & Crush):\n" +
-                "After all effects are applied, blends overly bright and dark areas\n" +
-                "with surroundings for a more natural, smooth appearance."),
+            EditorGUILayout.LabelField(L("Final Color Blending", "Final Color Blending"), EditorStyles.boldLabel);
+            DrawHelpToggle(
+                "FinalColorBlending",
+                L("Helps prevent highlight blow-out and shadow crush after all effects are applied.",
+                  "Helps prevent highlight blow-out and shadow crush after all effects are applied."),
                 MessageType.None);
 
             EditorGUILayout.Space();
-            DrawProperty("_FinalHighlightBlend", L("ハイライトなじませ（白飛び防止）", "Highlight Blend (Prevent Blow-out)"));
-            DrawProperty("_HighlightThreshold", L("ハイライト閾値", "Highlight Threshold"));
-            DrawHelpToggle("HighlightBlend",
-                L("✨ ハイライトなじませ（トーンマッピング搭載）:\n" +
-                "明るすぎる部分（ハイライト）を自然になじませます。\n\n" +
-                "📊 処理フロー（4段階）:\n" +
-                "1️⃣ スムーズショルダートーンマッピング\n" +
-                "   　・輝度60%以上の明るい部分を自然に圧縮\n" +
-                "   　・色の鮮やかさを保ちながら白飛びを防止\n" +
-                "2️⃣ ハイライトブレンド（閾値以上）\n" +
-                "   　・30%のデサチュレーションで過度な彩度を抑制\n" +
-                "   　・境界を柔らかくスムーズに\n" +
-                "3️⃣ ジェントルクランプ（1.05まで許容）\n" +
-                "   　・ハードカットオフを回避\n\n" +
-                "🎛️ パラメータ:\n" +
-                "• なじませ 0 = 効果なし、1 = 最大圧縮\n" +
-                "• 閾値: この値より明るい部分に追加ブレンド（推奨: 0.75）\n\n" +
-                "💡 おすすめ設定:\n" +
-                "　・通常: なじませ0.3-0.5、閾値0.75\n" +
-                "　・強め: なじませ0.7-0.9、閾値0.6\n" +
-                "　・最大: なじませ1.0、閾値0.5",
-                "✨ Highlight Blend (with Tone Mapping):\n" +
-                "Naturally blends overly bright areas (highlights).\n\n" +
-                "📊 Processing Flow (4 stages):\n" +
-                "1️⃣ Smooth Shoulder Tone Mapping\n" +
-                "   - Naturally compresses bright areas above 60% luminance\n" +
-                "   - Prevents blow-out while preserving color vividness\n" +
-                "2️⃣ Highlight Blend (above threshold)\n" +
-                "   - 30% desaturation to suppress excessive saturation\n" +
-                "   - Softens boundaries smoothly\n" +
-                "3️⃣ Gentle Clamp (allows up to 1.05)\n" +
-                "   - Avoids hard cutoff\n\n" +
-                "🎛️ Parameters:\n" +
-                "• Blend 0 = No effect, 1 = Maximum compression\n" +
-                "• Threshold: Additional blend above this value (Recommended: 0.75)\n\n" +
-                "💡 Recommended:\n" +
-                "  - Normal: Blend 0.3-0.5, Threshold 0.75\n" +
-                "  - Strong: Blend 0.7-0.9, Threshold 0.6\n" +
-                "  - Maximum: Blend 1.0, Threshold 0.5"),
+            DrawProperty("_FinalHighlightBlend", L("Highlight Blend (Prevent Blow-out)", "Highlight Blend (Prevent Blow-out)"));
+            DrawProperty("_HighlightThreshold", L("Highlight Threshold", "Highlight Threshold"));
+            DrawHelpToggle(
+                "HighlightBlend",
+                L("Softens overly bright areas above the threshold.",
+                  "Softens overly bright areas above the threshold."),
                 MessageType.Info);
 
             EditorGUILayout.Space();
-            DrawProperty("_FinalShadowBlend", L("シャドーなじませ（黒つぶれ防止）", "Shadow Blend (Prevent Crush)"));
-            DrawProperty("_ShadowThreshold", L("シャドー閾値", "Shadow Threshold"));
-            DrawHelpToggle("ShadowBlend",
-                L("🌙 シャドーなじませ:\n" +
-                "暗すぎる部分（シャドー）を周囲となじませます。\n" +
-                "• なじませ 0 = 効果なし、1 = 最大\n" +
-                "• 閾値: この値より暗い部分に適用（推奨: 0.25）\n\n" +
-                "💡 効果:\n" +
-                "　・黒つぶれを防止し、ディテールを保持\n" +
-                "　・影の境界を柔らかく\n" +
-                "　・わずかにシャドーを持ち上げて自然に",
-                "🌙 Shadow Blend:\n" +
-                "Blends overly dark areas (shadows) with surroundings.\n" +
-                "• Blend 0 = No effect, 1 = Maximum\n" +
-                "• Threshold: Applied to areas darker than this (Recommended: 0.25)\n\n" +
-                "💡 Effects:\n" +
-                "  - Prevents black crush, preserves detail\n" +
-                "  - Softens shadow boundaries\n" +
-                "  - Slightly lifts shadows for natural look"),
+            DrawProperty("_FinalShadowBlend", L("Shadow Blend (Prevent Crush)", "Shadow Blend (Prevent Crush)"));
+            DrawProperty("_ShadowThreshold", L("Shadow Threshold", "Shadow Threshold"));
+            DrawHelpToggle(
+                "ShadowBlend",
+                L("Softens very dark areas below the threshold.",
+                  "Softens very dark areas below the threshold."),
                 MessageType.Info);
-
         }
         EndBoxedSection(GetFoldout("MainTexture"));
     }
 
     private void DrawSurfaceFinishSection()
     {
-        // Glossiness control
-        DrawProperty("_Glossiness", L("光沢度（グロッシネス）", "Glossiness"));
-        DrawHelpToggle("Glossiness",
-            L("✨ 光沢度（Glossiness）:\n" +
-            "スペキュラー、リフレクション、リムライトなどの\n" +
-            "反射系エフェクトの強度を一括で調整します。\n\n" +
-            "• 0 = 光沢なし（完全マット）\n" +
-            "• 0.5 = 中程度の光沢\n" +
-            "• 1.0 = 最大光沢（デフォルト）\n\n" +
-            "💡 適用されるエフェクト:\n" +
-            "　・スペキュラーハイライト\n" +
-            "　・リムライト（1 & 2）\n" +
-            "　・環境リム\n" +
-            "　・MatCap\n" +
-            "　・キューブマップリフレクション\n" +
-            "　・Light Volume Specular\n\n" +
-            "※ Emission（発光）には影響しません",
-            "✨ Glossiness:\n" +
-            "Controls the intensity of all reflective effects\n" +
-            "(specular, reflection, rim light, etc.) at once.\n\n" +
-            "• 0 = No gloss (fully matte)\n" +
-            "• 0.5 = Medium gloss\n" +
-            "• 1.0 = Maximum gloss (default)\n\n" +
-            "💡 Affected effects:\n" +
-            "  - Specular highlights\n" +
-            "  - Rim Light (1 & 2)\n" +
-            "  - Environmental Rim\n" +
-            "  - MatCap\n" +
-            "  - Cubemap Reflection\n" +
-            "  - Light Volume Specular\n\n" +
-            "※ Does not affect Emission"),
+        DrawProperty("_Glossiness", L("Glossiness", "Glossiness"));
+        DrawHelpToggle(
+            "Glossiness",
+            L("Controls the intensity of reflective effects such as specular, rim, MatCap, and reflection.",
+              "Controls the intensity of reflective effects such as specular, rim, MatCap, and reflection."),
             MessageType.Info);
 
         EditorGUILayout.Space();
-
-        // Matte Effect (additional reduction)
-        DrawProperty("_MatteEffect", L("マット効果（追加の光沢抑制）", "Matte Effect (Additional Gloss Reduction)"));
-        DrawHelpToggle("MatteEffect",
-            L("🎨 マット効果:\n" +
-            "光沢度に加えて、さらに光沢を減らすための\n" +
-            "追加パラメータです。\n\n" +
-            "• 0 = 光沢度のみで制御\n" +
-            "• 0.5 = 光沢度の50%に減少\n" +
-            "• 1.0 = 完全にマット（光沢ゼロ）\n\n" +
-            "💡 使い方:\n" +
-            "光沢度と組み合わせて、より細かい調整が可能です。\n" +
-            "例: 光沢度0.8 × マット効果0.3 = 実質56%の光沢",
-            "🎨 Matte Effect:\n" +
-            "An additional parameter to further reduce gloss\n" +
-            "on top of the Glossiness setting.\n\n" +
-            "• 0 = Controlled by Glossiness only\n" +
-            "• 0.5 = Reduced to 50% of Glossiness\n" +
-            "• 1.0 = Fully matte (zero gloss)\n\n" +
-            "💡 Usage:\n" +
-            "Combine with Glossiness for finer control.\n" +
-            "Example: Glossiness 0.8 x Matte 0.3 = effective 56% gloss"),
+        DrawProperty("_MatteEffect", L("Matte Effect (Additional Gloss Reduction)", "Matte Effect (Additional Gloss Reduction)"));
+        DrawHelpToggle(
+            "MatteEffect",
+            L("Further reduces gloss on top of the Glossiness control.",
+              "Further reduces gloss on top of the Glossiness control."),
             MessageType.Info);
     }
 
     private void DrawMakeupTexturesSection()
     {
-        SetFoldout("MakeupTextures", DrawBoxedSection(L("追加テクスチャ（2nd〜5th）", "Additional Textures (2nd-5th)"), GetFoldout("MakeupTextures"), SectionCategory.Basic));
+        SetFoldout("MakeupTextures", DrawBoxedSection(L("Additional Textures (2nd-5th)", "Additional Textures (2nd-5th)"), GetFoldout("MakeupTextures"), SectionCategory.Basic));
         if (GetFoldout("MakeupTextures"))
         {
-            // Compact ON/OFF summary for all 4 layers
             EditorGUILayout.BeginHorizontal();
             string[] layerNames = { "2nd", "3rd", "4th", "5th" };
             string[] layerKeywords = { "_2ND_TEXTURE", "_3RD_TEXTURE", "_4TH_TEXTURE", "_5TH_TEXTURE" };
@@ -1028,135 +896,98 @@ public class NataneToonShaderGUI : ShaderGUI
                 Color badgeCol = layerOn ? new Color(0.2f, 0.7f, 0.3f, 0.9f) : new Color(0.4f, 0.4f, 0.4f, 0.4f);
                 Color textCol = layerOn ? Color.white : new Color(0.6f, 0.6f, 0.6f);
                 string label = $"{layerNames[i]}:{(layerOn ? "ON" : "OFF")}";
-                Rect r = GUILayoutUtility.GetRect(new GUIContent(label), EditorStyles.miniLabel, GUILayout.Height(18));
-                if (Event.current.type == EventType.Repaint) EditorGUI.DrawRect(r, badgeCol);
-                var oc = GUI.contentColor; GUI.contentColor = textCol;
-                GUI.Label(r, label, layerOn ? CachedMakeupBadgeStyleOn : CachedMakeupBadgeStyleOff);
-                GUI.contentColor = oc;
+                Rect rect = GUILayoutUtility.GetRect(new GUIContent(label), EditorStyles.miniLabel, GUILayout.Height(18));
+                if (Event.current.type == EventType.Repaint)
+                {
+                    EditorGUI.DrawRect(rect, badgeCol);
+                }
+
+                Color oldColor = GUI.contentColor;
+                GUI.contentColor = textCol;
+                GUI.Label(rect, label, layerOn ? CachedMakeupBadgeStyleOn : CachedMakeupBadgeStyleOff);
+                GUI.contentColor = oldColor;
             }
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.Space(SECTION_SPACING);
 
-            DrawHelpToggle("MakeupTextures",
-                L("メイクアップテクスチャ（透過PNG対応・HSVカラー調整）\n" +
-                "最大4つの追加テクスチャで合成。アルファチャンネルで適用範囲を制御。",
-                "Makeup Textures (Transparent PNG, HSV Color Adjustment)\n" +
-                "Composite up to 4 additional textures. Alpha channel controls application area."),
+            DrawHelpToggle(
+                "MakeupTextures",
+                L("Composite up to four additional textures. The alpha channel controls the application area.",
+                  "Composite up to four additional textures. The alpha channel controls the application area."),
                 MessageType.None);
 
             EditorGUILayout.Space(SECTION_SPACING);
-
-            // Draw each makeup texture layer using helper method
-            DrawMakeupTextureLayer("2nd", "2ND_TEXTURE", "2ND_TEX_MASK", L("ハイライト、アイシャドウ", "Highlights, Eye Shadow"));
+            DrawMakeupTextureLayer("2nd", "2ND_TEXTURE", "2ND_TEX_MASK", L("Highlights, Eye Shadow", "Highlights, Eye Shadow"));
             EditorGUILayout.Space(10);
-
-            DrawMakeupTextureLayer("3rd", "3RD_TEXTURE", "3RD_TEX_MASK", L("チーク", "Blush"));
+            DrawMakeupTextureLayer("3rd", "3RD_TEXTURE", "3RD_TEX_MASK", L("Blush", "Blush"));
             EditorGUILayout.Space(10);
-
-            DrawMakeupTextureLayer("4th", "4TH_TEXTURE", "4TH_TEX_MASK", L("グリッター、シャドウ", "Glitter, Shadow"));
+            DrawMakeupTextureLayer("4th", "4TH_TEXTURE", "4TH_TEX_MASK", L("Glitter, Shadow", "Glitter, Shadow"));
             EditorGUILayout.Space(10);
-
-            DrawMakeupTextureLayer("5th", "5TH_TEXTURE", "5TH_TEX_MASK", L("細部のハイライト、細部のシャドウ", "Detail Highlights, Detail Shadows"));
+            DrawMakeupTextureLayer("5th", "5TH_TEXTURE", "5TH_TEX_MASK", L("Detail Highlights, Detail Shadows", "Detail Highlights, Detail Shadows"));
         }
         EndBoxedSection(GetFoldout("MakeupTextures"));
     }
 
     /// <summary>
-    /// Helper method to draw a single makeup texture layer with all its properties
-    /// Reduces code duplication for 2nd, 3rd, 4th, 5th textures
+    /// Helper method to draw a single makeup texture layer with all its properties.
     /// </summary>
     private void DrawMakeupTextureLayer(string layerName, string textureKeyword, string maskKeyword, string usageHint)
     {
-        bool useTexture = DrawToggle($"_{textureKeyword}", $"_Use{layerName}Texture", L($"{layerName} Textureを有効化", $"Enable {layerName} Texture"));
-
-        if (useTexture)
+        bool useTexture = DrawToggle($"_{textureKeyword}", $"_Use{layerName}Texture", L($"Enable {layerName} Texture", $"Enable {layerName} Texture"));
+        if (!useTexture)
         {
-            EditorGUILayout.Space(SECTION_SPACING);
-            EditorGUILayout.LabelField(L($"{layerName} Texture設定", $"{layerName} Texture Settings"), EditorStyles.boldLabel);
-
-            // Texture and HSV controls
-            DrawProperty($"_{layerName}Tex", $"{layerName} Texture");
-            DrawProperty($"_{layerName}TexHueShift", "Hue Shift");
-            DrawProperty($"_{layerName}TexSaturation", "Saturation");
-            DrawProperty($"_{layerName}TexValue", "Brightness");
-
-            DrawHelpToggle("MakeupTextureHSV",
-                L("💡 HSVカラー調整:\n" +
-                "• Hue=0, Sat=1, Value=1 = テクスチャそのまま\n" +
-                "• Hue Shift = 色相を変更（-0.5～0.5）\n" +
-                "• Saturation = 彩度調整（0～2、1=元の彩度）\n" +
-                "• Brightness = 明度調整（0～2、1=元の明度）",
-                "💡 HSV Color Adjustment:\n" +
-                "• Hue=0, Sat=1, Value=1 = Original texture\n" +
-                "• Hue Shift = Change hue (-0.5 to 0.5)\n" +
-                "• Saturation = Saturation adjustment (0-2, 1=original)\n" +
-                "• Brightness = Brightness adjustment (0-2, 1=original)"),
-                MessageType.None);
-
-            // Intensity and blend mode
-            DrawProperty($"_{layerName}TexIntensity", L("強度", "Intensity"));
-            DrawProperty($"_{layerName}TexBlendMode", L("ブレンドモード", "Blend Mode"));
-
-            DrawHelpToggle("MakeupTextureBlendMode",
-                L($"ブレンドモード:\n" +
-                "• Add: 加算（ハイライトに最適）\n" +
-                $"• Multiply: 乗算（{usageHint}に最適）\n" +
-                "• Overlay: オーバーレイ（自然なメイク）\n" +
-                "• Screen: スクリーン（柔らかいハイライト）\n\n" +
-                "💡 透過PNG対応：\n" +
-                "テクスチャのアルファチャンネルが適用強度として使用されます",
-                $"Blend Mode:\n" +
-                "• Add: Additive (ideal for highlights)\n" +
-                $"• Multiply: Multiply (ideal for {usageHint})\n" +
-                "• Overlay: Overlay (natural makeup)\n" +
-                "• Screen: Screen (soft highlights)\n\n" +
-                "💡 Transparent PNG supported:\n" +
-                "Texture alpha channel is used as application intensity"),
-                MessageType.Info);
-
-            // Optional mask
-            EditorGUILayout.Space();
-            DrawProperty($"_{layerName}TexMask", L($"{layerName} Texマスク", $"{layerName} Tex Mask"));
-            DrawHelpToggle("MakeupTextureMask",
-                L("白 = テクスチャ適用、黒 = 適用なし\n" +
-                "マスクはアルファチャンネルと乗算されます",
-                "White = Apply texture, Black = No application\n" +
-                "Mask is multiplied with the alpha channel"),
-                MessageType.Info);
-
-            // UV Animation
-            DrawUVAnimationSettings($"_{layerName}TexScrollSpeed", $"_{layerName}TexRotateSpeed", $"{layerName} Texture");
+            return;
         }
+
+        EditorGUILayout.Space(SECTION_SPACING);
+        EditorGUILayout.LabelField(L($"{layerName} Texture Settings", $"{layerName} Texture Settings"), EditorStyles.boldLabel);
+
+        DrawProperty($"_{layerName}Tex", $"{layerName} Texture");
+        DrawProperty($"_{layerName}TexHueShift", "Hue Shift");
+        DrawProperty($"_{layerName}TexSaturation", "Saturation");
+        DrawProperty($"_{layerName}TexValue", "Brightness");
+        DrawHelpToggle(
+            "MakeupTextureHSV",
+            L("Adjust hue, saturation, and brightness for this layer.",
+              "Adjust hue, saturation, and brightness for this layer."),
+            MessageType.None);
+
+        DrawProperty($"_{layerName}TexIntensity", L("Intensity", "Intensity"));
+        DrawProperty($"_{layerName}TexBlendMode", L("Blend Mode", "Blend Mode"));
+        DrawHelpToggle(
+            "MakeupTextureBlendMode",
+            L($"Choose how the layer blends. Suggested usage: {usageHint}.",
+              $"Choose how the layer blends. Suggested usage: {usageHint}."),
+            MessageType.Info);
+
+        EditorGUILayout.Space();
+        DrawProperty($"_{layerName}TexMask", L($"{layerName} Tex Mask", $"{layerName} Tex Mask"));
+        DrawHelpToggle(
+            "MakeupTextureMask",
+            L("White applies the texture. Black disables it. The mask is multiplied by the texture alpha.",
+              "White applies the texture. Black disables it. The mask is multiplied by the texture alpha."),
+            MessageType.Info);
+
+        DrawUVAnimationSettings($"_{layerName}TexScrollSpeed", $"_{layerName}TexRotateSpeed", $"{layerName} Texture");
     }
 
     private void DrawScreenToneSection()
     {
-        SetFoldout("ScreenTone", DrawBoxedSection(L("スクリーントーン（網点オーバーレイ）", "Screen Tone (Halftone Overlay)"), GetFoldout("ScreenTone"), SectionCategory.Basic, "_SCREEN_TONE"));
+        SetFoldout("ScreenTone", DrawBoxedSection(L("Screen Tone (Halftone Overlay)", "Screen Tone (Halftone Overlay)"), GetFoldout("ScreenTone"), SectionCategory.Basic, "_SCREEN_TONE"));
         if (GetFoldout("ScreenTone"))
         {
-            bool enableScreenTone = DrawToggle("_SCREEN_TONE", "_ScreenTone", L("スクリーントーンを有効化", "Enable Screen Tone"));
+            bool enableScreenTone = DrawToggle("_SCREEN_TONE", "_ScreenTone", L("Enable Screen Tone", "Enable Screen Tone"));
             if (enableScreenTone)
             {
                 EditorGUI.indentLevel++;
-                DrawColorProperty("_ScreenToneColor", L("トーンカラー", "Tone Color"));
-                DrawProperty("_ScreenToneMask", L("マスクテクスチャ", "Mask Texture"));
-                DrawProperty("_ScreenToneScale", L("パターンサイズ（ドットの大きさ）", "Pattern Size (Dot Size)"));
-                DrawProperty("_ScreenToneThreshold", L("ドット密度（0=なし〜1=全面）", "Dot Density (0=None to 1=Full)"));
-                DrawHelpToggle("ScreenTone",
-                    L("スクリーントーン（網点オーバーレイ）:\n" +
-                    "漫画やイラスト調の網点パターンをモデル表面に適用します。\n\n" +
-                    "・トーンカラー: 網点の色を指定\n" +
-                    "・マスクテクスチャ: 白=表示、黒=非表示\n" +
-                    "・パターンサイズ: 値が大きいほど網点が大きい（1-200）\n" +
-                    "・ドット密度: 値が大きいほど網点が多い（0-1）\n\n" +
-                    "影の境界ディザリングとは別の機能です。",
-                    "Screen Tone (Halftone Overlay):\n" +
-                    "Applies halftone dot patterns to the model surface for manga/illustration style.\n\n" +
-                    "- Tone Color: Specifies halftone dot color\n" +
-                    "- Mask Texture: White=Show, Black=Hide\n" +
-                    "- Pattern Size: Larger = bigger dots (1-200)\n" +
-                    "- Dot Density: Larger = more dots (0-1)\n\n" +
-                    "This is separate from shadow boundary dithering."),
+                DrawColorProperty("_ScreenToneColor", L("Tone Color", "Tone Color"));
+                DrawProperty("_ScreenToneMask", L("Mask Texture", "Mask Texture"));
+                DrawProperty("_ScreenToneScale", L("Pattern Size (Dot Size)", "Pattern Size (Dot Size)"));
+                DrawProperty("_ScreenToneThreshold", L("Dot Density (0=None to 1=Full)", "Dot Density (0=None to 1=Full)"));
+                DrawHelpToggle(
+                    "ScreenTone",
+                    L("Applies a halftone overlay to the material surface.",
+                      "Applies a halftone overlay to the material surface."),
                     MessageType.Info);
                 DrawBlendControls(materialEditor, targetMaterial, "_ScreenToneBlend", "_ScreenToneBlendMode", "_ScreenToneBlur");
                 EditorGUI.indentLevel--;
@@ -1167,11 +998,21 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawShadingSection()
     {
-        SetFoldout("Shading", DrawBoxedSection(L("トゥーンシェーディング", "Toon Shading"), GetFoldout("Shading"), SectionCategory.Shading));
+        SetFoldout("Shading", DrawBoxedSection(L("Toon Shading", "Toon Shading"), GetFoldout("Shading"), SectionCategory.Shading));
         if (GetFoldout("Shading"))
         {
+            DrawLilToonMigrationCardIfNeeded();
+
+            if (IsLilToonMigratedMaterial(targetMaterial))
+            {
+                EditorGUILayout.Space(8);
+            }
+
             // Delegate content to helper class for better code organization
-            // ヘルパークラスにコンテンツ描画を委譲（コード整理のため）
+            DrawLookMixerControls();
+
+            EditorGUILayout.Space(8);
+
             NataneToonShaderGUIHelpers.DrawShadingSectionContent(
                 properties,
                 DrawToggle,
@@ -1181,6 +1022,552 @@ public class NataneToonShaderGUI : ShaderGUI
             );
         }
         EndBoxedSection(GetFoldout("Shading"));
+    }
+
+    private void DrawLilToonMigrationCardIfNeeded()
+    {
+        if (!IsLilToonMigratedMaterial(targetMaterial))
+        {
+            return;
+        }
+
+        EditorGUILayout.HelpBox(
+            L("This material contains lilToon migration metadata. Review the Look Mixer and lilToon Match controls below before making final shading adjustments.",
+              "This material contains lilToon migration metadata. Review the Look Mixer and lilToon Match controls below before making final shading adjustments."),
+            MessageType.Info);
+    }
+
+    private void DrawLookMixerControls()
+    {
+        MaterialProperty lookModeProp = FindProperty("_LookMode", properties, false);
+        MaterialProperty toonWeightProp = FindProperty("_ToonWeight", properties, false);
+        MaterialProperty nprWeightProp = FindProperty("_NprWeight", properties, false);
+        MaterialProperty pbrWeightProp = FindProperty("_PbrWeight", properties, false);
+
+        if (lookModeProp == null || toonWeightProp == null || nprWeightProp == null || pbrWeightProp == null)
+        {
+            return;
+        }
+
+        ResolveLookMixerForDisplay(
+            lookModeProp,
+            toonWeightProp,
+            nprWeightProp,
+            pbrWeightProp,
+            out int currentLookMode,
+            out float currentToon,
+            out float currentNpr,
+            out float currentPbr,
+            out bool isLegacy);
+
+        bool lilToonMatchEnabled = IsLilToonLookMixerLocked();
+        LilToonMigrationMode migrationMode = GetLilToonMigrationMode(targetMaterial);
+        LilToonParityFlags parityFlags = GetLilToonParityFlags(targetMaterial);
+        int warningCount = CountLilToonParityFlags(parityFlags);
+
+        EditorGUILayout.LabelField(L("Look Mixer", "Look Mixer"), EditorStyles.boldLabel);
+        DrawHelpToggle(
+            "LookMixer",
+            L("Toon and PBR blend the base shading. NPR controls the post-style stack layered on top. Migrated lilToon materials can switch between Natane editing and compatibility mode here.",
+              "Toon and PBR blend the base shading. NPR controls the post-style stack layered on top. Migrated lilToon materials can switch between Natane editing and compatibility mode here."),
+            MessageType.None);
+
+        if (lilToonMatchEnabled)
+        {
+            EditorGUILayout.HelpBox(
+                L("Look Mixer is read-only while lilToon Match is ON. Switch back to Natane mode below to resume Natane-native look editing.",
+                  "Look Mixer is read-only while lilToon Match is ON. Switch back to Natane mode below to resume Natane-native look editing."),
+                MessageType.Info);
+        }
+
+        if (isLegacy)
+        {
+            EditorGUILayout.HelpBox(
+                L("This material is still using legacy ShadingMode behavior. Editing the sliders below converts it to explicit Look Mixer values.",
+                  "This material is still using legacy ShadingMode behavior. Editing the sliders below converts it to explicit Look Mixer values."),
+                MessageType.Info);
+        }
+
+        using (new EditorGUI.DisabledScope(lilToonMatchEnabled))
+        {
+            EditorGUI.BeginChangeCheck();
+            int nextLookMode = EditorGUILayout.Popup(L("Look Mode", "Look Mode"), currentLookMode, GetLookModeLabels());
+            float nextToon = EditorGUILayout.Slider(L("Toon Weight", "Toon Weight"), currentToon, 0f, 1f);
+            float nextNpr = EditorGUILayout.Slider(L("NPR Weight", "NPR Weight"), currentNpr, 0f, 1f);
+            float nextPbr = EditorGUILayout.Slider(L("PBR Weight", "PBR Weight"), currentPbr, 0f, 1f);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                LookMode resolvedLookMode = nextLookMode <= (int)LookMode.Legacy
+                    ? SuggestLookMode(nextToon, nextNpr, nextPbr)
+                    : (LookMode)nextLookMode;
+
+                ApplyLookMixerToSelectedMaterials(
+                    "Adjust Look Mixer",
+                    resolvedLookMode,
+                    nextToon,
+                    nextNpr,
+                    nextPbr);
+            }
+        }
+
+        EditorGUILayout.Space(6);
+        EditorGUILayout.LabelField(L("LilToon Migration", "LilToon Migration"), EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            lilToonMatchEnabled
+                ? L("LilToon Match is active. The inspector prioritizes compatibility behavior to stay close to the migrated source look.",
+                    "LilToon Match is active. The inspector prioritizes compatibility behavior to stay close to the migrated source look.")
+                : L("Natane mode is active. Look Mixer and Natane-native art controls are available for normal editing.",
+                    "Natane mode is active. Look Mixer and Natane-native art controls are available for normal editing."),
+            lilToonMatchEnabled ? MessageType.Info : MessageType.None);
+
+        EditorGUI.BeginChangeCheck();
+        int selectedMode = GUILayout.SelectionGrid(
+            lilToonMatchEnabled ? 1 : 0,
+            new[]
+            {
+                L("Natane", "Natane"),
+                L("lilToon Match", "lilToon Match")
+            },
+            2,
+            EditorStyles.miniButton);
+
+        if (EditorGUI.EndChangeCheck())
+        {
+            lilToonMatchEnabled = selectedMode == 1;
+            ApplyLilToonModeToSelectedMaterials(lilToonMatchEnabled);
+        }
+
+        EditorGUILayout.Space(4);
+        EditorGUILayout.LabelField(L("Source Shader", "Source Shader"), GetLilToonSourceShader(targetMaterial));
+        EditorGUILayout.LabelField(L("Migration Mode", "Migration Mode"), GetLilToonMigrationModeLabel(migrationMode));
+        EditorGUILayout.LabelField(L("Parity Warnings", "Parity Warnings"), warningCount.ToString());
+
+        string migrationVersion = GetLilToonMigrationVersion(targetMaterial);
+        if (!string.IsNullOrEmpty(migrationVersion))
+        {
+            EditorGUILayout.LabelField(L("Migration Version", "Migration Version"), migrationVersion);
+        }
+
+        if (lilToonMatchEnabled &&
+            targetMaterial != null &&
+            targetMaterial.HasProperty("_ShadingMode") &&
+            targetMaterial.GetFloat("_ShadingMode") < 1.5f)
+        {
+            EditorGUILayout.HelpBox(
+                L("LilToon Match works best on the StandardToon base. You can reapply the StandardToon base with the button below.",
+                  "LilToon Match works best on the StandardToon base. You can reapply the StandardToon base with the button below."),
+                MessageType.Warning);
+        }
+
+        if (warningCount > 0)
+        {
+            showLilToonParityDetails = EditorGUILayout.Foldout(
+                showLilToonParityDetails,
+                L("Parity Details", "Parity Details"),
+                true);
+
+            if (showLilToonParityDetails)
+            {
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.RimShadeUnsupported, "Rim Shade: manual review needed.");
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.Emission2ndUnsupported, "Emission 2nd: no direct Natane equivalent yet.");
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.ShadowBorderRangeUnsupported, "Shadow Border Range: final gradation can still differ.");
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.ShadowMaskTypeUnsupported, "Shadow Mask Type: flat-face mask behavior still needs review.");
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.BackfaceForceShadowUnsupported, "Backface Force Shadow: backface shading parity is not finished.");
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.ShadowPostAOUnsupported, "Shadow Post AO: post-AO branch is still ignored.");
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.MatCapNeedsReview, "MatCap: blend semantics still need manual confirmation.");
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.OutlineNeedsReview, "Outline: width and mask behavior should be reviewed.");
+            }
+        }
+
+        EditorGUILayout.Space(4);
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button(L("Reapply lilToon Match", "Reapply lilToon Match"), GUILayout.Height(22)))
+        {
+            ApplyLilToonModeToSelectedMaterials(true);
+        }
+
+        if (GUILayout.Button(L("Open Migration Tool", "Open Migration Tool"), GUILayout.Height(22)))
+        {
+            OpenLilToonMigrationTool();
+        }
+        EditorGUILayout.EndHorizontal();
+    }
+
+    private void DrawLilToonParityFlagLine(LilToonParityFlags currentFlags, LilToonParityFlags flag, string message)
+    {
+        if ((currentFlags & flag) == 0)
+        {
+            return;
+        }
+
+        EditorGUILayout.LabelField($"- {message}", EditorStyles.miniLabel);
+    }
+
+    private void OpenLilToonMigrationTool()
+    {
+        const string migrationToolTypeName = "NataneToon.Editor.LilToonMigrationTool, NataneToon.Editor.Migration";
+        var migrationToolType = Type.GetType(migrationToolTypeName);
+        if (migrationToolType != null)
+        {
+            var showWindowMethod = migrationToolType.GetMethod(
+                "ShowWindow",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+
+            if (showWindowMethod != null)
+            {
+                showWindowMethod.Invoke(null, null);
+                return;
+            }
+
+            EditorWindow.GetWindow(migrationToolType);
+            return;
+        }
+
+        if (NataneToolMenuPaths.TryOpenByToolKey("LilToonMigration"))
+        {
+            return;
+        }
+
+        EditorUtility.DisplayDialog(
+            L("LilToon Migration", "LilToon Migration"),
+            L("Could not open the lilToon migration tool. Please check whether the migration assembly compiled successfully.", "Could not open the lilToon migration tool. Please check whether the migration assembly compiled successfully."),
+            "OK");
+    }
+
+    private void DrawLookMixerPresetButtons()
+    {
+        bool lookMixerLockedByLilToon = IsLilToonLookMixerLocked();
+
+        using (new EditorGUI.DisabledScope(lookMixerLockedByLilToon))
+        {
+            EditorGUILayout.Space(4);
+            EditorGUILayout.LabelField(L("Starter Presets", "Starter Presets"), EditorStyles.miniBoldLabel);
+
+            bool narrowLayout = EditorGUIUtility.currentViewWidth < 430f;
+
+            if (narrowLayout)
+            {
+                DrawLookMixerPresetButton(L("Pure Toon", "Pure Toon"), "Apply Pure Toon Look", LookMode.Toon, 1f, 0f, 0f, 0f);
+                DrawLookMixerPresetButton(L("Soft NPR", "Soft NPR"), "Apply Soft NPR Look", LookMode.NPR, 0.85f, 1f, 0.1f, 1f);
+                DrawLookMixerPresetButton(L("Toon-PBR Hybrid", "Toon-PBR Hybrid"), "Apply Toon-PBR Hybrid Look", LookMode.Hybrid, 0.8f, 0.2f, 0.6f, 0f);
+                DrawLookMixerPresetButton(L("Near PBR", "Near PBR"), "Apply Near PBR Look", LookMode.PBR, 0.15f, 0.1f, 1f, 3f);
+                return;
+            }
+
+            EditorGUILayout.BeginHorizontal();
+            DrawLookMixerPresetButton(L("Pure Toon", "Pure Toon"), "Apply Pure Toon Look", LookMode.Toon, 1f, 0f, 0f, 0f);
+            DrawLookMixerPresetButton(L("Soft NPR", "Soft NPR"), "Apply Soft NPR Look", LookMode.NPR, 0.85f, 1f, 0.1f, 1f);
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            DrawLookMixerPresetButton(L("Toon-PBR Hybrid", "Toon-PBR Hybrid"), "Apply Toon-PBR Hybrid Look", LookMode.Hybrid, 0.8f, 0.2f, 0.6f, 0f);
+            DrawLookMixerPresetButton(L("Near PBR", "Near PBR"), "Apply Near PBR Look", LookMode.PBR, 0.15f, 0.1f, 1f, 3f);
+            EditorGUILayout.EndHorizontal();
+        }
+    }
+
+    private void DrawLookMixerPresetButton(
+        string label,
+        string undoLabel,
+        LookMode lookMode,
+        float toonWeight,
+        float nprWeight,
+        float pbrWeight,
+        float shadingModeOverride)
+    {
+        if (GUILayout.Button(label, GUILayout.Height(24)))
+        {
+            ApplyLookMixerToSelectedMaterials(
+                undoLabel,
+                lookMode,
+                toonWeight,
+                nprWeight,
+                pbrWeight,
+                shadingModeOverride);
+        }
+    }
+
+    private void ResolveLookMixerForDisplay(
+        MaterialProperty lookModeProp,
+        MaterialProperty toonWeightProp,
+        MaterialProperty nprWeightProp,
+        MaterialProperty pbrWeightProp,
+        out int lookMode,
+        out float toonWeight,
+        out float nprWeight,
+        out float pbrWeight,
+        out bool isLegacy)
+    {
+        lookMode = Mathf.RoundToInt(lookModeProp.floatValue);
+        toonWeight = Mathf.Clamp01(toonWeightProp.floatValue);
+        nprWeight = Mathf.Clamp01(nprWeightProp.floatValue);
+        pbrWeight = Mathf.Clamp01(pbrWeightProp.floatValue);
+        isLegacy = lookMode <= (int)LookMode.Legacy;
+
+        if (!isLegacy || targetMaterial == null)
+        {
+            return;
+        }
+
+        ResolveLegacyLookMixer(targetMaterial, out toonWeight, out nprWeight, out pbrWeight);
+    }
+
+    private void ResolveLegacyLookMixer(Material material, out float toonWeight, out float nprWeight, out float pbrWeight)
+    {
+        bool legacyPbr =
+            (material.HasProperty("_ShadingMode") && material.GetFloat("_ShadingMode") >= 2.5f) ||
+            material.IsKeywordEnabled("_PBR_LIKE") ||
+            material.IsKeywordEnabled("_PBR");
+
+        toonWeight = legacyPbr ? 0f : 1f;
+        pbrWeight = legacyPbr ? 1f : 0f;
+        nprWeight = HasLookMixerNprFeatures(material) ? 1f : 0f;
+    }
+
+    private bool HasLookMixerNprFeatures(Material material)
+    {
+        foreach (string keyword in LookMixerNprKeywords)
+        {
+            if (material.IsKeywordEnabled(keyword))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private LookMode SuggestLookMode(float toonWeight, float nprWeight, float pbrWeight)
+    {
+        if (pbrWeight >= 0.75f && toonWeight <= 0.25f && nprWeight <= 0.25f)
+        {
+            return LookMode.PBR;
+        }
+
+        if (nprWeight >= 0.75f && pbrWeight <= 0.25f)
+        {
+            return LookMode.NPR;
+        }
+
+        if (toonWeight >= 0.75f && nprWeight <= 0.25f && pbrWeight <= 0.25f)
+        {
+            return LookMode.Toon;
+        }
+
+        return LookMode.Hybrid;
+    }
+
+    private bool IsLilToonLookMixerLocked()
+    {
+        return IsLilToonMigratedMaterial(targetMaterial) && GetLilToonExactCompatibility(targetMaterial);
+    }
+
+    private bool IsLilToonMigratedMaterial(Material material)
+    {
+        if (material == null)
+        {
+            return false;
+        }
+
+        if (material.HasProperty("_LilToonMigrated") && material.GetFloat("_LilToonMigrated") > 0.5f)
+        {
+            return true;
+        }
+
+        if (material.HasProperty("_LilToonMigrationMode") && material.GetFloat("_LilToonMigrationMode") > 0.5f)
+        {
+            return true;
+        }
+
+        if (material.HasProperty("_LilToonParityFlags") && material.GetFloat("_LilToonParityFlags") > 0.5f)
+        {
+            return true;
+        }
+
+        if (!string.IsNullOrEmpty(material.GetTag("NataneLilToonSourceShader", false, string.Empty)))
+        {
+            return true;
+        }
+
+        return material.HasProperty("_LilToonExactCompatibility") && material.GetFloat("_LilToonExactCompatibility") > 0.5f;
+    }
+
+    private bool GetLilToonExactCompatibility(Material material)
+    {
+        return material != null && material.HasProperty("_LilToonExactCompatibility") && material.GetFloat("_LilToonExactCompatibility") > 0.5f;
+    }
+
+    private LilToonMigrationMode GetLilToonMigrationMode(Material material)
+    {
+        if (material == null || !material.HasProperty("_LilToonMigrationMode"))
+        {
+            return LilToonMigrationMode.Unknown;
+        }
+
+        return (LilToonMigrationMode)Mathf.RoundToInt(material.GetFloat("_LilToonMigrationMode"));
+    }
+
+    private LilToonParityFlags GetLilToonParityFlags(Material material)
+    {
+        if (material == null || !material.HasProperty("_LilToonParityFlags"))
+        {
+            return LilToonParityFlags.None;
+        }
+
+        return (LilToonParityFlags)Mathf.RoundToInt(material.GetFloat("_LilToonParityFlags"));
+    }
+
+    private int CountLilToonParityFlags(LilToonParityFlags flags)
+    {
+        int value = (int)flags;
+        int count = 0;
+        while (value != 0)
+        {
+            count += value & 1;
+            value >>= 1;
+        }
+
+        return count;
+    }
+
+    private string GetLilToonSourceShader(Material material)
+    {
+        if (material == null)
+        {
+            return "lilToon";
+        }
+
+        string sourceShader = material.GetTag("NataneLilToonSourceShader", false, string.Empty);
+        return string.IsNullOrEmpty(sourceShader) ? "lilToon" : sourceShader;
+    }
+
+    private string GetLilToonMigrationVersion(Material material)
+    {
+        if (material == null)
+        {
+            return string.Empty;
+        }
+
+        return material.GetTag("NataneLilToonMigrationVersion", false, string.Empty);
+    }
+
+    private string GetLilToonMigrationModeLabel(LilToonMigrationMode mode)
+    {
+        switch (mode)
+        {
+            case LilToonMigrationMode.ExactCompatibility:
+                return L("Exact Compatibility", "Exact Compatibility");
+            case LilToonMigrationMode.VisualMatch:
+                return L("Visual Match", "Visual Match");
+            case LilToonMigrationMode.MinimalSafe:
+                return L("Minimal Safe", "Minimal Safe");
+            default:
+                return L("Unknown", "Unknown");
+        }
+    }
+
+    private void ApplyLilToonModeToSelectedMaterials(bool enableLilToonMatch)
+    {
+        if (materialEditor == null || materialEditor.targets == null || materialEditor.targets.Length == 0)
+        {
+            return;
+        }
+
+        Undo.RecordObjects(materialEditor.targets, enableLilToonMatch ? "Enable LilToon Match" : "Switch to Natane Mode");
+
+        foreach (UnityEngine.Object target in materialEditor.targets)
+        {
+            Material material = target as Material;
+            if (material == null || !material.HasProperty("_LilToonExactCompatibility"))
+            {
+                continue;
+            }
+
+            if (material.HasProperty("_LilToonMigrated") && IsLilToonMigratedMaterial(material))
+            {
+                material.SetFloat("_LilToonMigrated", 1f);
+            }
+
+            material.SetFloat("_LilToonExactCompatibility", enableLilToonMatch ? 1f : 0f);
+
+            if (enableLilToonMatch && material.HasProperty("_ShadingMode"))
+            {
+                material.SetFloat("_ShadingMode", 2f);
+            }
+
+            EditorUtility.SetDirty(material);
+        }
+
+        if (targetMaterial != null)
+        {
+            SynchronizeKeywordsAndRefreshInspectorCaches();
+        }
+    }
+
+    private string[] GetLookModeLabels()
+    {
+        return new[]
+        {
+            L("Legacy (Auto)", "Legacy (Auto)"),
+            L("Toon", "Toon"),
+            L("NPR", "NPR"),
+            L("PBR", "PBR"),
+            L("Hybrid", "Hybrid")
+        };
+    }
+
+    private void ApplyLookMixerToSelectedMaterials(
+        string undoLabel,
+        LookMode lookMode,
+        float toonWeight,
+        float nprWeight,
+        float pbrWeight,
+        float? shadingModeOverride = null)
+    {
+        if (materialEditor == null || materialEditor.targets == null || materialEditor.targets.Length == 0)
+        {
+            return;
+        }
+
+        Undo.RecordObjects(materialEditor.targets, undoLabel);
+
+        foreach (UnityEngine.Object target in materialEditor.targets)
+        {
+            Material material = target as Material;
+            if (material == null)
+            {
+                continue;
+            }
+
+            ApplyLookMixerValuesToMaterial(material, lookMode, toonWeight, nprWeight, pbrWeight, shadingModeOverride);
+            EditorUtility.SetDirty(material);
+        }
+
+        if (targetMaterial != null)
+        {
+            SynchronizeKeywordsAndRefreshInspectorCaches();
+        }
+    }
+
+    private void ApplyLookMixerValuesToMaterial(
+        Material material,
+        LookMode lookMode,
+        float toonWeight,
+        float nprWeight,
+        float pbrWeight,
+        float? shadingModeOverride = null)
+    {
+        if (material == null)
+        {
+            return;
+        }
+
+        if (material.HasProperty("_LookMode")) material.SetFloat("_LookMode", (float)lookMode);
+        if (material.HasProperty("_ToonWeight")) material.SetFloat("_ToonWeight", Mathf.Clamp01(toonWeight));
+        if (material.HasProperty("_NprWeight")) material.SetFloat("_NprWeight", Mathf.Clamp01(nprWeight));
+        if (material.HasProperty("_PbrWeight")) material.SetFloat("_PbrWeight", Mathf.Clamp01(pbrWeight));
+        if (shadingModeOverride.HasValue && material.HasProperty("_ShadingMode")) material.SetFloat("_ShadingMode", shadingModeOverride.Value);
     }
 
     private void DrawAdvancedLightingSection()
@@ -5801,12 +6188,6 @@ public class NataneToonShaderGUI : ShaderGUI
                 if (wirelightDrawer == null) wirelightDrawer = new NataneToon.Editor.NataneToonWirelightDrawer();
                 wirelightDrawer.Initialize(materialEditor, properties, targetMaterial);
                 wirelightDrawer.Draw();
-                break;
-
-            case NataneToon.Editor.ShaderType.ScreenFX:
-                if (screenFXDrawer == null) screenFXDrawer = new NataneToon.Editor.NataneToonScreenFXDrawer();
-                screenFXDrawer.Initialize(materialEditor, properties, targetMaterial);
-                screenFXDrawer.Draw();
                 break;
         }
     }

@@ -9,7 +9,6 @@ namespace NataneToon.Editor
 
     /// <summary>
     /// Asset Reference Checker - Detects missing/broken references in scenes, prefabs, and materials
-    /// 郢ｧ・｢郢ｧ・ｻ郢昴・繝ｨ陷ｿ繧峨・郢昶・縺臥ｹ昴・縺咲ｹ晢ｽｼ - 郢ｧ・ｷ郢晢ｽｼ郢晢ｽｳ邵ｲ竏壹・郢晢ｽｬ郢昜ｸ翫Ω邵ｲ竏壹・郢昴・ﾎ懃ｹｧ・｢郢晢ｽｫ邵ｺ・ｮ隹ｺ・ｰ隰ｳ繝ｻ驕撰ｽｴ隰ｳ讎顔崟霎｣・ｧ郢ｧ蜻茨ｽ､諛ｷ繝ｻ
     /// </summary>
     public class AssetReferenceChecker : EditorWindow
     {

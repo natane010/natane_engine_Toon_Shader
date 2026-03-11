@@ -727,10 +727,8 @@ namespace NataneToon.Editor
                 preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
 
                 var p = preset.parameters;
-                // mainColor郢ｧ蝣､蜊邵ｺ・ｫ邵ｺ蜉ｱ窶ｻ郢昴・縺醍ｹｧ・ｹ郢昶・ﾎ慕ｸｺ・ｮ豼ｶ・ｲ郢ｧ雋橸ｽｮ謔溘・邵ｺ・ｫ陷ｿ閧ｴ荳・
                 p.mainColor = new Color(1.0f, 1.0f, 1.0f, 1f);
                 p.alpha = 1f;
-                // 雋ゑｽｩ邵ｺ荵昶茜邵ｺ・ｮ邵ｺ繧・ｽ狗ｹ晄鱒繝ｻ郢昶悪・ｳ・ｻ邵ｺ・ｮ陟厄ｽｱ豼ｶ・ｲ
                 p.shadowColor = new Color(0.95f, 0.75f, 0.68f, 1f);
                 p.toonSteps = 2;
                 p.toonSharpness = 0.08f;
@@ -740,14 +738,12 @@ namespace NataneToon.Editor
                 p.lightColorInfluence = 1.0f;
                 p.backlight = 0.2f;
                 p.useSSS = true;
-                // 郢ｧ蛹ｻ・願ｲゑｽｩ邵ｺ荵昶茜邵ｺ・ｮ邵ｺ繧・ｽ鬼SS豼ｶ・ｲ繝ｻ蛹ｻ繝ｴ郢晢ｽｳ郢ｧ・ｯ邵ｺ蠕個ｰ邵ｺ・｣邵ｺ貅倥′郢晢ｽｬ郢晢ｽｳ郢ｧ・ｸ繝ｻ繝ｻ
                 p.sssColor = new Color(1f, 0.65f, 0.55f, 1f);
                 p.sssIntensity = 0.45f;
                 p.sssDistortion = 0.3f;
                 p.sssPower = 2.5f;
                 p.sssScale = 0.8f;
                 p.useRimLight = true;
-                // 雋ゑｽｩ邵ｺ荵昶茜邵ｺ・ｮ邵ｺ繧・ｽ狗ｹ晢ｽｪ郢晢｣ｰ郢晢ｽｩ郢ｧ・､郢晞メ迚｡
                 p.rimColor = new Color(1f, 0.9f, 0.85f, 1f);
                 p.rimIntensity = 0.6f;
                 p.rimPower = 4f;
@@ -798,10 +794,8 @@ namespace NataneToon.Editor
                 preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
 
                 var p = preset.parameters;
-                // mainColor郢ｧ蝣､蜊邵ｺ・ｫ邵ｺ蜉ｱ窶ｻ郢昴・縺醍ｹｧ・ｹ郢昶・ﾎ慕ｸｺ・ｮ豼ｶ・ｲ郢ｧ雋橸ｽｮ謔溘・邵ｺ・ｫ陷ｿ閧ｴ荳・
                 p.mainColor = new Color(1.0f, 1.0f, 1.0f, 1f);
                 p.alpha = 1f;
-                // 雋ゑｽｩ邵ｺ荵昶茜邵ｺ・ｮ邵ｺ繧・ｽ狗ｹ晄じﾎ帷ｹｧ・ｦ郢晢ｽｳ驍会ｽｻ邵ｺ・ｮ陟厄ｽｱ豼ｶ・ｲ
                 p.shadowColor = new Color(0.45f, 0.35f, 0.28f, 1f);
                 p.toonSteps = 2;
                 p.toonSharpness = 0.05f;
@@ -864,10 +858,8 @@ namespace NataneToon.Editor
                 preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
 
                 var p = preset.parameters;
-                // mainColor郢ｧ蝣､蜊邵ｺ・ｫ邵ｺ蜉ｱ窶ｻ郢昴・縺醍ｹｧ・ｹ郢昶・ﾎ慕ｸｺ・ｮ豼ｶ・ｲ郢ｧ雋橸ｽｮ謔溘・邵ｺ・ｫ陷ｿ閧ｴ荳・
                 p.mainColor = new Color(1.0f, 1.0f, 1.0f, 1f);
                 p.alpha = 1f;
-                // 郢ｧ繝ｻ・・ｲゑｽｩ邵ｺ荵昶茜邵ｺ・ｮ邵ｺ繧・ｽ狗ｹｧ・ｰ郢晢ｽｬ郢晢ｽｼ驍会ｽｻ邵ｺ・ｮ陟厄ｽｱ豼ｶ・ｲ
                 p.shadowColor = new Color(0.75f, 0.73f, 0.72f, 1f);
                 p.toonSteps = 2;
                 p.toonSharpness = 0.1f;
@@ -923,10 +915,8 @@ namespace NataneToon.Editor
                 preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
 
                 var p = preset.parameters;
-                // mainColor郢ｧ蝣､蜊邵ｺ・ｫ邵ｺ蜉ｱ窶ｻ郢昴・縺醍ｹｧ・ｹ郢昶・ﾎ慕ｸｺ・ｮ豼ｶ・ｲ郢ｧ雋橸ｽｮ謔溘・邵ｺ・ｫ陷ｿ閧ｴ荳・
                 p.mainColor = new Color(1.0f, 1.0f, 1.0f, 1f);
                 p.alpha = 1f;
-                // 郢ｧ繝ｻ・・ｲゑｽｩ邵ｺ荵昶茜邵ｺ・ｮ邵ｺ繧・ｽ矩ｫｱ蝣､・ｳ・ｻ邵ｺ・ｮ陟厄ｽｱ豼ｶ・ｲ
                 p.shadowColor = new Color(0.65f, 0.7f, 0.85f, 1f);
                 p.toonSteps = 3;
                 p.toonSharpness = 0.15f;
@@ -989,10 +979,8 @@ namespace NataneToon.Editor
                 preset.createdDate = System.DateTime.Now.ToString("yyyy-MM-dd");
 
                 var p = preset.parameters;
-                // mainColor邵ｺ・ｯ騾具ｽｽ邵ｺ・ｮ邵ｺ・ｾ邵ｺ・ｾ邵ｺ・ｧ郢昴・縺醍ｹｧ・ｹ郢昶・ﾎ慕ｸｺ・ｮ豼ｶ・ｲ郢ｧ雋橸ｽｮ謔溘・邵ｺ・ｫ陷ｿ閧ｴ荳・
                 p.mainColor = Color.white;
                 p.alpha = 1f;
-                // 郢ｧ繝ｻ・・ｲゑｽｩ邵ｺ荵昶茜邵ｺ・ｮ邵ｺ繧・ｽ狗ｹｧ・ｰ郢晢ｽｬ郢晢ｽｼ驍会ｽｻ邵ｺ・ｮ陟厄ｽｱ豼ｶ・ｲ
                 p.shadowColor = new Color(0.75f, 0.72f, 0.7f, 1f);
                 p.toonSteps = 2;
                 p.toonSharpness = 0.1f;

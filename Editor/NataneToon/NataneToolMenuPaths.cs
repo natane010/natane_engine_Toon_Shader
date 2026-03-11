@@ -14,13 +14,13 @@ namespace NataneToon.Editor
         public const string HelpWindow = "Tools/Natane/ヘルプ Help _h";
 
         public const string MaterialValidator = "Tools/Natane/マテリアル Material/マテリアル検証 Material Validator _m";
-        public const string MaterialEditor = "Tools/Natane/マテリアル Material/マテリアルエディタ Material Editor";
+        public const string MaterialEditor = "Tools/Natane/Material/統合マテリアルエディタ Unified Material Editor";
         public const string MaterialPreview = "Tools/Natane/マテリアル Material/マテリアルプレビュー Material Preview";
         public const string MaterialComparison = "Tools/Natane/マテリアル Material/マテリアル比較 Material Comparison Tool";
         public const string MakeupLayerManager = "Tools/Natane/マテリアル Material/メイクアップレイヤー管理 Makeup Layer Manager";
         public const string HierarchyBatchEditor = "Tools/Natane/マテリアル Material/ヒエラルキー一括編集 Hierarchy Batch Editor";
 
-        public const string MaterialPresetBrowser = "Tools/Natane/プリセット Presets/Material Preset Browser _p";
+        public const string MaterialPresetBrowser = "Tools/Natane/Presets/マテリアルプリセットブラウザ Material Preset Browser _p";
         public const string ColorPaletteManager = "Tools/Natane/プリセット Presets/カラーパレット管理 Color Palette Manager";
         public const string GenerateDefaultPresets = "Tools/Natane/プリセット Presets/デフォルトプリセット生成 Generate Default Presets";
         public const string RegenerateAllPresets = "Tools/Natane/プリセット Presets/全プリセット再生成 Regenerate All Presets";
@@ -35,15 +35,15 @@ namespace NataneToon.Editor
         public const string TextureOptimizer = "Tools/Natane/最適化 Optimization/テクスチャ最適化 Texture Optimizer";
         public const string OutlineOptimizer = "Tools/Natane/最適化 Optimization/アウトライン最適化 Outline Optimizer";
         public const string RefractionQualityBalancer = "Tools/Natane/最適化 Optimization/屈折品質バランサー Refraction Quality Balancer";
-        public const string AssetReferenceChecker = "Tools/Natane/最適化 Optimization/アセット参照チェック Asset Reference Checker";
+        public const string AssetReferenceChecker = "Tools/Natane/Optimization/アセット参照チェッカー Asset Reference Checker";
 
-        public const string LilToonMigration = "Tools/Natane/移行 Migration/lilToon移行ツール lilToon Migration Tool";
-        public const string BatchMaterialConverter = "Tools/Natane/移行 Migration/一括マテリアル変換 Batch Material Converter";
+        public const string LilToonMigration = "Tools/Natane/Migration/lilToon Migration Tool";
+        public const string BatchMaterialConverter = "Tools/Natane/Migration/一括マテリアル変換 Batch Material Converter";
         public const string PrefabVariantConverter = "Tools/Natane/移行 Migration/プレハブバリアント変換 Prefab Variant Converter";
 
-        public const string ShaderVariantCollector = "Tools/Natane/シェーダー Shader/シェーダーバリアント収集 Shader Variant Collector";
-        public const string ShaderPrewarming = "Tools/Natane/シェーダー Shader/シェーダープリウォーミング Shader Prewarming/設定 Settings";
-        public const string ShaderVariantStripper = "Tools/Natane/シェーダー Shader/バリアントストリッピング設定 Variant Stripping Settings";
+        public const string ShaderVariantCollector = "Tools/Natane/Shader/シェーダーバリアント収集 Shader Variant Collector";
+        public const string ShaderPrewarming = "Tools/Natane/Shader/シェーダープリウォーム Shader Prewarming/設定 Settings";
+        public const string ShaderVariantStripper = "Tools/Natane/Shader/バリアントストリッピング設定 Variant Stripping Settings";
         public const string VRCLightVolumesHelper = "Tools/Natane/VRChat/VRCライトボリュームヘルパー VRC Light Volumes Helper";
 
         public const string SmoothNormalBaker = "Tools/Natane/メッシュ Mesh/スムース法線ベイク Smooth Normal Baker";
@@ -79,7 +79,7 @@ namespace NataneToon.Editor
             { "MatCapLayerComposer", MatCapLayerComposer },
             { "DissolvePatternGenerator", DissolvePatternGenerator },
             { "RimLightDirectionVisualizer", RimLightDirectionVisualizer },
-            { "ScreenFXSetup", ScreenFXSetup },
+            // { "ScreenFXSetup", ScreenFXSetup },
 
             // --- Optimization ---
             { "PerformanceBudget", PerformanceBudgetTool },
@@ -113,7 +113,7 @@ namespace NataneToon.Editor
             { "Tools/Natane/Help", HelpWindow },
             { "Tools/Natane/ヘルプ Help", HelpWindow },
             { "Tools/Natane/ツールヘルプ Tool Help", HelpToolTab },
-            { "Tools/Natane/ヘルプ Interactive Help", HelpWindow },
+            { "Tools/Natane/統合ヘルプ Interactive Help", HelpWindow },
             { "Tools/Natane/Material Validator", MaterialValidator },
             { "Tools/Natane/Batch Material Processor", MaterialEditor },
             { "Tools/Natane/Shadow Adjustment Wizard", ShadowAdjustmentWizard },
@@ -190,7 +190,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// Returns all registered menu paths for external validation.
-        /// バリデータが外部から参照可能な全登録メニューパスのリストを返す。
+        /// Returns all registered menu paths for editor-side validation and health checks.
         /// </summary>
         public static List<string> GetAllMenuPaths()
         {
@@ -200,7 +200,7 @@ namespace NataneToon.Editor
                 MaterialValidator, MaterialEditor, MaterialPreview, MaterialComparison, MakeupLayerManager, HierarchyBatchEditor,
                 MaterialPresetBrowser, ColorPaletteManager, GenerateDefaultPresets, RegenerateAllPresets,
                 ShadowAdjustmentWizard, MatCapLayerComposer, DissolvePatternGenerator,
-                RimLightDirectionVisualizer, ScreenFXSetup,
+                RimLightDirectionVisualizer,
                 PerformanceBudgetTool, TextureOptimizer, OutlineOptimizer, RefractionQualityBalancer, AssetReferenceChecker,
                 LilToonMigration, BatchMaterialConverter, PrefabVariantConverter,
                 ShaderVariantCollector, ShaderPrewarming, ShaderVariantStripper, VRCLightVolumesHelper,

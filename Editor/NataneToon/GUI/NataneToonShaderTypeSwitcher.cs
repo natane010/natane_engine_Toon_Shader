@@ -5,21 +5,18 @@ namespace NataneToon.Editor
 {
     using static NataneToonLocalization;
     /// <summary>
-    /// シェーダータイプの定義と切り替えユーティリティ
-    /// Shader type definitions and switching utility
+    /// Shader type definitions and switching utility.
     /// </summary>
     public enum ShaderType
     {
         Toon = 0,
         Eye = 1,
         Wirelight = 2,
-        ScreenFX = 3,
-        StandardToon = 4
+        StandardToon = 3
     }
 
     public static class NataneToonShaderTypeSwitcher
     {
-        // シェーダー名の定義
         private static readonly string[] ToonShaderNames = new string[]
         {
             "Natane/Toon Shader",
@@ -37,20 +34,18 @@ namespace NataneToon.Editor
 
         private const string EyeShaderName = "Natane/Eye";
         private const string WirelightShaderName = "Natane/Toon Shader Wirelight";
-        private const string ScreenFXShaderName = "Natane/Screen FX Overlay";
 
         // Display names (bilingual)
         private static string[] ShaderTypeLabels => new string[]
         {
-            L("Toon (トゥーン)", "Toon"),
-            L("Eye (目)", "Eye"),
-            L("Wirelight (ワイヤーライト)", "Wirelight"),
-            L("Screen FX (スクリーンエフェクト)", "Screen FX"),
-            L("StandardToon (lilToon互換)", "StandardToon (lilToon)")
+            L("Toon", "Toon"),
+            L("Eye", "Eye"),
+            L("Wirelight", "Wirelight"),
+            L("StandardToon (lilToon)", "StandardToon (lilToon)")
         };
 
         /// <summary>
-        /// マテリアルのシェーダー名からShaderTypeを検出
+        /// Detect the shader type used by a material.
         /// </summary>
         public static ShaderType DetectShaderType(Material material)
         {
@@ -64,9 +59,13 @@ namespace NataneToon.Editor
             {
                 if (shaderName == ToonShaderNames[i])
                 {
-                    // StandardToon uses same shader but with _ShadingMode >= 2
-                    if (material.HasProperty("_ShadingMode") && material.GetFloat("_ShadingMode") >= 1.5f)
-                        return ShaderType.StandardToon;
+                    // StandardToon uses the same shader but only the 2.x shading mode range.
+                    if (material.HasProperty("_ShadingMode"))
+                    {
+                        float shadingModeValue = material.GetFloat("_ShadingMode");
+                        if (shadingModeValue >= 1.5f && shadingModeValue < 2.5f)
+                            return ShaderType.StandardToon;
+                    }
                     return ShaderType.Toon;
                 }
             }
@@ -77,15 +76,13 @@ namespace NataneToon.Editor
             if (shaderName == WirelightShaderName)
                 return ShaderType.Wirelight;
 
-            if (shaderName == ScreenFXShaderName)
-                return ShaderType.ScreenFX;
 
-            // フォールバック: 不明なシェーダーの場合はToon扱い
+            // Fallback: treat unknown shaders as Toon.
             return ShaderType.Toon;
         }
 
         /// <summary>
-        /// ShaderTypeに応じたデフォルトシェーダー名を返す
+        /// Get the default shader name for the given shader type.
         /// </summary>
         public static string GetDefaultShaderName(ShaderType type)
         {
@@ -94,21 +91,20 @@ namespace NataneToon.Editor
                 case ShaderType.Toon: return ToonShaderNames[0];
                 case ShaderType.Eye: return EyeShaderName;
                 case ShaderType.Wirelight: return WirelightShaderName;
-                case ShaderType.ScreenFX: return ScreenFXShaderName;
                 case ShaderType.StandardToon: return ToonShaderNames[0]; // same shader as Toon
                 default: return ToonShaderNames[0];
             }
         }
 
         /// <summary>
-        /// シェーダータイプを切り替える（Undo対応）
+        /// Change the shader type with Undo support.
         /// Returns true on success, false on failure (with error dialog shown).
         /// </summary>
         public static bool SetShaderType(Material material, ShaderType type, MaterialEditor editor)
         {
             if (material == null)
             {
-                NataneToonErrorDialog.ShowNullMaterialError(L("シェーダータイプの変更", "Change Shader Type"));
+                NataneToonErrorDialog.ShowNullMaterialError(L("Change Shader Type", "Change Shader Type"));
                 return false;
             }
 
@@ -148,7 +144,8 @@ namespace NataneToon.Editor
                 // Toon type: reset _ShadingMode if was StandardToon
                 if (type == ShaderType.Toon && material.HasProperty("_ShadingMode"))
                 {
-                    if (material.GetFloat("_ShadingMode") >= 1.5f)
+                    float shadingModeValue = material.GetFloat("_ShadingMode");
+                    if (shadingModeValue >= 1.5f && shadingModeValue < 2.5f)
                     {
                         material.SetFloat("_ShadingMode", 0.0f);
                         material.DisableKeyword("_STANDARD_TOON");
@@ -167,8 +164,8 @@ namespace NataneToon.Editor
         }
 
         /// <summary>
-        /// シェーダータイプ選択のドロップダウンを描画
-        /// 変更があった場合 true を返す
+        /// Draw the shader type dropdown.
+        /// Returns true when the shader type changed and the caller should exit early.
         /// </summary>
         public static bool DrawShaderTypeDropdown(Material material, MaterialEditor editor, out bool shouldReturn)
         {
@@ -177,16 +174,15 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space(5);
             EditorGUI.BeginChangeCheck();
-            ShaderType newType = (ShaderType)EditorGUILayout.EnumPopup(L("シェーダータイプ", "Shader Type"), currentType);
+            ShaderType newType = (ShaderType)EditorGUILayout.EnumPopup(L("Shader Type", "Shader Type"), currentType);
 
             if (EditorGUI.EndChangeCheck() && newType != currentType)
             {
                 if (EditorUtility.DisplayDialog(
-                    L("シェーダータイプ変更", "Change Shader Type"),
-                    L("シェーダータイプを変更すると、現在の設定の一部が失われる可能性があります。\n続行しますか？",
-                      "Changing the shader type may cause some current settings to be lost.\nContinue?"),
-                    L("変更する", "Change"),
-                    L("キャンセル", "Cancel")))
+                    L("Change Shader Type", "Change Shader Type"),
+                    L("Changing the shader type may cause some current settings to be lost.\nContinue?", "Changing the shader type may cause some current settings to be lost.\nContinue?"),
+                    L("Change", "Change"),
+                    L("Cancel", "Cancel")))
                 {
                     bool success = SetShaderType(material, newType, editor);
                     if (success)
@@ -194,7 +190,6 @@ namespace NataneToon.Editor
                         shouldReturn = true;
                         return true;
                     }
-                    // 失敗時: ダイアログは SetShaderType 内で表示済み。UIは現在の状態を維持。
                 }
             }
 
