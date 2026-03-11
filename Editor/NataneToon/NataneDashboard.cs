@@ -482,4 +482,3 @@ namespace NataneToon.Editor
         }
     }
 }
-

@@ -1,4 +1,4 @@
-﻿// ===== NataneToon Shader - Transparent Lite Variant =====
+// ===== NataneToon Shader - Transparent Lite Variant =====
 // Render Type: Transparent
 // Queue: Transparent
 // 特徴: 半透明レンダリング（Lite版: GrabPassなし、軽量）。
@@ -113,7 +113,22 @@ Shader "Natane/Toon Shader (Transparent Lite)"
 
         // ===== Shading (シェーディング) =====
         [Header(Shading)]
-        [Enum(Toon,0,Gradient,1,StandardToon,2)] _ShadingMode ("Shading Mode", Float) = 0
+        [Enum(Toon,0,Gradient,1,StandardToon,2,PBRLike,3)] _ShadingMode ("Shading Mode", Float) = 0
+        [Enum(Default,0,Skin,1,Hair,2,Eye,3,Cloth,4)] _SurfaceModel ("Surface Model", Float) = 0
+        [Enum(Legacy,0,Toon,1,NPR,2,PBR,3,Hybrid,4)] _LookMode ("Look Mode", Float) = 0
+        _ToonWeight ("Toon Weight", Range(0, 1)) = 1
+        _NprWeight ("NPR Weight", Range(0, 1)) = 0
+        _PbrWeight ("PBR Weight", Range(0, 1)) = 0
+        [HideInInspector] _LilToonMigrated ("LilToon Migrated", Float) = 0
+        [HideInInspector] _LilToonExactCompatibility ("LilToon Exact Compatibility", Float) = 0
+        [HideInInspector] _LilToonMigrationMode ("LilToon Migration Mode", Float) = 0
+        [HideInInspector] _LilToonParityFlags ("LilToon Parity Flags", Float) = 0
+        [HideInInspector] _ShadowMainStrength ("LilToon Shadow Main Strength", Range(0, 1)) = 0
+        [HideInInspector] _Shadow2ndBlur ("LilToon Shadow 2nd Blur", Range(0, 1)) = 0.1
+        [HideInInspector] _Shadow3rdBlur ("LilToon Shadow 3rd Blur", Range(0, 1)) = 0.1
+        [HideInInspector] _ShadowStrengthMask ("LilToon Shadow Strength Mask", 2D) = "white" {}
+        [HideInInspector] _ShadowBorderMask ("LilToon Shadow Border Mask", 2D) = "white" {}
+        [HideInInspector] _ShadowBlurMask ("LilToon Shadow Blur Mask", 2D) = "white" {}
         // StandardToon Properties (lilToon互換)
         _STShadowBorder ("ST Shadow Border", Range(0, 1)) = 0.5
         _STShadowBlur ("ST Shadow Blur", Range(0, 1)) = 0.1
@@ -163,6 +178,9 @@ Shader "Natane/Toon Shader (Transparent Lite)"
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _AOBlendMode ("AO Blend Mode", Float) = 0
         _AOBlend ("AO Blend", Range(0, 1)) = 1
         _AOBlur ("AO Blur", Range(0, 1)) = 0
+        _CavityMap ("Cavity Map", 2D) = "white" {}
+        _CavityStrength ("Cavity Strength", Range(0, 1)) = 0
+        _SpecularOcclusionStrength ("Specular Occlusion Strength", Range(0, 1)) = 0
         [Space(10)]
         [Toggle(_PROCEDURAL_AO)] _ProceduralAO ("Enable Procedural AO", Float) = 0
         _ProceduralAOHeightOffset ("AO Height Offset", Range(-2, 2)) = 0
@@ -257,9 +275,16 @@ Shader "Natane/Toon Shader (Transparent Lite)"
         [Toggle(_SPECULAR_DITHER)] _SpecularDither ("Specular Dither", Float) = 0
         _SpecularDitherScale ("Specular Dither Scale", Range(0.5, 8.0)) = 1.0
         _SpecularDitherStrength ("Specular Dither Strength", Range(0, 1)) = 1.0
-[Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _SpecularBlendMode ("Specular Blend Mode", Float) = 0
+        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _SpecularBlendMode ("Specular Blend Mode", Float) = 0
         _SpecularBlend ("Specular Blend", Range(0, 1)) = 1
         _SpecularBlur ("Specular Blur", Range(0, 1)) = 0
+        [Header(Skin Dual Lobe Specular)]
+        _SkinSpecPrimaryStrength ("Skin Primary Spec Strength", Range(0, 2)) = 1
+        _SkinSpecSecondaryStrength ("Skin Secondary Spec Strength", Range(0, 2)) = 0
+        _SkinSpecSecondarySmoothness ("Skin Secondary Smoothness", Range(0, 1)) = 0.85
+        _SkinSpecSecondaryColor ("Skin Secondary Spec Color", Color) = (1,1,1,1)
+        _SkinSpecFresnelPower ("Skin Spec Fresnel Power", Range(0.1, 8)) = 3
+        _SkinSpecMask ("Skin Spec Mask", 2D) = "white" {}
 
         [Header(Hair Specular Kajiya Kay)]
         [Toggle(_HAIR_SPECULAR)] _HairSpecular ("Enable Hair Specular", Float) = 0
@@ -276,6 +301,13 @@ Shader "Natane/Toon Shader (Transparent Lite)"
         _HairSpecShiftTex ("Shift Texture", 2D) = "grey" {}
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _HairSpecBlendMode ("Hair Spec Blend Mode", Float) = 0
         _HairSpecBlend ("Hair Spec Blend", Range(0, 1)) = 1
+        [Header(Hair Direction Transmission)]
+        _HairStrandDirectionMap ("Hair Strand Direction Map", 2D) = "gray" {}
+        _HairStrandDirectionStrength ("Hair Strand Direction Strength", Range(0, 1)) = 0
+        _HairTransmissionColor ("Hair Transmission Color", Color) = (1.0, 0.65, 0.45, 1)
+        _HairTransmissionStrength ("Hair Transmission Strength", Range(0, 2)) = 0
+        _HairTransmissionPower ("Hair Transmission Power", Range(1, 128)) = 24
+        _HairTransmissionMask ("Hair Transmission Mask", 2D) = "white" {}
 
         [Header(Angel Ring)]
         [Toggle(_ANGEL_RING)] _AngelRing ("Enable Angel Ring", Float) = 0
@@ -353,6 +385,8 @@ Shader "Natane/Toon Shader (Transparent Lite)"
         [Toggle(_THICKNESS_MAP)] _UseThicknessMap ("Use Thickness Map", Float) = 0
         _ThicknessMap ("Thickness Map", 2D) = "white" {}
         _ThicknessScale ("Thickness Scale", Range(0, 1)) = 0.2
+        _TransmissionMask ("Transmission Mask", 2D) = "white" {}
+        _TransmissionStrength ("Transmission Strength", Range(0, 1)) = 0
         [Toggle(_SSS_MASK)] _UseSSS_Mask ("Use SSS Mask", Float) = 0
         _SSSMask ("SSS Mask", 2D) = "white" {}
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _SSSBlendMode ("SSS Blend Mode", Float) = 0
@@ -500,6 +534,10 @@ Shader "Natane/Toon Shader (Transparent Lite)"
         [Toggle(_NORMALMAP)] _UseNormalMap ("Use Normal Map", Float) = 0
         _BumpMap ("Normal Map", 2D) = "bump" {}
         _BumpScale ("Normal Scale", Range(0, 2)) = 1
+        _MicroNormalMap ("Micro Normal Map", 2D) = "bump" {}
+        _MicroNormalScale ("Micro Normal Scale", Range(0, 2)) = 0.5
+        _MicroNormalTiling ("Micro Normal Tiling", Range(1, 64)) = 8
+        _MicroNormalStrength ("Micro Normal Strength", Range(0, 1)) = 0
         _BumpMapScrollSpeed ("Normal Map Scroll Speed XY", Vector) = (0,0,0,0)
         _BumpMapRotateSpeed ("Normal Map Rotate Speed", Float) = 0
         [Space(10)]
@@ -520,6 +558,13 @@ Shader "Natane/Toon Shader (Transparent Lite)"
         [Toggle(_REFLECTION_MASK)] _UseReflectionMask ("Use Reflection Mask", Float) = 0
         _ReflectionMask ("Reflection Mask", 2D) = "white" {}
         _ReflectionBlend ("Reflection Blend", Range(0, 1)) = 1
+        [Space(10)]
+        _ClearCoatIntensity ("Clear Coat Intensity", Range(0, 1)) = 0
+        _ClearCoatSmoothness ("Clear Coat Smoothness", Range(0, 1)) = 0.9
+        _ClearCoatMask ("Clear Coat Mask", 2D) = "white" {}
+        _ClearCoatNormalMap ("Clear Coat Normal Map", 2D) = "bump" {}
+        _ClearCoatNormalScale ("Clear Coat Normal Scale", Range(0, 2)) = 1
+        _ClearCoatFresnelPower ("Clear Coat Fresnel Power", Range(0.1, 10)) = 5
 
         [Header(Fake Environment Reflection)]
         [Toggle(_FAKE_REFLECTION)] _FakeReflection ("Enable Fake Reflection", Float) = 0
@@ -1407,6 +1452,7 @@ Blend [_SrcBlend] [_DstBlend]
             #pragma shader_feature_local _PIXEL_VERTEX_LIGHTS
             #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma shader_feature_local _VERTEX_COLOR_SHADOW
+            #pragma shader_feature_local _PBR_LIKE
             #pragma shader_feature_local _TESSELLATION
             #pragma shader_feature_local _TESS_DISPLACEMENT
             #pragma shader_feature_local _PCSS
@@ -1483,6 +1529,7 @@ Blend [_SrcBlend] [_DstBlend]
             #pragma shader_feature_local _VAT_NORMAL
             #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma shader_feature_local _VERTEX_COLOR_SHADOW
+            #pragma shader_feature_local _PBR_LIKE
             #pragma shader_feature_local _TESSELLATION
             #pragma shader_feature_local _TESS_DISPLACEMENT
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK

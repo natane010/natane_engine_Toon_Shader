@@ -19,6 +19,7 @@ namespace NataneToon.MaterialSystem
         [Serializable]
         public class ShareableData
         {
+            public int schemaVersion = 4;
             public string shaderName = "Natane/Toon Shader";
             public string materialName = "";
             public string exportDate = "";
@@ -47,6 +48,7 @@ namespace NataneToon.MaterialSystem
 
             ShareableData data = new ShareableData
             {
+                schemaVersion = 4,
                 shaderName = material.shader.name,
                 materialName = material.name,
                 notes = notes
@@ -88,6 +90,11 @@ namespace NataneToon.MaterialSystem
             try
             {
                 ShareableData data = JsonUtility.FromJson<ShareableData>(json);
+                if (data == null || data.parameters == null)
+                {
+                    Debug.LogError("[MaterialParameterShareSystem] JSON did not contain valid material parameters");
+                    return false;
+                }
 
                 // Create temporary preset and apply
                 var tempPreset = ScriptableObject.CreateInstance<NataneToonMaterialPreset>();

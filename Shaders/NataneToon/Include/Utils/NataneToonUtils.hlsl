@@ -1,6 +1,15 @@
 #ifndef NATANE_TOON_UTILS_INCLUDED
 #define NATANE_TOON_UTILS_INCLUDED
 
+// ===== NOSAMPLER Function Argument Helpers =====
+// Portable type for passing NOSAMPLER textures as function arguments.
+// SEPARATE platforms (DX11+): Texture2D, others: sampler2D.
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+    #define NATANE_TEX2D_NS_ARG(name) Texture2D name
+#else
+    #define NATANE_TEX2D_NS_ARG(name) sampler2D name
+#endif
+
 // Performance Optimization Macros
 #define LUMA_WEIGHTS half3(0.299, 0.587, 0.114)
 #define CALC_LUMINANCE(color) dot(color, LUMA_WEIGHTS)
@@ -94,7 +103,7 @@ float2 CalculateDissolveFromNoise(float dissolveNoise, float dissolveAmount, flo
 // Original function delegates to new core (backward compatible)
 float2 CalculateDissolve(float2 uv, float dissolveAmount, float edgeWidth)
 {
-    float dissolveNoise = tex2D(_DissolveTex, uv).r;
+    float dissolveNoise = NATANE_SAMPLE_REPEAT(_DissolveTex, uv).r;
     return CalculateDissolveFromNoise(dissolveNoise, dissolveAmount, edgeWidth);
 }
 
@@ -126,7 +135,7 @@ float2 ParallaxMapping(float2 uv, float3 viewDirTangent)
     float currentLayerDepth = 0.0;
 
     // Calculate UV offset per layer
-    float2 deltaUV = viewDirTangent.xy * _ParallaxScale / (viewDirTangent.z * numLayers);
+    float2 deltaUV = viewDirTangent.xy * _ParallaxScale / (max(abs(viewDirTangent.z), 0.001) * numLayers);
 
     // Initial values
     float2 currentUV = uv;
@@ -316,7 +325,7 @@ half3 ApplyFinalShadowBlend(half3 color, half blendAmount, half threshold)
         // Example: threshold=0.3, luminance=0.1 → (0.3-0.1)/0.3 = 0.667
         // Note: This formula is intentionally different from highlight calculation
         // to create asymmetric smoothing behavior (shadows are processed differently than highlights)
-        half shadowFactor = saturate((threshold - luminance) / threshold);
+        half shadowFactor = saturate((threshold - luminance) / max(threshold, 0.01));
 
         // Calculate blend target (slightly lifted and softened)
         half3 liftedColor = saturate(color + 0.05); // Lift shadows slightly
@@ -635,6 +644,30 @@ half SampleTex2DBlur1(sampler2D tex, float2 uv, float blur)
 {
     return SampleTex2DBlur(tex, uv, blur).r;
 }
+
+// NOSAMPLER overloads for Repeat sampling (sampler_MainTex shared)
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+half4 SampleTex2DBlurRepeat(Texture2D tex, float2 uv, float blur)
+{
+    half4 center = tex.Sample(sampler_MainTex, uv);
+    if (blur <= 0.001) return center;
+    float2 dx = ddx(uv) * blur * 4.0;
+    float2 dy = ddy(uv) * blur * 4.0;
+    half4 col = center * 0.4;
+    col += tex.Sample(sampler_MainTex, uv + dx) * 0.15;
+    col += tex.Sample(sampler_MainTex, uv - dx) * 0.15;
+    col += tex.Sample(sampler_MainTex, uv + dy) * 0.15;
+    col += tex.Sample(sampler_MainTex, uv - dy) * 0.15;
+    return col;
+}
+half3 SampleTex2DBlur3Repeat(Texture2D tex, float2 uv, float blur)
+{
+    return SampleTex2DBlurRepeat(tex, uv, blur).rgb;
+}
+#else
+#define SampleTex2DBlurRepeat(tex, uv, blur) SampleTex2DBlur(tex, uv, blur)
+#define SampleTex2DBlur3Repeat(tex, uv, blur) SampleTex2DBlur3(tex, uv, blur)
+#endif
 
 #if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
 half4 SampleTex2DBlurShared(Texture2D tex, SamplerState sharedSampler, float2 uv, float blur)
@@ -1023,14 +1056,14 @@ half3 CalculateGlitchRGBSplit(half3 baseColor, float2 uv,
 
 // Apply noise texture for glitch variety
 // mode: 0=UV Distortion, 1=Color Corruption, 2=Block Noise
-half3 ApplyGlitchNoise(half3 color, float2 uv, sampler2D noiseTex,
+half3 ApplyGlitchNoise(half3 color, float2 uv, NATANE_TEX2D_NS_ARG(noiseTex),
                         float4 noiseST, float4 scrollSpeed,
                         float intensity, float mode, sampler2D mainTex)
 {
     // Scrolling noise UV (manual calculation, not TRANSFORM_TEX)
     float2 noiseUV = uv * noiseST.xy + noiseST.zw;
     noiseUV += scrollSpeed.xy * _Time.y;
-    half4 noise = tex2D(noiseTex, noiseUV);
+    half4 noise = NATANE_SAMPLE_REPEAT(noiseTex, noiseUV);
 
     if (mode < 0.5)
     {
@@ -1531,11 +1564,11 @@ half3 ApplyLUT3D(half3 color, sampler2D lutTex, float lutSize)
 // hatchColor:   tint colour for hatching strokes
 // blend:        overall blend strength
 half3 ApplyHatching(half3 baseColor, float2 uv, half shadingValue, half maskValue,
-    sampler2D hatchTex0, sampler2D hatchTex1, float tiling, half4 hatchColor, float blend)
+    NATANE_TEX2D_NS_ARG(hatchTex0), NATANE_TEX2D_NS_ARG(hatchTex1), float tiling, half4 hatchColor, float blend)
 {
     float2 hatchUV = uv * tiling;
-    half4 h0 = tex2D(hatchTex0, hatchUV); // RGBA = levels 1-4
-    half2 h1 = tex2D(hatchTex1, hatchUV).rg; // RG = levels 5-6
+    half4 h0 = NATANE_SAMPLE_REPEAT(hatchTex0, hatchUV); // RGBA = levels 1-4
+    half2 h1 = NATANE_SAMPLE_REPEAT(hatchTex1, hatchUV).rg; // RG = levels 5-6
 
     // Map shading value to 6 weight slots
     half lum = shadingValue * 6.0;
@@ -1562,7 +1595,7 @@ half3 ApplyHatching(half3 baseColor, float2 uv, half shadingValue, half maskValu
 // granTex / granTex_ST: granulation (pigment particle) texture + tiling/offset
 // paperTex / paperTex_ST: paper surface texture + tiling/offset (sampled in screen space)
 half3 ApplyWatercolor(half3 baseColor, float2 uv, float2 screenUV, half shadingValue,
-    half maskValue, sampler2D granTex, float4 granTex_ST, sampler2D paperTex, float4 paperTex_ST,
+    half maskValue, NATANE_TEX2D_NS_ARG(granTex), float4 granTex_ST, NATANE_TEX2D_NS_ARG(paperTex), float4 paperTex_ST,
     float edgeDarkening, float wetEdge, float granulation, float paperIntensity, float paperTiling, float blend)
 {
     // 1. Edge Darkening — ddx/ddy gradient magnitude drives darkening
@@ -1579,13 +1612,13 @@ half3 ApplyWatercolor(half3 baseColor, float2 uv, float2 screenUV, half shadingV
 
     // 3. Granulation — pigment particles settle in texture valleys
     float2 granUV = uv * granTex_ST.xy + granTex_ST.zw;
-    half granTex_val = tex2D(granTex, granUV).r;
+    half granTex_val = NATANE_SAMPLE_REPEAT(granTex, granUV).r;
     half granEffect = lerp(1.0, granTex_val, granulation * (1.0 - shadingValue));
     half3 granulated = saturatedColor * granEffect;
 
     // 4. Paper Texture — screen-space paper grain overlay
     float2 paperUV = screenUV * paperTiling;
-    half paperVal = tex2D(paperTex, paperUV).r;
+    half paperVal = NATANE_SAMPLE_REPEAT(paperTex, paperUV).r;
     half paperEffect = paperVal * 2.0 - 1.0; // remap [0,1] → [-1,1]
     half3 papered = granulated + granulated * paperEffect * paperIntensity;
 

@@ -19,6 +19,18 @@ Shader "Natane/Eye"
         [HDR]_BackgroundColor ("Background Color", color) = (1,1,1,1)
         _PupilSize ("Pupil Size", Range(0, 1)) = .4
         _PupilAspect ("Pupil Aspect XY (1,1=Circle)", Vector) = (1,1,0,0)
+        [Toggle] _UseRealisticEye ("Enable Realistic Eye", Float) = 0
+        _IrisDepth ("Iris Depth", Range(-1, 1)) = -0.15
+        _IrisDepthRadius ("Iris Depth Radius", Range(0.1, 1.5)) = 0.82
+        [HDR]_LimbalRingColor ("Limbal Ring Color", Color) = (0.2, 0.28, 0.38, 1)
+        _LimbalRingWidth ("Limbal Ring Width", Range(0.01, 0.4)) = 0.08
+        _LimbalRingIntensity ("Limbal Ring Intensity", Range(0, 3)) = 0
+        [HDR]_ScleraTint ("Sclera Tint", Color) = (1, 1, 1, 1)
+        _ScleraShadowStrength ("Sclera Shadow Strength", Range(0, 1)) = 0
+        [HDR]_CorneaSpecColor ("Cornea Spec Color", Color) = (1, 1, 1, 1)
+        _CorneaSpecIntensity ("Cornea Spec Intensity", Range(0, 3)) = 0
+        _CorneaSpecSmoothness ("Cornea Spec Smoothness", Range(0, 1)) = 0.92
+        _CorneaFresnelPower ("Cornea Fresnel Power", Range(0.5, 8)) = 4
 
         [Header(___________________________________________________)]
         [Header(Dual Eye Centers)]
@@ -296,6 +308,9 @@ Shader "Natane/Eye"
 
             float _MainParallax, _PupilSize;
             float4 _PupilAspect;
+            float _UseRealisticEye, _IrisDepth, _IrisDepthRadius, _LimbalRingWidth, _LimbalRingIntensity;
+            float _ScleraShadowStrength, _CorneaSpecIntensity, _CorneaSpecSmoothness, _CorneaFresnelPower;
+            float4 _LimbalRingColor, _ScleraTint, _CorneaSpecColor;
             int _EyeState;
 
             float _DetailBrightness;
@@ -512,6 +527,26 @@ Shader "Natane/Eye"
                 return UVs;
             }
 
+            float NTEye_GetIrisMask(float2 uv, float2 center, float radius)
+            {
+                float radial = length(NTEye_GetPupilLocal(uv, center));
+                float outer = smoothstep(radius + 0.10, radius - 0.08, radial);
+                float inner = smoothstep(0.03, 0.18, radial);
+                return outer * inner;
+            }
+
+            float2 NTEye_ApplyIrisDepth(float2 uv, float2 viewDirection, float2 center)
+            {
+                if (_UseRealisticEye <= 0.5)
+                {
+                    return uv;
+                }
+
+                float irisMask = NTEye_GetIrisMask(uv, center, _IrisDepthRadius);
+                float2 irisDepthUV = NTEye_GenerateParallaxUV(uv, viewDirection, _IrisDepth);
+                return lerp(uv, irisDepthUV, irisMask);
+            }
+
             float3 NTEye_BlendColors(float3 base, float3 blend, int mode, float blendAmount)
             {
                 float3 result;
@@ -584,6 +619,33 @@ Shader "Natane/Eye"
 
                 float blendAmount = saturate(_TexturePolishStrength * focusMask * _TexturePolishTint.a * perf);
                 col.rgb = NTEye_BlendColors(col.rgb, polished, _TexturePolishBlendMode, blendAmount);
+            }
+
+            void NTEye_ApplyRealisticEye(inout fixed4 col, float2 workingUV, float2 glareUV, float2 workingViewDir, float2 eyeCenter)
+            {
+                if (_UseRealisticEye <= 0.5)
+                {
+                    return;
+                }
+
+                float2 localUV = NTEye_GetPupilLocal(workingUV, eyeCenter);
+                float radial = length(localUV);
+                float irisMask = NTEye_GetIrisMask(workingUV, eyeCenter, _IrisDepthRadius);
+                float scleraMask = saturate(1.0 - irisMask);
+
+                float limbalMask = saturate(1.0 - abs(radial - _IrisDepthRadius) / max(_LimbalRingWidth, 0.001));
+                limbalMask *= limbalMask * _LimbalRingIntensity;
+                col.rgb += _LimbalRingColor.rgb * limbalMask * _LimbalRingColor.a;
+
+                float scleraShadow = smoothstep(-0.2, 0.75, -localUV.y + radial * 0.25) * _ScleraShadowStrength;
+                col.rgb = lerp(col.rgb, col.rgb * _ScleraTint.rgb, saturate(scleraMask * _ScleraTint.a));
+                col.rgb *= 1.0 - scleraMask * scleraShadow * 0.35;
+
+                float corneaRadius = lerp(0.18, 0.03, saturate(_CorneaSpecSmoothness));
+                float corneaSpark = saturate(0.015 / max(length(glareUV - (eyeCenter + float2(0.05, -0.24))) - corneaRadius, 1e-5));
+                float corneaFresnel = pow(saturate(length(workingViewDir)), max(0.5, _CorneaFresnelPower));
+                float corneaMask = saturate((corneaSpark + corneaFresnel * 0.35) * _CorneaSpecIntensity);
+                col.rgb += _CorneaSpecColor.rgb * corneaMask * _CorneaSpecColor.a;
             }
 
             void NTEye_ApplyIrisCaustics(inout fixed4 col, float2 workingUV, float2 workingViewDir, float2 eyeCenter)
@@ -846,9 +908,10 @@ Shader "Natane/Eye"
                 float2 workingUV;
                 float2 workingViewDir;
                 NTEye_PrepareEyeData(i.uv, i.viewDir, eyeCenter, workingUV, workingViewDir);
+                float2 irisWorkingUV = NTEye_ApplyIrisDepth(workingUV, workingViewDir, eyeCenter);
 
-                float2 glareUV = NTEye_GenerateParallaxUV(workingUV, workingViewDir, -.2 * _MainParallax);
-                float2 pupilUV = NTEye_GenerateParallaxUV(workingUV, workingViewDir, -.25 * _MainParallax);
+                float2 glareUV = NTEye_GenerateParallaxUV(irisWorkingUV, workingViewDir, -.2 * _MainParallax);
+                float2 pupilUV = NTEye_GenerateParallaxUV(irisWorkingUV, workingViewDir, -.25 * _MainParallax);
 
                 if (_EyeState == 3)
                 {
@@ -861,10 +924,11 @@ Shader "Natane/Eye"
                         proceduralCol = lerp(proceduralCol, texCol * _BackgroundColor, _TextureBlend);
                     }
 
-                    NTEye_ApplyExpressionOverlay(proceduralCol, workingUV, workingViewDir, eyeCenter);
-                    NTEye_ApplyIrisCaustics(proceduralCol, workingUV, workingViewDir, eyeCenter);
-                    NTEye_ApplyIrisRing(proceduralCol, workingUV, workingViewDir, eyeCenter);
-                    NTEye_ApplyTexturePolish(proceduralCol, texCol, workingUV, eyeCenter);
+                    NTEye_ApplyExpressionOverlay(proceduralCol, irisWorkingUV, workingViewDir, eyeCenter);
+                    NTEye_ApplyIrisCaustics(proceduralCol, irisWorkingUV, workingViewDir, eyeCenter);
+                    NTEye_ApplyIrisRing(proceduralCol, irisWorkingUV, workingViewDir, eyeCenter);
+                    NTEye_ApplyTexturePolish(proceduralCol, texCol, irisWorkingUV, eyeCenter);
+                    NTEye_ApplyRealisticEye(proceduralCol, irisWorkingUV, glareUV, workingViewDir, eyeCenter);
                     return proceduralCol;
                 }
 
@@ -909,10 +973,11 @@ Shader "Natane/Eye"
                         proceduralCol = lerp(proceduralCol, texCol * _NervousBackgroundColor, _TextureBlend);
                     }
 
-                    NTEye_ApplyExpressionOverlay(proceduralCol, workingUV, workingViewDir, eyeCenter);
-                    NTEye_ApplyIrisCaustics(proceduralCol, workingUV, workingViewDir, eyeCenter);
-                    NTEye_ApplyIrisRing(proceduralCol, workingUV, workingViewDir, eyeCenter);
-                    NTEye_ApplyTexturePolish(proceduralCol, texCol, workingUV, eyeCenter);
+                    NTEye_ApplyExpressionOverlay(proceduralCol, irisWorkingUV, workingViewDir, eyeCenter);
+                    NTEye_ApplyIrisCaustics(proceduralCol, irisWorkingUV, workingViewDir, eyeCenter);
+                    NTEye_ApplyIrisRing(proceduralCol, irisWorkingUV, workingViewDir, eyeCenter);
+                    NTEye_ApplyTexturePolish(proceduralCol, texCol, irisWorkingUV, eyeCenter);
+                    NTEye_ApplyRealisticEye(proceduralCol, irisWorkingUV, glareUV, workingViewDir, eyeCenter);
                     return proceduralCol;
                 }
 
@@ -1023,10 +1088,11 @@ Shader "Natane/Eye"
                     col += saturate(0.001 / max(NTEye_EyeDetail1(glareUV, .25, eyeCenter), 1e-5)) * _DetailBrightness;
                 }
 
-                NTEye_ApplyExpressionOverlay(col, workingUV, workingViewDir, eyeCenter);
-                NTEye_ApplyIrisCaustics(col, workingUV, workingViewDir, eyeCenter);
-                NTEye_ApplyIrisRing(col, workingUV, workingViewDir, eyeCenter);
-                NTEye_ApplyTexturePolish(col, texCol, workingUV, eyeCenter);
+                NTEye_ApplyExpressionOverlay(col, irisWorkingUV, workingViewDir, eyeCenter);
+                NTEye_ApplyIrisCaustics(col, irisWorkingUV, workingViewDir, eyeCenter);
+                NTEye_ApplyIrisRing(col, irisWorkingUV, workingViewDir, eyeCenter);
+                NTEye_ApplyTexturePolish(col, texCol, irisWorkingUV, eyeCenter);
+                NTEye_ApplyRealisticEye(col, irisWorkingUV, glareUV, workingViewDir, eyeCenter);
 
                 return col;
             }

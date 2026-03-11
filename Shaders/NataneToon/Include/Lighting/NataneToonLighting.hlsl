@@ -130,9 +130,12 @@ half3 CalculateVertexLightsPixelPrecision(
         half ndotl = max(0, dot(worldNormal, lightDir));
         half toonLight = ToonShading(ndotl, shadowSteps, shadowSharpness);
         half gradientLight = GradientShading(ndotl, gradientWidth);
+        half stylizedLight = toonLight;
         half useGradient = step(HALF_VALUE, shadingMode) * (1.0 - step(1.5, shadingMode));
-        half shapedLight = lerp(toonLight, gradientLight, useGradient);
-        shapedLight *= ndotl;
+        half usePbrLike = step(2.5, shadingMode);
+        half pbrLikeLight = saturate(ndotl + clamp(_ShadowOffset, -1.0, 1.0));
+        stylizedLight = lerp(stylizedLight, gradientLight, useGradient);
+        half shapedLight = lerp(stylizedLight * ndotl, pbrLikeLight, usePbrLike);
         float atten = 1.0 / (1.0 + distSq * unity_4LightAtten0[i]);
         totalLight += unity_LightColor[i].rgb * shapedLight * atten;
     }
@@ -174,13 +177,25 @@ float DitheringPattern(float2 screenPos, float scale)
     return NataneGetDitherThreshold(StabilizeDitherCoord(screenPos), scale);
 }
 
+// Specular occlusion approximation based on visibility, view angle, and roughness.
+// This keeps micro-cavity areas from receiving unrealistically strong highlights.
+half NataneSpecularOcclusion(half visibility, half ndotv, half roughness)
+{
+    visibility = saturate(visibility);
+    ndotv = saturate(ndotv);
+    roughness = saturate(roughness);
+
+    half exponent = exp2(-16.0 * roughness - 1.0);
+    return saturate(pow(ndotv + visibility, exponent) - 1.0 + visibility);
+}
+
 // Ramp Texture Shading
 // Uses a gradient texture to control shadow colors
 #if defined(_USE_RAMP)
 float3 RampShading(float ndotl)
 {
     float2 rampUV = float2(saturate(ndotl + _ShadowOffset), 0.5);
-    return tex2D(_RampTex, rampUV).rgb;
+    return NATANE_SAMPLE_CLAMP(_RampTex, rampUV).rgb;
 }
 #endif
 
@@ -240,6 +255,32 @@ half SpecularHighlight(half3 normal, half3 viewDir, half3 lightDir, half size, h
 
 // Hair Specular (Kajiya-Kay)
 #if defined(_HAIR_SPECULAR)
+half NataneHairSurfaceWeight()
+{
+    return step(1.5, _SurfaceModel) * (1.0 - step(2.5, _SurfaceModel));
+}
+
+half3 ResolveHairStrandDirection(half3 worldNormal, half3 worldTangent, half3 worldBinormal, float2 uv)
+{
+    half3 tangent = normalize(worldBinormal);
+    half directionStrength = saturate(_HairStrandDirectionStrength) * NataneHairSurfaceWeight();
+
+    if (directionStrength > 0.001)
+    {
+        half2 strandDirTS = UNITY_SAMPLE_TEX2D_SAMPLER(_HairStrandDirectionMap, _MainTex, uv).rg * 2.0 - 1.0;
+        half strandLenSq = dot(strandDirTS, strandDirTS);
+
+        if (strandLenSq > 0.0001)
+        {
+            strandDirTS *= rsqrt(strandLenSq);
+            half3 mappedStrandDir = normalize(worldTangent * strandDirTS.x + worldBinormal * strandDirTS.y);
+            tangent = normalize(lerp(tangent, mappedStrandDir, directionStrength));
+        }
+    }
+
+    return normalize(tangent + worldNormal * 0.0001);
+}
+
 half KajiyaKaySpecular(half3 shiftedTangent, half3 halfVector, half exponent)
 {
     half TdotH = dot(shiftedTangent, halfVector);
@@ -257,9 +298,7 @@ half3 HairSpecularHighlight(half3 worldNormal, half3 worldTangent, half3 worldBi
                              half3 viewDir, half3 lightDir, float2 uv)
 {
     half3 halfVec = normalize(lightDir + viewDir);
-
-    // Use binormal as primary tangent direction (hair strands typically follow V-axis)
-    half3 tangent = worldBinormal;
+    half3 tangent = ResolveHairStrandDirection(worldNormal, worldTangent, worldBinormal, uv);
 
     // Sample shift texture if enabled
     half shiftTexValue = 0.0;
@@ -268,8 +307,8 @@ half3 HairSpecularHighlight(half3 worldNormal, half3 worldTangent, half3 worldBi
     #endif
 
     // Shift tangent along normal for each lobe
-    half3 shiftedTangent1 = normalize(tangent + worldNormal * (_HairSpecShift1 + shiftTexValue));
-    half3 shiftedTangent2 = normalize(tangent + worldNormal * (_HairSpecShift2 + shiftTexValue));
+    half3 shiftedTangent1 = normalize(tangent + worldNormal * (_HairSpecShift1 + shiftTexValue) + float3(0, 0, 0.0001));
+    half3 shiftedTangent2 = normalize(tangent + worldNormal * (_HairSpecShift2 + shiftTexValue) + float3(0, 0, 0.0001));
 
     // Calculate two specular lobes
     half spec1 = KajiyaKaySpecular(shiftedTangent1, halfVec, _HairSpecWidth1);
@@ -285,6 +324,26 @@ half3 HairSpecularHighlight(half3 worldNormal, half3 worldTangent, half3 worldBi
     #endif
 
     return specular * _HairSpecIntensity;
+}
+
+half3 HairTransmissionHighlight(half3 worldNormal, half3 worldTangent, half3 worldBinormal,
+                                half3 viewDir, half3 lightDir, float2 uv)
+{
+    half transmissionStrength = max(0.0, _HairTransmissionStrength) * NataneHairSurfaceWeight();
+    if (transmissionStrength <= 0.001)
+    {
+        return half3(0, 0, 0);
+    }
+
+    half3 strandDir = ResolveHairStrandDirection(worldNormal, worldTangent, worldBinormal, uv);
+    half3 transmissionVec = normalize(viewDir - lightDir + strandDir * 0.001);
+    half strandScatter = KajiyaKaySpecular(strandDir, transmissionVec, max(1.0, _HairTransmissionPower));
+    half backLit = saturate(dot(-worldNormal, lightDir));
+    half viewLightAlignment = saturate(dot(viewDir, -lightDir));
+    half transmissionMask = NATANE_SAMPLE_SHARED_R(_HairTransmissionMask, _MainTex, uv);
+    half transmission = strandScatter * backLit * viewLightAlignment * transmissionMask * transmissionStrength;
+
+    return _HairTransmissionColor.rgb * transmission;
 }
 #endif // _HAIR_SPECULAR
 
@@ -376,7 +435,7 @@ half3 SubsurfaceScatteringLUT(half ndotl, half3 normal, half3 worldPos, half thi
     half curvature = saturate(length(fwidth(normal)) / max(length(fwidth(worldPos)), 0.0001) * 0.5);
     // LUT UV: X=NdotL(0~1), Y=curvature(0~1)
     float2 lutUV = float2(ndotl * 0.5 + 0.5, curvature * (1.0 - thickness));
-    half3 sssLUT = tex2D(_SSSLUTTex, lutUV).rgb;
+    half3 sssLUT = NATANE_SAMPLE_CLAMP(_SSSLUTTex, lutUV).rgb;
     return sssLUT * _SSSColor.rgb * _SSSLUTScale;
 }
 #endif
@@ -448,7 +507,7 @@ float3 CalculateRefraction(float3 worldNormal, float3 viewDir, float refractionI
 {
     // Calculate refraction using Snell's law
     // IOR ratio: from air (1.0) to material (refractionIndex)
-    float iorRatio = 1.0 / refractionIndex;
+    float iorRatio = 1.0 / max(refractionIndex, 0.001);
 
     // Refract the view direction through the surface
     float3 refractDir = refract(-viewDir, worldNormal, iorRatio);
@@ -470,8 +529,8 @@ float ApplySDFShadow(float2 uv, float ndotl, float3 lightDir, float3 worldPos)
     #ifdef _SDF_MAP
         #ifdef _FACE_SDF_ROTATION
             // Transform face directions from object to world space
-            float3 faceForward = normalize(mul((float3x3)unity_ObjectToWorld, _FaceForwardDirection.xyz));
-            float3 faceRight = normalize(mul((float3x3)unity_ObjectToWorld, _FaceRightDirection.xyz));
+            float3 faceForward = normalize(mul((float3x3)unity_ObjectToWorld, _FaceForwardDirection.xyz) + float3(0, 0, 0.0001));
+            float3 faceRight = normalize(mul((float3x3)unity_ObjectToWorld, _FaceRightDirection.xyz) + float3(0.0001, 0, 0));
             float3 faceUp = cross(faceForward, faceRight);
 
             // Project light direction onto face plane (remove vertical component)
@@ -489,7 +548,7 @@ float ApplySDFShadow(float2 uv, float ndotl, float3 lightDir, float3 worldPos)
             sdfUV.x = (RdotL < 0) ? (1.0 - sdfUV.x) : sdfUV.x;
 
             // Sample SDF map
-            float sdfValue = tex2D(_SDFMap, sdfUV).r;
+            float sdfValue = NATANE_SAMPLE_REPEAT(_SDFMap, sdfUV).r;
 
             // Threshold based on forward dot light
             float threshold = FdotL * 0.5 + 0.5 + _SDFOffset;
@@ -502,7 +561,7 @@ float ApplySDFShadow(float2 uv, float ndotl, float3 lightDir, float3 worldPos)
             return lerp(ndotl, sdfShadow, _SDFIntensity);
         #else
             // Original UV-fixed behavior
-            float sdfValue = tex2D(_SDFMap, uv).r;
+            float sdfValue = NATANE_SAMPLE_REPEAT(_SDFMap, uv).r;
 
             // Apply offset to adjust shadow threshold
             sdfValue = saturate(sdfValue + _SDFOffset);
@@ -525,7 +584,7 @@ float ApplyShadingGradeMap(float2 uv, float shadowFactor)
 {
     #ifdef _SHADING_GRADE_MAP
         // Sample shading grade map (0.5 = neutral, <0.5 = darker, >0.5 = lighter)
-        float gradeValue = tex2D(_ShadingGradeMap, uv).r;
+        float gradeValue = NATANE_SAMPLE_REPEAT(_ShadingGradeMap, uv).r;
 
         // Remap from 0-1 to -1 to +1 range, then scale by user parameter
         float gradeAdjust = (gradeValue - 0.5) * 2.0 * _ShadingGradeScale;

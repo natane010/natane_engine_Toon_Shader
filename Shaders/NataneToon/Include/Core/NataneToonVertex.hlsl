@@ -18,7 +18,7 @@ float3 DecodeVATNormal(float4 rawData, float minVal, float maxVal)
     // Decode from normalized [0,1] range back to original range
     float3 normal = rawData.rgb;
     normal = normal * 2.0 - 1.0; // Convert from [0,1] to [-1,1]
-    return normalize(normal);
+    return normalize(normal + float3(0, 0, 0.0001));
 }
 
 // Apply VAT animation to vertex
@@ -33,7 +33,7 @@ void ApplyVAT(inout float4 vertex, inout float3 normal, float2 uv)
 
     // Sample position map
     float2 vatUV = float2(uv.x, frameV);
-    float4 positionData = tex2Dlod(_VATPositionMap, float4(vatUV, 0, 0));
+    float4 positionData = NATANE_SAMPLE_CLAMP_LOD(_VATPositionMap, vatUV, 0);
     float3 vatPosition = DecodeVATPosition(positionData, _VATPositionMin, _VATPositionMax);
 
     // Apply position offset with intensity control
@@ -41,7 +41,7 @@ void ApplyVAT(inout float4 vertex, inout float3 normal, float2 uv)
 
     // Sample and apply normal map if available
     #ifdef _VAT_NORMAL
-        float4 normalData = tex2Dlod(_VATNormalMap, float4(vatUV, 0, 0));
+        float4 normalData = NATANE_SAMPLE_CLAMP_LOD(_VATNormalMap, vatUV, 0);
         float3 vatNormal = DecodeVATNormal(normalData, _VATNormalMin, _VATNormalMax);
         normal = lerp(normal, vatNormal, _VATIntensity);
     #endif
@@ -54,7 +54,7 @@ void ApplyVAT(inout float4 vertex, inout float3 normal, float2 uv)
 float GetHandDrawnWidthFactor(float2 uv)
 {
     float2 noiseUV = uv * _OutlineNoiseTiling;
-    float widthNoise = tex2Dlod(_OutlineNoiseTex, float4(noiseUV, 0, 0)).r;
+    float widthNoise = NATANE_SAMPLE_REPEAT_LOD(_OutlineNoiseTex, noiseUV, 0).r;
     return lerp(1.0 - _OutlineWidthVariation, 1.0 + _OutlineWidthVariation, widthNoise);
 }
 
@@ -113,8 +113,8 @@ v2f vert(appdata v)
             float frameV_curr = (frame + 0.5) / _VATNumOfFrames;
             float frameV_prev = (prevFrame + 0.5) / _VATNumOfFrames;
 
-            float4 posCurr = tex2Dlod(_VATPositionMap, float4(v.uv.x, frameV_curr, 0, 0));
-            float4 posPrev = tex2Dlod(_VATPositionMap, float4(v.uv.x, frameV_prev, 0, 0));
+            float4 posCurr = NATANE_SAMPLE_CLAMP_LOD(_VATPositionMap, float2(v.uv.x, frameV_curr), 0);
+            float4 posPrev = NATANE_SAMPLE_CLAMP_LOD(_VATPositionMap, float2(v.uv.x, frameV_prev), 0);
 
             float3 vatVel = (DecodeVATPosition(posCurr, _VATPositionMin, _VATPositionMax)
                            - DecodeVATPosition(posPrev, _VATPositionMin, _VATPositionMax))
@@ -193,7 +193,7 @@ v2f vert(appdata v)
         else
         {
             // Mode 2: Baked Normal Texture (tangent space, same as outline pass)
-            float3 bakedNormal = tex2Dlod(_SmoothNormalTex, float4(v.uv, 0, 0)).rgb * 2.0 - 1.0;
+            float3 bakedNormal = NATANE_SAMPLE_REPEAT_LOD(_SmoothNormalTex, v.uv, 0).rgb * 2.0 - 1.0;
             float3 binormal = cross(v.normal, v.tangent.xyz) * v.tangent.w;
             float3x3 tbnOS = float3x3(v.tangent.xyz, binormal, v.normal);
             smoothNormalOS = mul(bakedNormal, tbnOS);

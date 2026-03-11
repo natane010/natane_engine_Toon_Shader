@@ -1,8 +1,6 @@
 #ifndef NATANE_TOON_PBR_INCLUDED
 #define NATANE_TOON_PBR_INCLUDED
 
-#ifdef _PBR
-
 // GGX Normal Distribution Function (Trowbridge-Reitz)
 half NataneGGX_D(half NdotH, half roughness)
 {
@@ -23,7 +21,7 @@ half NataneGGX_G(half NdotL, half NdotV, half roughness)
 // Schlick Fresnel
 half3 NataneSchlickFresnel(half cosTheta, half3 F0)
 {
-    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+    return F0 + (1.0 - F0) * pow(saturate(1.0 - cosTheta), 5.0);
 }
 
 // Full PBR Direct Specular (Cook-Torrance microfacet BRDF)
@@ -46,7 +44,7 @@ half3 NatanePBRSpecular(half3 normal, half3 viewDir, half3 lightDir,
 
 // Indirect Specular from Unity Reflection Probes
 half3 NatanePBRIndirectSpecular(half3 worldNormal, half3 viewDir, half3 worldPos,
-                                 half roughness, half3 F0)
+                                half roughness, half3 F0)
 {
     half3 reflDir = reflect(-viewDir, worldNormal);
     half mipLevel = roughness * 7.0;
@@ -73,5 +71,4 @@ half3 NatanePBRIndirectSpecular(half3 worldNormal, half3 viewDir, half3 worldPos
     return envColor * indirectF * surfaceReduction;
 }
 
-#endif // _PBR
 #endif

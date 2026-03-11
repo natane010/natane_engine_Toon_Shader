@@ -15,7 +15,10 @@ struct TessellationControlPoint
     float3 normal : NORMAL;
     float4 tangent : TANGENT;
     float2 uv : TEXCOORD0;
-    #ifdef _SMOOTH_NORMAL
+    #if defined(_BACKGROUND_MODE) || defined(_DETAIL_MAP) || defined(_LTCGI)
+        float2 uv1 : TEXCOORD1;
+    #endif
+    #if defined(_SMOOTH_NORMAL) || defined(_VERTEX_COLOR_SHADOW)
         float4 color : COLOR;
     #endif
 };
@@ -36,7 +39,10 @@ TessellationControlPoint tessVert(appdata v)
     o.normal = v.normal;
     o.tangent = v.tangent;
     o.uv = v.uv;
-    #ifdef _SMOOTH_NORMAL
+    #if defined(_BACKGROUND_MODE) || defined(_DETAIL_MAP) || defined(_LTCGI)
+        o.uv1 = v.uv1;
+    #endif
+    #if defined(_SMOOTH_NORMAL) || defined(_VERTEX_COLOR_SHADOW)
         o.color = v.color;
     #endif
     return o;
@@ -107,7 +113,10 @@ v2f domain(
     v.normal = normalize(flatNormal);
     v.tangent = patch[0].tangent * bary.x + patch[1].tangent * bary.y + patch[2].tangent * bary.z;
     v.uv = patch[0].uv * bary.x + patch[1].uv * bary.y + patch[2].uv * bary.z;
-    #ifdef _SMOOTH_NORMAL
+    #if defined(_BACKGROUND_MODE) || defined(_DETAIL_MAP) || defined(_LTCGI)
+        v.uv1 = patch[0].uv1 * bary.x + patch[1].uv1 * bary.y + patch[2].uv1 * bary.z;
+    #endif
+    #if defined(_SMOOTH_NORMAL) || defined(_VERTEX_COLOR_SHADOW)
         v.color = patch[0].color * bary.x + patch[1].color * bary.y + patch[2].color * bary.z;
     #endif
 
@@ -127,14 +136,14 @@ v2f domain(
     {
         float3 phongDisp = v.vertex.xyz - linearPos;
         float3 adjustedNormal = v.normal + phongDisp * _TessNormalSmooth * 4.0;
-        v.normal = normalize(adjustedNormal);
+        v.normal = normalize(adjustedNormal + float3(0, 0, 0.0001));
     }
 
     // Displacement map: push vertices along normal based on height map
     #ifdef _TESS_DISPLACEMENT
     {
         float2 dispUV = v.uv;
-        float height = tex2Dlod(_TessDispMap, float4(dispUV, 0, 0)).r;
+        float height = NATANE_SAMPLE_REPEAT_LOD(_TessDispMap, dispUV, 0).r;
         height = (height + _TessDispOffset) * _TessDispStrength;
         v.vertex.xyz += v.normal * height;
     }

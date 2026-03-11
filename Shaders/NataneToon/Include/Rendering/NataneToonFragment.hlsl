@@ -12,6 +12,29 @@
 #define AO_INDIRECT_STRENGTH     0.5   // AO 間接光強度
 #define SH_INDIRECT_BLEND        0.85  // SH 間接光ブレンド率
 
+inline half3 NataneResolveLookWeights()
+{
+    half explicitLookMixer = step(0.5, _LookMode);
+    half legacyPbr = step(2.5, _ShadingMode);
+
+    half toonWeight = lerp(1.0h - legacyPbr, saturate(_ToonWeight), explicitLookMixer);
+    half nprWeight = lerp(1.0h, saturate(_NprWeight), explicitLookMixer);
+    half pbrWeight = lerp(legacyPbr, saturate(_PbrWeight), explicitLookMixer);
+
+    return half3(toonWeight, nprWeight, pbrWeight);
+}
+
+inline half NataneResolveBasePbrWeight(half3 lookWeights)
+{
+    half baseTotal = lookWeights.x + lookWeights.z;
+    return baseTotal > 0.0001h ? saturate(lookWeights.z / baseTotal) : 0.0h;
+}
+
+inline half NataneResolveNprWeight(half3 lookWeights)
+{
+    return saturate(lookWeights.y);
+}
+
 // Fragment Shader
 // Main pixel/fragment rendering function
 // Optimized: half precision for better performance, cached luminance calculations
@@ -59,7 +82,7 @@ half4 frag(v2f i) : SV_Target
     // ===== Glitch Stretch (UV modification before main texture sampling) =====
     #if defined(_GLITCH_STRETCH) && defined(UNITY_PASS_FORWARDBASE)
     {
-        half stretchMaskVal = tex2D(_GlitchStretchMask, TRANSFORM_TEX(mainUV, _GlitchStretchMask)).r;
+        half stretchMaskVal = NATANE_SAMPLE_REPEAT(_GlitchStretchMask, TRANSFORM_TEX(mainUV, _GlitchStretchMask)).r;
         // Mask Scale: マスク値を増幅（1.0=等倍、5.0=5倍ブースト）
         stretchMaskVal = saturate(stretchMaskVal * _GlitchStretchMaskScale);
         half stretchTrigger = step(1.0 - _GlitchStretchFrequency,
@@ -102,7 +125,7 @@ half4 frag(v2f i) : SV_Target
     #ifdef _2ND_TEXTURE
     {
         float2 _2ndAnimUV = AnimateUVIfNeeded(uv, _2ndTexScrollSpeed.xy, _2ndTexRotateSpeed);
-        half4 secondTexSample = tex2D(_2ndTex, _2ndAnimUV);
+        half4 secondTexSample = NATANE_SAMPLE_REPEAT(_2ndTex, _2ndAnimUV);
         float secondMask = NATANE_SAMPLE_SHARED_R(_2ndTexMask, _2ndTex, uv);
         col.rgb = ApplyMakeupTexture(col.rgb, secondTexSample, secondMask,
             _2ndTexHueShift, _2ndTexSaturation, _2ndTexValue,
@@ -114,7 +137,7 @@ half4 frag(v2f i) : SV_Target
     #ifdef _3RD_TEXTURE
     {
         float2 _3rdAnimUV = AnimateUVIfNeeded(uv, _3rdTexScrollSpeed.xy, _3rdTexRotateSpeed);
-        half4 thirdTexSample = tex2D(_3rdTex, _3rdAnimUV);
+        half4 thirdTexSample = NATANE_SAMPLE_REPEAT(_3rdTex, _3rdAnimUV);
         float thirdMask = NATANE_SAMPLE_SHARED_R(_3rdTexMask, _3rdTex, uv);
         col.rgb = ApplyMakeupTexture(col.rgb, thirdTexSample, thirdMask,
             _3rdTexHueShift, _3rdTexSaturation, _3rdTexValue,
@@ -126,7 +149,7 @@ half4 frag(v2f i) : SV_Target
     #ifdef _4TH_TEXTURE
     {
         float2 _4thAnimUV = AnimateUVIfNeeded(uv, _4thTexScrollSpeed.xy, _4thTexRotateSpeed);
-        half4 fourthTexSample = tex2D(_4thTex, _4thAnimUV);
+        half4 fourthTexSample = NATANE_SAMPLE_REPEAT(_4thTex, _4thAnimUV);
         float fourthMask = NATANE_SAMPLE_SHARED_R(_4thTexMask, _4thTex, uv);
         col.rgb = ApplyMakeupTexture(col.rgb, fourthTexSample, fourthMask,
             _4thTexHueShift, _4thTexSaturation, _4thTexValue,
@@ -138,7 +161,7 @@ half4 frag(v2f i) : SV_Target
     #ifdef _5TH_TEXTURE
     {
         float2 _5thAnimUV = AnimateUVIfNeeded(uv, _5thTexScrollSpeed.xy, _5thTexRotateSpeed);
-        half4 fifthTexSample = tex2D(_5thTex, _5thAnimUV);
+        half4 fifthTexSample = NATANE_SAMPLE_REPEAT(_5thTex, _5thAnimUV);
         float fifthMask = NATANE_SAMPLE_SHARED_R(_5thTexMask, _5thTex, uv);
         col.rgb = ApplyMakeupTexture(col.rgb, fifthTexSample, fifthMask,
             _5thTexHueShift, _5thTexSaturation, _5thTexValue,
@@ -153,7 +176,7 @@ half4 frag(v2f i) : SV_Target
         float3 safeCoverDirA = normalize(_CoverDirection.xyz + float3(0, 0.0001, 0));
         float coverDot = dot(i.worldNormal, safeCoverDirA);
         float coverFactor = saturate((coverDot - _CoverThreshold) * _CoverBlendSharpness) * _CoverAmount;
-        half4 coverSample = tex2D(_CoverTex, i.worldPos.xz * _CoverTiling) * _CoverColor;
+        half4 coverSample = NATANE_SAMPLE_REPEAT(_CoverTex, i.worldPos.xz * _CoverTiling) * _CoverColor;
         col.rgb = lerp(col.rgb, coverSample.rgb, coverFactor);
     }
     #endif
@@ -170,11 +193,12 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     // ===== Normal Mapping =====
+    half3x3 tangentToWorld = half3x3(i.worldTangent, i.worldBinormal, i.worldNormal);
+
     // Optimization: Skip normalization if no normal mapping (already normalized in vertex shader)
     #ifdef _NORMALMAP
         float2 bumpUV = AnimateUVIfNeeded(uv, _BumpMapScrollSpeed.xy, _BumpMapRotateSpeed);
-        half3 normalMap = UnpackScaleNormal(tex2D(_BumpMap, bumpUV), _BumpScale);
-        half3x3 tangentToWorld = half3x3(i.worldTangent, i.worldBinormal, i.worldNormal);
+        half3 normalMap = UnpackScaleNormal(NATANE_SAMPLE_REPEAT(_BumpMap, bumpUV), _BumpScale);
         half3 worldNormal = normalize(mul(normalMap, tangentToWorld));
     #else
         half3 worldNormal = i.worldNormal; // Already normalized in vertex shader
@@ -185,16 +209,27 @@ half4 frag(v2f i) : SV_Target
     {
         float2 detailUV = (_DetailUVSet > 0.5) ? i.uv1 : uv;
         detailUV *= _DetailTiling;
-        half4 detailAlbedo = tex2D(_DetailAlbedoMap, detailUV);
+        half4 detailAlbedo = NATANE_SAMPLE_REPEAT(_DetailAlbedoMap, detailUV);
         col.rgb = lerp(col.rgb, col.rgb * detailAlbedo.rgb * 2.0, _DetailAlbedoScale * detailAlbedo.a);
         #ifdef _NORMALMAP
-            half3 detailNormalTS = UnpackScaleNormal(tex2D(_DetailNormalMap, detailUV), _DetailNormalScale);
+            half3 detailNormalTS = UnpackScaleNormal(NATANE_SAMPLE_REPEAT(_DetailNormalMap, detailUV), _DetailNormalScale);
             // Transform detail normal from tangent space to world space using TBN matrix
             half3 detailNormalWS = normalize(mul(detailNormalTS, tangentToWorld));
             worldNormal = normalize(lerp(worldNormal, detailNormalWS, _DetailAlbedoScale));
         #endif
     }
     #endif
+
+    // ===== Micro Normal Detail =====
+    if (_MicroNormalStrength > 0.001)
+    {
+        float2 microNormalUV = uv * max(_MicroNormalTiling, 1.0);
+        half3 microNormalTS = UnpackScaleNormal(
+            UNITY_SAMPLE_TEX2D_SAMPLER(_MicroNormalMap, _MainTex, microNormalUV),
+            _MicroNormalScale);
+        half3 microNormalWS = normalize(mul(microNormalTS, tangentToWorld));
+        worldNormal = normalize(lerp(worldNormal, microNormalWS, saturate(_MicroNormalStrength)));
+    }
 
     // ===== Surface Cover Normal Blending =====
     #ifdef _SURFACE_COVER
@@ -203,7 +238,7 @@ half4 frag(v2f i) : SV_Target
         float3 safeCoverDir = normalize(_CoverDirection.xyz + float3(0, 0.0001, 0));
         float coverDotN = dot(worldNormal, safeCoverDir);
         float coverFactorN = saturate((coverDotN - _CoverThreshold) * _CoverBlendSharpness) * _CoverAmount;
-        half3 coverNormTS = UnpackNormal(tex2D(_CoverNormalMap, i.worldPos.xz * _CoverTiling));
+        half3 coverNormTS = UnpackNormal(NATANE_SAMPLE_REPEAT(_CoverNormalMap, i.worldPos.xz * _CoverTiling));
         // Remap from tangent space (xz projection: tangent=X, bitangent=Z, normal=Y)
         half3 coverNormWS = half3(coverNormTS.x, coverNormTS.z, coverNormTS.y);
         worldNormal = normalize(lerp(worldNormal, coverNormWS, coverFactorN));
@@ -226,7 +261,7 @@ half4 frag(v2f i) : SV_Target
         if (_NormalFlattenY > 0.001)
         {
             worldNormal.y *= (1.0 - _NormalFlattenY);
-            worldNormal = normalize(worldNormal);
+            worldNormal = normalize(worldNormal + float3(0, 0, 0.0001));
         }
     }
     #endif
@@ -288,7 +323,7 @@ half4 frag(v2f i) : SV_Target
     #ifdef _LIGHT_SNAP
     {
         // Quantize light direction to discrete angles to prevent shadow flickering
-        float snapRad = radians(_LightSnapAngle);
+        float snapRad = max(radians(_LightSnapAngle), 0.0001);
         float phi = atan2(lightDir.z, lightDir.x);
         float theta = acos(clamp(lightDir.y, -1.0, 1.0));
         float snappedPhi = round(phi / snapRad) * snapRad;
@@ -310,6 +345,7 @@ half4 frag(v2f i) : SV_Target
     effectiveLightColor = clamp(effectiveLightColor, _LightColorMin, _LightColorMax);
     half lightGray = CALC_LUMINANCE(effectiveLightColor);
     effectiveLightColor = lerp(effectiveLightColor, half3(lightGray, lightGray, lightGray), _MonochromeLighting);
+    bool lilToonExactCompatibility = _LilToonExactCompatibility > 0.5;
 
     // ===== StandardToon v2: lilToon-compatible light color =====
     #ifdef _STANDARD_TOON
@@ -323,7 +359,10 @@ half4 frag(v2f i) : SV_Target
             // Re-apply clamping (lilToon clamps after SH addition)
             stLightColor = clamp(stLightColor, _LightColorMin, _LightColorMax);
             // 最低保証: ライトカラーがゼロにならないようにする
-            stLightColor = max(stLightColor, half3(0.001, 0.001, 0.001));
+            if (!lilToonExactCompatibility)
+            {
+                stLightColor = max(stLightColor, half3(0.001, 0.001, 0.001));
+            }
             half stGray = CALC_LUMINANCE(stLightColor);
             stLightColor = lerp(stLightColor, half3(stGray, stGray, stGray), _MonochromeLighting);
             // AsUnlit: applied to lightColor directly (lilToon behavior)
@@ -369,7 +408,7 @@ half4 frag(v2f i) : SV_Target
         {
             // === PCSS: Percentage Closer Soft Shadows (Screen-Space Approximation) ===
             half pcssOriginalAtten = atten; // 元の atten を保存（Blend 用）
-            float2 pcssShadowUV = i._ShadowCoord.xy / i._ShadowCoord.w;
+            float2 pcssShadowUV = i._ShadowCoord.xy / max(i._ShadowCoord.w, 0.0001);
             float pcssReceiverDepth = LinearEyeDepth(
                 UNITY_SAMPLE_SCREENSPACE_TEXTURE(_CameraDepthTexture, pcssShadowUV).r);
 
@@ -586,6 +625,24 @@ half4 frag(v2f i) : SV_Target
     }
     #endif
 
+    half cavityEffect = 1.0;
+    if (_CavityStrength > 0.001)
+    {
+        half cavity = NATANE_SAMPLE_SHARED_R(_CavityMap, _MainTex, uv);
+        cavity = ApplySoftMask(cavity);
+        cavityEffect = lerp(1.0, cavity, _CavityStrength);
+    }
+
+    half specularVisibility = saturate(aoForIndirect * cavityEffect);
+    half specularOcclusion = NataneSpecularOcclusion(
+        specularVisibility,
+        saturate(dot(worldNormal, viewDir)),
+        saturate(1.0 - _Smoothness));
+    specularOcclusion = lerp(1.0, specularOcclusion, _SpecularOcclusionStrength);
+    half3 lookWeights = NataneResolveLookWeights();
+    half basePbrWeight = NataneResolveBasePbrWeight(lookWeights);
+    half nprWeight = NataneResolveNprWeight(lookWeights);
+
     #ifdef _USE_RAMP
         half rampInput = lightTerm;
         #ifdef _USE_AO
@@ -599,14 +656,37 @@ half4 frag(v2f i) : SV_Target
         shadowColor = lighting;
     #elif defined(_STANDARD_TOON)
         // ===== StandardToon v2: lilToon-exact pipeline =====
+        half4 lilShadowStrengthMask = half4(1, 1, 1, 1);
+        half4 lilShadowBorderMask = half4(1, 1, 1, 1);
+        half4 lilShadowBlurMask = half4(1, 1, 1, 1);
+        if (lilToonExactCompatibility)
+        {
+            lilShadowStrengthMask = NATANE_SAMPLE_SHARED(_ShadowStrengthMask, _MainTex, uv);
+            lilShadowBorderMask = NATANE_SAMPLE_SHARED(_ShadowBorderMask, _MainTex, uv);
+            lilShadowBlurMask = NATANE_SAMPLE_SHARED(_ShadowBlurMask, _MainTex, uv);
+        }
+
+        half stShadowInput = lightTerm;
+        half stShadowBlur = _STShadowBlur;
+        if (lilToonExactCompatibility)
+        {
+            stShadowInput *= lilShadowBorderMask.r;
+            stShadowBlur *= lilShadowBlurMask.r;
+        }
+
         // Tooning
-        half stToon = LilToonShading(lightTerm, _STShadowBorder, _STShadowBlur);
+        half stToon = LilToonShading(stShadowInput, _STShadowBorder, stShadowBlur);
 
         // Shadow attenuation (lilToon: lns *= lerp(1, calculatedShadow, _ShadowReceive))
         stToon *= atten;
 
         // Shadow strength (lilToon: lns = lerp(1, lns, _ShadowStrength))
-        stToon = lerp(1.0, stToon, _STShadowStrength);
+        half stShadowStrength = _STShadowStrength;
+        if (lilToonExactCompatibility)
+        {
+            stShadowStrength *= lilShadowStrengthMask.r;
+        }
+        stToon = lerp(1.0, stToon, stShadowStrength);
 
         // AO
         #ifdef _USE_AO
@@ -625,7 +705,7 @@ half4 frag(v2f i) : SV_Target
         half3 stShadowColorTexSample = half3(1.0, 1.0, 1.0);
         if (shadowColorTexStrength > 0.001)
         {
-            stShadowColorTexSample = tex2D(_ShadowColorTex, uv).rgb;
+            stShadowColorTexSample = NATANE_SAMPLE_REPEAT(_ShadowColorTex, uv).rgb;
         }
         half3 stTintedAlbedo = lerp(stAlbedo, stAlbedo * stShadowColorTexSample, shadowColorTexStrength);
         half3 stIndirectCol = stTintedAlbedo * _ShadowColor.rgb;
@@ -633,17 +713,26 @@ half4 frag(v2f i) : SV_Target
         // Multi-shadow (lilToon sequential lerp with alpha)
         #ifdef _USE_MULTI_SHADOW
             // 2nd shadow
-            half toon2 = LilToonShading(lightTerm, _Shadow2ndBorder, _STShadowBlur);
+            half toon2Input = lilToonExactCompatibility ? lightTerm * lilShadowBorderMask.g : lightTerm;
+            half toon2Blur = lilToonExactCompatibility ? _Shadow2ndBlur * lilShadowBlurMask.g : _STShadowBlur;
+            half toon2 = LilToonShading(toon2Input, _Shadow2ndBorder, toon2Blur);
             half3 st2ndCol = stAlbedo * _Shadow2ndColor.rgb;
             half alpha2 = _Shadow2ndColor.a - _Shadow2ndColor.a * toon2;
             stIndirectCol = lerp(stIndirectCol, st2ndCol, alpha2);
 
             // 3rd shadow
-            half toon3 = LilToonShading(lightTerm, _Shadow3rdBorder, _STShadowBlur);
+            half toon3Input = lilToonExactCompatibility ? lightTerm * lilShadowBorderMask.b : lightTerm;
+            half toon3Blur = lilToonExactCompatibility ? _Shadow3rdBlur * lilShadowBlurMask.b : _STShadowBlur;
+            half toon3 = LilToonShading(toon3Input, _Shadow3rdBorder, toon3Blur);
             half3 st3rdCol = stAlbedo * _Shadow3rdColor.rgb;
             half alpha3 = _Shadow3rdColor.a - _Shadow3rdColor.a * toon3;
             stIndirectCol = lerp(stIndirectCol, st3rdCol, alpha3);
         #endif
+
+        if (lilToonExactCompatibility)
+        {
+            stIndirectCol = lerp(stIndirectCol, stIndirectCol * stAlbedo, saturate(_ShadowMainStrength));
+        }
 
         // Direct color & indirect color with light color
         half3 stDirectCol = stAlbedo * stLightColor;
@@ -656,7 +745,10 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         // Safety clamp: shadow never brighter than lit
-        stIndirectCol = min(stIndirectCol, stDirectCol);
+        if (!lilToonExactCompatibility)
+        {
+            stIndirectCol = min(stIndirectCol, stDirectCol);
+        }
 
         // Store for later composition
         shadowColor = _ShadowColor.rgb;
@@ -678,8 +770,11 @@ half4 frag(v2f i) : SV_Target
 
         half gradientValue = GradientShading(lightTerm, _ShadingGradientWidth);
 
-        // Blend between modes: 0 = Toon, 1 = Gradient
-        shadingValue = lerp(toonValue, gradientValue, step(HALF_VALUE, _ShadingMode));
+        // Blend between stylized base shading and PBR-like response.
+        half stylizedMode = step(HALF_VALUE, _ShadingMode) * (1.0 - step(1.5, _ShadingMode));
+        half pbrLikeValue = saturate(lightTerm + clamp(_ShadowOffset, -1.0, 1.0));
+        half stylizedShadingValue = lerp(toonValue, gradientValue, stylizedMode);
+        shadingValue = lerp(stylizedShadingValue, pbrLikeValue, basePbrWeight);
 
         // Apply Shading Grade Map before final lighting
         shadingValue = ApplyShadingGradeMap(uv, shadingValue);
@@ -720,7 +815,7 @@ half4 frag(v2f i) : SV_Target
         half shadowColorTexStrength = saturate(_ShadowColorTexStrength);
         if (shadowColorTexStrength > 0.001)
         {
-            half3 shadowColorTex = tex2D(_ShadowColorTex, uv).rgb;
+            half3 shadowColorTex = NATANE_SAMPLE_REPEAT(_ShadowColorTex, uv).rgb;
             half3 texturedShadowColor = shadowColor * shadowColorTex;
             shadowColor = lerp(shadowColor, texturedShadowColor, shadowColorTexStrength);
         }
@@ -888,7 +983,7 @@ half4 frag(v2f i) : SV_Target
         // ========== PBR Direct + Indirect Specular (Background only) ==========
         #ifdef _PBR
         {
-            half2 metallicGloss = tex2D(_PBR_MetallicGlossMap, uv).ra;
+            half2 metallicGloss = NATANE_SAMPLE_REPEAT(_PBR_MetallicGlossMap, uv).ra;
             half metallic = metallicGloss.x * _PBR_Metallic;
             half smoothness = metallicGloss.y * _PBR_Smoothness;
             half roughness = max(0.04, 1.0 - smoothness);
@@ -897,20 +992,88 @@ half4 frag(v2f i) : SV_Target
             half3 F0 = lerp(half3(0.04, 0.04, 0.04), col.rgb, metallic);
 
             // Energy conservation: metals reduce diffuse
-            directResult *= (1.0 - metallic);
+            directResult *= (1.0 - metallic * basePbrWeight);
 
             // GGX direct specular
             half3 pbrSpec = NatanePBRSpecular(worldNormal, viewDir, lightDir,
                 roughness, F0, effectiveLightColor, atten);
-            additionalResult += pbrSpec;
+            additionalResult += pbrSpec * basePbrWeight;
 
             // Indirect specular (reflection probes)
             half3 indirectSpec = NatanePBRIndirectSpecular(worldNormal, viewDir, i.worldPos,
                 roughness, F0);
             half pbrOcclusion = NATANE_SAMPLE_SHARED_R(_PBR_OcclusionMap, _PBR_MetallicGlossMap, uv);
             pbrOcclusion = lerp(1.0, pbrOcclusion, _PBR_OcclusionStrength);
-            indirectSpec *= pbrOcclusion * _PBR_ReflectionIntensity;
+            indirectSpec *= pbrOcclusion * _PBR_ReflectionIntensity * basePbrWeight;
             additionalResult += indirectSpec;
+        }
+        #endif
+
+        #if defined(_PBR_LIKE) && !defined(_PBR)
+        {
+            half metallic = saturate(_Metallic);
+            half smoothness = saturate(_Smoothness);
+            half roughness = max(0.04, 1.0 - smoothness);
+            half3 F0 = lerp(half3(0.04, 0.04, 0.04), col.rgb, metallic);
+            half skinSurface = step(0.5, _SurfaceModel) * (1.0 - step(1.5, _SurfaceModel));
+            half skinPrimaryStrength = lerp(1.0, max(0.0, _SkinSpecPrimaryStrength), skinSurface);
+
+            directResult *= (1.0 - metallic * 0.5 * basePbrWeight);
+
+            half3 pbrLikeSpec = NatanePBRSpecular(worldNormal, viewDir, lightDir,
+                roughness, F0, effectiveLightColor, atten);
+            pbrLikeSpec *= _Glossiness * specularOcclusion * skinPrimaryStrength * basePbrWeight;
+            pbrLikeSpec = ApplyMatteQuality(pbrLikeSpec, col.rgb, _MatteEffect);
+            additionalResult += pbrLikeSpec;
+
+            #ifdef UNITY_PASS_FORWARDBASE
+                half pbrLikeReflectionIntensity = 1.0;
+                #if defined(_REFLECTION)
+                    pbrLikeReflectionIntensity = _ReflectionIntensity;
+                #endif
+
+                half3 pbrLikeIndirectSpec = NatanePBRIndirectSpecular(worldNormal, viewDir, i.worldPos,
+                    roughness, F0);
+                pbrLikeIndirectSpec *= pbrLikeReflectionIntensity * _Glossiness * specularOcclusion * skinPrimaryStrength * basePbrWeight;
+                pbrLikeIndirectSpec = ApplyMatteQuality(pbrLikeIndirectSpec, col.rgb, _MatteEffect);
+                additionalResult += pbrLikeIndirectSpec;
+            #endif
+
+            if (skinSurface > 0.5 && _SkinSpecSecondaryStrength > 0.001 && basePbrWeight > 0.001)
+            {
+                half skinSpecMask = NATANE_SAMPLE_SHARED_R(_SkinSpecMask, _MainTex, uv);
+                skinSpecMask = ApplySoftMask(skinSpecMask);
+                half secondaryStrength = max(0.0, _SkinSpecSecondaryStrength * skinSpecMask * basePbrWeight);
+
+                if (secondaryStrength > 0.001)
+                {
+                    half secondaryRoughness = max(0.02, 1.0 - saturate(_SkinSpecSecondarySmoothness));
+                    half3 secondaryF0 = half3(0.04, 0.04, 0.04);
+                    half skinGrazing = pow(1.0 - saturate(dot(worldNormal, viewDir)), max(0.1, _SkinSpecFresnelPower));
+                    half skinFresnelFactor = lerp(0.35, 1.0, saturate(skinGrazing));
+
+                    half3 skinSecondarySpec = NatanePBRSpecular(worldNormal, viewDir, lightDir,
+                        secondaryRoughness, secondaryF0, effectiveLightColor, atten);
+                    skinSecondarySpec *= _SkinSpecSecondaryColor.rgb * _Glossiness * specularOcclusion
+                        * secondaryStrength * skinFresnelFactor;
+                    skinSecondarySpec = ApplyMatteQuality(skinSecondarySpec, col.rgb, _MatteEffect);
+                    additionalResult += skinSecondarySpec;
+
+                    #ifdef UNITY_PASS_FORWARDBASE
+                        half skinSecondaryReflectionIntensity = 1.0;
+                        #if defined(_REFLECTION)
+                            skinSecondaryReflectionIntensity = _ReflectionIntensity;
+                        #endif
+
+                        half3 skinSecondaryIndirectSpec = NatanePBRIndirectSpecular(worldNormal, viewDir, i.worldPos,
+                            secondaryRoughness, secondaryF0);
+                        skinSecondaryIndirectSpec *= skinSecondaryReflectionIntensity * _SkinSpecSecondaryColor.rgb
+                            * _Glossiness * specularOcclusion * secondaryStrength * skinFresnelFactor;
+                        skinSecondaryIndirectSpec = ApplyMatteQuality(skinSecondaryIndirectSpec, col.rgb, _MatteEffect);
+                        additionalResult += skinSecondaryIndirectSpec;
+                    #endif
+                }
+            }
         }
         #endif
 
@@ -924,7 +1087,7 @@ half4 frag(v2f i) : SV_Target
             {
                 half3 stResult = lerp(stIndirectCol, stDirectCol, shadingValue);
                 stResult += additionalResult * col.rgb;
-                lighting = CompressLightingForSafeRange(stResult, 0.95, 1.08);
+                lighting = lilToonExactCompatibility ? stResult : CompressLightingForSafeRange(stResult, 0.95, 1.08);
             }
             #else
             if (_LightVolumeBlendMode < 0.5) // Add (Legacy)
@@ -967,7 +1130,7 @@ half4 frag(v2f i) : SV_Target
             #ifdef _LIGHT_VOLUME_SPECULAR
                 float3 lvSpecular = LightVolumeSpecular(col.rgb, _Smoothness, _Metallic,
                     worldNormal, viewDir, L0, L1r, L1g, L1b);
-                lvSpecular *= _LightVolumeIntensity * _GIIntensity;
+                lvSpecular *= _LightVolumeIntensity * _GIIntensity * specularOcclusion;
                 lvSpecular *= _Glossiness;
                 lvSpecular = ApplyMatteQuality(lvSpecular, col.rgb, _MatteEffect);
                 float lvSpecStrength = saturate(length(lvSpecular) * 0.5);
@@ -982,7 +1145,8 @@ half4 frag(v2f i) : SV_Target
                 half3 stResult = lerp(stIndirectCol, stDirectCol, shadingValue);
 
                 // Add additional lights (vertex lights, backlight, LTCGI) scaled by albedo
-                lighting = CompressLightingForSafeRange(stResult + additionalResult * col.rgb, 0.95, 1.08);
+                half3 standardToonLighting = stResult + additionalResult * col.rgb;
+                lighting = lilToonExactCompatibility ? standardToonLighting : CompressLightingForSafeRange(standardToonLighting, 0.95, 1.08);
                 // Note: 'lighting' here already includes albedo for StandardToon
                 // 黒防止は _LightColorMin (= lilToon _LightMinLimit) で保証
             #else
@@ -1007,7 +1171,14 @@ half4 frag(v2f i) : SV_Target
             lighting *= max(0.0, _LightIntensity);
             lighting *= max(0.0, _AdditionalLightIntensity);
         #endif
-        lighting = CompressLightingForSafeRange(lighting, 0.75, 0.9);
+        #ifdef _STANDARD_TOON
+            if (!lilToonExactCompatibility)
+            {
+                lighting = CompressLightingForSafeRange(lighting, 0.75, 0.9);
+            }
+        #else
+            lighting = CompressLightingForSafeRange(lighting, 0.75, 0.9);
+        #endif
     #endif
 
     // Store original texture color before lighting application
@@ -1026,7 +1197,14 @@ half4 frag(v2f i) : SV_Target
             #endif
             col.rgb += originalAlbedo * backlight * _BacklightColor.rgb * _LightColor0.rgb * atten * _AdditionalLightIntensity * backlightBlendFaded_add;
         }
-        col.rgb = CompressLightingForSafeRange(col.rgb, 0.75, 0.9);
+        #ifdef _STANDARD_TOON
+            if (!lilToonExactCompatibility)
+            {
+                col.rgb = CompressLightingForSafeRange(col.rgb, 0.75, 0.9);
+            }
+        #else
+            col.rgb = CompressLightingForSafeRange(col.rgb, 0.75, 0.9);
+        #endif
     #else
         #ifdef _STANDARD_TOON
             // StandardToon v2: lighting already includes albedo (computed in STEP 5)
@@ -1083,6 +1261,7 @@ half4 frag(v2f i) : SV_Target
     #if defined(_LTCGI) && defined(UNITY_PASS_FORWARDBASE)
     {
         half3 ltcgiSpecularContrib = ltcgiSpecular * _LTCGISpecular * _LTCGIIntensity;
+        ltcgiSpecularContrib *= specularOcclusion;
         ltcgiSpecularContrib = ApplyMatteQuality(ltcgiSpecularContrib, col.rgb, _MatteEffect);
         half ltcgiSpecularStrength = saturate(length(ltcgiSpecularContrib) * 0.8);
         half3 preLTCGIColor = col.rgb;
@@ -1091,8 +1270,8 @@ half4 frag(v2f i) : SV_Target
     }
     #endif
 
-    // ===== Halftone Shadow =====
-    #if defined(_HALFTONE_SHADOW)
+    // ===== Halftone Shadow (ForwardBase only) =====
+    #if defined(_HALFTONE_SHADOW) && defined(UNITY_PASS_FORWARDBASE)
     {
         // shadowFactor: 0=lit, 1=shadow
         float shadowArea = smoothstep(_HalftoneShadowThreshold + _HalftoneShadowSoftness,
@@ -1129,14 +1308,14 @@ half4 frag(v2f i) : SV_Target
             // RGB quantization
             quantized = QuantizeColorRGB(col.rgb, _QuantizeLevels, _QuantizeDither, StabilizeDitherCoord(i.pos.xy));
         }
-        col.rgb = lerp(col.rgb, quantized, _QuantizeBlend * qMask);
+        col.rgb = lerp(col.rgb, quantized, _QuantizeBlend * qMask * nprWeight);
     }
     #endif
 
     #if defined(_LUT_3D) && defined(UNITY_PASS_FORWARDBASE)
     {
         half3 lutColor = ApplyLUT3D(saturate(col.rgb), _LUT3DTex, _LUT3DSize);
-        col.rgb = lerp(col.rgb, lutColor, _LUT3DIntensity);
+        col.rgb = lerp(col.rgb, lutColor, _LUT3DIntensity * nprWeight);
     }
     #endif
 
@@ -1146,7 +1325,7 @@ half4 frag(v2f i) : SV_Target
         // Use luminance of current color as proxy for shading value
         half hatchShading = dot(col.rgb, half3(0.299, 0.587, 0.114));
         col.rgb = ApplyHatching(col.rgb, uv, hatchShading, hMask,
-            _HatchTex0, _HatchTex1, _HatchingTiling, _HatchingColor, _HatchingBlend);
+            _HatchTex0, _HatchTex1, _HatchingTiling, _HatchingColor, _HatchingBlend * nprWeight);
     }
     #endif
 
@@ -1192,7 +1371,7 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         // Apply glossiness and matte material quality
-        specContrib *= _Glossiness;
+        specContrib *= _Glossiness * specularOcclusion;
         specContrib = ApplyMatteQuality(specContrib, col.rgb, _MatteEffect);
 
         // Use safe additive blending to prevent white-out
@@ -1209,6 +1388,8 @@ half4 frag(v2f i) : SV_Target
     #ifdef _HAIR_SPECULAR
         half3 hairSpec = HairSpecularHighlight(worldNormal, i.worldTangent, i.worldBinormal,
                                                 viewDir, lightDir, uv);
+        half3 hairTransmission = HairTransmissionHighlight(worldNormal, i.worldTangent, i.worldBinormal,
+                                                           viewDir, lightDir, uv);
 
         // Boundary Dithering: apply dither pattern at hair specular highlight edges
         #if defined(_SPECULAR_DITHER)
@@ -1223,14 +1404,18 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         hairSpec *= effectiveLightColor * atten;
+        hairTransmission *= effectiveLightColor * atten;
 
         // Apply additional light intensity scaling in ForwardAdd pass
         #ifndef UNITY_PASS_FORWARDBASE
             hairSpec *= _AdditionalLightIntensity;
+            hairTransmission *= _AdditionalLightIntensity;
         #endif
 
         // Apply glossiness and matte material quality
-        hairSpec *= _Glossiness;
+        hairSpec *= _Glossiness * specularOcclusion;
+        hairTransmission *= specularOcclusion;
+        hairSpec += hairTransmission;
         hairSpec = ApplyMatteQuality(hairSpec, col.rgb, _MatteEffect);
 
         // Use safe additive blending to prevent white-out
@@ -1244,8 +1429,8 @@ half4 frag(v2f i) : SV_Target
         col.rgb = ApplyEffectBlendPost(preHairSpec, col.rgb, hairSpecBlendFaded, _HairSpecBlendMode);
     #endif
 
-    // ===== Angel Ring (天使の輪) =====
-    #if defined(_ANGEL_RING)
+    // ===== Angel Ring (天使の輪, ForwardBase only) =====
+    #if defined(_ANGEL_RING) && defined(UNITY_PASS_FORWARDBASE)
     {
         // MatCapベースUV: ビュー空間法線のY成分でリング位置を決定
         float2 angelUV = float2(
@@ -1257,7 +1442,7 @@ half4 frag(v2f i) : SV_Target
         // リングパターン: Y座標のガウシアンで幅を制御
         float ringFactor = exp(-pow((angelUV.y - 0.5) / max(_AngelRingWidth, 0.01), 2.0));
         // テクスチャサンプリング
-        half4 angelTex = tex2D(_AngelRingTex, TRANSFORM_TEX(angelUV, _AngelRingTex));
+        half4 angelTex = NATANE_SAMPLE_CLAMP(_AngelRingTex, TRANSFORM_TEX(angelUV, _AngelRingTex));
         half3 angelColor = angelTex.rgb * _AngelRingColor.rgb * ringFactor * _AngelRingIntensity;
         // ブレンド
         half3 preAngel = col.rgb;
@@ -1273,6 +1458,9 @@ half4 frag(v2f i) : SV_Target
     // ===== Subsurface Scattering =====
     #if defined(_SSS) && defined(UNITY_PASS_FORWARDBASE)
         half thickness = NATANE_SAMPLE_SHARED_R(_ThicknessMap, _MainTex, uv) * _ThicknessScale;
+        half transmissionMask = NATANE_SAMPLE_SHARED_R(_TransmissionMask, _MainTex, uv);
+        transmissionMask = ApplySoftMask(transmissionMask);
+        half transmissionStrength = lerp(1.0, transmissionMask, _TransmissionStrength);
 
         #if defined(_SSS_LUT)
             half3 sss = SubsurfaceScatteringLUT(ndotl, worldNormal, i.worldPos, thickness);
@@ -1284,12 +1472,7 @@ half4 frag(v2f i) : SV_Target
         // Apply mask texture with soft blending
         half sssMask = NATANE_SAMPLE_SHARED_R(_SSSMask, _MainTex, uv);
         sssMask = ApplySoftMask(sssMask); // Smooth mask transitions
-        sss *= sssMask;
-
-        // Apply additional light intensity scaling in ForwardAdd pass
-        #ifndef UNITY_PASS_FORWARDBASE
-            sss *= _AdditionalLightIntensity;
-        #endif
+        sss *= sssMask * transmissionStrength;
 
         // Use safe additive blending to prevent white-out
         half sssStrength = saturate(length(sss) * 0.5);
@@ -1304,7 +1487,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Rim Light Direction (pre-calculate for both Rim Light 1 & 2) =====
     #if defined(UNITY_PASS_FORWARDBASE) && (defined(_RIM_LIGHT) || defined(_RIM_LIGHT_2))
-        half3 rimDirNormalized = normalize(_RimLightDirection.xyz);
+        half3 rimDirNormalized = normalize(_RimLightDirection.xyz + float3(0, 0, 0.0001));
     #endif
 
     // ===== Rim Light =====
@@ -1342,11 +1525,6 @@ half4 frag(v2f i) : SV_Target
             }
             // Shadow-based rim suppression (independent of direction)
             rim *= lerp(1.0, shadingValue, _RimShadowMask);
-
-            // ForwardAdd: per-light color and attenuation (same pattern as Specular/SSS)
-            #ifndef UNITY_PASS_FORWARDBASE
-                rim *= effectiveLightColor * atten * _AdditionalLightIntensity;
-            #endif
 
             // Use safe additive blending to prevent white-out
             half rimStrength = saturate(length(rim) * 0.5);
@@ -1397,11 +1575,6 @@ half4 frag(v2f i) : SV_Target
         // Shadow-based rim suppression
         rim2 *= lerp(1.0, shadingValue, _RimShadowMask);
 
-        // ForwardAdd: per-light color and attenuation
-        #ifndef UNITY_PASS_FORWARDBASE
-            rim2 *= effectiveLightColor * atten * _AdditionalLightIntensity;
-        #endif
-
         // Use fast additive blending (secondary effect)
         half rim2Strength = saturate(length(rim2) * 0.5);
         half3 preRim2 = col.rgb;
@@ -1432,11 +1605,6 @@ half4 frag(v2f i) : SV_Target
         offsetRim *= _Glossiness;
         offsetRim = ApplyMatteQuality(offsetRim, col.rgb, _MatteEffect);
 
-        // ForwardAdd: per-light color and attenuation
-        #ifndef UNITY_PASS_FORWARDBASE
-            offsetRim *= effectiveLightColor * atten * _AdditionalLightIntensity;
-        #endif
-
         // Safe additive blend
         half offsetRimStrength = saturate(length(offsetRim) * 0.5);
         half3 preOffsetRim = col.rgb;
@@ -1448,11 +1616,11 @@ half4 frag(v2f i) : SV_Target
         col.rgb = ApplyEffectBlendPost(preOffsetRim, col.rgb, offsetRimBlendFaded, _OffsetRimBlendMode);
     #endif
 
-    // ===== Sheen (Fabric Luster) =====
-    #if defined(_SHEEN)
+    // ===== Sheen (Fabric Luster, ForwardBase only) =====
+    #if defined(_SHEEN) && defined(UNITY_PASS_FORWARDBASE)
     {
         half3 sheen = SheenHighlight(worldNormal, viewDir, lightDir);
-        half sheenMask = tex2D(_SheenMask, TRANSFORM_TEX(uv, _SheenMask)).r;
+        half sheenMask = NATANE_SAMPLE_CLAMP(_SheenMask, TRANSFORM_TEX(uv, _SheenMask)).r;
         sheen *= sheenMask;
         sheen = ApplyMatteQuality(sheen, col.rgb, _MatteEffect);
         half3 preSheen = col.rgb;
@@ -1489,11 +1657,6 @@ half4 frag(v2f i) : SV_Target
         // Shadow-based rim suppression
         envRim *= lerp(1.0, shadingValue, _RimShadowMask);
 
-        // ForwardAdd: per-light color and attenuation
-        #ifndef UNITY_PASS_FORWARDBASE
-            envRim *= effectiveLightColor * atten * _AdditionalLightIntensity;
-        #endif
-
         // Use safe additive blending to prevent white-out
         half envRimStrength = saturate(length(envRim) * 0.5);
         half3 preEnvRim = col.rgb;
@@ -1507,7 +1670,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== MatCap (ForwardBase only) =====
     #if defined(_MATCAP) && defined(UNITY_PASS_FORWARDBASE)
-        half3 matcap = SampleTex2DBlur3(_MatCapTex, sharedMatCapUV, _MatCapBlur) * _MatCapIntensity;
+        half3 matcap = SampleTex2DBlur3Repeat(_MatCapTex, sharedMatCapUV, _MatCapBlur) * _MatCapIntensity;
 
         // Apply mask texture with soft blending
         half matcapMask = NATANE_SAMPLE_SHARED_R(_MatCapMask, _MatCapTex, uv);
@@ -1552,7 +1715,7 @@ half4 frag(v2f i) : SV_Target
     // ===== MatCap 2 (ForwardBase only) =====
     #ifndef _QUEST_LITE
     #if defined(_MATCAP_2) && defined(UNITY_PASS_FORWARDBASE)
-        half3 matcap2 = SampleTex2DBlur3(_MatCapTex2, sharedMatCapUV, _MatCap2Blur) * _MatCapIntensity2;
+        half3 matcap2 = SampleTex2DBlur3Repeat(_MatCapTex2, sharedMatCapUV, _MatCap2Blur) * _MatCapIntensity2;
 
         half matcapMask2 = NATANE_SAMPLE_SHARED_R(_MatCapMask2, _MatCapTex2, uv);
         matcapMask2 = ApplySoftMask(matcapMask2);
@@ -1581,7 +1744,7 @@ half4 frag(v2f i) : SV_Target
     // ===== MatCap 3 (ForwardBase only) =====
     #ifndef _QUEST_LITE
     #if defined(_MATCAP_3) && defined(UNITY_PASS_FORWARDBASE)
-        half3 matcap3 = SampleTex2DBlur3(_MatCapTex3, sharedMatCapUV, _MatCap3Blur) * _MatCapIntensity3;
+        half3 matcap3 = SampleTex2DBlur3Repeat(_MatCapTex3, sharedMatCapUV, _MatCap3Blur) * _MatCapIntensity3;
 
         half matcapMask3 = NATANE_SAMPLE_SHARED_R(_MatCapMask3, _MatCapTex3, uv);
         matcapMask3 = ApplySoftMask(matcapMask3);
@@ -1636,7 +1799,7 @@ half4 frag(v2f i) : SV_Target
         reflection *= reflectionMask;
 
         // Apply glossiness and matte material quality
-        reflection *= _Glossiness;
+        reflection *= _Glossiness * specularOcclusion;
         reflection = ApplyMatteQuality(reflection, col.rgb, _MatteEffect);
 
         // Use safe additive blending to prevent white-out
@@ -1648,6 +1811,42 @@ half4 frag(v2f i) : SV_Target
             reflectionBlendFaded *= lerp(1.0, distanceFade, _ReflectionDistFade);
         #endif
         col.rgb = lerp(preReflection, col.rgb, reflectionBlendFaded);
+    #endif
+
+    // ===== Clear Coat / Wetness Layer (ForwardBase only) =====
+    #if defined(UNITY_PASS_FORWARDBASE)
+    if (_ClearCoatIntensity > 0.001)
+    {
+        half coatMask = NATANE_SAMPLE_SHARED_R(_ClearCoatMask, _MainTex, uv);
+        coatMask = ApplySoftMask(coatMask);
+        half coatStrength = saturate(_ClearCoatIntensity * coatMask);
+
+        if (coatStrength > 0.001)
+        {
+            half3 coatNormalTS = UnpackScaleNormal(
+                UNITY_SAMPLE_TEX2D_SAMPLER(_ClearCoatNormalMap, _MainTex, uv),
+                _ClearCoatNormalScale);
+            half3 coatNormalWS = normalize(mul(coatNormalTS, tangentToWorld));
+
+            half coatRoughness = max(0.02, 1.0 - saturate(_ClearCoatSmoothness));
+            half3 coatF0 = half3(0.04, 0.04, 0.04);
+            half coatGrazing = pow(1.0 - saturate(dot(coatNormalWS, viewDir)), _ClearCoatFresnelPower);
+            half coatFresnelFactor = lerp(0.25, 1.0, saturate(coatGrazing));
+
+            half3 clearCoat = NatanePBRSpecular(coatNormalWS, viewDir, lightDir,
+                coatRoughness, coatF0, effectiveLightColor, atten);
+            clearCoat += NatanePBRIndirectSpecular(coatNormalWS, viewDir, i.worldPos,
+                coatRoughness, coatF0) * _GIIntensity * coatFresnelFactor;
+
+            clearCoat *= coatStrength * specularOcclusion;
+            clearCoat = ApplyMatteQuality(clearCoat, col.rgb, _MatteEffect);
+
+            half clearCoatBlend = saturate(length(clearCoat) * 0.35 + coatStrength * 0.35);
+            half3 preClearCoat = col.rgb;
+            col.rgb = SafeAdditiveBlend(col.rgb, clearCoat, clearCoatBlend);
+            col.rgb = lerp(preClearCoat, col.rgb, coatStrength);
+        }
+    }
     #endif
 
     // ===== Fake Environment Reflection (Cubemap-free, ForwardBase only) =====
@@ -1675,7 +1874,7 @@ half4 frag(v2f i) : SV_Target
     // ===== Refraction (ForwardBase only) =====
     #if defined(_REFRACTION) && defined(UNITY_PASS_FORWARDBASE)
         // Calculate screen UV from screen position
-        float2 screenUV = i.screenPos.xy / i.screenPos.w;
+        float2 screenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
 
         // Apply refraction mask
         float refractionMask = NATANE_SAMPLE_SHARED_R(_RefractionMask, _MainTex, uv);
@@ -1716,7 +1915,7 @@ half4 frag(v2f i) : SV_Target
             emissionUV = AnimateUV(uv, float2(_EmissionScrollSpeed, _EmissionScrollSpeedY), _EmissionRotateSpeed);
         }
 
-        half3 emission = SampleTex2DBlur3(_EmissionMap, emissionUV, _EmissionBlur) * _EmissionColor.rgb;
+        half3 emission = SampleTex2DBlur3Repeat(_EmissionMap, emissionUV, _EmissionBlur) * _EmissionColor.rgb;
 
         // Apply pulse animation
         if (_EmissionPulseSpeed > 0.001)
@@ -1862,7 +2061,7 @@ half4 frag(v2f i) : SV_Target
 
             // Apply mask
             float2 smearMaskUV = AnimateUVIfNeeded(uv, _SmearMaskScrollSpeed.xy, _SmearMaskRotateSpeed);
-            half smearMask = tex2D(_SmearMask, smearMaskUV).r;
+            half smearMask = NATANE_SAMPLE_REPEAT(_SmearMask, smearMaskUV).r;
             smearMask = ApplySoftMask(smearMask);
 
             // Trail
@@ -1898,7 +2097,7 @@ half4 frag(v2f i) : SV_Target
     #if defined(_WATER_DRIP) && defined(UNITY_PASS_FORWARDBASE)
     {
         float2 dripMaskUV = AnimateUVIfNeeded(uv, _DripMaskScrollSpeed.xy, _DripMaskRotateSpeed);
-        half dripMaskValue = tex2D(_DripMask, dripMaskUV).r;
+        half dripMaskValue = NATANE_SAMPLE_REPEAT(_DripMask, dripMaskUV).r;
         dripMaskValue = ApplySoftMask(dripMaskValue);
 
         float dripSharpnessBlurred = max(0.1, _DripSharpness * (1.0 - _DripBlur * 0.8));
@@ -1935,7 +2134,7 @@ half4 frag(v2f i) : SV_Target
 
         // Hologram mask
         float2 holoMaskUV = AnimateUVIfNeeded(uv, _HologramMaskScrollSpeed.xy, _HologramMaskRotateSpeed);
-        half holoMask = tex2D(_HologramMask, holoMaskUV).r;
+        half holoMask = NATANE_SAMPLE_CLAMP(_HologramMask, holoMaskUV).r;
 
         // Multi-layer scanline (blur widens scanline width for softer effect)
         float holoWidthBlurred = _HologramScanlineWidth + _HologramBlur * 0.3;
@@ -1981,7 +2180,7 @@ half4 frag(v2f i) : SV_Target
         half3 preGlitch = col.rgb;
 
         // Glitch mask sampling with scale amplification
-        half glitchMask = tex2D(_GlitchMask, TRANSFORM_TEX(uv, _GlitchMask)).r;
+        half glitchMask = NATANE_SAMPLE_REPEAT(_GlitchMask, TRANSFORM_TEX(uv, _GlitchMask)).r;
         // Mask Scale: マスク値を増幅して「白い部分をさらに強く」できる
         // Scale=1: 等倍（従来通り）、Scale=5: マスク0.2→1.0に増幅
         glitchMask = saturate(glitchMask * _GlitchMaskScale);
@@ -2031,7 +2230,7 @@ half4 frag(v2f i) : SV_Target
         if (decalInBounds > 0.5)
         {
             half3 preDecal = col.rgb;
-            half4 decalSample = SampleTex2DBlur(_DecalTex, decalUV, _DecalBlur) * _DecalColor;
+            half4 decalSample = SampleTex2DBlurRepeat(_DecalTex, decalUV, _DecalBlur) * _DecalColor;
             half decalAlpha = decalSample.a;
             // Blend modes: 0=Add, 1=Multiply, 2=Overlay, 3=Replace
             half3 decalAdd = SafeAdditiveBlendFast(col.rgb, decalSample.rgb * decalAlpha, 1.0);
@@ -2073,12 +2272,12 @@ half4 frag(v2f i) : SV_Target
                 float axisVal = _DissolveWorldAxis < 0.5 ? dissolveCoordPos.x
                     : (_DissolveWorldAxis < 1.5 ? dissolveCoordPos.y : dissolveCoordPos.z);
                 float posNoise = saturate((axisVal - _DissolveWorldMin) / max(_DissolveWorldMax - _DissolveWorldMin, 0.01));
-                float texNoise = tex2D(_DissolveTex, dissolveUV).r;
+                float texNoise = NATANE_SAMPLE_REPEAT(_DissolveTex, dissolveUV).r;
                 dissolveNoise = lerp(posNoise, posNoise * texNoise, _DissolveNoiseBlend);
             }
             else
             {
-                dissolveNoise = tex2D(_DissolveTex, dissolveUV).r;
+                dissolveNoise = NATANE_SAMPLE_REPEAT(_DissolveTex, dissolveUV).r;
             }
             float2 dissolveResult = CalculateDissolveFromNoise(dissolveNoise, _DissolveAmount, dissolveEdgeBlurred);
             half dissolveAlpha = dissolveResult.x;
@@ -2105,48 +2304,48 @@ half4 frag(v2f i) : SV_Target
 
     #if defined(UNITY_PASS_FORWARDBASE) && (defined(_WATERCOLOR) || defined(_SOFT_FILTER) || defined(_KUWAHARA_FILTER) || defined(_SCREEN_EDGE) || defined(_COLOR_BLEEDING) || defined(_CHROMATIC_ABERRATION))
     {
-        float2 illustGrabUV = i.screenPos.xy / i.screenPos.w;
+        float2 illustGrabUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
         float2 illustScreenUV = i.pos.xy / _ScreenParams.xy;
 
         #ifdef _WATERCOLOR
         {
-            half wcMask = tex2D(_WCMask, TRANSFORM_TEX(uv, _WCMask)).r;
+            half wcMask = NATANE_SAMPLE_REPEAT(_WCMask, TRANSFORM_TEX(uv, _WCMask)).r;
             half wcShading = dot(col.rgb, half3(0.299, 0.587, 0.114));
             col.rgb = ApplyWatercolor(col.rgb, uv, illustScreenUV, wcShading, wcMask,
                 _WCGranulationTex, _WCGranulationTex_ST, _WCPaperTex, _WCPaperTex_ST,
-                _WCEdgeDarkening, _WCWetEdge, _WCGranulation, _WCPaperIntensity, _WCPaperTiling, _WCBlend);
+                _WCEdgeDarkening, _WCWetEdge, _WCGranulation, _WCPaperIntensity, _WCPaperTiling, _WCBlend * nprWeight);
         }
         #endif
 
         #ifdef _SOFT_FILTER
         {
             col.rgb = ApplySoftFilter(col.rgb, illustGrabUV, _SoftFilterRadius,
-                _SoftFilterBlend, _SoftFilterThreshold, _SoftFilterMode);
+                _SoftFilterBlend * nprWeight, _SoftFilterThreshold, _SoftFilterMode);
         }
         #endif
 
         #ifdef _KUWAHARA_FILTER
         {
-            col.rgb = ApplyKuwaharaFilter(illustGrabUV, (int)_KuwaharaRadius, _KuwaharaBlend, col.rgb);
+            col.rgb = ApplyKuwaharaFilter(illustGrabUV, (int)_KuwaharaRadius, _KuwaharaBlend * nprWeight, col.rgb);
         }
         #endif
 
         #ifdef _SCREEN_EDGE
         {
             half edgeValue = ApplyScreenEdge(illustScreenUV, _EdgeDepthSensitivity, _EdgeNormalSensitivity, _EdgeWidth);
-            col.rgb = lerp(col.rgb, _EdgeColor.rgb, edgeValue * _EdgeBlend);
+            col.rgb = lerp(col.rgb, _EdgeColor.rgb, edgeValue * _EdgeBlend * nprWeight);
         }
         #endif
 
         #ifdef _COLOR_BLEEDING
         {
-            col.rgb = ApplyColorBleeding(col.rgb, illustGrabUV, _BleedingRadius, _BleedingBlend);
+            col.rgb = ApplyColorBleeding(col.rgb, illustGrabUV, _BleedingRadius, _BleedingBlend * nprWeight);
         }
         #endif
 
         #ifdef _CHROMATIC_ABERRATION
         {
-            col.rgb = ApplyChromaticAberration(illustGrabUV, _CAIntensity, _CABlend, col.rgb);
+            col.rgb = ApplyChromaticAberration(illustGrabUV, _CAIntensity, _CABlend * nprWeight, col.rgb);
         }
         #endif
     }

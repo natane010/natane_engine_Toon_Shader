@@ -9,6 +9,11 @@
 #include "Lighting.cginc"
 #include "../Utils/NataneToonUtils.hlsl"
 
+// FurShell passes are standalone CG programs with only 3 samplers (_MainTex,
+// _FurNoiseTex, _FurMask) — well within the DX11 16-sampler limit.
+// They use standard sampler2D declarations from the .shader Pass block,
+// so NOSAMPLER conversion is intentionally skipped here.
+
 #define NATANE_FORCE_LIGHTVOLUME_HELPERS
 #define NATANE_FORCE_LTCGI_HELPERS
 #include "../Lighting/NataneToonThirdPartyLighting.hlsl"
@@ -137,7 +142,7 @@ fixed4 furFrag(v2f_fur i) : SV_Target
 
     // Distance-based LOD: fade out upper shells at distance
     float camDist = distance(i.worldPos, _WorldSpaceCameraPos);
-    float lodFade = saturate(1.0 - (camDist - _FurLODDistance) / max(_FurLODDistance, 0.001));
+    float lodFade = saturate(1.0 - max(camDist - _FurLODDistance, 0.0) / max(_FurLODDistance * 0.5, 0.001));
     // Upper layers get clipped first at distance
     float lodThreshold = lerp(_FurLODMinLayers / (float)FUR_SHELL_COUNT, 1.0, lodFade);
     clip(lodThreshold - layer - 0.001);

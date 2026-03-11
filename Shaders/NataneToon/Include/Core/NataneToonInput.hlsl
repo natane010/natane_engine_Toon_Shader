@@ -110,6 +110,15 @@ CBUFFER_START(UnityPerMaterial)
 
     // Shading
     float _ShadingMode;
+    float _SurfaceModel;
+    float _LookMode;
+    float _ToonWeight;
+    float _NprWeight;
+    float _PbrWeight;
+    float _LilToonExactCompatibility;
+    float _ShadowMainStrength;
+    float _Shadow2ndBlur;
+    float _Shadow3rdBlur;
     float _ShadingGradientWidth;
     half4 _ShadowColor;
     float _ShadowHueShift;
@@ -158,6 +167,13 @@ CBUFFER_START(UnityPerMaterial)
     float _AOBlend;
     float _AOBlendMode;
     float _AOBlur;
+    float _CavityStrength;
+    float _SpecularOcclusionStrength;
+    float _SkinSpecPrimaryStrength;
+    float _SkinSpecSecondaryStrength;
+    float _SkinSpecSecondarySmoothness;
+    half4 _SkinSpecSecondaryColor;
+    float _SkinSpecFresnelPower;
 
     // Procedural AO
     #if defined(_PROCEDURAL_AO)
@@ -252,9 +268,14 @@ CBUFFER_START(UnityPerMaterial)
     float _HairSpecIntensity;
     float _HairSpecBlend;
     float _HairSpecBlendMode;
+    float _HairStrandDirectionStrength;
+    half4 _HairTransmissionColor;
+    float _HairTransmissionStrength;
+    float _HairTransmissionPower;
     #endif
 
     #if defined(_ANGEL_RING)
+    float4 _AngelRingTex_ST;
     half4 _AngelRingColor;
     float _AngelRingOffset;
     float _AngelRingWidth;
@@ -307,6 +328,7 @@ CBUFFER_START(UnityPerMaterial)
 
     // Sheen
     #if defined(_SHEEN)
+    float4 _SheenMask_ST;
     half4 _SheenColor;
     float _SheenIntensity;
     float _SheenPower;
@@ -376,6 +398,9 @@ CBUFFER_START(UnityPerMaterial)
 
     // Normal Map
     float _BumpScale;
+    float _MicroNormalScale;
+    float _MicroNormalTiling;
+    float _MicroNormalStrength;
     // Normal Map UV Animation
     float4 _BumpMapScrollSpeed;
     float _BumpMapRotateSpeed;
@@ -394,6 +419,7 @@ CBUFFER_START(UnityPerMaterial)
     float _SSSBlend;
     float _SSSBlendMode;
     float _SSSBlur;
+    float _TransmissionStrength;
     #endif
 
     // SSS LUT (Pre-integrated Subsurface Scattering)
@@ -437,11 +463,9 @@ CBUFFER_START(UnityPerMaterial)
     float _EmissionPulseAmplitude;
     #endif
 
-    // Smoothness/Metallic - shared by Reflection, Light Volume Specular, LTCGI
-    #if defined(_REFLECTION) || defined(_USE_LIGHT_VOLUME) || defined(_LTCGI)
+    // Smoothness/Metallic - shared by reflection and realistic-character workflows
     float _Smoothness;
     float _Metallic;
-    #endif
 
     // Cubemap Reflection (Environment Mapping)
     #if defined(_REFLECTION)
@@ -452,6 +476,10 @@ CBUFFER_START(UnityPerMaterial)
     float _ReflectionBlendMode;
     float _ReflectionBlend;
     #endif
+    float _ClearCoatIntensity;
+    float _ClearCoatSmoothness;
+    float _ClearCoatNormalScale;
+    float _ClearCoatFresnelPower;
 
     // Iridescence
     #if defined(_IRIDESCENCE)
@@ -981,6 +1009,7 @@ float _VRChatMirrorMode; // 0=Normal view, 1=Inside mirror
 sampler2D _MainTex;
 #if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
 SamplerState sampler_MainTex;
+SamplerState sampler_linear_clamp;
 #endif
 
 #ifndef NATANE_SAMPLE_SHARED
@@ -988,34 +1017,39 @@ SamplerState sampler_MainTex;
 #define NATANE_SAMPLE_SHARED_R(tex, samplerTex, coord) NATANE_SAMPLE_SHARED(tex, samplerTex, coord).r
 #endif
 
+// ===== NOSAMPLER Sampling Macros =====
+// Group A (Repeat+Bilinear): share sampler_MainTex
+// Group B (Clamp+Bilinear):  share sampler_linear_clamp
+#define NATANE_SAMPLE_REPEAT(tex, uv)   UNITY_SAMPLE_TEX2D_SAMPLER(tex, _MainTex, uv)
+#define NATANE_SAMPLE_REPEAT_R(tex, uv) NATANE_SAMPLE_REPEAT(tex, uv).r
+#define NATANE_SAMPLE_CLAMP(tex, uv)    UNITY_SAMPLE_TEX2D_SAMPLER(tex, _linear_clamp, uv)
+#define NATANE_SAMPLE_CLAMP_R(tex, uv)  NATANE_SAMPLE_CLAMP(tex, uv).r
+
+// tex2Dlod replacements for vertex/tessellation/fur shell
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
+    #define NATANE_SAMPLE_REPEAT_LOD(tex, uv, lod) tex.SampleLevel(sampler_MainTex, uv, lod)
+    #define NATANE_SAMPLE_CLAMP_LOD(tex, uv, lod)  tex.SampleLevel(sampler_linear_clamp, uv, lod)
+#else
+    #define NATANE_SAMPLE_REPEAT_LOD(tex, uv, lod) tex2Dlod(tex, float4(uv, 0, lod))
+    #define NATANE_SAMPLE_CLAMP_LOD(tex, uv, lod)  tex2Dlod(tex, float4(uv, 0, lod))
+#endif
+
 // Makeup Textures
 #if defined(_2ND_TEXTURE)
-sampler2D _2ndTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_2ndTex);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_2ndTexMask);
-#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
-SamplerState sampler_2ndTex;
-#endif
 #endif
 #if defined(_3RD_TEXTURE)
-sampler2D _3rdTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_3rdTex);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_3rdTexMask);
-#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
-SamplerState sampler_3rdTex;
-#endif
 #endif
 #if defined(_4TH_TEXTURE)
-sampler2D _4thTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_4thTex);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_4thTexMask);
-#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
-SamplerState sampler_4thTex;
-#endif
 #endif
 #if defined(_5TH_TEXTURE)
-sampler2D _5thTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_5thTex);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_5thTexMask);
-#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
-SamplerState sampler_5thTex;
-#endif
 #endif
 
 // Screen-Tone
@@ -1025,41 +1059,47 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_ScreenToneMask);
 
 // Shading
 #if defined(_USE_RAMP)
-sampler2D _RampTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_RampTex);
 #endif
 #if defined(_SHADOW_RECEIVE_MASK)
 UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowReceiveMask);
 #endif
-sampler2D _ShadowColorTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowColorTex);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowStrengthMask);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowBorderMask);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowBlurMask);
 
 // SDF & Grade Maps
 #if defined(_SDF_MAP)
-sampler2D _SDFMap;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_SDFMap);
 #endif
 #if defined(_SHADING_GRADE_MAP)
-sampler2D _ShadingGradeMap;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadingGradeMap);
 #endif
 
 // Ambient Occlusion
 #if defined(_USE_AO)
 UNITY_DECLARE_TEX2D_NOSAMPLER(_AOMap);
 #endif
+UNITY_DECLARE_TEX2D_NOSAMPLER(_CavityMap);
 
 // Specular
 #if defined(_SPECULAR)
 UNITY_DECLARE_TEX2D_NOSAMPLER(_SpecularMask);
 #endif
+UNITY_DECLARE_TEX2D_NOSAMPLER(_SkinSpecMask);
 
 // Hair Specular
 #if defined(_HAIR_SPECULAR)
 UNITY_DECLARE_TEX2D_NOSAMPLER(_HairSpecMask);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_HairSpecShiftTex);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_HairStrandDirectionMap);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_HairTransmissionMask);
 #endif
 
 // Angel Ring
 #if defined(_ANGEL_RING)
-sampler2D _AngelRingTex;
-float4 _AngelRingTex_ST;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_AngelRingTex);
 #endif
 
 // Rim Light
@@ -1073,37 +1113,21 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_RimMask2);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_OffsetRimMask);
 #endif
 #if defined(_SHEEN)
-sampler2D _SheenMask;
-float4 _SheenMask_ST;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_SheenMask);
 #endif
 
 // MatCap
 #if defined(_MATCAP)
-sampler2D _MatCapTex;
-#endif
-#if defined(_MATCAP)
+UNITY_DECLARE_TEX2D_NOSAMPLER(_MatCapTex);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_MatCapMask);
-#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
-SamplerState sampler_MatCapTex;
-#endif
 #endif
 #if defined(_MATCAP_2)
-sampler2D _MatCapTex2;
-#endif
-#if defined(_MATCAP_2)
+UNITY_DECLARE_TEX2D_NOSAMPLER(_MatCapTex2);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_MatCapMask2);
-#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
-SamplerState sampler_MatCapTex2;
-#endif
 #endif
 #if defined(_MATCAP_3)
-sampler2D _MatCapTex3;
-#endif
-#if defined(_MATCAP_3)
+UNITY_DECLARE_TEX2D_NOSAMPLER(_MatCapTex3);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_MatCapMask3);
-#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
-SamplerState sampler_MatCapTex3;
-#endif
 #endif
 
 // Glitter
@@ -1113,15 +1137,12 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_GlitterMask);
 
 // Outline
 #if defined(_OUTLINE)
-sampler2D _OutlineMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_OutlineMask);
 #endif
 
 // Emission
 #if defined(_EMISSION)
-sampler2D _EmissionMap;
-#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
-SamplerState sampler_EmissionMap;
-#endif
+UNITY_DECLARE_TEX2D_NOSAMPLER(_EmissionMap);
 #endif
 #if defined(_EMISSION)
 UNITY_DECLARE_TEX2D_NOSAMPLER(_EmissionMask);
@@ -1129,23 +1150,25 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_EmissionMask);
 
 // Normal Map
 #if defined(_NORMALMAP)
-sampler2D _BumpMap;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_BumpMap);
 #endif
+UNITY_DECLARE_TEX2D_NOSAMPLER(_MicroNormalMap);
 
 // Subsurface Scattering
 #if defined(_SSS)
 UNITY_DECLARE_TEX2D_NOSAMPLER(_ThicknessMap);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_TransmissionMask);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_SSSMask);
 #endif
 
 // SSS LUT
 #if defined(_SSS_LUT)
-sampler2D _SSSLUTTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_SSSLUTTex);
 #endif
 
 // Dissolve
 #if defined(_DISSOLVE)
-sampler2D _DissolveTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_DissolveTex);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_DissolveMask);
 #endif
 
@@ -1158,6 +1181,8 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_AlphaMask);
 #if defined(_REFLECTION)
 UNITY_DECLARE_TEX2D_NOSAMPLER(_ReflectionMask);
 #endif
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ClearCoatMask);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ClearCoatNormalMap);
 
 // Iridescence
 #if defined(_IRIDESCENCE)
@@ -1181,12 +1206,12 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_RefractionMask);
 
 // Decal
 #if defined(_DECAL)
-sampler2D _DecalTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_DecalTex);
 #endif
 
 // Backface
 #if defined(_BACKFACE_TEXTURE)
-sampler2D _BackfaceTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_BackfaceTex);
 #endif
 
 // Video
@@ -1196,53 +1221,53 @@ sampler2D _VideoTex;
 
 // Vertex Animation
 #if defined(_VERTEX_ANIMATION)
-sampler2D _VertexAnimMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_VertexAnimMask);
 #endif
 
 // Water Drip
 #if defined(_WATER_DRIP)
-sampler2D _DripMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_DripMask);
 #endif
 
 // Smear
 #if defined(_SMEAR)
-sampler2D _SmearMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_SmearMask);
 #endif
 
 // Fur
 #if defined(_FUR)
-sampler2D _FurNoiseTex;
-sampler2D _FurMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_FurNoiseTex);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_FurMask);
 #endif
 
 // PBR
 #if defined(_PBR)
-sampler2D _PBR_MetallicGlossMap;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_PBR_MetallicGlossMap);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_PBR_OcclusionMap);
 #endif
 
 // Smooth Normal Texture (for Mode 2: Baked Normal Texture)
 #if defined(_SMOOTH_NORMAL)
-sampler2D _SmoothNormalTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_SmoothNormalTex);
 #endif
 
 // Hologram (conditionally compiled)
 #if defined(_HOLOGRAM)
-sampler2D _HologramMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_HologramMask);
 #endif
 #if defined(_HOLOGRAM_NOISE)
-sampler2D _HologramNoiseTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_HologramNoiseTex);
 #endif
 
 // Glitch Mask
 #if defined(_GLITCH)
-sampler2D _GlitchMask;
-sampler2D _GlitchNoiseTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_GlitchMask);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_GlitchNoiseTex);
 #endif
 
 // Glitch Stretch Mask
 #if defined(_GLITCH_STRETCH)
-sampler2D _GlitchStretchMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_GlitchStretchMask);
 #endif
 
 // Illustration Style Textures
@@ -1250,46 +1275,46 @@ sampler2D _GlitchStretchMask;
 UNITY_DECLARE_TEX2D_NOSAMPLER(_QuantizeMask);
 #endif
 #ifdef _LUT_3D
-sampler2D _LUT3DTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_LUT3DTex);
 #endif
 #ifdef _HATCHING
-sampler2D _HatchTex0;
-sampler2D _HatchTex1;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_HatchTex0);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_HatchTex1);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_HatchingMask);
 #endif
 #ifdef _WATERCOLOR
-sampler2D _WCGranulationTex;
-sampler2D _WCPaperTex;
-sampler2D _WCMask;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_WCGranulationTex);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_WCPaperTex);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_WCMask);
 #endif
 #ifdef _SCREEN_EDGE
 UNITY_DECLARE_SCREENSPACE_TEXTURE(_CameraDepthNormalsTexture);
 #endif
 #ifdef _OUTLINE_HAND_DRAWN
-sampler2D _OutlineNoiseTex;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_OutlineNoiseTex);
 #endif
 
 // VAT
 #if defined(_VAT)
-sampler2D _VATPositionMap;
-sampler2D _VATNormalMap;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_VATPositionMap);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_VATNormalMap);
 #endif
 
 // Tessellation Displacement
 #if defined(_TESS_DISPLACEMENT)
-sampler2D _TessDispMap;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_TessDispMap);
 #endif
 
 // Detail Map
 #if defined(_DETAIL_MAP)
-sampler2D _DetailAlbedoMap;
-sampler2D _DetailNormalMap;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_DetailAlbedoMap);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_DetailNormalMap);
 #endif
 
 // Surface Cover
 #if defined(_SURFACE_COVER)
-sampler2D _CoverTex;
-sampler2D _CoverNormalMap;
+UNITY_DECLARE_TEX2D_NOSAMPLER(_CoverTex);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_CoverNormalMap);
 #endif
 
 // Cubemap samplers (outside CBUFFER)

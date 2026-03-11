@@ -33,11 +33,25 @@ namespace NataneToon.MaterialSystem
     [Serializable]
     public class MaterialParameterData
     {
+        public int schemaVersion = 4;
+
         // Basic Properties
         public Color mainColor = Color.white;
         public float alpha = 1f;
 
         // Shading
+        public int lookMode = 0;
+        public float toonWeight = 1f;
+        public float nprWeight = 0f;
+        public float pbrWeight = 0f;
+        public bool lilToonMigrated = false;
+        public bool lilToonExactCompatibility = false;
+        public int lilToonMigrationMode = 0;
+        public int lilToonParityFlags = 0;
+        public string lilToonSourceShader = "";
+        public string lilToonMigrationVersion = "";
+        public float shadingMode = 0f;
+        public float surfaceModel = 0f;
         public Color shadowColor = new Color(0.5f, 0.5f, 0.5f, 1f);
         public int toonSteps = 2;
         public float toonSharpness = 0.5f;
@@ -51,6 +65,7 @@ namespace NataneToon.MaterialSystem
         public bool useSpecular = false;
         public Color specularColor = Color.white;
         public float specularIntensity = 1f;
+        public float specularBlend = 1f;
         public float specularSize = 0.1f;
         public float specularSharpness = 0.9f;
         public bool useSpecularMask = false;
@@ -179,6 +194,21 @@ namespace NataneToon.MaterialSystem
     [CreateAssetMenu(fileName = "New Material Preset", menuName = "Natane/Material Preset", order = 1)]
     public class NataneToonMaterialPreset : ScriptableObject
     {
+        private const int CurrentSchemaVersion = 4;
+        private static readonly string[] LegacyNprKeywords =
+        {
+            "_COLOR_QUANTIZE",
+            "_LUT_3D",
+            "_HATCHING",
+            "_WATERCOLOR",
+            "_SOFT_FILTER",
+            "_KUWAHARA_FILTER",
+            "_SCREEN_EDGE",
+            "_COLOR_BLEEDING",
+            "_CHROMATIC_ABERRATION",
+            "_OUTLINE_HAND_DRAWN"
+        };
+
         [Header("Preset Information")]
         public string presetName = "New Preset";
         [TextArea(3, 5)]
@@ -219,6 +249,18 @@ namespace NataneToon.MaterialSystem
             if (material.HasProperty("_Alpha")) material.SetFloat("_Alpha", p.alpha);
 
             // Shading
+            if (material.HasProperty("_ShadingMode")) material.SetFloat("_ShadingMode", p.shadingMode);
+            if (material.HasProperty("_SurfaceModel")) material.SetFloat("_SurfaceModel", p.surfaceModel);
+            if (material.HasProperty("_LookMode")) material.SetFloat("_LookMode", Mathf.Max(0, p.lookMode));
+            if (material.HasProperty("_ToonWeight")) material.SetFloat("_ToonWeight", Mathf.Clamp01(p.toonWeight));
+            if (material.HasProperty("_NprWeight")) material.SetFloat("_NprWeight", Mathf.Clamp01(p.nprWeight));
+            if (material.HasProperty("_PbrWeight")) material.SetFloat("_PbrWeight", Mathf.Clamp01(p.pbrWeight));
+            if (material.HasProperty("_LilToonMigrated")) material.SetFloat("_LilToonMigrated", p.lilToonMigrated ? 1f : 0f);
+            if (material.HasProperty("_LilToonExactCompatibility")) material.SetFloat("_LilToonExactCompatibility", p.lilToonExactCompatibility ? 1f : 0f);
+            if (material.HasProperty("_LilToonMigrationMode")) material.SetFloat("_LilToonMigrationMode", Mathf.Max(0, p.lilToonMigrationMode));
+            if (material.HasProperty("_LilToonParityFlags")) material.SetFloat("_LilToonParityFlags", Mathf.Max(0, p.lilToonParityFlags));
+            material.SetOverrideTag("NataneLilToonSourceShader", p.lilToonSourceShader ?? string.Empty);
+            material.SetOverrideTag("NataneLilToonMigrationVersion", p.lilToonMigrationVersion ?? string.Empty);
             if (material.HasProperty("_ShadowColor")) material.SetColor("_ShadowColor", p.shadowColor);
             if (material.HasProperty("_ShadowSteps")) material.SetFloat("_ShadowSteps", p.toonSteps);
             if (material.HasProperty("_ShadowSharpness")) material.SetFloat("_ShadowSharpness", p.toonSharpness);
@@ -231,9 +273,10 @@ namespace NataneToon.MaterialSystem
             // Specular
             SetKeyword(material, "_SPECULAR", p.useSpecular);
             if (material.HasProperty("_SpecularColor")) material.SetColor("_SpecularColor", p.specularColor);
+            if (material.HasProperty("_SpecularIntensity")) material.SetFloat("_SpecularIntensity", Mathf.Max(0f, p.specularIntensity));
             if (material.HasProperty("_SpecularSize")) material.SetFloat("_SpecularSize", p.specularSize);
             if (material.HasProperty("_SpecularSoftness")) material.SetFloat("_SpecularSoftness", p.specularSharpness);
-            if (material.HasProperty("_SpecularBlend")) material.SetFloat("_SpecularBlend", Mathf.Clamp01(p.specularIntensity));
+            if (material.HasProperty("_SpecularBlend")) material.SetFloat("_SpecularBlend", Mathf.Clamp01(p.specularBlend));
             SetKeyword(material, "_SPECULAR_MASK", p.useSpecularMask);
 
             // Rim Light
@@ -364,12 +407,20 @@ namespace NataneToon.MaterialSystem
             }
 
             var p = parameters;
+            p.schemaVersion = CurrentSchemaVersion;
 
             // Basic Properties
             if (material.HasProperty("_Color")) p.mainColor = material.GetColor("_Color");
             if (material.HasProperty("_Alpha")) p.alpha = material.GetFloat("_Alpha");
 
             // Shading
+            ResolveLookMixer(material, p);
+            if (material.HasProperty("_LilToonMigrated")) p.lilToonMigrated = material.GetFloat("_LilToonMigrated") > 0.5f;
+            if (material.HasProperty("_LilToonExactCompatibility")) p.lilToonExactCompatibility = material.GetFloat("_LilToonExactCompatibility") > 0.5f;
+            if (material.HasProperty("_LilToonMigrationMode")) p.lilToonMigrationMode = Mathf.RoundToInt(material.GetFloat("_LilToonMigrationMode"));
+            if (material.HasProperty("_LilToonParityFlags")) p.lilToonParityFlags = Mathf.RoundToInt(material.GetFloat("_LilToonParityFlags"));
+            p.lilToonSourceShader = material.GetTag("NataneLilToonSourceShader", false, string.Empty);
+            p.lilToonMigrationVersion = material.GetTag("NataneLilToonMigrationVersion", false, string.Empty);
             if (material.HasProperty("_ShadowColor")) p.shadowColor = material.GetColor("_ShadowColor");
             if (material.HasProperty("_ShadowSteps")) p.toonSteps = (int)material.GetFloat("_ShadowSteps");
             if (material.HasProperty("_ShadowSharpness")) p.toonSharpness = material.GetFloat("_ShadowSharpness");
@@ -382,9 +433,11 @@ namespace NataneToon.MaterialSystem
             // Specular
             p.useSpecular = material.IsKeywordEnabled("_SPECULAR");
             if (material.HasProperty("_SpecularColor")) p.specularColor = material.GetColor("_SpecularColor");
+            if (material.HasProperty("_SpecularIntensity")) p.specularIntensity = material.GetFloat("_SpecularIntensity");
+            else if (material.HasProperty("_SpecularBlend")) p.specularIntensity = material.GetFloat("_SpecularBlend");
             if (material.HasProperty("_SpecularSize")) p.specularSize = material.GetFloat("_SpecularSize");
             if (material.HasProperty("_SpecularSoftness")) p.specularSharpness = material.GetFloat("_SpecularSoftness");
-            if (material.HasProperty("_SpecularBlend")) p.specularIntensity = material.GetFloat("_SpecularBlend");
+            if (material.HasProperty("_SpecularBlend")) p.specularBlend = material.GetFloat("_SpecularBlend");
             p.useSpecularMask = material.IsKeywordEnabled("_SPECULAR_MASK");
 
             // Rim Light
@@ -512,6 +565,47 @@ namespace NataneToon.MaterialSystem
             {
                 material.DisableKeyword(keyword);
             }
+        }
+
+        private static void ResolveLookMixer(Material material, MaterialParameterData p)
+        {
+            p.shadingMode = material.HasProperty("_ShadingMode") ? material.GetFloat("_ShadingMode") : 0f;
+            p.surfaceModel = material.HasProperty("_SurfaceModel") ? material.GetFloat("_SurfaceModel") : 0f;
+
+            bool hasExplicitLookMixer =
+                material.HasProperty("_LookMode") &&
+                material.HasProperty("_ToonWeight") &&
+                material.HasProperty("_NprWeight") &&
+                material.HasProperty("_PbrWeight") &&
+                material.GetFloat("_LookMode") > 0.5f;
+
+            if (hasExplicitLookMixer)
+            {
+                p.lookMode = Mathf.RoundToInt(material.GetFloat("_LookMode"));
+                p.toonWeight = Mathf.Clamp01(material.GetFloat("_ToonWeight"));
+                p.nprWeight = Mathf.Clamp01(material.GetFloat("_NprWeight"));
+                p.pbrWeight = Mathf.Clamp01(material.GetFloat("_PbrWeight"));
+                return;
+            }
+
+            bool legacyPbr = p.shadingMode >= 2.5f || material.IsKeywordEnabled("_PBR_LIKE") || material.IsKeywordEnabled("_PBR");
+            p.lookMode = 0;
+            p.toonWeight = legacyPbr ? 0f : 1f;
+            p.pbrWeight = legacyPbr ? 1f : 0f;
+            p.nprWeight = HasLegacyNprFeatures(material) ? 1f : 0f;
+        }
+
+        private static bool HasLegacyNprFeatures(Material material)
+        {
+            foreach (string keyword in LegacyNprKeywords)
+            {
+                if (material.IsKeywordEnabled(keyword))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
