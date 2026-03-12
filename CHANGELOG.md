@@ -5,6 +5,24 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.8] - 2026-03-13
+
+### Fixed
+- **ForwardAdd shadow color leakage**: Eliminated shadow color bleeding in ForwardAdd pass that caused multiple colored point lights to wash the entire model in a mixed color (purple wash). ForwardAdd now outputs zero on the shadow side, matching the vertex light pixel-precision path.
+- **Comprehensive UI improvements**: Fixed 25 UI/UX issues across the editor tooling including exception handling in migration card, foldout state persistence, search-time performance visibility, Look Mixer property safety, localization gaps, and disabled-state clarity.
+- **Migration tool localization**: Added missing Japanese translations for migration tool buttons and messages.
+- **Batch operation safety**: Added confirmation dialog for workflow switches and Undo grouping for batch auto-fix operations.
+
+### Added
+- **NataneUIConstants**: Centralized UI constants (button heights, spacing, window sizes) for consistent editor tool layout.
+- **Prefab material pagination**: Large prefab material lists now paginate at 20 items per page.
+- **Workflow navigation**: Direct "Open Workflow Settings" button in Look Mixer when lilToon migration mode is active.
+- **Dependency warning dismiss**: Users can now dismiss the dependency installer status notification.
+
+### Changed
+- **Search result ordering**: Reorganized inspector search results by category importance (Core → Effects → Advanced).
+- **Foldout state validation**: Added key validation on load to prevent null references from version mismatches.
+
 ## [1.4.7] - 2026-03-11
 
 ### Fixed
