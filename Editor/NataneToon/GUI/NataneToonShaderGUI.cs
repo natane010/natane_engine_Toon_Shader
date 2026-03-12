@@ -224,6 +224,9 @@ public class NataneToonShaderGUI : ShaderGUI
     private bool workflowShouldReturn;
     private bool workflowIsNonToon;
 
+    /// <summary>Whether the user has dismissed the dependency install status message this session</summary>
+    private static bool _dismissedDependencyWarning;
+
     // ===== RENDERING MODE =====
     public enum RenderingMode
     {
@@ -259,63 +262,69 @@ public class NataneToonShaderGUI : ShaderGUI
     private static readonly string[][] sectionSearchData = new string[][]
     {
         // { drawMethodSuffix, displayName, keywords }
+        // --- Core: Workflow & Base ---
         new[] { "CurrentState", "編集ワークフロー", "workflow current state summary shader status mode migration rendering workflow liltoon natane quick overview 編集ワークフロー 現在の状態 シェーダー モード 移行 描画タイプ" },
         new[] { "MainTexture", "Main Texture", "main texture color" },
         new[] { "MakeupTextures", "Makeup Textures", "makeup texture layer 2nd 3rd 4th 5th" },
-        new[] { "ScreenTone", "Screen Tone", "screen tone halftone dot pattern overlay" },
+        new[] { "NormalMap", "Normal Map", "normal map bump" },
+        new[] { "Backface", "Backface", "backface texture back" },
+        // --- Core: Shading & Lighting ---
         new[] { "Shading", "Shading", "shading toon shadow" },
         new[] { "AdvancedLighting", "Advanced Lighting", "advanced lighting" },
         new[] { "AO", "Ambient Occlusion", "ambient occlusion ao" },
-        new[] { "Dithering", "Dithering", "dithering screen tone" },
         new[] { "LightVolume", "VRC Light Volume", "vrc light volume" },
         new[] { "LTCGI", "LTCGI", "ltcgi area light" },
+        new[] { "LightSnap", "Light Snap", "light snap direction stabilize flicker" },
+        new[] { "CastShadowColor", "Cast Shadow Color", "cast shadow color tint intensity" },
+        new[] { "ShadowEdgeNoise", "Shadow Edge Noise", "shadow edge noise hand-drawn analog" },
+        // --- Effects: Surface ---
         new[] { "Specular", "Specular", "specular reflection" },
         new[] { "HairSpecular", "Hair Specular", "hair specular highlight kajiya" },
         new[] { "RimLight", "Rim Light", "rim light edge offset" },
+        new[] { "EnvironmentalRim", "Environmental Rim", "environmental rim" },
         new[] { "SSS", "Subsurface Scattering", "sss subsurface scattering translucent" },
         new[] { "MatCap", "MatCap", "matcap sphere map" },
+        new[] { "ProceduralMatCap", "Procedural MatCap", "procedural matcap texture-free mathematical gradient fresnel" },
+        new[] { "Reflection", "Reflection", "reflection cubemap" },
+        new[] { "FakeReflection", "Fake Reflection", "fake reflection environment sky ground cubemap-free lightweight" },
+        new[] { "Iridescence", "Iridescence", "iridescence" },
+        new[] { "Refraction", "Refraction", "refraction ior" },
+        new[] { "PBR", "PBR", "pbr metallic smoothness reflection probe" },
+        // --- Effects: Artistic ---
+        new[] { "ScreenTone", "Screen Tone", "screen tone halftone dot pattern overlay" },
+        new[] { "Dithering", "Dithering", "dithering screen tone" },
         new[] { "Glitter", "Glitter", "glitter sparkle" },
-        new[] { "Drip", "Drip", "drip water drop" },
-        new[] { "Smear", "Smear", "smear afterimage stretch trail glow" },
-        new[] { "Hologram", "Hologram", "hologram glitch" },
+        new[] { "Emission", "Emission", "emission glow" },
         new[] { "Decal", "Decal", "decal sticker" },
         new[] { "Outline", "Outline", "outline contour smooth normal" },
-        new[] { "Emission", "Emission", "emission glow" },
+        new[] { "Hologram", "Hologram", "hologram glitch" },
+        new[] { "Drip", "Drip", "drip water drop" },
+        new[] { "Smear", "Smear", "smear afterimage stretch trail glow" },
         new[] { "VirtualExpression", "Virtual Expression", "virtual expression dissolve" },
         new[] { "AudioLink", "AudioLink", "audiolink music reactive" },
-        new[] { "Reflection", "Reflection", "reflection cubemap" },
-        new[] { "Iridescence", "Iridescence", "iridescence" },
-        new[] { "EnvironmentalRim", "Environmental Rim", "environmental rim" },
-        new[] { "Refraction", "Refraction", "refraction ior" },
-        new[] { "NormalMap", "Normal Map", "normal map bump" },
+        new[] { "GradientBaseColor", "Gradient Base Color", "gradient base color position tint" },
+        new[] { "DepthColorFade", "Depth Color Fade", "depth color fade aerial perspective atmosphere desaturation distance" },
+        new[] { "PerspectiveFlat", "Perspective Flat", "perspective flat flatten depth compression 2d illustration" },
+        // --- Effects: Geometry & Animation ---
         new[] { "Parallax", "Parallax", "parallax height map" },
         new[] { "VertexAnimation", "Vertex Animation", "vertex animation wind breath pulse" },
         new[] { "VAT", "VAT", "vat vertex animation texture houdini" },
         new[] { "Tessellation", "Tessellation", "tessellation smoothing phong" },
-        new[] { "Backface", "Backface", "backface texture back" },
-        new[] { "Video", "Video", "video texture render" },
-        new[] { "GradientBaseColor", "Gradient Base Color", "gradient base color position tint" },
+        new[] { "Fur", "Fur", "fur shell hair strand pelt" },
+        new[] { "DetailMap", "Detail Map", "detail map secondary uv close-up" },
+        new[] { "Triplanar", "Triplanar", "triplanar projection no uv rock terrain" },
+        new[] { "SurfaceCover", "Surface Cover", "surface cover snow sand accumulation" },
+        // --- Advanced: Rendering & Optimization ---
+        new[] { "Rendering", "Rendering", "rendering mode opaque cutout transparent" },
         new[] { "HeightFade", "Height Fade", "height fade local position transparency" },
         new[] { "IntersectionFade", "Intersection Fade", "intersection fade depth contact" },
         new[] { "DistanceFade", "Distance Fade", "distance fade lod" },
-        new[] { "Stencil", "Stencil", "stencil mask buffer" },
-        new[] { "Fur", "Fur", "fur shell hair strand pelt" },
-        new[] { "BackgroundLightmap", "Background Lightmap", "lightmap background bake gi" },
-        new[] { "PBR", "PBR", "pbr metallic smoothness reflection probe" },
-        new[] { "Rendering", "Rendering", "rendering mode opaque cutout transparent" },
-        new[] { "DetailMap", "Detail Map", "detail map secondary uv close-up" },
-        new[] { "Triplanar", "Triplanar", "triplanar projection no uv rock terrain" },
         new[] { "HeightFog", "Height Fog", "height fog material fog mist atmosphere" },
-        new[] { "SurfaceCover", "Surface Cover", "surface cover snow sand accumulation" },
+        new[] { "Stencil", "Stencil", "stencil mask buffer" },
+        new[] { "Video", "Video", "video texture render" },
+        new[] { "BackgroundLightmap", "Background Lightmap", "lightmap background bake gi" },
         new[] { "MirrorControl", "Mirror Control", "mirror control vrchat reflection" },
         new[] { "QuestLite", "Quest Lite", "quest lite mobile performance optimization" },
-        new[] { "ShadowEdgeNoise", "Shadow Edge Noise", "shadow edge noise hand-drawn analog" },
-        new[] { "CastShadowColor", "Cast Shadow Color", "cast shadow color tint intensity" },
-        new[] { "LightSnap", "Light Snap", "light snap direction stabilize flicker" },
-        new[] { "ProceduralMatCap", "Procedural MatCap", "procedural matcap texture-free mathematical gradient fresnel" },
-        new[] { "FakeReflection", "Fake Reflection", "fake reflection environment sky ground cubemap-free lightweight" },
-        new[] { "PerspectiveFlat", "Perspective Flat", "perspective flat flatten depth compression 2d illustration" },
-        new[] { "DepthColorFade", "Depth Color Fade", "depth color fade aerial perspective atmosphere desaturation distance" },
     };
 
     // ===== SHADER TYPE DRAWER INSTANCES =====
@@ -444,6 +453,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 _lastLoadedMaterialInstanceId = currentMaterialId;
                 _lastValidatedMaterialInstanceId = -1;
                 _keywordValidationRequested = true;
+                searchQuery = "";
                 InvalidateInspectorCaches();
             }
             LoadUIState();
@@ -456,6 +466,7 @@ public class NataneToonShaderGUI : ShaderGUI
             SafeDrawSection(DrawCurrentStateSection, L("編集ワークフロー", "Workflow"));
             if (workflowShouldReturn)
             {
+                SaveUIState();
                 GUIUtility.ExitGUI();
                 return;
             }
@@ -502,6 +513,8 @@ public class NataneToonShaderGUI : ShaderGUI
             // ===== Tab Content or Search Results =====
             if (!string.IsNullOrEmpty(searchQuery))
             {
+                DrawSharedInspectorSections();
+                EditorGUILayout.Space(SECTION_SPACING);
                 DrawSearchResults(searchQuery);
             }
             else
@@ -1026,6 +1039,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
         if (lookModeProp == null || toonWeightProp == null || nprWeightProp == null || pbrWeightProp == null)
         {
+            EditorGUILayout.HelpBox(
+                L("このマテリアルには Look Mixer プロパティがありません。シェーダーが Look Mixer に対応しているか確認してください。",
+                  "Look Mixer properties are not available on this material. Please verify the shader supports Look Mixer."),
+                MessageType.Warning);
             return;
         }
 
@@ -1046,8 +1063,8 @@ public class NataneToonShaderGUI : ShaderGUI
         EditorGUILayout.LabelField(L("見た目ミキサー", "Look Mixer"), EditorStyles.boldLabel);
         DrawHelpToggle(
             "LookMixer",
-            L("Toon と PBR はベースの陰影バランス、NPR はその上に重ねる作風エフェクトの強さです。",
-              "Toon and PBR blend the base shading. NPR controls the post-style stack layered on top."),
+            L("Toon と PBR はベースの陰影バランス、NPR はその上に重ねる作風エフェクトの強さです。 (Ctrl+Z で元に戻せます)",
+              "Toon and PBR blend the base shading. NPR controls the post-style stack layered on top. (Ctrl+Z to undo)"),
             MessageType.None);
 
         if (lilToonMatchEnabled)
@@ -1056,6 +1073,10 @@ public class NataneToonShaderGUI : ShaderGUI
                 L("lilToon移行仕様が ON の間は、見た目ミキサーは読み取り専用です。上部の「編集ワークフロー」で Natane仕様 に戻すと通常編集に戻れます。",
                   "Look Mixer is read-only while the lilToon migration workflow is ON. Switch back to the Natane workflow from the Workflow panel at the top to resume normal editing."),
                 MessageType.Info);
+            if (GUILayout.Button(L("編集ワークフローを開く", "Open Workflow Settings")))
+            {
+                SetFoldout("CurrentState", true);
+            }
         }
 
         if (isLegacy)
@@ -1068,6 +1089,14 @@ public class NataneToonShaderGUI : ShaderGUI
 
         using (new EditorGUI.DisabledScope(lilToonMatchEnabled))
         {
+            if (lilToonMatchEnabled)
+            {
+                GUIStyle disabledLabelStyle = new GUIStyle(EditorStyles.miniLabel);
+                disabledLabelStyle.normal.textColor = new Color(1f, 0.6f, 0.2f);
+                EditorGUILayout.LabelField(
+                    L("lilToon移行ワークフロー有効中のため操作できません", "Disabled: lilToon migration workflow is active"),
+                    disabledLabelStyle);
+            }
             EditorGUI.BeginChangeCheck();
             int nextLookMode = EditorGUILayout.Popup(L("見た目プリセット", "Look Mode"), currentLookMode, GetLookModeLabels());
             float nextToon = EditorGUILayout.Slider(L("トゥーン寄り", "Toon Weight"), currentToon, 0f, 1f);
@@ -1086,6 +1115,7 @@ public class NataneToonShaderGUI : ShaderGUI
                     nextToon,
                     nextNpr,
                     nextPbr);
+                materialEditor?.Repaint();
             }
         }
 
@@ -1112,20 +1142,32 @@ public class NataneToonShaderGUI : ShaderGUI
     private void OpenLilToonMigrationTool()
     {
         const string migrationToolTypeName = "NataneToon.Editor.LilToonMigrationTool, NataneToon.Editor.Migration";
-        var migrationToolType = Type.GetType(migrationToolTypeName);
-        if (migrationToolType != null)
+        try
         {
-            var showWindowMethod = migrationToolType.GetMethod(
-                "ShowWindow",
-                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-
-            if (showWindowMethod != null)
+            var migrationToolType = Type.GetType(migrationToolTypeName);
+            if (migrationToolType != null)
             {
-                showWindowMethod.Invoke(null, null);
+                var showWindowMethod = migrationToolType.GetMethod(
+                    "ShowWindow",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+
+                if (showWindowMethod != null)
+                {
+                    showWindowMethod.Invoke(null, null);
+                    return;
+                }
+
+                EditorWindow.GetWindow(migrationToolType);
                 return;
             }
-
-            EditorWindow.GetWindow(migrationToolType);
+        }
+        catch (ExitGUIException) { throw; }
+        catch (Exception ex)
+        {
+            EditorGUILayout.HelpBox(
+                L("lilToon Migration ツールの読み込みに失敗しました: " + ex.Message,
+                  "Failed to load lilToon Migration tool: " + ex.Message),
+                MessageType.Error);
             return;
         }
 
@@ -1480,6 +1522,24 @@ public class NataneToonShaderGUI : ShaderGUI
         if (materialEditor == null || materialEditor.targets == null || materialEditor.targets.Length == 0)
         {
             return;
+        }
+
+        if (materialEditor.targets.Length > 1)
+        {
+            string workflowName = enableLilToonMatch
+                ? L("lilToon移行仕様", "lilToon Migration Workflow")
+                : L("Natane仕様", "Natane Workflow");
+            string message = L(
+                $"{materialEditor.targets.Length} 個のマテリアルの編集ワークフローを「{workflowName}」に切り替えます。\nシェーディングモードやキーワードが一括変更されます。続行しますか？",
+                $"This will switch the editing workflow to \"{workflowName}\" for {materialEditor.targets.Length} materials.\nShading mode and keywords will be changed in batch. Continue?");
+            if (!EditorUtility.DisplayDialog(
+                L("ワークフロー一括切替の確認", "Confirm Batch Workflow Switch"),
+                message,
+                L("続行", "Continue"),
+                L("キャンセル", "Cancel")))
+            {
+                return;
+            }
         }
 
         Undo.RecordObjects(materialEditor.targets, enableLilToonMatch ? "Enable LilToon Match" : "Switch to Natane Mode");
@@ -1878,9 +1938,15 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private static void DrawDependencyInstallStatus()
     {
-        if (NataneDependencyInstaller.HasStatusMessage)
+        if (_dismissedDependencyWarning || !NataneDependencyInstaller.HasStatusMessage)
         {
-            EditorGUILayout.HelpBox(NataneDependencyInstaller.StatusMessage, NataneDependencyInstaller.StatusType);
+            return;
+        }
+
+        EditorGUILayout.HelpBox(NataneDependencyInstaller.StatusMessage, NataneDependencyInstaller.StatusType);
+        if (GUILayout.Button(L("この通知を閉じる", "Dismiss"), EditorStyles.miniButton, GUILayout.Width(80)))
+        {
+            _dismissedDependencyWarning = true;
         }
     }
 
@@ -6727,8 +6793,8 @@ public class NataneToonShaderGUI : ShaderGUI
             NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate samplerBudget = GetCurrentSamplerBudgetEstimate();
 
             EditorGUILayout.LabelField(
-                L("最初にここで Shader Type と編集仕様を切り替えて、下の早見表で現在状態を確認できます。",
-                  "Switch shader and editing workflow here first, then confirm the current state in the summary below."),
+                L("最初にここで Shader Type と編集仕様を切り替えて、下の早見表で現在状態を確認できます。 (Ctrl+Z で元に戻せます)",
+                  "Switch shader and editing workflow here first, then confirm the current state in the summary below. (Ctrl+Z to undo)"),
                 EditorStyles.wordWrappedMiniLabel);
             EditorGUILayout.Space(4);
 
@@ -6808,10 +6874,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
         EditorGUILayout.HelpBox(
             lilToonMatchEnabled
-                ? L("lilToon移行仕様が有効です。移行元の見た目に寄せるため、互換性を優先して編集します。",
-                    "The lilToon migration workflow is active. Editing prioritizes compatibility with the migrated source look.")
-                : L("Natane仕様が有効です。Natane 標準の見た目ミキサーと各種調整を使って編集できます。",
-                    "The Natane workflow is active. Edit with the native Natane look mixer and art controls."),
+                ? L("lilToon移行仕様が有効です。移行元の見た目に寄せるため、互換性を優先して編集します。 (Ctrl+Z で元に戻せます)",
+                    "The lilToon migration workflow is active. Editing prioritizes compatibility with the migrated source look. (Ctrl+Z to undo)")
+                : L("Natane仕様が有効です。Natane 標準の見た目ミキサーと各種調整を使って編集できます。 (Ctrl+Z で元に戻せます)",
+                    "The Natane workflow is active. Edit with the native Natane look mixer and art controls. (Ctrl+Z to undo)"),
             lilToonMatchEnabled ? MessageType.Info : MessageType.None);
 
         EditorGUI.BeginChangeCheck();
@@ -7263,6 +7329,18 @@ public class NataneToonShaderGUI : ShaderGUI
     private void LoadUIState()
     {
         selectedTab = EditorPrefs.GetInt(NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "SelectedTab"), 0);
+
+        // Ensure all expected foldout keys exist with defaults to prevent null reference
+        // issues when foldout mappings are modified between versions
+        foreach (var kvp in foldoutPrefsKeys)
+        {
+            if (!foldoutStates.ContainsKey(kvp.Key))
+            {
+                bool defaultVal = foldoutDefaultTrue.Contains(kvp.Key);
+                foldoutStates[kvp.Key] = EditorPrefs.GetBool(
+                    NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, kvp.Value), defaultVal);
+            }
+        }
     }
 
     /// <summary>

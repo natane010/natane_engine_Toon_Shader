@@ -8,6 +8,7 @@ using NataneToon.MaterialSystem;
 namespace NataneToon.Editor
 {
     using static NataneToonLocalization;
+    using static NataneUIConstants;
 
     /// <summary>
     /// Material Preset Browser for easy material management
@@ -76,7 +77,7 @@ namespace NataneToon.Editor
         public static void ShowWindow()
         {
             var window = GetWindow<MaterialPresetBrowser>(WindowTitle);
-            window.minSize = new Vector2(600, 400);
+            window.minSize = new Vector2(WINDOW_WIDTH_STANDARD, 400);
             window.Show();
         }
 
@@ -94,13 +95,13 @@ namespace NataneToon.Editor
         private void OnGUI()
         {
             NataneToonShaderGUIUtility.DrawToolHeader("マテリアルプリセットブラウザ", "Material Preset Browser", "MaterialPresetBrowser");
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(SPACE_SMALL);
             DrawToolbar();
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(SPACE_SMALL);
             DrawMaterialSelection();
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(SPACE_SMALL);
             DrawFilterBar();
-            EditorGUILayout.Space(10);
+            EditorGUILayout.Space(SPACE_STANDARD);
             DrawPresetGrid();
         }
 
@@ -221,7 +222,7 @@ namespace NataneToon.Editor
 
         private void DrawMaterialActionButton(string label, System.Action action)
         {
-            if (GUILayout.Button(label, GUILayout.Height(25)))
+            if (GUILayout.Button(label, GUILayout.Height(BUTTON_HEIGHT_STANDARD)))
             {
                 action?.Invoke();
             }

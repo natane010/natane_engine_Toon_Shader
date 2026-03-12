@@ -1,0 +1,31 @@
+using UnityEngine;
+
+namespace NataneToon.Editor
+{
+    /// <summary>
+    /// エディターツール共通のUI定数定義
+    /// ウィンドウサイズ・ボタン高さ・スペーシング・パディングを統一管理する
+    /// </summary>
+    public static class NataneUIConstants
+    {
+        // ===== Window Sizes =====
+        public const float WINDOW_WIDTH_STANDARD  = 600f;
+        public const float WINDOW_HEIGHT_STANDARD = 500f;
+        public const float WINDOW_WIDTH_NARROW    = 400f;
+        public const float WINDOW_HEIGHT_TALL     = 700f;
+
+        // ===== Button Heights =====
+        public const float BUTTON_HEIGHT_SMALL    = 22f;
+        public const float BUTTON_HEIGHT_STANDARD = 25f;
+        public const float BUTTON_HEIGHT_LARGE    = 30f;
+
+        // ===== Spacing =====
+        public const float SPACE_TINY     = 2f;
+        public const float SPACE_SMALL    = 5f;
+        public const float SPACE_STANDARD = 10f;
+        public const float SPACE_LARGE    = 15f;
+
+        // ===== Padding =====
+        public const float INDENT_STANDARD = 15f;
+    }
+}

@@ -6,6 +6,7 @@ using System.Linq;
 namespace NataneToon.Editor
 {
     using static NataneToonLocalization;
+    using static NataneUIConstants;
     /// <summary>
     /// Material Comparison Tool
     /// マテリアル比較ツール
@@ -50,7 +51,7 @@ namespace NataneToon.Editor
         public static void ShowWindow()
         {
             var window = GetWindow<MaterialComparisonTool>(L("マテリアル比較", "Material Comparison Tool"));
-            window.minSize = new Vector2(600, 600);
+            window.minSize = new Vector2(WINDOW_WIDTH_STANDARD, 600);
             window.Show();
         }
 
@@ -58,15 +59,15 @@ namespace NataneToon.Editor
         {
             NataneToonShaderGUIUtility.DrawToolHeader("マテリアル比較ツール", "Material Comparison Tool", nameof(MaterialComparisonTool));
             EditorGUILayout.HelpBox(L("2つのマテリアルを比較して、差分やコピー対象を確認します。", "Compare two materials and inspect the differences before copying."), MessageType.Info);
-            EditorGUILayout.Space(10);
+            EditorGUILayout.Space(SPACE_STANDARD);
 
             DrawMaterialSelection();
-            EditorGUILayout.Space(10);
+            EditorGUILayout.Space(SPACE_STANDARD);
 
             if (materialA != null && materialB != null)
             {
                 DrawViewModeSelector();
-                EditorGUILayout.Space(10);
+                EditorGUILayout.Space(SPACE_STANDARD);
 
                 scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
 
@@ -106,16 +107,16 @@ namespace NataneToon.Editor
 
             EditorGUILayout.EndHorizontal();
 
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(SPACE_SMALL);
 
-            if (GUILayout.Button(L("比較を実行", "Run Comparison"), GUILayout.Height(25)))
+            if (GUILayout.Button(L("比較を実行", "Run Comparison"), GUILayout.Height(BUTTON_HEIGHT_STANDARD)))
             {
                 CompareMaterials();
             }
 
             if (materialA != null && materialB != null)
             {
-                EditorGUILayout.Space(5);
+                EditorGUILayout.Space(SPACE_SMALL);
                 if (GUILayout.Button(L("AからBにコピー", "Copy A to B")))
                 {
                     if (EditorUtility.DisplayDialog(L("確認", "Confirm"), L("マテリアルAの設定をBにコピーしますか？", "Copy settings from Material A to B?"), L("はい", "Yes"), L("いいえ", "No")))
@@ -218,12 +219,12 @@ namespace NataneToon.Editor
             EditorGUILayout.LabelField($"{L("名前", "Name")}: {mat.name}");
             EditorGUILayout.LabelField($"{L("シェーダー", "Shader")}: {mat.shader.name}");
 
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(SPACE_SMALL);
 
             int featureCount = CountActiveFeatures(mat);
             EditorGUILayout.LabelField($"{L("有効な機能", "Active Features")}: {featureCount}");
 
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(SPACE_SMALL);
 
             if (mat.HasProperty("_Color"))
             {

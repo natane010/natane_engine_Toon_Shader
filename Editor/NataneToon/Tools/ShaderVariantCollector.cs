@@ -7,6 +7,7 @@ using System.Linq;
 namespace NataneToon.Editor
 {
     using static NataneToonLocalization;
+    using static NataneUIConstants;
 
     /// <summary>
     /// Shader Variant Collection Tool for Natane Toon Shader
@@ -76,7 +77,8 @@ namespace NataneToon.Editor
         [MenuItem(NataneToolMenuPaths.ShaderVariantCollector, false, 71)]
         public static void ShowWindow()
         {
-            GetWindow<ShaderVariantCollector>(L("Shader Variant Collector", "Shader Variant Collector"));
+            var window = GetWindow<ShaderVariantCollector>(L("Shader Variant Collector", "Shader Variant Collector"));
+            window.minSize = new Vector2(WINDOW_WIDTH_STANDARD, WINDOW_HEIGHT_STANDARD);
         }
 
         private void OnGUI()
@@ -165,19 +167,19 @@ namespace NataneToon.Editor
             // Action Buttons
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button(L("Collect Variants", "Collect Variants"), GUILayout.Height(30)))
+            if (GUILayout.Button(L("Collect Variants", "Collect Variants"), GUILayout.Height(BUTTON_HEIGHT_LARGE)))
             {
                 CollectVariants();
             }
 
-            if (GUILayout.Button(L("Clear Collection", "Clear Collection"), GUILayout.Height(30)))
+            if (GUILayout.Button(L("Clear Collection", "Clear Collection"), GUILayout.Height(BUTTON_HEIGHT_LARGE)))
             {
                 ClearCollection();
             }
 
             EditorGUILayout.EndHorizontal();
 
-            if (GUILayout.Button(L("Save Collection", "Save Collection"), GUILayout.Height(30)))
+            if (GUILayout.Button(L("Save Collection", "Save Collection"), GUILayout.Height(BUTTON_HEIGHT_LARGE)))
             {
                 SaveCollection();
             }
@@ -194,7 +196,7 @@ namespace NataneToon.Editor
                 // Empty collection warning
                 if (collection.variantCount == 0)
                 {
-                    EditorGUILayout.Space(5);
+                    EditorGUILayout.Space(SPACE_SMALL);
                     EditorGUILayout.HelpBox(
                         L("Collection is empty. Run 'Collect Variants' to add variants.\n" +
                         "An empty collection provides no build optimization or prewarming benefit.", "Collection is empty. Run 'Collect Variants' to add variants.\n" +

@@ -55,6 +55,8 @@ namespace NataneToon.Editor
         private Vector2 prefabScrollPosition;
         private bool updatePrefabReferences = true;
         private bool duplicateInHierarchy = false;
+        private int prefabMaterialPageIndex = 0;
+        private const int PrefabMaterialsPerPage = 20;
         private GameObject lastDuplicatedObject = null;
         private bool hasScannedProjectMaterials = false;
         private int projectPageIndex = 0;
@@ -195,7 +197,7 @@ namespace NataneToon.Editor
         private void DrawProjectMode()
         {
             // Scan button
-            if (GUILayout.Button(L("Scan for lilToon Materials", "Scan for lilToon Materials"), GUILayout.Height(30)))
+            if (GUILayout.Button(L("lilToon マテリアルを検索", "Scan for lilToon Materials"), GUILayout.Height(30)))
             {
                 ScanForLilToonMaterials();
             }
@@ -258,7 +260,7 @@ namespace NataneToon.Editor
 
             // Convert all button
             GUI.enabled = lilToonMaterials.Count > 0;
-            if (GUILayout.Button(L("Convert All Materials", "Convert All Materials"), GUILayout.Height(40)))
+            if (GUILayout.Button(L("すべてのマテリアルを変換", "Convert All Materials"), GUILayout.Height(40)))
             {
                 ConvertAllMaterials();
             }
@@ -295,10 +297,10 @@ namespace NataneToon.Editor
         /// </summary>
         private void DrawPrefabMode()
         {
-            EditorGUILayout.LabelField(L("Prefab Selection", "Prefab Selection"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Prefab 選択", "Prefab Selection"), EditorStyles.boldLabel);
             EditorGUI.BeginChangeCheck();
             targetPrefab = (GameObject)EditorGUILayout.ObjectField(
-                L("Target Prefab", "Target Prefab"),
+                L("対象 Prefab", "Target Prefab"),
                 targetPrefab,
                 typeof(GameObject),
                 true
@@ -311,7 +313,7 @@ namespace NataneToon.Editor
             if (targetPrefab == null)
             {
                 EditorGUILayout.HelpBox(
-                    L("Drag & drop a prefab or scene avatar here to scan for lilToon materials.", "Drag & drop a prefab or scene avatar here to scan for lilToon materials."),
+                    L("Prefab またはシーン上のアバターをここにドラッグ＆ドロップすると、lilToon マテリアルを検出します。", "Drag & drop a prefab or scene avatar here to scan for lilToon materials."),
                     MessageType.Info
                 );
                 return;
@@ -319,7 +321,7 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space();
 
-            EditorGUILayout.LabelField(L("Prefab Settings", "Prefab Settings"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("Prefab 設定", "Prefab Settings"), EditorStyles.boldLabel);
 
             duplicateInHierarchy = EditorGUILayout.Toggle(
                 L("Create Duplicate in Hierarchy", "Create Duplicate in Hierarchy"),
@@ -345,6 +347,11 @@ namespace NataneToon.Editor
 
             if (duplicateInHierarchy)
             {
+                EditorGUILayout.HelpBox(
+                    L("「Hierarchy に複製」が有効の場合、元の Prefab は変更されないため「参照自動更新」は無効になります。",
+                      "When 'Create Duplicate in Hierarchy' is enabled, the original prefab is left untouched, so 'Auto-update References' is disabled."),
+                    MessageType.Info
+                );
             }
             else if (updatePrefabReferences && !replaceOriginal)
             {
@@ -363,7 +370,7 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space();
 
-            if (GUILayout.Button(L("Rescan Materials", "Rescan Materials"), GUILayout.Height(25)))
+            if (GUILayout.Button(L("マテリアルを再検索", "Rescan Materials"), GUILayout.Height(25)))
             {
                 ScanPrefabMaterials();
             }
@@ -373,7 +380,7 @@ namespace NataneToon.Editor
             if (prefabMaterials.Count == 0)
             {
                 EditorGUILayout.HelpBox(
-                    L("No lilToon materials found in this prefab.", "No lilToon materials found in this prefab."),
+                    L("この Prefab に lilToon マテリアルは見つかりませんでした。", "No lilToon materials found in this prefab."),
                     MessageType.Warning
                 );
                 return;
@@ -386,9 +393,43 @@ namespace NataneToon.Editor
 
             prefabScrollPosition = EditorGUILayout.BeginScrollView(prefabScrollPosition, GUILayout.Height(GetAdaptiveListHeight(220f, 400f, 0.38f)));
 
-            var grouped = prefabMaterials.GroupBy(m => m.original);
-            foreach (var group in grouped)
+            var grouped = prefabMaterials.GroupBy(m => m.original).ToList();
+            int totalGroups = grouped.Count;
+            bool usePagination = totalGroups > PrefabMaterialsPerPage;
+            int pageStart = 0;
+            int pageEnd = totalGroups;
+
+            if (usePagination)
             {
+                int maxPage = (totalGroups - 1) / PrefabMaterialsPerPage;
+                prefabMaterialPageIndex = Mathf.Clamp(prefabMaterialPageIndex, 0, maxPage);
+                pageStart = prefabMaterialPageIndex * PrefabMaterialsPerPage;
+                pageEnd = Mathf.Min(pageStart + PrefabMaterialsPerPage, totalGroups);
+
+                EditorGUILayout.BeginHorizontal();
+                using (new EditorGUI.DisabledScope(prefabMaterialPageIndex <= 0))
+                {
+                    if (GUILayout.Button(L("< Prev", "< Prev"), GUILayout.Width(80)))
+                        prefabMaterialPageIndex--;
+                }
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.LabelField(
+                    L($"{prefabMaterialPageIndex + 1} / {maxPage + 1}", $"{prefabMaterialPageIndex + 1} / {maxPage + 1}"),
+                    new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleCenter },
+                    GUILayout.Width(80));
+                GUILayout.FlexibleSpace();
+                using (new EditorGUI.DisabledScope(prefabMaterialPageIndex >= maxPage))
+                {
+                    if (GUILayout.Button(L("Next >", "Next >"), GUILayout.Width(80)))
+                        prefabMaterialPageIndex++;
+                }
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.Space(2);
+            }
+
+            for (int gi = pageStart; gi < pageEnd; gi++)
+            {
+                var group = grouped[gi];
                 Material mat = group.Key;
                 var entries = group.ToList();
                 bool willConvert = entries[0].willConvert;
@@ -804,7 +845,7 @@ namespace NataneToon.Editor
                 Shader nataneToonShader = DetectNataneShaderVariant(sourceMaterial);
                 if (nataneToonShader == null)
                 {
-                    Debug.LogError("Natane Toon Shader not found! Please make sure it's in your project.");
+                    Debug.LogError(L("Natane Toon Shader が見つかりません。プロジェクトにインポートされているか確認してください。", "Natane Toon Shader not found! Please make sure it's in your project."));
                     report.success = false;
                     report.warnings.Add("Natane Toon Shader was not found in the project.");
                     return report;

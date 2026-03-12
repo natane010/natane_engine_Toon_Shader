@@ -563,7 +563,7 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space(5);
             EditorGUILayout.LabelField(L("Shading Grade Map Settings", "Shading Grade Map Settings"), EditorStyles.boldLabel);
-            drawProperty("_ShadingGradeMap", "Shading Grade Map");
+            drawProperty("_ShadingGradeMap", L("シェーディンググレードマップ", "Shading Grade Map"));
             drawProperty("_ShadingGradeScale", L("Grade Scale", "Grade Scale"));
             drawHelpToggle(
                 "ShadingGradeMap",
@@ -619,7 +619,7 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space(5);
             EditorGUILayout.LabelField(L("Shadow Color Texture Settings", "Shadow Color Texture Settings"), EditorStyles.boldLabel);
-            drawProperty("_ShadowColorTex", "Shadow Color Texture");
+            drawProperty("_ShadowColorTex", L("影カラーテクスチャ", "Shadow Color Texture"));
             drawProperty("_ShadowColorTexStrength", L("Apply Strength", "Apply Strength"));
             drawHelpToggle(
                 "ShadowColorTexture",

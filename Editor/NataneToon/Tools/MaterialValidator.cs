@@ -6,6 +6,7 @@ using System.Linq;
 namespace NataneToon.Editor
 {
     using static NataneToonLocalization;
+    using static NataneUIConstants;
 
     /// <summary>
     /// Material validation and optimization checker
@@ -98,18 +99,18 @@ namespace NataneToon.Editor
         public static void ShowWindow()
         {
             var window = GetWindow<MaterialValidator>(L("Material Validator", "Material Validator"));
-            window.minSize = new Vector2(600, 400);
+            window.minSize = new Vector2(WINDOW_WIDTH_STANDARD, 400);
             window.Show();
         }
 
         private void OnGUI()
         {
             DrawHeader();
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(SPACE_SMALL);
             DrawMaterialSelection();
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(SPACE_SMALL);
             DrawValidationSettings();
-            EditorGUILayout.Space(10);
+            EditorGUILayout.Space(SPACE_STANDARD);
             DrawValidationResults();
         }
 
@@ -128,17 +129,17 @@ namespace NataneToon.Editor
 
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button(L("Add Selected Materials", "Add Selected Materials"), GUILayout.Height(25)))
+            if (GUILayout.Button(L("Add Selected Materials", "Add Selected Materials"), GUILayout.Height(BUTTON_HEIGHT_STANDARD)))
             {
                 AddSelectedMaterials();
             }
 
-            if (GUILayout.Button(L("Add All Natane Toon Materials", "Add All Natane Toon Materials"), GUILayout.Height(25)))
+            if (GUILayout.Button(L("Add All Natane Toon Materials", "Add All Natane Toon Materials"), GUILayout.Height(BUTTON_HEIGHT_STANDARD)))
             {
                 AddAllNataneToonMaterials();
             }
 
-            if (GUILayout.Button(L("Clear List", "Clear List"), GUILayout.Height(25)))
+            if (GUILayout.Button(L("Clear List", "Clear List"), GUILayout.Height(BUTTON_HEIGHT_STANDARD)))
             {
                 materialsToValidate.Clear();
                 validationResults.Clear();
@@ -146,7 +147,7 @@ namespace NataneToon.Editor
 
             EditorGUILayout.EndHorizontal();
 
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(SPACE_SMALL);
 
             // Display material list
             if (materialsToValidate.Count == 0)
@@ -193,18 +194,18 @@ namespace NataneToon.Editor
             checkUnusedFeatures = EditorGUILayout.ToggleLeft(L("Unused Features Check", "Unused Features Check"), checkUnusedFeatures);
             checkTextureCompression = EditorGUILayout.ToggleLeft(L("Texture Compression Check", "Texture Compression Check"), checkTextureCompression);
 
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(SPACE_SMALL);
 
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button(L("Validate All", "Validate All"), GUILayout.Height(30)))
+            if (GUILayout.Button(L("Validate All", "Validate All"), GUILayout.Height(BUTTON_HEIGHT_LARGE)))
             {
                 ValidateAllMaterials();
             }
 
             using (new EditorGUI.DisabledScope(!autoFixAvailable))
             {
-                if (GUILayout.Button(L("Auto-Fix All Issues", "Auto-Fix All Issues"), GUILayout.Height(30)))
+                if (GUILayout.Button(L("Auto-Fix All Issues", "Auto-Fix All Issues"), GUILayout.Height(BUTTON_HEIGHT_LARGE)))
                 {
                     AutoFixAllIssues();
                 }
@@ -236,7 +237,7 @@ namespace NataneToon.Editor
             EditorGUILayout.LabelField(L($"Info: {infos}", $"Info: {infos}"), EditorStyles.boldLabel, GUILayout.Width(120));
             EditorGUILayout.EndHorizontal();
 
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(SPACE_SMALL);
 
             // Results list
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
@@ -318,7 +319,7 @@ namespace NataneToon.Editor
             }
 
             EditorGUILayout.EndVertical();
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(SPACE_SMALL);
         }
 
         private void AddSelectedMaterials()
@@ -702,6 +703,9 @@ namespace NataneToon.Editor
         private void AutoFixAllIssues()
         {
             int fixedCount = 0;
+
+            Undo.IncrementCurrentGroup();
+            Undo.SetCurrentGroupName("Natane Auto-Fix All Issues");
 
             foreach (var result in validationResults)
             {
