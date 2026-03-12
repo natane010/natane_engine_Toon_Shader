@@ -1084,3 +1084,77 @@ Phase 5: 蜈ｨ繝舌Μ繧｢繝ｳ繝・(.shader) 縺ｮ繧ｳ繝ｳ繝代う�
   - sampler budget UI now better matches the post-refactor D3D11 implementation
   - texture-heavy but shared-sampler-safe materials stop being over-penalized
   - risky screen/depth/third-party lighting combinations still warn conservatively
+
+## 2026-03-12 lilToon migration shadow offset sign fix
+
+- User reported that shadows looked wrong immediately after running the lilToon migration tool.
+- Root cause:
+  - the non-exact migration path converted lilToon `_ShadowBorder` into Natane `_ShadowOffset` with `border - 0.5`
+  - this sign was backwards
+  - in lilToon, a larger border increases the shadowed region
+  - in Natane, a larger positive offset increases the lit region
+- Fix:
+  - `LilToonMigrationTool.ApplyNataneShadowSettingsFromLilToon(...)` now maps `_ShadowOffset` as `0.5 - border`
+  - `NataneToonShaderGUI.SyncNataneShadowSettingsFromLilToonCompatibility(...)` uses the same corrected mapping when switching migrated materials from `lilToon近似` back to `Natane`
+- Expected outcome:
+  - migrated materials no longer flip the light/shadow boundary in the wrong direction
+  - `Visual Match` / `Minimal Safe` and later `Natane` toggles stay consistent with the original lilToon shadow placement
+
+## 2026-03-12 inspector current-state summary and GUID-safe overwrite refresh
+
+- User asked for a more beginner-friendly inspector that can quickly show the current shader state, and also wanted lilToon migration overwrite to keep the destination material GUID.
+- Inspector UX notes:
+  - the existing compact header and performance summary were useful, but the next shared section was `Feature Overview`, which is broad and toggle-heavy rather than a quick state read
+  - beginners had to infer the current setup from several places (`shader name`, `rendering type`, `lilToon migration UI`, `look mode`, `feature grid`)
+- Inspector changes:
+  - added a new shared `Current State` section near the top of `NataneToonShaderGUI`
+  - it summarizes:
+    - shader variant
+    - rendering type
+    - current editing mode (`Natane` / `lilToon近似`)
+    - base shading mode (`Toon` / `Gradient` / `PBR-Like` / `Ramp` / `lilToon互換ベース`)
+    - look mode
+    - migration state and parity-review count
+    - active feature summary
+    - sampler/pass budget summary
+  - the section is searchable and defaults open so it works as a first-read status table
+  - `Feature Overview` now reuses a shared feature-entry list so the quick summary and the grid stay in sync
+- Migration overwrite changes:
+  - when the destination `*_NataneToon.mat` already exists, conversion now builds the latest result from the source material into a temporary material and copies that serialized result back into the existing asset
+  - this keeps the existing `.meta` / GUID while avoiding stale Natane-side values from an older converted material
+  - new output still uses normal `CreateAsset`, existing output now uses in-place refresh with GUID preserved
+
+## 2026-03-12 inspector quick state summary and GUID-safe lilToon overwrite flow
+
+- User asked for a usability review and wanted:
+  - a quick-read table in the Inspector showing the current shader state
+  - lilToon migration reruns to preserve GUIDs when the destination `_NataneToon.mat` already exists
+- UX assessment:
+  - the inspector already had a compact performance box and a large feature overview grid
+  - but it still did not answer the beginner question "what am I editing right now?" near the top
+  - the migration tool also had ambiguous rerun behavior because it always tried `CreateAsset(...)` for `_NataneToon.mat`
+- Fix:
+  - added a compact `Current Shader State` summary right under the header:
+    - shader asset name
+    - rendering type
+    - editing mode (`Natane` / `lilToon近似`)
+    - look mode
+    - base shading
+    - migration state
+    - review status
+  - changed `LilToonMigrationTool` so non-destructive conversion now:
+    - updates an existing `_NataneToon.mat` in-place when present
+    - preserves that asset's GUID
+    - only creates a new material asset when the destination does not exist yet
+  - backup creation now uses `GenerateUniqueAssetPath(...)` so repeated runs do not collide on the same `_lilToon_backup.mat`
+- Expected outcome:
+  - artists can confirm the current shader/workflow state before diving into tabs
+  - rerunning lilToon migration on the same material path no longer breaks prefab/material references by recreating the destination asset
+
+## 2026-03-12 migration overwrite behavior is now visible in UI
+
+- Follow-up usability note:
+  - the GUID-preserving overwrite flow for existing `*_NataneToon.mat` was already implemented, but users could not tell that from the tool UI
+- Change:
+  - added an info help box to `LilToonMigrationTool` when `Replace Original` is OFF
+  - it explains that reruns update the existing converted material in-place and preserve GUIDs, so prefab/material references stay stable

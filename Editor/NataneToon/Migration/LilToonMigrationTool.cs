@@ -159,6 +159,16 @@ namespace NataneToon.Editor
                     MessageType.Warning
                 );
             }
+            else
+            {
+                EditorGUILayout.HelpBox(
+                    L("同名の *_NataneToon.mat がすでにある場合は、新規作成ではなく中身だけ更新します。\n" +
+                      "既存アセットの GUID は維持されるので、Prefab や参照先を切りにくい安全寄りの再変換になります。",
+                      "If a *_NataneToon.mat already exists, the tool updates that asset in-place instead of recreating it.\n" +
+                      "The existing GUID is preserved, so prefab and material references stay stable on reruns."),
+                    MessageType.Info
+                );
+            }
 
             EditorGUILayout.Space();
 
@@ -629,6 +639,58 @@ namespace NataneToon.Editor
             return report.success;
         }
 
+        private static string GetBackupMaterialPath(string sourcePath)
+        {
+            return AssetDatabase.GenerateUniqueAssetPath(sourcePath.Replace(".mat", "_lilToon_backup.mat"));
+        }
+
+        private static string GetConvertedMaterialPath(string sourcePath)
+        {
+            return sourcePath.Replace(".mat", "_NataneToon.mat");
+        }
+
+        private Material GetOrCreateConversionTargetMaterial(
+            Material sourceMaterial,
+            ConversionReport report,
+            out Material existingMaterial,
+            out string targetPath)
+        {
+            existingMaterial = null;
+            targetPath = string.Empty;
+
+            if (replaceOriginal)
+            {
+                report.infos.Add("Replace Original mode: source material will be updated in-place.");
+                return sourceMaterial;
+            }
+
+            string sourcePath = AssetDatabase.GetAssetPath(sourceMaterial);
+            if (string.IsNullOrEmpty(sourcePath))
+            {
+                throw new System.InvalidOperationException($"Source material is not a project asset: {sourceMaterial.name}");
+            }
+
+            targetPath = GetConvertedMaterialPath(sourcePath);
+
+            UnityEngine.Object existingAsset = AssetDatabase.LoadMainAssetAtPath(targetPath);
+            if (existingAsset != null && !(existingAsset is Material))
+            {
+                throw new System.InvalidOperationException($"Target path is already occupied by a non-material asset: {targetPath}");
+            }
+
+            existingMaterial = existingAsset as Material;
+            if (existingMaterial != null)
+            {
+                report.infos.Add($"Updating existing converted material in-place: {targetPath} (GUID preserved)");
+                return new Material(sourceMaterial);
+            }
+
+            Material newMaterial = new Material(sourceMaterial);
+            AssetDatabase.CreateAsset(newMaterial, targetPath);
+            report.infos.Add($"Created converted material: {targetPath}");
+            return newMaterial;
+        }
+
         private ConversionReport ConvertMaterialWithReport(Material sourceMaterial)
         {
             var report = new ConversionReport();
@@ -636,31 +698,24 @@ namespace NataneToon.Editor
 
             try
             {
+                string sourcePath = AssetDatabase.GetAssetPath(sourceMaterial);
+                if (string.IsNullOrEmpty(sourcePath))
+                {
+                    throw new System.InvalidOperationException($"Source material is not a project asset: {sourceMaterial.name}");
+                }
+
                 // Create backup if requested
                 if (createBackup)
                 {
-                    string sourcePath = AssetDatabase.GetAssetPath(sourceMaterial);
-                    string backupPath = sourcePath.Replace(".mat", "_lilToon_backup.mat");
+                    string backupPath = GetBackupMaterialPath(sourcePath);
                     AssetDatabase.CopyAsset(sourcePath, backupPath);
                     Debug.Log($"Created backup: {backupPath}");
                     report.infos.Add($"Created backup material: {backupPath}");
                 }
 
-                Material targetMaterial;
-
-                if (replaceOriginal)
-                {
-                    targetMaterial = sourceMaterial;
-                }
-                else
-                {
-                    // Create new material
-                    targetMaterial = new Material(sourceMaterial);
-                    string sourcePath = AssetDatabase.GetAssetPath(sourceMaterial);
-                    string newPath = sourcePath.Replace(".mat", "_NataneToon.mat");
-                    AssetDatabase.CreateAsset(targetMaterial, newPath);
-                    report.infos.Add($"Created converted material: {newPath}");
-                }
+                Material existingTargetMaterial;
+                string targetPath;
+                Material targetMaterial = GetOrCreateConversionTargetMaterial(sourceMaterial, report, out existingTargetMaterial, out targetPath);
 
                 // Store original properties before changing shader
                 var originalProperties = CaptureProperties(sourceMaterial);
@@ -700,6 +755,14 @@ namespace NataneToon.Editor
                 else
                 {
                     report.infos.Add("Visual Match mode keeps migrated features enabled when possible.");
+                }
+
+                if (existingTargetMaterial != null)
+                {
+                    EditorUtility.CopySerialized(targetMaterial, existingTargetMaterial);
+                    UnityEngine.Object.DestroyImmediate(targetMaterial);
+                    targetMaterial = existingTargetMaterial;
+                    report.infos.Add($"Existing converted material was refreshed without changing GUID: {targetPath}");
                 }
 
                 if (showPreview)
@@ -991,7 +1054,8 @@ namespace NataneToon.Editor
 
             targetMaterial.DisableKeyword("_STANDARD_TOON");
             targetMaterial.SetFloat("_ShadingMode", nataneShadingMode);
-            targetMaterial.SetFloat("_ShadowOffset", Mathf.Clamp(border - 0.5f, -1.0f, 1.0f));
+            // lilToon border grows the shadowed region, while positive Natane offset grows the lit region.
+            targetMaterial.SetFloat("_ShadowOffset", Mathf.Clamp(0.5f - border, -1.0f, 1.0f));
             targetMaterial.SetFloat("_ShadowSharpness", Mathf.Clamp(Mathf.Max(blur, 0.05f), 0.001f, 1.0f));
             targetMaterial.SetFloat("_ShadingGradientWidth", Mathf.Clamp(Mathf.Max(blur * 1.5f, 0.05f), 0.001f, 1.0f));
             targetMaterial.SetFloat("_ShadowSteps", 2.0f);
@@ -1764,7 +1828,7 @@ namespace NataneToon.Editor
                     if (!replaceOriginal || duplicateInHierarchy)
                     {
                         string sourcePath = AssetDatabase.GetAssetPath(sourceMat);
-                        string newPath = sourcePath.Replace(".mat", "_NataneToon.mat");
+                        string newPath = GetConvertedMaterialPath(sourcePath);
                         Material newMat = AssetDatabase.LoadAssetAtPath<Material>(newPath);
                         if (newMat != null)
                         {
@@ -1808,7 +1872,7 @@ namespace NataneToon.Editor
             if (report.success)
             {
                 string sourcePath = AssetDatabase.GetAssetPath(sourceMaterial);
-                string newPath = sourcePath.Replace(".mat", "_NataneToon.mat");
+                string newPath = GetConvertedMaterialPath(sourcePath);
                 Material newMat = AssetDatabase.LoadAssetAtPath<Material>(newPath);
 
                 if (newMat != null)

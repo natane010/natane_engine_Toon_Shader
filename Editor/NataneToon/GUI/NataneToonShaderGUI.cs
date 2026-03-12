@@ -257,6 +257,7 @@ public class NataneToonShaderGUI : ShaderGUI
     private static readonly string[][] sectionSearchData = new string[][]
     {
         // { drawMethodSuffix, displayName, keywords }
+        new[] { "CurrentState", "現在の状態", "current state summary shader status mode migration quick overview 現在の状態 シェーダー モード 移行" },
         new[] { "MainTexture", "Main Texture", "main texture color" },
         new[] { "MakeupTextures", "Makeup Textures", "makeup texture layer 2nd 3rd 4th 5th" },
         new[] { "ScreenTone", "Screen Tone", "screen tone halftone dot pattern overlay" },
@@ -328,6 +329,7 @@ public class NataneToonShaderGUI : ShaderGUI
     // Most keys follow "Show" + key pattern, but some have legacy names
     private static readonly Dictionary<string, string> foldoutPrefsKeys = new Dictionary<string, string>
     {
+        { "CurrentState", "ShowCurrentState" },
         { "Presets", "ShowPresets" },
         { "Performance", "ShowPerformance" },
         { "MainTexture", "ShowBasic" },
@@ -385,7 +387,7 @@ public class NataneToonShaderGUI : ShaderGUI
     // Default values: keys listed here default to true; all others default to false
     private static readonly HashSet<string> foldoutDefaultTrue = new HashSet<string>
     {
-        "Presets", "Performance", "MainTexture", "Shading"
+        "CurrentState", "Presets", "Performance", "MainTexture", "Shading"
     };
 
     private bool GetFoldout(string key)
@@ -475,6 +477,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
             // ===== Compact Header =====
             DrawCompactHeader();
+            SafeDrawSection(DrawCurrentStateSection, L("現在の状態", "Current State"));
             NataneToonShaderGUIUtility.DrawCompactPerformanceSummary(targetMaterial, GetCurrentSamplerBudgetEstimate());
             EditorGUILayout.Space(SECTION_SPACING);
 
@@ -1463,7 +1466,8 @@ public class NataneToonShaderGUI : ShaderGUI
 
         if (material.HasProperty("_ShadowOffset"))
         {
-            material.SetFloat("_ShadowOffset", Mathf.Clamp(border - 0.5f, -1f, 1f));
+            // lilToon border grows the shadowed region, while positive Natane offset grows the lit region.
+            material.SetFloat("_ShadowOffset", Mathf.Clamp(0.5f - border, -1f, 1f));
         }
 
         if (material.HasProperty("_ShadowSharpness"))
@@ -6768,6 +6772,256 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("DepthColorFade"));
     }
 
+    private void DrawCurrentStateSection()
+    {
+        SetFoldout("CurrentState", DrawBoxedSection(L("現在の状態", "Current State"), GetFoldout("CurrentState"), SectionCategory.Basic));
+        if (GetFoldout("CurrentState"))
+        {
+            NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate samplerBudget = GetCurrentSamplerBudgetEstimate();
+
+            EditorGUILayout.LabelField(
+                L("いまのマテリアルがどのモードで動いているかを上から素早く確認できます。", "Quick summary of how this material is currently configured."),
+                EditorStyles.wordWrappedMiniLabel);
+            EditorGUILayout.Space(4);
+
+            DrawCurrentStateRow(L("シェーダー", "Shader"), GetCurrentShaderLabel(), true);
+            DrawCurrentStateRow(L("描画タイプ", "Rendering"), GetRenderingModeLabel(GetCurrentRenderingMode()));
+            DrawCurrentStateRow(L("編集モード", "Editing Mode"), GetCurrentEditingModeLabel());
+            DrawCurrentStateRow(L("ベース表現", "Base Shading"), GetCurrentBaseShadingLabel());
+            DrawCurrentStateRow(L("見た目プリセット", "Look Mode"), GetCurrentLookModeLabel());
+            DrawCurrentStateRow(L("移行状態", "Migration"), GetCurrentMigrationSummary(), true);
+            DrawCurrentStateRow(L("主な有効機能", "Active Features"), GetActiveFeatureSummary(targetMaterial, 4), true);
+            DrawCurrentStateRow(L("Sampler / Pass", "Sampler / Pass"), GetSamplerBudgetSummary(samplerBudget));
+        }
+        EndBoxedSection(GetFoldout("CurrentState"));
+    }
+
+    private void DrawCurrentStateRow(string label, string value, bool wrapValue = false)
+    {
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(label, EditorStyles.miniBoldLabel, GUILayout.Width(118));
+        EditorGUILayout.LabelField(value, wrapValue ? EditorStyles.wordWrappedMiniLabel : EditorStyles.miniLabel);
+        EditorGUILayout.EndHorizontal();
+    }
+
+    private string GetCurrentShaderLabel()
+    {
+        if (targetMaterial == null || targetMaterial.shader == null)
+        {
+            return L("未設定", "Unassigned");
+        }
+
+        return targetMaterial.shader.name;
+    }
+
+    private string GetRenderingModeLabel(RenderingMode mode)
+    {
+        switch (mode)
+        {
+            case RenderingMode.Cutout:
+                return L("カットアウト", "Cutout");
+            case RenderingMode.Transparent:
+                return L("透明", "Transparent");
+            case RenderingMode.Fur:
+                return L("ファー", "Fur");
+            case RenderingMode.Background:
+                return L("背景", "Background");
+            default:
+                return L("不透明", "Opaque");
+        }
+    }
+
+    private string GetCurrentEditingModeLabel()
+    {
+        if (targetMaterial == null)
+        {
+            return L("未設定", "Unassigned");
+        }
+
+        if (IsLilToonMigratedMaterial(targetMaterial))
+        {
+            return GetLilToonExactCompatibility(targetMaterial)
+                ? L("lilToon近似", "lilToon Match")
+                : L("Natane", "Natane");
+        }
+
+        return L("Natane", "Natane");
+    }
+
+    private string GetCurrentBaseShadingLabel()
+    {
+        if (targetMaterial == null)
+        {
+            return L("未設定", "Unassigned");
+        }
+
+        if (targetMaterial.IsKeywordEnabled("_USE_RAMP"))
+        {
+            return L("ランプ", "Ramp");
+        }
+
+        if (ShouldUseLilToonCompatibilityBase(targetMaterial))
+        {
+            return L("lilToon互換ベース", "lilToon Compatibility Base");
+        }
+
+        float shadingMode = targetMaterial.HasProperty("_ShadingMode")
+            ? targetMaterial.GetFloat("_ShadingMode")
+            : 0f;
+
+        if (shadingMode >= PbrLikeShadingModeThreshold)
+        {
+            return L("PBRライク", "PBR-Like");
+        }
+
+        if (shadingMode >= 0.5f)
+        {
+            return L("グラデーション", "Gradient");
+        }
+
+        return L("トゥーン", "Toon");
+    }
+
+    private string GetCurrentLookModeLabel()
+    {
+        if (targetMaterial == null || !targetMaterial.HasProperty("_LookMode"))
+        {
+            return GetLookModeLabels()[(int)LookMode.Legacy];
+        }
+
+        string[] labels = GetLookModeLabels();
+        int currentLookMode = Mathf.Clamp(Mathf.RoundToInt(targetMaterial.GetFloat("_LookMode")), 0, labels.Length - 1);
+        return labels[currentLookMode];
+    }
+
+    private string GetCurrentMigrationSummary()
+    {
+        if (targetMaterial == null || !IsLilToonMigratedMaterial(targetMaterial))
+        {
+            return L("通常マテリアル", "Standard Material");
+        }
+
+        LilToonMigrationMode migrationMode = GetLilToonMigrationMode(targetMaterial);
+        string currentMode = GetLilToonExactCompatibility(targetMaterial)
+            ? L("現在: lilToon近似", "Current: lilToon Match")
+            : L("現在: Natane", "Current: Natane");
+
+        LilToonParityFlags parityFlags = GetLilToonParityFlags(targetMaterial);
+        int parityCount = CountLilToonParityFlags(parityFlags);
+        string review = parityCount > 0
+            ? L($" / 要確認: {parityCount}", $" / Review: {parityCount}")
+            : string.Empty;
+
+        return $"{GetLilToonMigrationModeLabel(migrationMode)} / {currentMode}{review}";
+    }
+
+    private string GetSamplerBudgetSummary(NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate samplerBudget)
+    {
+        string status = samplerBudget.IsOverLimit
+            ? L("上限超過", "Over Limit")
+            : samplerBudget.IsNearLimit
+                ? L("上限近い", "Near Limit")
+                : samplerBudget.IsWarning
+                    ? L("注意", "Warning")
+                    : L("余裕あり", "Comfortable");
+
+        string extraPass = samplerBudget.ExtraPassCount > 0
+            ? L($" / 追加Pass +{samplerBudget.ExtraPassCount}", $" / Extra Pass +{samplerBudget.ExtraPassCount}")
+            : string.Empty;
+
+        return $"{status} / {samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}{extraPass}";
+    }
+
+    private string[][] GetFeatureOverviewEntries()
+    {
+        return new string[][]
+        {
+            new[] { "_SPECULAR", L("スペキュラー", "Specular"), "_Specular" },
+            new[] { "_HAIR_SPECULAR", L("ヘアハイライト", "Hair Highlight"), "_HairSpecular" },
+            new[] { "_RIM_LIGHT", L("リムライト", "Rim Light"), "_RimLight" },
+            new[] { "_SSS", "SSS", "_SSS" },
+            new[] { "_MATCAP", "MatCap", "_MatCap" },
+            new[] { "_GLITTER", L("グリッター", "Glitter"), "_Glitter" },
+            new[] { "_WATER_DRIP", L("雫", "Drip"), "_WaterDrip" },
+            new[] { "_SMEAR", L("スミア", "Smear"), "_Smear" },
+            new[] { "_HOLOGRAM", L("ホログラム", "Hologram"), "_Hologram" },
+            new[] { "_DECAL", L("デカール", "Decal"), "_Decal" },
+            new[] { "_OUTLINE", L("アウトライン", "Outline"), "_Outline" },
+            new[] { "_HALFTONE_SHADOW", L("ハーフトーンシャドウ", "Halftone Shadow"), "_HalftoneShadow" },
+            new[] { "_SHADOW_EDGE_NOISE", L("影エッジノイズ", "Shadow Edge Noise"), "_ShadowEdgeNoise" },
+            new[] { "_CAST_SHADOW_COLOR", L("キャストシャドウカラー", "Cast Shadow Color"), "_CastShadowColorEnable" },
+            new[] { "_LIGHT_SNAP", L("ライトスナップ", "Light Snap"), "_LightSnap" },
+            new[] { "_PROCEDURAL_MATCAP", L("プロシージャルMatCap", "Procedural MatCap"), "_ProceduralMatCap" },
+            new[] { "_FAKE_REFLECTION", L("フェイクリフレクション", "Fake Reflection"), "_FakeReflection" },
+            new[] { "_PERSPECTIVE_FLAT", L("パースフラット", "Perspective Flatten"), "_PerspectiveFlat" },
+            new[] { "_DEPTH_COLOR_FADE", L("深度カラーフェード", "Depth Color Fade"), "_DepthColorFade" },
+            new[] { "_EMISSION", L("エミッション", "Emission"), "_Emission" },
+            new[] { "_AUDIOLINK", "AudioLink", "_AudioLink" },
+            new[] { "_REFLECTION", L("リフレクション", "Reflection"), "_Reflection" },
+            new[] { "_IRIDESCENCE", L("イリデッセンス", "Iridescence"), "_Iridescence" },
+            new[] { "_ENV_RIM", L("環境リム", "Env Rim"), "_EnvRim" },
+            new[] { "_REFRACTION", L("屈折", "Refraction"), "_Refraction" },
+            new[] { "_NORMALMAP", L("ノーマルマップ", "Normal Map"), "_UseNormalMap" },
+            new[] { "_PARALLAX", L("パララックス", "Parallax"), "_Parallax" },
+            new[] { "_VERTEX_ANIMATION", L("頂点アニメーション", "Vertex Anim"), "_VertexAnimation" },
+            new[] { "_VAT", "VAT", "_VAT" },
+            new[] { "_USE_AO", "AO", "_UseAO" },
+            new[] { "_USE_DITHERING", L("ディザリング", "Dithering"), "_UseDithering" },
+            new[] { "_USE_LIGHT_VOLUME", "Light Volume", "_UseLightVolume" },
+            new[] { "_DISTANCE_FADE", L("距離フェード", "Dist Fade"), "_DistanceFade" },
+            new[] { "_BACKFACE_TEXTURE", L("裏面", "Backface"), "_BackfaceTexture" },
+            new[] { "_COLOR_QUANTIZE", L("色量子化", "Quantize"), "_UseColorQuantize" },
+            new[] { "_LUT_3D", "3D LUT", "_UseLUT3D" },
+            new[] { "_HATCHING", L("ハッチング", "Hatching"), "_UseHatching" },
+            new[] { "_WATERCOLOR", L("水彩", "Watercolor"), "_UseWatercolor" },
+            new[] { "_SOFT_FILTER", L("ソフトフィルター", "Soft Filter"), "_UseSoftFilter" },
+            new[] { "_KUWAHARA_FILTER", "Kuwahara", "_UseKuwahara" },
+            new[] { "_SCREEN_EDGE", L("エッジ検出", "Edge Detect"), "_UseScreenEdge" },
+            new[] { "_COLOR_BLEEDING", L("色にじみ", "Bleeding"), "_UseColorBleeding" },
+            new[] { "_CHROMATIC_ABERRATION", L("色収差", "Chrom Aber"), "_UseChromaticAberration" },
+            new[] { "_OUTLINE_HAND_DRAWN", L("手書き線", "Hand-drawn"), "_UseHandDrawnOutline" },
+        };
+    }
+
+    private string GetActiveFeatureSummary(Material material, int maxItems)
+    {
+        if (material == null)
+        {
+            return L("未設定", "Unassigned");
+        }
+
+        string[][] features = GetFeatureOverviewEntries();
+        List<string> activeLabels = new List<string>();
+        int activeCount = 0;
+
+        for (int i = 0; i < features.Length; i++)
+        {
+            if (!material.IsKeywordEnabled(features[i][0]))
+            {
+                continue;
+            }
+
+            activeCount++;
+            if (activeLabels.Count < maxItems)
+            {
+                activeLabels.Add(features[i][1]);
+            }
+        }
+
+        if (activeCount == 0)
+        {
+            return L("主要な追加機能は未使用", "No major extra features");
+        }
+
+        string summary = string.Join(", ", activeLabels.ToArray());
+        if (activeCount > activeLabels.Count)
+        {
+            summary += L($" +{activeCount - activeLabels.Count}件", $" +{activeCount - activeLabels.Count}");
+        }
+
+        return $"{summary} ({activeCount})";
+    }
+
     private void DrawPresetsSection()
     {
         SetFoldout("Presets", DrawBoxedSection(L("マテリアルプリセット＆共有", "Material Presets & Sharing"), GetFoldout("Presets"), SectionCategory.Basic));
@@ -6788,53 +7042,7 @@ public class NataneToonShaderGUI : ShaderGUI
         if (GetFoldout("FeatureOverview"))
         {
             // Feature keywords and display names for the overview grid
-            string[][] features = new string[][]
-            {
-                new[] { "_SPECULAR", L("スペキュラー", "Specular"), "_Specular" },
-                new[] { "_HAIR_SPECULAR", L("ヘアハイライト", "Hair Highlight"), "_HairSpecular" },
-                new[] { "_RIM_LIGHT", L("リムライト", "Rim Light"), "_RimLight" },
-                new[] { "_SSS", "SSS", "_SSS" },
-                new[] { "_MATCAP", "MatCap", "_MatCap" },
-                new[] { "_GLITTER", L("グリッター", "Glitter"), "_Glitter" },
-                new[] { "_WATER_DRIP", L("雫", "Drip"), "_WaterDrip" },
-                new[] { "_SMEAR", L("スミア", "Smear"), "_Smear" },
-                new[] { "_HOLOGRAM", L("ホログラム", "Hologram"), "_Hologram" },
-                new[] { "_DECAL", L("デカール", "Decal"), "_Decal" },
-                new[] { "_OUTLINE", L("アウトライン", "Outline"), "_Outline" },
-                new[] { "_HALFTONE_SHADOW", L("ハーフトーンシャドウ", "Halftone Shadow"), "_HalftoneShadow" },
-                new[] { "_SHADOW_EDGE_NOISE", L("影エッジノイズ", "Shadow Edge Noise"), "_ShadowEdgeNoise" },
-                new[] { "_CAST_SHADOW_COLOR", L("キャストシャドウカラー", "Cast Shadow Color"), "_CastShadowColorEnable" },
-                new[] { "_LIGHT_SNAP", L("ライトスナップ", "Light Snap"), "_LightSnap" },
-                new[] { "_PROCEDURAL_MATCAP", L("プロシージャルMatCap", "Procedural MatCap"), "_ProceduralMatCap" },
-                new[] { "_FAKE_REFLECTION", L("フェイクリフレクション", "Fake Reflection"), "_FakeReflection" },
-                new[] { "_PERSPECTIVE_FLAT", L("パースフラット", "Perspective Flatten"), "_PerspectiveFlat" },
-                new[] { "_DEPTH_COLOR_FADE", L("深度カラーフェード", "Depth Color Fade"), "_DepthColorFade" },
-                new[] { "_EMISSION", L("エミッション", "Emission"), "_Emission" },
-                new[] { "_AUDIOLINK", "AudioLink", "_AudioLink" },
-                new[] { "_REFLECTION", L("リフレクション", "Reflection"), "_Reflection" },
-                new[] { "_IRIDESCENCE", L("イリデッセンス", "Iridescence"), "_Iridescence" },
-                new[] { "_ENV_RIM", L("環境リム", "Env Rim"), "_EnvRim" },
-                new[] { "_REFRACTION", L("屈折", "Refraction"), "_Refraction" },
-                new[] { "_NORMALMAP", L("ノーマルマップ", "Normal Map"), "_UseNormalMap" },
-                new[] { "_PARALLAX", L("パララックス", "Parallax"), "_Parallax" },
-                new[] { "_VERTEX_ANIMATION", L("頂点アニメーション", "Vertex Anim"), "_VertexAnimation" },
-                new[] { "_VAT", "VAT", "_VAT" },
-                new[] { "_USE_AO", "AO", "_UseAO" },
-                new[] { "_USE_DITHERING", L("ディザリング", "Dithering"), "_UseDithering" },
-                new[] { "_USE_LIGHT_VOLUME", "Light Volume", "_UseLightVolume" },
-                new[] { "_DISTANCE_FADE", L("距離フェード", "Dist Fade"), "_DistanceFade" },
-                new[] { "_BACKFACE_TEXTURE", L("裏面", "Backface"), "_BackfaceTexture" },
-                new[] { "_COLOR_QUANTIZE", L("色量子化", "Quantize"), "_UseColorQuantize" },
-                new[] { "_LUT_3D", "3D LUT", "_UseLUT3D" },
-                new[] { "_HATCHING", L("ハッチング", "Hatching"), "_UseHatching" },
-                new[] { "_WATERCOLOR", L("水彩", "Watercolor"), "_UseWatercolor" },
-                new[] { "_SOFT_FILTER", L("ソフトフィルター", "Soft Filter"), "_UseSoftFilter" },
-                new[] { "_KUWAHARA_FILTER", "Kuwahara", "_UseKuwahara" },
-                new[] { "_SCREEN_EDGE", L("エッジ検出", "Edge Detect"), "_UseScreenEdge" },
-                new[] { "_COLOR_BLEEDING", L("色にじみ", "Bleeding"), "_UseColorBleeding" },
-                new[] { "_CHROMATIC_ABERRATION", L("色収差", "Chrom Aber"), "_UseChromaticAberration" },
-                new[] { "_OUTLINE_HAND_DRAWN", L("手書き線", "Hand-drawn"), "_UseHandDrawnOutline" },
-            };
+            string[][] features = GetFeatureOverviewEntries();
 
             int enabledCount = 0;
             int columns = 4;
@@ -7256,6 +7464,7 @@ public class NataneToonShaderGUI : ShaderGUI
     {
         switch (methodKey)
         {
+            case "CurrentState": return DrawCurrentStateSection;
             case "MainTexture": return DrawMainTextureSection;
             case "MakeupTextures": return DrawMakeupTexturesSection;
             case "ScreenTone": return DrawScreenToneSection;
