@@ -162,8 +162,10 @@ namespace NataneToon.Editor
             else
             {
                 EditorGUILayout.HelpBox(
-                    L("同名の *_NataneToon.mat がすでにある場合は、新規作成ではなく中身だけ更新します。\n" +
+                    L("変換先は元マテリアルの近くにある NataneToon フォルダーです。\n" +
+                      "同名の *_NataneToon.mat がすでにある場合は、新規作成ではなく中身だけ更新します。\n" +
                       "既存アセットの GUID は維持されるので、Prefab や参照先を切りにくい安全寄りの再変換になります。",
+                      "Converted materials are stored in a nearby NataneToon folder.\n" +
                       "If a *_NataneToon.mat already exists, the tool updates that asset in-place instead of recreating it.\n" +
                       "The existing GUID is preserved, so prefab and material references stay stable on reruns."),
                     MessageType.Info
@@ -644,9 +646,53 @@ namespace NataneToon.Editor
             return AssetDatabase.GenerateUniqueAssetPath(sourcePath.Replace(".mat", "_lilToon_backup.mat"));
         }
 
-        private static string GetConvertedMaterialPath(string sourcePath)
+        private static string GetConvertedMaterialFolderPath(string sourcePath)
+        {
+            string sourceFolder = System.IO.Path.GetDirectoryName(sourcePath);
+            if (string.IsNullOrEmpty(sourceFolder))
+            {
+                return "Assets/NataneToon";
+            }
+
+            sourceFolder = sourceFolder.Replace("\\", "/");
+            string folderName = System.IO.Path.GetFileName(sourceFolder);
+            if (string.Equals(folderName, "NataneToon", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return sourceFolder;
+            }
+
+            return $"{sourceFolder}/NataneToon";
+        }
+
+        private static string GetLegacyConvertedMaterialPath(string sourcePath)
         {
             return sourcePath.Replace(".mat", "_NataneToon.mat");
+        }
+
+        private static string GetConvertedMaterialPath(string sourcePath)
+        {
+            string targetFolder = GetConvertedMaterialFolderPath(sourcePath);
+            string fileName = System.IO.Path.GetFileNameWithoutExtension(sourcePath);
+            return $"{targetFolder}/{fileName}_NataneToon.mat";
+        }
+
+        private static void EnsureConvertedMaterialFolderExists(string sourcePath)
+        {
+            string sourceFolder = System.IO.Path.GetDirectoryName(sourcePath);
+            if (string.IsNullOrEmpty(sourceFolder))
+            {
+                sourceFolder = "Assets";
+            }
+
+            sourceFolder = sourceFolder.Replace("\\", "/");
+            string targetFolder = GetConvertedMaterialFolderPath(sourcePath);
+
+            if (targetFolder == sourceFolder || AssetDatabase.IsValidFolder(targetFolder))
+            {
+                return;
+            }
+
+            AssetDatabase.CreateFolder(sourceFolder, "NataneToon");
         }
 
         private Material GetOrCreateConversionTargetMaterial(
@@ -679,12 +725,45 @@ namespace NataneToon.Editor
             }
 
             existingMaterial = existingAsset as Material;
+            if (existingMaterial == null)
+            {
+                string legacyPath = GetLegacyConvertedMaterialPath(sourcePath);
+                if (legacyPath != targetPath)
+                {
+                    UnityEngine.Object legacyAsset = AssetDatabase.LoadMainAssetAtPath(legacyPath);
+                    if (legacyAsset != null && !(legacyAsset is Material))
+                    {
+                        throw new System.InvalidOperationException($"Legacy target path is occupied by a non-material asset: {legacyPath}");
+                    }
+
+                    Material legacyMaterial = legacyAsset as Material;
+                    if (legacyMaterial != null)
+                    {
+                        EnsureConvertedMaterialFolderExists(sourcePath);
+                        string moveError = AssetDatabase.MoveAsset(legacyPath, targetPath);
+                        if (!string.IsNullOrEmpty(moveError))
+                        {
+                            throw new System.InvalidOperationException($"Failed to move existing converted material into NataneToon folder: {moveError}");
+                        }
+
+                        existingMaterial = AssetDatabase.LoadAssetAtPath<Material>(targetPath);
+                        if (existingMaterial == null)
+                        {
+                            throw new System.InvalidOperationException($"Moved converted material could not be reloaded: {targetPath}");
+                        }
+
+                        report.infos.Add($"Moved existing converted material into NataneToon folder: {targetPath} (GUID preserved)");
+                    }
+                }
+            }
+
             if (existingMaterial != null)
             {
                 report.infos.Add($"Updating existing converted material in-place: {targetPath} (GUID preserved)");
                 return new Material(sourceMaterial);
             }
 
+            EnsureConvertedMaterialFolderExists(sourcePath);
             Material newMaterial = new Material(sourceMaterial);
             AssetDatabase.CreateAsset(newMaterial, targetPath);
             report.infos.Add($"Created converted material: {targetPath}");

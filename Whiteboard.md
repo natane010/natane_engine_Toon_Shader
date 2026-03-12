@@ -1158,3 +1158,15 @@ Phase 5: 蜈ｨ繝舌Μ繧｢繝ｳ繝・(.shader) 縺ｮ繧ｳ繝ｳ繝代う�
 - Change:
   - added an info help box to `LilToonMigrationTool` when `Replace Original` is OFF
   - it explains that reruns update the existing converted material in-place and preserve GUIDs, so prefab/material references stay stable
+
+## 2026-03-12 lilToon migration output now goes into a NataneToon folder
+
+- User requested that materials created by `LilToonMigrationTool` should be stored inside a `NataneToon` folder instead of next to the source material.
+- Change:
+  - converted output path now resolves to a nearby `NataneToon` folder
+  - if the source material is already inside a `NataneToon` folder, that folder is reused instead of nesting another one
+  - the folder is created automatically when needed
+  - if a legacy converted material still exists at the old sibling path, the tool moves it into the `NataneToon` folder with `AssetDatabase.MoveAsset(...)` so the GUID stays intact
+- Expected outcome:
+  - newly converted materials are organized under `NataneToon/`
+  - reruns keep existing references stable while also migrating older converted assets to the new folder layout
