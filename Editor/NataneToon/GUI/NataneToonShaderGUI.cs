@@ -221,6 +221,8 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>Target material being edited</summary>
     private Material targetMaterial;
     private bool showLilToonParityDetails;
+    private bool workflowShouldReturn;
+    private bool workflowIsNonToon;
 
     // ===== RENDERING MODE =====
     public enum RenderingMode
@@ -257,7 +259,7 @@ public class NataneToonShaderGUI : ShaderGUI
     private static readonly string[][] sectionSearchData = new string[][]
     {
         // { drawMethodSuffix, displayName, keywords }
-        new[] { "CurrentState", "現在の状態", "current state summary shader status mode migration quick overview 現在の状態 シェーダー モード 移行" },
+        new[] { "CurrentState", "編集ワークフロー", "workflow current state summary shader status mode migration rendering workflow liltoon natane quick overview 編集ワークフロー 現在の状態 シェーダー モード 移行 描画タイプ" },
         new[] { "MainTexture", "Main Texture", "main texture color" },
         new[] { "MakeupTextures", "Makeup Textures", "makeup texture layer 2nd 3rd 4th 5th" },
         new[] { "ScreenTone", "Screen Tone", "screen tone halftone dot pattern overlay" },
@@ -447,37 +449,24 @@ public class NataneToonShaderGUI : ShaderGUI
             LoadUIState();
             EnsureKeywordsValidatedForCurrentMaterial();
 
-            // ===== Shader Type Dropdown =====
-            bool shouldReturn;
-            bool isNonToon = NataneToon.Editor.NataneToonShaderTypeSwitcher.DrawShaderTypeDropdown(targetMaterial, materialEditor, out shouldReturn);
-            if (shouldReturn)
+            // ===== Compact Header =====
+            DrawCompactHeader();
+            workflowShouldReturn = false;
+            workflowIsNonToon = false;
+            SafeDrawSection(DrawCurrentStateSection, L("編集ワークフロー", "Workflow"));
+            if (workflowShouldReturn)
             {
                 GUIUtility.ExitGUI();
                 return;
             }
-            if (isNonToon)
+            if (workflowIsNonToon)
             {
                 DrawNonToonShaderGUI(NataneToon.Editor.NataneToonShaderTypeSwitcher.DetectShaderType(targetMaterial));
                 return;
             }
 
-            // ===== Rendering Type Dropdown (below Shader Type) =====
-            {
-                RenderingMode currentMode = GetCurrentRenderingMode();
-                EditorGUI.BeginChangeCheck();
-                int newIndex = EditorGUILayout.Popup(L("Rendering Type", "Rendering Type"), (int)currentMode, RenderingModeLabels);
-                if (EditorGUI.EndChangeCheck())
-                {
-                    SetRenderingMode((RenderingMode)newIndex);
-                }
-            }
-
             DrawDependencyInspectorWarnings();
             DrawSamplerBudgetInspectorWarning();
-
-            // ===== Compact Header =====
-            DrawCompactHeader();
-            SafeDrawSection(DrawCurrentStateSection, L("現在の状態", "Current State"));
             NataneToonShaderGUIUtility.DrawCompactPerformanceSummary(targetMaterial, GetCurrentSamplerBudgetEstimate());
             EditorGUILayout.Space(SECTION_SPACING);
 
@@ -1052,22 +1041,20 @@ public class NataneToonShaderGUI : ShaderGUI
             out bool isLegacy);
 
         bool lilToonMatchEnabled = IsLilToonLookMixerLocked();
-        LilToonMigrationMode migrationMode = GetLilToonMigrationMode(targetMaterial);
-        LilToonParityFlags parityFlags = GetLilToonParityFlags(targetMaterial);
-        int warningCount = CountLilToonParityFlags(parityFlags);
+        bool isMigratedMaterial = IsLilToonMigratedMaterial(targetMaterial);
 
         EditorGUILayout.LabelField(L("見た目ミキサー", "Look Mixer"), EditorStyles.boldLabel);
         DrawHelpToggle(
             "LookMixer",
-            L("Toon と PBR はベースの陰影バランス、NPR はその上に重ねる作風エフェクトの強さです。lilToon から来た素材は、ここで Natane 編集と lilToon 近似を切り替えられます。",
-              "Toon and PBR blend the base shading. NPR controls the post-style stack layered on top. Migrated lilToon materials can switch between Natane editing and compatibility mode here."),
+            L("Toon と PBR はベースの陰影バランス、NPR はその上に重ねる作風エフェクトの強さです。",
+              "Toon and PBR blend the base shading. NPR controls the post-style stack layered on top."),
             MessageType.None);
 
         if (lilToonMatchEnabled)
         {
             EditorGUILayout.HelpBox(
-                L("lilToon 近似が ON の間は、見た目ミキサーは読み取り専用です。Natane モードへ戻すと通常編集に戻れます。",
-                  "Look Mixer is read-only while lilToon Match is ON. Switch back to Natane mode below to resume Natane-native look editing."),
+                L("lilToon移行仕様が ON の間は、見た目ミキサーは読み取り専用です。上部の「編集ワークフロー」で Natane仕様 に戻すと通常編集に戻れます。",
+                  "Look Mixer is read-only while the lilToon migration workflow is ON. Switch back to the Natane workflow from the Workflow panel at the top to resume normal editing."),
                 MessageType.Info);
         }
 
@@ -1102,86 +1089,14 @@ public class NataneToonShaderGUI : ShaderGUI
             }
         }
 
-        EditorGUILayout.Space(6);
-        EditorGUILayout.LabelField(L("lilToon移行", "LilToon Migration"), EditorStyles.boldLabel);
-        EditorGUILayout.HelpBox(
-            lilToonMatchEnabled
-                ? L("lilToon 近似が有効です。移行元の見た目へ寄せるため、互換性を優先した挙動になります。",
-                    "LilToon Match is active. The inspector prioritizes compatibility behavior to stay close to the migrated source look.")
-                : L("Natane モードが有効です。見た目ミキサーや Natane 独自の調整を使った通常編集ができます。",
-                    "Natane mode is active. Look Mixer and Natane-native art controls are available for normal editing."),
-            lilToonMatchEnabled ? MessageType.Info : MessageType.None);
-
-        EditorGUI.BeginChangeCheck();
-        int selectedMode = GUILayout.SelectionGrid(
-            lilToonMatchEnabled ? 1 : 0,
-            new[]
-            {
-                L("Natane", "Natane"),
-                L("lilToon近似", "lilToon Match")
-            },
-            2,
-            EditorStyles.miniButton);
-
-        if (EditorGUI.EndChangeCheck())
+        if (isMigratedMaterial && !lilToonMatchEnabled)
         {
-            lilToonMatchEnabled = selectedMode == 1;
-            ApplyLilToonModeToSelectedMaterials(lilToonMatchEnabled);
-        }
-
-        EditorGUILayout.Space(4);
-        EditorGUILayout.LabelField(L("元シェーダー", "Source Shader"), GetLilToonSourceShader(targetMaterial));
-        EditorGUILayout.LabelField(L("移行モード", "Migration Mode"), GetLilToonMigrationModeLabel(migrationMode));
-        EditorGUILayout.LabelField(L("互換警告", "Parity Warnings"), warningCount.ToString());
-
-        string migrationVersion = GetLilToonMigrationVersion(targetMaterial);
-        if (!string.IsNullOrEmpty(migrationVersion))
-        {
-            EditorGUILayout.LabelField(L("移行バージョン", "Migration Version"), migrationVersion);
-        }
-
-        if (lilToonMatchEnabled &&
-            targetMaterial != null &&
-            !ShouldUseLilToonCompatibilityBase(targetMaterial))
-        {
+            EditorGUILayout.Space(6);
             EditorGUILayout.HelpBox(
-                L("lilToon 近似は内部の互換ベース上で使うのが最適です。下のボタンから互換ベースを再適用できます。",
-                  "lilToon Match works best on the compatibility base. You can reapply the compatibility base with the button below."),
-                MessageType.Warning);
+                L("Natane仕様 / lilToon移行仕様 の切替は、上部の「編集ワークフロー」に統合されています。ここでは見た目ミキサーだけを調整してください。",
+                  "Switch between the Natane and lilToon workflows from the Workflow panel at the top. This section is now only for look mixing."),
+                MessageType.None);
         }
-
-        if (warningCount > 0)
-        {
-            showLilToonParityDetails = EditorGUILayout.Foldout(
-                showLilToonParityDetails,
-                L("互換の詳細", "Parity Details"),
-                true);
-
-            if (showLilToonParityDetails)
-            {
-                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.RimShadeUnsupported, L("Rim Shade: 手動確認が必要です。", "Rim Shade: manual review needed."));
-                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.Emission2ndUnsupported, L("Emission 2nd: Natane 側に直接対応がまだありません。", "Emission 2nd: no direct Natane equivalent yet."));
-                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.ShadowBorderRangeUnsupported, L("Shadow Border Range: 最終的なグラデーション差が残ることがあります。", "Shadow Border Range: final gradation can still differ."));
-                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.ShadowMaskTypeUnsupported, L("Shadow Mask Type: 顔のフラットマスク挙動は要確認です。", "Shadow Mask Type: flat-face mask behavior still needs review."));
-                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.BackfaceForceShadowUnsupported, L("Backface Force Shadow: 裏面シェーディングの互換は未完了です。", "Backface Force Shadow: backface shading parity is not finished."));
-                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.ShadowPostAOUnsupported, L("Shadow Post AO: 後段 AO 分岐はまだ無視されます。", "Shadow Post AO: post-AO branch is still ignored."));
-                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.MatCapNeedsReview, L("MatCap: ブレンド挙動は手動確認してください。", "MatCap: blend semantics still need manual confirmation."));
-                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.OutlineNeedsReview, L("Outline: 幅とマスク挙動を確認してください。", "Outline: width and mask behavior should be reviewed."));
-            }
-        }
-
-        EditorGUILayout.Space(4);
-        EditorGUILayout.BeginHorizontal();
-        if (GUILayout.Button(L("lilToon近似を再適用", "Reapply lilToon Match"), GUILayout.Height(22)))
-        {
-            ApplyLilToonModeToSelectedMaterials(true);
-        }
-
-        if (GUILayout.Button(L("移行ツールを開く", "Open Migration Tool"), GUILayout.Height(22)))
-        {
-            OpenLilToonMigrationTool();
-        }
-        EditorGUILayout.EndHorizontal();
     }
 
     private void DrawLilToonParityFlagLine(LilToonParityFlags currentFlags, LilToonParityFlags flag, string message)
@@ -1484,6 +1399,11 @@ public class NataneToonShaderGUI : ShaderGUI
         {
             material.SetFloat("_ShadowSteps", 2f);
         }
+
+        if (material.HasProperty("_ShadowEnvStrength") && material.HasProperty("_STShadowEnvStrength"))
+        {
+            material.SetFloat("_ShadowEnvStrength", Mathf.Clamp01(material.GetFloat("_STShadowEnvStrength")));
+        }
     }
 
     private LilToonMigrationMode GetLilToonMigrationMode(Material material)
@@ -1545,13 +1465,13 @@ public class NataneToonShaderGUI : ShaderGUI
         switch (mode)
         {
             case LilToonMigrationMode.ExactCompatibility:
-                return L("Exact Compatibility", "Exact Compatibility");
+                return L("完全互換寄り", "Exact Compatibility");
             case LilToonMigrationMode.VisualMatch:
-                return L("Visual Match", "Visual Match");
+                return L("見た目寄せ", "Visual Match");
             case LilToonMigrationMode.MinimalSafe:
-                return L("Minimal Safe", "Minimal Safe");
+                return L("安全寄り", "Minimal Safe");
             default:
-                return L("Unknown", "Unknown");
+                return L("不明", "Unknown");
         }
     }
 
@@ -1582,6 +1502,7 @@ public class NataneToonShaderGUI : ShaderGUI
             if (enableLilToonMatch && material.HasProperty("_ShadingMode"))
             {
                 material.SetFloat("_ShadingMode", 2f);
+                material.EnableKeyword("_STANDARD_TOON");
             }
             else if (!enableLilToonMatch &&
                      material.HasProperty("_ShadingMode") &&
@@ -1589,6 +1510,11 @@ public class NataneToonShaderGUI : ShaderGUI
             {
                 SyncNataneShadowSettingsFromLilToonCompatibility(material);
                 material.SetFloat("_ShadingMode", GetNataneShadingModeForMaterial(material));
+                material.DisableKeyword("_STANDARD_TOON");
+            }
+            else if (!enableLilToonMatch)
+            {
+                material.DisableKeyword("_STANDARD_TOON");
             }
 
             EditorUtility.SetDirty(material);
@@ -6774,26 +6700,166 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawCurrentStateSection()
     {
-        SetFoldout("CurrentState", DrawBoxedSection(L("現在の状態", "Current State"), GetFoldout("CurrentState"), SectionCategory.Basic));
+        SetFoldout("CurrentState", DrawBoxedSection(L("編集ワークフロー", "Workflow"), GetFoldout("CurrentState"), SectionCategory.Basic));
         if (GetFoldout("CurrentState"))
         {
             NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate samplerBudget = GetCurrentSamplerBudgetEstimate();
 
             EditorGUILayout.LabelField(
-                L("いまのマテリアルがどのモードで動いているかを上から素早く確認できます。", "Quick summary of how this material is currently configured."),
+                L("最初にここで Shader Type と編集仕様を切り替えて、下の早見表で現在状態を確認できます。",
+                  "Switch shader and editing workflow here first, then confirm the current state in the summary below."),
                 EditorStyles.wordWrappedMiniLabel);
             EditorGUILayout.Space(4);
 
-            DrawCurrentStateRow(L("シェーダー", "Shader"), GetCurrentShaderLabel(), true);
-            DrawCurrentStateRow(L("描画タイプ", "Rendering"), GetRenderingModeLabel(GetCurrentRenderingMode()));
-            DrawCurrentStateRow(L("編集モード", "Editing Mode"), GetCurrentEditingModeLabel());
-            DrawCurrentStateRow(L("ベース表現", "Base Shading"), GetCurrentBaseShadingLabel());
-            DrawCurrentStateRow(L("見た目プリセット", "Look Mode"), GetCurrentLookModeLabel());
-            DrawCurrentStateRow(L("移行状態", "Migration"), GetCurrentMigrationSummary(), true);
-            DrawCurrentStateRow(L("主な有効機能", "Active Features"), GetActiveFeatureSummary(targetMaterial, 4), true);
-            DrawCurrentStateRow(L("Sampler / Pass", "Sampler / Pass"), GetSamplerBudgetSummary(samplerBudget));
+            DrawWorkflowControls();
+
+            if (!workflowShouldReturn && !workflowIsNonToon)
+            {
+                EditorGUILayout.Space(6);
+                DrawCurrentStateRow(L("シェーダー", "Shader"), GetCurrentShaderLabel(), true);
+                DrawCurrentStateRow(L("描画タイプ", "Rendering"), GetRenderingModeLabel(GetCurrentRenderingMode()));
+                DrawCurrentStateRow(L("編集仕様", "Editing Workflow"), GetCurrentEditingModeLabel());
+                DrawCurrentStateRow(L("ベース表現", "Base Shading"), GetCurrentBaseShadingLabel());
+                DrawCurrentStateRow(L("見た目プリセット", "Look Mode"), GetCurrentLookModeLabel());
+                DrawCurrentStateRow(L("移行状態", "Migration"), GetCurrentMigrationSummary(), true);
+                DrawCurrentStateRow(L("主な有効機能", "Active Features"), GetActiveFeatureSummary(targetMaterial, 4), true);
+                DrawCurrentStateRow(L("Sampler / Pass", "Sampler / Pass"), GetSamplerBudgetSummary(samplerBudget));
+            }
         }
         EndBoxedSection(GetFoldout("CurrentState"));
+    }
+
+    private void DrawWorkflowControls()
+    {
+        workflowIsNonToon = NataneToon.Editor.NataneToonShaderTypeSwitcher.DrawShaderTypeDropdown(targetMaterial, materialEditor, out bool shouldReturn);
+        workflowShouldReturn = shouldReturn;
+        if (workflowShouldReturn)
+        {
+            return;
+        }
+
+        if (workflowIsNonToon)
+        {
+            EditorGUILayout.HelpBox(
+                L("現在の Shader Type は Toon 系ではありません。Natane仕様 / lilToon移行仕様 の切替は Toon 系シェーダーで使えます。",
+                  "The current shader type is not a toon variant. Natane and lilToon workflow switching is available on toon shaders."),
+                MessageType.Info);
+            return;
+        }
+
+        EditorGUI.BeginChangeCheck();
+        RenderingMode currentMode = GetCurrentRenderingMode();
+        RenderingMode newMode = (RenderingMode)EditorGUILayout.Popup(L("描画タイプ", "Rendering Type"), (int)currentMode, RenderingModeLabels);
+        if (EditorGUI.EndChangeCheck())
+        {
+            SetRenderingMode(newMode);
+        }
+
+        DrawIntegratedEditingWorkflowControls();
+    }
+
+    private void DrawIntegratedEditingWorkflowControls()
+    {
+        bool isMigratedMaterial = IsLilToonMigratedMaterial(targetMaterial);
+
+        EditorGUILayout.Space(4);
+        EditorGUILayout.LabelField(L("編集仕様", "Editing Workflow"), EditorStyles.boldLabel);
+
+        if (!isMigratedMaterial)
+        {
+            EditorGUILayout.HelpBox(
+                L("このマテリアルは Natane 標準仕様です。lilToon 由来の素材にしたい場合は移行ツールから作成してください。",
+                  "This material uses the native Natane workflow. Use the migration tool if you need a lilToon-derived workflow."),
+                MessageType.None);
+
+            if (GUILayout.Button(L("lilToon移行ツールを開く", "Open lilToon Migration Tool"), GUILayout.Height(22)))
+            {
+                OpenLilToonMigrationTool();
+            }
+
+            return;
+        }
+
+        bool lilToonMatchEnabled = GetLilToonExactCompatibility(targetMaterial);
+        LilToonMigrationMode migrationMode = GetLilToonMigrationMode(targetMaterial);
+        LilToonParityFlags parityFlags = GetLilToonParityFlags(targetMaterial);
+        int warningCount = CountLilToonParityFlags(parityFlags);
+
+        EditorGUILayout.HelpBox(
+            lilToonMatchEnabled
+                ? L("lilToon移行仕様が有効です。移行元の見た目に寄せるため、互換性を優先して編集します。",
+                    "The lilToon migration workflow is active. Editing prioritizes compatibility with the migrated source look.")
+                : L("Natane仕様が有効です。Natane 標準の見た目ミキサーと各種調整を使って編集できます。",
+                    "The Natane workflow is active. Edit with the native Natane look mixer and art controls."),
+            lilToonMatchEnabled ? MessageType.Info : MessageType.None);
+
+        EditorGUI.BeginChangeCheck();
+        int selectedMode = GUILayout.Toolbar(
+            lilToonMatchEnabled ? 1 : 0,
+            new[]
+            {
+                L("Natane仕様", "Natane Workflow"),
+                L("lilToon移行仕様", "lilToon Migration Workflow")
+            });
+        if (EditorGUI.EndChangeCheck())
+        {
+            lilToonMatchEnabled = selectedMode == 1;
+            ApplyLilToonModeToSelectedMaterials(lilToonMatchEnabled);
+        }
+
+        EditorGUILayout.Space(4);
+        DrawCurrentStateRow(L("元シェーダー", "Source Shader"), GetLilToonSourceShader(targetMaterial), true);
+        DrawCurrentStateRow(L("移行モード", "Migration Mode"), GetLilToonMigrationModeLabel(migrationMode));
+        DrawCurrentStateRow(L("互換警告", "Parity Warnings"), warningCount.ToString());
+
+        string migrationVersion = GetLilToonMigrationVersion(targetMaterial);
+        if (!string.IsNullOrEmpty(migrationVersion))
+        {
+            DrawCurrentStateRow(L("移行バージョン", "Migration Version"), migrationVersion);
+        }
+
+        if (lilToonMatchEnabled &&
+            targetMaterial != null &&
+            !ShouldUseLilToonCompatibilityBase(targetMaterial))
+        {
+            EditorGUILayout.HelpBox(
+                L("lilToon移行仕様は内部の互換ベース上で使うのが最適です。下のボタンから互換ベースを再適用できます。",
+                  "The lilToon migration workflow works best on the compatibility base. You can reapply the compatibility base with the button below."),
+                MessageType.Warning);
+        }
+
+        if (warningCount > 0)
+        {
+            showLilToonParityDetails = EditorGUILayout.Foldout(
+                showLilToonParityDetails,
+                L("互換の詳細", "Parity Details"),
+                true);
+
+            if (showLilToonParityDetails)
+            {
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.RimShadeUnsupported, L("Rim Shade: 手動確認が必要です。", "Rim Shade: manual review needed."));
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.Emission2ndUnsupported, L("Emission 2nd: Natane 側に直接対応がまだありません。", "Emission 2nd: no direct Natane equivalent yet."));
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.ShadowBorderRangeUnsupported, L("Shadow Border Range: 最終的なグラデーション差が残ることがあります。", "Shadow Border Range: final gradation can still differ."));
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.ShadowMaskTypeUnsupported, L("Shadow Mask Type: 顔のフラットマスク挙動は要確認です。", "Shadow Mask Type: flat-face mask behavior still needs review."));
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.BackfaceForceShadowUnsupported, L("Backface Force Shadow: 裏面シェーディングの互換は未完了です。", "Backface Force Shadow: backface shading parity is not finished."));
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.ShadowPostAOUnsupported, L("Shadow Post AO: 後段 AO 分岐はまだ無視されます。", "Shadow Post AO: post-AO branch is still ignored."));
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.MatCapNeedsReview, L("MatCap: ブレンド挙動は手動確認してください。", "MatCap: blend semantics still need manual confirmation."));
+                DrawLilToonParityFlagLine(parityFlags, LilToonParityFlags.OutlineNeedsReview, L("Outline: 幅とマスク挙動を確認してください。", "Outline: width and mask behavior should be reviewed."));
+            }
+        }
+
+        EditorGUILayout.Space(4);
+        EditorGUILayout.BeginHorizontal();
+        if (GUILayout.Button(L("lilToon移行仕様を再適用", "Reapply lilToon Workflow"), GUILayout.Height(22)))
+        {
+            ApplyLilToonModeToSelectedMaterials(true);
+        }
+
+        if (GUILayout.Button(L("移行ツールを開く", "Open Migration Tool"), GUILayout.Height(22)))
+        {
+            OpenLilToonMigrationTool();
+        }
+        EditorGUILayout.EndHorizontal();
     }
 
     private void DrawCurrentStateRow(string label, string value, bool wrapValue = false)
@@ -6841,11 +6907,11 @@ public class NataneToonShaderGUI : ShaderGUI
         if (IsLilToonMigratedMaterial(targetMaterial))
         {
             return GetLilToonExactCompatibility(targetMaterial)
-                ? L("lilToon近似", "lilToon Match")
-                : L("Natane", "Natane");
+                ? L("lilToon移行仕様", "lilToon Migration Workflow")
+                : L("Natane仕様", "Natane Workflow");
         }
 
-        return L("Natane", "Natane");
+        return L("Natane仕様", "Natane Workflow");
     }
 
     private string GetCurrentBaseShadingLabel()
@@ -6898,13 +6964,13 @@ public class NataneToonShaderGUI : ShaderGUI
     {
         if (targetMaterial == null || !IsLilToonMigratedMaterial(targetMaterial))
         {
-            return L("通常マテリアル", "Standard Material");
+            return L("Natane標準素材", "Native Natane Material");
         }
 
         LilToonMigrationMode migrationMode = GetLilToonMigrationMode(targetMaterial);
         string currentMode = GetLilToonExactCompatibility(targetMaterial)
-            ? L("現在: lilToon近似", "Current: lilToon Match")
-            : L("現在: Natane", "Current: Natane");
+            ? L("現在: lilToon移行仕様", "Current: lilToon Workflow")
+            : L("現在: Natane仕様", "Current: Natane Workflow");
 
         LilToonParityFlags parityFlags = GetLilToonParityFlags(targetMaterial);
         int parityCount = CountLilToonParityFlags(parityFlags);

@@ -1170,3 +1170,40 @@ Phase 5: 蜈ｨ繝舌Μ繧｢繝ｳ繝・(.shader) 縺ｮ繧ｳ繝ｳ繝代う�
 - Expected outcome:
   - newly converted materials are organized under `NataneToon/`
   - reruns keep existing references stable while also migrating older converted assets to the new folder layout
+
+## 2026-03-12 lilToon migration shadow/light carry-over fixes
+
+- User reported two symptoms after migration:
+  - switching a migrated material from `lilToon近似` to `Natane` did not visibly change the look
+  - point-light-driven shading felt wrong / less responsive after migration
+- Fix:
+  - `ApplyLilToonModeToSelectedMaterials(...)` now explicitly toggles `_STANDARD_TOON` on when entering `lilToon近似` and off when returning to `Natane`
+  - migration now maps lilToon `_ShadowReceive` into Natane `_ShadowReceive`
+  - migration now maps lilToon `_ShadowEnvStrength` into both `_STShadowEnvStrength` and Natane `_ShadowEnvStrength`
+  - `Exact Compatibility` no longer bakes `_ShadowStrength` into `_ShadowColor` before also applying `_STShadowStrength`
+  - when lilToon source has `_UseShadow = 0`, Natane shadow tint / receive / multi-shadow are neutralized instead of leaving visible shadowing behind
+- Expected outcome:
+  - `Natane` mode stops sticking to the compatibility branch because `_STANDARD_TOON` is cleared immediately
+  - migrated materials keep closer shadow/light behavior in both exact and Natane-native paths
+
+## 2026-03-12 inspector workflow integration for Natane / lilToon migrated materials
+
+- User requested a single inspector category that ties together shader type and lilToon migration workflow instead of splitting them across the top and the Look Mixer block.
+- `Editor/NataneToon/GUI/NataneToonShaderGUI.cs` now treats the top `CurrentState` section as `編集ワークフロー / Workflow` and uses it as the single switching hub.
+- Integrated into the top workflow section:
+  - `Shader Type`
+  - `描画タイプ / Rendering Type`
+  - migrated-material-only toolbar for `Natane仕様` and `lilToon移行仕様`
+  - source shader / migration mode / parity warning count / migration version
+  - compatibility warning and quick actions
+- The old duplicated `lilToon移行` block inside `DrawLookMixerControls()` was removed.
+  - Look Mixer now only explains look blending
+  - migrated materials are directed back to the top workflow section for Natane vs lilToon switching
+- UI wording was aligned to be more beginner-friendly:
+  - `Exact Compatibility` -> `完全互換寄り`
+  - `Visual Match` -> `見た目寄せ`
+  - `Minimal Safe` -> `安全寄り`
+  - editing summary now reports `Natane仕様` / `lilToon移行仕様`
+- Expected outcome:
+  - users can decide the material workflow from one place before touching lower art controls
+  - migrated materials expose one-click switching at the top without hunting through the Look Mixer section

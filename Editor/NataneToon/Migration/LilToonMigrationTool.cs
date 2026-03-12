@@ -1172,7 +1172,7 @@ namespace NataneToon.Editor
                 Color shadowColor = (Color)sourceProps["_ShadowColor"];
 
                 float shadowStrength = GetFloatOr(sourceProps, "_ShadowStrength", 1.0f);
-                if (shadowStrength < 0.99f)
+                if (conversionMode != ConversionMode.ExactCompatibility && shadowStrength < 0.99f)
                 {
                     shadowColor = Color.Lerp(Color.white, shadowColor, shadowStrength);
                     report.infos.Add($"ShadowStrength={shadowStrength:F2}: shadow color was blended toward white.");
@@ -1201,6 +1201,13 @@ namespace NataneToon.Editor
             targetMaterial.SetFloat("_STShadowStrength", strength);
             report.infos.Add($"Compatibility shadow captured: Border={border:F2}, Blur={blur:F2}, Strength={strength:F2}");
 
+            float shadowReceive = useShadow ? GetFloatOr(sourceProps, "_ShadowReceive", 1.0f) : 0.0f;
+            if (targetMaterial.HasProperty("_ShadowReceive"))
+            {
+                targetMaterial.SetFloat("_ShadowReceive", shadowReceive);
+            }
+            report.infos.Add($"Shadow Receive mapped: {shadowReceive:F2}");
+
             if (conversionMode == ConversionMode.ExactCompatibility)
             {
                 targetMaterial.SetFloat("_ShadingMode", 2.0f); // StandardToon
@@ -1216,6 +1223,17 @@ namespace NataneToon.Editor
             if (useShadow)
             {
                 MapMultiShadowLayers(sourceProps, targetMaterial, report);
+            }
+            else
+            {
+                targetMaterial.SetColor("_ShadowColor", Color.white);
+                targetMaterial.SetFloat("_STShadowStrength", 0.0f);
+                if (targetMaterial.HasProperty("_ShadowColorTexStrength"))
+                {
+                    targetMaterial.SetFloat("_ShadowColorTexStrength", 0.0f);
+                }
+                targetMaterial.DisableKeyword("_USE_MULTI_SHADOW");
+                report.infos.Add("Source shadow was disabled, so Natane shadow tint/receive were neutralized.");
             }
 
             // === Shadow Color Texture ===
@@ -1523,7 +1541,11 @@ namespace NataneToon.Editor
             // StandardToon v2: stIndirectCol = lerp(stIndirectCol, stAlbedo, saturate(stIndLightColor * _STShadowEnvStrength))
             float shadowEnvStrength = GetFloatOr(sourceProps, "_ShadowEnvStrength", 1.0f);
             targetMaterial.SetFloat("_STShadowEnvStrength", shadowEnvStrength);
-            report.infos.Add($"Shadow Env Strength mapped to _STShadowEnvStrength={shadowEnvStrength:F2}");
+            if (targetMaterial.HasProperty("_ShadowEnvStrength"))
+            {
+                targetMaterial.SetFloat("_ShadowEnvStrength", shadowEnvStrength);
+            }
+            report.infos.Add($"Shadow Env Strength mapped: compatibility={shadowEnvStrength:F2}, natane={shadowEnvStrength:F2}");
 
             // Exact compatibility hidden payloads used by the StandardToon branch.
             if (targetMaterial.HasProperty("_ShadowMainStrength"))
