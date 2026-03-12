@@ -1207,3 +1207,25 @@ Phase 5: 蜈ｨ繝舌Μ繧｢繝ｳ繝・(.shader) 縺ｮ繧ｳ繝ｳ繝代う�
 - Expected outcome:
   - users can decide the material workflow from one place before touching lower art controls
   - migrated materials expose one-click switching at the top without hunting through the Look Mixer section
+
+## 2026-03-12 migrated point-light color blending fix
+
+- User reported that migrated materials still behaved unlike native Natane materials under two opposite-colored point lights:
+  - left red + right blue point lights lit the whole body purple instead of separating by position and blending only near the center
+  - even switching the inspector workflow back to `Natane仕様` did not restore Natane-like point-light response
+- Strongest root cause found in the code:
+  - migrated materials were not restoring `_UsePixelVertexLights / _PIXEL_VERTEX_LIGHTS` when returning to `Natane仕様`
+  - in that state the shader falls back to Unity vertex-light aggregation (`Shade4PointLights` / `i.vertexLightColor`), which tends to average multiple colored point lights across the mesh
+  - Natane's intended spatial separation path is the `_PIXEL_VERTEX_LIGHTS` branch using `CalculateVertexLightsPixelPrecision(...)`
+- Fix applied:
+  - `Editor/NataneToon/GUI/NataneToonShaderGUI.cs`
+    - `ApplyLilToonModeToSelectedMaterials(...)` now also switches migrated materials between compatibility lighting and Natane point-light shading
+    - `Natane仕様` enables `_UsePixelVertexLights` + `_PIXEL_VERTEX_LIGHTS`
+    - `lilToon移行仕様` disables them for closer lilToon parity
+  - `Editor/NataneToon/Migration/LilToonMigrationTool.cs`
+    - new migrated materials now default to pixel-precision point-light shading in non-Exact modes
+    - `Exact Compatibility` keeps pixel vertex lights off
+    - `MinimalSafe` no longer forcibly disables `_UsePixelVertexLights`
+- Expected outcome:
+  - migrated materials switched to `Natane仕様` should separate left/right point-light colors much closer to native Natane materials
+  - only the region where red and blue overlap should trend purple instead of the full body washing purple

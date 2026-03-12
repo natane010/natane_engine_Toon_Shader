@@ -1498,6 +1498,7 @@ public class NataneToonShaderGUI : ShaderGUI
             }
 
             material.SetFloat("_LilToonExactCompatibility", enableLilToonMatch ? 1f : 0f);
+            ApplyMigratedMaterialLightingWorkflow(material, enableLilToonMatch);
 
             if (enableLilToonMatch && material.HasProperty("_ShadingMode"))
             {
@@ -1523,6 +1524,26 @@ public class NataneToonShaderGUI : ShaderGUI
         if (targetMaterial != null)
         {
             SynchronizeKeywordsAndRefreshInspectorCaches();
+        }
+    }
+
+    private void ApplyMigratedMaterialLightingWorkflow(Material material, bool enableLilToonMatch)
+    {
+        if (material == null || !IsLilToonMigratedMaterial(material) || !material.HasProperty("_UsePixelVertexLights"))
+        {
+            return;
+        }
+
+        bool enableNatanePointLightShading = !enableLilToonMatch;
+        material.SetFloat("_UsePixelVertexLights", enableNatanePointLightShading ? 1f : 0f);
+
+        if (enableNatanePointLightShading)
+        {
+            material.EnableKeyword("_PIXEL_VERTEX_LIGHTS");
+        }
+        else
+        {
+            material.DisableKeyword("_PIXEL_VERTEX_LIGHTS");
         }
     }
 

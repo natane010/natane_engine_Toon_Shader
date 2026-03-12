@@ -1149,6 +1149,28 @@ namespace NataneToon.Editor
                 $"Sharpness={targetMaterial.GetFloat("_ShadowSharpness"):F2}, GradientWidth={targetMaterial.GetFloat("_ShadingGradientWidth"):F2}");
         }
 
+        private void ApplyMigratedLightingWorkflow(Material targetMaterial, bool enableLilToonCompatibility, ConversionReport report)
+        {
+            if (targetMaterial == null || !targetMaterial.HasProperty("_UsePixelVertexLights"))
+            {
+                return;
+            }
+
+            bool enableNatanePointLightShading = !enableLilToonCompatibility;
+            targetMaterial.SetFloat("_UsePixelVertexLights", enableNatanePointLightShading ? 1.0f : 0.0f);
+
+            if (enableNatanePointLightShading)
+            {
+                targetMaterial.EnableKeyword("_PIXEL_VERTEX_LIGHTS");
+                report.infos.Add("Natane lighting workflow enabled: Pixel-Precision Vertex Lights ON for spatial point-light separation.");
+            }
+            else
+            {
+                targetMaterial.DisableKeyword("_PIXEL_VERTEX_LIGHTS");
+                report.infos.Add("lilToon compatibility workflow enabled: Pixel-Precision Vertex Lights OFF to stay closer to lilToon.");
+            }
+        }
+
         private void MapProperties(Dictionary<string, object> sourceProps, Material targetMaterial)
         {
             var dummyReport = new ConversionReport();
@@ -1212,12 +1234,14 @@ namespace NataneToon.Editor
             {
                 targetMaterial.SetFloat("_ShadingMode", 2.0f); // StandardToon
                 targetMaterial.EnableKeyword("_STANDARD_TOON");
+                ApplyMigratedLightingWorkflow(targetMaterial, true, report);
                 targetMaterial.SetFloat("_ShadowOffset", 0);
                 report.infos.Add("Exact Compatibility keeps the lilToon compatibility base active.");
             }
             else
             {
                 ApplyNataneShadowSettingsFromLilToon(sourceProps, targetMaterial, report);
+                ApplyMigratedLightingWorkflow(targetMaterial, false, report);
             }
 
             if (useShadow)
@@ -1767,7 +1791,6 @@ namespace NataneToon.Editor
         private void DisableNonBasicFeatures(Material material, ConversionReport report)
         {
             DisableFeature(material, "_SoftLightingMode", "_SOFT_LIGHTING_MODE");
-            DisableFeature(material, "_UsePixelVertexLights", "_PIXEL_VERTEX_LIGHTS");
             DisableFeature(material, "_UseLightVolume", "_USE_LIGHT_VOLUME");
             DisableFeature(material, "_LightVolumeSpecular", "_LIGHT_VOLUME_SPECULAR");
             DisableFeature(material, "_LTCGI", "_LTCGI");
