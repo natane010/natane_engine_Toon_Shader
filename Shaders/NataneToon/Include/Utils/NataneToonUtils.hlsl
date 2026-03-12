@@ -689,7 +689,7 @@ half4 SampleTex2DBlurShared(Texture2D tex, SamplerState sharedSampler, float2 uv
 #endif
 
 #if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
-    #define NATANE_SAMPLE_SHARED_BLUR(tex, samplerTex, coord, blur) SampleTex2DBlurShared(tex, sampler##samplerTex, coord, blur)
+    #define NATANE_SAMPLE_SHARED_BLUR(tex, samplerTex, coord, blur) SampleTex2DBlurShared(tex, sampler_linear_repeat, coord, blur)
 #else
     #define NATANE_SAMPLE_SHARED_BLUR(tex, samplerTex, coord, blur) SampleTex2DBlur(tex, coord, blur)
 #endif
