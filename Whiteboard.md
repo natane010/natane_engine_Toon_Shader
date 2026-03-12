@@ -1044,3 +1044,43 @@ Phase 5: 蜈ｨ繝舌Μ繧｢繝ｳ繝・(.shader) 縺ｮ繧ｳ繝ｳ繝代う�
 - Expected outcome:
   - choosing `Natane` disables both the compatibility-base UI and the `_STANDARD_TOON` shader path
   - migrated materials return to normal Natane editing instead of remaining stuck in the lilToon base
+
+## 2026-03-12 lilToon migration now derives Natane-native shading outside exact compatibility
+
+- User reported that materials converted by `LilToonMigrationTool` still looked different from native Natane materials even after switching back to `Natane` mode.
+- Root cause:
+  - the migration tool always wrote `_ShadingMode = 2` and enabled `_STANDARD_TOON`, even for `Visual Match` and `Minimal Safe`
+  - those modes were therefore still born on the internal compatibility base, despite the UI text describing them as Natane-native approximation paths
+  - when switching from compatibility back to Natane mode, the GUI only changed the mode flag and did not project lilToon border/blur values into Natane-native shadow controls
+- Fix:
+  - `LilToonMigrationTool` now keeps `Exact Compatibility` on the compatibility base only
+  - `Visual Match` / `Minimal Safe` now derive Natane-native shading values from lilToon shadow data:
+    - `_ShadowOffset` from lilToon border
+    - `_ShadowSharpness` / `_ShadingGradientWidth` from lilToon blur
+    - `_ShadingMode` from simple toon/gradient/PBR-like heuristics
+    - `_STANDARD_TOON` disabled
+  - `NataneToonShaderGUI` now also copies the stored compatibility shadow settings back into Natane shadow controls when the user switches an already-migrated material from `lilToon近似` to `Natane`
+- Expected outcome:
+  - newly migrated `Visual Match` / `Minimal Safe` materials start in a real Natane-native base instead of a hidden StandardToon base
+  - previously migrated materials get a closer Natane result after toggling back from `lilToon近似`
+
+## 2026-03-12 sampler budget estimator recalibrated for shared samplers
+
+- User asked whether the inspector sampler count had already been updated after the shared sampler refactor.
+- Result:
+  - it had not
+  - `NataneToonSamplerBudgetEstimator` was still using the old texture-count-oriented heuristic (`BaseSamplerCount = 5`, many layered features costing +1/+2) even though most D3D11 sampling now goes through shared repeat/clamp sampler states
+- Fix:
+  - recalibrated `BaseSamplerCount` to `3` for the current D3D11 path (`_MainTex`, shared repeat sampler, shared clamp sampler)
+  - reduced shared-NOSAMPLER feature costs (layered textures, AO, emission, normal, PBR helpers, hatching, VAT, detail/surface cover, etc.) to `0`
+  - kept dedicated sampler features counted (`Reflection`, `Env Rim`, `Video Texture`, `AudioLink`, `Outline`, `Fur`, `Light Volume`, `LTCGI`)
+  - changed the estimator to count shared resources by group instead of per keyword:
+    - GrabPass stack (`Refraction`, `Soft Filter`, `Kuwahara`, `Color Bleeding`, `Chromatic Aberration`, `Watercolor`) = +1 once
+    - shared depth texture consumers (`Intersection Fade`, `Screen Edge`, `PCSS`) = +1 once
+    - `Screen Edge` depth normals = +1
+    - `PCSS` shadow map = +1
+  - changed `EvaluateEnable(...)` to use real estimate delta instead of raw table cost so enabling another GrabPass consumer after one is already active no longer over-counts sampler usage
+- Expected outcome:
+  - sampler budget UI now better matches the post-refactor D3D11 implementation
+  - texture-heavy but shared-sampler-safe materials stop being over-penalized
+  - risky screen/depth/third-party lighting combinations still warn conservatively

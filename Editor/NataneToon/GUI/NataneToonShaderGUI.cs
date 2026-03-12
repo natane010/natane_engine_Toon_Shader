@@ -1400,6 +1400,14 @@ public class NataneToonShaderGUI : ShaderGUI
             return 0f;
         }
 
+        bool pbrLikeSignal =
+            material.IsKeywordEnabled("_PBR_LIKE") ||
+            material.IsKeywordEnabled("_PBR");
+        if (pbrLikeSignal)
+        {
+            return 3f;
+        }
+
         int lookMode = material.HasProperty("_LookMode")
             ? Mathf.RoundToInt(material.GetFloat("_LookMode"))
             : (int)LookMode.Legacy;
@@ -1415,6 +1423,15 @@ public class NataneToonShaderGUI : ShaderGUI
             case LookMode.Hybrid:
                 return pbrWeight >= 0.6f ? 3f : 1f;
             case LookMode.Legacy:
+                if (material.HasProperty("_STShadowBlur"))
+                {
+                    float compatibilityBlur = Mathf.Clamp01(material.GetFloat("_STShadowBlur"));
+                    if (compatibilityBlur >= 0.18f)
+                    {
+                        return 1f;
+                    }
+                }
+
                 if (pbrWeight >= 0.6f || material.IsKeywordEnabled("_PBR_LIKE") || material.IsKeywordEnabled("_PBR"))
                 {
                     return 3f;
@@ -1428,6 +1445,41 @@ public class NataneToonShaderGUI : ShaderGUI
         }
 
         return 0f;
+    }
+
+    private void SyncNataneShadowSettingsFromLilToonCompatibility(Material material)
+    {
+        if (material == null)
+        {
+            return;
+        }
+
+        float border = material.HasProperty("_STShadowBorder")
+            ? Mathf.Clamp01(material.GetFloat("_STShadowBorder"))
+            : 0.5f;
+        float blur = material.HasProperty("_STShadowBlur")
+            ? Mathf.Clamp01(material.GetFloat("_STShadowBlur"))
+            : 0.1f;
+
+        if (material.HasProperty("_ShadowOffset"))
+        {
+            material.SetFloat("_ShadowOffset", Mathf.Clamp(border - 0.5f, -1f, 1f));
+        }
+
+        if (material.HasProperty("_ShadowSharpness"))
+        {
+            material.SetFloat("_ShadowSharpness", Mathf.Clamp(Mathf.Max(blur, 0.05f), 0.001f, 1f));
+        }
+
+        if (material.HasProperty("_ShadingGradientWidth"))
+        {
+            material.SetFloat("_ShadingGradientWidth", Mathf.Clamp(Mathf.Max(blur * 1.5f, 0.05f), 0.001f, 1f));
+        }
+
+        if (material.HasProperty("_ShadowSteps"))
+        {
+            material.SetFloat("_ShadowSteps", 2f);
+        }
     }
 
     private LilToonMigrationMode GetLilToonMigrationMode(Material material)
@@ -1531,6 +1583,7 @@ public class NataneToonShaderGUI : ShaderGUI
                      material.HasProperty("_ShadingMode") &&
                      IsLilToonCompatibilityShadingMode(material.GetFloat("_ShadingMode")))
             {
+                SyncNataneShadowSettingsFromLilToonCompatibility(material);
                 material.SetFloat("_ShadingMode", GetNataneShadingModeForMaterial(material));
             }
 

@@ -12,7 +12,7 @@ namespace NataneToon.Editor
     public static class NataneToonSamplerBudgetEstimator
     {
         public const string ScreenEdgeSplitShaderName = "Natane/Toon Shader (ScreenEdge Split)";
-        public const int BaseSamplerCount = 5;
+        public const int BaseSamplerCount = 3;
         public const int SamplerLimit = 16;
         public const int WarningThreshold = 13;
         public const int NearLimitThreshold = 15;
@@ -20,6 +20,10 @@ namespace NataneToon.Editor
         private const int LightVolumeLtcgiReserve = 3;
         private const int CriticalLightingReserve = 1;
         private const int ScreenSpaceLightingReserve = 2;
+        private const int SharedGrabPassSamplerCost = 1;
+        private const int SharedDepthTextureSamplerCost = 1;
+        private const int ScreenEdgeDepthNormalsSamplerCost = 1;
+        private const int PcssShadowMapSamplerCost = 1;
 
         public readonly struct FeatureCost
         {
@@ -96,10 +100,10 @@ namespace NataneToon.Editor
 
         private static readonly FeatureCost[] FeatureCosts =
         {
-            new FeatureCost("_2ND_TEXTURE", "2nd Texture", "2nd Texture", 1),
-            new FeatureCost("_3RD_TEXTURE", "3rd Texture", "3rd Texture", 1),
-            new FeatureCost("_4TH_TEXTURE", "4th Texture", "4th Texture", 1),
-            new FeatureCost("_5TH_TEXTURE", "5th Texture", "5th Texture", 1),
+            new FeatureCost("_2ND_TEXTURE", "2nd Texture", "2nd Texture", 0),
+            new FeatureCost("_3RD_TEXTURE", "3rd Texture", "3rd Texture", 0),
+            new FeatureCost("_4TH_TEXTURE", "4th Texture", "4th Texture", 0),
+            new FeatureCost("_5TH_TEXTURE", "5th Texture", "5th Texture", 0),
             new FeatureCost("_SCREEN_TONE", "Screen Tone", "Screen Tone", 0),
             new FeatureCost("_USE_AO", "AO", "Ambient Occlusion", 0),
             new FeatureCost("_SPECULAR", "Specular", "Specular", 0),
@@ -107,47 +111,52 @@ namespace NataneToon.Editor
             new FeatureCost("_RIM_LIGHT", "Rim Light", "Rim Light", 0),
             new FeatureCost("_RIM_LIGHT_2", "Rim Light 2", "Rim Light 2", 0),
             new FeatureCost("_OFFSET_RIM_LIGHT", "Offset Rim Light", "Offset Rim Light", 0),
-            new FeatureCost("_SHEEN", "Sheen", "Sheen", 1),
-            new FeatureCost("_MATCAP", "MatCap", "MatCap", 1),
-            new FeatureCost("_MATCAP_2", "MatCap 2", "MatCap 2", 1),
-            new FeatureCost("_MATCAP_3", "MatCap 3", "MatCap 3", 1),
+            new FeatureCost("_SHEEN", "Sheen", "Sheen", 0),
+            new FeatureCost("_MATCAP", "MatCap", "MatCap", 0),
+            new FeatureCost("_MATCAP_2", "MatCap 2", "MatCap 2", 0),
+            new FeatureCost("_MATCAP_3", "MatCap 3", "MatCap 3", 0),
             new FeatureCost("_GLITTER", "Glitter", "Glitter", 0),
             new FeatureCost("_OUTLINE", "Outline", "Outline", 1),
-            new FeatureCost("_EMISSION", "Emission", "Emission", 1),
-            new FeatureCost("_NORMALMAP", "Normal Map", "Normal Map", 1),
+            new FeatureCost("_EMISSION", "Emission", "Emission", 0),
+            new FeatureCost("_NORMALMAP", "Normal Map", "Normal Map", 0),
             new FeatureCost("_SSS", "SSS", "SSS", 0),
-            new FeatureCost("_SSS_LUT", "SSS LUT", "SSS LUT", 1),
-            new FeatureCost("_DISSOLVE", "Dissolve", "Dissolve", 1),
+            new FeatureCost("_SSS_LUT", "SSS LUT", "SSS LUT", 0),
+            new FeatureCost("_DISSOLVE", "Dissolve", "Dissolve", 0),
             new FeatureCost("_ALPHA_MASK", "Alpha Mask", "Alpha Mask", 0),
             new FeatureCost("_REFLECTION", "Reflection", "Reflection", 1),
             new FeatureCost("_IRIDESCENCE", "Iridescence", "Iridescence", 0),
             new FeatureCost("_ENV_RIM", "Environmental Rim", "Environmental Rim", 1),
             new FeatureCost("_PARALLAX", "Parallax", "Parallax", 0),
             new FeatureCost("_REFRACTION", "Refraction", "Refraction", 1),
-            new FeatureCost("_DECAL", "Decal", "Decal", 1),
-            new FeatureCost("_BACKFACE_TEXTURE", "Backface Texture", "Backface Texture", 1),
+            new FeatureCost("_SOFT_FILTER", "Soft Filter", "Soft Filter", 1),
+            new FeatureCost("_KUWAHARA_FILTER", "Kuwahara", "Kuwahara", 1),
+            new FeatureCost("_COLOR_BLEEDING", "Color Bleeding", "Color Bleeding", 1),
+            new FeatureCost("_CHROMATIC_ABERRATION", "Chromatic Aberration", "Chromatic Aberration", 1),
+            new FeatureCost("_DECAL", "Decal", "Decal", 0),
+            new FeatureCost("_BACKFACE_TEXTURE", "Backface Texture", "Backface Texture", 0),
             new FeatureCost("_VIDEO_TEXTURE", "Video Texture", "Video Texture", 1),
-            new FeatureCost("_VERTEX_ANIMATION", "Vertex Animation", "Vertex Animation", 1),
-            new FeatureCost("_WATER_DRIP", "Water Drip", "Water Drip", 1),
-            new FeatureCost("_SMEAR", "Smear", "Smear", 1),
-            new FeatureCost("_FUR", "Fur", "Fur", 2),
-            new FeatureCost("_PBR", "PBR", "PBR", 1),
-            new FeatureCost("_SMOOTH_NORMAL", "Smooth Normal", "Smooth Normal", 1),
-            new FeatureCost("_HOLOGRAM", "Hologram", "Hologram", 1),
-            new FeatureCost("_HOLOGRAM_NOISE", "Hologram Noise", "Hologram Noise", 1),
-            new FeatureCost("_GLITCH", "Glitch", "Glitch", 2),
-            new FeatureCost("_GLITCH_STRETCH", "Stretch Glitch", "Stretch Glitch", 1),
+            new FeatureCost("_VERTEX_ANIMATION", "Vertex Animation", "Vertex Animation", 0),
+            new FeatureCost("_WATER_DRIP", "Water Drip", "Water Drip", 0),
+            new FeatureCost("_SMEAR", "Smear", "Smear", 0),
+            new FeatureCost("_FUR", "Fur", "Fur", 1),
+            new FeatureCost("_PBR", "PBR", "PBR", 0),
+            new FeatureCost("_SMOOTH_NORMAL", "Smooth Normal", "Smooth Normal", 0),
+            new FeatureCost("_HOLOGRAM", "Hologram", "Hologram", 0),
+            new FeatureCost("_HOLOGRAM_NOISE", "Hologram Noise", "Hologram Noise", 0),
+            new FeatureCost("_GLITCH", "Glitch", "Glitch", 0),
+            new FeatureCost("_GLITCH_STRETCH", "Stretch Glitch", "Stretch Glitch", 0),
             new FeatureCost("_COLOR_QUANTIZE", "Color Quantize", "Color Quantize", 0),
-            new FeatureCost("_LUT_3D", "LUT", "LUT", 1),
-            new FeatureCost("_HATCHING", "Hatching", "Hatching", 2),
-            new FeatureCost("_WATERCOLOR", "Watercolor", "Watercolor", 3),
+            new FeatureCost("_LUT_3D", "LUT", "LUT", 0),
+            new FeatureCost("_HATCHING", "Hatching", "Hatching", 0),
+            new FeatureCost("_WATERCOLOR", "Watercolor", "Watercolor", 1),
             new FeatureCost("_SCREEN_EDGE", "Screen Edge", "Screen Edge", 2),
             new FeatureCost("_INTERSECTION_FADE", "Intersection Fade", "Intersection Fade", 1),
-            new FeatureCost("_DETAIL_MAP", "Detail Map", "Detail Map", 2),
-            new FeatureCost("_SURFACE_COVER", "Surface Cover", "Surface Cover", 2),
-            new FeatureCost("_AUDIOLINK", "AudioLink", "AudioLink", 2),
-            new FeatureCost("_VAT", "VAT", "VAT", 2),
-            new FeatureCost("_TESS_DISPLACEMENT", "Displacement", "Displacement", 1),
+            new FeatureCost("_PCSS", "PCSS", "PCSS", 2),
+            new FeatureCost("_DETAIL_MAP", "Detail Map", "Detail Map", 0),
+            new FeatureCost("_SURFACE_COVER", "Surface Cover", "Surface Cover", 0),
+            new FeatureCost("_AUDIOLINK", "AudioLink", "AudioLink", 1),
+            new FeatureCost("_VAT", "VAT", "VAT", 0),
+            new FeatureCost("_TESS_DISPLACEMENT", "Displacement", "Displacement", 0),
             new FeatureCost("_USE_LIGHT_VOLUME", "Light Volume", "Light Volume", 1),
             new FeatureCost("_LTCGI", "LTCGI", "LTCGI", 1)
         };
@@ -160,6 +169,35 @@ namespace NataneToon.Editor
 
         private static readonly FeatureCost ScreenSpaceLightingReserveCost =
             new FeatureCost("__SCREEN_SPACE_LIGHTING_RESERVE", "Screen Edge Reserve", "Screen Edge Reserve", ScreenSpaceLightingReserve);
+
+        private static readonly string[] SharedGrabPassKeywords =
+        {
+            "_REFRACTION",
+            "_SOFT_FILTER",
+            "_KUWAHARA_FILTER",
+            "_COLOR_BLEEDING",
+            "_CHROMATIC_ABERRATION",
+            "_WATERCOLOR"
+        };
+
+        private static readonly string[] SharedDepthTextureKeywords =
+        {
+            "_INTERSECTION_FADE",
+            "_SCREEN_EDGE",
+            "_PCSS"
+        };
+
+        private static readonly FeatureCost SharedGrabPassCost =
+            new FeatureCost("__SHARED_GRABPASS", "GrabPass", "GrabPass", SharedGrabPassSamplerCost);
+
+        private static readonly FeatureCost SharedDepthTextureCost =
+            new FeatureCost("__SHARED_DEPTH_TEXTURE", "Depth Texture", "Depth Texture", SharedDepthTextureSamplerCost);
+
+        private static readonly FeatureCost ScreenEdgeDepthNormalsCost =
+            new FeatureCost("__SCREEN_EDGE_DEPTH_NORMALS", "Depth Normals", "Depth Normals", ScreenEdgeDepthNormalsSamplerCost);
+
+        private static readonly FeatureCost PcssShadowMapCost =
+            new FeatureCost("__PCSS_SHADOWMAP", "Shadow Map", "Shadow Map", PcssShadowMapSamplerCost);
 
         public static SamplerBudgetEstimate Estimate(Material material)
         {
@@ -192,6 +230,11 @@ namespace NataneToon.Editor
                     isEnabled = false;
                 }
 
+                if (UsesSharedGrabPassSampler(feature.Keyword) || UsesSharedDepthTextureSampler(feature.Keyword))
+                {
+                    continue;
+                }
+
                 if (!isEnabled || feature.SamplerCost <= 0)
                 {
                     continue;
@@ -204,8 +247,38 @@ namespace NataneToon.Editor
             bool hasLightVolume = IsKeywordEnabled(material, "_USE_LIGHT_VOLUME", overrideKeyword, overrideEnabled);
             bool hasLtcgi = IsKeywordEnabled(material, "_LTCGI", overrideKeyword, overrideEnabled);
             bool hasHatching = IsKeywordEnabled(material, "_HATCHING", overrideKeyword, overrideEnabled);
-            bool hasScreenEdge = IsKeywordEnabled(material, "_SCREEN_EDGE", overrideKeyword, overrideEnabled);
+            bool hasGrabPassConsumer = AnyKeywordEnabled(material, SharedGrabPassKeywords, overrideKeyword, overrideEnabled);
+            bool hasScreenEdge = !usesScreenEdgeSplitVariant && IsKeywordEnabled(material, "_SCREEN_EDGE", overrideKeyword, overrideEnabled);
+            bool hasPcss = IsKeywordEnabled(material, "_PCSS", overrideKeyword, overrideEnabled);
+            bool hasDepthTextureConsumer =
+                IsKeywordEnabled(material, "_INTERSECTION_FADE", overrideKeyword, overrideEnabled) ||
+                hasScreenEdge ||
+                hasPcss;
             int extraPassCount = usesScreenEdgeSplitVariant ? 1 : 0;
+
+            if (hasGrabPassConsumer)
+            {
+                total += SharedGrabPassSamplerCost;
+                contributors.Add(SharedGrabPassCost);
+            }
+
+            if (hasDepthTextureConsumer)
+            {
+                total += SharedDepthTextureSamplerCost;
+                contributors.Add(SharedDepthTextureCost);
+            }
+
+            if (hasScreenEdge)
+            {
+                total += ScreenEdgeDepthNormalsSamplerCost;
+                contributors.Add(ScreenEdgeDepthNormalsCost);
+            }
+
+            if (hasPcss)
+            {
+                total += PcssShadowMapSamplerCost;
+                contributors.Add(PcssShadowMapCost);
+            }
 
             bool hasLightVolumeLtcgiCombo = hasLightVolume && hasLtcgi;
             bool hasCriticalLightingCombo = hasLightVolumeLtcgiCombo && hasHatching;
@@ -263,7 +336,7 @@ namespace NataneToon.Editor
 
             SamplerBudgetEstimate afterEnable = Estimate(material, keyword, true);
             bool canEnable = afterEnable.EstimatedSamplers <= SamplerLimit;
-            int addedSamplers = feature.SamplerCost;
+            int addedSamplers = Mathf.Max(0, afterEnable.EstimatedSamplers - current.EstimatedSamplers);
             if (current.UsesScreenEdgeSplitVariant && keyword == "_SCREEN_EDGE")
             {
                 addedSamplers = 0;
@@ -310,6 +383,42 @@ namespace NataneToon.Editor
             }
 
             return material.IsKeywordEnabled(keyword);
+        }
+
+        private static bool AnyKeywordEnabled(Material material, string[] keywords, string overrideKeyword, bool overrideEnabled)
+        {
+            for (int i = 0; i < keywords.Length; i++)
+            {
+                if (IsKeywordEnabled(material, keywords[i], overrideKeyword, overrideEnabled))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool UsesSharedGrabPassSampler(string keyword)
+        {
+            return ArrayContains(SharedGrabPassKeywords, keyword);
+        }
+
+        private static bool UsesSharedDepthTextureSampler(string keyword)
+        {
+            return ArrayContains(SharedDepthTextureKeywords, keyword);
+        }
+
+        private static bool ArrayContains(string[] values, string keyword)
+        {
+            for (int i = 0; i < values.Length; i++)
+            {
+                if (values[i] == keyword)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

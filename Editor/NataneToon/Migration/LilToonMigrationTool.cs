@@ -960,6 +960,52 @@ namespace NataneToon.Editor
             }
         }
 
+        private float GetNataneShadingModeFromLilToon(Dictionary<string, object> sourceProps)
+        {
+            float metallic = GetFloatOr(sourceProps, "_Metallic", 0.0f);
+            float smoothness = GetFloatOr(sourceProps, "_Smoothness", 0.0f);
+            float shadowBlur = GetFloatOr(sourceProps, "_ShadowBlur", 0.1f);
+            float reflectionStrength = GetFloatOr(sourceProps, "_ReflectionSpecular", 0.0f);
+
+            if (metallic >= 0.35f || smoothness >= 0.75f || reflectionStrength >= 0.35f)
+            {
+                return 3.0f;
+            }
+
+            if (shadowBlur >= 0.18f)
+            {
+                return 1.0f;
+            }
+
+            return 0.0f;
+        }
+
+        private void ApplyNataneShadowSettingsFromLilToon(
+            Dictionary<string, object> sourceProps,
+            Material targetMaterial,
+            ConversionReport report)
+        {
+            float border = Mathf.Clamp01(GetFloatOr(sourceProps, "_ShadowBorder", 0.5f));
+            float blur = Mathf.Clamp01(GetFloatOr(sourceProps, "_ShadowBlur", 0.1f));
+            float nataneShadingMode = GetNataneShadingModeFromLilToon(sourceProps);
+
+            targetMaterial.DisableKeyword("_STANDARD_TOON");
+            targetMaterial.SetFloat("_ShadingMode", nataneShadingMode);
+            targetMaterial.SetFloat("_ShadowOffset", Mathf.Clamp(border - 0.5f, -1.0f, 1.0f));
+            targetMaterial.SetFloat("_ShadowSharpness", Mathf.Clamp(Mathf.Max(blur, 0.05f), 0.001f, 1.0f));
+            targetMaterial.SetFloat("_ShadingGradientWidth", Mathf.Clamp(Mathf.Max(blur * 1.5f, 0.05f), 0.001f, 1.0f));
+            targetMaterial.SetFloat("_ShadowSteps", 2.0f);
+
+            string nataneModeLabel = nataneShadingMode >= 2.5f
+                ? "PBR-Like"
+                : nataneShadingMode >= 0.5f
+                    ? "Gradient"
+                    : "Toon";
+            report.infos.Add(
+                $"Natane base shading derived: Mode={nataneModeLabel}, Offset={targetMaterial.GetFloat("_ShadowOffset"):F2}, " +
+                $"Sharpness={targetMaterial.GetFloat("_ShadowSharpness"):F2}, GradientWidth={targetMaterial.GetFloat("_ShadingGradientWidth"):F2}");
+        }
+
         private void MapProperties(Dictionary<string, object> sourceProps, Material targetMaterial)
         {
             var dummyReport = new ConversionReport();
@@ -1003,21 +1049,25 @@ namespace NataneToon.Editor
             // =============================================
             //
             // =============================================
-            targetMaterial.SetFloat("_ShadingMode", 2.0f); // StandardToon
-            targetMaterial.EnableKeyword("_STANDARD_TOON");
+            float border = GetFloatOr(sourceProps, "_ShadowBorder", 0.5f);
+            float blur = GetFloatOr(sourceProps, "_ShadowBlur", 0.1f);
+            float strength = GetFloatOr(sourceProps, "_ShadowStrength", 1.0f);
 
+            targetMaterial.SetFloat("_STShadowBorder", border);
+            targetMaterial.SetFloat("_STShadowBlur", blur);
+            targetMaterial.SetFloat("_STShadowStrength", strength);
+            report.infos.Add($"Compatibility shadow captured: Border={border:F2}, Blur={blur:F2}, Strength={strength:F2}");
+
+            if (conversionMode == ConversionMode.ExactCompatibility)
             {
-                float border = GetFloatOr(sourceProps, "_ShadowBorder", 0.5f);
-                float blur = GetFloatOr(sourceProps, "_ShadowBlur", 0.1f);
-                float strength = GetFloatOr(sourceProps, "_ShadowStrength", 1.0f);
-
-                targetMaterial.SetFloat("_STShadowBorder", border);
-                targetMaterial.SetFloat("_STShadowBlur", blur);
-                targetMaterial.SetFloat("_STShadowStrength", strength);
-
+                targetMaterial.SetFloat("_ShadingMode", 2.0f); // StandardToon
+                targetMaterial.EnableKeyword("_STANDARD_TOON");
                 targetMaterial.SetFloat("_ShadowOffset", 0);
-
-                report.infos.Add($"StandardToon shadow mapped: Border={border:F2}, Blur={blur:F2}, Strength={strength:F2}");
+                report.infos.Add("Exact Compatibility keeps the lilToon compatibility base active.");
+            }
+            else
+            {
+                ApplyNataneShadowSettingsFromLilToon(sourceProps, targetMaterial, report);
             }
 
             if (useShadow)
