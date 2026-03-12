@@ -1028,3 +1028,19 @@ Phase 5: 蜈ｨ繝舌Μ繧｢繝ｳ繝・(.shader) 縺ｮ繧ｳ繝ｳ繝代う�
   - Added back `SamplerState sampler_linear_repeat;` and `SamplerState sampler_linear_clamp;` in `NataneToonInput.hlsl`.
 - Verification after the patch:
   - `git diff --check -- Shaders/NataneToon/Include/Core/NataneToonInput.hlsl Shaders/NataneToon/Include/Utils/NataneToonUtils.hlsl Shaders/NataneToon/Include/Lighting/NataneToonLighting.hlsl Shaders/NataneToon/Include/Rendering/NataneToonFragment.hlsl` shows only the existing LF/CRLF warnings
+
+## 2026-03-12 Natane mode now fully disables lilToon compatibility base
+
+- User reported that selecting `Natane` in the lilToon migration UI still left the `lilToon互換ベース` active.
+- Root cause:
+  - `ApplyLilToonModeToSelectedMaterials(false)` only turned off `_LilToonExactCompatibility`, but left `_ShadingMode = 2`, so the inspector still treated the material like compatibility-base shading.
+  - `_STANDARD_TOON` keyword sync also followed `_ShadingMode` alone, so shader-side compatibility logic could stay enabled after switching back to Natane mode.
+  - `NataneToonShaderGUIHelpers.DrawShadingModeControls(...)` showed the compatibility-base UI whenever `_ShadingMode` was in the legacy `2.x` range, even if the material was no longer in lilToon Match.
+- Fix:
+  - added a shared `ShouldUseLilToonCompatibilityBase(...)` check in `NataneToonShaderGUI.cs`
+  - when switching back to Natane mode, compatibility-base `_ShadingMode` now gets restored to a Natane-facing mode using current Look Mixer intent (`Toon` / `Gradient` / `PBR-Like`)
+  - `_STANDARD_TOON` keyword sync now requires both `_LilToonExactCompatibility` and the compatibility-base shading range
+  - shading-mode UI in `NataneToonShaderGUIHelpers.cs` now only exposes the `lilToon互換ベース` block while `_LilToonExactCompatibility` is actually active
+- Expected outcome:
+  - choosing `Natane` disables both the compatibility-base UI and the `_STANDARD_TOON` shader path
+  - migrated materials return to normal Natane editing instead of remaining stuck in the lilToon base

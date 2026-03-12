@@ -101,8 +101,12 @@ namespace NataneToon.Editor
             else
             {
                 MaterialProperty shadingModeProp = findProperty("_ShadingMode", properties, false);
+                MaterialProperty lilToonCompatibilityProp = findProperty("_LilToonExactCompatibility", properties, false);
                 float shadingModeValue = shadingModeProp != null ? shadingModeProp.floatValue : 0f;
-                bool isStandardToon = IsStandardToonMode(shadingModeValue);
+                bool usesLilToonCompatibilityBase = lilToonCompatibilityProp != null &&
+                                                    !lilToonCompatibilityProp.hasMixedValue &&
+                                                    lilToonCompatibilityProp.floatValue > 0.5f;
+                bool isStandardToon = usesLilToonCompatibilityBase && IsStandardToonMode(shadingModeValue);
                 bool isGradientMode = IsGradientMode(shadingModeValue);
                 bool isPbrLikeMode = IsPbrLikeMode(shadingModeValue);
 

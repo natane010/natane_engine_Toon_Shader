@@ -1139,8 +1139,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
         if (lilToonMatchEnabled &&
             targetMaterial != null &&
-            targetMaterial.HasProperty("_ShadingMode") &&
-            !IsLilToonCompatibilityShadingMode(targetMaterial.GetFloat("_ShadingMode")))
+            !ShouldUseLilToonCompatibilityBase(targetMaterial))
         {
             EditorGUILayout.HelpBox(
                 L("lilToon 近似は内部の互換ベース上で使うのが最適です。下のボタンから互換ベースを再適用できます。",
@@ -1386,6 +1385,51 @@ public class NataneToonShaderGUI : ShaderGUI
         return material != null && material.HasProperty("_LilToonExactCompatibility") && material.GetFloat("_LilToonExactCompatibility") > 0.5f;
     }
 
+    private bool ShouldUseLilToonCompatibilityBase(Material material)
+    {
+        return material != null &&
+               GetLilToonExactCompatibility(material) &&
+               material.HasProperty("_ShadingMode") &&
+               IsLilToonCompatibilityShadingMode(material.GetFloat("_ShadingMode"));
+    }
+
+    private float GetNataneShadingModeForMaterial(Material material)
+    {
+        if (material == null)
+        {
+            return 0f;
+        }
+
+        int lookMode = material.HasProperty("_LookMode")
+            ? Mathf.RoundToInt(material.GetFloat("_LookMode"))
+            : (int)LookMode.Legacy;
+        float nprWeight = material.HasProperty("_NprWeight") ? Mathf.Clamp01(material.GetFloat("_NprWeight")) : 0f;
+        float pbrWeight = material.HasProperty("_PbrWeight") ? Mathf.Clamp01(material.GetFloat("_PbrWeight")) : 0f;
+
+        switch ((LookMode)lookMode)
+        {
+            case LookMode.PBR:
+                return 3f;
+            case LookMode.NPR:
+                return 1f;
+            case LookMode.Hybrid:
+                return pbrWeight >= 0.6f ? 3f : 1f;
+            case LookMode.Legacy:
+                if (pbrWeight >= 0.6f || material.IsKeywordEnabled("_PBR_LIKE") || material.IsKeywordEnabled("_PBR"))
+                {
+                    return 3f;
+                }
+
+                if (nprWeight >= 0.35f || HasLookMixerNprFeatures(material))
+                {
+                    return 1f;
+                }
+                break;
+        }
+
+        return 0f;
+    }
+
     private LilToonMigrationMode GetLilToonMigrationMode(Material material)
     {
         if (material == null || !material.HasProperty("_LilToonMigrationMode"))
@@ -1482,6 +1526,12 @@ public class NataneToonShaderGUI : ShaderGUI
             if (enableLilToonMatch && material.HasProperty("_ShadingMode"))
             {
                 material.SetFloat("_ShadingMode", 2f);
+            }
+            else if (!enableLilToonMatch &&
+                     material.HasProperty("_ShadingMode") &&
+                     IsLilToonCompatibilityShadingMode(material.GetFloat("_ShadingMode")))
+            {
+                material.SetFloat("_ShadingMode", GetNataneShadingModeForMaterial(material));
             }
 
             EditorUtility.SetDirty(material);
@@ -7706,7 +7756,7 @@ public class NataneToonShaderGUI : ShaderGUI
         // StandardToon keyword sync (derived from _ShadingMode, not a simple toggle)
         if (targetMaterial.HasProperty("_ShadingMode"))
         {
-            bool shouldBeStandardToon = IsLilToonCompatibilityShadingMode(targetMaterial.GetFloat("_ShadingMode"));
+            bool shouldBeStandardToon = ShouldUseLilToonCompatibilityBase(targetMaterial);
             bool isStandardToon = targetMaterial.IsKeywordEnabled("_STANDARD_TOON");
             if (shouldBeStandardToon != isStandardToon)
             {
