@@ -267,7 +267,7 @@ half3 ResolveHairStrandDirection(half3 worldNormal, half3 worldTangent, half3 wo
 
     if (directionStrength > 0.001)
     {
-        half2 strandDirTS = UNITY_SAMPLE_TEX2D_SAMPLER(_HairStrandDirectionMap, _MainTex, uv).rg * 2.0 - 1.0;
+        half2 strandDirTS = NATANE_SAMPLE_REPEAT(_HairStrandDirectionMap, uv).rg * 2.0 - 1.0;
         half strandLenSq = dot(strandDirTS, strandDirTS);
 
         if (strandLenSq > 0.0001)

@@ -116,7 +116,7 @@ float2 CalculateDissolve(float2 uv, float dissolveAmount, float edgeWidth)
 float NataneSampleParallaxHeight(float2 uv, float2 uvDx, float2 uvDy)
 {
     #if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
-        return _ParallaxMap.SampleGrad(sampler_MainTex, uv, uvDx, uvDy).r;
+        return _ParallaxMap.SampleGrad(sampler_linear_repeat, uv, uvDx, uvDy).r;
     #else
         return tex2Dgrad(_ParallaxMap, uv, uvDx, uvDy).r;
     #endif
@@ -649,15 +649,15 @@ half SampleTex2DBlur1(sampler2D tex, float2 uv, float blur)
 #if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
 half4 SampleTex2DBlurRepeat(Texture2D tex, float2 uv, float blur)
 {
-    half4 center = tex.Sample(sampler_MainTex, uv);
+    half4 center = tex.Sample(sampler_linear_repeat, uv);
     if (blur <= 0.001) return center;
     float2 dx = ddx(uv) * blur * 4.0;
     float2 dy = ddy(uv) * blur * 4.0;
     half4 col = center * 0.4;
-    col += tex.Sample(sampler_MainTex, uv + dx) * 0.15;
-    col += tex.Sample(sampler_MainTex, uv - dx) * 0.15;
-    col += tex.Sample(sampler_MainTex, uv + dy) * 0.15;
-    col += tex.Sample(sampler_MainTex, uv - dy) * 0.15;
+    col += tex.Sample(sampler_linear_repeat, uv + dx) * 0.15;
+    col += tex.Sample(sampler_linear_repeat, uv - dx) * 0.15;
+    col += tex.Sample(sampler_linear_repeat, uv + dy) * 0.15;
+    col += tex.Sample(sampler_linear_repeat, uv - dy) * 0.15;
     return col;
 }
 half3 SampleTex2DBlur3Repeat(Texture2D tex, float2 uv, float blur)

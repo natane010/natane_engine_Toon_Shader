@@ -1008,28 +1008,40 @@ float _VRChatMirrorMode; // 0=Normal view, 1=Inside mirror
 // Main
 sampler2D _MainTex;
 #if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
-SamplerState sampler_MainTex;
+SamplerState sampler_linear_repeat;
 SamplerState sampler_linear_clamp;
 #endif
 
+// ===== NOSAMPLER Sampling Macros =====
+// Group A (Repeat+Bilinear): share sampler_linear_repeat
+// Group B (Clamp+Bilinear):  share sampler_linear_clamp
+#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
 #ifndef NATANE_SAMPLE_SHARED
-#define NATANE_SAMPLE_SHARED(tex, samplerTex, coord) UNITY_SAMPLE_TEX2D_SAMPLER(tex, samplerTex, coord)
-#define NATANE_SAMPLE_SHARED_R(tex, samplerTex, coord) NATANE_SAMPLE_SHARED(tex, samplerTex, coord).r
+    // Use Unity's inline sampler names so tessellation/vertex programs do not rely on
+    // a texture-bound sampler declaration that may not exist for NOSAMPLER textures.
+    #define NATANE_SAMPLE_SHARED(tex, samplerTex, coord) tex.Sample(sampler_linear_repeat, coord)
+    #define NATANE_SAMPLE_SHARED_R(tex, samplerTex, coord) NATANE_SAMPLE_SHARED(tex, samplerTex, coord).r
 #endif
 
-// ===== NOSAMPLER Sampling Macros =====
-// Group A (Repeat+Bilinear): share sampler_MainTex
-// Group B (Clamp+Bilinear):  share sampler_linear_clamp
-#define NATANE_SAMPLE_REPEAT(tex, uv)   UNITY_SAMPLE_TEX2D_SAMPLER(tex, _MainTex, uv)
-#define NATANE_SAMPLE_REPEAT_R(tex, uv) NATANE_SAMPLE_REPEAT(tex, uv).r
-#define NATANE_SAMPLE_CLAMP(tex, uv)    UNITY_SAMPLE_TEX2D_SAMPLER(tex, _linear_clamp, uv)
-#define NATANE_SAMPLE_CLAMP_R(tex, uv)  NATANE_SAMPLE_CLAMP(tex, uv).r
+    #define NATANE_SAMPLE_REPEAT(tex, uv)   tex.Sample(sampler_linear_repeat, uv)
+    #define NATANE_SAMPLE_REPEAT_R(tex, uv) NATANE_SAMPLE_REPEAT(tex, uv).r
+    #define NATANE_SAMPLE_CLAMP(tex, uv)    tex.Sample(sampler_linear_clamp, uv)
+    #define NATANE_SAMPLE_CLAMP_R(tex, uv)  NATANE_SAMPLE_CLAMP(tex, uv).r
 
-// tex2Dlod replacements for vertex/tessellation/fur shell
-#if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
-    #define NATANE_SAMPLE_REPEAT_LOD(tex, uv, lod) tex.SampleLevel(sampler_MainTex, uv, lod)
+    // tex2Dlod replacements for vertex/tessellation/fur shell
+    #define NATANE_SAMPLE_REPEAT_LOD(tex, uv, lod) tex.SampleLevel(sampler_linear_repeat, uv, lod)
     #define NATANE_SAMPLE_CLAMP_LOD(tex, uv, lod)  tex.SampleLevel(sampler_linear_clamp, uv, lod)
 #else
+    #ifndef NATANE_SAMPLE_SHARED
+    #define NATANE_SAMPLE_SHARED(tex, samplerTex, coord) UNITY_SAMPLE_TEX2D_SAMPLER(tex, samplerTex, coord)
+    #define NATANE_SAMPLE_SHARED_R(tex, samplerTex, coord) NATANE_SAMPLE_SHARED(tex, samplerTex, coord).r
+    #endif
+
+    #define NATANE_SAMPLE_REPEAT(tex, uv)   UNITY_SAMPLE_TEX2D_SAMPLER(tex, _MainTex, uv)
+    #define NATANE_SAMPLE_REPEAT_R(tex, uv) NATANE_SAMPLE_REPEAT(tex, uv).r
+    #define NATANE_SAMPLE_CLAMP(tex, uv)    UNITY_SAMPLE_TEX2D_SAMPLER(tex, _linear_clamp, uv)
+    #define NATANE_SAMPLE_CLAMP_R(tex, uv)  NATANE_SAMPLE_CLAMP(tex, uv).r
+
     #define NATANE_SAMPLE_REPEAT_LOD(tex, uv, lod) tex2Dlod(tex, float4(uv, 0, lod))
     #define NATANE_SAMPLE_CLAMP_LOD(tex, uv, lod)  tex2Dlod(tex, float4(uv, 0, lod))
 #endif

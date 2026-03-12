@@ -1007,3 +1007,24 @@ Phase 5: 蜈ｨ繝舌Μ繧｢繝ｳ繝・(.shader) 縺ｮ繧ｳ繝ｳ繝代う�
 - Verification after the patch:
   - `git diff --check` for touched files shows only the existing LF/CRLF warnings
   - `rg -n '\?\?\?\?' Editor/NataneToon` returned no matches
+
+## 2026-03-12 D3D11 sampler fix for tessellation and multi-texture masks
+
+- User reported shader compile errors on D3D11:
+  - `tessVert`: unrecognized `sampler_maintex`
+  - fragment path: undeclared `sampler_2ndTex`
+- Root cause:
+  - the shared texture macros mixed `UNITY_DECLARE_TEX2D_NOSAMPLER(...)` textures with sampler names derived from other textures
+  - on `UNITY_SEPARATE_TEXTURE_SAMPLER`, the code tried to use `sampler_MainTex` / `sampler_2ndTex` style bindings that were not valid for those NOSAMPLER declarations
+- Fix:
+  - changed the shared/repeat/clamp sampling macros in `NataneToonInput.hlsl` to use Unity inline samplers (`sampler_linear_repeat` / `sampler_linear_clamp`) on the separate-sampler path
+  - updated repeat blur/parallax helpers in `NataneToonUtils.hlsl` to use the same inline repeat sampler
+  - replaced remaining direct `UNITY_SAMPLE_TEX2D_SAMPLER(..., _MainTex, ...)` calls in `NataneToonLighting.hlsl` and `NataneToonFragment.hlsl` with the shared repeat macros
+- Expected outcome:
+  - tessellation vertex/hull/domain paths no longer require `sampler_MainTex`
+  - makeup mask sampling no longer expands to missing samplers such as `sampler_2ndTex`
+- Follow-up:
+  - Unity then reported `sampler_linear_repeat` as undeclared on D3D11 because the inline sampler names still need explicit `SamplerState` declarations.
+  - Added back `SamplerState sampler_linear_repeat;` and `SamplerState sampler_linear_clamp;` in `NataneToonInput.hlsl`.
+- Verification after the patch:
+  - `git diff --check -- Shaders/NataneToon/Include/Core/NataneToonInput.hlsl Shaders/NataneToon/Include/Utils/NataneToonUtils.hlsl Shaders/NataneToon/Include/Lighting/NataneToonLighting.hlsl Shaders/NataneToon/Include/Rendering/NataneToonFragment.hlsl` shows only the existing LF/CRLF warnings

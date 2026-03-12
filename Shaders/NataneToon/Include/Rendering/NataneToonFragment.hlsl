@@ -225,7 +225,7 @@ half4 frag(v2f i) : SV_Target
     {
         float2 microNormalUV = uv * max(_MicroNormalTiling, 1.0);
         half3 microNormalTS = UnpackScaleNormal(
-            UNITY_SAMPLE_TEX2D_SAMPLER(_MicroNormalMap, _MainTex, microNormalUV),
+            NATANE_SAMPLE_REPEAT(_MicroNormalMap, microNormalUV),
             _MicroNormalScale);
         half3 microNormalWS = normalize(mul(microNormalTS, tangentToWorld));
         worldNormal = normalize(lerp(worldNormal, microNormalWS, saturate(_MicroNormalStrength)));
@@ -1824,7 +1824,7 @@ half4 frag(v2f i) : SV_Target
         if (coatStrength > 0.001)
         {
             half3 coatNormalTS = UnpackScaleNormal(
-                UNITY_SAMPLE_TEX2D_SAMPLER(_ClearCoatNormalMap, _MainTex, uv),
+                NATANE_SAMPLE_REPEAT(_ClearCoatNormalMap, uv),
                 _ClearCoatNormalScale);
             half3 coatNormalWS = normalize(mul(coatNormalTS, tangentToWorld));
 
