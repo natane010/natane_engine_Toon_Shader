@@ -1157,13 +1157,17 @@ half4 frag(v2f i) : SV_Target
 
     #else
         // ===== ForwardAdd: Additional Light Contribution =====
+        // ForwardAdd は各追加ライトの寄与のみを出力する（Blend One One で加算合成）。
+        // 影色（shadowColor）は ForwardBase で既に処理済みのため、ここでは使用しない。
+        // 影色をそのまま使うと、影側でも非ゼロの寄与が加算され、
+        // 複数の色付きポイントライトで全身が混色する問題（紫ウォッシュ）が発生する。
         #ifdef _STANDARD_TOON
-            // StandardToon v2: simple additional light contribution (lilToon-style)
-            lighting = lerp(shadowColor, half3(1, 1, 1), shadingValue);
+            // StandardToon v2: additional light (shadow side → zero contribution)
+            lighting = half3(shadingValue, shadingValue, shadingValue);
             lighting *= _LightColor0.rgb;
             lighting *= max(0.0, _AdditionalLightIntensity);
         #else
-            lighting = lerp(shadowColor, half3(1, 1, 1), shadingValue);
+            lighting = half3(shadingValue, shadingValue, shadingValue);
             half lightColorLum_add = CALC_LUMINANCE(_LightColor0.rgb);
             half3 colorMul_add = lighting * _LightColor0.rgb;
             half3 lumOnly_add = lighting * lightColorLum_add;
