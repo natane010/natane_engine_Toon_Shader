@@ -11,6 +11,7 @@ namespace NataneToon.Editor
     {
         private const float GRADIENT_MODE_THRESHOLD = 0.5f;
         private const float STANDARD_TOON_MODE_THRESHOLD = 1.5f;
+        private const float PBR_LIKE_MODE_THRESHOLD = 2.5f;
 
         public delegate bool DrawToggleDelegate(string keyword, string propertyName, string label);
         public delegate void DrawPropertyDelegate(string propertyName, string label);
@@ -53,7 +54,8 @@ namespace NataneToon.Editor
             DrawShadowReceiveMaskControls(drawToggle, drawProperty, drawHelpToggle);
 
             EditorGUILayout.Space(10);
-            EditorGUILayout.HelpBox(
+            drawHelpToggle(
+                "LightShadowTabMigration",
                 L("AO and dithering settings have been moved to the Light & Shadow tab.",
                   "AO and dithering settings have been moved to the Light & Shadow tab."),
                 MessageType.None);
@@ -100,29 +102,39 @@ namespace NataneToon.Editor
             {
                 MaterialProperty shadingModeProp = findProperty("_ShadingMode", properties, false);
                 float shadingModeValue = shadingModeProp != null ? shadingModeProp.floatValue : 0f;
-                bool isStandardToon = shadingModeValue >= STANDARD_TOON_MODE_THRESHOLD;
-                bool isGradientMode = !isStandardToon && shadingModeValue >= GRADIENT_MODE_THRESHOLD;
+                bool isStandardToon = IsStandardToonMode(shadingModeValue);
+                bool isGradientMode = IsGradientMode(shadingModeValue);
+                bool isPbrLikeMode = IsPbrLikeMode(shadingModeValue);
 
                 EditorGUILayout.Space(5);
 
                 if (!isStandardToon)
                 {
-                    EditorGUILayout.LabelField(L("Shading Mode", "Shading Mode"), EditorStyles.boldLabel);
-                    drawProperty("_ShadingMode", L("Mode", "Mode"));
+                    EditorGUILayout.LabelField(L("見た目の方向性", "Shading Style"), EditorStyles.boldLabel);
+                    if (shadingModeProp != null)
+                    {
+                        DrawUserFacingShadingModePopup(shadingModeProp);
+                    }
+                    else
+                    {
+                        drawProperty("_ShadingMode", L("モード", "Mode"));
+                    }
+
                     drawHelpToggle(
                         "ShadingMode",
-                        L("Toon gives stepped cel shading. Gradient gives softer transitions. StandardToon is used for lilToon-compatible migrated materials.",
-                          "Toon gives stepped cel shading. Gradient gives softer transitions. StandardToon is used for lilToon-compatible migrated materials."),
+                        L("Toon はくっきりしたアニメ調、Gradient はやわらかい陰影、PBR-Like は立体感を少し強めた見た目です。lilToon 近似や移行マテリアルでは、必要に応じて内部の互換ベースが自動で使われます。",
+                          "Toon gives stepped cel shading. Gradient gives softer transitions. PBR-Like adds a bit more volume. lilToon Match and migrated materials automatically use the internal compatibility base when needed."),
                         MessageType.None);
                 }
                 else
                 {
                     EditorGUILayout.LabelField(
-                        L("StandardToon Mode", "StandardToon Mode"),
+                        L("lilToon互換ベース", "lilToon Compatibility Base"),
                         EditorStyles.boldLabel);
-                    EditorGUILayout.HelpBox(
-                        L("This material appears to be using the lilToon-compatible StandardToon mode.",
-                          "This material appears to be using the lilToon-compatible StandardToon mode."),
+                    drawHelpToggle(
+                        "StandardToonModeNotice",
+                        L("このマテリアルは lilToon 近似または移行用の互換ベースを使用しています。通常はこのまま編集して問題ありません。",
+                          "This material is using the lilToon compatibility base. In most cases you should keep this base active while editing."),
                         MessageType.Warning);
                 }
 
@@ -134,6 +146,15 @@ namespace NataneToon.Editor
                 else if (isGradientMode)
                 {
                     DrawGradientModeSettings(drawProperty, drawHelpToggle);
+                }
+                else if (isPbrLikeMode)
+                {
+                    drawHelpToggle(
+                        "PbrLikeMode",
+                        L("PBR-Like はトゥーン感を残しつつ立体感を強める方向です。影の調整は通常のトゥーン設定で行えます。",
+                          "PBR-Like keeps the toon workflow but pushes the lighting toward stronger volume. Use the regular toon controls below to tune shadows."),
+                        MessageType.None);
+                    DrawToonModeSettings(drawProperty, drawHelpToggle, drawToggle);
                 }
                 else
                 {
@@ -176,15 +197,18 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(5);
             DrawBlendParameter(
                 "_ShadowBlend",
+                "ShadowBlend",
                 L("Shadow Blend", "Shadow Blend"),
                 L("Higher values soften and widen the shadow transition.",
                   "Higher values soften and widen the shadow transition."),
-                drawProperty);
+                drawProperty,
+                drawHelpToggle);
 
             MaterialProperty shadowBlendProp = findProperty("_ShadowBlend", properties, false);
             if (shadowBlendProp != null && shadowBlendProp.floatValue > 0.7f)
             {
-                EditorGUILayout.HelpBox(
+                drawHelpToggle(
+                    "ShadowBlendHigh",
                     L("Shadow Blend is set high. Check other softness values if the result feels too soft.",
                       "Shadow Blend is set high. Check other softness values if the result feels too soft."),
                     MessageType.Info);
@@ -211,12 +235,14 @@ namespace NataneToon.Editor
 
         public static void DrawBlendParameter(
             string propertyName,
+            string sectionKey,
             string label,
             string helpText,
-            DrawPropertyDelegate drawProperty)
+            DrawPropertyDelegate drawProperty,
+            DrawHelpToggleDelegate drawHelpToggle)
         {
             drawProperty(propertyName, label);
-            EditorGUILayout.HelpBox(helpText, MessageType.Info);
+            drawHelpToggle(sectionKey, helpText, MessageType.Info);
         }
 
         public static void DrawGradientModeSettings(
@@ -238,7 +264,7 @@ namespace NataneToon.Editor
             DrawHelpToggleDelegate drawHelpToggle,
             DrawToggleDelegate drawToggle)
         {
-            EditorGUILayout.LabelField(L("StandardToon Settings", "StandardToon Settings"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("lilToon互換ベース設定", "lilToon Compatibility Settings"), EditorStyles.boldLabel);
             drawProperty("_STShadowBorder", L("Shadow Border", "Shadow Border"));
             drawProperty("_STShadowBlur", L("Shadow Blur", "Shadow Blur"));
             drawProperty("_STShadowStrength", L("Shadow Strength", "Shadow Strength"));
@@ -252,9 +278,84 @@ namespace NataneToon.Editor
             drawProperty("_STShadowEnvStrength", L("Shadow Env Strength", "Shadow Env Strength"));
             drawHelpToggle(
                 "StandardToon",
-                L("StandardToon is the lilToon-compatible shading path used by migrated materials.",
-                  "StandardToon is the lilToon-compatible shading path used by migrated materials."),
+                L("この設定群は lilToon 近似や移行マテリアル用の内部互換ベースです。通常の Natane 素材では無理に使う必要はありません。",
+                  "These controls belong to the internal lilToon compatibility base used by migrated and lilToon Match materials."),
                 MessageType.None);
+        }
+
+        private static bool IsGradientMode(float shadingModeValue)
+        {
+            return shadingModeValue >= GRADIENT_MODE_THRESHOLD &&
+                   shadingModeValue < STANDARD_TOON_MODE_THRESHOLD;
+        }
+
+        private static bool IsStandardToonMode(float shadingModeValue)
+        {
+            return shadingModeValue >= STANDARD_TOON_MODE_THRESHOLD &&
+                   shadingModeValue < PBR_LIKE_MODE_THRESHOLD;
+        }
+
+        private static bool IsPbrLikeMode(float shadingModeValue)
+        {
+            return shadingModeValue >= PBR_LIKE_MODE_THRESHOLD;
+        }
+
+        private static void DrawUserFacingShadingModePopup(MaterialProperty shadingModeProp)
+        {
+            bool previousMixedValue = EditorGUI.showMixedValue;
+            EditorGUI.showMixedValue = shadingModeProp.hasMixedValue;
+            EditorGUI.BeginChangeCheck();
+
+            int currentIndex = GetUserFacingShadingModeIndex(shadingModeProp.floatValue);
+            int nextIndex = EditorGUILayout.Popup(
+                L("モード", "Mode"),
+                currentIndex,
+                GetUserFacingShadingModeLabels());
+
+            EditorGUI.showMixedValue = previousMixedValue;
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                shadingModeProp.floatValue = GetShadingModeValueFromUserFacingIndex(nextIndex);
+            }
+        }
+
+        private static int GetUserFacingShadingModeIndex(float shadingModeValue)
+        {
+            if (IsPbrLikeMode(shadingModeValue))
+            {
+                return 2;
+            }
+
+            if (IsGradientMode(shadingModeValue))
+            {
+                return 1;
+            }
+
+            return 0;
+        }
+
+        private static float GetShadingModeValueFromUserFacingIndex(int index)
+        {
+            switch (index)
+            {
+                case 1:
+                    return 1f;
+                case 2:
+                    return 3f;
+                default:
+                    return 0f;
+            }
+        }
+
+        private static string[] GetUserFacingShadingModeLabels()
+        {
+            return new[]
+            {
+                L("トゥーン", "Toon"),
+                L("グラデーション", "Gradient"),
+                L("PBRライク", "PBR-Like")
+            };
         }
 
         public static void DrawMultiToneShadowSettings(

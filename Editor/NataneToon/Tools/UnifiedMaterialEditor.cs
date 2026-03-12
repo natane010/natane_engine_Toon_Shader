@@ -1219,7 +1219,7 @@ namespace NataneToon.Editor
 
             EditorUtility.DisplayDialog(
                 L("テクスチャクリア完了", "Texture Cleared"),
-                L($"{successCount}???????? {textureProperty} ????????", $"Cleared {textureProperty} in {successCount} materials"),
+                L($"{successCount} 個のマテリアルで {textureProperty} をクリアしました。", $"Cleared {textureProperty} in {successCount} materials"),
                 "OK");
         }
 

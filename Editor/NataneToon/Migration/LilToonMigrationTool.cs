@@ -41,14 +41,14 @@ namespace NataneToon.Editor
         private enum ConversionMode { ExactCompatibility, VisualMatch, MinimalSafe }
         private ConversionMode conversionMode = ConversionMode.VisualMatch;
         private string[] conversionModeDisplayNames => new[] {
-            L("Exact Compatibility (Preview)", "Exact Compatibility (Preview)"),
-            L("Visual Match (Approximate)", "Visual Match (Approximate)"),
-            L("Minimal Safe (Legacy)", "Minimal Safe (Legacy)")
+            L("完全互換 (プレビュー)", "Exact Compatibility (Preview)"),
+            L("見た目優先 (近似)", "Visual Match (Approximate)"),
+            L("最小安全構成 (旧仕様向け)", "Minimal Safe (Legacy)")
         };
 
         private enum MigrationMode { Project, Prefab }
         private MigrationMode currentMode = MigrationMode.Project;
-        private string[] modeNames => new[] { L("Project", "Project"), L("Avatar/Prefab", "Avatar/Prefab") };
+        private string[] modeNames => new[] { L("プロジェクト", "Project"), L("アバター/Prefab", "Avatar/Prefab") };
 
         private GameObject targetPrefab = null;
         private List<PrefabMaterialInfo> prefabMaterials = new List<PrefabMaterialInfo>();
@@ -108,23 +108,23 @@ namespace NataneToon.Editor
             if (!hasScannedProjectMaterials)
             {
                 EditorGUILayout.HelpBox(
-                    L("Project-wide material scan is manual so opening the tool stays responsive on large projects.", "Project-wide material scan is manual so opening the tool stays responsive on large projects."),
+                    L("大規模プロジェクトでも重くなりにくいように、プロジェクト全体のマテリアル走査は手動開始になっています。", "Project-wide material scan is manual so opening the tool stays responsive on large projects."),
                     MessageType.Info);
             }
 
-            EditorGUILayout.LabelField(L("Options", "Options"), EditorStyles.boldLabel);
-            createBackup = EditorGUILayout.Toggle(L("Create Backup", "Create Backup"), createBackup);
-            replaceOriginal = EditorGUILayout.Toggle(L("Replace Original (Destructive)", "Replace Original (Destructive)"), replaceOriginal);
-            showPreview = EditorGUILayout.Toggle(L("Show Preview After Conversion", "Show Preview After Conversion"), showPreview);
+            EditorGUILayout.LabelField(L("オプション", "Options"), EditorStyles.boldLabel);
+            createBackup = EditorGUILayout.Toggle(L("バックアップを作成", "Create Backup"), createBackup);
+            replaceOriginal = EditorGUILayout.Toggle(L("元マテリアルを直接置換 (破壊的)", "Replace Original (Destructive)"), replaceOriginal);
+            showPreview = EditorGUILayout.Toggle(L("変換後にプレビューを表示", "Show Preview After Conversion"), showPreview);
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField(L("Conversion Mode", "Conversion Mode"), EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(L("変換モード", "Conversion Mode"), EditorStyles.boldLabel);
             conversionMode = DrawResponsiveSelection(conversionMode, conversionModeDisplayNames);
             if (conversionMode == ConversionMode.ExactCompatibility)
             {
                 EditorGUILayout.HelpBox(
-                    L("Migrated materials opt into a dedicated exact-compatibility flag and use a parity-focused StandardToon path.\n" +
-                      "Some features such as MatCap still require manual review, so check warnings after conversion.", "Migrated materials opt into a dedicated exact-compatibility flag and use a parity-focused StandardToon path.\n" +
+                    L("完全互換モードでは専用の互換フラグを有効にし、lilToon の見た目へ寄せる内部互換ベースを使います。\n" +
+                      "MatCap など一部の機能は手動確認が必要なので、変換後に警告を確認してください。", "Migrated materials opt into a dedicated exact-compatibility flag and use a parity-focused compatibility base.\n" +
                       "Some features such as MatCap still require manual review, so check warnings after conversion."),
                     MessageType.Info
                 );
@@ -132,8 +132,8 @@ namespace NataneToon.Editor
             else if (conversionMode == ConversionMode.VisualMatch)
             {
                 EditorGUILayout.HelpBox(
-                    L("All active lilToon features (rim light, outline, emission, MatCap, specular, etc.) will be converted and enabled.\n" +
-                      "This is a Natane-native approximation path and does not guarantee pixel-perfect parity.", "All active lilToon features (rim light, outline, emission, MatCap, specular, etc.) will be converted and enabled.\n" +
+                    L("有効な lilToon 機能 (リムライト、アウトライン、発光、MatCap、スペキュラーなど) をまとめて Natane 側へ近似変換して有効化します。\n" +
+                      "見た目優先の経路なので、ピクセル単位の完全一致は保証しません。", "All active lilToon features (rim light, outline, emission, MatCap, specular, etc.) will be converted and enabled.\n" +
                       "This is a Natane-native approximation path and does not guarantee pixel-perfect parity."),
                     MessageType.Info
                 );
@@ -141,8 +141,8 @@ namespace NataneToon.Editor
             else
             {
                 EditorGUILayout.HelpBox(
-                    L("Only basic settings (texture, color, shadow) are enabled. Other features are migrated in OFF state.\n" +
-                      "Property values are preserved, so you can enable features individually after migration.", "Only basic settings (texture, color, shadow) are enabled. Other features are migrated in OFF state.\n" +
+                    L("基本設定 (テクスチャ、色、影) のみを有効にし、ほかの機能は OFF のまま値だけ移行します。\n" +
+                      "移行後に必要な機能だけ個別に ON にしたい場合に向いています。", "Only basic settings (texture, color, shadow) are enabled. Other features are migrated in OFF state.\n" +
                       "Property values are preserved, so you can enable features individually after migration."),
                     MessageType.Info
                 );

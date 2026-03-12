@@ -38,10 +38,18 @@ namespace NataneToon.Editor
         // Display names (bilingual)
         private static string[] ShaderTypeLabels => new string[]
         {
-            L("Toon", "Toon"),
-            L("Eye", "Eye"),
-            L("Wirelight", "Wirelight"),
-            L("StandardToon (lilToon)", "StandardToon (lilToon)")
+            L("トゥーン", "Toon"),
+            L("瞳", "Eye"),
+            L("ワイヤーライト", "Wirelight"),
+            L("lilToon互換ベース", "lilToon Compatibility Base")
+        };
+
+        private static readonly ShaderType[] ShaderTypeDisplayOrder =
+        {
+            ShaderType.Toon,
+            ShaderType.Eye,
+            ShaderType.Wirelight,
+            ShaderType.StandardToon
         };
 
         /// <summary>
@@ -174,15 +182,17 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space(5);
             EditorGUI.BeginChangeCheck();
-            ShaderType newType = (ShaderType)EditorGUILayout.EnumPopup(L("Shader Type", "Shader Type"), currentType);
+            int currentIndex = Mathf.Max(0, System.Array.IndexOf(ShaderTypeDisplayOrder, currentType));
+            int nextIndex = EditorGUILayout.Popup(L("シェーダータイプ", "Shader Type"), currentIndex, ShaderTypeLabels);
+            ShaderType newType = ShaderTypeDisplayOrder[Mathf.Clamp(nextIndex, 0, ShaderTypeDisplayOrder.Length - 1)];
 
             if (EditorGUI.EndChangeCheck() && newType != currentType)
             {
                 if (EditorUtility.DisplayDialog(
-                    L("Change Shader Type", "Change Shader Type"),
-                    L("Changing the shader type may cause some current settings to be lost.\nContinue?", "Changing the shader type may cause some current settings to be lost.\nContinue?"),
-                    L("Change", "Change"),
-                    L("Cancel", "Cancel")))
+                    L("シェーダータイプ変更", "Change Shader Type"),
+                    L("シェーダータイプを変更すると、一部の現在設定が失われることがあります。\n続行しますか？", "Changing the shader type may cause some current settings to be lost.\nContinue?"),
+                    L("変更", "Change"),
+                    L("キャンセル", "Cancel")))
                 {
                     bool success = SetShaderType(material, newType, editor);
                     if (success)

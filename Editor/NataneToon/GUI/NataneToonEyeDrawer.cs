@@ -176,7 +176,7 @@ namespace NataneToon.Editor
         private void DrawHeader()
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            EditorGUILayout.LabelField(L("Natane Toon Eye Shader", "Natane Toon Eye Shader"), HeaderStyle);
+            EditorGUILayout.LabelField(L("Natane Toon 瞳シェーダー", "Natane Toon Eye Shader"), HeaderStyle);
             EditorGUILayout.EndVertical();
         }
 
@@ -193,18 +193,18 @@ namespace NataneToon.Editor
 
         private void DrawEyeStateSection()
         {
-            if (!DrawFoldout(ref showEyeState, L("Eye State", "Eye State"))) return;
+            if (!DrawFoldout(ref showEyeState, L("目の状態", "Eye State"))) return;
             EditorGUI.indentLevel++;
-            DrawProperty("_EyeState", L("Eye State (Normal/Star/Heart/Dead/Nervous)", "Eye State (Normal/Star/Heart/Dead/Nervous)"));
+            DrawProperty("_EyeState", L("目の状態 (通常/星/ハート/死んだ目/緊張)", "Eye State (Normal/Star/Heart/Dead/Nervous)"));
             EditorGUILayout.HelpBox(
-                L("Normal / Star / Heart / Dead / Nervous", "Normal / Star / Heart / Dead / Nervous"),
+                L("通常 / 星 / ハート / 死んだ目 / 緊張", "Normal / Star / Heart / Dead / Nervous"),
                 MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawMainSettingsSection()
         {
-            if (!DrawFoldout(ref showMainSettings, L("Main Settings", "Main Settings"))) return;
+            if (!DrawFoldout(ref showMainSettings, L("基本設定", "Main Settings"))) return;
             EditorGUI.indentLevel++;
             MaterialProperty mainTexProp = FindProperty("_MainTex", properties, false);
             if (mainTexProp != null) materialEditor.TextureProperty(mainTexProp, L("Base Texture", "Base Texture"));
@@ -221,7 +221,7 @@ namespace NataneToon.Editor
 
         private void DrawRealisticEyeSection()
         {
-            if (!DrawFoldout(ref showRealisticEye, L("Realistic Eye", "Realistic Eye"))) return;
+            if (!DrawFoldout(ref showRealisticEye, L("リアルな瞳", "Realistic Eye"))) return;
             EditorGUI.indentLevel++;
             DrawProperty("_UseRealisticEye", L("Enable Realistic Eye", "Enable Realistic Eye"));
             DrawProperty("_IrisDepth", L("Iris Depth", "Iris Depth"));
@@ -236,14 +236,14 @@ namespace NataneToon.Editor
             DrawProperty("_CorneaSpecSmoothness", L("Cornea Smoothness", "Cornea Smoothness"));
             DrawProperty("_CorneaFresnelPower", L("Cornea Fresnel", "Cornea Fresnel"));
             EditorGUILayout.HelpBox(
-                L("Adds iris depth, limbal ring, sclera shading, and a cornea-like top highlight. Enable Realistic Eye first, then tune Iris Depth and Cornea controls.", "Adds iris depth, limbal ring, sclera shading, and a cornea-like top highlight. Enable Realistic Eye first, then tune Iris Depth and Cornea controls."),
+                L("虹彩の奥行き、輪部リング、白目の陰影、角膜風のハイライトを追加します。まず『リアルな瞳』を有効にしてから、虹彩の奥行きや角膜まわりを調整してください。", "Adds iris depth, limbal ring, sclera shading, and a cornea-like top highlight. Enable Realistic Eye first, then tune Iris Depth and Cornea controls."),
                 MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawDualCenterSection()
         {
-            if (!DrawFoldout(ref showDualCenter, L("Dual Eye Center", "Dual Eye Center"))) return;
+            if (!DrawFoldout(ref showDualCenter, L("左右の目中心", "Dual Eye Center"))) return;
             EditorGUI.indentLevel++;
             DrawProperty("_EyeCenter1", L("Eye Center 1 (UV)", "Eye Center 1 (UV)"));
             DrawProperty("_EyeCenter2", L("Eye Center 2 (UV)", "Eye Center 2 (UV)"));
@@ -253,8 +253,8 @@ namespace NataneToon.Editor
             DrawProperty("_EyeSymmetryPivotX", L("Symmetry Pivot X", "Symmetry Pivot X"));
             DrawProperty("_MirrorRightEyeUV", L("Mirror Right Eye UV", "Mirror Right Eye UV"));
             EditorGUILayout.HelpBox(
-                L("Nearest Center: Selects the center closest to the UV coordinate.\n" +
-                  "Symmetry From Center1: Symmetrizes based on Center1.", "Nearest Center: Selects the center closest to the UV coordinate.\n" +
+                L("Nearest Center: UV 座標に最も近い中心を選びます。\n" +
+                  "Symmetry From Center1: Center1 を基準に左右対称化します。", "Nearest Center: Selects the center closest to the UV coordinate.\n" +
                   "Symmetry From Center1: Symmetrizes based on Center1."),
                 MessageType.None);
             EditorGUI.indentLevel--;
@@ -262,7 +262,7 @@ namespace NataneToon.Editor
 
         private void DrawRegionMaskSection()
         {
-            if (!DrawFoldout(ref showRegionMask, L("Eye Region Mask", "Eye Region Mask"))) return;
+            if (!DrawFoldout(ref showRegionMask, L("目の領域マスク", "Eye Region Mask"))) return;
             EditorGUI.indentLevel++;
             DrawProperty("_UseEyeRegionMask", L("Use Region Mask", "Use Region Mask"));
             MaterialProperty maskProp = FindProperty("_EyeRegionMask", properties, false);
@@ -271,13 +271,13 @@ namespace NataneToon.Editor
             DrawProperty("_EyeMaskThreshold", L("Mask Threshold", "Mask Threshold"));
             DrawProperty("_EyeMaskSoftness", L("Mask Softness", "Mask Softness"));
             DrawProperty("_EyeMaskInvert", L("Invert Mask", "Invert Mask"));
-            EditorGUILayout.HelpBox(L("Use when the face and eyes share the same material. Specify the eye region with a mask.", "Use when the face and eyes share the same material. Specify the eye region with a mask."), MessageType.None);
+            EditorGUILayout.HelpBox(L("顔と目が同じマテリアルを共有しているときに使います。マスクで目の範囲を指定してください。", "Use when the face and eyes share the same material. Specify the eye region with a mask."), MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawStateNormalSection()
         {
-            if (!DrawFoldout(ref showStateNormal, L("Normal State", "Normal State"))) return;
+            if (!DrawFoldout(ref showStateNormal, L("通常状態", "Normal State"))) return;
             EditorGUI.indentLevel++;
             MaterialProperty texProp = FindProperty("_NormalStateTex", properties, false);
             if (texProp != null) materialEditor.TextureProperty(texProp, L("Normal State Texture", "Normal State Texture"));
@@ -288,7 +288,7 @@ namespace NataneToon.Editor
 
         private void DrawStateStarSection()
         {
-            if (!DrawFoldout(ref showStateStar, L("Star State", "Star State"))) return;
+            if (!DrawFoldout(ref showStateStar, L("星状態", "Star State"))) return;
             EditorGUI.indentLevel++;
             MaterialProperty texProp = FindProperty("_StarStateTex", properties, false);
             if (texProp != null) materialEditor.TextureProperty(texProp, L("Star Texture", "Star Texture"));
@@ -301,7 +301,7 @@ namespace NataneToon.Editor
 
         private void DrawStateHeartSection()
         {
-            if (!DrawFoldout(ref showStateHeart, L("Heart State", "Heart State"))) return;
+            if (!DrawFoldout(ref showStateHeart, L("ハート状態", "Heart State"))) return;
             EditorGUI.indentLevel++;
             MaterialProperty texProp = FindProperty("_HeartStateTex", properties, false);
             if (texProp != null) materialEditor.TextureProperty(texProp, L("Heart Texture", "Heart Texture"));
@@ -313,7 +313,7 @@ namespace NataneToon.Editor
 
         private void DrawStateDeadSection()
         {
-            if (!DrawFoldout(ref showStateDead, L("Dead State", "Dead State"))) return;
+            if (!DrawFoldout(ref showStateDead, L("死んだ目状態", "Dead State"))) return;
             EditorGUI.indentLevel++;
             MaterialProperty texProp = FindProperty("_DeadStateTex", properties, false);
             if (texProp != null) materialEditor.TextureProperty(texProp, L("Dead Eye Texture", "Dead Eye Texture"));
@@ -325,7 +325,7 @@ namespace NataneToon.Editor
 
         private void DrawStateNervousSection()
         {
-            if (!DrawFoldout(ref showStateNervous, L("Nervous State", "Nervous State"))) return;
+            if (!DrawFoldout(ref showStateNervous, L("緊張状態", "Nervous State"))) return;
             EditorGUI.indentLevel++;
             MaterialProperty texProp = FindProperty("_NervousStateTex", properties, false);
             if (texProp != null) materialEditor.TextureProperty(texProp, L("Nervous Texture", "Nervous Texture"));
@@ -341,7 +341,7 @@ namespace NataneToon.Editor
 
         private void DrawHueColorSection()
         {
-            if (!DrawFoldout(ref showHueColor, L("Hue & Color", "Hue & Color"))) return;
+            if (!DrawFoldout(ref showHueColor, L("色味調整", "Hue & Color"))) return;
             EditorGUI.indentLevel++;
             DrawProperty("_Contrast", L("Contrast", "Contrast"));
             DrawProperty("_MainSaturation", L("Saturation", "Saturation"));
@@ -352,19 +352,19 @@ namespace NataneToon.Editor
 
         private void DrawBubbleSection()
         {
-            if (!DrawFoldout(ref showBubble, L("Bubble Effect", "Bubble Effect"))) return;
+            if (!DrawFoldout(ref showBubble, L("バブルエフェクト", "Bubble Effect"))) return;
             EditorGUI.indentLevel++;
             DrawProperty("_BubbleSize", L("Bubble Size", "Bubble Size"));
             DrawProperty("_BubbleBrightness", L("Bubble Brightness", "Bubble Brightness"));
             DrawProperty("_BubbleWobbleSpeed", L("Wobble Speed", "Wobble Speed"));
             DrawProperty("_BubbleWobbleStrength", L("Wobble Strength", "Wobble Strength"));
-            EditorGUILayout.HelpBox(L("Iris highlight particle effect. Adds sparkling shine.", "Iris highlight particle effect. Adds sparkling shine."), MessageType.None);
+            EditorGUILayout.HelpBox(L("虹彩のハイライトにきらめきを足すエフェクトです。", "Iris highlight particle effect. Adds sparkling shine."), MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawIrisCausticsSection()
         {
-            if (!DrawFoldout(ref showIrisCaustics, L("Iris Caustics", "Iris Caustics"))) return;
+            if (!DrawFoldout(ref showIrisCaustics, L("虹彩コースティクス", "Iris Caustics"))) return;
             EditorGUI.indentLevel++;
             DrawProperty("_UseIrisCaustics", L("Enable Caustics", "Enable Caustics"));
             DrawProperty("_IrisCausticsColor", L("Caustics Color (HDR)", "Caustics Color (HDR)"));
@@ -379,7 +379,7 @@ namespace NataneToon.Editor
 
         private void DrawIrisRingPulseSection()
         {
-            if (!DrawFoldout(ref showIrisRingPulse, L("Iris Ring Pulse", "Iris Ring Pulse"))) return;
+            if (!DrawFoldout(ref showIrisRingPulse, L("虹彩リングパルス", "Iris Ring Pulse"))) return;
             EditorGUI.indentLevel++;
             DrawProperty("_UseIrisRingPulse", L("Enable Ring Pulse", "Enable Ring Pulse"));
             DrawProperty("_IrisRingColor", L("Ring Color (HDR)", "Ring Color (HDR)"));
@@ -395,7 +395,7 @@ namespace NataneToon.Editor
 
         private void DrawTexturePolishSection()
         {
-            if (!DrawFoldout(ref showTexturePolish, L("Texture Polish", "Texture Polish"))) return;
+            if (!DrawFoldout(ref showTexturePolish, L("テクスチャ磨き", "Texture Polish"))) return;
             EditorGUI.indentLevel++;
             DrawProperty("_UseTexturePolish", L("Enable Texture Polish", "Enable Texture Polish"));
             DrawProperty("_TexturePolishBlendMode", L("Blend Mode", "Blend Mode"));
@@ -409,7 +409,7 @@ namespace NataneToon.Editor
 
         private void DrawExpressionSection()
         {
-            if (!DrawFoldout(ref showExpression, L("Expression Overlay", "Expression Overlay"))) return;
+            if (!DrawFoldout(ref showExpression, L("表情オーバーレイ", "Expression Overlay"))) return;
             EditorGUI.indentLevel++;
             DrawProperty("_ExpressionPreset", L("Expression Preset", "Expression Preset"));
             DrawProperty("_ExpressionMode", L("Expression Mode (Off/Spiral/Tearful/Shock)", "Expression Mode (Off/Spiral/Tearful/Shock)"));
@@ -421,17 +421,17 @@ namespace NataneToon.Editor
             DrawProperty("_ExpressionDetail", L("Detail", "Detail"));
 
             EditorGUILayout.Space(3);
-            EditorGUILayout.LabelField(L("Spiral Settings", "Spiral Settings"), EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(L("スパイラル設定", "Spiral Settings"), EditorStyles.miniBoldLabel);
             DrawProperty("_SpiralTightness", L("Spiral Tightness", "Spiral Tightness"));
             DrawProperty("_SpiralLineWidth", L("Spiral Line Width", "Spiral Line Width"));
 
             EditorGUILayout.Space(3);
-            EditorGUILayout.LabelField(L("Tear Settings", "Tear Settings"), EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(L("涙設定", "Tear Settings"), EditorStyles.miniBoldLabel);
             DrawProperty("_TearFlow", L("Tear Flow", "Tear Flow"));
             DrawProperty("_TearRim", L("Tear Rim Highlight", "Tear Rim Highlight"));
 
             EditorGUILayout.Space(3);
-            EditorGUILayout.LabelField(L("Shock Ring Settings", "Shock Ring Settings"), EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(L("ショックリング設定", "Shock Ring Settings"), EditorStyles.miniBoldLabel);
             DrawProperty("_ShockRingCount", L("Ring Count", "Ring Count"));
             DrawProperty("_ShockRingWidth", L("Ring Width", "Ring Width"));
             DrawProperty("_ExpressionBlendMode", L("Blend Mode", "Blend Mode"));
@@ -440,7 +440,7 @@ namespace NataneToon.Editor
 
         private void DrawInnerMeshPrioritySection()
         {
-            if (!DrawFoldout(ref showInnerMeshPriority, L("Inner Mesh Priority (BlendShape)", "Inner Mesh Priority (BlendShape)"))) return;
+            if (!DrawFoldout(ref showInnerMeshPriority, L("内側メッシュ優先度 (BlendShape)", "Inner Mesh Priority (BlendShape)"))) return;
             EditorGUI.indentLevel++;
             DrawProperty("_UseInnerMeshPriority", L("Enable Inner Mesh Priority", "Enable Inner Mesh Priority"));
             MaterialProperty maskProp = FindProperty("_InnerMeshPriorityMask", properties, false);
@@ -451,22 +451,22 @@ namespace NataneToon.Editor
             DrawProperty("_InnerMeshPriorityInvert", L("Invert", "Invert"));
             DrawProperty("_InnerMeshPriorityMode", L("Priority Mode", "Priority Mode"));
             DrawProperty("_InnerMeshPriorityStrength", L("Strength", "Strength"));
-            EditorGUILayout.HelpBox(L("Controls inner mesh draw priority when using BlendShapes.", "Controls inner mesh draw priority when using BlendShapes."), MessageType.None);
+            EditorGUILayout.HelpBox(L("BlendShape 使用時に、内側メッシュをどちら優先で描くかを調整します。", "Controls inner mesh draw priority when using BlendShapes."), MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawPerformanceSection()
         {
-            if (!DrawFoldout(ref showPerformance, L("Performance", "Performance"))) return;
+            if (!DrawFoldout(ref showPerformance, L("パフォーマンス", "Performance"))) return;
             EditorGUI.indentLevel++;
             DrawProperty("_PerformanceTier", L("Performance Tier (Quality/Balanced/Lite)", "Performance Tier (Quality/Balanced/Lite)"));
-            EditorGUILayout.HelpBox(L("Lite: Disables some effects for optimization. Recommended for Quest.", "Lite: Disables some effects for optimization. Recommended for Quest."), MessageType.None);
+            EditorGUILayout.HelpBox(L("Lite は一部エフェクトを無効化して軽量化します。Quest 向けでは特におすすめです。", "Lite: Disables some effects for optimization. Recommended for Quest."), MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawVignetteSection()
         {
-            if (!DrawFoldout(ref showVignette, L("Vignette Effect", "Vignette Effect"))) return;
+            if (!DrawFoldout(ref showVignette, L("ビネット効果", "Vignette Effect"))) return;
             EditorGUI.indentLevel++;
             DrawProperty("_VignetteTransparency", L("Enable Transparency", "Enable Transparency"));
             DrawProperty("_VignetteDitherScale", L("Dither Scale", "Dither Scale"));
@@ -477,21 +477,21 @@ namespace NataneToon.Editor
 
         private void DrawAudioLinkSection()
         {
-            if (!DrawFoldout(ref showAudioLink, "Audio Link")) return;
+            if (!DrawFoldout(ref showAudioLink, L("Audio Link", "Audio Link"))) return;
             EditorGUI.indentLevel++;
             DrawProperty("_BandSelection", L("Frequency Band", "Frequency Band"));
             DrawProperty("_Intensity", L("Intensity", "Intensity"));
             DrawProperty("_MinValue", L("Minimum Brightness", "Minimum Brightness"));
-            EditorGUILayout.HelpBox(L("Syncs with music when AudioLink is installed in the VRChat world.", "Syncs with music when AudioLink is installed in the VRChat world."), MessageType.None);
+            EditorGUILayout.HelpBox(L("VRChat ワールドに AudioLink が入っている場合、音に合わせて変化します。", "Syncs with music when AudioLink is installed in the VRChat world."), MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawRenderingSection()
         {
-            if (!DrawFoldout(ref showRendering, L("Rendering Settings", "Rendering Settings"))) return;
+            if (!DrawFoldout(ref showRendering, L("描画設定", "Rendering Settings"))) return;
             EditorGUI.indentLevel++;
 
-            EditorGUILayout.LabelField(L("Stencil", "Stencil"), EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(L("ステンシル", "Stencil"), EditorStyles.miniBoldLabel);
             DrawProperty("_StencilRef", L("Reference Value", "Reference Value"));
             DrawProperty("_StencilComp", L("Comparison Function", "Comparison Function"));
             DrawProperty("_StencilPass", L("Pass Operation", "Pass Operation"));
@@ -501,7 +501,7 @@ namespace NataneToon.Editor
             DrawProperty("_StencilWriteMask", L("Write Mask", "Write Mask"));
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField(L("Blend & Transparency", "Blend & Transparency"), EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(L("ブレンドと透明", "Blend & Transparency"), EditorStyles.miniBoldLabel);
             DrawProperty("_SrcBlend", L("Source Blend", "Source Blend"));
             DrawProperty("_DstBlend", L("Destination Blend", "Destination Blend"));
             DrawProperty("_BlendOp", L("Blend Operation", "Blend Operation"));
@@ -510,7 +510,7 @@ namespace NataneToon.Editor
             DrawProperty("_GlobalOpacity", L("Global Opacity", "Global Opacity"));
 
             EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField(L("Depth & Culling", "Depth & Culling"), EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField(L("深度とカリング", "Depth & Culling"), EditorStyles.miniBoldLabel);
             DrawProperty("_ZTest", L("Z Test", "Z Test"));
             DrawProperty("_ZWrite", L("Z Write", "Z Write"));
             DrawProperty("_OffsetFactor", L("Offset Factor", "Offset Factor"));
@@ -525,7 +525,7 @@ namespace NataneToon.Editor
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(L("Natane Eye Shader v1.1", "Natane Eye Shader v1.1"), FooterStyle);
-            EditorGUILayout.LabelField(L("5 Eye States + Expression Overlay Support", "5 Eye States + Expression Overlay Support"), FooterStyle);
+            EditorGUILayout.LabelField(L("5つの目状態 + 表情オーバーレイ対応", "5 Eye States + Expression Overlay Support"), FooterStyle);
             EditorGUILayout.EndVertical();
         }
     }

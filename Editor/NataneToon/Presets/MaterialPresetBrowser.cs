@@ -475,10 +475,10 @@ namespace NataneToon.Editor
         {
             string defaultName = $"{material.name}_Preset";
             string path = EditorUtility.SaveFilePanelInProject(
-                L("??????????????", "Create Preset from Material"),
+                L("マテリアルからプリセット作成", "Create Preset from Material"),
                 defaultName,
                 "asset",
-                L("??????????????????", "Choose where to save the preset"));
+                L("プリセットの保存先を選択してください", "Choose where to save the preset"));
 
             if (!string.IsNullOrEmpty(path))
             {
@@ -494,8 +494,8 @@ namespace NataneToon.Editor
                 RefreshPresetList(forceRefresh: true);
 
                 EditorUtility.DisplayDialog(
-                    L("?????????", "Preset Created"),
-                    L($"????? '{material.name}' ??????? '{preset.presetName}' ???????", $"Created preset '{preset.presetName}' from material '{material.name}'"),
+                    L("プリセット作成完了", "Preset Created"),
+                    L($"マテリアル '{material.name}' からプリセット '{preset.presetName}' を作成しました。", $"Created preset '{preset.presetName}' from material '{material.name}'"),
                     "OK");
             }
         }
@@ -507,7 +507,7 @@ namespace NataneToon.Editor
             string extension = MaterialParameterShareSystem.GetFileExtension();
 
             string path = EditorUtility.SaveFilePanel(
-                L("???????????????", "Export Material Parameters"),
+                L("マテリアルパラメータを書き出し", "Export Material Parameters"),
                 defaultFolder,
                 defaultName,
                 extension.TrimStart('.'));
@@ -518,8 +518,8 @@ namespace NataneToon.Editor
                 if (!string.IsNullOrEmpty(result))
                 {
                     EditorUtility.DisplayDialog(
-                        L("??????", "Export Successful"),
-                        L($"??????????????????:\n{result}", $"Material parameters exported to:\n{result}"),
+                        L("書き出し完了", "Export Successful"),
+                        L($"マテリアルパラメータを書き出しました:\n{result}", $"Material parameters exported to:\n{result}"),
                         "OK");
                 }
             }
@@ -540,7 +540,7 @@ namespace NataneToon.Editor
             string extension = MaterialParameterShareSystem.GetFileExtension();
 
             string path = EditorUtility.OpenFilePanel(
-                L("???????????????", "Import Material Parameters"),
+                L("マテリアルパラメータを読み込み", "Import Material Parameters"),
                 defaultFolder,
                 extension.TrimStart('.'));
 
@@ -553,8 +553,8 @@ namespace NataneToon.Editor
                 {
                     EditorUtility.SetDirty(selectedMaterial);
                     EditorUtility.DisplayDialog(
-                        L("??????", "Import Successful"),
-                        L($"'{selectedMaterial.name}' ???????????????????", $"Material parameters imported to '{selectedMaterial.name}'"),
+                        L("読み込み完了", "Import Successful"),
+                        L($"'{selectedMaterial.name}' にマテリアルパラメータを読み込みました。", $"Material parameters imported to '{selectedMaterial.name}'"),
                         "OK");
                 }
             }
@@ -566,8 +566,8 @@ namespace NataneToon.Editor
             if (success)
             {
                 EditorUtility.DisplayDialog(
-                    L("???????????????", "Copied to Clipboard"),
-                    L($"????? '{material.name}' ???????????????????????\n\n?????????????????????????", $"Material '{material.name}' parameters copied to clipboard.\n\nYou can now paste these parameters to another material or share with others."),
+                    L("クリップボードへコピー", "Copied to Clipboard"),
+                    L($"マテリアル '{material.name}' のパラメータをクリップボードへコピーしました。\n\n別のマテリアルへ貼り付けたり、ほかの人へ共有したりできます。", $"Material '{material.name}' parameters copied to clipboard.\n\nYou can now paste these parameters to another material or share with others."),
                     "OK");
             }
         }
@@ -606,12 +606,22 @@ namespace NataneToon.Editor
         {
             EditorUtility.DisplayDialog(
                 L("マテリアルプリセットブラウザ - ヘルプ", "Material Preset Browser - Help"),
-                L("Features:\n", "Features:\n" +
-                    "遯ｶ・｢ Browse and apply material presets visually\n" +
-                    "遯ｶ・｢ Filter by category and search by name\n" +
-                    "遯ｶ・｢ Create presets from existing materials\n" +
-                    "遯ｶ・｢ Share parameters via file or clipboard\n" +
-                    "遯ｶ・｢ Generate VTuber-optimized presets\n\n" +
+                L("機能:\n" +
+                    "・マテリアルプリセットを見ながら適用できます\n" +
+                    "・カテゴリや名前で絞り込みできます\n" +
+                    "・既存マテリアルからプリセットを作成できます\n" +
+                    "・ファイルやクリップボードで共有できます\n" +
+                    "・VTuber 向けプリセットを自動生成できます\n\n" +
+                    "使い方:\n" +
+                    "1. 対象マテリアルを選択\n" +
+                    "2. プリセットを選んで Apply を押す\n" +
+                    "3. 必要ならマテリアルからプリセットを作成\n" +
+                    "4. Export / Import で共有", "Features:\n" +
+                    "Browse and apply material presets visually\n" +
+                    "Filter by category and search by name\n" +
+                    "Create presets from existing materials\n" +
+                    "Share parameters via file or clipboard\n" +
+                    "Generate VTuber-optimized presets\n\n" +
                     "Usage:\n" +
                     "1. Select a target material\n" +
                     "2. Browse presets and click Apply\n" +
@@ -629,7 +639,15 @@ namespace NataneToon.Editor
             // Show confirmation dialog
             bool proceed = EditorUtility.DisplayDialog(
                 L("VTuber プリセット生成", "Generate VTuber Presets"),
-                L("Generate high-quality VTuber material presets.\n\n", "Generate high-quality VTuber material presets.\n\n" +
+                L("高品質な VTuber 向けマテリアルプリセットを生成します。\n\n" +
+                "次の 5 種類を作成します:\n" +
+                "1. Character Skin - SSS 付きの柔らかい肌\n" +
+                "2. Character Hair - 光沢感のある髪\n" +
+                "3. Character Clothing - クリーンな衣装表現\n" +
+                "4. Character Eyes - きらめく瞳\n" +
+                "5. Live Performance - 軽量ライブ向け\n\n" +
+                "保存先: Assets/NataneToon/Runtime/Presets/VTuber/\n\n" +
+                "生成しますか？", "Generate high-quality VTuber material presets.\n\n" +
                 "The following 5 presets will be created:\n" +
                 "1. Character Skin - Soft cell shading with SSS\n" +
                 "2. Character Hair - Glossy anime-style hair\n" +
@@ -638,8 +656,8 @@ namespace NataneToon.Editor
                 "5. Live Performance - Lightweight & high performance\n\n" +
                 "Location: Assets/NataneToon/Runtime/Presets/VTuber/\n\n" +
                 "Generate?"),
-                L("??", "Generate"),
-                L("?????", "Cancel"));
+                L("生成", "Generate"),
+                L("キャンセル", "Cancel"));
 
             if (!proceed) return;
 
@@ -662,8 +680,8 @@ namespace NataneToon.Editor
                 {
                     Debug.LogError($"[MaterialPresetBrowser] Failed to create directory: {e.Message}");
                     EditorUtility.DisplayDialog(
-                        L("???", "Error"),
-                        L($"Failed to create directory:\n{e.Message}\n\n", $"Failed to create directory:\n{e.Message}\n\n" +
+                        L("エラー", "Error"),
+                        L($"フォルダの作成に失敗しました:\n{e.Message}\n\n手動で次のフォルダを作成してください:\n{presetPath}", $"Failed to create directory:\n{e.Message}\n\n" +
                         $"Please manually create the directory:\n{presetPath}"),
                         "OK");
                     return;
@@ -692,7 +710,7 @@ namespace NataneToon.Editor
             // Show completion dialog
             EditorUtility.DisplayDialog(
                 L("完了", "Complete"),
-                L($"VTuber preset generation complete!\n\n", $"VTuber preset generation complete!\n\n" +
+                L($"VTuber プリセットの生成が完了しました。\n\n作成数: {presetsCreated}\n保存先: {presetPath}\n\nこのブラウザに新しいプリセットが表示されています。\n対象マテリアルを選んで Apply を押すと使えます。", $"VTuber preset generation complete!\n\n" +
                 $"Presets created: {presetsCreated}\n" +
                 $"Location: {presetPath}\n\n" +
                 $"Presets are now displayed in this browser.\n" +
