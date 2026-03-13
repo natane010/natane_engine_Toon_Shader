@@ -11,6 +11,10 @@
 // - NataneToonVertex.hlsl: Vertex shader
 // - NataneToonFragment.hlsl: Fragment shader
 
+// Build settings (feature #defines for build-time optimization)
+// Must be included before everything else.
+#include "NataneToonBuildSettings.hlsl"
+
 // Unity includes
 #include "UnityCG.cginc"
 #include "Lighting.cginc"
