@@ -1257,10 +1257,10 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawLookMixerPresetButton(L("Toon-PBR Hybrid", "Toon-PBR Hybrid"), "Apply Toon-PBR Hybrid Look", LookMode.Hybrid, 0.8f, 0.2f, 0.6f, 0f);
                 DrawLookMixerPresetButton(L("Near PBR", "Near PBR"), "Apply Near PBR Look", LookMode.PBR, 0.15f, 0.1f, 1f, 3f);
 
-                // miHoYo style (applies comprehensive settings beyond LookMixer weights)
-                if (GUILayout.Button(L("⭐ miHoYo風", "⭐ miHoYo Style"), GUILayout.Height(24)))
+                // Game character style (applies comprehensive settings beyond LookMixer weights)
+                if (GUILayout.Button(L("⭐ ゲームキャラクター風", "⭐ Game Character Style"), GUILayout.Height(24)))
                 {
-                    ApplyMihoyoLookMixerToSelectedMaterials();
+                    ApplyGameCharacterLookMixerToSelectedMaterials();
                 }
                 return;
             }
@@ -1275,10 +1275,10 @@ public class NataneToonShaderGUI : ShaderGUI
             DrawLookMixerPresetButton(L("Near PBR", "Near PBR"), "Apply Near PBR Look", LookMode.PBR, 0.15f, 0.1f, 1f, 3f);
             EditorGUILayout.EndHorizontal();
 
-            // miHoYo style (applies comprehensive settings beyond LookMixer weights)
-            if (GUILayout.Button(L("⭐ miHoYo風（原神・スタレ・ZZZ系）", "⭐ miHoYo Style (Genshin / HSR / ZZZ)"), GUILayout.Height(24)))
+            // Game character style (applies comprehensive settings beyond LookMixer weights)
+            if (GUILayout.Button(L("⭐ ゲームキャラクター風", "⭐ Game Character Style"), GUILayout.Height(24)))
             {
-                ApplyMihoyoLookMixerToSelectedMaterials();
+                ApplyGameCharacterLookMixerToSelectedMaterials();
             }
         }
     }
@@ -1305,18 +1305,18 @@ public class NataneToonShaderGUI : ShaderGUI
     }
 
     /// <summary>
-    /// Applies miHoYo-style preset to all selected materials via Look Mixer.
+    /// Applies game-character-style preset to all selected materials via Look Mixer.
     /// Sets LookMode to Toon, applies comprehensive shading/rim/specular/outline,
     /// then synchronizes keywords.
     /// </summary>
-    private void ApplyMihoyoLookMixerToSelectedMaterials()
+    private void ApplyGameCharacterLookMixerToSelectedMaterials()
     {
         if (materialEditor == null || materialEditor.targets == null || materialEditor.targets.Length == 0)
         {
             return;
         }
 
-        Undo.RecordObjects(materialEditor.targets, "Apply miHoYo Style");
+        Undo.RecordObjects(materialEditor.targets, "Apply Game Character Style");
 
         foreach (UnityEngine.Object target in materialEditor.targets)
         {
@@ -1328,8 +1328,8 @@ public class NataneToonShaderGUI : ShaderGUI
 
             // Set LookMixer weights (Pure Toon base)
             ApplyLookMixerValuesToMaterial(material, LookMode.Toon, 1f, 0f, 0f, 0f);
-            // Apply comprehensive miHoYo shading parameters
-            ApplyMihoyoStyle(material);
+            // Apply comprehensive game character shading parameters
+            ApplyGameCharacterStyle(material);
         }
 
         SynchronizeKeywordsAndRefreshInspectorCaches();
@@ -8037,11 +8037,11 @@ public class NataneToonShaderGUI : ShaderGUI
 
         EditorGUILayout.Space(4);
 
-        // miHoYo-style preset (full width)
-        if (GUILayout.Button(L("⭐ miHoYo風（原神・スタレ・ZZZ系）", "⭐ miHoYo Style (Genshin / HSR / ZZZ)"), GUILayout.Height(40)))
+        // Game character style preset (full width)
+        if (GUILayout.Button(L("⭐ ゲームキャラクター風", "⭐ Game Character Style"), GUILayout.Height(40)))
         {
-            Undo.RecordObject(targetMaterial, "Apply miHoYo Style");
-            ApplyMihoyoStyle(targetMaterial);
+            Undo.RecordObject(targetMaterial, "Apply Game Character Style");
+            ApplyGameCharacterStyle(targetMaterial);
             SynchronizeKeywordsAndRefreshInspectorCaches();
         }
         EditorGUILayout.LabelField(
@@ -8098,8 +8098,8 @@ public class NataneToonShaderGUI : ShaderGUI
                 L("Near PBR", "Near PBR"),
                 L("PBR寄りのリアルなライティングと質感です。", "Near-realistic lighting and surface finish."));
             DrawQuickSetupHint(
-                L("miHoYo風", "miHoYo Style"),
-                L("原神・スタレ風の2段影＋リムライト＋アウトラインの一括設定です。", "One-click Genshin/HSR-style setup with 2-step shadow, rim light, and outline."));
+                L("ゲームキャラクター風", "Game Character Style"),
+                L("2段影＋リムライト＋スペキュラー＋アウトラインの一括設定です。", "One-click setup with 2-step shadow, rim light, specular, and outline."));
             return;
         }
 
@@ -8122,8 +8122,8 @@ public class NataneToonShaderGUI : ShaderGUI
         EditorGUILayout.EndHorizontal();
 
         DrawQuickSetupHint(
-            L("miHoYo風", "miHoYo Style"),
-            L("原神・スタレ風の2段影＋リムライト＋アウトラインの一括設定です。", "One-click Genshin/HSR-style setup with 2-step shadow, rim light, and outline."));
+            L("ゲームキャラクター風", "Game Character Style"),
+            L("2段影＋リムライト＋スペキュラー＋アウトラインの一括設定です。", "One-click setup with 2-step shadow, rim light, specular, and outline."));
     }
 
     private void DrawQuickSetupHint(string title, string description)
@@ -8197,22 +8197,22 @@ public class NataneToonShaderGUI : ShaderGUI
     }
 
     /// <summary>
-    /// Apply miHoYo-style preset (Genshin Impact / Honkai Star Rail / ZZZ)
+    /// Apply game-character-style preset
     /// 2-step sharp shadows, warm shadow color, rim light, specular, texture-linked outline
-    /// Based on reverse-engineered HoyoToon / StarRailNPRShader rendering characteristics
+    /// Inspired by modern 3D game character toon rendering techniques
     /// </summary>
-    private void ApplyMihoyoStyle(Material mat)
+    private void ApplyGameCharacterStyle(Material mat)
     {
         // --- Shading: 2-step sharp toon ---
         mat.SetFloat("_ShadingMode", 0); // Toon
         mat.SetFloat("_ShadowSteps", 2);
-        mat.SetFloat("_ShadowSharpness", 0.03f); // Very sharp boundary (miHoYo uses near-binary step)
+        mat.SetFloat("_ShadowSharpness", 0.03f); // Very sharp boundary (near-binary step)
         mat.SetFloat("_ShadowBlend", 0);
         mat.SetFloat("_LitSoftness", 0);
         mat.SetFloat("_WrapAmount", 0);
         mat.SetFloat("_ShadowOffset", 0);
 
-        // --- Shadow color: warm tint (miHoYo day-time warm shadow) ---
+        // --- Shadow color: warm tint (game character warm shadow) ---
         mat.SetColor("_ShadowColor", new Color(0.62f, 0.52f, 0.54f, 1f));
         mat.SetFloat("_ShadowHueShift", 0.02f); // Slight warm hue shift
         mat.SetFloat("_ShadowSaturation", 1.15f); // Slightly boosted saturation
@@ -8221,14 +8221,14 @@ public class NataneToonShaderGUI : ShaderGUI
         mat.SetFloat("_AlbedoPreservation", 0.85f);
         mat.SetFloat("_FinalHighlightBlend", 0.2f);
 
-        // --- Rim Light (Fresnel-based, miHoYo standard) ---
+        // --- Rim Light (Fresnel-based, game character standard) ---
         mat.SetFloat("_RimLight", 1); // Toggle ON → keyword synced later
         mat.SetColor("_RimColor", new Color(1f, 1f, 1f, 1f));
-        mat.SetFloat("_RimPower", 2.5f); // Broad rim (miHoYo uses wide rim)
+        mat.SetFloat("_RimPower", 2.5f); // Broad rim
         mat.SetFloat("_RimIntensity", 1.5f);
         mat.SetFloat("_RimSpread", 0f);
 
-        // --- Specular (Blinn-Phong, miHoYo-style step threshold) ---
+        // --- Specular (Blinn-Phong, sharp step threshold) ---
         mat.SetFloat("_Specular", 1); // Toggle ON
         mat.SetColor("_SpecularColor", new Color(1f, 1f, 1f, 1f));
         mat.SetFloat("_SpecularSize", 0.08f); // Small, focused highlight
@@ -8246,7 +8246,7 @@ public class NataneToonShaderGUI : ShaderGUI
         // --- Normal: slight Y-flatten for face softening ---
         mat.SetFloat("_NormalFlattenY", 0.15f);
 
-        // --- Surface: matte-leaning (miHoYo characters are mostly matte) ---
+        // --- Surface: matte-leaning (game characters are mostly matte) ---
         mat.SetFloat("_Glossiness", 0.15f);
         mat.SetFloat("_MatteEffect", 0.6f);
 
