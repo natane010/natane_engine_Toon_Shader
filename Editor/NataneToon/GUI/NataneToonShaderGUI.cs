@@ -7706,6 +7706,7 @@ public class NataneToonShaderGUI : ShaderGUI
         {
             SafeDrawSection(DrawQuickSetupSection, L("クイックセットアップ", "Quick Setup"));
         }
+        EndBoxedSection(GetFoldout("QuickSetup"));
         EditorGUILayout.Space(SECTION_SPACING);
 
         SafeDrawSection(DrawMainTextureSection, L("メインテクスチャ", "Main Texture"));
