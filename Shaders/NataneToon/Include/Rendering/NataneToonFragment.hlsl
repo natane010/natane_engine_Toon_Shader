@@ -46,6 +46,7 @@ half4 frag(v2f i) : SV_Target
     // VRChat globals: _VRChatMirrorMode (0=Normal, 1=Mirror VR, 2=Mirror Desktop)
     //                 _VRChatCameraMode (0=Normal, 1=VR Camera, 2=Desktop Camera, 3=Screenshot)
     #ifdef _MIRROR_CONTROL
+    if (_MirrorControl >= 0.5)
     {
         // _MirrorMode (user setting): 0=Both, 1=Mirror Only, 2=Non-Mirror Only
         if (_MirrorMode > 0.5 && _MirrorMode < 1.5 && !NataneIsMirror())
@@ -91,11 +92,13 @@ half4 frag(v2f i) : SV_Target
     // ===== UV Animation =====
     float2 mainUV = uv;
     #ifdef _MAIN_TEX_ANIMATION
-        mainUV = AnimateUV(uv, _MainTexScrollSpeed.xy, _MainTexRotateSpeed);
+        if (_MainTexAnimation >= 0.5)
+            mainUV = AnimateUV(uv, _MainTexScrollSpeed.xy, _MainTexRotateSpeed);
     #endif
 
     // ===== Glitch Stretch (UV modification before main texture sampling) =====
     #if defined(_GLITCH_STRETCH) && defined(UNITY_PASS_FORWARDBASE)
+    if (_GlitchStretch >= 0.5)
     {
         half stretchMaskVal = NATANE_SAMPLE_REPEAT(_GlitchStretchMask, TRANSFORM_TEX(mainUV, _GlitchStretchMask)).r;
         // Mask Scale: マスク値を増幅（1.0=等倍、5.0=5倍ブースト）
@@ -114,7 +117,9 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Texture Sampling =====
     #ifdef _TRIPLANAR
-        half4 mainTex = TriplanarSample(_MainTex, i.worldPos, i.worldNormal, _TriplanarScale, _TriplanarBlendSharpness);
+        half4 mainTex = (_Triplanar >= 0.5)
+            ? TriplanarSample(_MainTex, i.worldPos, i.worldNormal, _TriplanarScale, _TriplanarBlendSharpness)
+            : tex2D(_MainTex, mainUV);
     #else
         half4 mainTex = tex2D(_MainTex, mainUV);
     #endif
@@ -122,6 +127,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Gradient Base Color =====
     #ifdef _GRADIENT_BASE_COLOR
+    if (_GradientBaseColor >= 0.5)
     {
         half3 gradColor = CalculateGradientColor(i.worldPos,
             _GradientTopColor.rgb, _GradientBottomColor.rgb,
@@ -138,6 +144,7 @@ half4 frag(v2f i) : SV_Target
     // 各テクスチャはUVアニメーション、HSV調整、マスク、ブレンドモード
     // （Add/Multiply/Overlay/Screen）を個別に持ち、メイクアップ表現を実現する。
     #ifdef _2ND_TEXTURE
+    if (_Use2ndTexture >= 0.5)
     {
         float2 _2ndAnimUV = AnimateUVIfNeeded(uv, _2ndTexScrollSpeed.xy, _2ndTexRotateSpeed);
         half4 secondTexSample = NATANE_SAMPLE_REPEAT(_2ndTex, _2ndAnimUV);
@@ -150,6 +157,7 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     #ifdef _3RD_TEXTURE
+    if (_Use3rdTexture >= 0.5)
     {
         float2 _3rdAnimUV = AnimateUVIfNeeded(uv, _3rdTexScrollSpeed.xy, _3rdTexRotateSpeed);
         half4 thirdTexSample = NATANE_SAMPLE_REPEAT(_3rdTex, _3rdAnimUV);
@@ -162,6 +170,7 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     #ifdef _4TH_TEXTURE
+    if (_Use4thTexture >= 0.5)
     {
         float2 _4thAnimUV = AnimateUVIfNeeded(uv, _4thTexScrollSpeed.xy, _4thTexRotateSpeed);
         half4 fourthTexSample = NATANE_SAMPLE_REPEAT(_4thTex, _4thAnimUV);
@@ -174,6 +183,7 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     #ifdef _5TH_TEXTURE
+    if (_Use5thTexture >= 0.5)
     {
         float2 _5thAnimUV = AnimateUVIfNeeded(uv, _5thTexScrollSpeed.xy, _5thTexRotateSpeed);
         half4 fifthTexSample = NATANE_SAMPLE_REPEAT(_5thTex, _5thAnimUV);
@@ -187,6 +197,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Surface Cover (Snow/Sand Accumulation) =====
     #ifdef _SURFACE_COVER
+    if (_SurfaceCover >= 0.5)
     {
         float3 safeCoverDirA = normalize(_CoverDirection.xyz + float3(0, 0.0001, 0));
         float coverDot = dot(i.worldNormal, safeCoverDirA);
@@ -198,6 +209,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Screen-Tone Overlay =====
     #ifdef _SCREEN_TONE
+    if (_ScreenTone >= 0.5)
     {
         half screenToneMask = NATANE_SAMPLE_SHARED_BLUR_R(_ScreenToneMask, _MainTex, uv, _ScreenToneBlur);
         screenToneMask = ApplySoftMask(screenToneMask);
@@ -212,15 +224,24 @@ half4 frag(v2f i) : SV_Target
 
     // Optimization: Skip normalization if no normal mapping (already normalized in vertex shader)
     #ifdef _NORMALMAP
-        float2 bumpUV = AnimateUVIfNeeded(uv, _BumpMapScrollSpeed.xy, _BumpMapRotateSpeed);
-        half3 normalMap = UnpackScaleNormal(NATANE_SAMPLE_REPEAT(_BumpMap, bumpUV), _BumpScale);
-        half3 worldNormal = normalize(mul(normalMap, tangentToWorld));
+        half3 worldNormal;
+        if (_UseNormalMap >= 0.5)
+        {
+            float2 bumpUV = AnimateUVIfNeeded(uv, _BumpMapScrollSpeed.xy, _BumpMapRotateSpeed);
+            half3 normalMapSample = UnpackScaleNormal(NATANE_SAMPLE_REPEAT(_BumpMap, bumpUV), _BumpScale);
+            worldNormal = normalize(mul(normalMapSample, tangentToWorld));
+        }
+        else
+        {
+            worldNormal = i.worldNormal;
+        }
     #else
         half3 worldNormal = i.worldNormal; // Already normalized in vertex shader
     #endif
 
     // ===== Detail Map (Secondary UV) =====
     #ifdef _DETAIL_MAP
+    if (_DetailMap >= 0.5)
     {
         float2 detailUV = (_DetailUVSet > 0.5) ? i.uv1 : uv;
         detailUV *= _DetailTiling;
@@ -249,6 +270,7 @@ half4 frag(v2f i) : SV_Target
     // ===== Surface Cover Normal Blending =====
     #ifdef _SURFACE_COVER
     #ifdef _NORMALMAP
+    if (_SurfaceCover >= 0.5 && _UseNormalMap >= 0.5)
     {
         float3 safeCoverDir = normalize(_CoverDirection.xyz + float3(0, 0.0001, 0));
         float coverDotN = dot(worldNormal, safeCoverDir);
@@ -263,6 +285,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Procedural Normal Warping =====
     #ifdef _NORMAL_WARP
+    if (_NormalWarp >= 0.5)
     {
         // 1. 球状法線: オブジェクト空間位置を正規化
         float3 sphereNormal = normalize(i.objectPos);
@@ -285,8 +308,11 @@ half4 frag(v2f i) : SV_Target
     // Sample shadow mask once and use it for all shadow-related calculations
     half shadowReceiveMask = 0.0; // Default: fully receive shadows (black = receive shadows)
     #ifdef _SHADOW_RECEIVE_MASK
-        shadowReceiveMask = NATANE_SAMPLE_SHARED_R(_ShadowReceiveMask, _MainTex, uv);
-        shadowReceiveMask = ApplySoftMask(shadowReceiveMask); // Smooth mask transitions
+        if (_UseShadowReceiveMask >= 0.5)
+        {
+            shadowReceiveMask = NATANE_SAMPLE_SHARED_R(_ShadowReceiveMask, _MainTex, uv);
+            shadowReceiveMask = ApplySoftMask(shadowReceiveMask); // Smooth mask transitions
+        }
     #endif
 
     // ===== Lighting Setup =====
@@ -336,6 +362,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Light Direction Snapping (shadow stabilization) =====
     #ifdef _LIGHT_SNAP
+    if (_LightSnap >= 0.5)
     {
         // Quantize light direction to discrete angles to prevent shadow flickering
         float snapRad = max(radians(_LightSnapAngle), 0.0001);
@@ -395,8 +422,11 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Per-Effect Distance Fade (early calculation) =====
     #ifdef _DISTANCE_FADE
+        half distanceFade = 1.0; // Default: fully visible (no fade)
+        if (_DistanceFade >= 0.5)
+        {
         float distFadeBlurRange = _DistFadeBlur * (_DistanceFadeEnd - _DistanceFadeStart) * DIST_FADE_BLUR_SCALE;
-        half distanceFade = CalculateDistanceFade(i.worldPos, _DistanceFadeStart - distFadeBlurRange, _DistanceFadeEnd + distFadeBlurRange);
+        distanceFade = CalculateDistanceFade(i.worldPos, _DistanceFadeStart - distFadeBlurRange, _DistanceFadeEnd + distFadeBlurRange);
 
         // Near fade: camera too close → transparent
         if (_NearFadeEnd > _NearFadeStart + 0.001)
@@ -409,6 +439,7 @@ half4 frag(v2f i) : SV_Target
             );
             distanceFade *= nearFade;
         }
+        } // if (_DistanceFade >= 0.5)
     #endif
 
     // ===== PCSS / Shadow Map Smoothing (PCF + Adaptive) =====
@@ -420,6 +451,7 @@ half4 frag(v2f i) : SV_Target
     //   ポイント/スポットライト: fwidth ベースの適応型 smoothstep。
     #if defined(UNITY_PASS_FORWARDBASE) && defined(SHADOWS_SCREEN) && !defined(UNITY_NO_SCREENSPACE_SHADOWS)
         #ifdef _PCSS
+        if (_UsePCSS >= 0.5)
         {
             // === PCSS: Percentage Closer Soft Shadows (Screen-Space Approximation) ===
             half pcssOriginalAtten = atten; // 元の atten を保存（Blend 用）
@@ -546,6 +578,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Vertex Color Shadow Threshold =====
     #ifdef _VERTEX_COLOR_SHADOW
+    if (_VertexColorShadow >= 0.5)
     {
         // 頂点カラーR値で影閾値をオフセット（R=0.5がデフォルト）
         half vcOffset = (i.color.r - _VCShadowThreshold) + _VCShadowPush;
@@ -630,6 +663,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Procedural AO (Height-based) =====
     #ifdef _PROCEDURAL_AO
+    if (_ProceduralAO >= 0.5)
     {
         // オブジェクト空間Y座標からAOグラデーション生成
         float proceduralAO = smoothstep(0.0, max(_ProceduralAOSoftness, 0.01),
@@ -796,6 +830,7 @@ half4 frag(v2f i) : SV_Target
 
         // ===== Shadow Edge Noise (hand-drawn shadow boundaries) =====
         #ifdef _SHADOW_EDGE_NOISE
+        if (_ShadowEdgeNoise >= 0.5)
         {
             // Only apply noise near shadow boundaries (shadingValue 0.2-0.8)
             float edgeMask = 1.0 - saturate(abs(shadingValue - 0.5) * 4.0);
@@ -837,6 +872,7 @@ half4 frag(v2f i) : SV_Target
 
         // ===== Cast Shadow Color Control =====
         #ifdef _CAST_SHADOW_COLOR
+        if (_CastShadowColorEnable >= 0.5)
         {
             // Detect cast shadow: low attenuation but surface facing light
             float castShadowMask = saturate((1.0 - atten) * saturate(ndotl + 0.5));
@@ -1291,6 +1327,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Halftone Shadow (ForwardBase only) =====
     #if defined(_HALFTONE_SHADOW) && defined(UNITY_PASS_FORWARDBASE)
+    if (_HalftoneShadow >= 0.5)
     {
         // shadowFactor: 0=lit, 1=shadow
         float shadowArea = smoothstep(_HalftoneShadowThreshold + _HalftoneShadowSoftness,
@@ -1313,6 +1350,7 @@ half4 frag(v2f i) : SV_Target
     // ================================================================
 
     #if defined(_COLOR_QUANTIZE) && defined(UNITY_PASS_FORWARDBASE)
+    if (_UseColorQuantize >= 0.5)
     {
         half qMask = NATANE_SAMPLE_SHARED_R(_QuantizeMask, _MainTex, uv);
         half3 quantized;
@@ -1332,6 +1370,7 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     #if defined(_LUT_3D) && defined(UNITY_PASS_FORWARDBASE)
+    if (_UseLUT3D >= 0.5)
     {
         half3 lutColor = ApplyLUT3D(saturate(col.rgb), _LUT3DTex, _LUT3DSize);
         col.rgb = lerp(col.rgb, lutColor, _LUT3DIntensity * nprWeight);
@@ -1339,6 +1378,7 @@ half4 frag(v2f i) : SV_Target
     #endif
 
     #if defined(_HATCHING) && defined(UNITY_PASS_FORWARDBASE)
+    if (_UseHatching >= 0.5)
     {
         half hMask = NATANE_SAMPLE_SHARED_R(_HatchingMask, _MainTex, uv);
         // Use luminance of current color as proxy for shading value
@@ -1456,6 +1496,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Angel Ring (天使の輪, ForwardBase only) =====
     #if defined(_ANGEL_RING) && defined(UNITY_PASS_FORWARDBASE)
+    if (_AngelRing >= 0.5)
     {
         // MatCapベースUV: ビュー空間法線のY成分でリング位置を決定
         // X軸はミラーで反転するため NataneMirrorSign() で補正
@@ -1483,6 +1524,8 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Subsurface Scattering =====
     #if defined(_SSS) && defined(UNITY_PASS_FORWARDBASE)
+    if (_SSS >= 0.5)
+    {
         half thickness = NATANE_SAMPLE_SHARED_R(_ThicknessMap, _MainTex, uv) * _ThicknessScale;
         half transmissionMask = NATANE_SAMPLE_SHARED_R(_TransmissionMask, _MainTex, uv);
         transmissionMask = ApplySoftMask(transmissionMask);
@@ -1509,6 +1552,7 @@ half4 frag(v2f i) : SV_Target
             sssBlendFaded *= lerp(1.0, distanceFade, _SSSDistFade);
         #endif
         col.rgb = ApplyEffectBlendPost(preSSS, col.rgb, sssBlendFaded, _SSSBlendMode);
+    } // if (_SSS >= 0.5)
     #endif
 
     // ===== Rim Light Direction (pre-calculate for both Rim Light 1 & 2) =====
@@ -1518,6 +1562,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Rim Light =====
     #if defined(_RIM_LIGHT) && defined(UNITY_PASS_FORWARDBASE)
+    if (_RimLight >= 0.5)
         {
             float rimPowerBlurred = max(0.1, _RimPower * (1.0 - _RimBlur * 0.8));
             half rimSpreadPower = lerp(rimPowerBlurred, max(0.5, rimPowerBlurred * 0.3), _RimSpread);
@@ -1566,6 +1611,8 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Rim Light 2 =====
     #if defined(_RIM_LIGHT_2) && defined(UNITY_PASS_FORWARDBASE)
+    if (_RimLight2 >= 0.5)
+    {
         float rim2PowerBlurred = max(0.1, _RimPower2 * (1.0 - _Rim2Blur * 0.8));
         half rim2SpreadPower = lerp(rim2PowerBlurred, max(0.5, rim2PowerBlurred * 0.3), _RimSpread2);
 
@@ -1610,10 +1657,13 @@ half4 frag(v2f i) : SV_Target
             rim2BlendFaded *= lerp(1.0, distanceFade, _Rim2DistFade);
         #endif
         col.rgb = ApplyEffectBlendPost(preRim2, col.rgb, rim2BlendFaded, _RimBlendMode2);
+    } // if (_RimLight2 >= 0.5)
     #endif
 
     // ===== Offset Rim Light =====
     #if defined(_OFFSET_RIM_LIGHT) && defined(UNITY_PASS_FORWARDBASE)
+    if (_OffsetRimLight >= 0.5)
+    {
         float offsetRimPowerBlurred = max(0.1, _OffsetRimPower * (1.0 - _OffsetRimBlur * 0.8));
 
         // Offset rim uses lightDir for light direction linking
@@ -1640,10 +1690,12 @@ half4 frag(v2f i) : SV_Target
             offsetRimBlendFaded *= lerp(1.0, distanceFade, _OffsetRimDistFade);
         #endif
         col.rgb = ApplyEffectBlendPost(preOffsetRim, col.rgb, offsetRimBlendFaded, _OffsetRimBlendMode);
+    } // if (_OffsetRimLight >= 0.5)
     #endif
 
     // ===== Sheen (Fabric Luster, ForwardBase only) =====
     #if defined(_SHEEN) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Sheen >= 0.5)
     {
         half3 sheen = SheenHighlight(worldNormal, viewDir, lightDir);
         half sheenMask = NATANE_SAMPLE_CLAMP(_SheenMask, TRANSFORM_TEX(uv, _SheenMask)).r;
@@ -1661,6 +1713,8 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Environmental Rim =====
     #if defined(_ENV_RIM) && defined(UNITY_PASS_FORWARDBASE)
+    if (_EnvRim >= 0.5)
+    {
         float envRimPowerBlurred = max(0.1, _EnvRimPower * (1.0 - _EnvRimBlur * 0.8));
 
         // Fresnel + cubemap rim (same for both passes)
@@ -1692,6 +1746,7 @@ half4 frag(v2f i) : SV_Target
             envRimBlendFaded *= lerp(1.0, distanceFade, _EnvRimDistFade);
         #endif
         col.rgb = ApplyEffectBlendPost(preEnvRim, col.rgb, envRimBlendFaded, _EnvRimBlendMode);
+    } // if (_EnvRim >= 0.5)
     #endif
 
     // ===== MatCap (ForwardBase only) =====
@@ -1849,6 +1904,7 @@ half4 frag(v2f i) : SV_Target
             reflectionBlendFaded *= lerp(1.0, distanceFade, _ReflectionDistFade);
         #endif
         col.rgb = lerp(preReflection, col.rgb, reflectionBlendFaded);
+    } // if (_Reflection >= 0.5)
     #endif
 
     // ===== Clear Coat / Wetness Layer (ForwardBase only) =====
@@ -1912,6 +1968,8 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Refraction (ForwardBase only) =====
     #if defined(_REFRACTION) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Refraction >= 0.5)
+    {
         // Calculate screen UV from screen position
         float2 screenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
 
@@ -1942,10 +2000,13 @@ half4 frag(v2f i) : SV_Target
             refractionBlendFaded *= lerp(1.0, distanceFade, _RefractionDistFade);
         #endif
         col.rgb = ApplyEffectBlendPost(preRefraction, col.rgb, refractionBlendFaded, _RefractionBlendMode);
+    } // if (_Refraction >= 0.5)
     #endif
 
     // ===== Emission (ForwardBase only) =====
     #if defined(_EMISSION) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Emission >= 0.5)
+    {
         float2 emissionUV = uv;
 
         // Apply UV animation (scroll XY + rotation)
@@ -1989,19 +2050,24 @@ half4 frag(v2f i) : SV_Target
             emissionBlendFaded *= lerp(1.0, distanceFade, _EmissionDistFade);
         #endif
         col.rgb = ApplyEffectBlendPost(preEmission, col.rgb, emissionBlendFaded, _EmissionBlendMode);
+    } // if (_Emission >= 0.5)
     #endif
 
     // ===== Virtual Expression - Hue Shift =====
     // Optimized: removed branching (ApplyHueShift handles _HueShift=0 efficiently)
     #if defined(_HUE_SHIFT) && defined(UNITY_PASS_FORWARDBASE)
+    if (_HueShiftEnable >= 0.5)
+    {
         half3 preHue = col.rgb;
         float hueShiftBlurred = _HueShift * (1.0 - _HueShiftBlur * 0.7);
         col.rgb = ApplyHueShift(col.rgb, hueShiftBlurred);
         col.rgb = lerp(preHue, col.rgb, _HueShiftBlend);
+    }
     #endif
 
     // ===== AudioLink Integration (ForwardBase only) =====
     #if defined(_AUDIOLINK) && defined(UNITY_PASS_FORWARDBASE)
+    if (_AudioLink >= 0.5)
     {
         half3 preAL = col.rgb;
         // AudioLink Emission - modulate emission brightness with audio
@@ -2088,6 +2154,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== SMEAR EFFECT (スミア / 残像エフェクト) =====
     #ifdef _SMEAR
+    if (_Smear >= 0.5)
     {
         float smearStretch = i.smearStretchFactor;
 
@@ -2140,6 +2207,7 @@ half4 frag(v2f i) : SV_Target
     // ===== Water Drip Effect (ForwardBase only) =====
     #ifndef _QUEST_LITE
     #if defined(_WATER_DRIP) && defined(UNITY_PASS_FORWARDBASE)
+    if (_WaterDrip >= 0.5)
     {
         float2 dripMaskUV = AnimateUVIfNeeded(uv, _DripMaskScrollSpeed.xy, _DripMaskRotateSpeed);
         half dripMaskValue = NATANE_SAMPLE_REPEAT(_DripMask, dripMaskUV).r;
@@ -2166,6 +2234,7 @@ half4 frag(v2f i) : SV_Target
     // ===== Hologram Effect (ForwardBase only) =====
     #ifndef _QUEST_LITE
     #if defined(_HOLOGRAM) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Hologram >= 0.5)
     {
         half3 preHolo = col.rgb;
         half preHoloAlpha = col.a;
@@ -2221,6 +2290,7 @@ half4 frag(v2f i) : SV_Target
     // ===== Glitch Effect (ForwardBase only) =====
     #ifndef _QUEST_LITE
     #if defined(_GLITCH) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Glitch >= 0.5)
     {
         half3 preGlitch = col.rgb;
 
@@ -2269,6 +2339,8 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Decal System (ForwardBase only) =====
     #if defined(_DECAL) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Decal >= 0.5)
+    {
         float2 decalUV = CalculateDecalUV(uv, _DecalPosition.xy, _DecalRotation, _DecalScale);
         // Only apply within decal bounds (CalculateDecalUV returns -1,-1 if out of bounds)
         half decalInBounds = step(0.0, decalUV.x) * step(decalUV.x, 1.0) * step(0.0, decalUV.y) * step(decalUV.y, 1.0);
@@ -2292,10 +2364,13 @@ half4 frag(v2f i) : SV_Target
             #endif
             col.rgb = lerp(preDecal, col.rgb, decalBlendFaded);
         }
+    } // if (_Decal >= 0.5)
     #endif
 
     // ===== Virtual Expression - Dissolve =====
     #ifdef _DISSOLVE
+    if (_Dissolve >= 0.5)
+    {
         // Early exit if dissolve amount is 0 (no effect)
         if (_DissolveAmount > 0.0)
         {
@@ -2341,6 +2416,7 @@ half4 frag(v2f i) : SV_Target
             // Clip pixels based on dissolve amount and mask
             clip(dissolveAlpha + (1.0 - dissolveMaskValue));
         }
+    } // if (_Dissolve >= 0.5)
     #endif
 
     // ================================================================
@@ -2353,6 +2429,7 @@ half4 frag(v2f i) : SV_Target
         float2 illustScreenUV = i.pos.xy / _ScreenParams.xy;
 
         #ifdef _WATERCOLOR
+        if (_UseWatercolor >= 0.5)
         {
             half wcMask = NATANE_SAMPLE_REPEAT(_WCMask, TRANSFORM_TEX(uv, _WCMask)).r;
             half wcShading = dot(col.rgb, half3(0.299, 0.587, 0.114));
@@ -2363,6 +2440,7 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         #ifdef _SOFT_FILTER
+        if (_UseSoftFilter >= 0.5)
         {
             col.rgb = ApplySoftFilter(col.rgb, illustGrabUV, _SoftFilterRadius,
                 _SoftFilterBlend * nprWeight, _SoftFilterThreshold, _SoftFilterMode);
@@ -2370,12 +2448,14 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         #ifdef _KUWAHARA_FILTER
+        if (_UseKuwahara >= 0.5)
         {
             col.rgb = ApplyKuwaharaFilter(illustGrabUV, (int)_KuwaharaRadius, _KuwaharaBlend * nprWeight, col.rgb);
         }
         #endif
 
         #ifdef _SCREEN_EDGE
+        if (_UseScreenEdge >= 0.5)
         {
             half edgeValue = ApplyScreenEdge(illustScreenUV, _EdgeDepthSensitivity, _EdgeNormalSensitivity, _EdgeWidth);
             col.rgb = lerp(col.rgb, _EdgeColor.rgb, edgeValue * _EdgeBlend * nprWeight);
@@ -2383,12 +2463,14 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         #ifdef _COLOR_BLEEDING
+        if (_UseColorBleeding >= 0.5)
         {
             col.rgb = ApplyColorBleeding(col.rgb, illustGrabUV, _BleedingRadius, _BleedingBlend * nprWeight);
         }
         #endif
 
         #ifdef _CHROMATIC_ABERRATION
+        if (_UseChromaticAberration >= 0.5)
         {
             col.rgb = ApplyChromaticAberration(illustGrabUV, _CAIntensity, _CABlend * nprWeight, col.rgb);
         }
@@ -2399,12 +2481,16 @@ half4 frag(v2f i) : SV_Target
     // ===== Alpha Mask =====
     // Apply alpha mask for partial transparency control
     #ifdef _ALPHA_MASK
+    if (_UseAlphaMask >= 0.5)
+    {
         half alphaMask = NATANE_SAMPLE_SHARED_R(_AlphaMask, _MainTex, uv);
         col.a *= alphaMask;
+    }
     #endif
 
     // ===== Height Fade (Local Height-Based Transparency) =====
     #ifdef _HEIGHT_FADE
+    if (_HeightFade >= 0.5)
     {
         half heightFade = CalculateHeightFade(i.worldPos, _HeightFadeStart, _HeightFadeEnd,
             _HeightFadeAxis, _HeightFadeSpace, _HeightFadeInvert);
@@ -2439,6 +2525,7 @@ half4 frag(v2f i) : SV_Target
     // ===== Intersection Fade (Object Intersection Transparency) =====
     #ifndef _QUEST_LITE
     #ifdef _INTERSECTION_FADE
+    if (_IntersectionFade >= 0.5)
     {
         float2 intersectScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
         float sceneDepth = LinearEyeDepth(UNITY_SAMPLE_SCREENSPACE_TEXTURE(_CameraDepthTexture, intersectScreenUV).r);
@@ -2502,6 +2589,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Height Fog (Material-Based Fog) =====
     #ifdef _HEIGHT_FOG
+    if (_HeightFog >= 0.5)
     {
         float worldY = i.worldPos.y;
         float heightFactor = saturate((worldY - _HeightFogStart) / (_HeightFogEnd - _HeightFogStart + 0.001));
@@ -2514,6 +2602,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Depth-based Color Fade (Aerial Perspective per Material) =====
     #if defined(_DEPTH_COLOR_FADE)
+    if (_DepthColorFade >= 0.5)
     {
         float camDist = length(_WorldSpaceCameraPos - i.worldPos);
         float depthFactor = saturate((camDist - _DepthFadeStart) / max(_DepthFadeEnd - _DepthFadeStart, 0.001));
@@ -2536,13 +2625,19 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Hashed / Dithering Alpha =====
     #if defined(_HASHED_ALPHA)
-        float2 hashedScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
-        float2 hashedScreenPos = hashedScreenUV * _ScreenParams.xy;
-        clip(ApplyHashedAlpha(col.a, StabilizeDitherCoord(hashedScreenPos), i.worldPos.xz, _HashedAlphaScale));
+        if (_HashedAlpha >= 0.5)
+        {
+            float2 hashedScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
+            float2 hashedScreenPos = hashedScreenUV * _ScreenParams.xy;
+            clip(ApplyHashedAlpha(col.a, StabilizeDitherCoord(hashedScreenPos), i.worldPos.xz, _HashedAlphaScale));
+        }
     #elif defined(_DITHERING_ALPHA)
-        float2 ditherScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
-        float2 ditherScreenPos = ditherScreenUV * _ScreenParams.xy;
-        clip(ApplyDitheringAlpha(col.a, StabilizeDitherCoord(ditherScreenPos), max(_DitheringAlphaScale, 1.0)));
+        if (_DitheringAlpha >= 0.5)
+        {
+            float2 ditherScreenUV = i.screenPos.xy / max(i.screenPos.w, 0.0001);
+            float2 ditherScreenPos = ditherScreenUV * _ScreenParams.xy;
+            clip(ApplyDitheringAlpha(col.a, StabilizeDitherCoord(ditherScreenPos), max(_DitheringAlphaScale, 1.0)));
+        }
     #endif
 
     // ===== Fog =====
