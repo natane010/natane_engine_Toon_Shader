@@ -14,13 +14,13 @@ namespace NataneToon.Editor
         public const string HelpWindow = "Tools/Natane/ヘルプ Help _h";
 
         public const string MaterialValidator = "Tools/Natane/マテリアル Material/マテリアル検証 Material Validator _m";
-        public const string MaterialEditor = "Tools/Natane/Material/統合マテリアルエディタ Unified Material Editor";
+        public const string MaterialEditor = "Tools/Natane/マテリアル Material/統合マテリアルエディタ Unified Material Editor";
         public const string MaterialPreview = "Tools/Natane/マテリアル Material/マテリアルプレビュー Material Preview";
         public const string MaterialComparison = "Tools/Natane/マテリアル Material/マテリアル比較 Material Comparison Tool";
         public const string MakeupLayerManager = "Tools/Natane/マテリアル Material/メイクアップレイヤー管理 Makeup Layer Manager";
         public const string HierarchyBatchEditor = "Tools/Natane/マテリアル Material/ヒエラルキー一括編集 Hierarchy Batch Editor";
 
-        public const string MaterialPresetBrowser = "Tools/Natane/Presets/マテリアルプリセットブラウザ Material Preset Browser _p";
+        public const string MaterialPresetBrowser = "Tools/Natane/プリセット Presets/マテリアルプリセットブラウザ Material Preset Browser _p";
         public const string ColorPaletteManager = "Tools/Natane/プリセット Presets/カラーパレット管理 Color Palette Manager";
         public const string GenerateDefaultPresets = "Tools/Natane/プリセット Presets/デフォルトプリセット生成 Generate Default Presets";
         public const string RegenerateAllPresets = "Tools/Natane/プリセット Presets/全プリセット再生成 Regenerate All Presets";
@@ -35,21 +35,31 @@ namespace NataneToon.Editor
         public const string TextureOptimizer = "Tools/Natane/最適化 Optimization/テクスチャ最適化 Texture Optimizer";
         public const string OutlineOptimizer = "Tools/Natane/最適化 Optimization/アウトライン最適化 Outline Optimizer";
         public const string RefractionQualityBalancer = "Tools/Natane/最適化 Optimization/屈折品質バランサー Refraction Quality Balancer";
-        public const string AssetReferenceChecker = "Tools/Natane/Optimization/アセット参照チェッカー Asset Reference Checker";
+        public const string AssetReferenceChecker = "Tools/Natane/最適化 Optimization/アセット参照チェッカー Asset Reference Checker";
 
-        public const string LilToonMigration = "Tools/Natane/Migration/lilToon Migration Tool";
-        public const string BatchMaterialConverter = "Tools/Natane/Migration/一括マテリアル変換 Batch Material Converter";
+        public const string LilToonMigration = "Tools/Natane/移行 Migration/lilToon Migration Tool";
+        public const string BatchMaterialConverter = "Tools/Natane/移行 Migration/一括マテリアル変換 Batch Material Converter";
         public const string PrefabVariantConverter = "Tools/Natane/移行 Migration/プレハブバリアント変換 Prefab Variant Converter";
 
-        public const string ShaderVariantCollector = "Tools/Natane/Shader/シェーダーバリアント収集 Shader Variant Collector";
-        public const string ShaderPrewarming = "Tools/Natane/Shader/シェーダープリウォーム Shader Prewarming/設定 Settings";
-        public const string ShaderVariantStripper = "Tools/Natane/Shader/バリアントストリッピング設定 Variant Stripping Settings";
+        public const string ShaderVariantCollector = "Tools/Natane/シェーダー Shader/シェーダーバリアント収集 Shader Variant Collector";
+        public const string ShaderPrewarming = "Tools/Natane/シェーダー Shader/シェーダープリウォーム Shader Prewarming/設定 Settings";
+        public const string ShaderVariantStripper = "Tools/Natane/シェーダー Shader/バリアントストリッピング設定 Variant Stripping Settings";
         public const string VRCLightVolumesHelper = "Tools/Natane/VRChat/VRCライトボリュームヘルパー VRC Light Volumes Helper";
 
         public const string SmoothNormalBaker = "Tools/Natane/メッシュ Mesh/スムース法線ベイク Smooth Normal Baker";
 
         public const string UVTextureGenerator = "Tools/Natane/UVテクスチャ生成 UV Texture Generator";
         public const string ParticleEffectEditor = "Tools/Natane/パーティクルエフェクトエディタ Particle Effect Editor";
+
+        // ===== Consolidated Windows =====
+        public const string MaterialAnalysis = "Tools/Natane/マテリアル Material/マテリアル分析 Material Analysis";
+        public const string EffectStudio = "Tools/Natane/エフェクト Effects/エフェクトスタジオ Effect Studio";
+        public const string OptimizationHub = "Tools/Natane/最適化 Optimization/最適化ハブ Optimization Hub";
+        public const string ShaderBuildManager = "Tools/Natane/シェーダー Shader/ビルド管理 Build Manager";
+        public const string MigrationHub = "Tools/Natane/移行 Migration/マイグレーションハブ Migration Hub";
+        public const string TextureTools = "Tools/Natane/テクスチャ Texture/テクスチャツール Texture Tools";
+        public const string PresetManager = "Tools/Natane/プリセット Presets/プリセット管理 Preset Manager";
+        public const string VRChatIntegration = "Tools/Natane/VRChat/VRChat統合 VRChat Integration";
 
         // Not an actual Unity menu path. Used by launchers for direct tab open.
         public const string HelpToolTab = "__NATANE_HELP_TOOL_TAB__";
@@ -105,6 +115,16 @@ namespace NataneToon.Editor
             // --- Generator / Other ---
             { "UVTextureGenerator", UVTextureGenerator },
             { "ParticleEffectEditor", ParticleEffectEditor },
+
+            // --- Consolidated Windows ---
+            { "MaterialAnalysis", MaterialAnalysis },
+            { "EffectStudio", EffectStudio },
+            { "OptimizationHub", OptimizationHub },
+            { "ShaderBuildManager", ShaderBuildManager },
+            { "MigrationHub", MigrationHub },
+            { "TextureTools", TextureTools },
+            { "PresetManager", PresetManager },
+            { "VRChatIntegration", VRChatIntegration },
         };
 
         private static readonly Dictionary<string, string> LegacyPathAliases = new Dictionary<string, string>
@@ -124,7 +144,38 @@ namespace NataneToon.Editor
             { "Tools/Natane/MatCap Layer Composer", MatCapLayerComposer },
             { "Tools/Natane/Performance Budget Tool", PerformanceBudgetTool },
             { "Tools/Natane/VRC Light Volumes Helper", VRCLightVolumesHelper },
-            { "Tools/Natane/Prefab Variant Converter", PrefabVariantConverter }
+            { "Tools/Natane/Prefab Variant Converter", PrefabVariantConverter },
+
+            // H-7: 旧個別ツール → 統合ウィンドウへのリダイレクト
+            { ShadowAdjustmentWizard, EffectStudio },
+            { MatCapLayerComposer, EffectStudio },
+            { DissolvePatternGenerator, EffectStudio },
+            { RimLightDirectionVisualizer, EffectStudio },
+            { PerformanceBudgetTool, MaterialAnalysis },
+            { TextureOptimizer, OptimizationHub },
+            { OutlineOptimizer, OptimizationHub },
+            { RefractionQualityBalancer, OptimizationHub },
+            { AssetReferenceChecker, MaterialAnalysis },
+            { ColorPaletteManager, PresetManager },
+            { GenerateDefaultPresets, PresetManager },
+            { ShaderVariantCollector, ShaderBuildManager },
+            { ShaderPrewarming, ShaderBuildManager },
+            { ShaderVariantStripper, ShaderBuildManager },
+            { VRCLightVolumesHelper, VRChatIntegration },
+            { SmoothNormalBaker, TextureTools },
+            { UVTextureGenerator, TextureTools },
+            { BatchMaterialConverter, MigrationHub },
+            { PrefabVariantConverter, MigrationHub },
+
+            // H-8: 旧書式パスの後方互換性
+            { "Tools/Natane/Material/統合マテリアルエディタ Unified Material Editor", MaterialEditor },
+            { "Tools/Natane/Presets/マテリアルプリセットブラウザ Material Preset Browser _p", MaterialPresetBrowser },
+            { "Tools/Natane/Optimization/アセット参照チェッカー Asset Reference Checker", AssetReferenceChecker },
+            { "Tools/Natane/Migration/lilToon Migration Tool", LilToonMigration },
+            { "Tools/Natane/Migration/一括マテリアル変換 Batch Material Converter", BatchMaterialConverter },
+            { "Tools/Natane/Shader/シェーダーバリアント収集 Shader Variant Collector", ShaderVariantCollector },
+            { "Tools/Natane/Shader/シェーダープリウォーム Shader Prewarming/設定 Settings", ShaderPrewarming },
+            { "Tools/Natane/Shader/バリアントストリッピング設定 Variant Stripping Settings", ShaderVariantStripper },
         };
 
         public static bool TryOpenByToolKey(string toolKey)
@@ -206,6 +257,9 @@ namespace NataneToon.Editor
                 ShaderVariantCollector, ShaderPrewarming, ShaderVariantStripper, VRCLightVolumesHelper,
                 SmoothNormalBaker,
                 UVTextureGenerator, ParticleEffectEditor,
+                // Consolidated Windows
+                MaterialAnalysis, EffectStudio, OptimizationHub, ShaderBuildManager,
+                MigrationHub, TextureTools, PresetManager, VRChatIntegration,
             };
             return paths;
         }

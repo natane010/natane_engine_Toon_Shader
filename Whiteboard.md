@@ -1229,3 +1229,35 @@ Phase 5: 蜈ｨ繝舌Μ繧｢繝ｳ繝・(.shader) 縺ｮ繧ｳ繝ｳ繝代う�
 - Expected outcome:
   - migrated materials switched to `Natane仕様` should separate left/right point-light colors much closer to native Natane materials
   - only the region where red and blue overlap should trend purple instead of the full body washing purple
+
+## 2026-03-13 deeper investigation: migrated material still not matching native Natane point lights
+
+- User reported the previous fix still does not fully resolve the issue.
+- Additional code review suggests the problem is not only `_PIXEL_VERTEX_LIGHTS` state.
+- Current strongest findings:
+  - Inspector/migration side
+    - `Natane仕様` switching now restores `_UsePixelVertexLights / _PIXEL_VERTEX_LIGHTS`, but migrated materials still retain lilToon-derived light behavior payloads such as `_LightColorMin`, `_LightColorMax`, `_MonochromeLighting`, `_STAsUnlit`, `_STShadowEnvStrength`
+    - `ExactCompatibility` keeps `_STANDARD_TOON` on by design, and even non-exact migrated materials still start from a light setup mapped from lilToon rather than a clean Natane lighting preset
+  - Shader side
+    - in point-light-only scenes with no directional light, `ForwardBase` selects a fallback "primary" point light via `GetBrightestVertexLightIndex(...)`
+    - that selection is attenuation/luminance-based only and does not consider surface facing (`NdotL`), so a nearby red or blue light can become the whole-surface base tint candidate
+    - `_STANDARD_TOON` path colors both `stDirectCol` and `stIndirectCol` with `stLightColor`, which means colored point lights can tint shadowed regions across wide areas much more aggressively than native Natane's non-`_STANDARD_TOON` path
+    - `ForwardAdd` StandardToon path also applies `_LightColor0.rgb` directly instead of going through Natane's `LightColorInfluence` handling
+- Working hypothesis:
+  - the persisted purple wash is a combination of
+    - fallback primary-light selection that is not facing-aware
+    - StandardToon's whole-body light-color tint model
+    - migrated materials carrying lilToon-derived light parameters even after switching to `Natane仕様`
+- Recommended fix plan:
+  - 1. Separate "shading workflow" and "lighting workflow" more explicitly for migrated materials
+    - `Natane仕様` should restore a Natane lighting preset, not only disable `_STANDARD_TOON`
+    - candidate reset set: `_LightColorMin`, `_LightColorMax`, `_MonochromeLighting`, `_STAsUnlit`, `_ShadowEnvStrength`, `_UsePixelVertexLights`
+  - 2. Make the point-light fallback main-light selection facing-aware
+    - update `GetBrightestVertexLightIndex(...)` or add a new variant that scores lights by attenuated contribution including `max(0, NdotL)` instead of pure attenuated luminance
+  - 3. Reduce whole-body tinting in the StandardToon additional-light path
+    - review whether non-exact migrated usage should continue to use the current StandardToon composition at all
+    - if kept, make additional light color handling closer to the Natane path or limit full-shadow tint carryover
+  - 4. Validate with an explicit repro scene
+    - no directional light
+    - left red point light / right blue point light
+    - compare native Natane material, migrated `ExactCompatibility`, migrated `VisualMatch`, and the same migrated material after switching to `Natane仕様`

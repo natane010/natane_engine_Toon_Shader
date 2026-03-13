@@ -479,6 +479,16 @@ public class NataneToonShaderGUI : ShaderGUI
             DrawDependencyInspectorWarnings();
             DrawSamplerBudgetInspectorWarning();
             NataneToonShaderGUIUtility.DrawCompactPerformanceSummary(targetMaterial, GetCurrentSamplerBudgetEstimate());
+
+            // ===== Multi-material editing indicator =====
+            if (materialEditor.targets != null && materialEditor.targets.Length > 1)
+            {
+                EditorGUILayout.HelpBox(
+                    L($"{materialEditor.targets.Length} 個のマテリアルを同時編集中です。混在する値は「-」で表示されます。",
+                      $"Editing {materialEditor.targets.Length} materials simultaneously. Mixed values are shown as '-'."),
+                    MessageType.Info);
+            }
+
             EditorGUILayout.Space(SECTION_SPACING);
 
             // ===== Tab Navigation =====
@@ -880,6 +890,12 @@ public class NataneToonShaderGUI : ShaderGUI
         SetFoldout("MakeupTextures", DrawBoxedSection(L("追加テクスチャ (2nd-5th)", "Additional Textures (2nd-5th)"), GetFoldout("MakeupTextures"), SectionCategory.Basic));
         if (GetFoldout("MakeupTextures"))
         {
+            if (targetMaterial != null)
+            {
+                NataneToonShaderGUIUtility.DrawOpenInStudioButton(
+                    "→ レイヤースタジオで開く", "→ Open in Layer Studio",
+                    () => NataneToolBridge.OpenConsolidatedWindow(NataneToolMenuPaths.EffectStudio, 4, targetMaterial));
+            }
             EditorGUILayout.BeginHorizontal();
             string[] layerNames = { "2nd", "3rd", "4th", "5th" };
             string[] layerKeywords = { "_2ND_TEXTURE", "_3RD_TEXTURE", "_4TH_TEXTURE", "_5TH_TEXTURE" };
@@ -994,6 +1010,12 @@ public class NataneToonShaderGUI : ShaderGUI
         SetFoldout("Shading", DrawBoxedSection(L("Toon Shading", "Toon Shading"), GetFoldout("Shading"), SectionCategory.Shading));
         if (GetFoldout("Shading"))
         {
+            if (targetMaterial != null)
+            {
+                NataneToonShaderGUIUtility.DrawOpenInStudioButton(
+                    "→ シャドウスタジオで開く", "→ Open in Shadow Studio",
+                    () => NataneToolBridge.OpenConsolidatedWindow(NataneToolMenuPaths.EffectStudio, 0, targetMaterial));
+            }
             DrawLilToonMigrationCardIfNeeded();
 
             if (IsLilToonMigratedMaterial(targetMaterial))
@@ -2063,6 +2085,12 @@ public class NataneToonShaderGUI : ShaderGUI
         SetFoldout("LightVolume", DrawBoxedSection(L("VRC ライトボリューム", "VRC Light Volumes"), GetFoldout("LightVolume"), SectionCategory.Lighting, "_USE_LIGHT_VOLUME"));
         if (GetFoldout("LightVolume"))
         {
+            if (targetMaterial != null)
+            {
+                NataneToonShaderGUIUtility.DrawOpenInStudioButton(
+                    "→ VRChat統合で開く", "→ Open VRChat Integration",
+                    () => NataneToolBridge.OpenConsolidatedWindow(NataneToolMenuPaths.VRChatIntegration, 0, targetMaterial));
+            }
             bool packageInstalled = IsVRCLightVolumesPackageInstalled();
             if (packageInstalled)
             {
@@ -2397,6 +2425,12 @@ public class NataneToonShaderGUI : ShaderGUI
         SetFoldout("RimLight", DrawBoxedSection(L("リムライト（輪郭光）", "Rim Light (Edge Light)"), GetFoldout("RimLight"), SectionCategory.Effects, "_RIM_LIGHT"));
         if (GetFoldout("RimLight"))
         {
+            if (targetMaterial != null)
+            {
+                NataneToonShaderGUIUtility.DrawOpenInStudioButton(
+                    "→ リムライトスタジオで開く", "→ Open in RimLight Studio",
+                    () => NataneToolBridge.OpenConsolidatedWindow(NataneToolMenuPaths.EffectStudio, 2, targetMaterial));
+            }
 
             bool enableRimLight = DrawToggle("_RIM_LIGHT", "_RimLight", L("リムライトを有効化", "Enable Rim Light"));
 
@@ -2693,6 +2727,12 @@ public class NataneToonShaderGUI : ShaderGUI
         SetFoldout("MatCap", DrawBoxedSection(L("マットキャップ（MatCap）", "MatCap"), GetFoldout("MatCap"), SectionCategory.Effects, "_MATCAP"));
         if (GetFoldout("MatCap"))
         {
+            if (targetMaterial != null)
+            {
+                NataneToonShaderGUIUtility.DrawOpenInStudioButton(
+                    "→ MatCapスタジオで開く", "→ Open in MatCap Studio",
+                    () => NataneToolBridge.OpenConsolidatedWindow(NataneToolMenuPaths.EffectStudio, 1, targetMaterial));
+            }
 
             bool enableMatCap = DrawToggle("_MATCAP", "_MatCap", L("MatCapを有効化", "Enable MatCap"));
 
@@ -4159,6 +4199,12 @@ public class NataneToonShaderGUI : ShaderGUI
         SetFoldout("Outline", DrawBoxedSection(L("アウトライン（輪郭線）", "Outline (Contour)"), GetFoldout("Outline"), SectionCategory.Effects, "_OUTLINE"));
         if (GetFoldout("Outline"))
         {
+            if (targetMaterial != null)
+            {
+                NataneToonShaderGUIUtility.DrawOpenInStudioButton(
+                    "→ アウトライン最適化で開く", "→ Open Outline Optimizer",
+                    () => NataneToolBridge.OpenConsolidatedWindow(NataneToolMenuPaths.OptimizationHub, 1, targetMaterial));
+            }
 
             bool enableOutline = DrawToggle("_OUTLINE", "_Outline", L("アウトラインを有効化", "Enable Outline"));
 
@@ -4474,6 +4520,12 @@ public class NataneToonShaderGUI : ShaderGUI
         SetFoldout("VirtualExpression", DrawBoxedSection(L("バーチャル表現", "Virtual Expression"), GetFoldout("VirtualExpression"), SectionCategory.Effects));
         if (GetFoldout("VirtualExpression"))
         {
+            if (targetMaterial != null)
+            {
+                NataneToonShaderGUIUtility.DrawOpenInStudioButton(
+                    "→ ディゾルブスタジオで開く", "→ Open in Dissolve Studio",
+                    () => NataneToolBridge.OpenConsolidatedWindow(NataneToolMenuPaths.EffectStudio, 3, targetMaterial));
+            }
 
             // Dissolve Effect
             bool enableDissolve = DrawToggle("_DISSOLVE", "_Dissolve", L("ディゾルブを有効化", "Enable Dissolve"));
@@ -4591,6 +4643,9 @@ public class NataneToonShaderGUI : ShaderGUI
         SetFoldout("NormalMap", DrawBoxedSection(L("ノーマルマップ", "Normal Map"), GetFoldout("NormalMap"), SectionCategory.Advanced, "_NORMALMAP"));
         if (GetFoldout("NormalMap"))
         {
+            NataneToonShaderGUIUtility.DrawOpenInStudioButton(
+                "→ 法線ベイクツールで開く", "→ Open Normal Baker",
+                () => NataneToolBridge.OpenConsolidatedWindow(NataneToolMenuPaths.TextureTools, 0, null));
             bool useNormalMap = DrawToggle("_NORMALMAP", "_UseNormalMap", L("ノーマルマップを使用", "Use Normal Map"));
 
             if (useNormalMap)
@@ -5080,6 +5135,12 @@ public class NataneToonShaderGUI : ShaderGUI
         SetFoldout("Refraction", DrawBoxedSection(L("屈折（リフラクション）", "Refraction"), GetFoldout("Refraction"), SectionCategory.Environment, "_REFRACTION"));
         if (GetFoldout("Refraction"))
         {
+            if (targetMaterial != null)
+            {
+                NataneToonShaderGUIUtility.DrawOpenInStudioButton(
+                    "→ 屈折最適化で開く", "→ Open Refraction Optimizer",
+                    () => NataneToolBridge.OpenConsolidatedWindow(NataneToolMenuPaths.OptimizationHub, 2, targetMaterial));
+            }
             bool enableRefraction = DrawToggle("_REFRACTION", "_Refraction", L("屈折を有効化", "Enable Refraction"));
 
             if (enableRefraction)
@@ -7180,6 +7241,12 @@ public class NataneToonShaderGUI : ShaderGUI
         SetFoldout("Presets", DrawBoxedSection(L("マテリアルプリセット＆共有", "Material Presets & Sharing"), GetFoldout("Presets"), SectionCategory.Basic));
         if (GetFoldout("Presets"))
         {
+            if (targetMaterial != null)
+            {
+                NataneToonShaderGUIUtility.DrawOpenInStudioButton(
+                    "→ プリセット管理で開く", "→ Open Preset Manager",
+                    () => NataneToolBridge.OpenConsolidatedWindow(NataneToolMenuPaths.PresetManager, 0, targetMaterial));
+            }
             NataneToonShaderGUIUtility.DrawMaterialActionsToolbar(targetMaterial, materialEditor);
         }
         EndBoxedSection(GetFoldout("Presets"));
@@ -7311,6 +7378,12 @@ public class NataneToonShaderGUI : ShaderGUI
         SetFoldout("Performance", DrawBoxedSection(L("パフォーマンス", "Performance"), GetFoldout("Performance"), SectionCategory.Basic));
         if (GetFoldout("Performance"))
         {
+            if (targetMaterial != null)
+            {
+                NataneToonShaderGUIUtility.DrawOpenInStudioButton(
+                    "→ マテリアル分析で開く", "→ Open Material Analysis",
+                    () => NataneToolBridge.OpenConsolidatedWindow(NataneToolMenuPaths.MaterialAnalysis, 0, targetMaterial));
+            }
             NataneToonShaderGUIUtility.DrawPerformanceIndicatorWithSamplerBudget(targetMaterial, GetCurrentSamplerBudgetEstimate());
 
             DrawHelpToggle("PerformanceHint",
@@ -7438,6 +7511,12 @@ public class NataneToonShaderGUI : ShaderGUI
     /// </summary>
     private void DrawBasicTab()
     {
+        DrawExpandCollapseButtons((state) => {
+            SetFoldout("MainTexture", state); SetFoldout("MakeupTextures", state);
+            SetFoldout("ScreenTone", state); SetFoldout("HalftoneShadow", state);
+            SetFoldout("ShadowEdgeNoise", state); SetFoldout("GradientBaseColor", state);
+            SetFoldout("Shading", state);
+        });
         SafeDrawSection(DrawQuickSetupSection, L("クイックセットアップ", "Quick Setup")); // 3.2 Quick Setup
         EditorGUILayout.Space(SECTION_SPACING);
 

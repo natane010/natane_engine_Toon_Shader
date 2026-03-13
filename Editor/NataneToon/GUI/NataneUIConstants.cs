@@ -27,5 +27,15 @@ namespace NataneToon.Editor
 
         // ===== Padding =====
         public const float INDENT_STANDARD = 15f;
+
+        // ===== Tab Bar =====
+        public const float TAB_BAR_HEIGHT = 28f;
+        public const float TAB_BUTTON_MIN_WIDTH = 80f;
+        public const float TAB_BUTTON_PADDING = 4f;
+        public const float MATERIAL_FIELD_HEIGHT = 22f;
+
+        // ===== Tab Active Indicator (H-5) =====
+        public const float TAB_INDICATOR_HEIGHT = 2f;
+        public static readonly Color TAB_ACTIVE_INDICATOR_COLOR = new Color(0.3f, 0.6f, 1f, 1f);
     }
 }

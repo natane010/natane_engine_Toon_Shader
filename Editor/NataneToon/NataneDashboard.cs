@@ -138,6 +138,16 @@ namespace NataneToon.Editor
             AddTool("シェーダープリウォーミング", "Shader Prewarming", "ビルド前のシェーダーウォーミングで VRChat 初回フリーズを防ぎます。", "Warm shaders before build to reduce first-load stalls in VRChat.", NataneToolMenuPaths.ShaderPrewarming, ToolCategory.Performance, "🔥");
             AddTool("VRCライトボリュームヘルパー", "VRC Light Volumes Helper", "VRChat Light Volumes のセットアップを支援します。", "Assist with VRC Light Volumes setup.", NataneToolMenuPaths.VRCLightVolumesHelper, ToolCategory.Performance, "💡");
 
+            // Consolidated Windows (統合ウィンドウ)
+            AddTool("マテリアル分析", "Material Analysis", "マテリアル検証・パフォーマンス・比較・参照チェックを統合したウィンドウです。", "Unified window for material validation, performance, comparison, and reference checks.", NataneToolMenuPaths.MaterialAnalysis, ToolCategory.Material, "📋");
+            AddTool("エフェクトスタジオ", "Effect Studio", "シャドウ・MatCap・リムライト・ディゾルブ・レイヤー管理を統合したウィンドウです。", "Unified window for shadow, MatCap, rim light, dissolve, and layer management.", NataneToolMenuPaths.EffectStudio, ToolCategory.Advanced, "🎬");
+            AddTool("最適化ハブ", "Optimization Hub", "テクスチャ・アウトライン・屈折の最適化を統合したウィンドウです。", "Unified window for texture, outline, and refraction optimization.", NataneToolMenuPaths.OptimizationHub, ToolCategory.Performance, "⚙");
+            AddTool("シェーダービルド管理", "Shader Build Manager", "バリアント収集・プリウォーミング・ストリッピングを統合したウィンドウです。", "Unified window for variant collection, prewarming, and stripping.", NataneToolMenuPaths.ShaderBuildManager, ToolCategory.Performance, "🔨");
+            AddTool("マイグレーションハブ", "Migration Hub", "lilToon移行・一括変換・Prefab変換を統合したウィンドウです。", "Unified window for lilToon migration, batch conversion, and prefab conversion.", NataneToolMenuPaths.MigrationHub, ToolCategory.Migration, "🔄");
+            AddTool("テクスチャツール", "Texture Tools", "法線ベイク・UVテクスチャ生成・マスクパックを統合したウィンドウです。", "Unified window for normal baking, UV texture generation, and mask packing.", NataneToolMenuPaths.TextureTools, ToolCategory.Advanced, "🖌");
+            AddTool("プリセット管理", "Preset Manager", "プリセットブラウザ・カラーパレット・プリセット生成を統合したウィンドウです。", "Unified window for preset browsing, color palettes, and preset generation.", NataneToolMenuPaths.PresetManager, ToolCategory.Presets, "📦");
+            AddTool("VRChat統合", "VRChat Integration", "Light Volumes・パッケージ設定・自動検出を統合したウィンドウです。", "Unified window for Light Volumes, package setup, and auto-detection.", NataneToolMenuPaths.VRChatIntegration, ToolCategory.Performance, "🌐");
+
             // Help & Documentation
             AddTool("ツールヘルプ", "Tool Help", "全ツールの使い方と説明を確認します。", "Browse usage guides and explanations for every tool.", NataneToolMenuPaths.HelpToolTab, ToolCategory.Help, "❓");
             AddTool("統合ヘルプ", "Interactive Help", "インタラクティブな統合ヘルプシステムを開きます。", "Open the unified interactive help system.", NataneToolMenuPaths.HelpWindow, ToolCategory.Help, "📚");

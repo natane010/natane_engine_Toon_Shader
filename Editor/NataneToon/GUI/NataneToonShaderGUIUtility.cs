@@ -202,7 +202,7 @@ namespace NataneToon.Editor
 
             // Determine colors based on theme
             bool isDark = EditorGUIUtility.isProSkin;
-            Color lineColor = isDark ? new Color(0.5f, 0.5f, 0.5f, 0.4f) : new Color(0.3f, 0.3f, 0.3f, 0.3f);
+            Color lineColor = isDark ? new Color(0.5f, 0.5f, 0.5f, 0.6f) : new Color(0.3f, 0.3f, 0.3f, 0.5f);
             Color textColor = isDark ? new Color(0.6f, 0.6f, 0.6f, 0.8f) : new Color(0.4f, 0.4f, 0.4f, 0.8f);
 
             // Measure text width
@@ -210,7 +210,7 @@ namespace NataneToon.Editor
             {
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = textColor },
-                fontSize = 10
+                fontSize = 12
             };
             GUIContent content = new GUIContent(label);
             float textWidth = labelStyle.CalcSize(content).x + 16; // padding
@@ -333,10 +333,10 @@ namespace NataneToon.Editor
                 EditorGUIUtility.PingObject(preset);
 
                 EditorUtility.DisplayDialog(
-                    "Preset Created",
-                    $"Created preset '{preset.presetName}' from material '{material.name}'\n\n" +
-                    "You can now share this preset file with others!",
-                    "OK");
+                    L("プリセット作成完了", "Preset Created"),
+                    L($"マテリアル '{material.name}' からプリセット '{preset.presetName}' を作成しました。\n\nこのプリセットファイルを他のユーザーと共有できます！",
+                      $"Created preset '{preset.presetName}' from material '{material.name}'\n\nYou can now share this preset file with others!"),
+                    L("OK", "OK"));
             }
         }
 
@@ -361,10 +361,10 @@ namespace NataneToon.Editor
                 if (!string.IsNullOrEmpty(result))
                 {
                     EditorUtility.DisplayDialog(
-                        "Export Successful",
-                        $"Material parameters exported to:\n{result}\n\n" +
-                        "Share this file with others to transfer settings!",
-                        "OK");
+                        L("エクスポート完了", "Export Successful"),
+                        L($"マテリアルパラメータをエクスポートしました:\n{result}\n\nこのファイルを共有して設定を転送できます！",
+                          $"Material parameters exported to:\n{result}\n\nShare this file with others to transfer settings!"),
+                        L("OK", "OK"));
                 }
             }
         }
@@ -378,10 +378,10 @@ namespace NataneToon.Editor
             if (success)
             {
                 EditorUtility.DisplayDialog(
-                    "Copied to Clipboard",
-                    $"Material '{material.name}' parameters copied to clipboard.\n\n" +
-                    "You can now paste these parameters to another material or share with others.",
-                    "OK");
+                    L("クリップボードにコピー完了", "Copied to Clipboard"),
+                    L($"マテリアル '{material.name}' のパラメータをクリップボードにコピーしました。\n\n他のマテリアルに貼り付けたり、共有したりできます。",
+                      $"Material '{material.name}' parameters copied to clipboard.\n\nYou can now paste these parameters to another material or share with others."),
+                    L("OK", "OK"));
             }
         }
 
@@ -392,15 +392,21 @@ namespace NataneToon.Editor
         {
             var info = MaterialParameterShareSystem.GetClipboardInfo();
             bool proceed = EditorUtility.DisplayDialog(
-                "Paste Material Parameters",
-                $"Paste parameters from:\n\n" +
-                $"Material: {info.materialName}\n" +
-                $"Exported by: {info.exportedBy}\n" +
-                $"Export date: {info.exportDate}\n" +
-                $"Notes: {info.notes}\n\n" +
-                $"This will overwrite current settings of '{material.name}'",
-                "Paste",
-                "Cancel");
+                L("マテリアルパラメータの貼り付け", "Paste Material Parameters"),
+                L($"以下のパラメータを貼り付けます:\n\n" +
+                  $"マテリアル: {info.materialName}\n" +
+                  $"エクスポート元: {info.exportedBy}\n" +
+                  $"エクスポート日: {info.exportDate}\n" +
+                  $"メモ: {info.notes}\n\n" +
+                  $"'{material.name}' の現在の設定が上書きされます",
+                  $"Paste parameters from:\n\n" +
+                  $"Material: {info.materialName}\n" +
+                  $"Exported by: {info.exportedBy}\n" +
+                  $"Export date: {info.exportDate}\n" +
+                  $"Notes: {info.notes}\n\n" +
+                  $"This will overwrite current settings of '{material.name}'"),
+                L("貼り付け", "Paste"),
+                L("キャンセル", "Cancel"));
 
             if (proceed)
             {
@@ -411,9 +417,10 @@ namespace NataneToon.Editor
                 {
                     EditorUtility.SetDirty(material);
                     EditorUtility.DisplayDialog(
-                        "Paste Successful",
-                        $"Material parameters pasted to '{material.name}'",
-                        "OK");
+                        L("貼り付け完了", "Paste Successful"),
+                        L($"マテリアルパラメータを '{material.name}' に貼り付けました",
+                          $"Material parameters pasted to '{material.name}'"),
+                        L("OK", "OK"));
                 }
             }
         }
@@ -494,6 +501,10 @@ namespace NataneToon.Editor
             GUI.color = oldColor;
 
             EditorGUILayout.EndHorizontal();
+            // Color-independent text label for accessibility (WCAG)
+            EditorGUILayout.LabelField(
+                $"{L("評価ランク", "Rating")}: {GetRatingLetter(activeFeatures)}",
+                EditorStyles.miniLabel);
             EditorGUILayout.LabelField(
                 $"{L("Active Features", "Active Features")}: {activeFeatures}",
                 EditorStyles.miniLabel);
@@ -553,10 +564,18 @@ namespace NataneToon.Editor
 
         private static string GetPerformanceRating(int featureCount)
         {
-            if (featureCount <= 3) return L("Excellent (A)", "Excellent (A)");
-            if (featureCount <= 6) return L("Good (B)", "Good (B)");
-            if (featureCount <= 9) return L("Fair (C)", "Fair (C)");
-            return L("Heavy (D)", "Heavy (D)");
+            if (featureCount <= 3) return L("\u2605 Excellent (A)", "\u2605 Excellent (A)");
+            if (featureCount <= 6) return L("\u25C6 Good (B)", "\u25C6 Good (B)");
+            if (featureCount <= 9) return L("\u25B2 Fair (C)", "\u25B2 Fair (C)");
+            return L("\u25CF Heavy (D)", "\u25CF Heavy (D)");
+        }
+
+        private static string GetRatingLetter(int featureCount)
+        {
+            if (featureCount <= 3) return "A";
+            if (featureCount <= 6) return "B";
+            if (featureCount <= 9) return "C";
+            return "D";
         }
 
         private static string GetEstimatedCostLabel(int featureCount)
@@ -753,6 +772,23 @@ namespace NataneToon.Editor
         public static bool DrawSecondaryButton(string label, float width = 150, float height = 25)
         {
             return GUILayout.Button(label, GUILayout.Width(width), GUILayout.Height(height));
+        }
+
+        // ===== Inspector → Consolidated Window Links =====
+
+        /// <summary>
+        /// Draw a compact button that opens a consolidated tool window tab.
+        /// Placed inside inspector sections to provide quick access to the full tool.
+        /// </summary>
+        public static void DrawOpenInStudioButton(string labelJP, string labelEN, System.Action onClick)
+        {
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button(L(labelJP, labelEN), EditorStyles.miniButton, GUILayout.Width(160), GUILayout.Height(18)))
+            {
+                onClick?.Invoke();
+            }
+            EditorGUILayout.EndHorizontal();
         }
 
         /// <summary>
