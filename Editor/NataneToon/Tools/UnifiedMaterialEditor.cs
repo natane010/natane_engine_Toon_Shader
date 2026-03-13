@@ -1247,10 +1247,12 @@ namespace NataneToon.Editor
                     if (enable)
                     {
                         material.EnableKeyword(features[i]);
+                        SetTogglePropertyForKeyword(material, features[i], 1.0f);
                     }
                     else
                     {
                         material.DisableKeyword(features[i]);
+                        SetTogglePropertyForKeyword(material, features[i], 0.0f);
                     }
                 }
 
@@ -1283,6 +1285,7 @@ namespace NataneToon.Editor
                 foreach (string feature in features)
                 {
                     material.DisableKeyword(feature);
+                    SetTogglePropertyForKeyword(material, feature, 0.0f);
                 }
 
                 EditorUtility.SetDirty(material);
@@ -1293,6 +1296,18 @@ namespace NataneToon.Editor
                 L("全機能を無効化しました", "All Features Disabled"),
                 L($"Disabled all features in {successCount} materials", $"Disabled all features in {successCount} materials"),
                 "OK");
+        }
+
+        private static void SetTogglePropertyForKeyword(Material material, string keyword, float value)
+        {
+            foreach (var mapping in NataneShaderKeywordSynchronizer.KeywordMappings)
+            {
+                if (mapping.keyword == keyword && material.HasProperty(mapping.propertyName))
+                {
+                    material.SetFloat(mapping.propertyName, value);
+                    return;
+                }
+            }
         }
 
         private void ApplyVariantConversion()

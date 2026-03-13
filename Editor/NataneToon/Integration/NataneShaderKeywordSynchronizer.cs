@@ -1,0 +1,351 @@
+using System.Collections.Generic;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
+
+namespace NataneToon.Editor
+{
+    /// <summary>
+    /// シェーダーリインポート時にNataneマテリアルのキーワード状態を自動修正する。
+    /// [Toggle(_KEYWORD)] プロパティの値とキーワード状態のズレ（reimport後の古いキーワード残留）を防止。
+    /// </summary>
+    internal sealed class NataneShaderKeywordSynchronizer : AssetPostprocessor
+    {
+        /// <summary>
+        /// Toggle プロパティ名 → シェーダーキーワード のマッピング。
+        /// NataneToonShaderGUI.ValidateAndFixKeywords() と同一のリストを維持すること。
+        /// </summary>
+        internal static readonly (string propertyName, string keyword)[] KeywordMappings =
+        {
+            // Main Texture Animation
+            ("_MainTexAnimation", "_MAIN_TEX_ANIMATION"),
+
+            // Makeup Textures
+            ("_Use2ndTexture", "_2ND_TEXTURE"),
+            ("_Use3rdTexture", "_3RD_TEXTURE"),
+            ("_Use4thTexture", "_4TH_TEXTURE"),
+            ("_Use5thTexture", "_5TH_TEXTURE"),
+
+            // Shading
+            ("_UseRamp", "_USE_RAMP"),
+            ("_UseMultiShadow", "_USE_MULTI_SHADOW"),
+            ("_UseShadowReceiveMask", "_SHADOW_RECEIVE_MASK"),
+            ("_UseAO", "_USE_AO"),
+            ("_UseDithering", "_USE_DITHERING"),
+            ("_UseSDFMap", "_SDF_MAP"),
+            ("_UseGradeMap", "_SHADING_GRADE_MAP"),
+
+            // Lighting
+            ("_SoftLightingMode", "_SOFT_LIGHTING_MODE"),
+            ("_UseLightVolume", "_USE_LIGHT_VOLUME"),
+            ("_LightVolumeSpecular", "_LIGHT_VOLUME_SPECULAR"),
+            ("_UsePixelVertexLights", "_PIXEL_VERTEX_LIGHTS"),
+
+            // Specular
+            ("_Specular", "_SPECULAR"),
+            ("_SpecularDither", "_SPECULAR_DITHER"),
+            ("_HairSpecular", "_HAIR_SPECULAR"),
+
+            // Rim Light
+            ("_RimLight", "_RIM_LIGHT"),
+            ("_RimLight2", "_RIM_LIGHT_2"),
+            ("_OffsetRimLight", "_OFFSET_RIM_LIGHT"),
+
+            // SSS
+            ("_SSS", "_SSS"),
+
+            // MatCap
+            ("_MatCap", "_MATCAP"),
+            ("_MatCap2", "_MATCAP_2"),
+            ("_MatCap3", "_MATCAP_3"),
+
+            // Glitter
+            ("_Glitter", "_GLITTER"),
+            ("_GlintsAdvanced", "_GLINTS_ADVANCED"),
+
+            // Reflection
+            ("_Reflection", "_REFLECTION"),
+
+            // Iridescence
+            ("_Iridescence", "_IRIDESCENCE"),
+
+            // Environmental Rim
+            ("_EnvRim", "_ENV_RIM"),
+
+            // Outline
+            ("_Outline", "_OUTLINE"),
+            ("_OutlineTextureColor", "_OUTLINE_TEXTURE_COLOR"),
+            ("_SmoothNormal", "_SMOOTH_NORMAL"),
+
+            // Emission
+            ("_Emission", "_EMISSION"),
+
+            // Normal Map
+            ("_UseNormalMap", "_NORMALMAP"),
+
+            // Virtual Expression
+            ("_Dissolve", "_DISSOLVE"),
+            ("_UseAlphaMask", "_ALPHA_MASK"),
+            ("_HueShiftEnable", "_HUE_SHIFT"),
+
+            // Parallax
+            ("_Parallax", "_PARALLAX"),
+
+            // Refraction
+            ("_Refraction", "_REFRACTION"),
+
+            // AudioLink
+            ("_AudioLink", "_AUDIOLINK"),
+
+            // Distance Fade
+            ("_DistanceFade", "_DISTANCE_FADE"),
+
+            // Vertex Animation
+            ("_VertexAnimation", "_VERTEX_ANIMATION"),
+
+            // VAT
+            ("_VAT", "_VAT"),
+            ("_VATNormal", "_VAT_NORMAL"),
+
+            // Water Drip
+            ("_WaterDrip", "_WATER_DRIP"),
+
+            // Smear
+            ("_Smear", "_SMEAR"),
+
+            // Hologram / Glitch
+            ("_Hologram", "_HOLOGRAM"),
+            ("_Glitch", "_GLITCH"),
+            ("_GlitchStretch", "_GLITCH_STRETCH"),
+            ("_UseHologramNoise", "_HOLOGRAM_NOISE"),
+
+            // Illustration Style
+            ("_UseColorQuantize", "_COLOR_QUANTIZE"),
+            ("_UseLUT3D", "_LUT_3D"),
+            ("_UseHatching", "_HATCHING"),
+            ("_UseWatercolor", "_WATERCOLOR"),
+            ("_UseSoftFilter", "_SOFT_FILTER"),
+            ("_UseKuwahara", "_KUWAHARA_FILTER"),
+            ("_UseScreenEdge", "_SCREEN_EDGE"),
+            ("_UseColorBleeding", "_COLOR_BLEEDING"),
+            ("_UseChromaticAberration", "_CHROMATIC_ABERRATION"),
+            ("_UseHandDrawnOutline", "_OUTLINE_HAND_DRAWN"),
+
+            // Decal
+            ("_Decal", "_DECAL"),
+
+            // Backface Texture
+            ("_BackfaceTexture", "_BACKFACE_TEXTURE"),
+
+            // Video Texture
+            ("_VideoTexture", "_VIDEO_TEXTURE"),
+
+            // LTCGI
+            ("_LTCGI", "_LTCGI"),
+
+            // Screen Tone
+            ("_ScreenTone", "_SCREEN_TONE"),
+
+            // Gradient Base Color
+            ("_GradientBaseColor", "_GRADIENT_BASE_COLOR"),
+
+            // Blue Noise Dither
+            ("_BlueNoiseDither", "_BLUE_NOISE_DITHER"),
+
+            // Dithering Alpha
+            ("_DitheringAlpha", "_DITHERING_ALPHA"),
+            ("_HashedAlpha", "_HASHED_ALPHA"),
+
+            // PCSS Soft Shadow
+            ("_UsePCSS", "_PCSS"),
+
+            // Outline sub-keywords
+            ("_UseOutlineMask", "_OUTLINE_MASK"),
+            ("_UseOutlineWidthMap", "_OUTLINE_WIDTH_MAP"),
+            ("_OutlineMultiColor", "_OUTLINE_MULTI_COLOR"),
+
+            // Halftone Shadow
+            ("_HalftoneShadow", "_HALFTONE_SHADOW"),
+
+            // Shadow Edge Noise
+            ("_ShadowEdgeNoise", "_SHADOW_EDGE_NOISE"),
+
+            // Cast Shadow Color
+            ("_CastShadowColorEnable", "_CAST_SHADOW_COLOR"),
+
+            // Light Snap
+            ("_LightSnap", "_LIGHT_SNAP"),
+
+            // Procedural MatCap
+            ("_ProceduralMatCap", "_PROCEDURAL_MATCAP"),
+
+            // Fake Reflection
+            ("_FakeReflection", "_FAKE_REFLECTION"),
+
+            // Perspective Flat
+            ("_PerspectiveFlat", "_PERSPECTIVE_FLAT"),
+
+            // Height Fade / Intersection Fade
+            ("_HeightFade", "_HEIGHT_FADE"),
+            ("_IntersectionFade", "_INTERSECTION_FADE"),
+
+            // Tessellation
+            ("_Tessellation", "_TESSELLATION"),
+            ("_TessDisplacement", "_TESS_DISPLACEMENT"),
+
+            // Depth Color Fade
+            ("_DepthColorFade", "_DEPTH_COLOR_FADE"),
+
+            // Mirror / Camera Control
+            ("_MirrorControl", "_MIRROR_CONTROL"),
+
+            // Angel Ring
+            ("_AngelRing", "_ANGEL_RING"),
+
+            // Detail Map
+            ("_DetailMap", "_DETAIL_MAP"),
+
+            // Procedural AO
+            ("_ProceduralAO", "_PROCEDURAL_AO"),
+
+            // Normal Warp
+            ("_NormalWarp", "_NORMAL_WARP"),
+
+            // Specular Anti-Aliasing
+            ("_SpecularAA", "_SPECULAR_AA"),
+
+            // Vertex Color Shadow
+            ("_VertexColorShadow", "_VERTEX_COLOR_SHADOW"),
+
+            // Face SDF Rotation
+            ("_FaceSDFRotation", "_FACE_SDF_ROTATION"),
+
+            // Sheen
+            ("_Sheen", "_SHEEN"),
+
+            // SSS LUT
+            ("_SSSLUT", "_SSS_LUT"),
+
+            // Surface Cover
+            ("_SurfaceCover", "_SURFACE_COVER"),
+
+            // Triplanar
+            ("_Triplanar", "_TRIPLANAR"),
+
+            // Height Fog
+            ("_HeightFog", "_HEIGHT_FOG"),
+
+            // Fur (Fur variant only)
+            ("_Fur", "_FUR"),
+        };
+
+        private static void OnPostprocessAllAssets(
+            string[] importedAssets,
+            string[] deletedAssets,
+            string[] movedAssets,
+            string[] movedFromAssetPaths)
+        {
+            // Natane シェーダーファイルがリインポートされたかチェック
+            bool nataneShaderReimported = importedAssets.Any(path =>
+                path.EndsWith(".shader", System.StringComparison.OrdinalIgnoreCase) &&
+                path.Contains("NataneToon"));
+
+            if (!nataneShaderReimported)
+                return;
+
+            // 次フレームで実行（シェーダーコンパイル完了後）
+            EditorApplication.delayCall += SynchronizeAllNataneMaterials;
+        }
+
+        /// <summary>
+        /// プロジェクト内のすべての Natane マテリアルのキーワードを同期する。
+        /// </summary>
+        [MenuItem("Tools/Natane/Fix All Material Keywords")]
+        internal static void SynchronizeAllNataneMaterials()
+        {
+            string[] materialGuids = AssetDatabase.FindAssets("t:Material");
+            int fixedCount = 0;
+            int totalChecked = 0;
+
+            foreach (string guid in materialGuids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+
+                if (material == null || material.shader == null)
+                    continue;
+
+                if (!NataneShaderCatalog.IsNataneShader(material.shader.name))
+                    continue;
+
+                totalChecked++;
+
+                if (SynchronizeMaterialKeywords(material))
+                {
+                    EditorUtility.SetDirty(material);
+                    fixedCount++;
+                }
+            }
+
+            if (fixedCount > 0)
+            {
+                AssetDatabase.SaveAssets();
+                Debug.Log($"[NataneToonShader] キーワード同期完了: {fixedCount}/{totalChecked} マテリアルを修正しました");
+            }
+        }
+
+        /// <summary>
+        /// 単一マテリアルのキーワードを同期する。変更があった場合 true を返す。
+        /// </summary>
+        internal static bool SynchronizeMaterialKeywords(Material material)
+        {
+            if (material == null)
+                return false;
+
+            bool anyChanges = false;
+
+            foreach (var mapping in KeywordMappings)
+            {
+                if (!material.HasProperty(mapping.propertyName))
+                    continue;
+
+                float propertyValue = material.GetFloat(mapping.propertyName);
+                bool shouldBeEnabled = propertyValue >= 0.5f;
+                bool isEnabled = material.IsKeywordEnabled(mapping.keyword);
+
+                if (shouldBeEnabled != isEnabled)
+                {
+                    if (shouldBeEnabled)
+                        material.EnableKeyword(mapping.keyword);
+                    else
+                        material.DisableKeyword(mapping.keyword);
+
+                    anyChanges = true;
+                }
+            }
+
+            // _STANDARD_TOON keyword (derived from _LilToonExactCompatibility + _ShadingMode)
+            // Matches NataneToonShaderGUI.ShouldUseLilToonCompatibilityBase() logic:
+            //   _LilToonExactCompatibility > 0.5 AND _ShadingMode in [1.5, 2.5)
+            if (material.HasProperty("_ShadingMode"))
+            {
+                bool lilToonExact = material.HasProperty("_LilToonExactCompatibility") &&
+                                    material.GetFloat("_LilToonExactCompatibility") > 0.5f;
+                float shadingMode = material.GetFloat("_ShadingMode");
+                bool isLilToonCompatShadingMode = shadingMode >= 1.5f && shadingMode < 2.5f;
+                bool shouldBeStandardToon = lilToonExact && isLilToonCompatShadingMode;
+                bool isStandardToon = material.IsKeywordEnabled("_STANDARD_TOON");
+                if (shouldBeStandardToon != isStandardToon)
+                {
+                    if (shouldBeStandardToon)
+                        material.EnableKeyword("_STANDARD_TOON");
+                    else
+                        material.DisableKeyword("_STANDARD_TOON");
+                    anyChanges = true;
+                }
+            }
+
+            return anyChanges;
+        }
+    }
+}

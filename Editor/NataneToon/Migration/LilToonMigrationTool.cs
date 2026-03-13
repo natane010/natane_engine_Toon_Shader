@@ -1274,6 +1274,7 @@ namespace NataneToon.Editor
             if (conversionMode == ConversionMode.ExactCompatibility)
             {
                 targetMaterial.SetFloat("_ShadingMode", 2.0f); // StandardToon
+                targetMaterial.SetFloat("_LilToonExactCompatibility", 1.0f);
                 targetMaterial.EnableKeyword("_STANDARD_TOON");
                 ApplyMigratedLightingWorkflow(targetMaterial, true, report);
                 targetMaterial.SetFloat("_ShadowOffset", 0);
@@ -1806,6 +1807,7 @@ namespace NataneToon.Editor
             }
 
             // Enable multi-shadow keyword
+            targetMaterial.SetFloat("_UseMultiShadow", 1.0f);
             targetMaterial.EnableKeyword("_USE_MULTI_SHADOW");
 
             if (meaningful2nd)
