@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
@@ -7,15 +8,19 @@ using UnityEngine.SceneManagement;
 namespace NataneToon.Editor
 {
     /// <summary>
-    /// VRChat SDK 等のビルドパイプラインでシーン処理時にマテリアルキーワードを同期する。
-    /// IProcessSceneWithReport はビルド対象シーンがロードされた後、
-    /// アセットバンドル化される前に呼ばれるため、ここでキーワードを修正すれば
-    /// ビルド成果物に正しいキーワード状態が反映される。
+    /// VRChat SDK 等のビルドパイプラインでマテリアルキーワードを同期する。
+    ///
+    /// VRChat SDK は BuildAssetBundle を使うため IPreprocessBuildWithReport が
+    /// 呼ばれない。唯一確実に呼ばれる IProcessSceneWithReport を使って、
+    /// ビルド前に全マテリアルのキーワードをプロパティ値と同期しディスクに保存する。
     /// </summary>
     internal sealed class NataneBuildSceneKeywordSync : IProcessSceneWithReport
     {
         // VRChat SDK より先に実行（VRChat SDK は通常 callbackOrder = 0 付近）
         public int callbackOrder => -50;
+
+        // 同一ビルド内で複数シーンが処理される場合に全マテリアル同期を1回だけ実行する
+        private static bool _hasSyncedThisBuild;
 
         public void OnProcessScene(Scene scene, BuildReport report)
         {
@@ -23,6 +28,24 @@ namespace NataneToon.Editor
             if (report == null)
                 return;
 
+            // --- Phase 1: 全マテリアルのキーワード同期 + ディスク保存（1回だけ） ---
+            // VRChat SDK は BuildAssetBundle を使うため IPreprocessBuildWithReport が
+            // 呼ばれない。ここで全マテリアルを同期してディスクに書き込むことで、
+            // アセットバンドルに正しいキーワード状態が焼き込まれる。
+            if (!_hasSyncedThisBuild)
+            {
+                _hasSyncedThisBuild = true;
+
+                // EditorApplication.delayCall でビルド完了後にフラグをリセット
+                EditorApplication.delayCall += () => _hasSyncedThisBuild = false;
+
+                NataneShaderKeywordSynchronizer.SynchronizeAllNataneMaterials();
+                Debug.Log($"[NataneToonShader] ビルド時キーワード同期: 全マテリアルを同期してディスクに保存しました");
+            }
+
+            // --- Phase 2: シーン内マテリアルのインメモリ修正（安全ネット） ---
+            // ディスク保存後にシーンがロードされた場合や、シーンローカルな
+            // マテリアル参照に対する追加の安全ネット。
             var renderers = new List<Renderer>();
             var rootObjects = scene.GetRootGameObjects();
 
@@ -58,7 +81,7 @@ namespace NataneToon.Editor
 
             if (fixedCount > 0)
             {
-                Debug.Log($"[NataneToonShader] ビルド時キーワード同期: シーン '{scene.name}' の {fixedCount} マテリアルを修正しました");
+                Debug.Log($"[NataneToonShader] ビルド時キーワード同期(シーン内): シーン '{scene.name}' の {fixedCount} マテリアルを追加修正しました");
             }
         }
     }
