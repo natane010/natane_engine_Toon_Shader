@@ -23,24 +23,14 @@ namespace NataneToon.Editor
 
         private static readonly string BuildSettingsPath = FindBuildSettingsHlslPath();
 
-        private static readonly string DefaultContent =
-@"// NataneToonBuildSettings.hlsl
-// Auto-managed by NataneBuildFeatureOptimizer.
-// During builds, this file is rewritten to contain only the features actually used.
-// In the editor (non-build), all features are enabled by default.
-// DO NOT EDIT MANUALLY - changes will be overwritten during builds.
-
-#ifndef NATANE_BUILD_SETTINGS_INCLUDED
-#define NATANE_BUILD_SETTINGS_INCLUDED
-
-// Default: all features enabled (editor mode).
-// During VRChat/platform builds, NataneBuildFeatureOptimizer rewrites this file
-// to #define only the features actually referenced by project materials,
-// ensuring unused features are stripped even if shader keywords are desynchronized.
-#define NATANE_BUILD_ALL_FEATURES
-
-#endif // NATANE_BUILD_SETTINGS_INCLUDED
-";
+        /// <summary>
+        /// KeywordMappings に含まれない追加キーワード（派生・特殊用途）。
+        /// </summary>
+        private static readonly string[] ExtraKeywords =
+        {
+            "_STANDARD_TOON",
+            "_EYE_PARALLAX",
+        };
 
         public void OnPreprocessBuild(BuildReport report)
         {
@@ -95,6 +85,20 @@ namespace NataneToon.Editor
                         usedKeywords.Add(mapping.keyword);
                     }
                 }
+
+                // _STANDARD_TOON (derived keyword)
+                if (material.HasProperty("_ShadingMode"))
+                {
+                    bool lilToonExact = material.HasProperty("_LilToonExactCompatibility") &&
+                                        material.GetFloat("_LilToonExactCompatibility") > 0.5f;
+                    float shadingMode = material.GetFloat("_ShadingMode");
+                    if (lilToonExact && shadingMode >= 1.5f && shadingMode < 2.5f)
+                        usedKeywords.Add("_STANDARD_TOON");
+                }
+
+                // _EYE_PARALLAX
+                if (material.HasProperty("_EyeParallax") && material.GetFloat("_EyeParallax") >= 0.5f)
+                    usedKeywords.Add("_EYE_PARALLAX");
             }
 
             // 2. AnimationClip スキャン
@@ -164,6 +168,8 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// 使用機能のみを #define した NataneToonBuildSettings.hlsl を書き出す。
+        /// NATANE_BUILD_ALL_FEATURES を定義しないため、#undef ガードが有効になり、
+        /// 未使用キーワードが強制無効化される。
         /// </summary>
         private static void WriteBuildSettingsHlsl(HashSet<string> usedKeywords)
         {
@@ -183,15 +189,21 @@ namespace NataneToon.Editor
             sb.AppendLine("#define NATANE_BUILD_SETTINGS_INCLUDED");
             sb.AppendLine();
             sb.AppendLine("// Build-time feature defines (only used features are enabled).");
+            sb.AppendLine("// NATANE_BUILD_ALL_FEATURES is intentionally NOT defined,");
+            sb.AppendLine("// so the #undef guard block below will strip unused keywords.");
 
             // キーワードをソートして出力（再現性のため）
             var sortedKeywords = usedKeywords.OrderBy(k => k, StringComparer.Ordinal);
             foreach (string keyword in sortedKeywords)
             {
-                // _MATCAP → NATANE_FEATURE_MATCAP
                 string featureDefine = "NATANE_FEATURE" + keyword; // keyword already starts with _
                 sb.AppendLine($"#define {featureDefine}");
             }
+
+            sb.AppendLine();
+
+            // #undef ガードブロックを生成
+            AppendUndefGuardBlock(sb);
 
             sb.AppendLine();
             sb.AppendLine("#endif // NATANE_BUILD_SETTINGS_INCLUDED");
@@ -202,6 +214,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// NataneToonBuildSettings.hlsl をデフォルト（全機能有効）に復元する。
+        /// NATANE_BUILD_ALL_FEATURES が定義されるため、#undef ガードはスキップされる。
         /// </summary>
         private static void RestoreDefaultBuildSettings()
         {
@@ -212,7 +225,8 @@ namespace NataneToon.Editor
             try
             {
                 string fullPath = Path.GetFullPath(path);
-                File.WriteAllText(fullPath, DefaultContent, new UTF8Encoding(false));
+                string content = GenerateDefaultContent();
+                File.WriteAllText(fullPath, content, new UTF8Encoding(false));
                 AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
                 Debug.Log("[NataneToonShader] ビルド設定を復元しました（全機能有効）");
             }
@@ -220,6 +234,76 @@ namespace NataneToon.Editor
             {
                 Debug.LogWarning($"[NataneToonShader] ビルド設定の復元に失敗: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// デフォルトの NataneToonBuildSettings.hlsl 内容を生成する。
+        /// KeywordMappings から #undef ガードブロックを自動生成するため、
+        /// 新しいキーワードを追加しても自動的に対応される。
+        /// </summary>
+        private static string GenerateDefaultContent()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("// NataneToonBuildSettings.hlsl");
+            sb.AppendLine("// Auto-managed by NataneBuildFeatureOptimizer.");
+            sb.AppendLine("// During builds, this file is rewritten to contain only the features actually used.");
+            sb.AppendLine("// In the editor (non-build), all features are enabled by default.");
+            sb.AppendLine("// DO NOT EDIT MANUALLY - changes will be overwritten during builds.");
+            sb.AppendLine();
+            sb.AppendLine("#ifndef NATANE_BUILD_SETTINGS_INCLUDED");
+            sb.AppendLine("#define NATANE_BUILD_SETTINGS_INCLUDED");
+            sb.AppendLine();
+            sb.AppendLine("// Default: all features enabled (editor mode).");
+            sb.AppendLine("// During VRChat/platform builds, NataneBuildFeatureOptimizer rewrites this file");
+            sb.AppendLine("// to #define only the features actually referenced by project materials,");
+            sb.AppendLine("// ensuring unused features are stripped even if shader keywords are desynchronized.");
+            sb.AppendLine("#define NATANE_BUILD_ALL_FEATURES");
+            sb.AppendLine();
+
+            AppendUndefGuardBlock(sb);
+
+            sb.AppendLine();
+            sb.AppendLine("#endif // NATANE_BUILD_SETTINGS_INCLUDED");
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// #undef ガードブロックを StringBuilder に追加する。
+        /// NATANE_BUILD_ALL_FEATURES が未定義の場合のみ有効化され、
+        /// 対応する NATANE_FEATURE_* がないキーワードを強制的に #undef する。
+        /// </summary>
+        private static void AppendUndefGuardBlock(StringBuilder sb)
+        {
+            sb.AppendLine("// -----------------------------------------------------------------");
+            sb.AppendLine("// Build-time keyword guard: when NATANE_BUILD_ALL_FEATURES is NOT");
+            sb.AppendLine("// defined (i.e. during a build), force-#undef any shader keyword");
+            sb.AppendLine("// whose corresponding NATANE_FEATURE_* is absent. This prevents");
+            sb.AppendLine("// desynchronized keywords from enabling features the user disabled.");
+            sb.AppendLine("// -----------------------------------------------------------------");
+            sb.AppendLine("#ifndef NATANE_BUILD_ALL_FEATURES");
+            sb.AppendLine();
+
+            // KeywordMappings から自動生成
+            foreach (var mapping in NataneShaderKeywordSynchronizer.KeywordMappings)
+            {
+                string keyword = mapping.keyword;
+                string featureDefine = "NATANE_FEATURE" + keyword;
+                sb.AppendLine($"#if defined({keyword}) && !defined({featureDefine})");
+                sb.AppendLine($"    #undef {keyword}");
+                sb.AppendLine("#endif");
+            }
+
+            // 追加キーワード（KeywordMappings 外）
+            foreach (string keyword in ExtraKeywords)
+            {
+                string featureDefine = "NATANE_FEATURE" + keyword;
+                sb.AppendLine($"#if defined({keyword}) && !defined({featureDefine})");
+                sb.AppendLine($"    #undef {keyword}");
+                sb.AppendLine("#endif");
+            }
+
+            sb.AppendLine();
+            sb.AppendLine("#endif // !NATANE_BUILD_ALL_FEATURES");
         }
 
         /// <summary>
