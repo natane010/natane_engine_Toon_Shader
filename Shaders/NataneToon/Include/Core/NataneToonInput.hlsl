@@ -998,6 +998,77 @@ CBUFFER_START(UnityPerMaterial)
     float _DepthFadeDesaturation;
     #endif
 
+    // ===== Feature Toggle Properties =====
+    // [Toggle(_KEYWORD)] properties used for runtime feature guards.
+    // These must be in the CBUFFER for the if(_Prop >= 0.5) checks
+    // in Fragment.hlsl to compile.
+    float _MirrorControl;
+    float _MainTexAnimation;
+    float _GlitchStretch;
+    float _Triplanar;
+    float _GradientBaseColor;
+    float _Use2ndTexture;
+    float _Use3rdTexture;
+    float _Use4thTexture;
+    float _Use5thTexture;
+    float _SurfaceCover;
+    float _ScreenTone;
+    float _UseNormalMap;
+    float _DetailMap;
+    float _NormalWarp;
+    float _UseShadowReceiveMask;
+    float _LightSnap;
+    float _DistanceFade;
+    float _UsePCSS;
+    float _VertexColorShadow;
+    float _ProceduralAO;
+    float _ShadowEdgeNoise;
+    float _CastShadowColorEnable;
+    float _HalftoneShadow;
+    float _UseColorQuantize;
+    float _UseLUT3D;
+    float _UseHatching;
+    float _AngelRing;
+    float _SSS;
+    float _RimLight;
+    float _RimLight2;
+    float _OffsetRimLight;
+    float _Sheen;
+    float _EnvRim;
+    float _Specular;
+    float _HairSpecular;
+    float _MatCap;
+    float _MatCap2;
+    float _MatCap3;
+    float _ProceduralMatCap;
+    float _Reflection;
+    float _FakeReflection;
+    float _Refraction;
+    float _Emission;
+    float _HueShiftEnable;
+    float _AudioLink;
+    float _Glitter;
+    float _Iridescence;
+    float _Smear;
+    float _WaterDrip;
+    float _Hologram;
+    float _Glitch;
+    float _Decal;
+    float _Dissolve;
+    float _UseAlphaMask;
+    float _HeightFade;
+    float _IntersectionFade;
+    float _HeightFog;
+    float _DepthColorFade;
+    float _HashedAlpha;
+    float _DitheringAlpha;
+    float _UseWatercolor;
+    float _UseSoftFilter;
+    float _UseKuwahara;
+    float _UseScreenEdge;
+    float _UseColorBleeding;
+    float _UseChromaticAberration;
+
 CBUFFER_END
 
 // ===== VRChat Shader Globals (set by VRChat runtime) =====
