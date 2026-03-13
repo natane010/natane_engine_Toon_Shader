@@ -564,10 +564,11 @@ namespace NataneToon.Editor
 
         private static string GetPerformanceRating(int featureCount)
         {
-            if (featureCount <= 3) return L("\u2605 Excellent (A)", "\u2605 Excellent (A)");
-            if (featureCount <= 6) return L("\u25C6 Good (B)", "\u25C6 Good (B)");
-            if (featureCount <= 9) return L("\u25B2 Fair (C)", "\u25B2 Fair (C)");
-            return L("\u25CF Heavy (D)", "\u25CF Heavy (D)");
+            // P-15: WCAG-compliant dual encoding (shape + color)
+            if (featureCount <= 3) return L("\u2713 \u512A\u79C0 (A)", "\u2713 Excellent (A)");
+            if (featureCount <= 6) return L("\u2192 \u826F\u597D (B)", "\u2192 Good (B)");
+            if (featureCount <= 9) return L("\u25B3 \u6CE8\u610F (C)", "\u25B3 Fair (C)");
+            return L("\u2715 \u91CD\u3044 (D)", "\u2715 Heavy (D)");
         }
 
         private static string GetRatingLetter(int featureCount)
@@ -588,10 +589,11 @@ namespace NataneToon.Editor
 
         private static Color GetRatingColor(int featureCount)
         {
-            if (featureCount <= 3) return Color.green;
-            if (featureCount <= 6) return Color.cyan;
-            if (featureCount <= 9) return Color.yellow;
-            return new Color(1f, 0.5f, 0f); // Orange
+            // P-15: WCAG-compliant colors paired with shape indicators
+            if (featureCount <= 3) return new Color(0.3f, 0.8f, 0.3f);  // Green
+            if (featureCount <= 6) return new Color(0.3f, 0.6f, 1.0f);  // Blue
+            if (featureCount <= 9) return new Color(1.0f, 0.7f, 0.2f);  // Orange
+            return new Color(1.0f, 0.3f, 0.3f);                         // Red
         }
 
         public static void DrawPerformanceIndicatorWithSamplerBudget(Material material)

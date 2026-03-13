@@ -55,8 +55,10 @@ namespace NataneToon.Editor
         // ===== Cached GUIStyles =====
 
         private static GUIStyle _boxOuter;
+        private static bool _boxOuterDarkApplied;
         /// <summary>
         /// セクション外枠ボックス - helpBoxベース、padding(8,8,4,4)、下マージン付き
+        /// P-21: ダークテーマ時にコントラストを強化
         /// </summary>
         public static GUIStyle BoxOuter
         {
@@ -69,6 +71,17 @@ namespace NataneToon.Editor
                         padding = new RectOffset(8, 8, 4, 4),
                         margin = new RectOffset(0, 0, 0, 6)
                     };
+                    _boxOuterDarkApplied = false;
+                }
+                // P-21: Dark theme contrast enhancement
+                if (EditorGUIUtility.isProSkin && !_boxOuterDarkApplied)
+                {
+                    Texture2D bgTex = new Texture2D(1, 1);
+                    bgTex.SetPixel(0, 0, new Color(0.25f, 0.25f, 0.25f, 0.3f));
+                    bgTex.Apply();
+                    bgTex.hideFlags = HideFlags.HideAndDontSave;
+                    _boxOuter.normal.background = bgTex;
+                    _boxOuterDarkApplied = true;
                 }
                 return _boxOuter;
             }
@@ -226,6 +239,28 @@ namespace NataneToon.Editor
                     };
                 }
                 return _searchField;
+            }
+        }
+
+        // P-17: Dependency hint label for disabled feature sections
+        private static GUIStyle _dependencyHintLabel;
+        /// <summary>
+        /// 無効な機能セクションに表示するヒントラベル - イタリック、右揃え、半透明
+        /// </summary>
+        public static GUIStyle DependencyHintLabel
+        {
+            get
+            {
+                if (_dependencyHintLabel == null)
+                {
+                    _dependencyHintLabel = new GUIStyle(EditorStyles.miniLabel)
+                    {
+                        fontStyle = FontStyle.Italic,
+                        alignment = TextAnchor.MiddleRight
+                    };
+                    _dependencyHintLabel.normal.textColor = new Color(0.5f, 0.5f, 0.5f, 0.6f);
+                }
+                return _dependencyHintLabel;
             }
         }
 
