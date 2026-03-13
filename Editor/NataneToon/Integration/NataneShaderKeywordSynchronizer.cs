@@ -380,14 +380,11 @@ namespace NataneToon.Editor
                     anyChanges = true;
                 }
 
-                // Normalize property to clean 0/1 toggle values.
-                // This ensures the runtime guards (if _Property >= 0.5)
-                // work correctly even after VRChat SDK variant stripping.
-                // OFF → 0.0, ON → 1.0 (no ambiguous intermediate values)
-                float normalizedValue = shouldBeEnabled ? 1.0f : 0.0f;
-                if (!Mathf.Approximately(propertyValue, normalizedValue))
+                // OFF の場合のみプロパティを 0 にクリーンアップ。
+                // ON の場合は元の値を維持する（中途半端な値でも意図的な設定の可能性がある）。
+                if (!shouldBeEnabled && propertyValue != 0.0f)
                 {
-                    material.SetFloat(mapping.propertyName, normalizedValue);
+                    material.SetFloat(mapping.propertyName, 0.0f);
                     anyChanges = true;
                 }
             }
