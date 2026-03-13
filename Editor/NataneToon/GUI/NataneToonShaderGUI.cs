@@ -1104,9 +1104,9 @@ public class NataneToonShaderGUI : ShaderGUI
         if (isLegacy)
         {
             EditorGUILayout.HelpBox(
-                L("このマテリアルは旧 ShadingMode ベースです。下のスライダーを動かすと、新しい見た目ミキサー値へ自動変換されます。",
-                  "This material is still using legacy ShadingMode behavior. Editing the sliders below converts it to explicit Look Mixer values."),
-                MessageType.Info);
+                L("レガシーモードのため、ウェイトスライダーの変更はシェーダーに反映されません。プリセットボタンを使用するか、スライダーを操作すると自動的に明示モードに切り替わります。",
+                  "In Legacy mode, weight slider changes are not reflected in the shader. Use a preset button, or the mode will auto-upgrade when you adjust a slider."),
+                MessageType.Warning);
         }
 
         using (new EditorGUI.DisabledScope(lilToonMatchEnabled))
@@ -1130,6 +1130,19 @@ public class NataneToonShaderGUI : ShaderGUI
                 LookMode resolvedLookMode = nextLookMode <= (int)LookMode.Legacy
                     ? SuggestLookMode(nextToon, nextNpr, nextPbr)
                     : (LookMode)nextLookMode;
+
+                // F-6: Auto-upgrade from Legacy mode when sliders are adjusted
+                if (isLegacy && resolvedLookMode != LookMode.Legacy)
+                {
+                    foreach (UnityEngine.Object target in materialEditor.targets)
+                    {
+                        Material mat = target as Material;
+                        if (mat != null && mat.HasProperty("_LookMode"))
+                        {
+                            mat.SetFloat("_LookMode", (float)resolvedLookMode);
+                        }
+                    }
+                }
 
                 ApplyLookMixerToSelectedMaterials(
                     "Adjust Look Mixer",
@@ -1671,6 +1684,7 @@ public class NataneToonShaderGUI : ShaderGUI
             }
 
             ApplyLookMixerValuesToMaterial(material, lookMode, toonWeight, nprWeight, pbrWeight, shadingModeOverride);
+            ApplyLookMixerShadingParams(material, lookMode);
             EditorUtility.SetDirty(material);
         }
 
@@ -1698,6 +1712,67 @@ public class NataneToonShaderGUI : ShaderGUI
         if (material.HasProperty("_NprWeight")) material.SetFloat("_NprWeight", Mathf.Clamp01(nprWeight));
         if (material.HasProperty("_PbrWeight")) material.SetFloat("_PbrWeight", Mathf.Clamp01(pbrWeight));
         if (shadingModeOverride.HasValue && material.HasProperty("_ShadingMode")) material.SetFloat("_ShadingMode", shadingModeOverride.Value);
+    }
+
+    /// <summary>
+    /// Applies shading parameters that correspond to a Look Mixer preset.
+    /// This ensures that switching presets produces a visible difference
+    /// by adjusting shadow, softness, and blend parameters.
+    /// </summary>
+    private void ApplyLookMixerShadingParams(Material material, LookMode lookMode)
+    {
+        if (material == null)
+        {
+            return;
+        }
+
+        float shadowSteps, shadowSharpness, shadingGradientWidth, litSoftness, wrapAmount, shadowBlend;
+
+        switch (lookMode)
+        {
+            case LookMode.Toon:
+                shadowSteps = 3f;
+                shadowSharpness = 0.05f;
+                shadingGradientWidth = 0.2f;
+                litSoftness = 0f;
+                wrapAmount = 0f;
+                shadowBlend = 0f;
+                break;
+            case LookMode.NPR:
+                shadowSteps = 2f;
+                shadowSharpness = 0.3f;
+                shadingGradientWidth = 0.65f;
+                litSoftness = 0.3f;
+                wrapAmount = 0.15f;
+                shadowBlend = 0.2f;
+                break;
+            case LookMode.Hybrid:
+                shadowSteps = 2f;
+                shadowSharpness = 0.15f;
+                shadingGradientWidth = 0.45f;
+                litSoftness = 0.2f;
+                wrapAmount = 0.2f;
+                shadowBlend = 0.3f;
+                break;
+            case LookMode.PBR:
+                shadowSteps = 1f;
+                shadowSharpness = 0.8f;
+                shadingGradientWidth = 0.8f;
+                litSoftness = 0.5f;
+                wrapAmount = 0.3f;
+                shadowBlend = 0.5f;
+                break;
+            default:
+                // Legacy or unknown — do not touch shading params
+                return;
+        }
+
+        if (material.HasProperty("_ShadowSteps")) material.SetFloat("_ShadowSteps", shadowSteps);
+        if (material.HasProperty("_ShadowSharpness")) material.SetFloat("_ShadowSharpness", shadowSharpness);
+        if (material.HasProperty("_ShadingGradientWidth")) material.SetFloat("_ShadingGradientWidth", shadingGradientWidth);
+        if (material.HasProperty("_LitSoftness")) material.SetFloat("_LitSoftness", litSoftness);
+        if (material.HasProperty("_WrapAmount")) material.SetFloat("_WrapAmount", wrapAmount);
+        if (material.HasProperty("_ShadowBlend")) material.SetFloat("_ShadowBlend", shadowBlend);
     }
 
     private void DrawAdvancedLightingSection()

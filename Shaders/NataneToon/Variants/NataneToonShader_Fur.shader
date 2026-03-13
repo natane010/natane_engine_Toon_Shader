@@ -135,7 +135,7 @@ Shader "Natane/Toon Shader (Fur)"
         _STShadowStrength ("ST Shadow Strength", Range(0, 1)) = 1.0
         _STAsUnlit ("ST As Unlit", Range(0, 1)) = 0
         _STShadowEnvStrength ("ST Shadow Env Strength", Range(0, 1)) = 1
-        _ShadingGradientWidth ("Gradient Width", Range(0.001, 1)) = 0.2
+        _ShadingGradientWidth ("Gradient Width", Range(0.001, 1)) = 0.5
         [Toggle(_USE_RAMP)] _UseRamp ("Use Ramp Texture", Float) = 0
         _RampTex ("Ramp Texture", 2D) = "white" {}
         _ShadowColor ("Shadow Color 1st", Color) = (0.5, 0.5, 0.5, 1)
@@ -146,13 +146,13 @@ Shader "Natane/Toon Shader (Fur)"
         _Shadow2ndBorder ("2nd Shadow Border", Range(0, 1)) = 0.3
         _Shadow3rdColor ("Shadow Color 3rd", Color) = (0.2, 0.2, 0.2, 1)
         _Shadow3rdBorder ("3rd Shadow Border", Range(0, 1)) = 0.15
-        _ShadowSteps ("Shadow Steps", Range(1, 10)) = 2
+        _ShadowSteps ("Shadow Steps", Range(1, 10)) = 3
         _ShadowSharpness ("Shadow Sharpness", Range(0.001, 1)) = 0.1
         _StepBorderSmooth ("Step Border Smooth", Range(0, 1)) = 0
         _ShadowOffset ("Shadow Offset", Range(-1, 1)) = 0
         _WrapAmount ("Wrap Amount (Light Wraparound)", Range(0, 1)) = 0
-        _LitSoftness ("Lit Area Softness Global Smoothstep", Range(0, 1)) = 0
-        _ShadowBlend ("Shadow Blend Softness", Range(0, 1)) = 0
+        _LitSoftness ("Lit Area Softness Global Smoothstep", Range(0, 1)) = 0.1
+        _ShadowBlend ("Shadow Blend Softness", Range(0, 1)) = 0.1
         [Space(10)]
         [Toggle(_VERTEX_COLOR_SHADOW)] _VertexColorShadow ("Vertex Color Shadow Threshold", Float) = 0
         _VCShadowThreshold ("Shadow Threshold", Range(0, 1)) = 0.5
