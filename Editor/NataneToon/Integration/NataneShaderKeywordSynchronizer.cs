@@ -245,56 +245,17 @@ namespace NataneToon.Editor
             string[] movedAssets,
             string[] movedFromAssetPaths)
         {
-            // Natane シェーダー or HLSL ファイルがリインポートされた場合 → 全マテリアル同期
+            // Natane シェーダー or HLSL ファイルがリインポートされた場合のみ全マテリアル同期
             bool nataneShaderReimported = importedAssets.Any(path =>
                 (path.EndsWith(".shader", System.StringComparison.OrdinalIgnoreCase) ||
                  path.EndsWith(".hlsl", System.StringComparison.OrdinalIgnoreCase)) &&
                 path.Contains("NataneToon"));
 
-            if (nataneShaderReimported)
-            {
-                // シェーダーコンパイル完了後に全マテリアルを同期
-                EditorApplication.delayCall += SynchronizeAllNataneMaterials;
-                return;
-            }
-
-            // マテリアルファイルがリインポートされた場合 → 該当マテリアルのみ同期
-            var reimportedMaterials = importedAssets
-                .Where(path => path.EndsWith(".mat", System.StringComparison.OrdinalIgnoreCase))
-                .ToArray();
-
-            if (reimportedMaterials.Length == 0)
+            if (!nataneShaderReimported)
                 return;
 
-            // delayCall でマテリアルロード完了後に実行
-            EditorApplication.delayCall += () => SynchronizeReimportedMaterials(reimportedMaterials);
-        }
-
-        private static void SynchronizeReimportedMaterials(string[] materialPaths)
-        {
-            int fixedCount = 0;
-
-            foreach (string path in materialPaths)
-            {
-                Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-                if (material == null || material.shader == null)
-                    continue;
-
-                if (!NataneShaderCatalog.IsNataneShader(material.shader.name))
-                    continue;
-
-                if (SynchronizeMaterialKeywords(material))
-                {
-                    EditorUtility.SetDirty(material);
-                    fixedCount++;
-                }
-            }
-
-            if (fixedCount > 0)
-            {
-                AssetDatabase.SaveAssets();
-                Debug.Log($"[NataneToonShader] マテリアルリインポート時キーワード同期: {fixedCount} マテリアルを修正しました");
-            }
+            // シェーダーコンパイル完了後に全マテリアルを同期
+            EditorApplication.delayCall += SynchronizeAllNataneMaterials;
         }
 
         /// <summary>
