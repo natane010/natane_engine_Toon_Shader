@@ -369,6 +369,7 @@ namespace NataneToon.Editor
                 bool shouldBeEnabled = propertyValue >= 0.5f;
                 bool isEnabled = material.IsKeywordEnabled(mapping.keyword);
 
+                // Sync keyword state from property value
                 if (shouldBeEnabled != isEnabled)
                 {
                     if (shouldBeEnabled)
@@ -376,6 +377,17 @@ namespace NataneToon.Editor
                     else
                         material.DisableKeyword(mapping.keyword);
 
+                    anyChanges = true;
+                }
+
+                // Normalize property to clean 0/1 toggle values.
+                // This ensures the runtime guards (if _Property >= 0.5)
+                // work correctly even after VRChat SDK variant stripping.
+                // OFF → 0.0, ON → 1.0 (no ambiguous intermediate values)
+                float normalizedValue = shouldBeEnabled ? 1.0f : 0.0f;
+                if (!Mathf.Approximately(propertyValue, normalizedValue))
+                {
+                    material.SetFloat(mapping.propertyName, normalizedValue);
                     anyChanges = true;
                 }
             }
