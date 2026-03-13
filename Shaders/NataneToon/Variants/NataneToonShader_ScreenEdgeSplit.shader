@@ -1069,6 +1069,7 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             float _OutlineMode;
             float _OutlineCornerSmooth;
             float _OutlineEdgeCompensation;
+            float _VRChatMirrorMode;
             sampler2D _OutlineMask;
             sampler2D _OutlineWidthMap;
             #ifdef _OUTLINE_TEXTURE_COLOR
@@ -1192,6 +1193,8 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
                         // Mode 0: Inverted Hull - Extrusion along normals in view space
                         // Improved for better consistency at different angles
                         float3 norm = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, outlineNormal));
+                        // VRChat mirror/camera flips the view matrix, compensate outline normal
+                        norm.x *= lerp(1.0, -1.0, _VRChatMirrorMode);
                         float2 offset = TransformViewToProjection(norm.xy);
 
                         o.pos = UnityObjectToClipPos(v.vertex);
