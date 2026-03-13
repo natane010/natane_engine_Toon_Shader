@@ -239,23 +239,70 @@ namespace NataneToon.Editor
             ("_Fur", "_FUR"),
         };
 
+        // SaveAssets による再インポート→再同期の無限ループを防止
+        private static bool _isSynchronizing;
+
         private static void OnPostprocessAllAssets(
             string[] importedAssets,
             string[] deletedAssets,
             string[] movedAssets,
             string[] movedFromAssetPaths)
         {
-            // Natane シェーダー or HLSL ファイルがリインポートされた場合のみ全マテリアル同期
+            if (_isSynchronizing)
+                return;
+
+            // Natane シェーダー or HLSL ファイルがリインポートされた場合 → 全マテリアル同期＆保存
             bool nataneShaderReimported = importedAssets.Any(path =>
                 (path.EndsWith(".shader", System.StringComparison.OrdinalIgnoreCase) ||
                  path.EndsWith(".hlsl", System.StringComparison.OrdinalIgnoreCase)) &&
                 path.Contains("NataneToon"));
 
-            if (!nataneShaderReimported)
+            if (nataneShaderReimported)
+            {
+                // シェーダーコンパイル完了後に全マテリアルを同期（保存あり）
+                EditorApplication.delayCall += SynchronizeAllNataneMaterials;
                 return;
+            }
 
-            // シェーダーコンパイル完了後に全マテリアルを同期
-            EditorApplication.delayCall += SynchronizeAllNataneMaterials;
+            // マテリアルファイルがリインポートされた場合 → 該当マテリアルのみメモリ上で修正
+            // SaveAssets は呼ばない（無限ループ防止）。ユーザーがプロジェクト保存時に永続化される。
+            var reimportedMaterials = importedAssets
+                .Where(path => path.EndsWith(".mat", System.StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            if (reimportedMaterials.Length > 0)
+            {
+                EditorApplication.delayCall += () => SynchronizeReimportedMaterialsInMemory(reimportedMaterials);
+            }
+        }
+
+        /// <summary>
+        /// リインポートされたマテリアルのキーワードをメモリ上で修正する。
+        /// ディスクには書き込まない（SaveAssets を呼ばない）ため無限ループが発生しない。
+        /// </summary>
+        private static void SynchronizeReimportedMaterialsInMemory(string[] materialPaths)
+        {
+            int fixedCount = 0;
+
+            foreach (string path in materialPaths)
+            {
+                Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+                if (material == null || material.shader == null)
+                    continue;
+
+                if (!NataneShaderCatalog.IsNataneShader(material.shader.name))
+                    continue;
+
+                if (SynchronizeMaterialKeywords(material))
+                {
+                    fixedCount++;
+                }
+            }
+
+            if (fixedCount > 0)
+            {
+                Debug.Log($"[NataneToonShader] マテリアルキーワード修正 (in-memory): {fixedCount} マテリアル");
+            }
         }
 
         /// <summary>
@@ -264,34 +311,42 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/Fix All Material Keywords")]
         public static void SynchronizeAllNataneMaterials()
         {
-            string[] materialGuids = AssetDatabase.FindAssets("t:Material");
-            int fixedCount = 0;
-            int totalChecked = 0;
-
-            foreach (string guid in materialGuids)
+            _isSynchronizing = true;
+            try
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+                string[] materialGuids = AssetDatabase.FindAssets("t:Material");
+                int fixedCount = 0;
+                int totalChecked = 0;
 
-                if (material == null || material.shader == null)
-                    continue;
-
-                if (!NataneShaderCatalog.IsNataneShader(material.shader.name))
-                    continue;
-
-                totalChecked++;
-
-                if (SynchronizeMaterialKeywords(material))
+                foreach (string guid in materialGuids)
                 {
-                    EditorUtility.SetDirty(material);
-                    fixedCount++;
+                    string path = AssetDatabase.GUIDToAssetPath(guid);
+                    Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+
+                    if (material == null || material.shader == null)
+                        continue;
+
+                    if (!NataneShaderCatalog.IsNataneShader(material.shader.name))
+                        continue;
+
+                    totalChecked++;
+
+                    if (SynchronizeMaterialKeywords(material))
+                    {
+                        EditorUtility.SetDirty(material);
+                        fixedCount++;
+                    }
+                }
+
+                if (fixedCount > 0)
+                {
+                    AssetDatabase.SaveAssets();
+                    Debug.Log($"[NataneToonShader] キーワード同期完了: {fixedCount}/{totalChecked} マテリアルを修正しました");
                 }
             }
-
-            if (fixedCount > 0)
+            finally
             {
-                AssetDatabase.SaveAssets();
-                Debug.Log($"[NataneToonShader] キーワード同期完了: {fixedCount}/{totalChecked} マテリアルを修正しました");
+                _isSynchronizing = false;
             }
         }
 
