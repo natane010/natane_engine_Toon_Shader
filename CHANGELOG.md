@@ -5,6 +5,21 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-03-13
+
+### Added
+- **VRChat Mirror / Camera Control**: New per-material mirror and camera visibility toggle. Supports Mirror Only, Non-Mirror Only, Camera Only, Non-Camera Only modes for all 10 shader variants.
+- **VRChat Shader Globals**: Declared all 9 official VRChat shader globals (`_VRChatMirrorMode`, `_VRChatCameraMode`, `_VRChatCameraMask`, `_VRChatFaceMirrorMode`, `_VRChatMirrorCameraPos`, `_VRChatScreenCameraPos`, `_VRChatScreenCameraRot`, `_VRChatPhotoCameraPos`, `_VRChatPhotoCameraRot`).
+- **Mirror detection helpers**: `NataneIsMirror()`, `NataneMirrorSign()`, `NataneIsCamera()` utility functions for consistent mirror/camera state checking across all shader modules.
+
+### Fixed
+- **Mirror rendering: MatCap UV flip** — MatCap textures no longer appear left-right reversed in VRChat mirrors.
+- **Mirror rendering: AngelRing flip** — Angel Ring (hair highlight) no longer shifts to the wrong side in mirrors.
+- **Mirror rendering: OffsetRimLight flip** — Offset Rim Light direction and position are now correct in mirrors.
+- **Mirror rendering: Eye Parallax flip** — Eye parallax depth offset no longer reverses in mirrors.
+- **Mirror rendering: Outline Desktop mirror** — Fixed outline normal X multiplier using `lerp(1,-1,val)` which produced -3.0 instead of -1.0 when `_VRChatMirrorMode=2` (Desktop mirror). All 10 shader variants fixed.
+- **Mirror rendering: Global detection** — `_VRChatMirrorMode` is now always declared globally, enabling mirror compensation even when Mirror Control feature is disabled.
+
 ## [1.4.8] - 2026-03-13
 
 ### Fixed
