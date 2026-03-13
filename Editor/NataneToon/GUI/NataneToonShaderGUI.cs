@@ -493,7 +493,11 @@ public class NataneToonShaderGUI : ShaderGUI
 
             // ===== Tab Navigation =====
             EditorGUI.BeginChangeCheck();
-            selectedTab = GUILayout.Toolbar(selectedTab, TabNames, GUILayout.Height(TAB_HEIGHT));
+            bool narrowView = EditorGUIUtility.currentViewWidth < 420f;
+            string[] displayTabNames = narrowView
+                ? new[] { L("色", "Tex"), L("光", "Light"), L("FX", "FX"), L("環境", "Env"), L("詳細", "Adv") }
+                : TabNames;
+            selectedTab = GUILayout.Toolbar(selectedTab, displayTabNames, GUILayout.Height(TAB_HEIGHT));
             if (EditorGUI.EndChangeCheck())
             {
                 SaveUIState();
@@ -692,17 +696,22 @@ public class NataneToonShaderGUI : ShaderGUI
     }
 
     private static GUIStyle _badgeStyleOff;
+    private static bool _badgeStyleOffWasDark;
     private static GUIStyle BadgeStyleOff
     {
         get
         {
-            if (_badgeStyleOff == null)
+            bool isDark = EditorGUIUtility.isProSkin;
+            if (_badgeStyleOff == null || _badgeStyleOffWasDark != isDark)
             {
                 _badgeStyleOff = new GUIStyle(EditorStyles.miniLabel);
-                _badgeStyleOff.normal.textColor = new Color(0.6f, 0.6f, 0.6f);
+                _badgeStyleOff.normal.textColor = isDark
+                    ? new Color(0.6f, 0.6f, 0.6f, 0.8f)
+                    : new Color(0.3f, 0.3f, 0.3f, 0.6f);
                 _badgeStyleOff.fontSize = 9;
                 _badgeStyleOff.alignment = TextAnchor.MiddleCenter;
                 _badgeStyleOff.padding = new RectOffset(4, 4, 1, 1);
+                _badgeStyleOffWasDark = isDark;
             }
             return _badgeStyleOff;
         }
@@ -813,7 +822,7 @@ public class NataneToonShaderGUI : ShaderGUI
             }
 
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField(L("色保持と補正", "Color Preservation & Enhancement"), EditorStyles.boldLabel);
+            DrawSubGroupHeader(L("色保持と補正", "Color Preservation & Enhancement"));
 
             DrawProperty("_AlbedoPreservation", L("テクスチャ色保持", "Texture Color Preservation"));
             DrawHelpToggle(
@@ -839,7 +848,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 MessageType.Info);
 
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField(L("最終色ブレンド", "Final Color Blending"), EditorStyles.boldLabel);
+            DrawSubGroupHeader(L("最終色ブレンド", "Final Color Blending"));
             DrawHelpToggle(
                 "FinalColorBlending",
                 L("すべての効果を重ねたあとでも、白飛びや黒つぶれを抑えやすくします。",
@@ -1092,8 +1101,8 @@ public class NataneToonShaderGUI : ShaderGUI
         if (lilToonMatchEnabled)
         {
             EditorGUILayout.HelpBox(
-                L("lilToon移行仕様が ON の間は、見た目ミキサーは読み取り専用です。上部の「編集ワークフロー」で Natane仕様 に戻すと通常編集に戻れます。",
-                  "Look Mixer is read-only while the lilToon migration workflow is ON. Switch back to the Natane workflow from the Workflow panel at the top to resume normal editing."),
+                L("lilToon移行中のため読み取り専用です。ワークフロー設定で変更できます。",
+                  "Read-only during lilToon migration. Change in Workflow settings."),
                 MessageType.Info);
             if (GUILayout.Button(L("編集ワークフローを開く", "Open Workflow Settings")))
             {
@@ -1104,9 +1113,22 @@ public class NataneToonShaderGUI : ShaderGUI
         if (isLegacy)
         {
             EditorGUILayout.HelpBox(
-                L("レガシーモードのため、ウェイトスライダーの変更はシェーダーに反映されません。プリセットボタンを使用するか、スライダーを操作すると自動的に明示モードに切り替わります。",
-                  "In Legacy mode, weight slider changes are not reflected in the shader. Use a preset button, or the mode will auto-upgrade when you adjust a slider."),
+                L("レガシーモードです。スライダー操作で自動的に切り替わります。",
+                  "Legacy mode. Adjusting sliders will auto-upgrade the mode."),
                 MessageType.Warning);
+
+            if (GUILayout.Button(L("→ 明示モードに切り替え", "→ Switch to Explicit Mode"), GUILayout.Height(22)))
+            {
+                LookMode suggested = SuggestLookMode(currentToon, currentNpr, currentPbr);
+                if (suggested == LookMode.Legacy) suggested = LookMode.Hybrid;
+                ApplyLookMixerToSelectedMaterials(
+                    "Upgrade to Explicit LookMode",
+                    suggested,
+                    currentToon,
+                    currentNpr,
+                    currentPbr);
+                materialEditor?.Repaint();
+            }
         }
 
         using (new EditorGUI.DisabledScope(lilToonMatchEnabled))
@@ -1158,8 +1180,8 @@ public class NataneToonShaderGUI : ShaderGUI
         {
             EditorGUILayout.Space(6);
             EditorGUILayout.HelpBox(
-                L("Natane仕様 / lilToon移行仕様 の切替は、上部の「編集ワークフロー」に統合されています。ここでは見た目ミキサーだけを調整してください。",
-                  "Switch between the Natane and lilToon workflows from the Workflow panel at the top. This section is now only for look mixing."),
+                L("仕様の切替は上部の「編集ワークフロー」で行えます。",
+                  "Switch workflows from the Workflow panel above."),
                 MessageType.None);
         }
     }
@@ -1234,6 +1256,12 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawLookMixerPresetButton(L("Soft NPR", "Soft NPR"), "Apply Soft NPR Look", LookMode.NPR, 0.85f, 1f, 0.1f, 1f);
                 DrawLookMixerPresetButton(L("Toon-PBR Hybrid", "Toon-PBR Hybrid"), "Apply Toon-PBR Hybrid Look", LookMode.Hybrid, 0.8f, 0.2f, 0.6f, 0f);
                 DrawLookMixerPresetButton(L("Near PBR", "Near PBR"), "Apply Near PBR Look", LookMode.PBR, 0.15f, 0.1f, 1f, 3f);
+
+                // miHoYo style (applies comprehensive settings beyond LookMixer weights)
+                if (GUILayout.Button(L("⭐ miHoYo風", "⭐ miHoYo Style"), GUILayout.Height(24)))
+                {
+                    ApplyMihoyoLookMixerToSelectedMaterials();
+                }
                 return;
             }
 
@@ -1246,6 +1274,12 @@ public class NataneToonShaderGUI : ShaderGUI
             DrawLookMixerPresetButton(L("Toon-PBR Hybrid", "Toon-PBR Hybrid"), "Apply Toon-PBR Hybrid Look", LookMode.Hybrid, 0.8f, 0.2f, 0.6f, 0f);
             DrawLookMixerPresetButton(L("Near PBR", "Near PBR"), "Apply Near PBR Look", LookMode.PBR, 0.15f, 0.1f, 1f, 3f);
             EditorGUILayout.EndHorizontal();
+
+            // miHoYo style (applies comprehensive settings beyond LookMixer weights)
+            if (GUILayout.Button(L("⭐ miHoYo風（原神・スタレ・ZZZ系）", "⭐ miHoYo Style (Genshin / HSR / ZZZ)"), GUILayout.Height(24)))
+            {
+                ApplyMihoyoLookMixerToSelectedMaterials();
+            }
         }
     }
 
@@ -1268,6 +1302,37 @@ public class NataneToonShaderGUI : ShaderGUI
                 pbrWeight,
                 shadingModeOverride);
         }
+    }
+
+    /// <summary>
+    /// Applies miHoYo-style preset to all selected materials via Look Mixer.
+    /// Sets LookMode to Toon, applies comprehensive shading/rim/specular/outline,
+    /// then synchronizes keywords.
+    /// </summary>
+    private void ApplyMihoyoLookMixerToSelectedMaterials()
+    {
+        if (materialEditor == null || materialEditor.targets == null || materialEditor.targets.Length == 0)
+        {
+            return;
+        }
+
+        Undo.RecordObjects(materialEditor.targets, "Apply miHoYo Style");
+
+        foreach (UnityEngine.Object target in materialEditor.targets)
+        {
+            Material material = target as Material;
+            if (material == null)
+            {
+                continue;
+            }
+
+            // Set LookMixer weights (Pure Toon base)
+            ApplyLookMixerValuesToMaterial(material, LookMode.Toon, 1f, 0f, 0f, 0f);
+            // Apply comprehensive miHoYo shading parameters
+            ApplyMihoyoStyle(material);
+        }
+
+        SynchronizeKeywordsAndRefreshInspectorCaches();
     }
 
     private void ResolveLookMixerForDisplay(
@@ -1782,7 +1847,7 @@ public class NataneToonShaderGUI : ShaderGUI
         {
 
             // Soft Lighting Mode
-            EditorGUILayout.LabelField(L("ソフトライティングモード", "Soft Lighting Mode"), EditorStyles.boldLabel);
+            DrawSubGroupHeader(L("ソフトライティングモード", "Soft Lighting Mode"));
             bool softLightingMode = DrawToggle("_SOFT_LIGHTING_MODE", "_SoftLightingMode", L("ソフトライティングモード（グローバル）", "Soft Lighting Mode (Global)"));
             if (softLightingMode)
             {
@@ -1809,7 +1874,7 @@ public class NataneToonShaderGUI : ShaderGUI
             }
 
             // Global Light Controls
-            EditorGUILayout.LabelField(L("グローバルライト制御", "Global Light Controls"), EditorStyles.boldLabel);
+            DrawSubGroupHeader(L("グローバルライト制御", "Global Light Controls"));
             DrawProperty("_LightIntensity", L("ライト強度（グローバル）", "Light Intensity (Global)"));
             DrawHelpToggle("LightIntensity", L("全体的なライティングの強さを制御します。0 = ライトなし、1 = 標準、1.73 = 移行補正値、5 = 最大", "Controls overall lighting strength. 0 = No light, 1 = Standard, 1.73 = Migration correction, 5 = Maximum"), MessageType.Info);
 
@@ -1830,7 +1895,7 @@ public class NataneToonShaderGUI : ShaderGUI
             DrawHelpToggle("LightColorInfluence", L("ライトの色がマテリアルに与える影響を制御します。\n• 0 = ライトの色を無視（白色光として処理）\n• 1 = ライトの色を完全に反映\n• 0.5 = 中間（推奨）", "Controls how much light color affects the material.\n• 0 = Ignore light color (treat as white)\n• 1 = Fully reflect light color\n• 0.5 = Middle (Recommended)"), MessageType.Info);
 
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField(L("シャドウ設定", "Shadow Settings"), EditorStyles.boldLabel);
+            DrawSubGroupHeader(L("シャドウ設定", "Shadow Settings"));
             DrawProperty("_ShadowReceive", L("影の受け取り", "Shadow Receive"));
             DrawHelpToggle("ShadowReceive", L("他のオブジェクトからの影がこのマテリアルに与える影響を制御します。1 = 完全な影、0 = 影なし。", "Controls how shadows from other objects affect this material. 1 = Full shadow, 0 = No shadow."), MessageType.Info);
 
@@ -1874,7 +1939,7 @@ public class NataneToonShaderGUI : ShaderGUI
             DrawHelpToggle("ShadowMaxDarkness", L("影の最小明るさです。0 = 完全に暗い、1 = 暗くならない。影が真っ黒になりすぎるのを防ぎます。", "Minimum shadow brightness. 0 = Fully dark, 1 = No darkening. Prevents shadows from becoming too black."), MessageType.Info);
 
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField(L("ライトカラー制限", "Light Color Limits"), EditorStyles.boldLabel);
+            DrawSubGroupHeader(L("ライトカラー制限", "Light Color Limits"));
             DrawProperty("_LightColorMin", L("ライト色の下限", "Light Color Min"));
             DrawProperty("_LightColorMax", L("ライト色の上限", "Light Color Max"));
             DrawHelpToggle("LightColorLimits", L(
@@ -1902,7 +1967,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 "Use when colored lights distort texture colors too much."), MessageType.Info);
 
             EditorGUILayout.Space(10);
-            EditorGUILayout.LabelField(L("ライト影響範囲", "Light Influence Range"), EditorStyles.boldLabel);
+            DrawSubGroupHeader(L("ライト影響範囲", "Light Influence Range"));
             DrawProperty("_LightMinInfluence", L("ライトの最小影響", "Light Min Influence"));
             DrawProperty("_LightMaxInfluence", L("ライトの最大影響", "Light Max Influence"));
             DrawHelpToggle("LightInfluenceRange", L("normalize後の輝度値の最小/最大を制御します。最小値は暗くなりすぎを防ぎ、最大値は露出オーバーを防ぎます。", "Controls min/max of luminance after normalize step. Min prevents excessive darkness, max prevents overexposure."), MessageType.Info);
@@ -1993,7 +2058,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
             // --- Vertex Light Settings ---
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField(L("頂点ライト設定", "Vertex Light Settings"), EditorStyles.boldLabel);
+            DrawSubGroupHeader(L("頂点ライト設定", "Vertex Light Settings"));
 
             bool enablePixelVertexLights = DrawToggle("_PIXEL_VERTEX_LIGHTS", "_UsePixelVertexLights", L("ピクセル精度の頂点ライト", "Pixel-Precision Vertex Lights"));
             DrawHelpToggle("PixelVertexLights",
@@ -7028,10 +7093,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
         EditorGUILayout.HelpBox(
             lilToonMatchEnabled
-                ? L("lilToon移行仕様が有効です。移行元の見た目に寄せるため、互換性を優先して編集します。 (Ctrl+Z で元に戻せます)",
-                    "The lilToon migration workflow is active. Editing prioritizes compatibility with the migrated source look. (Ctrl+Z to undo)")
-                : L("Natane仕様が有効です。Natane 標準の見た目ミキサーと各種調整を使って編集できます。 (Ctrl+Z で元に戻せます)",
-                    "The Natane workflow is active. Edit with the native Natane look mixer and art controls. (Ctrl+Z to undo)"),
+                ? L("lilToon移行仕様が有効です。互換性優先で編集中です。",
+                    "lilToon migration workflow active. Editing in compatibility mode.")
+                : L("Natane仕様が有効です。通常の編集が可能です。",
+                    "Natane workflow active. Full editing available."),
             lilToonMatchEnabled ? MessageType.Info : MessageType.None);
 
         EditorGUI.BeginChangeCheck();
@@ -7064,8 +7129,8 @@ public class NataneToonShaderGUI : ShaderGUI
             !ShouldUseLilToonCompatibilityBase(targetMaterial))
         {
             EditorGUILayout.HelpBox(
-                L("lilToon移行仕様は内部の互換ベース上で使うのが最適です。下のボタンから互換ベースを再適用できます。",
-                  "The lilToon migration workflow works best on the compatibility base. You can reapply the compatibility base with the button below."),
+                L("互換ベースの再適用を推奨します。下のボタンから実行できます。",
+                  "Reapplying the compatibility base is recommended. Use the button below."),
                 MessageType.Warning);
         }
 
@@ -7105,10 +7170,41 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawCurrentStateRow(string label, string value, bool wrapValue = false)
     {
-        EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField(label, EditorStyles.miniBoldLabel, GUILayout.Width(118));
-        EditorGUILayout.LabelField(value, wrapValue ? EditorStyles.wordWrappedMiniLabel : EditorStyles.miniLabel);
-        EditorGUILayout.EndHorizontal();
+        if (EditorGUIUtility.currentViewWidth < 380f)
+        {
+            // Narrow view: stack label and value vertically
+            EditorGUILayout.LabelField(label, EditorStyles.miniBoldLabel);
+            EditorGUI.indentLevel++;
+            EditorGUILayout.LabelField(value, wrapValue ? EditorStyles.wordWrappedMiniLabel : EditorStyles.miniLabel);
+            EditorGUI.indentLevel--;
+        }
+        else
+        {
+            // Normal horizontal layout
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(label, EditorStyles.miniBoldLabel, GUILayout.Width(118));
+            EditorGUILayout.LabelField(value, wrapValue ? EditorStyles.wordWrappedMiniLabel : EditorStyles.miniLabel);
+            EditorGUILayout.EndHorizontal();
+        }
+    }
+
+    /// <summary>
+    /// Draws a sub-group header with a left accent line and indented bold label
+    /// to visually distinguish sub-groups from main section headers.
+    /// </summary>
+    private void DrawSubGroupHeader(string label)
+    {
+        EditorGUILayout.Space(2);
+        Rect rect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
+        // Left accent line
+        float lineX = rect.x + 4;
+        if (Event.current.type == EventType.Repaint)
+        {
+            EditorGUI.DrawRect(new Rect(lineX, rect.y, 2, rect.height), new Color(0.5f, 0.5f, 0.5f, 0.4f));
+        }
+        // Indented label
+        Rect labelRect = new Rect(rect.x + 12, rect.y, rect.width - 12, rect.height);
+        EditorGUI.LabelField(labelRect, label, EditorStyles.boldLabel);
     }
 
     private string GetCurrentShaderLabel()
@@ -7897,6 +7993,62 @@ public class NataneToonShaderGUI : ShaderGUI
 
         EditorGUILayout.EndHorizontal();
 
+        // Visual description for row 1
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(
+            L("→ はっきりした影境界・3段階の明暗・クリーンなセル調",
+              "→ Sharp shadow edges, 3-step shading, clean cel look"),
+            EditorStyles.miniLabel);
+        EditorGUILayout.LabelField(
+            L("→ なめらかなグラデーション影・柔らかい光の回り込み・イラスト風",
+              "→ Smooth gradient shadows, soft light wrap, illustration style"),
+            EditorStyles.miniLabel);
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.Space(4);
+
+        EditorGUILayout.BeginHorizontal();
+
+        if (GUILayout.Button(L("Toon-PBR ハイブリッド", "Toon-PBR Hybrid"), GUILayout.Height(40)))
+        {
+            Undo.RecordObject(targetMaterial, "Apply Toon-PBR Hybrid");
+            ApplyToonPbrHybridStyle(targetMaterial);
+        }
+
+        if (GUILayout.Button(L("Near PBR", "Near PBR"), GUILayout.Height(40)))
+        {
+            Undo.RecordObject(targetMaterial, "Apply Near PBR");
+            ApplyNearPbrStyle(targetMaterial);
+        }
+
+        EditorGUILayout.EndHorizontal();
+
+        // Visual description for row 2
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(
+            L("→ トゥーンの明暗＋PBRの質感・バランス型",
+              "→ Toon shading + PBR textures, balanced look"),
+            EditorStyles.miniLabel);
+        EditorGUILayout.LabelField(
+            L("→ リアルな質感・滑らかなライティング・写実的",
+              "→ Realistic textures, smooth lighting, photorealistic"),
+            EditorStyles.miniLabel);
+        EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.Space(4);
+
+        // miHoYo-style preset (full width)
+        if (GUILayout.Button(L("⭐ miHoYo風（原神・スタレ・ZZZ系）", "⭐ miHoYo Style (Genshin / HSR / ZZZ)"), GUILayout.Height(40)))
+        {
+            Undo.RecordObject(targetMaterial, "Apply miHoYo Style");
+            ApplyMihoyoStyle(targetMaterial);
+            SynchronizeKeywordsAndRefreshInspectorCaches();
+        }
+        EditorGUILayout.LabelField(
+            L("→ 2段影・シャープ境界・リムライト・スペキュラー・テクスチャ連動アウトライン",
+              "→ 2-step shadows, sharp edges, rim light, specular, texture-linked outline"),
+            EditorStyles.miniLabel);
+
         DrawQuickSetupPresetHints();
 
         // Surface finish buttons
@@ -7939,6 +8091,15 @@ public class NataneToonShaderGUI : ShaderGUI
             DrawQuickSetupHint(
                 L("柔らかい塗り調", "Soft Painting Style"),
                 L("グラデーション寄りのやわらかい陰影に寄せます。", "Moves the look toward softer gradient shading."));
+            DrawQuickSetupHint(
+                L("Toon-PBR ハイブリッド", "Toon-PBR Hybrid"),
+                L("トゥーンの陰影にPBRの質感を加えたバランス型です。", "Balanced blend of toon shading with PBR surface quality."));
+            DrawQuickSetupHint(
+                L("Near PBR", "Near PBR"),
+                L("PBR寄りのリアルなライティングと質感です。", "Near-realistic lighting and surface finish."));
+            DrawQuickSetupHint(
+                L("miHoYo風", "miHoYo Style"),
+                L("原神・スタレ風の2段影＋リムライト＋アウトラインの一括設定です。", "One-click Genshin/HSR-style setup with 2-step shadow, rim light, and outline."));
             return;
         }
 
@@ -7950,6 +8111,19 @@ public class NataneToonShaderGUI : ShaderGUI
             L("柔らかい塗り調", "Soft Painting Style"),
             L("グラデーション寄りのやわらかい陰影に寄せます。", "Moves the look toward softer gradient shading."));
         EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.BeginHorizontal();
+        DrawQuickSetupHint(
+            L("Toon-PBR ハイブリッド", "Toon-PBR Hybrid"),
+            L("トゥーンの陰影にPBRの質感を加えたバランス型です。", "Balanced blend of toon shading with PBR surface quality."));
+        DrawQuickSetupHint(
+            L("Near PBR", "Near PBR"),
+            L("PBR寄りのリアルなライティングと質感です。", "Near-realistic lighting and surface finish."));
+        EditorGUILayout.EndHorizontal();
+
+        DrawQuickSetupHint(
+            L("miHoYo風", "miHoYo Style"),
+            L("原神・スタレ風の2段影＋リムライト＋アウトラインの一括設定です。", "One-click Genshin/HSR-style setup with 2-step shadow, rim light, and outline."));
     }
 
     private void DrawQuickSetupHint(string title, string description)
@@ -7987,6 +8161,95 @@ public class NataneToonShaderGUI : ShaderGUI
         mat.SetFloat("_ShadowBlend", 0.5f);
         mat.SetFloat("_LightBlend", 0.4f);
         mat.SetFloat("_AlbedoPreservation", 0.7f);
+        EditorUtility.SetDirty(mat);
+    }
+
+    /// <summary>
+    /// Apply Toon-PBR Hybrid preset (3.2 Quick Setup)
+    /// </summary>
+    private void ApplyToonPbrHybridStyle(Material mat)
+    {
+        mat.SetFloat("_ShadingMode", 0); // Toon base
+        mat.SetFloat("_ShadowSteps", 2);
+        mat.SetFloat("_ShadowSharpness", 0.2f);
+        mat.SetFloat("_ShadowBlend", 0.3f);
+        mat.SetFloat("_LightBlend", 0.3f);
+        mat.SetFloat("_AlbedoPreservation", 0.6f);
+        mat.SetFloat("_Glossiness", 0.5f);
+        mat.SetFloat("_MatteEffect", 0.3f);
+        EditorUtility.SetDirty(mat);
+    }
+
+    /// <summary>
+    /// Apply Near PBR preset (3.2 Quick Setup)
+    /// </summary>
+    private void ApplyNearPbrStyle(Material mat)
+    {
+        mat.SetFloat("_ShadingMode", 1); // Gradient
+        mat.SetFloat("_ShadingGradientWidth", 0.6f);
+        mat.SetFloat("_LitSoftness", 0.8f);
+        mat.SetFloat("_ShadowBlend", 0.7f);
+        mat.SetFloat("_LightBlend", 0.6f);
+        mat.SetFloat("_AlbedoPreservation", 0.5f);
+        mat.SetFloat("_Glossiness", 0.8f);
+        mat.SetFloat("_MatteEffect", 0.0f);
+        EditorUtility.SetDirty(mat);
+    }
+
+    /// <summary>
+    /// Apply miHoYo-style preset (Genshin Impact / Honkai Star Rail / ZZZ)
+    /// 2-step sharp shadows, warm shadow color, rim light, specular, texture-linked outline
+    /// Based on reverse-engineered HoyoToon / StarRailNPRShader rendering characteristics
+    /// </summary>
+    private void ApplyMihoyoStyle(Material mat)
+    {
+        // --- Shading: 2-step sharp toon ---
+        mat.SetFloat("_ShadingMode", 0); // Toon
+        mat.SetFloat("_ShadowSteps", 2);
+        mat.SetFloat("_ShadowSharpness", 0.03f); // Very sharp boundary (miHoYo uses near-binary step)
+        mat.SetFloat("_ShadowBlend", 0);
+        mat.SetFloat("_LitSoftness", 0);
+        mat.SetFloat("_WrapAmount", 0);
+        mat.SetFloat("_ShadowOffset", 0);
+
+        // --- Shadow color: warm tint (miHoYo day-time warm shadow) ---
+        mat.SetColor("_ShadowColor", new Color(0.62f, 0.52f, 0.54f, 1f));
+        mat.SetFloat("_ShadowHueShift", 0.02f); // Slight warm hue shift
+        mat.SetFloat("_ShadowSaturation", 1.15f); // Slightly boosted saturation
+
+        // --- Albedo & tone ---
+        mat.SetFloat("_AlbedoPreservation", 0.85f);
+        mat.SetFloat("_FinalHighlightBlend", 0.2f);
+
+        // --- Rim Light (Fresnel-based, miHoYo standard) ---
+        mat.SetFloat("_RimLight", 1); // Toggle ON → keyword synced later
+        mat.SetColor("_RimColor", new Color(1f, 1f, 1f, 1f));
+        mat.SetFloat("_RimPower", 2.5f); // Broad rim (miHoYo uses wide rim)
+        mat.SetFloat("_RimIntensity", 1.5f);
+        mat.SetFloat("_RimSpread", 0f);
+
+        // --- Specular (Blinn-Phong, miHoYo-style step threshold) ---
+        mat.SetFloat("_Specular", 1); // Toggle ON
+        mat.SetColor("_SpecularColor", new Color(1f, 1f, 1f, 1f));
+        mat.SetFloat("_SpecularSize", 0.08f); // Small, focused highlight
+        mat.SetFloat("_SpecularSoftness", 0.05f); // Sharp edge
+        mat.SetFloat("_SpecularIntensity", 1.2f);
+
+        // --- Outline (texture-color linked, moderate width) ---
+        mat.SetFloat("_Outline", 1); // Toggle ON
+        mat.SetFloat("_OutlineWidth", 0.08f);
+        mat.SetColor("_OutlineColor", new Color(0f, 0f, 0f, 1f));
+        mat.SetFloat("_OutlineTextureColor", 1); // Toggle ON → texture-linked color
+        mat.SetFloat("_OutlineTexColorBlend", 0.8f);
+        mat.SetFloat("_OutlineTexColorDarken", 0.5f);
+
+        // --- Normal: slight Y-flatten for face softening ---
+        mat.SetFloat("_NormalFlattenY", 0.15f);
+
+        // --- Surface: matte-leaning (miHoYo characters are mostly matte) ---
+        mat.SetFloat("_Glossiness", 0.15f);
+        mat.SetFloat("_MatteEffect", 0.6f);
+
         EditorUtility.SetDirty(mat);
     }
 

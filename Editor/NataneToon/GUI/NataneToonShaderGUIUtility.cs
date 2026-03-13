@@ -630,6 +630,24 @@ namespace NataneToon.Editor
                 EditorGUILayout.HelpBox(
                     L($"Estimated sampler usage is over the limit ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}). The current look is preserved, but new heavy features cannot be enabled.", $"Estimated sampler usage is over the limit ({samplerBudget.EstimatedSamplers}/{samplerBudget.Limit}). The current look is preserved, but new heavy features cannot be enabled."),
                     MessageType.Warning);
+
+                // Specific reduction suggestions based on top contributors
+                if (samplerBudget.Contributors != null && samplerBudget.Contributors.Length > 0)
+                {
+                    int overBy = samplerBudget.EstimatedSamplers - samplerBudget.Limit;
+                    EditorGUILayout.LabelField(
+                        L($"💡 削減の提案 (あと {overBy} sampler 減らす必要があります):",
+                          $"💡 Suggestions to reduce (need to free {overBy} sampler(s)):"),
+                        EditorStyles.miniBoldLabel);
+                    foreach (var contributor in samplerBudget.Contributors)
+                    {
+                        string name = NataneToonSamplerBudgetEstimator.GetDisplayName(contributor);
+                        EditorGUILayout.LabelField(
+                            L($"  • {name} を OFF → -{contributor.SamplerCost} samplers",
+                              $"  • Turn off {name} → -{contributor.SamplerCost} samplers"),
+                            EditorStyles.miniLabel);
+                    }
+                }
             }
             else if (samplerBudget.IsNearLimit)
             {
