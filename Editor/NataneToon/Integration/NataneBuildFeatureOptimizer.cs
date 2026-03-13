@@ -14,14 +14,13 @@ namespace NataneToon.Editor
     /// lilToon 方式のビルド時機能最適化。
     /// ビルド前: プロジェクト内のマテリアル・AnimationClip をスキャンし、
     ///           実際に使用されている機能だけを #define した NataneToonBuildSettings.hlsl を生成。
+    ///           未使用キーワードは #undef で強制無効化される。
     /// ビルド後: デフォルト（全機能有効）に復元。
     /// </summary>
     internal sealed class NataneBuildFeatureOptimizer : IPreprocessBuildWithReport, IPostprocessBuildWithReport
     {
         // キーワード同期 (-100) の後、他のビルド処理の前に実行
         public int callbackOrder => -90;
-
-        private static readonly string BuildSettingsPath = FindBuildSettingsHlslPath();
 
         /// <summary>
         /// KeywordMappings に含まれない追加キーワード（派生・特殊用途）。
@@ -32,13 +31,28 @@ namespace NataneToon.Editor
             "_EYE_PARALLAX",
         };
 
+        // 遅延初期化: static readonly だと AssetDatabase 未準備時に null になる
+        private static string _buildSettingsPath;
+        private static string BuildSettingsPath
+        {
+            get
+            {
+                if (_buildSettingsPath == null)
+                    _buildSettingsPath = FindBuildSettingsHlslPath();
+                return _buildSettingsPath;
+            }
+        }
+
         public void OnPreprocessBuild(BuildReport report)
         {
             try
             {
+                // パスキャッシュをクリアして最新状態で検索
+                _buildSettingsPath = null;
+
                 var usedFeatures = CollectUsedFeatures();
                 WriteBuildSettingsHlsl(usedFeatures);
-                ReimportShaders();
+                ReimportAllNataneShaders();
 
                 Debug.Log($"[NataneToonShader] ビルド時機能最適化: {usedFeatures.Count}/{NataneShaderKeywordSynchronizer.KeywordMappings.Length} 機能を有効化");
             }
@@ -210,6 +224,8 @@ namespace NataneToon.Editor
 
             string fullPath = Path.GetFullPath(path);
             File.WriteAllText(fullPath, sb.ToString(), new UTF8Encoding(false));
+
+            Debug.Log($"[NataneToonShader] BuildSettings.hlsl を書き出しました: {path}");
         }
 
         /// <summary>
@@ -218,6 +234,8 @@ namespace NataneToon.Editor
         /// </summary>
         private static void RestoreDefaultBuildSettings()
         {
+            // パスキャッシュをクリアして再検索
+            _buildSettingsPath = null;
             string path = BuildSettingsPath;
             if (string.IsNullOrEmpty(path))
                 return;
@@ -307,23 +325,47 @@ namespace NataneToon.Editor
         }
 
         /// <summary>
-        /// Natane シェーダーを再インポートして再コンパイルを強制する。
+        /// 全 Natane シェーダー (.shader) を再インポートして再コンパイルを強制する。
+        /// .hlsl ファイルだけのリインポートでは依存シェーダーの再コンパイルが
+        /// 発動しないケースがあるため、.shader 本体もリインポートする。
         /// </summary>
-        private static void ReimportShaders()
+        private static void ReimportAllNataneShaders()
         {
-            string path = BuildSettingsPath;
-            if (string.IsNullOrEmpty(path))
-                return;
+            // まず .hlsl をリインポート
+            string hlslPath = BuildSettingsPath;
+            if (!string.IsNullOrEmpty(hlslPath))
+            {
+                AssetDatabase.ImportAsset(hlslPath, ImportAssetOptions.ForceUpdate);
+            }
 
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            // 全 Natane .shader ファイルをリインポート
+            string[] shaderGuids = AssetDatabase.FindAssets("t:Shader");
+            int reimportCount = 0;
+            foreach (string guid in shaderGuids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!path.EndsWith(".shader", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Natane シェーダーのパスに含まれるか確認
+                if (!path.Contains("NataneToon"))
+                    continue;
+
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                reimportCount++;
+            }
+
+            Debug.Log($"[NataneToonShader] シェーダー再コンパイル: {reimportCount} ファイル");
         }
 
         /// <summary>
         /// NataneToonBuildSettings.hlsl のアセットパスを検索する。
+        /// Unity は .hlsl を ShaderInclude として扱うため t:TextAsset では見つからない。
         /// </summary>
         private static string FindBuildSettingsHlslPath()
         {
-            string[] guids = AssetDatabase.FindAssets("NataneToonBuildSettings t:TextAsset");
+            // 方法1: ShaderInclude 型で検索
+            string[] guids = AssetDatabase.FindAssets("NataneToonBuildSettings t:ShaderInclude");
             foreach (string guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
@@ -331,7 +373,7 @@ namespace NataneToon.Editor
                     return path;
             }
 
-            // フォールバック: Glob 検索
+            // 方法2: 型フィルタなしで検索
             guids = AssetDatabase.FindAssets("NataneToonBuildSettings");
             foreach (string guid in guids)
             {
@@ -340,6 +382,19 @@ namespace NataneToon.Editor
                     return path;
             }
 
+            // 方法3: NatanePackagePathResolver 経由のフォールバック
+            if (NatanePackagePathResolver.TryResolvePackageAssetPath(
+                    "Shaders/NataneToon/Include/Core/NataneToonBuildSettings.hlsl",
+                    out string resolvedPath))
+            {
+                if (File.Exists(Path.GetFullPath(resolvedPath)))
+                {
+                    Debug.Log($"[NataneToonShader] BuildSettings.hlsl をフォールバックパスで検出: {resolvedPath}");
+                    return resolvedPath;
+                }
+            }
+
+            Debug.LogWarning("[NataneToonShader] NataneToonBuildSettings.hlsl が見つかりません");
             return null;
         }
 
@@ -352,7 +407,9 @@ namespace NataneToon.Editor
         {
             EditorApplication.delayCall += () =>
             {
-                string path = FindBuildSettingsHlslPath();
+                // パスキャッシュをクリアして最新で検索
+                _buildSettingsPath = null;
+                string path = BuildSettingsPath;
                 if (string.IsNullOrEmpty(path))
                     return;
 
