@@ -29,6 +29,12 @@ namespace NataneToon.Editor
         private static readonly Color EnvironmentColor = new Color(0.45f, 0.80f, 0.90f); // ティール
         private static readonly Color AdvancedColor    = new Color(0.75f, 0.55f, 0.55f); // 赤茶
 
+        // ===== Toggle Status Colors =====
+        public static readonly Color ToggleEnabledColor    = new Color(0.3f, 0.8f, 0.3f);
+        public static readonly Color ToggleDisabledColor   = new Color(0.6f, 0.6f, 0.6f);
+        public static readonly Color ToggleBlockedColor    = new Color(0.9f, 0.6f, 0.2f);
+        public static readonly Color SamplerBlockHintColor = new Color(0.92f, 0.66f, 0.22f);
+
         /// <summary>
         /// セクションカテゴリに対応するカラーを返す
         /// </summary>

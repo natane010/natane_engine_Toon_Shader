@@ -509,10 +509,10 @@ public class NataneToonShaderGUI : ShaderGUI
 
             // ===== Search Bar =====
             EditorGUILayout.Space(4);
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.Label(L("Search:", "Search:"), GUILayout.Width(35));
+            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+            GUILayout.Label(L("検索", "Search"), EditorStyles.miniLabel, GUILayout.Width(40));
             searchQuery = EditorGUILayout.TextField(searchQuery, EditorStyles.toolbarSearchField);
-            if (!string.IsNullOrEmpty(searchQuery) && GUILayout.Button("X", EditorStyles.miniButton, GUILayout.Width(20)))
+            if (!string.IsNullOrEmpty(searchQuery) && GUILayout.Button(L("クリア", "Clear"), EditorStyles.toolbarButton, GUILayout.Width(45)))
             {
                 searchQuery = "";
                 GUI.FocusControl(null);
@@ -6455,22 +6455,27 @@ public class NataneToonShaderGUI : ShaderGUI
 
         EditorGUILayout.BeginHorizontal();
 
+        // 1. チェックボックス（ラベルなし）
         using (new EditorGUI.DisabledScope(!canEnable))
         {
             EditorGUI.BeginChangeCheck();
-            newEnabled = EditorGUILayout.Toggle(label, enabled);
+            newEnabled = EditorGUILayout.Toggle(GUIContent.none, enabled, GUILayout.Width(16));
             changed = EditorGUI.EndChangeCheck();
         }
 
+        // 2. ステータスアイコン（チェックボックスの直後）
         string statusIcon = newEnabled ? "✓" : (canEnable ? "✗" : "!");
         Color statusColor = newEnabled
-            ? new Color(0.3f, 0.8f, 0.3f)
-            : (canEnable ? new Color(0.6f, 0.6f, 0.6f) : new Color(0.9f, 0.6f, 0.2f));
+            ? NataneToonShaderGUIStyles.ToggleEnabledColor
+            : (canEnable ? NataneToonShaderGUIStyles.ToggleDisabledColor : NataneToonShaderGUIStyles.ToggleBlockedColor);
 
         var oldColor = GUI.color;
         GUI.color = statusColor;
-        GUILayout.Label(statusIcon, GUILayout.Width(20));
+        GUILayout.Label(statusIcon, GUILayout.Width(18));
         GUI.color = oldColor;
+
+        // 3. ラベル
+        EditorGUILayout.LabelField(label);
 
         EditorGUILayout.EndHorizontal();
 
@@ -6495,10 +6500,23 @@ public class NataneToonShaderGUI : ShaderGUI
         return newEnabled;
     }
 
+    /// <summary>
+    /// Count how many of the given shader keywords are currently enabled on the target material.
+    /// </summary>
+    private int CountEnabledKeywords(params string[] keywords)
+    {
+        int count = 0;
+        foreach (var kw in keywords)
+        {
+            if (targetMaterial.IsKeywordEnabled(kw)) count++;
+        }
+        return count;
+    }
+
     private void DrawSamplerBlockHint(NataneToonSamplerBudgetEstimator.ToggleEvaluation evaluation)
     {
         Color oldColor = GUI.color;
-        GUI.color = new Color(0.92f, 0.66f, 0.22f);
+        GUI.color = NataneToonShaderGUIStyles.SamplerBlockHintColor;
         EditorGUILayout.LabelField(
             L(
                 $"Sampler 制限のため有効化できません (+{evaluation.AddedSamplers}, 推定 {evaluation.AfterEnable.EstimatedSamplers}/{evaluation.AfterEnable.Limit})",
@@ -7454,14 +7472,14 @@ public class NataneToonShaderGUI : ShaderGUI
     /// </summary>
     private void DrawCompactHeader()
     {
+        // 1行目: タイトル + 言語切替
         EditorGUILayout.BeginHorizontal();
 
-        // Title (compact)
         EditorGUILayout.LabelField("Natane Toon Shader", CachedHeaderTitleStyle, GUILayout.Width(200));
 
         GUILayout.FlexibleSpace();
 
-        // Language toggle button
+        // Language toggle
         string langLabel = IsJapanese ? "JP" : "EN";
         if (GUILayout.Button(langLabel, GUILayout.Width(30), GUILayout.Height(20)))
         {
@@ -7469,34 +7487,29 @@ public class NataneToonShaderGUI : ShaderGUI
             materialEditor?.Repaint();
         }
 
-        // Quick validation button
-        if (GUILayout.Button(new GUIContent(L("更新", "Sync"), L("キーワード検証", "Keyword Validation")), GUILayout.Width(40), GUILayout.Height(20)))
+        EditorGUILayout.EndHorizontal();
+
+        // 2行目: アクションボタン（ツールバー風）
+        EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+
+        if (GUILayout.Button(new GUIContent(L("更新", "Sync"), L("キーワードとキャッシュを同期", "Synchronize keywords and caches")), EditorStyles.toolbarButton, GUILayout.Width(45)))
         {
             SynchronizeKeywordsAndRefreshInspectorCaches();
         }
 
-        // Expand/Collapse buttons
-        if (GUILayout.Button(L("展開", "Expand"), GUILayout.Width(50), GUILayout.Height(20)))
+        GUILayout.FlexibleSpace();
+
+        if (GUILayout.Button(L("全展開", "Expand All"), EditorStyles.toolbarButton, GUILayout.Width(60)))
         {
             ExpandAllSections(true);
-
-            // Force repaint and exit GUI to prevent layout conflicts
-            if (materialEditor != null)
-            {
-                materialEditor.Repaint();
-            }
+            if (materialEditor != null) materialEditor.Repaint();
             GUIUtility.ExitGUI();
         }
 
-        if (GUILayout.Button(L("折畳", "Collapse"), GUILayout.Width(50), GUILayout.Height(20)))
+        if (GUILayout.Button(L("全折畳", "Collapse All"), EditorStyles.toolbarButton, GUILayout.Width(60)))
         {
             ExpandAllSections(false);
-
-            // Force repaint and exit GUI to prevent layout conflicts
-            if (materialEditor != null)
-            {
-                materialEditor.Repaint();
-            }
+            if (materialEditor != null) materialEditor.Repaint();
             GUIUtility.ExitGUI();
         }
 
@@ -7557,7 +7570,9 @@ public class NataneToonShaderGUI : ShaderGUI
         SafeDrawSection(DrawDitheringSection, L("ディザリング", "Dithering"));
 
         // ─── 外部ライティング ───
-        NataneToonShaderGUIUtility.DrawCategoryDivider(L("外部ライティング", "External Lighting"));
+        int extLightCount = CountEnabledKeywords("_USE_LIGHT_VOLUME", "_LTCGI");
+        NataneToonShaderGUIUtility.DrawCategoryDivider(
+            L($"外部ライティング ({extLightCount}/2)", $"External Lighting ({extLightCount}/2)"));
         SafeDrawSection(DrawLightVolumeSection, "Light Volume");
         SafeDrawSection(DrawLTCGISection, "LTCGI");
 
@@ -7582,14 +7597,18 @@ public class NataneToonShaderGUI : ShaderGUI
             SetFoldout("VirtualExpression", state); SetFoldout("AudioLink", state); SetFoldout("SurfaceCover", state);
         });
         // ─── 光源エフェクト ───
-        NataneToonShaderGUIUtility.DrawCategoryDivider(L("光源エフェクト", "Light Source Effects"));
+        int lightCount = CountEnabledKeywords("_SPECULAR", "_HAIR_SPECULAR", "_RIM_LIGHT", "_SSS");
+        NataneToonShaderGUIUtility.DrawCategoryDivider(
+            L($"光源エフェクト ({lightCount}/4)", $"Light Source Effects ({lightCount}/4)"));
         SafeDrawSection(DrawSpecularSection, L("スペキュラー", "Specular"));
         SafeDrawSection(DrawHairSpecularSection, L("ヘアスペキュラー", "Hair Specular"));
         SafeDrawSection(DrawRimLightSection, L("リムライト", "Rim Light"));
         SafeDrawSection(DrawSSSSection, "SSS");
 
         // ─── 表面エフェクト ───
-        NataneToonShaderGUIUtility.DrawCategoryDivider(L("表面エフェクト", "Surface Effects"));
+        int surfaceCount = CountEnabledKeywords("_MATCAP", "_PROCEDURAL_MATCAP", "_GLITTER", "_WATER_DRIP", "_SMEAR", "_FUR", "_DECAL", "_SURFACE_COVER");
+        NataneToonShaderGUIUtility.DrawCategoryDivider(
+            L($"表面エフェクト ({surfaceCount}/8)", $"Surface Effects ({surfaceCount}/8)"));
         SafeDrawSection(DrawMatCapSection, "MatCap");
         SafeDrawSection(DrawProceduralMatCapSection, L("プロシージャルMatCap", "Procedural MatCap"));
         SafeDrawSection(DrawGlitterSection, L("グリッター", "Glitter"));
@@ -7600,7 +7619,9 @@ public class NataneToonShaderGUI : ShaderGUI
         SafeDrawSection(DrawSurfaceCoverSection, L("サーフェスカバー", "Surface Cover"));
 
         // ─── ビジュアルエフェクト ───
-        NataneToonShaderGUIUtility.DrawCategoryDivider(L("ビジュアルエフェクト", "Visual Effects"));
+        int visualCount = CountEnabledKeywords("_COLOR_QUANTIZE", "_HOLOGRAM", "_OUTLINE", "_EMISSION", "_AUDIOLINK");
+        NataneToonShaderGUIUtility.DrawCategoryDivider(
+            L($"ビジュアルエフェクト ({visualCount}/5)", $"Visual Effects ({visualCount}/5)"));
         SafeDrawSection(DrawHologramSection, L("ホログラム＆グリッチ", "Hologram & Glitch"));
         SafeDrawSection(DrawIllustrationStyleSection, L("イラスト調スタイル", "Illustration Style"));
         SafeDrawSection(DrawOutlineSection, L("アウトライン", "Outline"));
@@ -7640,7 +7661,9 @@ public class NataneToonShaderGUI : ShaderGUI
             SetFoldout("DetailMap", state); SetFoldout("Triplanar", state); SetFoldout("MirrorControl", state); SetFoldout("QuestLite", state);
         });
         // ─── マッピング ───
-        NataneToonShaderGUIUtility.DrawCategoryDivider(L("マッピング", "Mapping"));
+        int mapCount = CountEnabledKeywords("_NORMALMAP", "_PARALLAX");
+        NataneToonShaderGUIUtility.DrawCategoryDivider(
+            L($"マッピング ({mapCount}/2)", $"Mapping ({mapCount}/2)"));
         SafeDrawSection(DrawNormalMapSection, L("ノーマルマップ", "Normal Map"));
         SafeDrawSection(DrawParallaxSection, L("視差マッピング", "Parallax Mapping"));
         SafeDrawSection(DrawDetailMapSection, L("ディテールマップ", "Detail Map"));

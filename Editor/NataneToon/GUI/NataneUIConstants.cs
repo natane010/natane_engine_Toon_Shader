@@ -37,5 +37,18 @@ namespace NataneToon.Editor
         // ===== Tab Active Indicator (H-5) =====
         public const float TAB_INDICATOR_HEIGHT = 2f;
         public static readonly Color TAB_ACTIVE_INDICATOR_COLOR = new Color(0.3f, 0.6f, 1f, 1f);
+
+        // ===== Inspector Header =====
+        public const float HEADER_LANG_BUTTON_WIDTH = 30f;
+        public const float HEADER_ACTION_BUTTON_WIDTH = 50f;
+        public const float HEADER_SMALL_BUTTON_HEIGHT = 20f;
+
+        // ===== Search Bar =====
+        public const float SEARCH_LABEL_WIDTH = 60f;
+        public const float SEARCH_CLEAR_BUTTON_WIDTH = 45f;
+
+        // ===== Toggle Status =====
+        public const float TOGGLE_CHECKBOX_WIDTH = 16f;
+        public const float TOGGLE_STATUS_ICON_WIDTH = 18f;
     }
 }
