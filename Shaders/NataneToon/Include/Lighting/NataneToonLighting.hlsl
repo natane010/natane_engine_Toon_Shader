@@ -365,12 +365,14 @@ half3 OffsetRimLighting(half3 normal, half3 viewDir, half3 lightDir, half power,
 {
     // ビュー空間に法線を変換してXYオフセットを適用
     float3 viewNormal = mul((float3x3)UNITY_MATRIX_V, normal);
+    viewNormal.x *= NataneMirrorSign(); // Compensate VRChat mirror X-axis flip
 
     // マニュアルオフセット
     float2 manualOffset = float2(_OffsetRimOffsetX, _OffsetRimOffsetY);
 
     // ライト方向連動オフセット
     float3 viewLightDir = mul((float3x3)UNITY_MATRIX_V, lightDir);
+    viewLightDir.x *= NataneMirrorSign(); // Compensate VRChat mirror X-axis flip
     float2 lightOffset = viewLightDir.xy * _OffsetRimLightDirStrength;
 
     // オフセット合成（マニュアル + ライト方向 * UseLightDir）

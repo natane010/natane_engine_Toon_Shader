@@ -720,10 +720,11 @@ Shader "Natane/Toon Shader (Background)"
         _CoverTiling ("Cover Tiling", Float) = 1
         _CoverDirection ("Cover Direction", Vector) = (0, 1, 0, 0)
 
-        // ===== Mirror Control (ミラー対応) =====
-        [Header(Mirror Control VRChat)]
-        [Toggle(_MIRROR_CONTROL)] _MirrorControl ("Enable Mirror Control", Float) = 0
+        // ===== Mirror / Camera Control (ミラー・カメラ制御) =====
+        [Header(Mirror Camera Control VRChat)]
+        [Toggle(_MIRROR_CONTROL)] _MirrorControl ("Enable Mirror Camera Control", Float) = 0
         [Enum(Both,0,Mirror Only,1,Non Mirror Only,2)] _MirrorMode ("Mirror Mode", Float) = 0
+        [Enum(Both,0,Camera Only,1,Non Camera Only,2)] _CameraMode ("Camera Mode", Float) = 0
         _MirrorEmissionMultiplier ("Mirror Emission Multiplier", Range(0, 2)) = 1
 
         // ===== Quest Lite (Quest軽量パス) =====
@@ -930,7 +931,7 @@ CGPROGRAM
                     {
                         float3 norm = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, outlineNormal));
                         // VRChat mirror/camera flips the view matrix, compensate outline normal
-                        norm.x *= lerp(1.0, -1.0, _VRChatMirrorMode);
+                        norm.x *= _VRChatMirrorMode > 0.5 ? -1.0 : 1.0;
                         float2 offset = TransformViewToProjection(norm.xy);
                         o.pos = UnityObjectToClipPos(v.vertex);
                         float outlineWidth = _OutlineWidth * 0.1 * (1.0 + distanceFactor) * widthMultiplier;
@@ -1193,6 +1194,7 @@ CGPROGRAM
             #pragma shader_feature_local _VERTEX_COLOR_SHADOW
             #pragma shader_feature_local _PBR_LIKE
             #pragma shader_feature_local _PBR
+            #pragma shader_feature_local _MIRROR_CONTROL
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "../Include/Core/NataneToonCore.hlsl"

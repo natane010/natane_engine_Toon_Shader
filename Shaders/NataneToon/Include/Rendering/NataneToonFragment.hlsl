@@ -42,14 +42,22 @@ half4 frag(v2f i) : SV_Target
 {
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
 
-    // ===== Mirror Control (VRChat) =====
+    // ===== Mirror / Camera Control (VRChat) =====
+    // VRChat globals: _VRChatMirrorMode (0=Normal, 1=Mirror VR, 2=Mirror Desktop)
+    //                 _VRChatCameraMode (0=Normal, 1=VR Camera, 2=Desktop Camera, 3=Screenshot)
     #ifdef _MIRROR_CONTROL
     {
-        // _MirrorMode: 0=Both, 1=Mirror Only, 2=Non-Mirror Only
-        if (_MirrorMode > 0.5 && _MirrorMode < 1.5 && _VRChatMirrorMode < 0.5)
+        // _MirrorMode (user setting): 0=Both, 1=Mirror Only, 2=Non-Mirror Only
+        if (_MirrorMode > 0.5 && _MirrorMode < 1.5 && !NataneIsMirror())
             discard; // Mirror-only mode: discard in normal view
-        if (_MirrorMode > 1.5 && _VRChatMirrorMode > 0.5)
+        if (_MirrorMode > 1.5 && NataneIsMirror())
             discard; // Non-mirror mode: discard in mirror view
+
+        // _CameraMode (user setting): 0=Both, 1=Camera Only, 2=Non-Camera Only
+        if (_CameraMode > 0.5 && _CameraMode < 1.5 && !NataneIsCamera())
+            discard; // Camera-only mode: discard when not in VRChat camera
+        if (_CameraMode > 1.5 && NataneIsCamera())
+            discard; // Non-camera mode: discard when in VRChat camera
     }
     #endif
 
@@ -64,6 +72,7 @@ half4 frag(v2f i) : SV_Target
         // 軽量アイパララックス: ビュー方向のXY成分でUVオフセット
         float3 eyeViewDir = normalize(UnityWorldSpaceViewDir(i.worldPos));
         float3 eyeViewTS = mul((float3x3)UNITY_MATRIX_V, eyeViewDir);
+        eyeViewTS.x *= NataneMirrorSign(); // Compensate VRChat mirror X-axis flip
         float2 eyeOffset = eyeViewTS.xy * _EyeParallaxDepth;
         uv += eyeOffset;
     }
@@ -1437,8 +1446,9 @@ half4 frag(v2f i) : SV_Target
     #if defined(_ANGEL_RING) && defined(UNITY_PASS_FORWARDBASE)
     {
         // MatCapベースUV: ビュー空間法線のY成分でリング位置を決定
+        // X軸はミラーで反転するため NataneMirrorSign() で補正
         float2 angelUV = float2(
-            dot(normalize(UNITY_MATRIX_V[0].xyz), worldNormal) * 0.5 + 0.5,
+            dot(normalize(UNITY_MATRIX_V[0].xyz), worldNormal) * NataneMirrorSign() * 0.5 + 0.5,
             dot(normalize(UNITY_MATRIX_V[1].xyz), worldNormal) * 0.5 + 0.5
         );
         // Y方向にオフセット（リングの位置調整）
@@ -1937,7 +1947,7 @@ half4 frag(v2f i) : SV_Target
 
         // Mirror emission multiplier (VRChat)
         #ifdef _MIRROR_CONTROL
-            emission *= lerp(1.0, _MirrorEmissionMultiplier, step(0.5, _VRChatMirrorMode));
+            emission *= lerp(1.0, _MirrorEmissionMultiplier, NataneIsMirror());
         #endif
 
         // Apply Glow/Bloom effect - Optimized: removed branching, use cached luminance

@@ -331,7 +331,7 @@ public class NataneToonShaderGUI : ShaderGUI
         new[] { "Stencil", "Stencil", "stencil mask buffer" },
         new[] { "Video", "Video", "video texture render" },
         new[] { "BackgroundLightmap", "Background Lightmap", "lightmap background bake gi" },
-        new[] { "MirrorControl", "Mirror Control", "mirror control vrchat reflection" },
+        new[] { "MirrorControl", "Mirror / Camera Control", "mirror camera control vrchat reflection photo" },
         new[] { "QuestLite", "Quest Lite", "quest lite mobile performance optimization" },
     };
 
@@ -6242,32 +6242,51 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawMirrorControlSection()
     {
-        SetFoldout("MirrorControl", DrawBoxedSection(L("ミラー対応", "Mirror Control"), GetFoldout("MirrorControl"), SectionCategory.Advanced, "_MIRROR_CONTROL"));
+        SetFoldout("MirrorControl", DrawBoxedSection(L("ミラー・カメラ制御", "Mirror / Camera Control"), GetFoldout("MirrorControl"), SectionCategory.Advanced, "_MIRROR_CONTROL"));
         if (GetFoldout("MirrorControl"))
         {
-            bool enableMirror = DrawToggle("_MIRROR_CONTROL", "_MirrorControl", L("ミラー制御を有効化", "Enable Mirror Control"));
+            bool enableMirror = DrawToggle("_MIRROR_CONTROL", "_MirrorControl", L("ミラー・カメラ制御を有効化", "Enable Mirror / Camera Control"));
             if (enableMirror)
             {
                 EditorGUI.indentLevel++;
                 EditorGUILayout.Space(SECTION_SPACING);
-                EditorGUILayout.LabelField(L("ミラー制御設定", "Mirror Control Settings"), EditorStyles.boldLabel);
+                EditorGUILayout.LabelField(L("ミラー制御", "Mirror Control"), EditorStyles.boldLabel);
 
-                DrawProperty("_MirrorMode", L("表示モード", "Display Mode"));
+                DrawProperty("_MirrorMode", L("ミラー表示モード", "Mirror Display Mode"));
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("カメラ制御", "Camera Control"), EditorStyles.boldLabel);
+
+                DrawProperty("_CameraMode", L("カメラ表示モード", "Camera Display Mode"));
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("エミッション設定", "Emission Settings"), EditorStyles.boldLabel);
+
                 DrawProperty("_MirrorEmissionMultiplier", L("ミラー内エミッション倍率", "Mirror Emission Multiplier"));
 
                 DrawHelpToggle("MirrorControl",
-                    L("🪞 ミラー対応:\n" +
-                    "VRChatミラー内での描画を制御します。\n\n" +
+                    L("🪞 ミラー・カメラ制御:\n" +
+                    "VRChatミラー・カメラでの描画を制御します。\n\n" +
+                    "【ミラー表示モード】\n" +
                     "• 両方表示: 通常・ミラー両方で表示\n" +
                     "• ミラーのみ: ミラー内でのみ表示\n" +
                     "• ミラー以外のみ: 通常時のみ表示\n\n" +
-                    "💡 ミラー限定の隠し装飾や、ミラー内のパフォーマンス最適化に活用。",
-                    "🪞 Mirror Control:\n" +
-                    "Controls rendering in VRChat mirrors.\n\n" +
+                    "【カメラ表示モード】\n" +
+                    "• 両方表示: 通常・カメラ両方で表示\n" +
+                    "• カメラのみ: VRChatカメラ撮影時のみ表示\n" +
+                    "• カメラ以外のみ: VRChatカメラ撮影時に非表示\n\n" +
+                    "💡 ミラー限定の隠し装飾や、カメラ撮影時だけ見える特殊エフェクトに活用。",
+                    "🪞 Mirror / Camera Control:\n" +
+                    "Controls rendering in VRChat mirrors and cameras.\n\n" +
+                    "[Mirror Display Mode]\n" +
                     "• Both: Show in normal and mirror view\n" +
                     "• Mirror Only: Show only in mirror\n" +
                     "• Non-Mirror Only: Show only in normal view\n\n" +
-                    "💡 Use for hidden mirror decorations or mirror performance optimization."),
+                    "[Camera Display Mode]\n" +
+                    "• Both: Show in normal and camera view\n" +
+                    "• Camera Only: Show only when captured by VRChat camera\n" +
+                    "• Non-Camera Only: Hide when captured by VRChat camera\n\n" +
+                    "💡 Use for hidden decorations in mirrors or special effects visible only in photos."),
                     MessageType.Info);
 
                 EditorGUI.indentLevel--;
@@ -7911,7 +7930,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
         // ─── VRChat＆パフォーマンス ───
         NataneToonShaderGUIUtility.DrawCategoryDivider(L("VRChat＆パフォーマンス", "VRChat & Performance"));
-        SafeDrawSection(DrawMirrorControlSection, L("ミラー対応", "Mirror Control"));
+        SafeDrawSection(DrawMirrorControlSection, L("ミラー・カメラ制御", "Mirror / Camera Control"));
         SafeDrawSection(DrawQuestLiteSection, L("Quest軽量パス", "Quest Lite"));
 
         // ─── レンダリング ───
@@ -8162,7 +8181,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 new[] { "IntersectionFade", L("交差フェード", "Intersection Fade") },
                 new[] { "DistanceFade", L("距離フェード", "Distance Fade") },
                 new[] { "PerspectiveFlat", L("パースフラット", "Perspective Flat") },
-                new[] { "MirrorControl", L("ミラー対応", "Mirror Control") },
+                new[] { "MirrorControl", L("ミラー・カメラ制御", "Mirror / Camera Control") },
                 new[] { "QuestLite", L("Quest軽量", "Quest Lite") },
                 new[] { "Rendering", L("レンダリング", "Rendering") }
             };

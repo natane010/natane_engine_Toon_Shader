@@ -23,11 +23,37 @@
 
 // Utility Functions
 
+// VRChat Mirror Detection Helpers
+// _VRChatMirrorMode: 0=Normal, 1=Mirror(VR), 2=Mirror(Desktop)
+// Both 1 and 2 indicate mirror rendering where the view matrix X-axis is flipped.
+// Reference: https://creators.vrchat.com/worlds/udon/vrc-graphics/vrchat-shader-globals/
+
+// Returns true if currently rendering in a VRChat mirror
+float NataneIsMirror()
+{
+    return _VRChatMirrorMode > 0.5;
+}
+
+// Returns -1.0 in mirror (X axis flipped), 1.0 in normal view.
+// Used to compensate all view-space calculations that use UNITY_MATRIX_V.
+float NataneMirrorSign()
+{
+    return _VRChatMirrorMode > 0.5 ? -1.0 : 1.0;
+}
+
+// Returns true if currently rendering for a VRChat camera
+// _VRChatCameraMode: 0=Normal, 1=VR handheld camera, 2=Desktop camera, 3=Screenshot
+float NataneIsCamera()
+{
+    return _VRChatCameraMode > 0.5;
+}
+
 // Calculate MatCap UV coordinates from world normal
 // MatCap uses view-space normals to create sphere-mapped effects
 float2 CalculateMatCapUV(float3 worldNormal, float3 viewDir)
 {
     float3 viewNormal = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+    viewNormal.x *= NataneMirrorSign(); // Compensate VRChat mirror X-axis flip
     float2 matcapUV = viewNormal.xy * 0.5 + 0.5;
     return matcapUV;
 }

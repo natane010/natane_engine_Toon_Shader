@@ -874,9 +874,10 @@ CBUFFER_START(UnityPerMaterial)
         float4 _CoverDirection;
     #endif
 
-    // ===== 18. Mirror Control (ミラー対応) =====
+    // ===== 18. Mirror / Camera Control (ミラー・カメラ制御) =====
     #if defined(_MIRROR_CONTROL)
         float _MirrorMode;
+        float _CameraMode;
         float _MirrorEmissionMultiplier;
     #endif
 
@@ -999,10 +1000,26 @@ CBUFFER_START(UnityPerMaterial)
 
 CBUFFER_END
 
-// VRChat Mirror Mode global variable (set by VRChat runtime)
-#if defined(_MIRROR_CONTROL)
-float _VRChatMirrorMode; // 0=Normal view, 1=Inside mirror
-#endif
+// ===== VRChat Shader Globals (set by VRChat runtime) =====
+// These uniform variables are provided by VRChat and available in all worlds.
+// Always declared globally so view-dependent effects can compensate for mirror flipping,
+// regardless of whether the user has enabled the Mirror/Camera Control feature.
+// Reference: https://creators.vrchat.com/worlds/udon/vrc-graphics/vrchat-shader-globals/
+
+// Mirror Detection
+float _VRChatMirrorMode;      // 0=Normal, 1=Mirror(VR), 2=Mirror(Desktop)
+float _VRChatFaceMirrorMode;  // Face mirror mode
+
+// Camera Detection
+float _VRChatCameraMode;      // 0=Normal, 1=VR handheld camera, 2=Desktop camera, 3=Screenshot
+float _VRChatCameraMask;      // Camera layer mask
+
+// Camera Positions & Rotations
+float3 _VRChatMirrorCameraPos;    // Mirror camera world position
+float3 _VRChatScreenCameraPos;    // Screen camera world position
+float4 _VRChatScreenCameraRot;    // Screen camera rotation (quaternion)
+float3 _VRChatPhotoCameraPos;     // Photo camera world position
+float4 _VRChatPhotoCameraRot;     // Photo camera rotation (quaternion)
 
 // Texture samplers (must be outside CBUFFER per HLSL specification)
 // Main

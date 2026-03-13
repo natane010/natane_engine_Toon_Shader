@@ -949,6 +949,13 @@ Shader "Natane/Toon Shader (Cutout Lite)"
         _DepthFadeIntensity ("Fade Intensity", Range(0, 1)) = 0.5
         _DepthFadeDesaturation ("Desaturation", Range(0, 1)) = 0.3
 
+        // ===== Mirror / Camera Control (ミラー・カメラ制御) =====
+        [Header(Mirror Camera Control VRChat)]
+        [Toggle(_MIRROR_CONTROL)] _MirrorControl ("Enable Mirror Camera Control", Float) = 0
+        [Enum(Both,0,Mirror Only,1,Non Mirror Only,2)] _MirrorMode ("Mirror Mode", Float) = 0
+        [Enum(Both,0,Camera Only,1,Non Camera Only,2)] _CameraMode ("Camera Mode", Float) = 0
+        _MirrorEmissionMultiplier ("Mirror Emission Multiplier", Range(0, 2)) = 1
+
         // ===== Advanced (詳細設定) =====
         [Header(Rendering)]
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull Mode", Float) = 2
@@ -1191,7 +1198,7 @@ CGPROGRAM
                         // Improved for better consistency at different angles
                         float3 norm = normalize(mul((float3x3)UNITY_MATRIX_IT_MV, outlineNormal));
                         // VRChat mirror/camera flips the view matrix, compensate outline normal
-                        norm.x *= lerp(1.0, -1.0, _VRChatMirrorMode);
+                        norm.x *= _VRChatMirrorMode > 0.5 ? -1.0 : 1.0;
                         float2 offset = TransformViewToProjection(norm.xy);
 
                         o.pos = UnityObjectToClipPos(v.vertex);
@@ -1456,6 +1463,7 @@ CGPROGRAM
             #pragma shader_feature_local _PCSS
             #pragma shader_feature_local _PERSPECTIVE_FLAT
             #pragma shader_feature_local _DEPTH_COLOR_FADE
+            #pragma shader_feature_local _MIRROR_CONTROL
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
             #define CUTOUT_VARIANT
 
@@ -1549,6 +1557,7 @@ CGPROGRAM
             #pragma shader_feature_local _PBR_LIKE
             #pragma shader_feature_local _TESSELLATION
             #pragma shader_feature_local _TESS_DISPLACEMENT
+            #pragma shader_feature_local _MIRROR_CONTROL
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
             #define CUTOUT_VARIANT
 
