@@ -7701,7 +7701,11 @@ public class NataneToonShaderGUI : ShaderGUI
             SetFoldout("ShadowEdgeNoise", state); SetFoldout("GradientBaseColor", state);
             SetFoldout("Shading", state);
         });
-        SafeDrawSection(DrawQuickSetupSection, L("クイックセットアップ", "Quick Setup")); // 3.2 Quick Setup
+        SetFoldout("QuickSetup", DrawBoxedSection(L("クイックセットアップ", "Quick Setup"), GetFoldout("QuickSetup"), SectionCategory.Basic));
+        if (GetFoldout("QuickSetup"))
+        {
+            SafeDrawSection(DrawQuickSetupSection, L("クイックセットアップ", "Quick Setup"));
+        }
         EditorGUILayout.Space(SECTION_SPACING);
 
         SafeDrawSection(DrawMainTextureSection, L("メインテクスチャ", "Main Texture"));
@@ -7969,8 +7973,6 @@ public class NataneToonShaderGUI : ShaderGUI
     /// </summary>
     private void DrawQuickSetupSection()
     {
-        EditorGUILayout.Space(SECTION_SPACING);
-        EditorGUILayout.LabelField(L("🎨 クイックセットアップ", "🎨 Quick Setup"), EditorStyles.boldLabel);
         EditorGUILayout.HelpBox(
             L(
                 "最初は 1. ベーススタイル 2. 表面の質感 の順で決めると迷いにくいです。",
