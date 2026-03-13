@@ -1,6 +1,6 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.4.7-blue)](https://github.com/natane010/natane_toon_shader/releases)
+[![Version](https://img.shields.io/badge/version-1.4.8-blue)](https://github.com/natane010/natane_toon_shader/releases)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -24,7 +24,7 @@ VRChat運用を意識した機能（AudioLink、VRC Light Volumes、LTCGI、最�
 ## 動作環境
 
 - Unity: `2019.4+`（Built-in Render Pipeline想定）
-- パッケージバージョン: `1.4.7`（`package.json`準拠）
+- パッケージバージョン: `1.4.8`（`package.json`準拠）
 
 ## 収録シェーダー
 
@@ -208,6 +208,20 @@ VRChat運用を意識した機能（AudioLink、VRC Light Volumes、LTCGI、最�
   - **Wirelight**: 12セクション + 9種プリセットボタン（サイバーパンク/ホログラム/AudioLink等）
   - **Screen FX**: 4セクション構成（ブレンド/トゥーン化/画面歪み/シネマティック）
 
+#### インスペクターUX機能
+
+- **クイックセットアップウィザード**: ガイド付きモード（3ステップ: 用途選択→スタイル選択→質感調整）と全表示モードを切替可能
+- **ゲームキャラクター風プリセット**: 2段影＋リムライト＋スペキュラー＋テクスチャ連動アウトラインを一括設定
+- **初回オンボーディング**: はじめてインスペクターを開いた際にガイドパネルを表示
+- **セクションアイコン**: カテゴリ別アイコン（🎨☀💡✨🌍⚙）でセクションを視覚的に識別
+- **ジャンプメニュー**: ▼ボタンから現在タブのセクション一覧へワンクリックジャンプ
+- **キーボードショートカット**: Ctrl+1~5 でタブ切替
+- **レスポンシブUI**: Feature Overview グリッド（2/3/4列自動切替）、Current State Row の動的幅調整
+- **WCAG準拠パフォーマンス表示**: 色+形状の二重エンコーディング（✓A / →B / △C / ✕D）
+- **スマート検索**: 全タブ横断検索、前方一致優先のランキング表示
+- **プリセットプレビュー**: ボタンホバーで適用パラメータ一覧をツールチップ表示
+- **ダークテーマ対応**: ON/OFFバッジ・セクションボックスのコントラスト最適化
+
 ## サードパーティライティング統合
 
 ### VRC Light Volumes（ボクセル型ライティング）
@@ -248,7 +262,8 @@ VRChat運用を意識した機能（AudioLink、VRC Light Volumes、LTCGI、最�
 
 1. Materialを作成し、Shaderを `Natane/Toon Shader` に設定（またはインスペクターのシェーダータイプで「Toon」を選択）
 2. 必要に応じて `Cutout` / `Transparent` バリアントに切替
-3. まずは `Shadow Steps`, `Shadow Sharpness`, `Rim`, `Outline` を調整
+3. 「クイックセットアップ」セクションでスタイルプリセットを選択（シャープなアニメ調 / 柔らかい塗り調 / ゲームキャラクター風 / Toon-PBR ハイブリッド / Near PBR）
+4. 必要に応じて各タブでエフェクトを追加（Ctrl+1~5でタブ切替可能）
 
 ### 2. Eye Shader
 
@@ -290,6 +305,7 @@ VRChat運用を意識した機能（AudioLink、VRC Light Volumes、LTCGI、最�
 
 - パラメータ調整により、フラットなアニメ調からリッチなNPR表現まで幅広いセルシェーディングスタイルに対応します
 - イラスト調スタイル10機能（Color Quantize / Hatching / Watercolor / Kuwahara等）で手描き風表現も可能
+- **ゲームキャラクター風プリセット**: 2段影＋リムライト＋スペキュラー＋テクスチャ連動アウトラインで、3Dゲーム風のトゥーンレンダリングをワンクリック設定
 - 既定構成は、NPRセル影を軸にした実用寄りのバランスです
 - 詳細監査: `Documentation~/SHADER_STYLE_AND_OPTIMIZATION_AUDIT.md`
 

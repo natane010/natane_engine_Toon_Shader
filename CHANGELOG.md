@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Search result ordering**: Reorganized inspector search results by category importance (Core → Effects → Advanced).
 - **Foldout state validation**: Added key validation on load to prevent null references from version mismatches.
 
+### Improved
+- **Inspector UX Phase 2 (P-1~P-8)**: Quick Setup visual preview descriptions, sampler budget reduction suggestions, Legacy LookMode upgrade button, sub-group header visual distinction, narrow-view tab labels, dark theme ON/OFF badges, responsive Current State Row, concise HelpBox messages.
+- **Inspector UX Phase 3 (P-9~P-22)**: Quick Setup wizard mode (guided 3-step / show-all toggle), first-run onboarding panel, responsive Feature Overview grid (2/3/4 columns), cross-tab search label, dynamic Current State Row label width, section jump menu, WCAG-compliant performance rating (shape+color), section header icons, disabled feature hints, ranked search results, preset parameter tooltips, Undo group names, dark theme contrast enhancement, Ctrl+1~5 tab shortcuts.
+- **Game Character Style preset**: One-click setup with 2-step shadows, rim light, specular, and texture-linked outline for game-character toon rendering.
+- **Toon shading defaults**: Improved default values for better out-of-box visual impact (ShadowSteps 2→3, ShadingGradientWidth 0.2→0.5, ShadowBlend 0→0.1, LitSoftness 0→0.1).
+- **Quick Setup foldable**: Quick Setup section now uses DrawBoxedSection pattern for consistent fold behavior.
+
 ## [1.4.7] - 2026-03-11
 
 ### Fixed
