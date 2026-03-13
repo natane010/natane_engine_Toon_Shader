@@ -1029,7 +1029,12 @@ CBUFFER_START(UnityPerMaterial)
     float _UseLUT3D;
     float _UseHatching;
     float _AngelRing;
+    // _SSS: property name == keyword name, so #ifndef guard needed
+    // When _SSS keyword is active, _SSS is a preprocessor define (1),
+    // so if(_SSS >= 0.5) becomes if(1 >= 0.5) → always true (correct).
+    #ifndef _SSS
     float _SSS;
+    #endif
     float _RimLight;
     float _RimLight2;
     float _OffsetRimLight;
