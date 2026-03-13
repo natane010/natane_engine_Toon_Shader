@@ -78,8 +78,14 @@ half4 frag(v2f i) : SV_Target
     }
     #endif
     #ifdef _PARALLAX
-        float3 tangentViewDir = CalculateTangentViewDir(i.worldPos, i.worldTangent, i.worldBinormal, i.worldNormal);
-        uv = ParallaxMapping(i.uv, tangentViewDir);
+        // Property value check: prevents parallax from activating on materials
+        // where _Parallax=0 even if the shader keyword is incorrectly enabled
+        // (e.g. due to VRChat SDK build variant stripping fallback).
+        if (_Parallax >= 0.5)
+        {
+            float3 tangentViewDir = CalculateTangentViewDir(i.worldPos, i.worldTangent, i.worldBinormal, i.worldNormal);
+            uv = ParallaxMapping(i.uv, tangentViewDir);
+        }
     #endif
 
     // ===== UV Animation =====
@@ -1356,6 +1362,8 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Specular Highlight =====
     #ifdef _SPECULAR
+    if (_Specular >= 0.5)
+    {
         float specSoftnessBlurred = _SpecularSoftness + _SpecularBlur * 0.3;
         half spec = SpecularHighlight(worldNormal, viewDir, lightDir, _SpecularSize, specSoftnessBlurred);
 
@@ -1395,10 +1403,13 @@ half4 frag(v2f i) : SV_Target
             specBlendFaded *= lerp(1.0, distanceFade, _SpecularDistFade);
         #endif
         col.rgb = ApplyEffectBlendPost(preSpec, col.rgb, specBlendFaded, _SpecularBlendMode);
+    } // if (_Specular >= 0.5)
     #endif
 
     // ===== Hair Specular (Kajiya-Kay) =====
     #ifdef _HAIR_SPECULAR
+    if (_HairSpecular >= 0.5)
+    {
         half3 hairSpec = HairSpecularHighlight(worldNormal, i.worldTangent, i.worldBinormal,
                                                 viewDir, lightDir, uv);
         half3 hairTransmission = HairTransmissionHighlight(worldNormal, i.worldTangent, i.worldBinormal,
@@ -1440,6 +1451,7 @@ half4 frag(v2f i) : SV_Target
             hairSpecBlendFaded *= lerp(1.0, distanceFade, _HairSpecDistFade);
         #endif
         col.rgb = ApplyEffectBlendPost(preHairSpec, col.rgb, hairSpecBlendFaded, _HairSpecBlendMode);
+    } // if (_HairSpecular >= 0.5)
     #endif
 
     // ===== Angel Ring (天使の輪, ForwardBase only) =====
@@ -1684,6 +1696,8 @@ half4 frag(v2f i) : SV_Target
 
     // ===== MatCap (ForwardBase only) =====
     #if defined(_MATCAP) && defined(UNITY_PASS_FORWARDBASE)
+    if (_MatCap >= 0.5)
+    {
         half3 matcap = SampleTex2DBlur3Repeat(_MatCapTex, sharedMatCapUV, _MatCapBlur) * _MatCapIntensity;
 
         // Apply mask texture with soft blending
@@ -1724,11 +1738,14 @@ half4 frag(v2f i) : SV_Target
             #endif
             col.rgb = lerp(preMatCap, col.rgb, matCapBlendFaded);
         #endif
+    } // if (_MatCap >= 0.5)
     #endif
 
     // ===== MatCap 2 (ForwardBase only) =====
     #ifndef _QUEST_LITE
     #if defined(_MATCAP_2) && defined(UNITY_PASS_FORWARDBASE)
+    if (_MatCap2 >= 0.5)
+    {
         half3 matcap2 = SampleTex2DBlur3Repeat(_MatCapTex2, sharedMatCapUV, _MatCap2Blur) * _MatCapIntensity2;
 
         half matcapMask2 = NATANE_SAMPLE_SHARED_R(_MatCapMask2, _MatCapTex2, uv);
@@ -1752,12 +1769,15 @@ half4 frag(v2f i) : SV_Target
             matCap2BlendFaded *= lerp(1.0, distanceFade, _MatCap2DistFade);
         #endif
         col.rgb = lerp(preMatCap2, col.rgb, matCap2BlendFaded);
+    } // if (_MatCap2 >= 0.5)
     #endif
     #endif // !_QUEST_LITE
 
     // ===== MatCap 3 (ForwardBase only) =====
     #ifndef _QUEST_LITE
     #if defined(_MATCAP_3) && defined(UNITY_PASS_FORWARDBASE)
+    if (_MatCap3 >= 0.5)
+    {
         half3 matcap3 = SampleTex2DBlur3Repeat(_MatCapTex3, sharedMatCapUV, _MatCap3Blur) * _MatCapIntensity3;
 
         half matcapMask3 = NATANE_SAMPLE_SHARED_R(_MatCapMask3, _MatCapTex3, uv);
@@ -1781,11 +1801,13 @@ half4 frag(v2f i) : SV_Target
             matCap3BlendFaded *= lerp(1.0, distanceFade, _MatCap3DistFade);
         #endif
         col.rgb = lerp(preMatCap3, col.rgb, matCap3BlendFaded);
+    } // if (_MatCap3 >= 0.5)
     #endif
     #endif // !_QUEST_LITE
 
     // ===== Procedural MatCap (ForwardBase only) =====
     #if defined(_PROCEDURAL_MATCAP) && defined(UNITY_PASS_FORWARDBASE)
+    if (_ProceduralMatCap >= 0.5)
     {
         // Spherical gradient from view-space normal
         half gradient = pow(saturate(1.0 - length(sharedMatCapUV - 0.5) * 2.0), _ProcMatCapPower);
@@ -1805,6 +1827,8 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Cubemap Reflection (ForwardBase only) =====
     #if defined(_REFLECTION) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Reflection >= 0.5)
+    {
         half3 reflection = CubemapReflection(worldNormal, viewDir, _Smoothness, _Metallic);
 
         // Apply mask texture with soft blending
@@ -1865,6 +1889,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Fake Environment Reflection (Cubemap-free, ForwardBase only) =====
     #if defined(_FAKE_REFLECTION) && defined(UNITY_PASS_FORWARDBASE)
+    if (_FakeReflection >= 0.5)
     {
         // Reflect view direction around surface normal
         float3 reflectDir = reflect(-viewDir, worldNormal);
@@ -2028,6 +2053,8 @@ half4 frag(v2f i) : SV_Target
     // ===== Glitter Effect =====
     #ifndef _QUEST_LITE
     #if defined(_GLITTER) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Glitter >= 0.5)
+    {
         float2 glitterMaskUV = AnimateUVIfNeeded(uv, _GlitterMaskScrollSpeed.xy, _GlitterMaskRotateSpeed);
         half3 glitter = GlitterEffect(glitterMaskUV, i.worldPos, viewDir, worldNormal, lightDir, _GlitterBlur);
         glitter = ApplyMatteQuality(glitter, col.rgb, _MatteEffect);
@@ -2038,11 +2065,14 @@ half4 frag(v2f i) : SV_Target
             glitterBlendFaded *= lerp(1.0, distanceFade, _GlitterDistFade);
         #endif
         col.rgb = ApplyEffectBlendPost(preGlitter, col.rgb, glitterBlendFaded, _GlitterBlendMode);
+    } // if (_Glitter >= 0.5)
     #endif
     #endif // !_QUEST_LITE
 
     // ===== Iridescence Effect =====
     #if defined(_IRIDESCENCE) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Iridescence >= 0.5)
+    {
         float iridSizeBlurred = lerp(_IridescenceSize, _IridescenceSize * 3.0, _IridescenceBlur);
         half3 iridescence = IridescenceEffect(worldNormal, viewDir, uv, iridSizeBlurred);
         iridescence = ApplyMatteQuality(iridescence, col.rgb, _MatteEffect);
@@ -2053,6 +2083,7 @@ half4 frag(v2f i) : SV_Target
             iridescenceBlendFaded *= lerp(1.0, distanceFade, _IridescenceDistFade);
         #endif
         col.rgb = ApplyEffectBlendPost(preIridescence, col.rgb, iridescenceBlendFaded, _IridescenceBlendMode);
+    } // if (_Iridescence >= 0.5)
     #endif
 
     // ===== SMEAR EFFECT (スミア / 残像エフェクト) =====
