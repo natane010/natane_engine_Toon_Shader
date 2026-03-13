@@ -9,13 +9,13 @@ namespace NataneToon.Editor
     /// シェーダーリインポート時にNataneマテリアルのキーワード状態を自動修正する。
     /// [Toggle(_KEYWORD)] プロパティの値とキーワード状態のズレ（reimport後の古いキーワード残留）を防止。
     /// </summary>
-    internal sealed class NataneShaderKeywordSynchronizer : AssetPostprocessor
+    public sealed class NataneShaderKeywordSynchronizer : AssetPostprocessor
     {
         /// <summary>
         /// Toggle プロパティ名 → シェーダーキーワード のマッピング。
         /// NataneToonShaderGUI.ValidateAndFixKeywords() と同一のリストを維持すること。
         /// </summary>
-        internal static readonly (string propertyName, string keyword)[] KeywordMappings =
+        public static readonly (string propertyName, string keyword)[] KeywordMappings =
         {
             // Main Texture Animation
             ("_MainTexAnimation", "_MAIN_TEX_ANIMATION"),
@@ -301,7 +301,7 @@ namespace NataneToon.Editor
         /// プロジェクト内のすべての Natane マテリアルのキーワードを同期する。
         /// </summary>
         [MenuItem("Tools/Natane/Fix All Material Keywords")]
-        internal static void SynchronizeAllNataneMaterials()
+        public static void SynchronizeAllNataneMaterials()
         {
             string[] materialGuids = AssetDatabase.FindAssets("t:Material");
             int fixedCount = 0;
@@ -337,7 +337,7 @@ namespace NataneToon.Editor
         /// <summary>
         /// 単一マテリアルのキーワードを同期する。変更があった場合 true を返す。
         /// </summary>
-        internal static bool SynchronizeMaterialKeywords(Material material)
+        public static bool SynchronizeMaterialKeywords(Material material)
         {
             if (material == null)
                 return false;
