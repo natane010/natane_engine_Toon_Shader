@@ -1411,11 +1411,13 @@ namespace NataneToon.Editor
 
                 int lilRimBlendMode = sourceProps.ContainsKey("_RimBlendMode")
                     ? (int)(float)sourceProps["_RimBlendMode"]
-                    : 1;
+                    : 0;
                 int nataneRimBlendMode = ConvertRimBlendMode(lilRimBlendMode);
                 targetMaterial.SetFloat("_RimBlendMode", nataneRimBlendMode);
 
-                report.infos.Add($"Rim Light enabled: DirStrength={rimEnableLighting:F2}, ShadowMask={rimShadowMask:F2}, BlendMode={nataneRimBlendMode}");
+                string[] lilNames = { "Normal", "Add", "Screen", "Multiply" };
+                string[] natNames = { "Normal", "Soft", "Screen", "Overlay" };
+                report.infos.Add($"Rim Light enabled: DirStrength={rimEnableLighting:F2}, ShadowMask={rimShadowMask:F2}, BlendMode={lilNames[Mathf.Clamp(lilRimBlendMode, 0, 3)]}→{natNames[nataneRimBlendMode]}");
             }
 
             if (useRimShade)
@@ -1530,17 +1532,12 @@ namespace NataneToon.Editor
                 {
                     // lilToon: 0=Normal, 1=Add, 2=Screen, 3=Multiply
                     // Natane:  0=Normal, 1=Soft, 2=Screen, 3=Overlay
-                    // Normal と Screen は同じ。Add→Soft、Multiply→Overlay で近似。
                     int lilBlendMode = (int)GetFloatOr(sourceProps, "_EmissionBlendMode", 0.0f);
-                    int nataneBlendMode;
-                    switch (lilBlendMode)
-                    {
-                        case 1: nataneBlendMode = 1; break; // Add → Soft
-                        case 2: nataneBlendMode = 2; break; // Screen → Screen
-                        case 3: nataneBlendMode = 3; break; // Multiply → Overlay
-                        default: nataneBlendMode = 0; break; // Normal → Normal
-                    }
+                    int nataneBlendMode = ConvertEffectBlendMode(lilBlendMode);
                     targetMaterial.SetFloat("_EmissionBlendMode", nataneBlendMode);
+                    string[] lilNames = { "Normal", "Add", "Screen", "Multiply" };
+                    string[] natNames = { "Normal", "Soft", "Screen", "Overlay" };
+                    report.infos.Add($"Emission BlendMode: lilToon {lilNames[Mathf.Clamp(lilBlendMode, 0, 3)]} → Natane {natNames[nataneBlendMode]}");
                 }
 
                 // Scroll/Rotate: lilToon _EmissionMap_ScrollRotate (Vector4: scrollX, scrollY, ?, rotate)
@@ -1923,16 +1920,27 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// lilToon: 0=Normal(lerp), 1=Add, 2=Screen, 3=Multiply
-        /// Natane:  0=Normal(SoftLight), 1=Soft, 2=Screen, 3=Overlay
+        /// Natane:  0=Normal, 1=Soft, 2=Screen, 3=Overlay
+        /// Emission, Rim Light, Env Rim 共通の変換ロジック。
         /// </summary>
         private int ConvertRimBlendMode(int lilBlendMode)
         {
+            return ConvertEffectBlendMode(lilBlendMode);
+        }
+
+        /// <summary>
+        /// lilToon → Natane 汎用エフェクト合成モード変換。
+        /// lilToon: 0=Normal, 1=Add, 2=Screen, 3=Multiply
+        /// Natane:  0=Normal, 1=Soft, 2=Screen, 3=Overlay
+        /// </summary>
+        private int ConvertEffectBlendMode(int lilBlendMode)
+        {
             switch (lilBlendMode)
             {
-                case 0: return 2;
-                case 1: return 0;
-                case 2: return 2;
-                case 3: return 3;
+                case 0: return 0; // Normal → Normal
+                case 1: return 1; // Add → Soft (近似)
+                case 2: return 2; // Screen → Screen
+                case 3: return 3; // Multiply → Overlay (近似)
                 default: return 0;
             }
         }
