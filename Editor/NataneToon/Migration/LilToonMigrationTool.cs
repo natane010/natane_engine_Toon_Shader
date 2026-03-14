@@ -864,6 +864,10 @@ namespace NataneToon.Editor
                 MapPropertiesWithReport(originalProperties, targetMaterial, report);
                 ApplyLilToonParityFlags(targetMaterial, originalProperties);
 
+                // renderQueue をソースから維持
+                targetMaterial.renderQueue = sourceMaterial.renderQueue;
+                report.infos.Add($"Render Queue: {sourceMaterial.renderQueue}");
+
                 if (conversionMode == ConversionMode.MinimalSafe)
                 {
                     DisableNonBasicFeatures(targetMaterial, report);
@@ -1021,6 +1025,13 @@ namespace NataneToon.Editor
             CaptureFloat(material, "_LightMaxLimit", properties);
             CaptureFloat(material, "_MonochromeLighting", properties);
             CaptureFloat(material, "_AsUnlit", properties);
+
+            // === Render State ===
+            CaptureFloat(material, "_Cull", properties);
+            CaptureFloat(material, "_ZWrite", properties);
+            CaptureFloat(material, "_SrcBlend", properties);
+            CaptureFloat(material, "_DstBlend", properties);
+            CaptureFloat(material, "_AlphaToMask", properties);
 
             return properties;
         }
@@ -1670,6 +1681,37 @@ namespace NataneToon.Editor
             {
                 report.warnings.Add("Shadow Post AO is enabled in lilToon, but Natane Exact Compatibility still ignores that branch.");
             }
+
+            // === Render State Migration ===
+            // _Cull: lilToon 0=Off(両面), 1=Front, 2=Back(デフォルト)
+            if (sourceProps.ContainsKey("_Cull"))
+            {
+                float cull = (float)sourceProps["_Cull"];
+                targetMaterial.SetFloat("_Cull", cull);
+                string cullName = cull < 0.5f ? "Off (両面)" : cull < 1.5f ? "Front" : "Back";
+                report.infos.Add($"Cull Mode: {cullName}");
+            }
+
+            // _ZWrite: lilToon と Natane で同じ意味 (0=Off, 1=On)
+            if (sourceProps.ContainsKey("_ZWrite"))
+            {
+                float zwrite = (float)sourceProps["_ZWrite"];
+                targetMaterial.SetFloat("_ZWrite", zwrite);
+                report.infos.Add($"ZWrite: {(zwrite > 0.5f ? "On" : "Off")}");
+            }
+
+            // _SrcBlend / _DstBlend: Transparent シェーダーの場合のみ
+            string targetShaderName = targetMaterial.shader != null ? targetMaterial.shader.name : "";
+            if (targetShaderName.Contains("Transparent"))
+            {
+                if (sourceProps.ContainsKey("_SrcBlend"))
+                    targetMaterial.SetFloat("_SrcBlend", (float)sourceProps["_SrcBlend"]);
+                if (sourceProps.ContainsKey("_DstBlend"))
+                    targetMaterial.SetFloat("_DstBlend", (float)sourceProps["_DstBlend"]);
+                report.infos.Add("Blend mode properties migrated for Transparent variant.");
+            }
+
+            // renderQueue: 呼び出し側で sourceMaterial.renderQueue を設定すること
         }
 
         /// <summary>
