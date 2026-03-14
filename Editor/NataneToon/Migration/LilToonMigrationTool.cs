@@ -1751,20 +1751,60 @@ namespace NataneToon.Editor
         }
 
         /// <summary>
+        /// ソースマテリアルのシェーダー名・renderQueue・プロパティから
+        /// 適切な Natane シェーダーバリアント (Opaque/Cutout/Transparent) を判定する。
         /// </summary>
         private Shader DetectNataneShaderVariant(Material sourceMaterial)
         {
             string shaderName = sourceMaterial.shader.name.ToLower();
 
+            // --- Step 1: シェーダー名から判定 ---
+            // lilToon の命名パターン: "cutout", "transparent", "fade" 等
             if (shaderName.Contains("transparent") || shaderName.Contains("fade"))
             {
-                Shader transparentShader = Shader.Find("Natane/Toon Shader Transparent");
+                Shader transparentShader = Shader.Find("Natane/Toon Shader (Transparent)");
                 if (transparentShader != null) return transparentShader;
             }
             else if (shaderName.Contains("cutout"))
             {
-                Shader cutoutShader = Shader.Find("Natane/Toon Shader Cutout");
+                Shader cutoutShader = Shader.Find("Natane/Toon Shader (Cutout)");
                 if (cutoutShader != null) return cutoutShader;
+            }
+
+            // --- Step 2: renderQueue から判定（シェーダー名で判別できなかった場合） ---
+            // AlphaTest queue = 2450, Transparent queue >= 2501
+            int queue = sourceMaterial.renderQueue;
+            if (queue >= 2501)
+            {
+                Shader transparentShader = Shader.Find("Natane/Toon Shader (Transparent)");
+                if (transparentShader != null) return transparentShader;
+            }
+            else if (queue >= 2450 && queue <= 2500)
+            {
+                Shader cutoutShader = Shader.Find("Natane/Toon Shader (Cutout)");
+                if (cutoutShader != null) return cutoutShader;
+            }
+
+            // --- Step 3: マテリアルプロパティから判定（最終フォールバック） ---
+            // _Cutoff > 0 かつブレンドモードが Opaque 系 → Cutout
+            if (sourceMaterial.HasProperty("_Cutoff"))
+            {
+                float cutoff = sourceMaterial.GetFloat("_Cutoff");
+                if (cutoff > 0.001f)
+                {
+                    bool isTransparentBlend = sourceMaterial.HasProperty("_SrcBlend") &&
+                                              sourceMaterial.GetFloat("_SrcBlend") > 1.5f;
+                    if (isTransparentBlend)
+                    {
+                        Shader transparentShader = Shader.Find("Natane/Toon Shader (Transparent)");
+                        if (transparentShader != null) return transparentShader;
+                    }
+                    else
+                    {
+                        Shader cutoutShader = Shader.Find("Natane/Toon Shader (Cutout)");
+                        if (cutoutShader != null) return cutoutShader;
+                    }
+                }
             }
 
             return Shader.Find("Natane/Toon Shader");
