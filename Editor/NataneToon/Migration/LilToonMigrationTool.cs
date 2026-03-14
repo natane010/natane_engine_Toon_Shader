@@ -1468,8 +1468,26 @@ namespace NataneToon.Editor
 
             if (sourceProps.ContainsKey("_OutlineColor"))
             {
-                targetMaterial.SetColor("_OutlineColor", (Color)sourceProps["_OutlineColor"]);
+                Color outlineColor = (Color)sourceProps["_OutlineColor"];
+
+                // 半透明アウトラインバリアント (OnePassTransparent, TwoPassTransparent 等) は
+                // アウトライン色をアルファ0の黒に設定し、半透明描画と自然に馴染ませる
+                bool isTransparentOutline = sourceShaderLower.Contains("transparent") && isOutlineVariant;
+                if (isTransparentOutline)
+                {
+                    outlineColor = new Color(0f, 0f, 0f, 0f);
+                    report.infos.Add("Outline Color set to transparent black (0,0,0,0) for transparent outline variant.");
+                }
+
+                targetMaterial.SetColor("_OutlineColor", outlineColor);
                 hasOutline = true;
+            }
+            else if (sourceShaderLower.Contains("transparent") && isOutlineVariant)
+            {
+                // _OutlineColor が未設定でも半透明バリアントなら透明黒をセット
+                targetMaterial.SetColor("_OutlineColor", new Color(0f, 0f, 0f, 0f));
+                hasOutline = true;
+                report.infos.Add("Outline Color defaulted to transparent black (0,0,0,0) for transparent outline variant.");
             }
 
             // Outline Texture (lilToon _OutlineTex → Natane _OutlineTex)
