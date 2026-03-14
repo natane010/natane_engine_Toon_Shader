@@ -18,6 +18,20 @@
 // Unity includes
 #include "UnityCG.cginc"
 #include "Lighting.cginc"
+
+// Transparent variants must NOT use screen-space shadows.
+// Screen-space shadows sample the depth buffer, but transparent objects
+// (ZWrite Off) are absent from it, so the lookup returns the shadow of
+// whatever opaque geometry sits behind — causing shadow "bleed-through".
+// Undefining SHADOWS_SCREEN before AutoLight.cginc forces Unity to fall
+// back to direct light-space shadow map sampling, which is depth-buffer
+// independent and gives correct per-fragment shadow positions.
+#ifdef TRANSPARENT_VARIANT
+    #ifdef SHADOWS_SCREEN
+        #undef SHADOWS_SCREEN
+    #endif
+#endif
+
 #include "AutoLight.cginc"
 
 // Natane Toon Shader modules
