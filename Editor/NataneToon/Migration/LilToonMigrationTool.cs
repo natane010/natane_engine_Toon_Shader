@@ -839,6 +839,8 @@ namespace NataneToon.Editor
 
                 // Store original properties before changing shader
                 var originalProperties = CaptureProperties(sourceMaterial);
+                // ソースシェーダー名を保存（MapPropertiesWithReport でアウトラインバリアント検出に使用）
+                originalProperties["__sourceShaderName"] = sourceMaterial.shader != null ? sourceMaterial.shader.name : "";
 
                 DetectMultipleShadowLayers(originalProperties, report);
 
@@ -994,6 +996,10 @@ namespace NataneToon.Editor
             CaptureFloat(material, "_OutlineFixWidth", properties);
             CaptureTexture(material, "_OutlineTex", properties);
             CaptureTexture(material, "_OutlineWidthMask", properties);
+            CaptureTexture(material, "_OutlineVectorTex", properties);
+            CaptureFloat(material, "_OutlineEnableLighting", properties);
+            CaptureFloat(material, "_OutlineZBias", properties);
+            CaptureVector(material, "_OutlineTexHSVG", properties);
 
             // === Emission ===
             CaptureTexture(material, "_EmissionMap", properties);
@@ -1418,7 +1424,15 @@ namespace NataneToon.Editor
             }
 
             // === Outline ===
+            // lilToon のアウトラインバリアント (lilToonOutline, lilToonCutoutOutline,
+            // lilToonOnePassTransparentOutline 等) はシェーダー名に "outline" を含む。
+            // _UseOutline フラグやシェーダー名からアウトライン有効を判定する。
+            string sourceShaderName = sourceProps.ContainsKey("__sourceShaderName") ? (string)sourceProps["__sourceShaderName"] : "";
+            string sourceShaderLower = sourceShaderName.ToLower();
+            bool isOutlineVariant = sourceShaderLower.Contains("outline");
+            bool useOutlineFlag = GetFloatOr(sourceProps, "_UseOutline", 0.0f) > 0.5f;
             bool hasOutline = false;
+
             if (sourceProps.ContainsKey("_OutlineWidth"))
             {
                 float originalWidth = (float)sourceProps["_OutlineWidth"];
@@ -1434,6 +1448,20 @@ namespace NataneToon.Editor
                     report.convertedOutlineWidth = convertedWidth;
                     report.infos.Add($"Outline Width: lilToon {originalWidth:F4} -> Natane {convertedWidth:F4} (0.1 scale)");
                 }
+                else if (isOutlineVariant || useOutlineFlag)
+                {
+                    // アウトラインバリアントなのに width=0 → デフォルト幅を設定
+                    targetMaterial.SetFloat("_OutlineWidth", 0.05f);
+                    hasOutline = true;
+                    report.infos.Add("Outline Width was 0 but source is outline variant. Set default width 0.05.");
+                }
+            }
+            else if (isOutlineVariant || useOutlineFlag)
+            {
+                // _OutlineWidth プロパティが存在しない場合もデフォルト設定
+                targetMaterial.SetFloat("_OutlineWidth", 0.05f);
+                hasOutline = true;
+                report.infos.Add("Outline enabled from source shader variant. Set default width 0.05.");
             }
 
             if (sourceProps.ContainsKey("_OutlineColor"))
@@ -1441,6 +1469,9 @@ namespace NataneToon.Editor
                 targetMaterial.SetColor("_OutlineColor", (Color)sourceProps["_OutlineColor"]);
                 hasOutline = true;
             }
+
+            // Outline Texture (lilToon _OutlineTex → Natane _OutlineTex)
+            SetTextureIfExists(sourceProps, "_OutlineTex", targetMaterial, "_OutlineTex");
 
             if (sourceProps.ContainsKey("_OutlineWidthMask") && sourceProps["_OutlineWidthMask"] != null)
             {
@@ -1451,10 +1482,27 @@ namespace NataneToon.Editor
                 report.infos.Add("Outline Width Mask mapped to Natane Outline Width Map.");
             }
 
+            // Smooth Normal (lilToon _OutlineVectorTex → Natane smooth normal)
+            if (sourceProps.ContainsKey("_OutlineVectorTex") && sourceProps["_OutlineVectorTex"] != null)
+            {
+                targetMaterial.SetTexture("_SmoothNormalTex", (Texture)sourceProps["_OutlineVectorTex"]);
+                targetMaterial.SetFloat("_SmoothNormal", 1.0f);
+                targetMaterial.EnableKeyword("_SMOOTH_NORMAL");
+                report.infos.Add("Outline Vector Texture mapped to Smooth Normal.");
+            }
+
+            // アウトラインバリアントまたはフラグで強制有効化
+            if (isOutlineVariant || useOutlineFlag)
+            {
+                hasOutline = true;
+            }
+
             if (hasOutline)
             {
                 targetMaterial.SetFloat("_Outline", 1.0f);
                 targetMaterial.EnableKeyword("_OUTLINE");
+                if (isOutlineVariant)
+                    report.infos.Add($"Outline enabled (source: {sourceShaderName}).");
             }
 
             // === Emission ===
