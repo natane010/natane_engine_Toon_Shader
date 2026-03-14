@@ -998,8 +998,17 @@ namespace NataneToon.Editor
             // === Emission ===
             CaptureTexture(material, "_EmissionMap", properties);
             CaptureColor(material, "_EmissionColor", properties);
+            CaptureTexture(material, "_EmissionBlendMask", properties);
+            CaptureVector(material, "_EmissionMap_ScrollRotate", properties);
+            CaptureVector(material, "_EmissionBlendMask_ScrollRotate", properties);
+            CaptureFloat(material, "_EmissionBlend", properties);
+            CaptureFloat(material, "_EmissionBlendMode", properties);
+            CaptureTexture(material, "_EmissionGradTex", properties);
+            CaptureFloat(material, "_EmissionGradSpeed", properties);
+            CaptureVector(material, "_EmissionBlink", properties);
             CaptureTexture(material, "_Emission2ndMap", properties);
             CaptureColor(material, "_Emission2ndColor", properties);
+            CaptureTexture(material, "_Emission2ndBlendMask", properties);
 
             // === MatCap ===
             CaptureTexture(material, "_MatCapTex", properties);
@@ -1151,6 +1160,14 @@ namespace NataneToon.Editor
             if (material.HasProperty(propertyName))
             {
                 properties[propertyName] = material.GetFloat(propertyName);
+            }
+        }
+
+        private void CaptureVector(Material material, string propertyName, Dictionary<string, object> properties)
+        {
+            if (material.HasProperty(propertyName))
+            {
+                properties[propertyName] = material.GetVector(propertyName);
             }
         }
 
@@ -1446,14 +1463,94 @@ namespace NataneToon.Editor
 
             if (useEmission)
             {
+                // Emission Map (色マップ)
                 SetTextureIfExists(sourceProps, "_EmissionMap", targetMaterial, "_EmissionMap");
                 if (sourceProps.ContainsKey("_EmissionColor"))
                 {
                     targetMaterial.SetColor("_EmissionColor", (Color)sourceProps["_EmissionColor"]);
                 }
+
+                // Emission Mask (マスクテクスチャ)
+                // lilToon: _EmissionBlendMask → Natane: _EmissionMask
+                SetTextureIfExists(sourceProps, "_EmissionBlendMask", targetMaterial, "_EmissionMask");
+
+                // Blend 強度・モード
+                float emissionBlend = GetFloatOr(sourceProps, "_EmissionBlend", 1.0f);
+                targetMaterial.SetFloat("_EmissionBlend", emissionBlend);
+
+                if (sourceProps.ContainsKey("_EmissionBlendMode"))
+                {
+                    // lilToon: 0=Normal, 1=Add, 2=Screen, 3=Multiply
+                    // Natane:  0=Normal, 1=Soft, 2=Screen, 3=Overlay
+                    // Normal と Screen は同じ。Add→Soft、Multiply→Overlay で近似。
+                    int lilBlendMode = (int)GetFloatOr(sourceProps, "_EmissionBlendMode", 0.0f);
+                    int nataneBlendMode;
+                    switch (lilBlendMode)
+                    {
+                        case 1: nataneBlendMode = 1; break; // Add → Soft
+                        case 2: nataneBlendMode = 2; break; // Screen → Screen
+                        case 3: nataneBlendMode = 3; break; // Multiply → Overlay
+                        default: nataneBlendMode = 0; break; // Normal → Normal
+                    }
+                    targetMaterial.SetFloat("_EmissionBlendMode", nataneBlendMode);
+                }
+
+                // Scroll/Rotate: lilToon _EmissionMap_ScrollRotate (Vector4: scrollX, scrollY, ?, rotate)
+                if (sourceProps.ContainsKey("_EmissionMap_ScrollRotate"))
+                {
+                    Vector4 scrollRotate = (Vector4)sourceProps["_EmissionMap_ScrollRotate"];
+                    // Natane: 個別プロパティに分解
+                    if (Mathf.Abs(scrollRotate.x) > 0.001f || Mathf.Abs(scrollRotate.y) > 0.001f)
+                    {
+                        targetMaterial.SetFloat("_EmissionScroll", 1.0f);
+                        targetMaterial.SetFloat("_EmissionScrollSpeed", scrollRotate.x);
+                        targetMaterial.SetFloat("_EmissionScrollSpeedY", scrollRotate.y);
+                        report.infos.Add($"Emission Scroll: X={scrollRotate.x:F2}, Y={scrollRotate.y:F2}");
+                    }
+                    if (Mathf.Abs(scrollRotate.w) > 0.001f)
+                    {
+                        targetMaterial.SetFloat("_EmissionRotateSpeed", scrollRotate.w);
+                        report.infos.Add($"Emission Rotate Speed: {scrollRotate.w:F2}");
+                    }
+                }
+
+                // Mask Scroll/Rotate
+                if (sourceProps.ContainsKey("_EmissionBlendMask_ScrollRotate"))
+                {
+                    Vector4 maskScrollRotate = (Vector4)sourceProps["_EmissionBlendMask_ScrollRotate"];
+                    if (targetMaterial.HasProperty("_EmissionMaskScrollSpeed"))
+                    {
+                        targetMaterial.SetVector("_EmissionMaskScrollSpeed", new Vector4(maskScrollRotate.x, maskScrollRotate.y, 0, 0));
+                    }
+                    if (Mathf.Abs(maskScrollRotate.w) > 0.001f && targetMaterial.HasProperty("_EmissionMaskRotateSpeed"))
+                    {
+                        targetMaterial.SetFloat("_EmissionMaskRotateSpeed", maskScrollRotate.w);
+                    }
+                }
+
+                // Blink → Pulse 変換
+                // lilToon _EmissionBlink: (strength, speed, offset, ?)
+                if (sourceProps.ContainsKey("_EmissionBlink"))
+                {
+                    Vector4 blink = (Vector4)sourceProps["_EmissionBlink"];
+                    if (blink.x > 0.001f)
+                    {
+                        targetMaterial.SetFloat("_EmissionPulse", 1.0f);
+                        targetMaterial.SetFloat("_EmissionPulseAmplitude", blink.x);
+                        targetMaterial.SetFloat("_EmissionPulseSpeed", blink.y);
+                        report.infos.Add($"Emission Blink → Pulse: Amplitude={blink.x:F2}, Speed={blink.y:F2}");
+                    }
+                }
+
+                // Gradient Texture (lilToon 固有、Natane 非対応の場合は警告)
+                if (sourceProps.ContainsKey("_EmissionGradTex") && sourceProps["_EmissionGradTex"] != null)
+                {
+                    report.warnings.Add("Emission Gradient Texture (_EmissionGradTex) は Natane に直接対応がないため、手動調整が必要です。");
+                }
+
                 targetMaterial.SetFloat("_Emission", 1.0f);
                 targetMaterial.EnableKeyword("_EMISSION");
-                report.infos.Add("Emission mapped.");
+                report.infos.Add($"Emission mapped (Blend={emissionBlend:F2}).");
             }
 
             if (useEmission2nd)
