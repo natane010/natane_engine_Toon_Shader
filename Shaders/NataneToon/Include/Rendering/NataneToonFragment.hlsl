@@ -1244,6 +1244,13 @@ half4 frag(v2f i) : SV_Target
         // Keep this path minimal to avoid over-brightening and reduce per-light cost.
         col.rgb = originalAlbedo * lighting * _Brightness;
 
+        // For transparent variants using Blend SrcAlpha One, the alpha channel
+        // controls how much additional light is added. Without this, shadows
+        // from additional lights appear opaque on transparent surfaces.
+        #ifdef TRANSPARENT_VARIANT
+            col.a *= atten;
+        #endif
+
         // Backlight contribution in ForwardAdd
         {
             half backlightBlendFaded_add = _BacklightBlend;

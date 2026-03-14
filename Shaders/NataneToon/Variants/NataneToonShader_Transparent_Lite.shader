@@ -1482,7 +1482,7 @@ Blend [_SrcBlend] [_DstBlend]
         {
             Name "FORWARD_ADD"
             Tags { "LightMode" = "ForwardAdd" }
-            Blend One One
+            Blend SrcAlpha One
             ZWrite Off
             Cull [_Cull]
 
@@ -1554,6 +1554,7 @@ Blend [_SrcBlend] [_DstBlend]
     }
 
     CustomEditor "NataneToonShaderGUI"
-    FallBack "Transparent/Diffuse"
+    // Transparent objects should not cast opaque shadows.
+    FallBack Off
 }
 
