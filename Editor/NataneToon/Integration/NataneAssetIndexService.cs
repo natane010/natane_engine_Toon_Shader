@@ -12,6 +12,7 @@ namespace NataneToon.Editor
         private static bool loaded;
         private static bool savePending;
         private static bool fullRebuildQueued;
+        private static bool lookupsDirty;
 
         private static readonly HashSet<string> dirtyMaterialPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private static readonly HashSet<string> dirtyPrefabPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -37,6 +38,18 @@ namespace NataneToon.Editor
 
             loaded = true;
             RebuildLookups();
+        }
+
+        /// <summary>
+        /// ルックアップ辞書が最新であることを保証する。
+        /// 遅延再構築: 変更が溜まっている場合のみ再構築する。
+        /// </summary>
+        private static void EnsureLookups()
+        {
+            if (lookupsDirty || materialsByGuid == null || materialsByPath == null)
+            {
+                RebuildLookups();
+            }
         }
 
         internal static int GetPendingAssetCount()
@@ -120,6 +133,7 @@ namespace NataneToon.Editor
         public static MaterialIndexEntry TryGetMaterialEntry(string guid)
         {
             EnsureLoaded();
+            EnsureLookups();
             if (string.IsNullOrEmpty(guid) || materialsByGuid == null)
             {
                 return null;
@@ -208,6 +222,12 @@ namespace NataneToon.Editor
                 {
                     break;
                 }
+            }
+
+            // バッチ処理の最後にまとめてルックアップを再構築する（per-item ではなく）
+            if (processed > 0 && lookupsDirty)
+            {
+                RebuildLookups();
             }
 
             SaveIfNeeded();
@@ -373,7 +393,7 @@ namespace NataneToon.Editor
             {
                 data.materials.Add(entry);
                 savePending = true;
-                RebuildLookups();
+                lookupsDirty = true;
             }
         }
 
@@ -407,13 +427,22 @@ namespace NataneToon.Editor
                 return null;
             }
 
+            string shaderName = material.shader != null ? material.shader.name : string.Empty;
+
+            // Natane / lilToon 以外のマテリアルはインデックス対象外
+            bool isNatane = NataneShaderCatalog.IsNataneShader(shaderName);
+            bool isLilToon = NataneShaderCatalog.IsLilToonShader(shaderName);
+            if (!isNatane && !isLilToon)
+            {
+                return null;
+            }
+
             string guid = AssetDatabase.AssetPathToGUID(path);
             if (string.IsNullOrEmpty(guid))
             {
                 return null;
             }
 
-            string shaderName = material.shader != null ? material.shader.name : string.Empty;
             return new MaterialIndexEntry
             {
                 guid = guid,
@@ -421,8 +450,8 @@ namespace NataneToon.Editor
                 name = material.name,
                 shaderName = shaderName,
                 keywordSetKey = GetKeywordSetKey(material.shaderKeywords),
-                isNataneShader = NataneShaderCatalog.IsNataneShader(shaderName),
-                isLilToonShader = NataneShaderCatalog.IsLilToonShader(shaderName),
+                isNataneShader = isNatane,
+                isLilToonShader = isLilToon,
                 usesLightVolume = material.HasProperty("_UseLightVolume") && material.GetFloat("_UseLightVolume") > 0.5f,
                 usesLtcgi = material.HasProperty("_LTCGI") && material.GetFloat("_LTCGI") > 0.5f
             };
@@ -477,7 +506,7 @@ namespace NataneToon.Editor
             if (data.materials.RemoveAll(entry => string.Equals(entry.path, path, StringComparison.OrdinalIgnoreCase)) > 0)
             {
                 savePending = true;
-                RebuildLookups();
+                lookupsDirty = true;
             }
         }
 
@@ -511,6 +540,8 @@ namespace NataneToon.Editor
                 .Where(entry => !string.IsNullOrEmpty(entry.path))
                 .GroupBy(entry => entry.path, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.Last(), StringComparer.OrdinalIgnoreCase);
+
+            lookupsDirty = false;
         }
 
         private static string GetKeywordSetKey(string[] keywords)
