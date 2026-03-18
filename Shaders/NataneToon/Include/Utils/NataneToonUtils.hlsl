@@ -683,7 +683,10 @@ half SampleTex2DBlur1(sampler2D tex, float2 uv, float blur)
     return SampleTex2DBlur(tex, uv, blur).r;
 }
 
-// NOSAMPLER overloads for Repeat sampling (sampler_MainTex shared)
+// NOSAMPLER overloads for Repeat sampling
+// Requires sampler_linear_repeat from NataneToonInput.hlsl — excluded in standalone passes (e.g. FurShell)
+#ifndef NATANE_UTILS_STANDALONE
+
 #if defined(UNITY_SEPARATE_TEXTURE_SAMPLER)
 half4 SampleTex2DBlurRepeat(Texture2D tex, float2 uv, float blur)
 {
@@ -733,6 +736,8 @@ half4 SampleTex2DBlurShared(Texture2D tex, SamplerState sharedSampler, float2 uv
 #endif
 
 #define NATANE_SAMPLE_SHARED_BLUR_R(tex, samplerTex, coord, blur) NATANE_SAMPLE_SHARED_BLUR(tex, samplerTex, coord, blur).r
+
+#endif // !NATANE_UTILS_STANDALONE
 
 // ===== UV Animation Functions =====
 
