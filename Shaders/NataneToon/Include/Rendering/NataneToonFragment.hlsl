@@ -227,7 +227,8 @@ half4 frag(v2f i) : SV_Target
         half3 worldNormal;
         if (_UseNormalMap >= 0.5)
         {
-            float2 bumpUV = AnimateUVIfNeeded(uv, _BumpMapScrollSpeed.xy, _BumpMapRotateSpeed);
+            float2 bumpUV = uv * _BumpMap_ST.xy + _BumpMap_ST.zw;
+            bumpUV = AnimateUVIfNeeded(bumpUV, _BumpMapScrollSpeed.xy, _BumpMapRotateSpeed);
             half3 normalMapSample = UnpackScaleNormal(NATANE_SAMPLE_REPEAT(_BumpMap, bumpUV), _BumpScale);
             worldNormal = normalize(mul(normalMapSample, tangentToWorld));
         }
@@ -1668,7 +1669,7 @@ half4 frag(v2f i) : SV_Target
     if (_ProceduralMatCap >= 0.5)
     {
         // Spherical gradient from view-space normal
-        half gradient = pow(saturate(1.0 - length(sharedMatCapUV - 0.5) * 2.0), _ProcMatCapPower);
+        half gradient = pow(saturate(1.0 - length(sharedMatCapUV - 0.5) * 2.0), 1.0 / max(_ProcMatCapPower, 0.001));
         // Fresnel rim enhancement (mirror-safe)
         float3 procViewNormal = mul((float3x3)UNITY_MATRIX_V, worldNormal);
         procViewNormal.x *= NataneMirrorSign();

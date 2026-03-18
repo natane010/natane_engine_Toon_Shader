@@ -388,6 +388,7 @@ CBUFFER_START(UnityPerMaterial)
     // 表面の見た目や形状を変形・修飾するエフェクト群
 
     // Normal Map
+    float4 _BumpMap_ST;
     float _BumpScale;
     float _MicroNormalScale;
     float _MicroNormalTiling;
