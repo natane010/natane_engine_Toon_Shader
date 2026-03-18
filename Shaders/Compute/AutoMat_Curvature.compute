@@ -1,0 +1,46 @@
+// AutoMat_Curvature.compute
+// Normal map → Curvature map (convex/concave detection)
+// Output: 0.5 = flat, >0.5 = convex (edge), <0.5 = concave (groove)
+// Dispatch: (texWidth/8, texHeight/8, 1)
+
+#pragma kernel CSMain
+
+Texture2D<float4> _Input;  // Normal map (encoded 0..1)
+RWTexture2D<float4> _Result;
+int2 _TexSize;
+float _CurvatureScale;
+
+float3 DecodeNormal(float4 encoded)
+{
+    return encoded.rgb * 2.0 - 1.0;
+}
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_TexSize.x || id.y >= (uint)_TexSize.y)
+        return;
+
+    int2 p = int2(id.xy);
+    float3 center = DecodeNormal(_Input[p]);
+
+    // Sample 4 neighbors
+    int2 pL = clamp(p + int2(-1, 0), int2(0, 0), _TexSize - int2(1, 1));
+    int2 pR = clamp(p + int2( 1, 0), int2(0, 0), _TexSize - int2(1, 1));
+    int2 pU = clamp(p + int2( 0,-1), int2(0, 0), _TexSize - int2(1, 1));
+    int2 pD = clamp(p + int2( 0, 1), int2(0, 0), _TexSize - int2(1, 1));
+
+    float3 nL = DecodeNormal(_Input[pL]);
+    float3 nR = DecodeNormal(_Input[pR]);
+    float3 nU = DecodeNormal(_Input[pU]);
+    float3 nD = DecodeNormal(_Input[pD]);
+
+    // Average dot product deviation from center
+    float curvature = 4.0 - (dot(center, nL) + dot(center, nR) + dot(center, nU) + dot(center, nD));
+    curvature *= _CurvatureScale;
+
+    // Remap: 0.5 = flat, >0.5 = convex, <0.5 = concave
+    float result = saturate(0.5 + curvature);
+
+    _Result[id.xy] = float4(result, result, result, 1.0);
+}

@@ -45,6 +45,7 @@ namespace NataneToon.MaterialSystem
         public float nprWeight = 0f;
         public float pbrWeight = 0f;
         public bool lilToonMigrated = false;
+        [System.Obsolete("ExactCompatibility mode has been removed. Kept for serialization compatibility.")]
         public bool lilToonExactCompatibility = false;
         public int lilToonMigrationMode = 0;
         public int lilToonParityFlags = 0;
@@ -256,7 +257,7 @@ namespace NataneToon.MaterialSystem
             if (material.HasProperty("_NprWeight")) material.SetFloat("_NprWeight", Mathf.Clamp01(p.nprWeight));
             if (material.HasProperty("_PbrWeight")) material.SetFloat("_PbrWeight", Mathf.Clamp01(p.pbrWeight));
             if (material.HasProperty("_LilToonMigrated")) material.SetFloat("_LilToonMigrated", p.lilToonMigrated ? 1f : 0f);
-            if (material.HasProperty("_LilToonExactCompatibility")) material.SetFloat("_LilToonExactCompatibility", p.lilToonExactCompatibility ? 1f : 0f);
+            if (material.HasProperty("_LilToonExactCompatibility")) material.SetFloat("_LilToonExactCompatibility", 0f);
             if (material.HasProperty("_LilToonMigrationMode")) material.SetFloat("_LilToonMigrationMode", Mathf.Max(0, p.lilToonMigrationMode));
             if (material.HasProperty("_LilToonParityFlags")) material.SetFloat("_LilToonParityFlags", Mathf.Max(0, p.lilToonParityFlags));
             material.SetOverrideTag("NataneLilToonSourceShader", p.lilToonSourceShader ?? string.Empty);
@@ -416,7 +417,10 @@ namespace NataneToon.MaterialSystem
             // Shading
             ResolveLookMixer(material, p);
             if (material.HasProperty("_LilToonMigrated")) p.lilToonMigrated = material.GetFloat("_LilToonMigrated") > 0.5f;
-            if (material.HasProperty("_LilToonExactCompatibility")) p.lilToonExactCompatibility = material.GetFloat("_LilToonExactCompatibility") > 0.5f;
+            // _LilToonExactCompatibility is deprecated; always read as false for backward compat
+            #pragma warning disable 612, 618
+            p.lilToonExactCompatibility = false;
+            #pragma warning restore 612, 618
             if (material.HasProperty("_LilToonMigrationMode")) p.lilToonMigrationMode = Mathf.RoundToInt(material.GetFloat("_LilToonMigrationMode"));
             if (material.HasProperty("_LilToonParityFlags")) p.lilToonParityFlags = Mathf.RoundToInt(material.GetFloat("_LilToonParityFlags"));
             p.lilToonSourceShader = material.GetTag("NataneLilToonSourceShader", false, string.Empty);

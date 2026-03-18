@@ -115,7 +115,6 @@ CBUFFER_START(UnityPerMaterial)
     float _ToonWeight;
     float _NprWeight;
     float _PbrWeight;
-    float _LilToonExactCompatibility;
     float _ShadowMainStrength;
     float _Shadow2ndBlur;
     float _Shadow3rdBlur;
@@ -139,15 +138,6 @@ CBUFFER_START(UnityPerMaterial)
     #if defined(_VERTEX_COLOR_SHADOW)
     float _VCShadowThreshold;
     float _VCShadowPush;
-    #endif
-
-    // StandardToon (lilToon互換)
-    #if defined(_STANDARD_TOON)
-    float _STShadowBorder;        // lilToon _ShadowBorder (影境界, default 0.5)
-    float _STShadowBlur;          // lilToon _ShadowBlur (影ぼかし, default 0.1)
-    float _STShadowStrength;      // lilToon _ShadowStrength (影の強さ, default 1.0)
-    float _STAsUnlit;             // lilToon _AsUnlit (アンライト度, default 0.0)
-    float _STShadowEnvStrength;   // lilToon _ShadowEnvStrength (間接光による影持ち上げ, default 1.0)
     #endif
 
     // SDF Shadow Map
@@ -1169,9 +1159,6 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_RampTex);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowReceiveMask);
 #endif
 UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowColorTex);
-UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowStrengthMask);
-UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowBorderMask);
-UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowBlurMask);
 
 // SDF & Grade Maps
 #if defined(_SDF_MAP)

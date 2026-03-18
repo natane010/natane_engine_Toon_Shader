@@ -1,0 +1,87 @@
+// AutoMat_MetallicEstimate.compute
+// HSL heuristic-based Metallic map estimation
+// Dispatch: (texWidth/8, texHeight/8, 1)
+
+#pragma kernel CSMain
+
+Texture2D<float4> _Input;
+RWTexture2D<float4> _Result;
+int2 _TexSize;
+float _LuminanceThreshold;
+float _SaturationThreshold;
+float2 _GoldHueRange;    // x=min, y=max (0..1 range, e.g., 0.083..0.139 for 30-50 degrees)
+float2 _CopperHueRange;  // x=min, y=max (e.g., 0.028..0.069 for 10-25 degrees)
+float _Bias;
+
+float3 RGBtoHSL(float3 rgb)
+{
+    float maxC = max(rgb.r, max(rgb.g, rgb.b));
+    float minC = min(rgb.r, min(rgb.g, rgb.b));
+    float delta = maxC - minC;
+
+    float h = 0, s = 0, l = (maxC + minC) * 0.5;
+
+    if (delta > 0.001)
+    {
+        s = (l < 0.5) ? (delta / (maxC + minC)) : (delta / (2.0 - maxC - minC));
+
+        if (maxC == rgb.r)
+            h = (rgb.g - rgb.b) / delta + (rgb.g < rgb.b ? 6.0 : 0.0);
+        else if (maxC == rgb.g)
+            h = (rgb.b - rgb.r) / delta + 2.0;
+        else
+            h = (rgb.r - rgb.g) / delta + 4.0;
+        h /= 6.0;
+    }
+
+    return float3(h, s, l);
+}
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_TexSize.x || id.y >= (uint)_TexSize.y)
+        return;
+
+    float3 rgb = _Input[id.xy].rgb;
+    float3 hsl = RGBtoHSL(rgb);
+    float hue = hsl.x;
+    float sat = hsl.y;
+    float lum = hsl.z;
+
+    float metallic = 0.0;
+
+    // Rule 1: Silver/Iron — high luminance, low saturation
+    float silverScore = 0.0;
+    if (lum > _LuminanceThreshold && sat < _SaturationThreshold)
+    {
+        silverScore = (lum - _LuminanceThreshold) / max(1.0 - _LuminanceThreshold, 0.001)
+                    * (1.0 - sat / max(_SaturationThreshold, 0.001));
+    }
+
+    // Rule 2: Gold/Brass — specific hue range, moderate saturation
+    float goldScore = 0.0;
+    if (hue >= _GoldHueRange.x && hue <= _GoldHueRange.y && sat > 0.15 && sat < 0.7)
+    {
+        float hueCenter = (_GoldHueRange.x + _GoldHueRange.y) * 0.5;
+        float hueHalf = (_GoldHueRange.y - _GoldHueRange.x) * 0.5;
+        goldScore = 1.0 - abs(hue - hueCenter) / max(hueHalf, 0.001);
+        goldScore *= lum; // Brighter = more metallic
+    }
+
+    // Rule 3: Copper — specific hue range, moderate saturation
+    float copperScore = 0.0;
+    if (hue >= _CopperHueRange.x && hue <= _CopperHueRange.y && sat > 0.2 && sat < 0.6)
+    {
+        float hueCenter = (_CopperHueRange.x + _CopperHueRange.y) * 0.5;
+        float hueHalf = (_CopperHueRange.y - _CopperHueRange.x) * 0.5;
+        copperScore = 1.0 - abs(hue - hueCenter) / max(hueHalf, 0.001);
+        copperScore *= lum;
+    }
+
+    // Weighted combination
+    metallic = max(silverScore, max(goldScore * 0.9, copperScore * 0.85));
+    metallic = saturate(metallic + _Bias);
+
+    _Result[id.xy] = float4(metallic, metallic, metallic, 1.0);
+}

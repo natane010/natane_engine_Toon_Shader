@@ -27,7 +27,6 @@ namespace NataneToon.Editor
         /// </summary>
         private static readonly string[] ExtraKeywords =
         {
-            "_STANDARD_TOON",
             "_EYE_PARALLAX",
         };
 
@@ -98,16 +97,6 @@ namespace NataneToon.Editor
                     {
                         usedKeywords.Add(mapping.keyword);
                     }
-                }
-
-                // _STANDARD_TOON (derived keyword)
-                if (material.HasProperty("_ShadingMode"))
-                {
-                    bool lilToonExact = material.HasProperty("_LilToonExactCompatibility") &&
-                                        material.GetFloat("_LilToonExactCompatibility") > 0.5f;
-                    float shadingMode = material.GetFloat("_ShadingMode");
-                    if (lilToonExact && shadingMode >= 1.5f && shadingMode < 2.5f)
-                        usedKeywords.Add("_STANDARD_TOON");
                 }
 
                 // _EYE_PARALLAX

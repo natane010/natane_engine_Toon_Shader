@@ -444,11 +444,6 @@
     #undef _FUR
 #endif
 
-// Standard Toon (derived keyword)
-#if defined(_STANDARD_TOON) && !defined(NATANE_FEATURE_STANDARD_TOON)
-    #undef _STANDARD_TOON
-#endif
-
 // Eye Parallax
 #if defined(_EYE_PARALLAX) && !defined(NATANE_FEATURE_EYE_PARALLAX)
     #undef _EYE_PARALLAX

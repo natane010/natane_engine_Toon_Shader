@@ -1,0 +1,82 @@
+// AutoMat_UVBake.compute
+// Bake per-vertex scalar data into UV-space texture via triangle rasterization
+// Dispatch: (_TriangleCount / 64 + 1, 1, 1)
+
+#pragma kernel CSMain
+
+StructuredBuffer<float3> _Vertices;
+StructuredBuffer<float2> _UVs;
+StructuredBuffer<int> _Triangles;
+StructuredBuffer<float> _VertexData;
+RWTexture2D<float4> _Result;
+int2 _TexSize;
+int _TriangleCount;
+
+float Cross2D(float2 a, float2 b)
+{
+    return a.x * b.y - a.y * b.x;
+}
+
+void BakePixel(int2 pixel, float value)
+{
+    if (pixel.x < 0 || pixel.y < 0 || pixel.x >= _TexSize.x || pixel.y >= _TexSize.y)
+        return;
+    _Result[pixel] = float4(value, value, value, 1.0);
+}
+
+[numthreads(64, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    uint triIdx = id.x;
+    if (triIdx >= (uint)_TriangleCount)
+        return;
+
+    int i0 = _Triangles[triIdx * 3];
+    int i1 = _Triangles[triIdx * 3 + 1];
+    int i2 = _Triangles[triIdx * 3 + 2];
+
+    float2 uv0 = _UVs[i0];
+    float2 uv1 = _UVs[i1];
+    float2 uv2 = _UVs[i2];
+
+    float d0 = _VertexData[i0];
+    float d1 = _VertexData[i1];
+    float d2 = _VertexData[i2];
+
+    // Convert UV to pixel coords
+    float2 p0 = uv0 * float2(_TexSize);
+    float2 p1 = uv1 * float2(_TexSize);
+    float2 p2 = uv2 * float2(_TexSize);
+
+    // Bounding box
+    int2 bmin = int2(floor(min(p0, min(p1, p2))));
+    int2 bmax = int2(ceil(max(p0, max(p1, p2))));
+    bmin = clamp(bmin, int2(0, 0), _TexSize - int2(1, 1));
+    bmax = clamp(bmax, int2(0, 0), _TexSize - int2(1, 1));
+
+    float area = Cross2D(p1 - p0, p2 - p0);
+    if (abs(area) < 0.001)
+        return;
+
+    float invArea = 1.0 / area;
+
+    // Rasterize triangle
+    for (int y = bmin.y; y <= bmax.y; y++)
+    {
+        for (int x = bmin.x; x <= bmax.x; x++)
+        {
+            float2 p = float2(x + 0.5, y + 0.5);
+
+            float w0 = Cross2D(p1 - p0, p - p0) * invArea;
+            float w1 = Cross2D(p2 - p1, p - p1) * invArea;
+            float w2 = 1.0 - w0 - w1;
+
+            // Inside triangle check (with small margin for edge coverage)
+            if (w0 >= -0.001 && w1 >= -0.001 && w2 >= -0.001)
+            {
+                float value = d0 * w2 + d1 * w0 + d2 * w1;
+                BakePixel(int2(x, y), value);
+            }
+        }
+    }
+}

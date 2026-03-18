@@ -10,7 +10,6 @@ namespace NataneToon.Editor
     public static class NataneToonShaderGUIHelpers
     {
         private const float GRADIENT_MODE_THRESHOLD = 0.5f;
-        private const float STANDARD_TOON_MODE_THRESHOLD = 1.5f;
         private const float PBR_LIKE_MODE_THRESHOLD = 2.5f;
 
         public delegate bool DrawToggleDelegate(string keyword, string propertyName, string label);
@@ -21,6 +20,7 @@ namespace NataneToon.Editor
 
         public static void DrawShadingSection(
             ref bool showShading,
+            Material material,
             MaterialProperty[] properties,
             DrawToggleDelegate drawToggle,
             DrawPropertyDelegate drawProperty,
@@ -30,10 +30,11 @@ namespace NataneToon.Editor
         {
             _ = showShading;
             _ = saveFoldoutStates;
-            DrawShadingSectionContent(properties, drawToggle, drawProperty, drawHelpToggle, findProperty);
+            DrawShadingSectionContent(material, properties, drawToggle, drawProperty, drawHelpToggle, findProperty);
         }
 
         public static void DrawShadingSectionContent(
+            Material material,
             MaterialProperty[] properties,
             DrawToggleDelegate drawToggle,
             DrawPropertyDelegate drawProperty,
@@ -63,7 +64,7 @@ namespace NataneToon.Editor
             if (isSectionAvailable == null || isSectionAvailable("SDFMap"))
             {
                 EditorGUILayout.Space(10);
-                DrawSDFShadowMapControls(drawToggle, drawProperty, drawHelpToggle);
+                DrawSDFShadowMapControls(material, drawToggle, drawProperty, drawHelpToggle);
             }
 
             EditorGUILayout.Space(10);
@@ -101,53 +102,30 @@ namespace NataneToon.Editor
             else
             {
                 MaterialProperty shadingModeProp = findProperty("_ShadingMode", properties, false);
-                MaterialProperty lilToonCompatibilityProp = findProperty("_LilToonExactCompatibility", properties, false);
                 float shadingModeValue = shadingModeProp != null ? shadingModeProp.floatValue : 0f;
-                bool usesLilToonCompatibilityBase = lilToonCompatibilityProp != null &&
-                                                    !lilToonCompatibilityProp.hasMixedValue &&
-                                                    lilToonCompatibilityProp.floatValue > 0.5f;
-                bool isStandardToon = usesLilToonCompatibilityBase && IsStandardToonMode(shadingModeValue);
                 bool isGradientMode = IsGradientMode(shadingModeValue);
                 bool isPbrLikeMode = IsPbrLikeMode(shadingModeValue);
 
                 EditorGUILayout.Space(5);
 
-                if (!isStandardToon)
+                EditorGUILayout.LabelField(L("見た目の方向性", "Shading Style"), EditorStyles.boldLabel);
+                if (shadingModeProp != null)
                 {
-                    EditorGUILayout.LabelField(L("見た目の方向性", "Shading Style"), EditorStyles.boldLabel);
-                    if (shadingModeProp != null)
-                    {
-                        DrawUserFacingShadingModePopup(shadingModeProp);
-                    }
-                    else
-                    {
-                        drawProperty("_ShadingMode", L("モード", "Mode"));
-                    }
-
-                    drawHelpToggle(
-                        "ShadingMode",
-                        L("Toon はくっきりしたアニメ調、Gradient はやわらかい陰影、PBR-Like は立体感を少し強めた見た目です。lilToon 近似や移行マテリアルでは、必要に応じて内部の互換ベースが自動で使われます。",
-                          "Toon gives stepped cel shading. Gradient gives softer transitions. PBR-Like adds a bit more volume. lilToon Match and migrated materials automatically use the internal compatibility base when needed."),
-                        MessageType.None);
+                    DrawUserFacingShadingModePopup(shadingModeProp);
                 }
                 else
                 {
-                    EditorGUILayout.LabelField(
-                        L("lilToon互換ベース", "lilToon Compatibility Base"),
-                        EditorStyles.boldLabel);
-                    drawHelpToggle(
-                        "StandardToonModeNotice",
-                        L("このマテリアルは lilToon 近似または移行用の互換ベースを使用しています。通常はこのまま編集して問題ありません。",
-                          "This material is using the lilToon compatibility base. In most cases you should keep this base active while editing."),
-                        MessageType.Warning);
+                    drawProperty("_ShadingMode", L("モード", "Mode"));
                 }
 
+                drawHelpToggle(
+                    "ShadingMode",
+                    L("Toon はくっきりしたアニメ調、Gradient はやわらかい陰影、PBR-Like は立体感を少し強めた見た目です。",
+                      "Toon gives stepped cel shading. Gradient gives softer transitions. PBR-Like adds a bit more volume."),
+                    MessageType.None);
+
                 EditorGUILayout.Space(5);
-                if (isStandardToon)
-                {
-                    DrawStandardToonSettings(drawProperty, drawHelpToggle, drawToggle);
-                }
-                else if (isGradientMode)
+                if (isGradientMode)
                 {
                     DrawGradientModeSettings(drawProperty, drawHelpToggle);
                 }
@@ -263,39 +241,9 @@ namespace NataneToon.Editor
                 MessageType.Info);
         }
 
-        public static void DrawStandardToonSettings(
-            DrawPropertyDelegate drawProperty,
-            DrawHelpToggleDelegate drawHelpToggle,
-            DrawToggleDelegate drawToggle)
-        {
-            EditorGUILayout.LabelField(L("lilToon互換ベース設定", "lilToon Compatibility Settings"), EditorStyles.boldLabel);
-            drawProperty("_STShadowBorder", L("Shadow Border", "Shadow Border"));
-            drawProperty("_STShadowBlur", L("Shadow Blur", "Shadow Blur"));
-            drawProperty("_STShadowStrength", L("Shadow Strength", "Shadow Strength"));
-            drawProperty("_ShadowColor", L("Shadow Color (1st)", "Shadow Color (1st)"));
-
-            EditorGUILayout.Space();
-            DrawMultiToneShadowSettings(drawToggle, drawProperty, drawHelpToggle);
-
-            EditorGUILayout.Space();
-            drawProperty("_STAsUnlit", L("As Unlit", "As Unlit"));
-            drawProperty("_STShadowEnvStrength", L("Shadow Env Strength", "Shadow Env Strength"));
-            drawHelpToggle(
-                "StandardToon",
-                L("この設定群は lilToon 近似や移行マテリアル用の内部互換ベースです。通常の Natane 素材では無理に使う必要はありません。",
-                  "These controls belong to the internal lilToon compatibility base used by migrated and lilToon Match materials."),
-                MessageType.None);
-        }
-
         private static bool IsGradientMode(float shadingModeValue)
         {
             return shadingModeValue >= GRADIENT_MODE_THRESHOLD &&
-                   shadingModeValue < STANDARD_TOON_MODE_THRESHOLD;
-        }
-
-        private static bool IsStandardToonMode(float shadingModeValue)
-        {
-            return shadingModeValue >= STANDARD_TOON_MODE_THRESHOLD &&
                    shadingModeValue < PBR_LIKE_MODE_THRESHOLD;
         }
 
@@ -507,11 +455,33 @@ namespace NataneToon.Editor
         }
 
         public static void DrawSDFShadowMapControls(
+            Material material,
             DrawToggleDelegate drawToggle,
             DrawPropertyDelegate drawProperty,
             DrawHelpToggleDelegate drawHelpToggle)
         {
             bool useSDFMap = drawToggle("_SDF_MAP", "_UseSDFMap", L("Use SDF Shadow Map", "Use SDF Shadow Map"));
+            EditorGUILayout.Space(4);
+            if (GUILayout.Button(L("SDFを自動生成して適用", "Generate and Assign SDF"), GUILayout.Height(22)))
+            {
+                bool generated = NataneToonSdfAutoGenerator.TryGenerateAndAssign(material, out string message);
+                if (generated)
+                {
+                    useSDFMap = true;
+                }
+
+                EditorUtility.DisplayDialog(
+                    generated ? L("SDF生成", "SDF Generation") : L("SDF生成に失敗", "SDF Generation Failed"),
+                    message,
+                    L("閉じる", "Close"));
+                GUI.changed = true;
+            }
+
+            EditorGUILayout.HelpBox(
+                L("Shadow Receive Mask を優先し、なければ Main Texture の alpha / グレースケールから SDF を自動生成して適用します。",
+                  "Automatically generates and assigns an SDF from Shadow Receive Mask first, then falls back to Main Texture alpha or grayscale."),
+                MessageType.None);
+
             if (useSDFMap)
             {
                 EditorGUILayout.Space(5);

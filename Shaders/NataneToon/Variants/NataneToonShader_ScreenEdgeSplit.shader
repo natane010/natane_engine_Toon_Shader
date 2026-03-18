@@ -120,22 +120,12 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
         _NprWeight ("NPR Weight", Range(0, 1)) = 0
         _PbrWeight ("PBR Weight", Range(0, 1)) = 0
         [HideInInspector] _LilToonMigrated ("LilToon Migrated", Float) = 0
-        [HideInInspector] _LilToonExactCompatibility ("LilToon Exact Compatibility", Float) = 0
         [HideInInspector] _LilToonMigrationMode ("LilToon Migration Mode", Float) = 0
         [HideInInspector] _LilToonParityFlags ("LilToon Parity Flags", Float) = 0
         [HideInInspector] _ShadowMainStrength ("LilToon Shadow Main Strength", Range(0, 1)) = 0
         [HideInInspector] _Shadow2ndBlur ("LilToon Shadow 2nd Blur", Range(0, 1)) = 0.1
         [HideInInspector] _Shadow3rdBlur ("LilToon Shadow 3rd Blur", Range(0, 1)) = 0.1
-        [HideInInspector] _ShadowStrengthMask ("LilToon Shadow Strength Mask", 2D) = "white" {}
-        [HideInInspector] _ShadowBorderMask ("LilToon Shadow Border Mask", 2D) = "white" {}
-        [HideInInspector] _ShadowBlurMask ("LilToon Shadow Blur Mask", 2D) = "white" {}
         _ShadingGradientWidth ("Gradient Width", Range(0.001, 1)) = 0.5
-        // StandardToon Properties (lilToon互換)
-        _STShadowBorder ("ST Shadow Border", Range(0, 1)) = 0.5
-        _STShadowBlur ("ST Shadow Blur", Range(0, 1)) = 0.1
-        _STShadowStrength ("ST Shadow Strength", Range(0, 1)) = 1.0
-        _STAsUnlit ("ST As Unlit", Range(0, 1)) = 0
-        _STShadowEnvStrength ("ST Shadow Env Strength", Range(0, 1)) = 1
         [Toggle(_USE_RAMP)] _UseRamp ("Use Ramp Texture", Float) = 0
         _RampTex ("Ramp Texture", 2D) = "white" {}
         _ShadowColor ("Shadow Color 1st", Color) = (0.5, 0.5, 0.5, 1)
@@ -1386,7 +1376,6 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             #pragma shader_feature_local _HALFTONE_SHADOW
             #pragma shader_feature_local _GRADIENT_BASE_COLOR
             #pragma shader_feature_local _USE_RAMP
-            #pragma shader_feature_local _STANDARD_TOON
             #pragma shader_feature_local _USE_MULTI_SHADOW
             #pragma shader_feature_local _SHADOW_RECEIVE_MASK
             #pragma shader_feature_local _SDF_MAP
@@ -1503,7 +1492,6 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             #pragma shader_feature_local _SCREEN_TONE
             #pragma shader_feature_local _GRADIENT_BASE_COLOR
             #pragma shader_feature_local _USE_RAMP
-            #pragma shader_feature_local _STANDARD_TOON
             #pragma shader_feature_local _USE_MULTI_SHADOW
             #pragma shader_feature_local _SHADOW_RECEIVE_MASK
             #pragma shader_feature_local _SDF_MAP

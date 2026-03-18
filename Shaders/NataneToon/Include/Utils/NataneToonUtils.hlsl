@@ -1010,7 +1010,10 @@ float CalculateHologramFlicker(float speed, float amount)
 half3 CalculateHologramEdgeGlow(float3 worldNormal, float3 viewDir,
                                  half3 holoColor, float power, float intensity)
 {
-    float fresnel = 1.0 - saturate(dot(worldNormal, viewDir));
+    // Mirror-safe Fresnel
+    float3 holoViewNormal = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+    holoViewNormal.x *= NataneMirrorSign();
+    float fresnel = 1.0 - saturate(dot(normalize(holoViewNormal), float3(0, 0, 1)));
     fresnel = pow(fresnel, power);
     return holoColor * fresnel * intensity;
 }
@@ -1019,7 +1022,10 @@ half3 CalculateHologramEdgeGlow(float3 worldNormal, float3 viewDir,
 half CalculateHologramAlpha(float3 worldNormal, float3 viewDir,
                              float baseAlpha, float holoAlpha)
 {
-    float fresnel = 1.0 - saturate(dot(worldNormal, viewDir));
+    // Mirror-safe Fresnel
+    float3 holoAlphaViewNormal = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+    holoAlphaViewNormal.x *= NataneMirrorSign();
+    float fresnel = 1.0 - saturate(dot(normalize(holoAlphaViewNormal), float3(0, 0, 1)));
     float edgeKeep = saturate(fresnel * 3.0);
     return lerp(baseAlpha, edgeKeep, holoAlpha);
 }
@@ -1467,8 +1473,10 @@ half3 CalculateSmearTrail(float2 uv, half3 baseColor, float3 smearDir, float3 wo
 half3 CalculateSmearGlow(float3 worldNormal, float3 viewDir, float3 smearDir, float stretchFactor,
                           half4 glowColor, float glowIntensity, float glowPower)
 {
-    // Fresnel term
-    float NdotV = saturate(dot(worldNormal, viewDir));
+    // Fresnel term (mirror-safe)
+    float3 smearViewNormal = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+    smearViewNormal.x *= NataneMirrorSign();
+    float NdotV = saturate(dot(normalize(smearViewNormal), float3(0, 0, 1)));
     float fresnel = pow(1.0 - NdotV, glowPower);
 
     // Directional mask - glow stronger on edges facing the smear direction

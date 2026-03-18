@@ -1,0 +1,43 @@
+// AutoMat_NormalFromHeight.compute
+// Height map (R channel) → tangent-space Normal map via Sobel filter
+// Dispatch: (texWidth/8, texHeight/8, 1)
+
+#pragma kernel CSMain
+
+Texture2D<float4> _Input;
+RWTexture2D<float4> _Result;
+int2 _TexSize;
+float _NormalStrength;
+
+float SampleHeight(int2 coord)
+{
+    coord = clamp(coord, int2(0, 0), _TexSize - int2(1, 1));
+    return _Input[coord].r;
+}
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_TexSize.x || id.y >= (uint)_TexSize.y)
+        return;
+
+    int2 p = int2(id.xy);
+
+    // Sobel filter for X and Y gradients
+    float tl = SampleHeight(p + int2(-1, -1));
+    float t  = SampleHeight(p + int2( 0, -1));
+    float tr = SampleHeight(p + int2( 1, -1));
+    float l  = SampleHeight(p + int2(-1,  0));
+    float r  = SampleHeight(p + int2( 1,  0));
+    float bl = SampleHeight(p + int2(-1,  1));
+    float b  = SampleHeight(p + int2( 0,  1));
+    float br = SampleHeight(p + int2( 1,  1));
+
+    float dx = (tr + 2.0 * r + br) - (tl + 2.0 * l + bl);
+    float dy = (bl + 2.0 * b + br) - (tl + 2.0 * t + tr);
+
+    float3 normal = normalize(float3(-dx * _NormalStrength, dy * _NormalStrength, 1.0));
+
+    // Encode to 0..1 range (Unity standard: OpenGL Y-up)
+    _Result[id.xy] = float4(normal * 0.5 + 0.5, 1.0);
+}

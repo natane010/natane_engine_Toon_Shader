@@ -9,8 +9,8 @@ namespace NataneToon.Editor
     {
         private const string LANG_PREFS_KEY = "NataneToon_Language";
         private static int _language = -1; // -1 = uninitialized
-        private static readonly Regex JapaneseTextRegex = new Regex("[ぁ-ゖァ-ヺ一-龯々ー]", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        private static readonly Regex SuspiciousLocalizedTextRegex = new Regex("[�]|[ｦ-ﾟ]|\\?{2,}|遯", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex JapaneseTextRegex = new Regex("[\\u3041-\\u3096\\u30A1-\\u30FA\\u30FC\\u3400-\\u4DBF\\u4E00-\\u9FFF\\u3005\\u3006\\u3001\\u3002\\u300C\\u300D\\u300E\\u300F\\u30FB\\uFF01\\uFF1F]", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex SuspiciousLocalizedTextRegex = new Regex("[\\uFFFD]|[\\uFF61-\\uFF9F]|\\?{2,}|(?:\\u7E3A|\\u7E67|\\u7E5D|\\u8B5B|\\u9A55|\\u86FB|\\u8700|\\u8B41|\\u907F|\\u8C55)", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private static readonly Dictionary<string, string> JapaneseFallbackExact = new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -547,7 +547,7 @@ namespace NataneToon.Editor
             { "Creates a duplicate in the hierarchy with converted materials, keeping the original prefab untouched.\nAuto-update References can repoint the original prefab to the new materials if needed.", "Hierarchy に変換済みマテリアルを使う複製を作成し、元の Prefab はそのまま残します。\n必要なら Auto-update References で元の Prefab の参照先を新しいマテリアルへ向け直せます。" },
             { "Shader prewarming compiles shader variants in advance to prevent stuttering during gameplay.\nThis is especially important for VRChat worlds and avatars.", "シェーダープリウォームはシェーダーバリアントを事前コンパイルし、プレイ中のカクつきを防ぎます。\nこれは VRChat のワールドやアバターで特に重要です。" },
             { "WARNING: Runtime prewarming scripts DO NOT work in VRChat!\nOnly enable this for non-VRChat projects where you need runtime shader prewarming.", "警告: ランタイムプリウォームスクリプトは VRChat では動作しません。\nランタイムシェーダープリウォームが必要な非 VRChat プロジェクトでのみ有効にしてください。" },
-            { "Features:\n遯ｶ・｢ Browse and apply material presets visually\n遯ｶ・｢ Filter by category and search by name\n遯ｶ・｢ Create presets from existing materials\n遯ｶ・｢ Share parameters via file or clipboard\n遯ｶ・｢ Generate VTuber-optimized presets\n\nUsage:\n1. Select a target material\n2. Browse presets and click Apply\n3. Create presets from materials\n4. Share with Export/Import", "機能:\n・マテリアルプリセットを視覚的に参照して適用\n・カテゴリで絞り込み、名前で検索\n・既存マテリアルからプリセットを作成\n・ファイルまたはクリップボードでパラメータ共有\n・VTuber 向け最適化プリセットを生成\n\n使い方:\n1. 対象マテリアルを選択\n2. プリセットを見て Apply を押す\n3. マテリアルからプリセットを作成\n4. Export / Import で共有" },
+            { "Features:\nBrowse and apply material presets visually\nFilter by category and search by name\nCreate presets from existing materials\nShare parameters via file or clipboard\nGenerate VTuber-optimized presets\n\nUsage:\n1. Select a target material\n2. Browse presets and click Apply\n3. Create presets from materials\n4. Share with Export/Import", "機能:\n・マテリアルプリセットを視覚的に参照して適用\n・カテゴリで絞り込み、名前で検索\n・既存マテリアルからプリセットを作成\n・ファイルまたはクリップボードでパラメータ共有\n・VTuber 向け最適化プリセットを生成\n\n使い方:\n1. 対象マテリアルを選択\n2. プリセットを見て Apply を押す\n3. マテリアルからプリセットを作成\n4. Export / Import で共有" },
             { "Generate high-quality VTuber material presets.\n\nThe following 5 presets will be created:\n1. Character Skin - Soft cell shading with SSS\n2. Character Hair - Glossy anime-style hair\n3. Character Clothing - Clean anime style\n4. Character Eyes - Sparkling eyes\n5. Live Performance - Lightweight & high performance\n\nLocation: Assets/NataneToon/Runtime/Presets/VTuber/\n\nGenerate?", "高品質な VTuber 向けマテリアルプリセットを生成します。\n\n次の 5 種類のプリセットを作成します:\n1. Character Skin - SSS 付きの柔らかいセルシェーディング\n2. Character Hair - 光沢感のあるアニメ調ヘア\n3. Character Clothing - クリーンなアニメ調衣装\n4. Character Eyes - きらめく瞳\n5. Live Performance - 軽量で高パフォーマンス\n\n保存先: Assets/NataneToon/Runtime/Presets/VTuber/\n\n生成しますか?" },
             { "Generate", "生成" },
             { "Complete", "完了" },
@@ -662,29 +662,42 @@ namespace NataneToon.Editor
             if (!IsJapanese)
                 return en;
 
-            if (!NeedsJapaneseFallback(ja))
+            if (HasUsableJapaneseText(ja))
                 return ja;
 
-            string translated = TranslateJapaneseFallback(ja);
-            if (!string.Equals(translated, ja, StringComparison.Ordinal))
+            string translated;
+            if (TryGetValidJapaneseFallback(ja, out translated))
                 return translated;
 
             if (!string.Equals(ja, en, StringComparison.Ordinal))
             {
-                translated = TranslateJapaneseFallback(en);
-                if (!string.Equals(translated, en, StringComparison.Ordinal))
+                if (TryGetValidJapaneseFallback(en, out translated))
                     return translated;
             }
 
-            return string.IsNullOrEmpty(ja) ? en : ja;
+            return string.IsNullOrEmpty(en) ? ja : en;
         }
 
         private static bool NeedsJapaneseFallback(string text)
         {
-            if (string.IsNullOrEmpty(text))
-                return true;
+            return !HasUsableJapaneseText(text);
+        }
 
-            return !JapaneseTextRegex.IsMatch(text) || SuspiciousLocalizedTextRegex.IsMatch(text);
+        private static bool HasUsableJapaneseText(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return false;
+
+            return JapaneseTextRegex.IsMatch(text) && !SuspiciousLocalizedTextRegex.IsMatch(text);
+        }
+
+        private static bool TryGetValidJapaneseFallback(string text, out string translated)
+        {
+            translated = TranslateJapaneseFallback(text);
+            if (string.IsNullOrEmpty(translated))
+                return false;
+
+            return !string.Equals(translated, text, StringComparison.Ordinal) && HasUsableJapaneseText(translated);
         }
 
         private static string TranslateJapaneseFallback(string text)

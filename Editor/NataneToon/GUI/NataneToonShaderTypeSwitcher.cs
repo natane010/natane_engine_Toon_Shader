@@ -131,7 +131,6 @@ namespace NataneToon.Editor
                 }
                 material.shader = newShader;
                 material.SetFloat("_ShadingMode", 2.0f);
-                material.EnableKeyword("_STANDARD_TOON");
             }
             else
             {
@@ -156,7 +155,6 @@ namespace NataneToon.Editor
                     if (shadingModeValue >= 1.5f && shadingModeValue < 2.5f)
                     {
                         material.SetFloat("_ShadingMode", 0.0f);
-                        material.DisableKeyword("_STANDARD_TOON");
                     }
                 }
             }

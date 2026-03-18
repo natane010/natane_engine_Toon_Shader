@@ -31,7 +31,10 @@ half3 NatanePBRSpecular(half3 normal, half3 viewDir, half3 lightDir,
     half3 H = normalize(viewDir + lightDir);
     half NdotH = max(0.001, dot(normal, H));
     half NdotL = max(0.001, dot(normal, lightDir));
-    half NdotV = max(0.001, dot(normal, viewDir));
+    // Mirror-safe NdotV
+    float3 pbrViewNormal = mul((float3x3)UNITY_MATRIX_V, normal);
+    pbrViewNormal.x *= NataneMirrorSign();
+    half NdotV = max(0.001, dot(normalize(pbrViewNormal), float3(0, 0, 1)));
     half VdotH = max(0.001, dot(viewDir, H));
 
     half D = NataneGGX_D(NdotH, roughness);
@@ -60,8 +63,10 @@ half3 NatanePBRIndirectSpecular(half3 worldNormal, half3 viewDir, half3 worldPos
     half4 envSample = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, reflDir0, mipLevel);
     half3 envColor = DecodeHDR(envSample, unity_SpecCube0_HDR);
 
-    // Approximate environment BRDF (Karis 2014 split-sum approximation)
-    half NdotV = max(0.001, dot(worldNormal, viewDir));
+    // Approximate environment BRDF (Karis 2014 split-sum approximation, mirror-safe)
+    float3 indViewNormal = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+    indViewNormal.x *= NataneMirrorSign();
+    half NdotV = max(0.001, dot(normalize(indViewNormal), float3(0, 0, 1)));
     half3 F = NataneSchlickFresnel(NdotV, F0);
     half surfaceReduction = 1.0 / (roughness * roughness + 1.0);
     half grazingTerm = saturate((1.0 - roughness) + max(F0.r, max(F0.g, F0.b)));

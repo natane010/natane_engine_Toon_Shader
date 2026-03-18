@@ -5,34 +5,6 @@
 
 // Lighting Calculation Functions
 
-// lilToon-compatible toon shading (linear interpolation, NOT smoothstep)
-// lilTooningScale: saturate((value - borderMin) / (borderMax - borderMin))
-// Used by StandardToon mode (_ShadingMode = 2) for exact lilToon parity
-// v2: fwidth-based anti-aliasing added (lilToon LIL_ANTIALIAS_MODE != 0)
-#ifdef _STANDARD_TOON
-float LilToonShading(float value, float border, float blur)
-{
-    float borderMin = saturate(border - blur * 0.5);
-    float borderMax = saturate(border + blur * 0.5);
-    // fwidth-based AA for smoother shadow boundary (matches lilToon's antialias mode)
-    float aa = fwidth(value) * 0.5;
-    return saturate((value - borderMin) / max(borderMax - borderMin + aa, 0.0001));
-}
-
-// lilToon-compatible color blend function
-// Supports 4 blend modes: 0=Normal(Replace), 1=Add, 2=Screen, 3=Multiply
-half3 LilBlendColor(half3 dstCol, half3 srcCol, half srcA, uint blendMode)
-{
-    half3 ad = dstCol + srcCol;
-    half3 mu = dstCol * srcCol;
-    half3 outCol = srcCol;                                              // 0: Normal (Replace)
-    outCol = (blendMode == 1) ? ad : outCol;                           // 1: Add
-    outCol = (blendMode == 2) ? max(ad - mu, dstCol) : outCol;        // 2: Screen
-    outCol = (blendMode == 3) ? mu : outCol;                           // 3: Multiply
-    return lerp(dstCol, outCol, srcA);
-}
-#endif
-
 // Toon Shading with adjustable steps and sharpness
 // Creates cel-shaded stepped lighting effect
 float ToonShading(float ndotl, float steps, float sharpness)
@@ -349,10 +321,15 @@ half3 HairTransmissionHighlight(half3 worldNormal, half3 worldTangent, half3 wor
 
 // Rim Light Calculation
 // Creates highlights at grazing angles (edges of objects)
+// Uses view-space Fresnel with mirror compensation for consistent VRChat mirror rendering
 #if defined(_RIM_LIGHT)
 half3 RimLighting(half3 normal, half3 viewDir, half power, half intensity)
 {
-    half rim = 1.0 - saturate(dot(normal, viewDir));
+    // Convert normal to view space and compensate mirror X-axis flip
+    float3 viewNormal = mul((float3x3)UNITY_MATRIX_V, normal);
+    viewNormal.x *= NataneMirrorSign();
+    // Fresnel in view space: dot against forward direction (0,0,1)
+    half rim = 1.0 - saturate(dot(normalize(viewNormal), float3(0, 0, 1)));
     rim = pow(rim, power) * intensity;
     return rim * _RimColor.rgb;
 }
@@ -395,10 +372,14 @@ half3 OffsetRimLighting(half3 normal, half3 viewDir, half3 lightDir, half power,
 
 // Sheen (Fabric Luster)
 // Simulates the sheen effect of fabric materials at grazing angles
+// Uses view-space Fresnel with mirror compensation
 #if defined(_SHEEN)
 half3 SheenHighlight(half3 normal, half3 viewDir, half3 lightDir)
 {
-    half NdotV = max(0.0, dot(normal, viewDir));
+    // Mirror-safe NdotV via view-space Fresnel
+    float3 viewNormal = mul((float3x3)UNITY_MATRIX_V, normal);
+    viewNormal.x *= NataneMirrorSign();
+    half NdotV = max(0.0, dot(normalize(viewNormal), float3(0, 0, 1)));
     half NdotL = max(0.0, dot(normal, lightDir));
     // Charlie sheen approximation: grazing angle fabric luster
     half sheen = pow(1.0 - NdotV, _SheenPower) * NdotL;
@@ -444,11 +425,16 @@ half3 SubsurfaceScatteringLUT(half ndotl, half3 normal, half3 worldPos, half thi
 
 // Cubemap Reflection (Environment Mapping)
 // Samples a cubemap based on reflection vector for realistic environment reflections
+// Fresnel uses view-space computation for mirror-safe grazing angle detection
 #if defined(_REFLECTION)
 half3 CubemapReflection(half3 worldNormal, half3 viewDir, half smoothness, half metallic)
 {
     // Calculate reflection vector
     half3 reflectDir = reflect(-viewDir, worldNormal);
+    // Mirror compensation: flip reflection X in view space, then back to world
+    float3 viewReflect = mul((float3x3)UNITY_MATRIX_V, reflectDir);
+    viewReflect.x *= NataneMirrorSign();
+    reflectDir = mul(viewReflect, (float3x3)UNITY_MATRIX_V);
 
     // Calculate mip level based on smoothness (roughness = 1 - smoothness)
     half roughness = 1.0 - smoothness;
@@ -460,8 +446,10 @@ half3 CubemapReflection(half3 worldNormal, half3 viewDir, half smoothness, half 
     // Apply reflection color tint
     half3 reflection = reflectionSample.rgb * _ReflectionColor.rgb;
 
-    // Fresnel effect - objects reflect more at grazing angles
-    half viewAngle = saturate(dot(worldNormal, viewDir));
+    // Fresnel effect - mirror-safe via view-space dot product
+    float3 viewNormal = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+    viewNormal.x *= NataneMirrorSign();
+    half viewAngle = saturate(dot(normalize(viewNormal), float3(0, 0, 1)));
 
     // Apply softness to Fresnel transition - Optimized: removed branching
     // Softness creates a more gradual transition between reflected and non-reflected areas
@@ -484,17 +472,23 @@ half3 CubemapReflection(half3 worldNormal, half3 viewDir, half smoothness, half 
 
 // Environmental Rim (Low-angle environment reflections)
 // Simulates reflections at grazing angles from environment cubemap
+// Uses view-space computations for mirror-safe rendering
 #if defined(_ENV_RIM)
 half3 EnvironmentalRim(half3 worldNormal, half3 viewDir, float powerOverride)
 {
-    // Calculate reflection vector
+    // Calculate reflection vector with mirror compensation
     half3 reflectDir = reflect(-viewDir, worldNormal);
+    float3 viewReflect = mul((float3x3)UNITY_MATRIX_V, reflectDir);
+    viewReflect.x *= NataneMirrorSign();
+    reflectDir = mul(viewReflect, (float3x3)UNITY_MATRIX_V);
 
     // Sample environment cubemap
     half3 envColor = texCUBE(_EnvRimCube, reflectDir).rgb;
 
-    // Calculate rim factor (stronger at edges)
-    half rim = 1.0 - saturate(dot(worldNormal, viewDir));
+    // Calculate rim factor (stronger at edges) — mirror-safe via view-space Fresnel
+    float3 viewNormal = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+    viewNormal.x *= NataneMirrorSign();
+    half rim = 1.0 - saturate(dot(normalize(viewNormal), float3(0, 0, 1)));
     rim = pow(rim, powerOverride);
 
     // Apply color tint and intensity
@@ -504,6 +498,7 @@ half3 EnvironmentalRim(half3 worldNormal, half3 viewDir, float powerOverride)
 
 // Refraction Calculation
 // Calculates refracted view direction for transparent materials
+// Mirror-safe: compensates view-space X-axis flip for refract/reflect directions
 #if defined(_REFRACTION)
 float3 CalculateRefraction(float3 worldNormal, float3 viewDir, float refractionIndex)
 {
@@ -519,6 +514,11 @@ float3 CalculateRefraction(float3 worldNormal, float3 viewDir, float refractionI
     {
         refractDir = reflect(-viewDir, worldNormal);
     }
+
+    // Mirror compensation: flip X in view space, then back to world
+    float3 viewRefract = mul((float3x3)UNITY_MATRIX_V, refractDir);
+    viewRefract.x *= NataneMirrorSign();
+    refractDir = mul(viewRefract, (float3x3)UNITY_MATRIX_V);
 
     return refractDir;
 }
@@ -639,8 +639,10 @@ half3 GlitterEffect(float2 uv, float3 worldPos, half3 viewDir, half3 normal, hal
             half glitterFlicker = frac(glitterRandom * 10.0 + glitterTime);
             glitterFlicker = smoothstep(0.3, 0.7, glitterFlicker); // Pulse animation
 
-            // Calculate view-dependent glitter intensity (sparkles more when viewed at certain angles)
-            half viewDot = max(0.0, dot(normal, viewDir));
+            // Calculate view-dependent glitter intensity (mirror-safe)
+            float3 glitterViewNormal = mul((float3x3)UNITY_MATRIX_V, normal);
+            glitterViewNormal.x *= NataneMirrorSign();
+            half viewDot = max(0.0, dot(normalize(glitterViewNormal), float3(0, 0, 1)));
             half viewFactor = viewDot * viewDot;
             glitter = glitterMask * glitterFlicker * viewFactor;
         #endif
@@ -660,8 +662,10 @@ half3 GlitterEffect(float2 uv, float3 worldPos, half3 viewDir, half3 normal, hal
 half3 IridescenceEffect(half3 normal, half3 viewDir, float2 uv, float sizeOverride)
 {
     #ifdef _IRIDESCENCE
-        // Calculate view-dependent angle
-        half viewAngle = saturate(dot(normal, viewDir));
+        // Calculate view-dependent angle (mirror-safe)
+        float3 iriViewNormal = mul((float3x3)UNITY_MATRIX_V, normal);
+        iriViewNormal.x *= NataneMirrorSign();
+        half viewAngle = saturate(dot(normalize(iriViewNormal), float3(0, 0, 1)));
 
         // Create color shift based on view angle and size parameter
         half hueShift = (1.0 - viewAngle) * sizeOverride;

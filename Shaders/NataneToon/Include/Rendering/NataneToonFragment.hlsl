@@ -387,37 +387,6 @@ half4 frag(v2f i) : SV_Target
     effectiveLightColor = clamp(effectiveLightColor, _LightColorMin, _LightColorMax);
     half lightGray = CALC_LUMINANCE(effectiveLightColor);
     effectiveLightColor = lerp(effectiveLightColor, half3(lightGray, lightGray, lightGray), _MonochromeLighting);
-    bool lilToonExactCompatibility = _LilToonExactCompatibility > 0.5;
-
-    // ===== StandardToon v2: lilToon-compatible light color =====
-    #ifdef _STANDARD_TOON
-        half3 stLightColor;
-        half3 stIndLightColor;
-        #ifdef UNITY_PASS_FORWARDBASE
-            // lilToon: lightColor = MAINLIGHT + SHToon
-            // SHToon = ShadeSH9(lightDir * 0.666666)
-            float3 stSHToon = max(0, ShadeSH9(float4(lightDir * 0.666666, 1.0)));
-            stLightColor = effectiveLightColor + stSHToon;
-            // Re-apply clamping (lilToon clamps after SH addition)
-            stLightColor = clamp(stLightColor, _LightColorMin, _LightColorMax);
-            // 最低保証: ライトカラーがゼロにならないようにする
-            if (!lilToonExactCompatibility)
-            {
-                stLightColor = max(stLightColor, half3(0.001, 0.001, 0.001));
-            }
-            half stGray = CALC_LUMINANCE(stLightColor);
-            stLightColor = lerp(stLightColor, half3(stGray, stGray, stGray), _MonochromeLighting);
-            // AsUnlit: applied to lightColor directly (lilToon behavior)
-            stLightColor = lerp(stLightColor, half3(1, 1, 1), _STAsUnlit);
-            // Indirect: SHToonMin (opposite direction)
-            stIndLightColor = saturate(ShadeSH9(float4(-lightDir * 0.666666, 1.0)));
-        #else
-            // ForwardAdd: just use the per-light color
-            stLightColor = effectiveLightColor;
-            stIndLightColor = half3(0, 0, 0);
-        #endif
-    #endif
-
     UNITY_LIGHT_ATTENUATION(atten, i, i.worldPos);
 
     // ===== Per-Effect Distance Fade (early calculation) =====
@@ -588,18 +557,10 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Wrapped Diffuse =====
     // (NdotL + wrap) / (1 + wrap) — 0=Lambert, 0.5=Half-Lambert, 1=Uniform
-    #ifndef _STANDARD_TOON
     if (_WrapAmount > 0.001)
     {
         ndotl = (ndotl + _WrapAmount) / (1.0 + _WrapAmount);
     }
-    #endif
-
-    // ===== StandardToon: Half-Lambert =====
-    #ifdef _STANDARD_TOON
-        // Half-Lambert: maps [-1,1] → [0,1], front faces always ≥ 0.5
-        ndotl = saturate(ndotl * 0.5 + 0.5);
-    #endif
 
     // ===== Backlight Calculation =====
     // Calculate light coming from behind the object (rim-like effect)
@@ -623,28 +584,25 @@ half4 frag(v2f i) : SV_Target
     // これにより、ndotlの影響を受けずにシェーディングを無効化できる
     lightTerm = lerp(lightTerm, 1.0, shadowReceiveMask);
 
-    #ifndef _STANDARD_TOON
-        // Apply lit area softness - Optimized: removed branching
-        // Softness calculation always executes (branch removal for better GPU performance)
-        half smoothedLight = smoothstep(0.0, 1.0, lightTerm);
-        lightTerm = lerp(lightTerm, smoothedLight, _LitSoftness);
+    // Apply lit area softness - Optimized: removed branching
+    // Softness calculation always executes (branch removal for better GPU performance)
+    half smoothedLight = smoothstep(0.0, 1.0, lightTerm);
+    lightTerm = lerp(lightTerm, smoothedLight, _LitSoftness);
 
-        // Apply dithering to soften shadow boundaries
-        #ifdef _USE_DITHERING
-            half ditherPattern = DitheringPattern(i.pos.xy, _DitheringScale);
-            // Apply dithering to shadow boundary area (around 0.4-0.6 range)
-            half ditherRange = saturate(1.0 - abs(lightTerm - 0.5) * 2.0);
-            float ditherStrengthBlurred = saturate(_DitheringStrength + _DitheringBlur * 0.5);
-            half ditherEffect = (ditherPattern - 0.5) * ditherStrengthBlurred * ditherRange;
-            half preDitherLightTerm = lightTerm;
-            lightTerm = saturate(lightTerm + ditherEffect);
-            lightTerm = lerp(preDitherLightTerm, lightTerm, _DitheringBlend);
-        #endif
-
-        // Apply unified lighting softness controls (Light Blend / Highlight Softness).
-        lightTerm = ApplyLightBlend(lightTerm);
+    // Apply dithering to soften shadow boundaries
+    #ifdef _USE_DITHERING
+        half ditherPattern = DitheringPattern(i.pos.xy, _DitheringScale);
+        // Apply dithering to shadow boundary area (around 0.4-0.6 range)
+        half ditherRange = saturate(1.0 - abs(lightTerm - 0.5) * 2.0);
+        float ditherStrengthBlurred = saturate(_DitheringStrength + _DitheringBlur * 0.5);
+        half ditherEffect = (ditherPattern - 0.5) * ditherStrengthBlurred * ditherRange;
+        half preDitherLightTerm = lightTerm;
+        lightTerm = saturate(lightTerm + ditherEffect);
+        lightTerm = lerp(preDitherLightTerm, lightTerm, _DitheringBlend);
     #endif
-    // StandardToon: lightTerm をそのまま使用（lilToon互換）
+
+    // Apply unified lighting softness controls (Light Blend / Highlight Softness).
+    lightTerm = ApplyLightBlend(lightTerm);
 
     // ===== Toon/Ramp Shading =====
     half3 lighting;
@@ -683,9 +641,13 @@ half4 frag(v2f i) : SV_Target
     }
 
     half specularVisibility = saturate(aoForIndirect * cavityEffect);
+    // Mirror-safe NdotV for specular occlusion
+    float3 soViewNormal = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+    soViewNormal.x *= NataneMirrorSign();
+    half soNdotV = saturate(dot(normalize(soViewNormal), float3(0, 0, 1)));
     half specularOcclusion = NataneSpecularOcclusion(
         specularVisibility,
-        saturate(dot(worldNormal, viewDir)),
+        soNdotV,
         saturate(1.0 - _Smoothness));
     specularOcclusion = lerp(1.0, specularOcclusion, _SpecularOcclusionStrength);
     half3 lookWeights = NataneResolveLookWeights();
@@ -703,106 +665,6 @@ half4 frag(v2f i) : SV_Target
         lighting = RampShading(rampInput);
         shadingValue = saturate(rampInput + clamp(_ShadowOffset, -1.0, 1.0));
         shadowColor = lighting;
-    #elif defined(_STANDARD_TOON)
-        // ===== StandardToon v2: lilToon-exact pipeline =====
-        half4 lilShadowStrengthMask = half4(1, 1, 1, 1);
-        half4 lilShadowBorderMask = half4(1, 1, 1, 1);
-        half4 lilShadowBlurMask = half4(1, 1, 1, 1);
-        if (lilToonExactCompatibility)
-        {
-            lilShadowStrengthMask = NATANE_SAMPLE_SHARED(_ShadowStrengthMask, _MainTex, uv);
-            lilShadowBorderMask = NATANE_SAMPLE_SHARED(_ShadowBorderMask, _MainTex, uv);
-            lilShadowBlurMask = NATANE_SAMPLE_SHARED(_ShadowBlurMask, _MainTex, uv);
-        }
-
-        half stShadowInput = lightTerm;
-        half stShadowBlur = _STShadowBlur;
-        if (lilToonExactCompatibility)
-        {
-            stShadowInput *= lilShadowBorderMask.r;
-            stShadowBlur *= lilShadowBlurMask.r;
-        }
-
-        // Tooning
-        half stToon = LilToonShading(stShadowInput, _STShadowBorder, stShadowBlur);
-
-        // Shadow attenuation (lilToon: lns *= lerp(1, calculatedShadow, _ShadowReceive))
-        stToon *= atten;
-
-        // Shadow strength (lilToon: lns = lerp(1, lns, _ShadowStrength))
-        half stShadowStrength = _STShadowStrength;
-        if (lilToonExactCompatibility)
-        {
-            stShadowStrength *= lilShadowStrengthMask.r;
-        }
-        stToon = lerp(1.0, stToon, stShadowStrength);
-
-        // AO
-        #ifdef _USE_AO
-            stToon *= lerp(1.0, aoEffect, _AOBlend);
-        #endif
-
-        shadingValue = stToon;
-
-        // ---- Shadow color computation (lilToon model: multiplicative with albedo) ----
-        half3 stAlbedo = col.rgb;
-
-        // Shadow color texture: lilToon style (multiplicative tinting)
-        // _ShadowColorTexStrength で制御（既存Natane方式との互換）
-        // デフォルト白テクスチャ + Strength=0 → stIndirectCol = stAlbedo * _ShadowColor.rgb（正常動作）
-        half shadowColorTexStrength = saturate(_ShadowColorTexStrength);
-        half3 stShadowColorTexSample = half3(1.0, 1.0, 1.0);
-        if (shadowColorTexStrength > 0.001)
-        {
-            stShadowColorTexSample = NATANE_SAMPLE_REPEAT(_ShadowColorTex, uv).rgb;
-        }
-        half3 stTintedAlbedo = lerp(stAlbedo, stAlbedo * stShadowColorTexSample, shadowColorTexStrength);
-        half3 stIndirectCol = stTintedAlbedo * _ShadowColor.rgb;
-
-        // Multi-shadow (lilToon sequential lerp with alpha)
-        #ifdef _USE_MULTI_SHADOW
-            // 2nd shadow
-            half toon2Input = lilToonExactCompatibility ? lightTerm * lilShadowBorderMask.g : lightTerm;
-            half toon2Blur = lilToonExactCompatibility ? _Shadow2ndBlur * lilShadowBlurMask.g : _STShadowBlur;
-            half toon2 = LilToonShading(toon2Input, _Shadow2ndBorder, toon2Blur);
-            half3 st2ndCol = stAlbedo * _Shadow2ndColor.rgb;
-            half alpha2 = _Shadow2ndColor.a - _Shadow2ndColor.a * toon2;
-            stIndirectCol = lerp(stIndirectCol, st2ndCol, alpha2);
-
-            // 3rd shadow
-            half toon3Input = lilToonExactCompatibility ? lightTerm * lilShadowBorderMask.b : lightTerm;
-            half toon3Blur = lilToonExactCompatibility ? _Shadow3rdBlur * lilShadowBlurMask.b : _STShadowBlur;
-            half toon3 = LilToonShading(toon3Input, _Shadow3rdBorder, toon3Blur);
-            half3 st3rdCol = stAlbedo * _Shadow3rdColor.rgb;
-            half alpha3 = _Shadow3rdColor.a - _Shadow3rdColor.a * toon3;
-            stIndirectCol = lerp(stIndirectCol, st3rdCol, alpha3);
-        #endif
-
-        if (lilToonExactCompatibility)
-        {
-            stIndirectCol = lerp(stIndirectCol, stIndirectCol * stAlbedo, saturate(_ShadowMainStrength));
-        }
-
-        // Direct color & indirect color with light color
-        half3 stDirectCol = stAlbedo * stLightColor;
-        stIndirectCol *= stLightColor;
-
-        // Shadow Environment Strength: lighten shadows with indirect light
-        #ifdef UNITY_PASS_FORWARDBASE
-            stIndirectCol = lerp(stIndirectCol, stAlbedo,
-                                 saturate(stIndLightColor * _STShadowEnvStrength));
-        #endif
-
-        // Safety clamp: shadow never brighter than lit
-        if (!lilToonExactCompatibility)
-        {
-            stIndirectCol = min(stIndirectCol, stDirectCol);
-        }
-
-        // Store for later composition
-        shadowColor = _ShadowColor.rgb;
-        // lighting は STEP 5 で計算される（LV パス用に初期値を設定）
-        lighting = lerp(shadowColor, half3(1, 1, 1), shadingValue);
     #else
         // Choose between Toon and Gradient shading modes - Optimized: no branching
         // Calculate both modes and blend based on _ShadingMode
@@ -947,10 +809,6 @@ half4 frag(v2f i) : SV_Target
 
             // LV使用時はUnityのAmbient Colorを使用しない（LVが環境光を提供するため）
             ambient = float3(0, 0, 0);
-
-            // StandardToon: stDirectCol/stIndirectCol は stLightColor ベースで計算済み。
-            // stLightColor にはディレクショナルライト + SH が含まれるため、
-            // STEP 5 では追加のLVブーストなしで正しくレンダリングされる。
         #else
             // Fallback: Unity Light Probes
             // L0 (uniform ambient) for indirect
@@ -977,17 +835,12 @@ half4 frag(v2f i) : SV_Target
         #endif
 
         // ========== STEP 3: Direct Light ==========
-        #ifdef _STANDARD_TOON
-            // StandardToon v2: lilToon-exact composition handled in STEP 5
-            // stDirectCol, stIndirectCol, shadingValue computed in shading branch
-            half3 directResult = half3(0, 0, 0); // placeholder, replaced in STEP 5
-        #elif defined(_USE_RAMP)
+        #ifdef _USE_RAMP
             half3 directResult = lighting; // Ramp already provides colored shadow-to-lit
         #else
             half3 directResult = lerp(shadowColor, half3(1, 1, 1), shadingValue);
         #endif
 
-        #ifndef _STANDARD_TOON
         // Light color application (with LightColorInfluence preservation)
         half lightColorLum = CALC_LUMINANCE(effectiveLightColor);
         half3 colorMultiplied = directResult * saturate(effectiveLightColor);
@@ -1000,7 +853,6 @@ half4 frag(v2f i) : SV_Target
         directLum = clamp(directLum, _LightMinInfluence, _LightMaxInfluence);
         half3 directDir = normalize(max(directResult, 0.01));
         directResult = directDir * directLum;
-        #endif
 
         // ========== STEP 4: Additional Light ==========
         half3 additionalResult = half3(0, 0, 0);
@@ -1100,7 +952,11 @@ half4 frag(v2f i) : SV_Target
                 {
                     half secondaryRoughness = max(0.02, 1.0 - saturate(_SkinSpecSecondarySmoothness));
                     half3 secondaryF0 = half3(0.04, 0.04, 0.04);
-                    half skinGrazing = pow(1.0 - saturate(dot(worldNormal, viewDir)), max(0.1, _SkinSpecFresnelPower));
+                    // Mirror-safe Fresnel for skin specular
+                    float3 skinViewNormal = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+                    skinViewNormal.x *= NataneMirrorSign();
+                    half skinNdotV = saturate(dot(normalize(skinViewNormal), float3(0, 0, 1)));
+                    half skinGrazing = pow(1.0 - skinNdotV, max(0.1, _SkinSpecFresnelPower));
                     half skinFresnelFactor = lerp(0.35, 1.0, saturate(skinGrazing));
 
                     half3 skinSecondarySpec = NatanePBRSpecular(worldNormal, viewDir, lightDir,
@@ -1130,24 +986,15 @@ half4 frag(v2f i) : SV_Target
 
         // ========== STEP 5: Final Composition ==========
         #ifdef _USE_LIGHT_VOLUME
-            #ifdef _STANDARD_TOON
-            // StandardToon + LV: lilToon互換合成
-            // stDirectCol/stIndirectCol は stLightColor ベースで計算済みのため
-            // 非LVパスと同じ合成ロジックで正しくレンダリングされる。
-            // LV の環境光は preLightVolume → _LightVolumeBlend で反映される。
-            {
-                half3 stResult = lerp(stIndirectCol, stDirectCol, shadingValue);
-                stResult += additionalResult * col.rgb;
-                lighting = lilToonExactCompatibility ? stResult : CompressLightingForSafeRange(stResult, 0.95, 1.08);
-            }
-            #else
             if (_LightVolumeBlendMode < 0.5) // Add (Legacy)
             {
                 lighting = directResult + additionalResult;
                 float3 lvAddition = saturate(directLightLV - lighting);
                 lighting += lvAddition;
-                // Indirect as subtle rim
-                float rimFactor = 1.0 - saturate(dot(worldNormal, viewDir));
+                // Indirect as subtle rim (mirror-safe)
+                float3 lvRimViewNormal = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+                lvRimViewNormal.x *= NataneMirrorSign();
+                float rimFactor = 1.0 - saturate(dot(normalize(lvRimViewNormal), float3(0, 0, 1)));
                 rimFactor = rimFactor * rimFactor * rimFactor;
                 float3 indirectAddition = saturate(indirectLightLV - lighting);
                 lighting += indirectAddition * rimFactor;
@@ -1175,7 +1022,6 @@ half4 frag(v2f i) : SV_Target
                 half3 totalIndirect = max(indirectResult, lvIndirectNatural);
                 lighting = CombineDiffuseLightingSafe(totalIndirect, directResult + lvDirectNatural, additionalResult, half3(0, 0, 0));
             }
-            #endif
 
             // Light Volume Specular (additive on albedo)
             #ifdef _LIGHT_VOLUME_SPECULAR
@@ -1190,20 +1036,8 @@ half4 frag(v2f i) : SV_Target
 
             lighting = lerp(preLightVolume, lighting, _LightVolumeBlend);
         #else
-            #ifdef _STANDARD_TOON
-                // ========== StandardToon v2: lilToon-compatible composition ==========
-                // lilToon's final composition: lerp(indirectCol, directCol, toon)
-                half3 stResult = lerp(stIndirectCol, stDirectCol, shadingValue);
-
-                // Add additional lights (vertex lights, backlight, LTCGI) scaled by albedo
-                half3 standardToonLighting = stResult + additionalResult * col.rgb;
-                lighting = lilToonExactCompatibility ? standardToonLighting : CompressLightingForSafeRange(standardToonLighting, 0.95, 1.08);
-                // Note: 'lighting' here already includes albedo for StandardToon
-                // 黒防止は _LightColorMin (= lilToon _LightMinLimit) で保証
-            #else
-                // Non-LV: keep indirect visibility while compressing direct/additional blowout.
-                lighting = CombineDiffuseLightingSafe(indirectResult, directResult, additionalResult, ambient);
-            #endif
+            // Non-LV: keep indirect visibility while compressing direct/additional blowout.
+            lighting = CombineDiffuseLightingSafe(indirectResult, directResult, additionalResult, ambient);
         #endif
 
     #else
@@ -1212,28 +1046,14 @@ half4 frag(v2f i) : SV_Target
         // 影色（shadowColor）は ForwardBase で既に処理済みのため、ここでは使用しない。
         // 影色をそのまま使うと、影側でも非ゼロの寄与が加算され、
         // 複数の色付きポイントライトで全身が混色する問題（紫ウォッシュ）が発生する。
-        #ifdef _STANDARD_TOON
-            // StandardToon v2: additional light (shadow side → zero contribution)
-            lighting = half3(shadingValue, shadingValue, shadingValue);
-            lighting *= _LightColor0.rgb;
-            lighting *= max(0.0, _AdditionalLightIntensity);
-        #else
-            lighting = half3(shadingValue, shadingValue, shadingValue);
-            half lightColorLum_add = CALC_LUMINANCE(_LightColor0.rgb);
-            half3 colorMul_add = lighting * _LightColor0.rgb;
-            half3 lumOnly_add = lighting * lightColorLum_add;
-            lighting = lerp(lumOnly_add, colorMul_add, _LightColorInfluence);
-            lighting *= max(0.0, _LightIntensity);
-            lighting *= max(0.0, _AdditionalLightIntensity);
-        #endif
-        #ifdef _STANDARD_TOON
-            if (!lilToonExactCompatibility)
-            {
-                lighting = CompressLightingForSafeRange(lighting, 0.75, 0.9);
-            }
-        #else
-            lighting = CompressLightingForSafeRange(lighting, 0.75, 0.9);
-        #endif
+        lighting = half3(shadingValue, shadingValue, shadingValue);
+        half lightColorLum_add = CALC_LUMINANCE(_LightColor0.rgb);
+        half3 colorMul_add = lighting * _LightColor0.rgb;
+        half3 lumOnly_add = lighting * lightColorLum_add;
+        lighting = lerp(lumOnly_add, colorMul_add, _LightColorInfluence);
+        lighting *= max(0.0, _LightIntensity);
+        lighting *= max(0.0, _AdditionalLightIntensity);
+        lighting = CompressLightingForSafeRange(lighting, 0.75, 0.9);
     #endif
 
     // Store original texture color before lighting application
@@ -1259,24 +1079,10 @@ half4 frag(v2f i) : SV_Target
             #endif
             col.rgb += originalAlbedo * backlight * _BacklightColor.rgb * _LightColor0.rgb * atten * _AdditionalLightIntensity * backlightBlendFaded_add;
         }
-        #ifdef _STANDARD_TOON
-            if (!lilToonExactCompatibility)
-            {
-                col.rgb = CompressLightingForSafeRange(col.rgb, 0.75, 0.9);
-            }
-        #else
-            col.rgb = CompressLightingForSafeRange(col.rgb, 0.75, 0.9);
-        #endif
+        col.rgb = CompressLightingForSafeRange(col.rgb, 0.75, 0.9);
     #else
-        #ifdef _STANDARD_TOON
-            // StandardToon v2: lighting already includes albedo (computed in STEP 5)
-            col.rgb = lighting;
-            half gray = CALC_LUMINANCE(col.rgb);
-            col.rgb = lerp(gray, col.rgb, _Saturation);
-            col.rgb *= _Brightness;
-        #else
-            // Optimized: Cache original luminance (used multiple times)
-            half originalLum = CALC_LUMINANCE(originalAlbedo);
+        // Optimized: Cache original luminance (used multiple times)
+        half originalLum = CALC_LUMINANCE(originalAlbedo);
 
             // ===== Improved Color Preservation Lighting =====
             // Instead of directly multiplying, preserve color hue and saturation
@@ -1315,7 +1121,6 @@ half4 frag(v2f i) : SV_Target
             // 3. Overall Brightness Adjustment
             // Final brightness control (applied before effects so they show properly)
             col.rgb *= _Brightness;
-        #endif
     #endif
 
     // LTCGI Specular: applied after lighting composition to avoid double-application
@@ -1623,11 +1428,14 @@ half4 frag(v2f i) : SV_Target
         float rim2PowerBlurred = max(0.1, _RimPower2 * (1.0 - _Rim2Blur * 0.8));
         half rim2SpreadPower = lerp(rim2PowerBlurred, max(0.5, rim2PowerBlurred * 0.3), _RimSpread2);
 
-        // Fresnel rim (same for both passes)
-        half rim2Factor = 1.0 - saturate(dot(worldNormal, viewDir));
+        // Fresnel rim — mirror-safe via view-space dot product
+        float3 rim2ViewNormal = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+        rim2ViewNormal.x *= NataneMirrorSign();
+        half rim2NdotV = saturate(dot(normalize(rim2ViewNormal), float3(0, 0, 1)));
+        half rim2Factor = 1.0 - rim2NdotV;
         rim2Factor = pow(rim2Factor, rim2PowerBlurred) * _RimIntensity2;
         half3 rim2 = rim2Factor * _RimColor2.rgb;
-        half rim2SpreadFactor = 1.0 - saturate(dot(worldNormal, viewDir));
+        half rim2SpreadFactor = 1.0 - rim2NdotV;
         rim2SpreadFactor = pow(rim2SpreadFactor, rim2SpreadPower) * _RimIntensity2 * _RimSpread2 * 0.5;
         rim2 += rim2SpreadFactor * _RimColor2.rgb * step(0.001, _RimSpread2);
 
@@ -1767,39 +1575,27 @@ half4 frag(v2f i) : SV_Target
         matcapMask = ApplySoftMask(matcapMask); // Smooth mask transitions
         matcap *= matcapMask;
 
-        #ifdef _STANDARD_TOON
-            // StandardToon: MatCap は常に Add モード（Multiply/Replace は黒レンダリングの原因になるため）
-            half3 preMatCap = col.rgb;
-            half matcapStrength = saturate(_MatCapIntensity * matcapMask);
-            col.rgb = SafeAdditiveBlend(col.rgb, matcap, matcapStrength);
-            half matCapBlendFaded = _MatCapBlend;
-            #ifdef _DISTANCE_FADE
-                matCapBlendFaded *= lerp(1.0, distanceFade, _MatCapDistFade);
-            #endif
-            col.rgb = lerp(preMatCap, col.rgb, matCapBlendFaded);
-        #else
-            // Apply glossiness and matte material quality
-            matcap *= _Glossiness;
-            matcap = ApplyMatteQuality(matcap, col.rgb, _MatteEffect);
+        // Apply glossiness and matte material quality
+        matcap *= _Glossiness;
+        matcap = ApplyMatteQuality(matcap, col.rgb, _MatteEffect);
 
-            // Blend modes: 0=Add (safe), 1=Multiply, 2=Replace - Optimized: no branching
-            half3 preMatCap = col.rgb;
-            half matcapStrength = saturate(_MatCapIntensity * matcapMask);
-            half3 addResult = SafeAdditiveBlend(col.rgb, matcap, matcapStrength);
-            half3 multiplyResult = BlendWithSoftMask(col.rgb, col.rgb * matcap, saturate(_MatCapIntensity * matcapMask));
-            half3 replaceResult = BlendWithSoftMask(col.rgb, matcap, saturate(_MatCapIntensity * matcapMask));
+        // Blend modes: 0=Add (safe), 1=Multiply, 2=Replace - Optimized: no branching
+        half3 preMatCap = col.rgb;
+        half matcapStrength = saturate(_MatCapIntensity * matcapMask);
+        half3 addResult = SafeAdditiveBlend(col.rgb, matcap, matcapStrength);
+        half3 multiplyResult = BlendWithSoftMask(col.rgb, col.rgb * matcap, saturate(_MatCapIntensity * matcapMask));
+        half3 replaceResult = BlendWithSoftMask(col.rgb, matcap, saturate(_MatCapIntensity * matcapMask));
 
-            // Select blend mode using lerp
-            half isMultiply = step(HALF_VALUE, _MatCapBlendMode) * step(_MatCapBlendMode, 1.5);
-            half isReplace = step(1.5, _MatCapBlendMode);
-            col.rgb = lerp(addResult, multiplyResult, isMultiply);
-            col.rgb = lerp(col.rgb, replaceResult, isReplace);
-            half matCapBlendFaded = _MatCapBlend;
-            #ifdef _DISTANCE_FADE
-                matCapBlendFaded *= lerp(1.0, distanceFade, _MatCapDistFade);
-            #endif
-            col.rgb = lerp(preMatCap, col.rgb, matCapBlendFaded);
+        // Select blend mode using lerp
+        half isMultiply = step(HALF_VALUE, _MatCapBlendMode) * step(_MatCapBlendMode, 1.5);
+        half isReplace = step(1.5, _MatCapBlendMode);
+        col.rgb = lerp(addResult, multiplyResult, isMultiply);
+        col.rgb = lerp(col.rgb, replaceResult, isReplace);
+        half matCapBlendFaded = _MatCapBlend;
+        #ifdef _DISTANCE_FADE
+            matCapBlendFaded *= lerp(1.0, distanceFade, _MatCapDistFade);
         #endif
+        col.rgb = lerp(preMatCap, col.rgb, matCapBlendFaded);
     } // if (_MatCap >= 0.5)
     #endif
 
@@ -1873,8 +1669,11 @@ half4 frag(v2f i) : SV_Target
     {
         // Spherical gradient from view-space normal
         half gradient = pow(saturate(1.0 - length(sharedMatCapUV - 0.5) * 2.0), _ProcMatCapPower);
-        // Fresnel rim enhancement
-        half procFresnel = pow(1.0 - saturate(dot(worldNormal, viewDir)), _ProcMatCapFresnelPower);
+        // Fresnel rim enhancement (mirror-safe)
+        float3 procViewNormal = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+        procViewNormal.x *= NataneMirrorSign();
+        half procNdotV = saturate(dot(normalize(procViewNormal), float3(0, 0, 1)));
+        half procFresnel = pow(1.0 - procNdotV, _ProcMatCapFresnelPower);
         half3 procMatCap = _ProcMatCapColor.rgb * (gradient + procFresnel) * _ProcMatCapIntensity;
 
         half3 preProcMatCap = col.rgb;
@@ -1954,13 +1753,18 @@ half4 frag(v2f i) : SV_Target
     #if defined(_FAKE_REFLECTION) && defined(UNITY_PASS_FORWARDBASE)
     if (_FakeReflection >= 0.5)
     {
-        // Reflect view direction around surface normal
+        // Reflect view direction around surface normal — mirror-safe
         float3 reflectDir = reflect(-viewDir, worldNormal);
+        float3 viewReflectFake = mul((float3x3)UNITY_MATRIX_V, reflectDir);
+        viewReflectFake.x *= NataneMirrorSign();
+        reflectDir = mul(viewReflectFake, (float3x3)UNITY_MATRIX_V);
         // Sky-ground gradient based on reflection Y component
         float skyFactor = saturate(reflectDir.y * _FakeReflSmoothness * 5.0 + 0.5);
         half3 fakeRefl = lerp(_FakeReflGroundColor.rgb, _FakeReflSkyColor.rgb, skyFactor);
-        // Fresnel: stronger reflection at grazing angles
-        half fresnel = pow(1.0 - saturate(dot(worldNormal, viewDir)), _FakeReflFresnelPower);
+        // Fresnel: stronger reflection at grazing angles — mirror-safe via view-space
+        float3 fakeReflViewN = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+        fakeReflViewN.x *= NataneMirrorSign();
+        half fresnel = pow(1.0 - saturate(dot(normalize(fakeReflViewN), float3(0, 0, 1))), _FakeReflFresnelPower);
         fakeRefl *= fresnel * _FakeReflIntensity;
 
         half3 preFakeRefl = col.rgb;
@@ -2091,7 +1895,10 @@ half4 frag(v2f i) : SV_Target
         if (_AudioLinkRimIntensity > 0.001)
         {
             half alRim = SampleAudioLink(_AudioLinkRimBand);
-            half alRimFactor = 1.0 - saturate(dot(worldNormal, viewDir));
+            // Mirror-safe AudioLink rim
+            float3 alRimViewNormal = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+            alRimViewNormal.x *= NataneMirrorSign();
+            half alRimFactor = 1.0 - saturate(dot(normalize(alRimViewNormal), float3(0, 0, 1)));
             alRimFactor = alRimFactor * alRimFactor * alRimFactor;
             col.rgb = SafeAdditiveBlendFast(col.rgb, _RimColor.rgb * alRim * _AudioLinkRimIntensity * alRimFactor, 1.0);
         }

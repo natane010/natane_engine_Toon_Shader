@@ -389,27 +389,6 @@ namespace NataneToon.Editor
                 }
             }
 
-            // _STANDARD_TOON keyword (derived from _LilToonExactCompatibility + _ShadingMode)
-            // Matches NataneToonShaderGUI.ShouldUseLilToonCompatibilityBase() logic:
-            //   _LilToonExactCompatibility > 0.5 AND _ShadingMode in [1.5, 2.5)
-            if (material.HasProperty("_ShadingMode"))
-            {
-                bool lilToonExact = material.HasProperty("_LilToonExactCompatibility") &&
-                                    material.GetFloat("_LilToonExactCompatibility") > 0.5f;
-                float shadingMode = material.GetFloat("_ShadingMode");
-                bool isLilToonCompatShadingMode = shadingMode >= 1.5f && shadingMode < 2.5f;
-                bool shouldBeStandardToon = lilToonExact && isLilToonCompatShadingMode;
-                bool isStandardToon = material.IsKeywordEnabled("_STANDARD_TOON");
-                if (shouldBeStandardToon != isStandardToon)
-                {
-                    if (shouldBeStandardToon)
-                        material.EnableKeyword("_STANDARD_TOON");
-                    else
-                        material.DisableKeyword("_STANDARD_TOON");
-                    anyChanges = true;
-                }
-            }
-
             return anyChanges;
         }
     }

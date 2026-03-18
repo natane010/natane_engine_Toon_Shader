@@ -35,13 +35,13 @@ namespace NataneToon.Editor
         private bool replaceOriginal = false;
         private bool showPreview = false;
         private Material previewMaterial = null;
+        private bool autoOptimize = true;
         private const float CompactLayoutWidth = 720f;
         private const float NarrowLayoutWidth = 560f;
 
-        private enum ConversionMode { ExactCompatibility, VisualMatch, MinimalSafe }
+        private enum ConversionMode { VisualMatch, MinimalSafe }
         private ConversionMode conversionMode = ConversionMode.VisualMatch;
         private string[] conversionModeDisplayNames => new[] {
-            L("完全互換 (プレビュー)", "Exact Compatibility (Preview)"),
             L("見た目優先 (近似)", "Visual Match (Approximate)"),
             L("最小安全構成 (旧仕様向け)", "Minimal Safe (Legacy)")
         };
@@ -105,79 +105,33 @@ namespace NataneToon.Editor
         {
             windowScrollPosition = EditorGUILayout.BeginScrollView(windowScrollPosition);
             NataneToonShaderGUIUtility.DrawToolHeader("lilToon移行ツール", "lilToon Migration Tool", nameof(LilToonMigrationTool));
-            EditorGUILayout.Space();
+            EditorGUILayout.Space(4);
 
-            if (!hasScannedProjectMaterials)
-            {
-                EditorGUILayout.HelpBox(
-                    L("大規模プロジェクトでも重くなりにくいように、プロジェクト全体のマテリアル走査は手動開始になっています。", "Project-wide material scan is manual so opening the tool stays responsive on large projects."),
-                    MessageType.Info);
-            }
+            // --- 対象選択 ---
+            currentMode = DrawResponsiveSelection(currentMode, modeNames);
+            EditorGUILayout.Space(4);
 
-            EditorGUILayout.LabelField(L("オプション", "Options"), EditorStyles.boldLabel);
+            // --- 設定 (コンパクト) ---
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            autoOptimize = EditorGUILayout.Toggle(L("Auto Setup で自動最適化", "Auto-optimize with Auto Setup"), autoOptimize);
             createBackup = EditorGUILayout.Toggle(L("バックアップを作成", "Create Backup"), createBackup);
-            replaceOriginal = EditorGUILayout.Toggle(L("元マテリアルを直接置換 (破壊的)", "Replace Original (Destructive)"), replaceOriginal);
-            showPreview = EditorGUILayout.Toggle(L("変換後にプレビューを表示", "Show Preview After Conversion"), showPreview);
+            conversionMode = (ConversionMode)EditorGUILayout.Popup(
+                L("変換モード", "Conversion Mode"),
+                (int)conversionMode, conversionModeDisplayNames);
 
-            EditorGUILayout.Space(5);
-            EditorGUILayout.LabelField(L("変換モード", "Conversion Mode"), EditorStyles.boldLabel);
-            conversionMode = DrawResponsiveSelection(conversionMode, conversionModeDisplayNames);
-            if (conversionMode == ConversionMode.ExactCompatibility)
-            {
-                EditorGUILayout.HelpBox(
-                    L("完全互換モードでは専用の互換フラグを有効にし、lilToon の見た目へ寄せる内部互換ベースを使います。\n" +
-                      "MatCap など一部の機能は手動確認が必要なので、変換後に警告を確認してください。", "Migrated materials opt into a dedicated exact-compatibility flag and use a parity-focused compatibility base.\n" +
-                      "Some features such as MatCap still require manual review, so check warnings after conversion."),
-                    MessageType.Info
-                );
-            }
-            else if (conversionMode == ConversionMode.VisualMatch)
-            {
-                EditorGUILayout.HelpBox(
-                    L("有効な lilToon 機能 (リムライト、アウトライン、発光、MatCap、スペキュラーなど) をまとめて Natane 側へ近似変換して有効化します。\n" +
-                      "見た目優先の経路なので、ピクセル単位の完全一致は保証しません。", "All active lilToon features (rim light, outline, emission, MatCap, specular, etc.) will be converted and enabled.\n" +
-                      "This is a Natane-native approximation path and does not guarantee pixel-perfect parity."),
-                    MessageType.Info
-                );
-            }
-            else
-            {
-                EditorGUILayout.HelpBox(
-                    L("基本設定 (テクスチャ、色、影) のみを有効にし、ほかの機能は OFF のまま値だけ移行します。\n" +
-                      "移行後に必要な機能だけ個別に ON にしたい場合に向いています。", "Only basic settings (texture, color, shadow) are enabled. Other features are migrated in OFF state.\n" +
-                      "Property values are preserved, so you can enable features individually after migration."),
-                    MessageType.Info
-                );
-            }
-
-            EditorGUILayout.Space(5);
-
+            // 上級オプション (折りたたみ)
+            replaceOriginal = EditorGUILayout.Toggle(L("元マテリアルを直接置換", "Replace Original"), replaceOriginal);
             if (replaceOriginal)
             {
                 EditorGUILayout.HelpBox(
-                    L("WARNING: This will permanently modify your original materials!\n" +
-                      "Make sure you have a backup of your project.", "WARNING: This will permanently modify your original materials!\n" +
-                      "Make sure you have a backup of your project."),
-                    MessageType.Warning
-                );
+                    L("元マテリアルを直接書き換えます。バックアップを推奨します。",
+                      "Original materials will be overwritten. Backup recommended."),
+                    MessageType.Warning);
             }
-            else
-            {
-                EditorGUILayout.HelpBox(
-                    L("変換先は元マテリアルの近くにある NataneToon フォルダーです。\n" +
-                      "同名の *_NataneToon.mat がすでにある場合は、新規作成ではなく中身だけ更新します。\n" +
-                      "既存アセットの GUID は維持されるので、Prefab や参照先を切りにくい安全寄りの再変換になります。",
-                      "Converted materials are stored in a nearby NataneToon folder.\n" +
-                      "If a *_NataneToon.mat already exists, the tool updates that asset in-place instead of recreating it.\n" +
-                      "The existing GUID is preserved, so prefab and material references stay stable on reruns."),
-                    MessageType.Info
-                );
-            }
+            showPreview = EditorGUILayout.Toggle(L("変換後にプレビュー", "Preview After Conversion"), showPreview);
+            EditorGUILayout.EndVertical();
 
-            EditorGUILayout.Space();
-
-            currentMode = DrawResponsiveSelection(currentMode, modeNames);
-            EditorGUILayout.Space();
+            EditorGUILayout.Space(4);
 
             switch (currentMode)
             {
@@ -629,14 +583,6 @@ namespace NataneToon.Editor
                 .ThenBy(entry => entry.path)
                 .ToList();
 
-            if (!EditorUtility.DisplayDialog(
-                L("Convert All Materials", "Convert All Materials"),
-                L($"Are you sure you want to convert {lilToonMaterials.Count} materials?", $"Are you sure you want to convert {lilToonMaterials.Count} materials?"),
-                L("Yes", "Yes"), L("Cancel", "Cancel")))
-            {
-                return;
-            }
-
             int successCount = 0;
             List<ConversionReport> reports = new List<ConversionReport>();
 
@@ -859,7 +805,7 @@ namespace NataneToon.Editor
                 ApplyLilToonMigrationMetadata(targetMaterial, sourceMaterial, sourceMaterial.shader != null ? sourceMaterial.shader.name : "lilToon");
                 if (targetMaterial.HasProperty("_LilToonExactCompatibility"))
                 {
-                    targetMaterial.SetFloat("_LilToonExactCompatibility", conversionMode == ConversionMode.ExactCompatibility ? 1.0f : 0.0f);
+                    targetMaterial.SetFloat("_LilToonExactCompatibility", 0.0f);
                 }
 
                 // Map properties
@@ -873,10 +819,6 @@ namespace NataneToon.Editor
                 if (conversionMode == ConversionMode.MinimalSafe)
                 {
                     DisableNonBasicFeatures(targetMaterial, report);
-                }
-                else if (conversionMode == ConversionMode.ExactCompatibility)
-                {
-                    report.infos.Add("Exact Compatibility mode enabled: parity-focused lilToon migration path is active where supported.");
                 }
                 else
                 {
@@ -895,6 +837,24 @@ namespace NataneToon.Editor
                 {
                     previewMaterial = targetMaterial;
                     Selection.activeObject = targetMaterial;
+                }
+
+                // Auto-optimize with AutoFixer
+                if (autoOptimize)
+                {
+                    try
+                    {
+                        var fixResult = NataneLilToonAutoFixer.Fix(targetMaterial, originalProperties);
+                        report.infos.Add($"Auto-fix applied: quality {fixResult.qualityScore}/100, {fixResult.actions.Count} optimizations");
+                        foreach (var warning in fixResult.warnings)
+                        {
+                            report.warnings.Add($"AutoFix: {warning}");
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        report.warnings.Add($"Auto-fix failed: {ex.Message}");
+                    }
                 }
 
                 EditorUtility.SetDirty(targetMaterial);
@@ -1134,8 +1094,6 @@ namespace NataneToon.Editor
         {
             switch (mode)
             {
-                case ConversionMode.ExactCompatibility:
-                    return 1;
                 case ConversionMode.VisualMatch:
                     return 2;
                 case ConversionMode.MinimalSafe:
@@ -1206,7 +1164,6 @@ namespace NataneToon.Editor
             float blur = Mathf.Clamp01(GetFloatOr(sourceProps, "_ShadowBlur", 0.1f));
             float nataneShadingMode = GetNataneShadingModeFromLilToon(sourceProps);
 
-            targetMaterial.DisableKeyword("_STANDARD_TOON");
             targetMaterial.SetFloat("_ShadingMode", nataneShadingMode);
             // lilToon border grows the shadowed region, while positive Natane offset grows the lit region.
             targetMaterial.SetFloat("_ShadowOffset", Mathf.Clamp(0.5f - border, -1.0f, 1.0f));
@@ -1224,26 +1181,15 @@ namespace NataneToon.Editor
                 $"Sharpness={targetMaterial.GetFloat("_ShadowSharpness"):F2}, GradientWidth={targetMaterial.GetFloat("_ShadingGradientWidth"):F2}");
         }
 
-        private void ApplyMigratedLightingWorkflow(Material targetMaterial, bool enableLilToonCompatibility, ConversionReport report)
+        private void ApplyMigratedLightingWorkflow(Material targetMaterial, ConversionReport report)
         {
             if (targetMaterial == null || !targetMaterial.HasProperty("_UsePixelVertexLights"))
             {
                 return;
             }
-
-            bool enableNatanePointLightShading = !enableLilToonCompatibility;
-            targetMaterial.SetFloat("_UsePixelVertexLights", enableNatanePointLightShading ? 1.0f : 0.0f);
-
-            if (enableNatanePointLightShading)
-            {
-                targetMaterial.EnableKeyword("_PIXEL_VERTEX_LIGHTS");
-                report.infos.Add("Natane lighting workflow enabled: Pixel-Precision Vertex Lights ON for spatial point-light separation.");
-            }
-            else
-            {
-                targetMaterial.DisableKeyword("_PIXEL_VERTEX_LIGHTS");
-                report.infos.Add("lilToon compatibility workflow enabled: Pixel-Precision Vertex Lights OFF to stay closer to lilToon.");
-            }
+            targetMaterial.SetFloat("_UsePixelVertexLights", 1.0f);
+            targetMaterial.EnableKeyword("_PIXEL_VERTEX_LIGHTS");
+            report.infos.Add("Natane lighting workflow: Pixel-Precision Vertex Lights ON.");
         }
 
         private void MapProperties(Dictionary<string, object> sourceProps, Material targetMaterial)
@@ -1269,7 +1215,7 @@ namespace NataneToon.Editor
                 Color shadowColor = (Color)sourceProps["_ShadowColor"];
 
                 float shadowStrength = GetFloatOr(sourceProps, "_ShadowStrength", 1.0f);
-                if (conversionMode != ConversionMode.ExactCompatibility && shadowStrength < 0.99f)
+                if (shadowStrength < 0.99f)
                 {
                     shadowColor = Color.Lerp(Color.white, shadowColor, shadowStrength);
                     report.infos.Add($"ShadowStrength={shadowStrength:F2}: shadow color was blended toward white.");
@@ -1305,20 +1251,8 @@ namespace NataneToon.Editor
             }
             report.infos.Add($"Shadow Receive mapped: {shadowReceive:F2}");
 
-            if (conversionMode == ConversionMode.ExactCompatibility)
-            {
-                targetMaterial.SetFloat("_ShadingMode", 2.0f); // StandardToon
-                targetMaterial.SetFloat("_LilToonExactCompatibility", 1.0f);
-                targetMaterial.EnableKeyword("_STANDARD_TOON");
-                ApplyMigratedLightingWorkflow(targetMaterial, true, report);
-                targetMaterial.SetFloat("_ShadowOffset", 0);
-                report.infos.Add("Exact Compatibility keeps the lilToon compatibility base active.");
-            }
-            else
-            {
-                ApplyNataneShadowSettingsFromLilToon(sourceProps, targetMaterial, report);
-                ApplyMigratedLightingWorkflow(targetMaterial, false, report);
-            }
+            ApplyNataneShadowSettingsFromLilToon(sourceProps, targetMaterial, report);
+            ApplyMigratedLightingWorkflow(targetMaterial, report);
 
             if (useShadow)
             {
@@ -1734,30 +1668,16 @@ namespace NataneToon.Editor
                 report.infos.Add($"Alpha Cutoff: {cutoff:F2}");
             }
 
-            if (conversionMode != ConversionMode.ExactCompatibility)
-            {
-                targetMaterial.SetFloat("_LightIntensity", 1.0f);
-                targetMaterial.SetFloat("_LightMaxInfluence", 2.0f);
-                targetMaterial.SetFloat("_Brightness", 1.0f);
-                targetMaterial.SetFloat("_Saturation", 1.0f);
-                report.infos.Add("StandardToon v2 light defaults applied (_LightIntensity=1.0).");
-            }
-            else
-            {
-                report.infos.Add("Exact Compatibility: skipped Natane light defaults injection.");
-            }
+            targetMaterial.SetFloat("_LightIntensity", 1.0f);
+            targetMaterial.SetFloat("_LightMaxInfluence", 2.0f);
+            targetMaterial.SetFloat("_Brightness", 1.0f);
+            targetMaterial.SetFloat("_Saturation", 1.0f);
+            report.infos.Add("Natane light defaults applied (_LightIntensity=1.0).");
 
-            if (conversionMode != ConversionMode.ExactCompatibility)
-            {
-                targetMaterial.SetFloat("_ShadowMaxDarkness", 0.15f);
-                targetMaterial.SetFloat("_LightMinInfluence", 0.05f);
-                targetMaterial.SetFloat("_GIIntensity", 0.0f);
-                report.infos.Add("Floor/GI defaults applied (_GIIntensity=0, _LightColorMin preserved).");
-            }
-            else
-            {
-                report.infos.Add("Exact Compatibility: skipped Natane floor/GI defaults injection.");
-            }
+            targetMaterial.SetFloat("_ShadowMaxDarkness", 0.15f);
+            targetMaterial.SetFloat("_LightMinInfluence", 0.05f);
+            targetMaterial.SetFloat("_GIIntensity", 0.0f);
+            report.infos.Add("Floor/GI defaults applied (_GIIntensity=0).");
 
             float lightMinLimit = GetFloatOr(sourceProps, "_LightMinLimit", 0.05f);
             float lightMaxLimit = GetFloatOr(sourceProps, "_LightMaxLimit", 1.0f);
@@ -2207,18 +2127,6 @@ namespace NataneToon.Editor
 
             if (materialsToConvert.Count == 0) return;
 
-            string dialogMessage = duplicateInHierarchy
-                ? L($"Create a duplicate of '{targetPrefab.name}' and convert {materialsToConvert.Count} materials?\nThe original prefab will not be modified.", $"Create a duplicate of '{targetPrefab.name}' and convert {materialsToConvert.Count} materials?\nThe original prefab will not be modified.")
-                : L($"Are you sure you want to convert {materialsToConvert.Count} materials in '{targetPrefab.name}'?", $"Are you sure you want to convert {materialsToConvert.Count} materials in '{targetPrefab.name}'?");
-
-            if (!EditorUtility.DisplayDialog(
-                L("Convert Prefab Materials", "Convert Prefab Materials"),
-                dialogMessage,
-                L("Yes", "Yes"), L("Cancel", "Cancel")))
-            {
-                return;
-            }
-
             int undoGroup = Undo.GetCurrentGroup();
             Undo.SetCurrentGroupName($"lilToon Migration - {targetPrefab.name}");
 
@@ -2574,6 +2482,75 @@ namespace NataneToon.Editor
                 {
                     EditorWindow.GetWindow(System.Type.GetType("UnityEditor.ConsoleWindow,UnityEditor"));
                 }
+            }
+        }
+
+        [MenuItem("Tools/Natane/移行 Migration/互換モード一括アップグレード Upgrade Compat Materials")]
+        public static void UpgradeExactCompatMaterials()
+        {
+            var guids = AssetDatabase.FindAssets("t:Material");
+            var upgraded = new List<string>();
+
+            foreach (var guid in guids)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+                if (mat == null) continue;
+                if (!mat.HasProperty("_LilToonExactCompatibility")) continue;
+                if (mat.GetFloat("_LilToonExactCompatibility") <= 0.5f) continue;
+
+                Undo.RecordObject(mat, "Upgrade Exact Compat");
+
+                // Disable StandardToon
+                mat.SetFloat("_LilToonExactCompatibility", 0.0f);
+                mat.DisableKeyword("_STANDARD_TOON");
+
+                // Convert ST params to Natane native
+                float border = mat.HasProperty("_STShadowBorder") ? mat.GetFloat("_STShadowBorder") : 0.5f;
+                float blur = mat.HasProperty("_STShadowBlur") ? mat.GetFloat("_STShadowBlur") : 0.1f;
+
+                mat.SetFloat("_ShadowSharpness", Mathf.Max(blur * 1.2f, 0.05f));
+                mat.SetFloat("_ShadowOffset", Mathf.Clamp((0.5f - border) * (1.0f + blur * 0.3f), -1.0f, 1.0f));
+
+                // Set appropriate shading mode
+                float currentMode = mat.HasProperty("_ShadingMode") ? mat.GetFloat("_ShadingMode") : 0.0f;
+                if (currentMode >= 1.5f && currentMode < 2.5f)
+                {
+                    // Was StandardToon mode (2.0), convert to Toon (0.0)
+                    mat.SetFloat("_ShadingMode", 0.0f);
+                }
+
+                // Enable Natane lighting
+                if (mat.HasProperty("_UsePixelVertexLights"))
+                {
+                    mat.SetFloat("_UsePixelVertexLights", 1.0f);
+                    mat.EnableKeyword("_PIXEL_VERTEX_LIGHTS");
+                }
+
+                // Run AutoFixer
+                try
+                {
+                    NataneLilToonAutoFixer.Fix(mat, new Dictionary<string, object>());
+                }
+                catch (System.Exception) { }
+
+                EditorUtility.SetDirty(mat);
+                upgraded.Add(mat.name);
+            }
+
+            AssetDatabase.SaveAssets();
+
+            if (upgraded.Count > 0)
+            {
+                EditorUtility.DisplayDialog(
+                    "Upgrade Complete",
+                    $"Upgraded {upgraded.Count} materials from Exact Compatibility mode:\n" + string.Join("\n", upgraded.Take(20)),
+                    "OK"
+                );
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("No Materials Found", "No materials with Exact Compatibility mode were found.", "OK");
             }
         }
     }

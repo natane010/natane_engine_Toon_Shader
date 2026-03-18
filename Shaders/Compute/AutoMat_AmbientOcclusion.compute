@@ -1,0 +1,49 @@
+// AutoMat_AmbientOcclusion.compute
+// Height-based ambient occlusion estimation
+// Dispatch: (texWidth/8, texHeight/8, 1)
+
+#pragma kernel CSMain
+
+Texture2D<float4> _Input;  // Height map (R channel)
+RWTexture2D<float4> _Result;
+int2 _TexSize;
+int _AORadius;
+float _AOStrength;
+float _AOBias;
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_TexSize.x || id.y >= (uint)_TexSize.y)
+        return;
+
+    float centerH = _Input[id.xy].r;
+    float occlusion = 0.0;
+    float sampleCount = 0.0;
+
+    for (int dy = -_AORadius; dy <= _AORadius; dy++)
+    {
+        for (int dx = -_AORadius; dx <= _AORadius; dx++)
+        {
+            if (dx == 0 && dy == 0)
+                continue;
+
+            int2 samplePos = clamp(int2(id.xy) + int2(dx, dy), int2(0, 0), _TexSize - int2(1, 1));
+            float sampleH = _Input[samplePos].r;
+
+            // Neighbor is higher → this pixel is occluded
+            float diff = sampleH - centerH - _AOBias;
+            if (diff > 0.0)
+            {
+                float dist = length(float2(dx, dy));
+                float falloff = 1.0 / (1.0 + dist);
+                occlusion += diff * falloff;
+            }
+            sampleCount += 1.0;
+        }
+    }
+
+    occlusion = occlusion / max(sampleCount, 1.0) * _AOStrength;
+    float ao = saturate(1.0 - occlusion);
+    _Result[id.xy] = float4(ao, ao, ao, 1.0);
+}
