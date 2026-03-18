@@ -307,6 +307,7 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// プロジェクト内のすべての Natane マテリアルのキーワードを同期する。
+        /// アセットインデックスから Natane マテリアルのみを取得し、プロジェクト全体のスキャンを回避する。
         /// </summary>
         [MenuItem("Tools/Natane/Fix All Material Keywords")]
         public static void SynchronizeAllNataneMaterials()
@@ -314,22 +315,19 @@ namespace NataneToon.Editor
             _isSynchronizing = true;
             try
             {
-                string[] materialGuids = AssetDatabase.FindAssets("t:Material");
-                int fixedCount = 0;
-                int totalChecked = 0;
+                NataneAssetIndexService.EnsureLoaded();
+                var nataneEntries = NataneAssetIndexService
+                    .EnumerateMaterialEntries(e => e.isNataneShader)
+                    .ToList();
 
-                foreach (string guid in materialGuids)
+                int fixedCount = 0;
+
+                foreach (var entry in nataneEntries)
                 {
-                    string path = AssetDatabase.GUIDToAssetPath(guid);
-                    Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+                    Material material = AssetDatabase.LoadAssetAtPath<Material>(entry.path);
 
                     if (material == null || material.shader == null)
                         continue;
-
-                    if (!NataneShaderCatalog.IsNataneShader(material.shader.name))
-                        continue;
-
-                    totalChecked++;
 
                     if (SynchronizeMaterialKeywords(material))
                     {
@@ -341,7 +339,7 @@ namespace NataneToon.Editor
                 if (fixedCount > 0)
                 {
                     AssetDatabase.SaveAssets();
-                    Debug.Log($"[NataneToonShader] キーワード同期完了: {fixedCount}/{totalChecked} マテリアルを修正しました");
+                    Debug.Log($"[NataneToonShader] キーワード同期完了: {fixedCount}/{nataneEntries.Count} マテリアルを修正しました");
                 }
             }
             finally

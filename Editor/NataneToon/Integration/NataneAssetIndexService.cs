@@ -190,11 +190,11 @@ namespace NataneToon.Editor
         {
             EnsureLoaded();
 
-            if (allowFullRebuild && (fullRebuildQueued || !NataneAssetIndexStore.IndexExists))
+            if (allowFullRebuild && fullRebuildQueued)
             {
-                RebuildAllInternal(showProgress: false);
-                SaveIfNeeded();
-                return 1;
+                // 自動トリガーでの全再構築は行わない。インクリメンタル処理にフォールバックする。
+                // 全再構築は Tools > Natane > Rebuild Asset Index から手動実行すること。
+                fullRebuildQueued = false;
             }
 
             int processed = 0;
