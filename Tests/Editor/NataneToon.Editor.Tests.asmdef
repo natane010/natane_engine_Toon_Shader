@@ -1,0 +1,23 @@
+{
+    "name": "NataneToon.Editor.Tests",
+    "rootNamespace": "",
+    "references": [
+        "NataneToon.Editor",
+        "NataneToon.Editor.Tools",
+        "NataneToon.Editor.Migration"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}
