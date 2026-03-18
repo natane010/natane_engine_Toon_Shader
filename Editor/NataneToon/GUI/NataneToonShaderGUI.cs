@@ -4981,6 +4981,24 @@ public class NataneToonShaderGUI : ShaderGUI
             {
                 EditorGUI.indentLevel++;
                 DrawProperty("_BumpMap", L("ノーマルマップ", "Normal Map"));
+
+                // Auto-generate Normal Map button
+                bool normalHasAlbedo = targetMaterial != null && targetMaterial.HasProperty("_MainTex") && targetMaterial.GetTexture("_MainTex") != null;
+                EditorGUI.BeginDisabledGroup(!normalHasAlbedo);
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button(L("Normal を自動生成", "Auto-Generate Normal"), GUILayout.Height(22), GUILayout.Width(180)))
+                {
+                    MapGeneratorGUIBridge.GenerateNormalForMaterial(targetMaterial);
+                }
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.EndHorizontal();
+                EditorGUI.EndDisabledGroup();
+                if (!normalHasAlbedo)
+                {
+                    EditorGUILayout.HelpBox(L("Albedo テクスチャ (_MainTex) が必要です。", "Albedo texture (_MainTex) is required."), MessageType.Info);
+                }
+
                 DrawProperty("_BumpScale", L("ノーマルのスケール", "Normal Scale"));
                 DrawUVAnimationSettings("_BumpMapScrollSpeed", "_BumpMapRotateSpeed", L("ノーマルマップ", "Normal Map"));
                 DrawHelpToggle("NormalMap",
@@ -5769,6 +5787,34 @@ public class NataneToonShaderGUI : ShaderGUI
                 }
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.EndHorizontal();
+
+                // Additional map generation buttons (Shadow, Roughness)
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button(L("Shadow Map を生成", "Generate Shadow Map"), GUILayout.Height(22), GUILayout.Width(180)))
+                {
+                    MapGeneratorGUIBridge.GenerateShadowForMaterial(targetMaterial);
+                }
+                bool hasAlbedo = targetMaterial.HasProperty("_MainTex") && targetMaterial.GetTexture("_MainTex") != null;
+                EditorGUI.BeginDisabledGroup(!hasAlbedo);
+                if (GUILayout.Button(L("Roughness を生成", "Generate Roughness"), GUILayout.Height(22), GUILayout.Width(180)))
+                {
+                    MapGeneratorGUIBridge.GenerateRoughnessForMaterial(targetMaterial);
+                }
+                EditorGUI.EndDisabledGroup();
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.EndHorizontal();
+
+                // All maps at once button
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button(L("★ 全マップ一括生成", "★ Generate All Maps"), GUILayout.Height(26), GUILayout.Width(365)))
+                {
+                    MapGeneratorGUIBridge.GenerateAllForMaterial(targetMaterial);
+                }
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.EndHorizontal();
+
                 EditorGUI.EndDisabledGroup();
                 if (!aoHasMesh)
                 {

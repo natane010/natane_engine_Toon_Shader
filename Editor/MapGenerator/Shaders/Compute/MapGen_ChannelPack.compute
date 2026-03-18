@@ -1,0 +1,38 @@
+// MapGen_ChannelPack.compute
+// RGBA channel packing: combine R channels from up to 4 source textures
+// Dispatch: (texWidth/8, texHeight/8, 1)
+
+#pragma kernel CSMain
+
+Texture2D<float4> _SourceR;
+Texture2D<float4> _SourceG;
+Texture2D<float4> _SourceB;
+Texture2D<float4> _SourceA;
+RWTexture2D<float4> _Result;
+int2 _TexSize;
+
+// Default values for channels when source is not provided (set from CPU)
+float _DefaultR;
+float _DefaultG;
+float _DefaultB;
+float _DefaultA;
+
+// Flags: 1 = use source texture, 0 = use default value
+int _UseSourceR;
+int _UseSourceG;
+int _UseSourceB;
+int _UseSourceA;
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_TexSize.x || id.y >= (uint)_TexSize.y)
+        return;
+
+    float r = _UseSourceR ? _SourceR[id.xy].r : _DefaultR;
+    float g = _UseSourceG ? _SourceG[id.xy].r : _DefaultG;
+    float b = _UseSourceB ? _SourceB[id.xy].r : _DefaultB;
+    float a = _UseSourceA ? _SourceA[id.xy].r : _DefaultA;
+
+    _Result[id.xy] = float4(r, g, b, a);
+}

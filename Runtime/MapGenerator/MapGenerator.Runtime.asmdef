@@ -1,14 +1,8 @@
 {
-    "name": "NataneToon.Editor",
+    "name": "MapGenerator.Runtime",
     "rootNamespace": "",
-    "references": [
-        "NataneToon.Runtime",
-        "MapGenerator.Editor",
-        "MapGenerator.Runtime"
-    ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "references": [],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

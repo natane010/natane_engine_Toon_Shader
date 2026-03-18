@@ -1,0 +1,56 @@
+// MapGen_Dilation.compute
+// UV seam dilation: fills empty (alpha=0) pixels by sampling nearest non-empty neighbors
+// Dispatch: (texWidth/8, texHeight/8, 1) per iteration
+
+#pragma kernel CSMain
+
+Texture2D<float4> _Input;
+RWTexture2D<float4> _Result;
+int2 _TexSize;
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_TexSize.x || id.y >= (uint)_TexSize.y)
+        return;
+
+    float4 center = _Input[id.xy];
+
+    // If this pixel is already filled, pass through
+    if (center.a > 0.5)
+    {
+        _Result[id.xy] = center;
+        return;
+    }
+
+    // Sample 8 neighbors, accumulate filled ones
+    float4 sum = float4(0, 0, 0, 0);
+    float count = 0;
+
+    for (int dy = -1; dy <= 1; dy++)
+    {
+        for (int dx = -1; dx <= 1; dx++)
+        {
+            if (dx == 0 && dy == 0)
+                continue;
+
+            int2 neighbor = clamp(int2(id.xy) + int2(dx, dy), int2(0, 0), _TexSize - int2(1, 1));
+            float4 s = _Input[neighbor];
+
+            if (s.a > 0.5)
+            {
+                sum += float4(s.rgb, 1.0);
+                count += 1.0;
+            }
+        }
+    }
+
+    if (count > 0)
+    {
+        _Result[id.xy] = float4(sum.rgb / count, 1.0);
+    }
+    else
+    {
+        _Result[id.xy] = center;
+    }
+}
