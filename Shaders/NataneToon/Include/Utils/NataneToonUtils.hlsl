@@ -1315,6 +1315,8 @@ half3 CalculateDripEffectFast(float3 worldPos, float time, half3 dripColor, floa
 // オブジェクト移動時のディザパターンスライドを抑制する。
 // Note: HLSL の fmod() は負の値を返すため、Bayer配列の範囲外アクセスを防ぐ必要がある。
 // 大きな正のオフセットを加えて座標を常に正に保つ。
+// Requires _DitherStabilize from CBUFFER — excluded in standalone passes
+#ifndef NATANE_UTILS_STANDALONE
 float2 StabilizeDitherCoord(float2 screenPixelPos)
 {
     float4 pivotClip = mul(UNITY_MATRIX_VP, float4(unity_ObjectToWorld._m03_m13_m23, 1.0));
@@ -1325,6 +1327,7 @@ float2 StabilizeDitherCoord(float2 screenPixelPos)
     float2 stablePos = screenPixelPos - pivotScreen + 100000.0;
     return lerp(screenPixelPos, stablePos, saturate(_DitherStabilize));
 }
+#endif
 
 // ===== Shared Dithering / Alpha Functions =====
 static const float NataneBayer4x4[16] = {
