@@ -496,6 +496,7 @@ CBUFFER_START(UnityPerMaterial)
 
     // Parallax Mapping
     #if defined(_PARALLAX)
+    float _Parallax;
     float _ParallaxScale;
     float _ParallaxMinSamples;
     float _ParallaxMaxSamples;
