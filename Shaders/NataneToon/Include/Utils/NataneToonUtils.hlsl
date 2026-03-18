@@ -27,6 +27,15 @@
 // _VRChatMirrorMode: 0=Normal, 1=Mirror(VR), 2=Mirror(Desktop)
 // Both 1 and 2 indicate mirror rendering where the view matrix X-axis is flipped.
 // Reference: https://creators.vrchat.com/worlds/udon/vrc-graphics/vrchat-shader-globals/
+//
+// Declared here so that any file including Utils alone (e.g. FurShell)
+// gets the VRChat globals without needing the full NataneToonInput.hlsl.
+// NataneToonInput.hlsl guards with the same variable names, so no redefinition occurs.
+#ifndef NATANE_VRCHAT_GLOBALS_DECLARED
+#define NATANE_VRCHAT_GLOBALS_DECLARED
+float _VRChatMirrorMode;
+float _VRChatCameraMode;
+#endif
 
 // Returns true if currently rendering in a VRChat mirror
 float NataneIsMirror()

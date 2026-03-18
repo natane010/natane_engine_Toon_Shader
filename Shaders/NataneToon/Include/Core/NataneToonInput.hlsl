@@ -1075,11 +1075,15 @@ CBUFFER_END
 // Reference: https://creators.vrchat.com/worlds/udon/vrc-graphics/vrchat-shader-globals/
 
 // Mirror Detection
+// Guarded: may already be declared by NataneToonUtils.hlsl for standalone passes (e.g. FurShell)
+#ifndef NATANE_VRCHAT_GLOBALS_DECLARED
+#define NATANE_VRCHAT_GLOBALS_DECLARED
 float _VRChatMirrorMode;      // 0=Normal, 1=Mirror(VR), 2=Mirror(Desktop)
+float _VRChatCameraMode;      // 0=Normal, 1=VR handheld camera, 2=Desktop camera, 3=Screenshot
+#endif
 float _VRChatFaceMirrorMode;  // Face mirror mode
 
-// Camera Detection
-float _VRChatCameraMode;      // 0=Normal, 1=VR handheld camera, 2=Desktop camera, 3=Screenshot
+// Camera Detection (extended - always declared here)
 float _VRChatCameraMask;      // Camera layer mask
 
 // Camera Positions & Rotations
