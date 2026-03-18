@@ -69,23 +69,28 @@ namespace NataneToon.Editor
         }
 
         /// <summary>
-        /// プロジェクト内の全 Natane マテリアルと AnimationClip をスキャンし、
+        /// アセットインデックスから Natane マテリアルのみを取得し、
         /// 使用されている機能キーワードを収集する。
+        /// AnimationClip はプレハブ経由で参照される可能性があるため、
+        /// インデックス内のプレハブが参照するクリップのみをスキャンする。
         /// </summary>
         private static HashSet<string> CollectUsedFeatures()
         {
             var usedKeywords = new HashSet<string>(StringComparer.Ordinal);
 
-            // 1. マテリアルスキャン
-            string[] materialGuids = AssetDatabase.FindAssets("t:Material");
-            foreach (string guid in materialGuids)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-                if (material == null || material.shader == null)
-                    continue;
+            // インデックスを最新に同期
+            NataneAssetIndexService.EnsureLoaded();
+            NataneAssetIndexService.RunSynchronousCatchUp();
 
-                if (!NataneShaderCatalog.IsNataneShader(material.shader.name))
+            // 1. マテリアルスキャン（インデックスから Natane マテリアルのみ）
+            var nataneEntries = NataneAssetIndexService
+                .EnumerateMaterialEntries(e => e.isNataneShader)
+                .ToList();
+
+            foreach (var entry in nataneEntries)
+            {
+                Material material = AssetDatabase.LoadAssetAtPath<Material>(entry.path);
+                if (material == null || material.shader == null)
                     continue;
 
                 foreach (var mapping in NataneShaderKeywordSynchronizer.KeywordMappings)
@@ -105,21 +110,38 @@ namespace NataneToon.Editor
             }
 
             // 2. AnimationClip スキャン
+            // Natane マテリアルを参照するプレハブから AnimationClip を収集し、
             // アニメーションで機能の ON/OFF を切り替えるケースに対応。
-            // いずれかのキーフレームで値 >= 0.5 なら「使用される可能性あり」と判定する。
-            string[] animGuids = AssetDatabase.FindAssets("t:AnimationClip");
-            foreach (string guid in animGuids)
+            var nataneGuids = new HashSet<string>(
+                nataneEntries.Select(e => e.guid),
+                StringComparer.OrdinalIgnoreCase);
+
+            var prefabs = NataneAssetIndexService.GetPrefabsUsingMaterialGuids(nataneGuids);
+            var scannedClipPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var prefabEntry in prefabs)
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
+                GameObject prefab = NataneAssetIndexService.LoadPrefab(prefabEntry);
+                if (prefab == null)
+                    continue;
 
-                // FBX 内の AnimationClip はサブアセットとして格納されている
-                var clips = AssetDatabase.LoadAllAssetsAtPath(path)
-                    .OfType<AnimationClip>()
-                    .Where(c => !c.name.StartsWith("__preview__", StringComparison.Ordinal));
-
-                foreach (var clip in clips)
+                // プレハブ配下の Animator から AnimationClip を収集
+                foreach (var animator in prefab.GetComponentsInChildren<Animator>(true))
                 {
-                    ScanAnimationClipForFeatures(clip, usedKeywords);
+                    if (animator.runtimeAnimatorController == null)
+                        continue;
+
+                    foreach (var clip in animator.runtimeAnimatorController.animationClips)
+                    {
+                        if (clip == null)
+                            continue;
+
+                        string clipPath = AssetDatabase.GetAssetPath(clip);
+                        if (string.IsNullOrEmpty(clipPath) || !scannedClipPaths.Add(clipPath))
+                            continue;
+
+                        ScanAnimationClipForFeatures(clip, usedKeywords);
+                    }
                 }
             }
 
