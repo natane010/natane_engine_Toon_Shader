@@ -1001,6 +1001,14 @@ namespace NataneToon.Editor
             CaptureFloat(material, "_MonochromeLighting", properties);
             CaptureFloat(material, "_AsUnlit", properties);
 
+            // === Gem / Refraction (lilToonGem specific) ===
+            CaptureFloat(material, "_GemChromaticAberration", properties);
+            CaptureColor(material, "_GemParticleColor", properties);
+            CaptureFloat(material, "_GemEnvContrast", properties);
+            CaptureFloat(material, "_GemVRParallaxStrength", properties);
+            CaptureFloat(material, "_RefractionStrength", properties);
+            CaptureFloat(material, "_RefractionFresnelPower", properties);
+
             // === Render State ===
             CaptureFloat(material, "_Cull", properties);
             CaptureFloat(material, "_ZWrite", properties);
@@ -1660,6 +1668,9 @@ namespace NataneToon.Editor
                 report.infos.Add($"Specular mapped from Metallic: Metallic={metallic:F2}");
             }
 
+            // === Texture-less Material Compensation (Gem / Metal / etc.) ===
+            ApplyTexturelessMaterialCompensation(sourceProps, targetMaterial, report);
+
             // === Alpha Cutoff ===
             if (sourceProps.ContainsKey("_Cutoff"))
             {
@@ -1828,6 +1839,225 @@ namespace NataneToon.Editor
         }
 
         /// <summary>
+        /// Compensate for materials that have no MainTex and rely on effects (gem, metal, etc.)
+        /// for their visual appearance. Without this, they appear black after migration.
+        /// </summary>
+        private void ApplyTexturelessMaterialCompensation(
+            Dictionary<string, object> sourceProps,
+            Material targetMaterial,
+            ConversionReport report)
+        {
+            // Check if this material has a MainTex assigned
+            bool hasMainTex = sourceProps.ContainsKey("_MainTex") && sourceProps["_MainTex"] != null;
+
+            // Detect gem shader from source shader name
+            string sourceShader = sourceProps.ContainsKey("__sourceShaderName")
+                ? ((string)sourceProps["__sourceShaderName"]).ToLower()
+                : "";
+            bool isGemShader = sourceShader.Contains("gem");
+            bool isFakeShadowShader = sourceShader.Contains("fakeshadow");
+
+            // Detect metallic surface (no texture, relies on reflections)
+            float sourceSmoothness = GetFloatOr(sourceProps, "_Smoothness", 0.0f);
+            float sourceMetallic = GetFloatOr(sourceProps, "_Metallic", 0.0f);
+            bool isMetallicSurface = !hasMainTex && (sourceMetallic > 0.3f || sourceSmoothness > 0.5f);
+
+            // Detect gem-specific properties (lilToonGem captures)
+            bool hasGemProperties = sourceProps.ContainsKey("_GemChromaticAberration")
+                || sourceProps.ContainsKey("_GemEnvContrast");
+
+            if (isGemShader || hasGemProperties)
+            {
+                ApplyGemCompensation(sourceProps, targetMaterial, report);
+                return;
+            }
+
+            if (isFakeShadowShader)
+            {
+                report.infos.Add("FakeShadow shader detected. Minimal migration applied (color only).");
+                return;
+            }
+
+            if (isMetallicSurface)
+            {
+                ApplyMetallicCompensation(sourceProps, targetMaterial, report);
+                return;
+            }
+
+            // General: if no MainTex and _Color is very dark, brighten it
+            if (!hasMainTex)
+            {
+                ApplyDarkColorCompensation(sourceProps, targetMaterial, report);
+            }
+        }
+
+        private void ApplyGemCompensation(
+            Dictionary<string, object> sourceProps,
+            Material targetMaterial,
+            ConversionReport report)
+        {
+            report.infos.Add("Gem shader detected: applying gem-to-Natane compensation.");
+
+            // Brighten gem color — gems are dark because refraction adds brightness
+            if (sourceProps.ContainsKey("_Color"))
+            {
+                Color gemColor = (Color)sourceProps["_Color"];
+                float luminance = gemColor.r * 0.299f + gemColor.g * 0.587f + gemColor.b * 0.114f;
+                if (luminance < 0.4f && luminance > 0.001f)
+                {
+                    // Boost color to compensate for missing refraction brightness
+                    float boost = Mathf.Lerp(2.5f, 1.0f, luminance / 0.4f);
+                    Color boosted = new Color(
+                        Mathf.Clamp01(gemColor.r * boost),
+                        Mathf.Clamp01(gemColor.g * boost),
+                        Mathf.Clamp01(gemColor.b * boost),
+                        gemColor.a);
+                    targetMaterial.SetColor("_Color", boosted);
+                    report.infos.Add($"Gem color brightened: ({gemColor.r:F2},{gemColor.g:F2},{gemColor.b:F2}) → ({boosted.r:F2},{boosted.g:F2},{boosted.b:F2}) (boost={boost:F1}x)");
+                }
+            }
+
+            // Enable refraction (gem's primary visual)
+            if (targetMaterial.HasProperty("_Refraction"))
+            {
+                targetMaterial.SetFloat("_Refraction", 1.0f);
+                targetMaterial.EnableKeyword("_REFRACTION");
+
+                float ior = GetFloatOr(sourceProps, "_RefractionStrength", 0.0f);
+                // lilToon _RefractionStrength → Natane IOR: remap to 1.3-2.0 range
+                float nataneIOR = ior > 0.01f ? Mathf.Lerp(1.3f, 2.0f, Mathf.Clamp01(ior)) : 1.5f;
+                targetMaterial.SetFloat("_RefractionIndex", nataneIOR);
+                targetMaterial.SetFloat("_RefractionIntensity", 0.8f);
+                targetMaterial.SetFloat("_RefractionBlur", 0.1f);
+                report.infos.Add($"Refraction enabled: IOR={nataneIOR:F2}, Intensity=0.8");
+            }
+
+            // Enable specular for gem sparkle
+            if (targetMaterial.HasProperty("_Specular"))
+            {
+                targetMaterial.SetFloat("_Specular", 1.0f);
+                targetMaterial.EnableKeyword("_SPECULAR");
+                targetMaterial.SetColor("_SpecularColor", new Color(1, 1, 1, 1));
+                targetMaterial.SetFloat("_SpecularSize", 0.15f);
+                targetMaterial.SetFloat("_SpecularSoftness", 0.3f);
+                report.infos.Add("Specular enabled for gem sparkle: Size=0.15, Softness=0.3");
+            }
+
+            // Enable reflection for environment mapping
+            if (targetMaterial.HasProperty("_Reflection"))
+            {
+                float smoothness = GetFloatOr(sourceProps, "_Smoothness", 0.85f);
+                targetMaterial.SetFloat("_Reflection", 1.0f);
+                targetMaterial.EnableKeyword("_REFLECTION");
+                targetMaterial.SetFloat("_ReflectionIntensity", 0.6f);
+                targetMaterial.SetFloat("_Smoothness", smoothness);
+                targetMaterial.SetFloat("_Metallic", 0.0f);
+                report.infos.Add($"Reflection enabled for gem: Intensity=0.6, Smoothness={smoothness:F2}");
+            }
+
+            // Cull Off for gems (typically double-sided)
+            targetMaterial.SetFloat("_Cull", 0.0f);
+            report.infos.Add("Cull set to Off (double-sided) for gem material.");
+        }
+
+        private void ApplyMetallicCompensation(
+            Dictionary<string, object> sourceProps,
+            Material targetMaterial,
+            ConversionReport report)
+        {
+            float sourceMetallic = GetFloatOr(sourceProps, "_Metallic", 0.0f);
+            float sourceSmoothness = GetFloatOr(sourceProps, "_Smoothness", 0.5f);
+
+            report.infos.Add($"Metallic surface detected (no MainTex, Metallic={sourceMetallic:F2}, Smoothness={sourceSmoothness:F2}): applying compensation.");
+
+            // Brighten dark metallic colors
+            if (sourceProps.ContainsKey("_Color"))
+            {
+                Color metalColor = (Color)sourceProps["_Color"];
+                float luminance = metalColor.r * 0.299f + metalColor.g * 0.587f + metalColor.b * 0.114f;
+                if (luminance < 0.3f && luminance > 0.001f)
+                {
+                    float boost = Mathf.Lerp(2.0f, 1.0f, luminance / 0.3f);
+                    Color boosted = new Color(
+                        Mathf.Clamp01(metalColor.r * boost),
+                        Mathf.Clamp01(metalColor.g * boost),
+                        Mathf.Clamp01(metalColor.b * boost),
+                        metalColor.a);
+                    targetMaterial.SetColor("_Color", boosted);
+                    report.infos.Add($"Metal color brightened: ({metalColor.r:F2},{metalColor.g:F2},{metalColor.b:F2}) → ({boosted.r:F2},{boosted.g:F2},{boosted.b:F2})");
+                }
+            }
+
+            // Ensure specular is enabled for metallic materials
+            if (targetMaterial.HasProperty("_Specular") && !targetMaterial.IsKeywordEnabled("_SPECULAR"))
+            {
+                float specularSize = OptimizeSpecularSize(sourceSmoothness);
+                targetMaterial.SetFloat("_Specular", 1.0f);
+                targetMaterial.EnableKeyword("_SPECULAR");
+                targetMaterial.SetColor("_SpecularColor", new Color(1, 1, 1, 1));
+                targetMaterial.SetFloat("_SpecularSize", specularSize);
+                targetMaterial.SetFloat("_SpecularSoftness", Mathf.Max(0.1f, 1.0f - sourceSmoothness));
+                report.infos.Add($"Specular enabled for metal: Size={specularSize:F3}, Softness={1.0f - sourceSmoothness:F2}");
+            }
+
+            // Enable reflection for environment mapping
+            if (targetMaterial.HasProperty("_Reflection"))
+            {
+                targetMaterial.SetFloat("_Reflection", 1.0f);
+                targetMaterial.EnableKeyword("_REFLECTION");
+                targetMaterial.SetFloat("_ReflectionIntensity", Mathf.Clamp(sourceMetallic, 0.3f, 1.0f));
+                targetMaterial.SetFloat("_Smoothness", sourceSmoothness);
+                targetMaterial.SetFloat("_Metallic", sourceMetallic);
+                report.infos.Add($"Reflection enabled for metal: Intensity={sourceMetallic:F2}, Smoothness={sourceSmoothness:F2}");
+            }
+
+            // MatCap as fallback if no cubemap is available
+            if (targetMaterial.HasProperty("_MatCap") && targetMaterial.GetTexture("_MatCapTex") != null
+                && !targetMaterial.IsKeywordEnabled("_MATCAP"))
+            {
+                targetMaterial.SetFloat("_MatCap", 1.0f);
+                targetMaterial.EnableKeyword("_MATCAP");
+                report.infos.Add("MatCap enabled (existing texture found) for metallic fallback.");
+            }
+        }
+
+        private void ApplyDarkColorCompensation(
+            Dictionary<string, object> sourceProps,
+            Material targetMaterial,
+            ConversionReport report)
+        {
+            if (!sourceProps.ContainsKey("_Color")) return;
+
+            Color color = (Color)sourceProps["_Color"];
+            float luminance = color.r * 0.299f + color.g * 0.587f + color.b * 0.114f;
+
+            // Only compensate if very dark and no visual features are enabled
+            if (luminance >= 0.15f) return;
+            if (luminance < 0.001f) return; // Intentionally black, don't touch
+
+            bool hasVisualFeature =
+                targetMaterial.IsKeywordEnabled("_SPECULAR") ||
+                targetMaterial.IsKeywordEnabled("_MATCAP") ||
+                targetMaterial.IsKeywordEnabled("_REFLECTION") ||
+                targetMaterial.IsKeywordEnabled("_REFRACTION") ||
+                targetMaterial.IsKeywordEnabled("_EMISSION") ||
+                targetMaterial.IsKeywordEnabled("_RIM_LIGHT");
+
+            if (hasVisualFeature) return;
+
+            float boost = Mathf.Lerp(3.0f, 1.0f, luminance / 0.15f);
+            Color boosted = new Color(
+                Mathf.Clamp01(color.r * boost),
+                Mathf.Clamp01(color.g * boost),
+                Mathf.Clamp01(color.b * boost),
+                color.a);
+            targetMaterial.SetColor("_Color", boosted);
+            report.warnings.Add(
+                $"No MainTex and very dark _Color detected ({luminance:F3}). Color brightened to prevent black appearance: " +
+                $"({color.r:F2},{color.g:F2},{color.b:F2}) → ({boosted.r:F2},{boosted.g:F2},{boosted.b:F2}). Manual review recommended.");
+        }
+
+        /// <summary>
         /// </summary>
         private float OptimizeSpecularSize(float smoothness)
         {
@@ -1892,8 +2122,14 @@ namespace NataneToon.Editor
             string shaderName = sourceMaterial.shader.name.ToLower();
 
             // --- Step 1: シェーダー名から判定 ---
-            // lilToon の命名パターン: "cutout", "transparent", "fade" 等
-            if (shaderName.Contains("transparent") || shaderName.Contains("fade"))
+            // lilToon の命名パターン: "cutout", "transparent", "fade", "gem" 等
+            // Gem は透過シェーダーとして扱う（リフラクション使用のため）
+            if (shaderName.Contains("gem"))
+            {
+                Shader transparentShader = Shader.Find("Natane/Toon Shader (Transparent)");
+                if (transparentShader != null) return transparentShader;
+            }
+            else if (shaderName.Contains("transparent") || shaderName.Contains("fade"))
             {
                 Shader transparentShader = Shader.Find("Natane/Toon Shader (Transparent)");
                 if (transparentShader != null) return transparentShader;
@@ -2501,9 +2737,7 @@ namespace NataneToon.Editor
 
                 Undo.RecordObject(mat, "Upgrade Exact Compat");
 
-                // Disable StandardToon
                 mat.SetFloat("_LilToonExactCompatibility", 0.0f);
-                mat.DisableKeyword("_STANDARD_TOON");
 
                 // Convert ST params to Natane native
                 float border = mat.HasProperty("_STShadowBorder") ? mat.GetFloat("_STShadowBorder") : 0.5f;
