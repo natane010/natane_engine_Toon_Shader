@@ -22,18 +22,21 @@ public static class MapGeneratorGUIBridge
 
         if (albedo == null && mesh == null)
         {
-            EditorUtility.DisplayDialog("Map Generator",
-                "Albedo テクスチャ (_MainTex) またはシーン内のメッシュが必要です。", "OK");
+            EditorUtility.DisplayDialog(MapGenL.L("マップジェネレーター", "Map Generator"),
+                MapGenL.L("Albedo テクスチャ (_MainTex) またはシーン内のメッシュが必要です。",
+                           "Albedo texture (_MainTex) or a mesh in the scene is required."), "OK");
             return;
         }
 
         try
         {
-            EditorUtility.DisplayProgressBar("Map Generator", "Normal Map を生成中...", 0.3f);
+            EditorUtility.DisplayProgressBar(MapGenL.L("マップジェネレーター", "Map Generator"),
+                MapGenL.L("Normal Map を生成中...", "Generating Normal Map..."), 0.3f);
             Texture2D result = MapGeneratorEngine.GenerateNormalMap(albedo, _defaultSettings, mesh, renderer);
             if (result == null)
             {
-                EditorUtility.DisplayDialog("Map Generator", "Normal Map の生成に失敗しました。", "OK");
+                EditorUtility.DisplayDialog(MapGenL.L("マップジェネレーター", "Map Generator"),
+                    MapGenL.L("Normal Map の生成に失敗しました。", "Failed to generate Normal Map."), "OK");
                 return;
             }
 
@@ -41,8 +44,10 @@ public static class MapGeneratorGUIBridge
             AssignToMaterial(material, path, "_BumpMap", "_UseNormalMap", "_NORMALMAP", "_USE_NORMAL_MAP");
             Object.DestroyImmediate(result);
 
-            EditorUtility.DisplayDialog("完了",
-                $"Normal Map を生成して _BumpMap に適用しました。\n保存先: {path}", "閉じる");
+            EditorUtility.DisplayDialog(MapGenL.L("完了", "Done"),
+                MapGenL.L($"Normal Map を生成して _BumpMap に適用しました。\n保存先: {path}",
+                           $"Generated Normal Map and assigned to _BumpMap.\nSaved to: {path}"),
+                MapGenL.L("閉じる", "Close"));
         }
         finally
         {
@@ -63,7 +68,8 @@ public static class MapGeneratorGUIBridge
         Texture2D result = MapGeneratorEngine.GenerateShadowMap(mesh, renderer, _defaultSettings);
         if (result == null)
         {
-            EditorUtility.DisplayDialog("Map Generator", "Shadow Map の生成に失敗しました。", "OK");
+            EditorUtility.DisplayDialog(MapGenL.L("マップジェネレーター", "Map Generator"),
+                MapGenL.L("Shadow Map の生成に失敗しました。", "Failed to generate Shadow Map."), "OK");
             return;
         }
 
@@ -71,8 +77,10 @@ public static class MapGeneratorGUIBridge
         AssignToMaterial(material, path, "_ShadowReceiveMask");
         Object.DestroyImmediate(result);
 
-        EditorUtility.DisplayDialog("完了",
-            $"Shadow Map を生成しました。\n保存先: {path}", "閉じる");
+        EditorUtility.DisplayDialog(MapGenL.L("完了", "Done"),
+            MapGenL.L($"Shadow Map を生成しました。\n保存先: {path}",
+                       $"Generated Shadow Map.\nSaved to: {path}"),
+            MapGenL.L("閉じる", "Close"));
     }
 
     /// <summary>
@@ -85,18 +93,21 @@ public static class MapGeneratorGUIBridge
         Texture2D albedo = GetAlbedo(material);
         if (albedo == null)
         {
-            EditorUtility.DisplayDialog("Map Generator",
-                "Albedo テクスチャ (_MainTex) が設定されていません。", "OK");
+            EditorUtility.DisplayDialog(MapGenL.L("マップジェネレーター", "Map Generator"),
+                MapGenL.L("Albedo テクスチャ (_MainTex) が設定されていません。",
+                           "Albedo texture (_MainTex) is not set."), "OK");
             return;
         }
 
         try
         {
-            EditorUtility.DisplayProgressBar("Map Generator", "Roughness Map を生成中...", 0.3f);
+            EditorUtility.DisplayProgressBar(MapGenL.L("マップジェネレーター", "Map Generator"),
+                MapGenL.L("Roughness Map を生成中...", "Generating Roughness Map..."), 0.3f);
             Texture2D result = MapGeneratorEngine.GenerateRoughnessMap(albedo, _defaultSettings);
             if (result == null)
             {
-                EditorUtility.DisplayDialog("Map Generator", "Roughness Map の生成に失敗しました。", "OK");
+                EditorUtility.DisplayDialog(MapGenL.L("マップジェネレーター", "Map Generator"),
+                    MapGenL.L("Roughness Map の生成に失敗しました。", "Failed to generate Roughness Map."), "OK");
                 return;
             }
 
@@ -104,8 +115,10 @@ public static class MapGeneratorGUIBridge
             AssignToMaterial(material, path, "_RoughnessMap", "_UseRoughnessMap", "_USE_ROUGHNESS_MAP");
             Object.DestroyImmediate(result);
 
-            EditorUtility.DisplayDialog("完了",
-                $"Roughness Map を生成して _RoughnessMap に適用しました。\n保存先: {path}", "閉じる");
+            EditorUtility.DisplayDialog(MapGenL.L("完了", "Done"),
+                MapGenL.L($"Roughness Map を生成して _RoughnessMap に適用しました。\n保存先: {path}",
+                           $"Generated Roughness Map and assigned to _RoughnessMap.\nSaved to: {path}"),
+                MapGenL.L("閉じる", "Close"));
         }
         finally
         {
@@ -125,9 +138,9 @@ public static class MapGeneratorGUIBridge
 
         if (mesh == null && albedo == null)
         {
-            EditorUtility.DisplayDialog("Map Generator",
-                "メッシュも Albedo テクスチャも見つかりません。\n" +
-                "シーンにオブジェクトを配置し、_MainTex を設定してください。", "OK");
+            EditorUtility.DisplayDialog(MapGenL.L("マップジェネレーター", "Map Generator"),
+                MapGenL.L("メッシュも Albedo テクスチャも見つかりません。\nシーンにオブジェクトを配置し、_MainTex を設定してください。",
+                           "Neither mesh nor Albedo texture found.\nPlace an object in the scene and set _MainTex."), "OK");
             return;
         }
 
@@ -142,7 +155,8 @@ public static class MapGeneratorGUIBridge
             // Normal (mesh geometry + albedo detail)
             if (albedo != null || mesh != null)
             {
-                EditorUtility.DisplayProgressBar("Map Generator", "Normal Map...", 0.0f);
+                EditorUtility.DisplayProgressBar(MapGenL.L("マップジェネレーター", "Map Generator"),
+                    MapGenL.L("Normal Map を生成中...", "Generating Normal Map..."), 0.0f);
                 Texture2D normal = MapGeneratorEngine.GenerateNormalMap(albedo, _defaultSettings, mesh, renderer);
                 if (normal != null)
                 {
@@ -157,7 +171,8 @@ public static class MapGeneratorGUIBridge
             // AO
             if (mesh != null && renderer != null)
             {
-                EditorUtility.DisplayProgressBar("Map Generator", "AO Map...", 0.15f);
+                EditorUtility.DisplayProgressBar(MapGenL.L("マップジェネレーター", "Map Generator"),
+                    MapGenL.L("AO Map を生成中...", "Generating AO Map..."), 0.15f);
                 Texture2D ao = MapGeneratorEngine.GenerateAOMap(mesh, renderer, _defaultSettings);
                 if (ao != null)
                 {
@@ -172,7 +187,8 @@ public static class MapGeneratorGUIBridge
             // Curvature → _CavityMap
             if (mesh != null)
             {
-                EditorUtility.DisplayProgressBar("Map Generator", "Curvature Map...", 0.4f);
+                EditorUtility.DisplayProgressBar(MapGenL.L("マップジェネレーター", "Map Generator"),
+                    MapGenL.L("Curvature Map を生成中...", "Generating Curvature Map..."), 0.4f);
                 Texture2D curvature = MapGeneratorEngine.GenerateCurvatureMap(mesh, _defaultSettings);
                 if (curvature != null)
                 {
@@ -187,7 +203,8 @@ public static class MapGeneratorGUIBridge
             // Roughness
             if (albedo != null)
             {
-                EditorUtility.DisplayProgressBar("Map Generator", "Roughness Map...", 0.6f);
+                EditorUtility.DisplayProgressBar(MapGenL.L("マップジェネレーター", "Map Generator"),
+                    MapGenL.L("Roughness Map を生成中...", "Generating Roughness Map..."), 0.6f);
                 Texture2D roughness = MapGeneratorEngine.GenerateRoughnessMap(albedo, _defaultSettings);
                 if (roughness != null)
                 {
@@ -202,7 +219,8 @@ public static class MapGeneratorGUIBridge
             // Shadow
             if (mesh != null && renderer != null)
             {
-                EditorUtility.DisplayProgressBar("Map Generator", "Shadow Map...", 0.8f);
+                EditorUtility.DisplayProgressBar(MapGenL.L("マップジェネレーター", "Map Generator"),
+                    MapGenL.L("Shadow Map を生成中...", "Generating Shadow Map..."), 0.8f);
                 Texture2D shadow = MapGeneratorEngine.GenerateShadowMap(mesh, renderer, _defaultSettings);
                 if (shadow != null)
                 {
@@ -217,8 +235,10 @@ public static class MapGeneratorGUIBridge
             EditorUtility.SetDirty(material);
             AssetDatabase.SaveAssets();
 
-            EditorUtility.DisplayDialog("完了",
-                $"全マップ生成完了！\n生成数: {generated} マップ\n保存先: {folder}", "閉じる");
+            EditorUtility.DisplayDialog(MapGenL.L("完了", "Done"),
+                MapGenL.L($"全マップ生成完了！\n生成数: {generated} マップ\n保存先: {folder}",
+                           $"All maps generated!\nCount: {generated} maps\nOutput: {folder}"),
+                MapGenL.L("閉じる", "Close"));
         }
         finally
         {
@@ -257,8 +277,9 @@ public static class MapGeneratorGUIBridge
 
         if (mesh == null && showDialog)
         {
-            EditorUtility.DisplayDialog("Map Generator",
-                "シーンにこのマテリアルを使用しているメッシュが見つかりません。", "OK");
+            EditorUtility.DisplayDialog(MapGenL.L("マップジェネレーター", "Map Generator"),
+                MapGenL.L("シーンにこのマテリアルを使用しているメッシュが見つかりません。",
+                           "No mesh using this material was found in the scene."), "OK");
         }
         return mesh != null;
     }

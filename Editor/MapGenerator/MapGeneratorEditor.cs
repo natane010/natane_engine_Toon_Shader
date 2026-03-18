@@ -7,6 +7,41 @@ using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 // =============================================================================
+// MapGenL — Lightweight localization helper for MapGenerator (JP/EN)
+// Follows the same L("日本語", "English") pattern as NataneToonLocalization
+// =============================================================================
+
+public static class MapGenL
+{
+    private const string LANG_PREFS_KEY = "MapGen_Language";
+    private static int _lang = -1; // -1 = uninitialized
+
+    public static bool IsJapanese
+    {
+        get
+        {
+            if (_lang < 0) _lang = EditorPrefs.GetInt(LANG_PREFS_KEY, -1);
+            if (_lang < 0)
+            {
+                // Auto-detect from system locale
+                _lang = (Application.systemLanguage == SystemLanguage.Japanese) ? 1 : 0;
+                EditorPrefs.SetInt(LANG_PREFS_KEY, _lang);
+            }
+            return _lang == 1;
+        }
+    }
+
+    public static void ToggleLanguage()
+    {
+        _lang = IsJapanese ? 0 : 1;
+        EditorPrefs.SetInt(LANG_PREFS_KEY, _lang);
+    }
+
+    /// <summary>Returns Japanese text if IsJapanese, otherwise English.</summary>
+    public static string L(string ja, string en) => IsJapanese ? ja : en;
+}
+
+// =============================================================================
 // MapGeneratorEngine — Standalone texture map generation engine (Editor-only)
 // =============================================================================
 
@@ -1109,24 +1144,33 @@ public class MapGeneratorEditor : Editor
 
         // Auto-detect info
         EditorGUILayout.HelpBox(
-            $"Renderer: {(gen.targetRenderer != null ? gen.targetRenderer.GetType().Name : "None")}\n" +
-            $"Mesh: {(gen.targetMesh != null ? gen.targetMesh.name + $" ({gen.targetMesh.vertexCount} verts)" : "None")}\n" +
-            $"Albedo: {(gen.albedoTexture != null ? gen.albedoTexture.name : "None")}",
+            $"{MapGenL.L("レンダラー:", "Renderer:")} {(gen.targetRenderer != null ? gen.targetRenderer.GetType().Name : "None")}\n" +
+            $"{MapGenL.L("メッシュ:", "Mesh:")} {(gen.targetMesh != null ? gen.targetMesh.name + $" ({gen.targetMesh.vertexCount} verts)" : "None")}\n" +
+            $"{MapGenL.L("アルベド:", "Albedo:")} {(gen.albedoTexture != null ? gen.albedoTexture.name : "None")}",
             MessageType.Info);
 
+        // Language toggle
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.FlexibleSpace();
+        if (GUILayout.Button(MapGenL.IsJapanese ? "English" : "日本語", GUILayout.Width(80)))
+        {
+            MapGenL.ToggleLanguage();
+        }
+        EditorGUILayout.EndHorizontal();
+
         // ===== Common Settings =====
-        _foldCommon = EditorGUILayout.Foldout(_foldCommon, "Common Settings", true, EditorStyles.foldoutHeader);
+        _foldCommon = EditorGUILayout.Foldout(_foldCommon, MapGenL.L("共通設定", "Common Settings"), true, EditorStyles.foldoutHeader);
         if (_foldCommon)
         {
             EditorGUI.indentLevel++;
-            gen.albedoTexture = (Texture2D)EditorGUILayout.ObjectField("Albedo Texture", gen.albedoTexture, typeof(Texture2D), false);
-            gen.settings.outputResolution = EditorGUILayout.Vector2IntField("Output Resolution", gen.settings.outputResolution);
+            gen.albedoTexture = (Texture2D)EditorGUILayout.ObjectField(MapGenL.L("アルベドテクスチャ", "Albedo Texture"), gen.albedoTexture, typeof(Texture2D), false);
+            gen.settings.outputResolution = EditorGUILayout.Vector2IntField(MapGenL.L("出力解像度", "Output Resolution"), gen.settings.outputResolution);
 
             EditorGUILayout.BeginHorizontal();
-            gen.settings.outputFolder = EditorGUILayout.TextField("Output Folder", gen.settings.outputFolder);
-            if (GUILayout.Button("Browse", GUILayout.Width(60)))
+            gen.settings.outputFolder = EditorGUILayout.TextField(MapGenL.L("出力フォルダ", "Output Folder"), gen.settings.outputFolder);
+            if (GUILayout.Button(MapGenL.L("参照", "Browse"), GUILayout.Width(60)))
             {
-                string selected = EditorUtility.OpenFolderPanel("Select Output Folder", "Assets", "");
+                string selected = EditorUtility.OpenFolderPanel(MapGenL.L("出力フォルダを選択", "Select Output Folder"), "Assets", "");
                 if (!string.IsNullOrEmpty(selected))
                 {
                     if (selected.StartsWith(Application.dataPath))
@@ -1135,9 +1179,9 @@ public class MapGeneratorEditor : Editor
             }
             EditorGUILayout.EndHorizontal();
 
-            gen.settings.outputFormat = (OutputFormat)EditorGUILayout.EnumPopup("Output Format", gen.settings.outputFormat);
-            gen.settings.autoAssignToMaterial = EditorGUILayout.Toggle("Auto Assign to Material", gen.settings.autoAssignToMaterial);
-            gen.settings.dilationPixels = EditorGUILayout.IntSlider("Dilation Pixels", gen.settings.dilationPixels, 0, 16);
+            gen.settings.outputFormat = (OutputFormat)EditorGUILayout.EnumPopup(MapGenL.L("出力形式", "Output Format"), gen.settings.outputFormat);
+            gen.settings.autoAssignToMaterial = EditorGUILayout.Toggle(MapGenL.L("マテリアルに自動割り当て", "Auto Assign to Material"), gen.settings.autoAssignToMaterial);
+            gen.settings.dilationPixels = EditorGUILayout.IntSlider(MapGenL.L("ダイレーションピクセル", "Dilation Pixels"), gen.settings.dilationPixels, 0, 16);
             EditorGUI.indentLevel--;
         }
 
@@ -1145,14 +1189,15 @@ public class MapGeneratorEditor : Editor
 
         // ===== Generate All Button =====
         GUI.backgroundColor = new Color(0.3f, 0.8f, 0.3f);
-        if (GUILayout.Button("★ Generate All Maps", GUILayout.Height(40)))
+        if (GUILayout.Button(MapGenL.L("★ 全マップ生成", "★ Generate All Maps"), GUILayout.Height(40)))
         {
             Undo.RecordObject(gen, "Generate All Maps");
             MapGenResult result = MapGeneratorEngine.GenerateAll(gen);
             if (result != null)
             {
                 EditorUtility.DisplayDialog("Map Generator",
-                    $"All maps generated successfully!\nTime: {result.processingTimeMs:F0}ms",
+                    MapGenL.L($"全マップの生成が完了しました！\n処理時間: {result.processingTimeMs:F0}ms",
+                              $"All maps generated successfully!\nTime: {result.processingTimeMs:F0}ms"),
                     "OK");
             }
         }
@@ -1161,10 +1206,10 @@ public class MapGeneratorEditor : Editor
         EditorGUILayout.Space(5);
 
         // ===== Normal Map =====
-        DrawMapSection(ref _foldNormal, "Normal Map", ref gen.settings.generateNormal, () =>
+        DrawMapSection(ref _foldNormal, MapGenL.L("ノーマルマップ", "Normal Map"), ref gen.settings.generateNormal, () =>
         {
-            gen.settings.normalStrength = EditorGUILayout.Slider("Strength", gen.settings.normalStrength, 0.1f, 10f);
-            gen.settings.normalBlurRadius = EditorGUILayout.IntSlider("Blur Radius", gen.settings.normalBlurRadius, 0, 10);
+            gen.settings.normalStrength = EditorGUILayout.Slider(MapGenL.L("強度", "Strength"), gen.settings.normalStrength, 0.1f, 10f);
+            gen.settings.normalBlurRadius = EditorGUILayout.IntSlider(MapGenL.L("ぼかし半径", "Blur Radius"), gen.settings.normalBlurRadius, 0, 10);
             DrawPreviewAndButton(gen.lastNormalMap, "Normal", () =>
             {
                 Undo.RecordObject(gen, "Generate Normal Map");
@@ -1175,12 +1220,12 @@ public class MapGeneratorEditor : Editor
         });
 
         // ===== AO Map =====
-        DrawMapSection(ref _foldAO, "AO Map", ref gen.settings.generateAO, () =>
+        DrawMapSection(ref _foldAO, MapGenL.L("AOマップ", "AO Map"), ref gen.settings.generateAO, () =>
         {
-            gen.settings.aoRayCount = EditorGUILayout.IntSlider("Ray Count", gen.settings.aoRayCount, 8, 256);
-            gen.settings.aoMaxDistance = EditorGUILayout.FloatField("Max Distance", gen.settings.aoMaxDistance);
-            gen.settings.aoIntensity = EditorGUILayout.Slider("Intensity", gen.settings.aoIntensity, 0.1f, 5f);
-            gen.settings.aoDilation = EditorGUILayout.IntSlider("Dilation", gen.settings.aoDilation, 0, 16);
+            gen.settings.aoRayCount = EditorGUILayout.IntSlider(MapGenL.L("レイ数", "Ray Count"), gen.settings.aoRayCount, 8, 256);
+            gen.settings.aoMaxDistance = EditorGUILayout.FloatField(MapGenL.L("最大距離", "Max Distance"), gen.settings.aoMaxDistance);
+            gen.settings.aoIntensity = EditorGUILayout.Slider(MapGenL.L("強度", "Intensity"), gen.settings.aoIntensity, 0.1f, 5f);
+            gen.settings.aoDilation = EditorGUILayout.IntSlider(MapGenL.L("ダイレーション", "Dilation"), gen.settings.aoDilation, 0, 16);
             DrawPreviewAndButton(gen.lastAOMap, "AO", () =>
             {
                 Undo.RecordObject(gen, "Generate AO Map");
@@ -1190,10 +1235,10 @@ public class MapGeneratorEditor : Editor
         });
 
         // ===== Curvature Map =====
-        DrawMapSection(ref _foldCurvature, "Curvature Map", ref gen.settings.generateCurvature, () =>
+        DrawMapSection(ref _foldCurvature, MapGenL.L("カーブチャーマップ", "Curvature Map"), ref gen.settings.generateCurvature, () =>
         {
-            gen.settings.curvatureMultiplier = EditorGUILayout.Slider("Multiplier", gen.settings.curvatureMultiplier, 0.1f, 5f);
-            gen.settings.curvatureDilation = EditorGUILayout.IntSlider("Dilation", gen.settings.curvatureDilation, 0, 16);
+            gen.settings.curvatureMultiplier = EditorGUILayout.Slider(MapGenL.L("倍率", "Multiplier"), gen.settings.curvatureMultiplier, 0.1f, 5f);
+            gen.settings.curvatureDilation = EditorGUILayout.IntSlider(MapGenL.L("ダイレーション", "Dilation"), gen.settings.curvatureDilation, 0, 16);
             DrawPreviewAndButton(gen.lastCurvatureMap, "Curvature", () =>
             {
                 Undo.RecordObject(gen, "Generate Curvature Map");
@@ -1203,13 +1248,13 @@ public class MapGeneratorEditor : Editor
         });
 
         // ===== Roughness Map =====
-        DrawMapSection(ref _foldRoughness, "Roughness/Smoothness Map", ref gen.settings.generateRoughness, () =>
+        DrawMapSection(ref _foldRoughness, MapGenL.L("ラフネス/スムーズネスマップ", "Roughness/Smoothness Map"), ref gen.settings.generateRoughness, () =>
         {
-            gen.settings.roughnessBaseline = EditorGUILayout.Slider("Baseline", gen.settings.roughnessBaseline, 0f, 1f);
-            gen.settings.luminanceInfluence = EditorGUILayout.Slider("Luminance Influence", gen.settings.luminanceInfluence, 0f, 1f);
-            gen.settings.saturationInfluence = EditorGUILayout.Slider("Saturation Influence", gen.settings.saturationInfluence, 0f, 1f);
-            gen.settings.invertToSmoothness = EditorGUILayout.Toggle("Invert to Smoothness", gen.settings.invertToSmoothness);
-            gen.settings.roughnessBlur = EditorGUILayout.IntSlider("Blur Radius", gen.settings.roughnessBlur, 0, 10);
+            gen.settings.roughnessBaseline = EditorGUILayout.Slider(MapGenL.L("ベースライン", "Baseline"), gen.settings.roughnessBaseline, 0f, 1f);
+            gen.settings.luminanceInfluence = EditorGUILayout.Slider(MapGenL.L("輝度の影響", "Luminance Influence"), gen.settings.luminanceInfluence, 0f, 1f);
+            gen.settings.saturationInfluence = EditorGUILayout.Slider(MapGenL.L("彩度の影響", "Saturation Influence"), gen.settings.saturationInfluence, 0f, 1f);
+            gen.settings.invertToSmoothness = EditorGUILayout.Toggle(MapGenL.L("スムーズネスに反転", "Invert to Smoothness"), gen.settings.invertToSmoothness);
+            gen.settings.roughnessBlur = EditorGUILayout.IntSlider(MapGenL.L("ぼかし半径", "Blur Radius"), gen.settings.roughnessBlur, 0, 10);
             DrawPreviewAndButton(gen.lastRoughnessMap, "Roughness", () =>
             {
                 Undo.RecordObject(gen, "Generate Roughness Map");
@@ -1219,13 +1264,13 @@ public class MapGeneratorEditor : Editor
         });
 
         // ===== Shadow Map =====
-        DrawMapSection(ref _foldShadow, "Shadow Map", ref gen.settings.generateShadow, () =>
+        DrawMapSection(ref _foldShadow, MapGenL.L("シャドウマップ", "Shadow Map"), ref gen.settings.generateShadow, () =>
         {
-            gen.settings.shadowLightDir = EditorGUILayout.Vector3Field("Light Direction", gen.settings.shadowLightDir);
-            gen.settings.shadowRayCount = EditorGUILayout.IntSlider("Ray Count", gen.settings.shadowRayCount, 4, 128);
-            gen.settings.shadowSpreadAngle = EditorGUILayout.Slider("Spread Angle", gen.settings.shadowSpreadAngle, 0f, 30f);
-            gen.settings.shadowIntensity = EditorGUILayout.Slider("Intensity", gen.settings.shadowIntensity, 0f, 2f);
-            gen.settings.shadowDilation = EditorGUILayout.IntSlider("Dilation", gen.settings.shadowDilation, 0, 16);
+            gen.settings.shadowLightDir = EditorGUILayout.Vector3Field(MapGenL.L("ライト方向", "Light Direction"), gen.settings.shadowLightDir);
+            gen.settings.shadowRayCount = EditorGUILayout.IntSlider(MapGenL.L("レイ数", "Ray Count"), gen.settings.shadowRayCount, 4, 128);
+            gen.settings.shadowSpreadAngle = EditorGUILayout.Slider(MapGenL.L("拡散角度", "Spread Angle"), gen.settings.shadowSpreadAngle, 0f, 30f);
+            gen.settings.shadowIntensity = EditorGUILayout.Slider(MapGenL.L("強度", "Intensity"), gen.settings.shadowIntensity, 0f, 2f);
+            gen.settings.shadowDilation = EditorGUILayout.IntSlider(MapGenL.L("ダイレーション", "Dilation"), gen.settings.shadowDilation, 0, 16);
             DrawPreviewAndButton(gen.lastShadowMap, "Shadow", () =>
             {
                 Undo.RecordObject(gen, "Generate Shadow Map");
@@ -1235,12 +1280,12 @@ public class MapGeneratorEditor : Editor
         });
 
         // ===== Control Map =====
-        DrawMapSection(ref _foldControl, "Control Map", ref gen.settings.generateControl, () =>
+        DrawMapSection(ref _foldControl, MapGenL.L("コントロールマップ", "Control Map"), ref gen.settings.generateControl, () =>
         {
-            gen.settings.channelR = (ControlMapChannel)EditorGUILayout.EnumPopup("R Channel", gen.settings.channelR);
-            gen.settings.channelG = (ControlMapChannel)EditorGUILayout.EnumPopup("G Channel", gen.settings.channelG);
-            gen.settings.channelB = (ControlMapChannel)EditorGUILayout.EnumPopup("B Channel", gen.settings.channelB);
-            gen.settings.channelA = (ControlMapChannel)EditorGUILayout.EnumPopup("A Channel", gen.settings.channelA);
+            gen.settings.channelR = (ControlMapChannel)EditorGUILayout.EnumPopup(MapGenL.L("Rチャンネル", "R Channel"), gen.settings.channelR);
+            gen.settings.channelG = (ControlMapChannel)EditorGUILayout.EnumPopup(MapGenL.L("Gチャンネル", "G Channel"), gen.settings.channelG);
+            gen.settings.channelB = (ControlMapChannel)EditorGUILayout.EnumPopup(MapGenL.L("Bチャンネル", "B Channel"), gen.settings.channelB);
+            gen.settings.channelA = (ControlMapChannel)EditorGUILayout.EnumPopup(MapGenL.L("Aチャンネル", "A Channel"), gen.settings.channelA);
             DrawPreviewAndButton(gen.lastControlMap, "Control", () =>
             {
                 Undo.RecordObject(gen, "Generate Control Map");
@@ -1260,7 +1305,7 @@ public class MapGeneratorEditor : Editor
         EditorGUILayout.Space(10);
 
         // ===== Open Detailed Window =====
-        if (GUILayout.Button("Open Detailed Window...", GUILayout.Height(25)))
+        if (GUILayout.Button(MapGenL.L("詳細ウィンドウを開く...", "Open Detailed Window..."), GUILayout.Height(25)))
         {
             MapGeneratorWindow.Open(gen);
         }
@@ -1333,13 +1378,13 @@ public class MapGeneratorEditor : Editor
         }
         else
         {
-            GUILayout.Label("No preview", EditorStyles.centeredGreyMiniLabel, GUILayout.Width(64), GUILayout.Height(64));
+            GUILayout.Label(MapGenL.L("プレビューなし", "No preview"), EditorStyles.centeredGreyMiniLabel, GUILayout.Width(64), GUILayout.Height(64));
         }
 
         GUILayout.FlexibleSpace();
 
         EditorGUI.BeginDisabledGroup(!canGenerate);
-        if (GUILayout.Button($"Generate {mapName} Only", GUILayout.Height(30), GUILayout.Width(180)))
+        if (GUILayout.Button(MapGenL.L($"{mapName} のみ生成", $"Generate {mapName} Only"), GUILayout.Height(30), GUILayout.Width(180)))
         {
             generateAction?.Invoke();
         }
@@ -1380,13 +1425,13 @@ public class MapGeneratorWindow : EditorWindow
     [MenuItem("Tools/MapGenerator/Map Generator Window")]
     public static void Open()
     {
-        var window = GetWindow<MapGeneratorWindow>("Map Generator");
+        var window = GetWindow<MapGeneratorWindow>(MapGenL.L("マップジェネレーター", "Map Generator"));
         window.minSize = new Vector2(800, 500);
     }
 
     public static void Open(MapGenerator target)
     {
-        var window = GetWindow<MapGeneratorWindow>("Map Generator");
+        var window = GetWindow<MapGeneratorWindow>(MapGenL.L("マップジェネレーター", "Map Generator"));
         window._target = target;
         window.minSize = new Vector2(800, 500);
     }
@@ -1399,15 +1444,25 @@ public class MapGeneratorWindow : EditorWindow
         EditorGUILayout.BeginVertical(GUILayout.Width(position.width * 0.45f));
         _scrollLeft = EditorGUILayout.BeginScrollView(_scrollLeft);
 
-        EditorGUILayout.LabelField("Map Generator", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField(MapGenL.L("マップジェネレーター", "Map Generator"), EditorStyles.boldLabel);
+
+        // Language toggle
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.FlexibleSpace();
+        if (GUILayout.Button(MapGenL.IsJapanese ? "English" : "日本語", GUILayout.Width(80)))
+        {
+            MapGenL.ToggleLanguage();
+        }
+        EditorGUILayout.EndHorizontal();
+
         EditorGUILayout.Space(5);
 
         // Target selection
-        _target = (MapGenerator)EditorGUILayout.ObjectField("Target", _target, typeof(MapGenerator), true);
+        _target = (MapGenerator)EditorGUILayout.ObjectField(MapGenL.L("ターゲット", "Target"), _target, typeof(MapGenerator), true);
 
         if (_target == null)
         {
-            EditorGUILayout.HelpBox("Select a GameObject with MapGenerator component, or drag it here.", MessageType.Info);
+            EditorGUILayout.HelpBox(MapGenL.L("MapGenerator コンポーネントを持つ GameObject を選択するか、ここにドラッグしてください。", "Select a GameObject with MapGenerator component, or drag it here."), MessageType.Info);
 
             // Try to find from selection
             if (Selection.activeGameObject != null)
@@ -1427,9 +1482,9 @@ public class MapGeneratorWindow : EditorWindow
 
         // Info
         EditorGUILayout.HelpBox(
-            $"Mesh: {(_target.targetMesh != null ? _target.targetMesh.name : "None")}\n" +
-            $"Vertices: {(_target.targetMesh != null ? _target.targetMesh.vertexCount.ToString() : "N/A")}\n" +
-            $"Albedo: {(_target.albedoTexture != null ? _target.albedoTexture.name : "None")}",
+            $"{MapGenL.L("メッシュ:", "Mesh:")} {(_target.targetMesh != null ? _target.targetMesh.name : "None")}\n" +
+            $"{MapGenL.L("頂点数:", "Vertices:")} {(_target.targetMesh != null ? _target.targetMesh.vertexCount.ToString() : "N/A")}\n" +
+            $"{MapGenL.L("アルベド:", "Albedo:")} {(_target.albedoTexture != null ? _target.albedoTexture.name : "None")}",
             MessageType.Info);
 
         EditorGUILayout.Space(5);
@@ -1437,86 +1492,86 @@ public class MapGeneratorWindow : EditorWindow
         // Settings
         var s = _target.settings;
 
-        EditorGUILayout.LabelField("Output Settings", EditorStyles.boldLabel);
-        s.outputResolution = EditorGUILayout.Vector2IntField("Resolution", s.outputResolution);
-        s.outputFolder = EditorGUILayout.TextField("Output Folder", s.outputFolder);
-        s.outputFormat = (OutputFormat)EditorGUILayout.EnumPopup("Format", s.outputFormat);
-        s.autoAssignToMaterial = EditorGUILayout.Toggle("Auto Assign", s.autoAssignToMaterial);
-        s.dilationPixels = EditorGUILayout.IntSlider("Dilation", s.dilationPixels, 0, 16);
+        EditorGUILayout.LabelField(MapGenL.L("出力設定", "Output Settings"), EditorStyles.boldLabel);
+        s.outputResolution = EditorGUILayout.Vector2IntField(MapGenL.L("解像度", "Resolution"), s.outputResolution);
+        s.outputFolder = EditorGUILayout.TextField(MapGenL.L("出力フォルダ", "Output Folder"), s.outputFolder);
+        s.outputFormat = (OutputFormat)EditorGUILayout.EnumPopup(MapGenL.L("形式", "Format"), s.outputFormat);
+        s.autoAssignToMaterial = EditorGUILayout.Toggle(MapGenL.L("自動割り当て", "Auto Assign"), s.autoAssignToMaterial);
+        s.dilationPixels = EditorGUILayout.IntSlider(MapGenL.L("ダイレーション", "Dilation"), s.dilationPixels, 0, 16);
 
         EditorGUILayout.Space(5);
-        EditorGUILayout.LabelField("Normal Map", EditorStyles.boldLabel);
-        s.generateNormal = EditorGUILayout.Toggle("Enable", s.generateNormal);
+        EditorGUILayout.LabelField(MapGenL.L("ノーマルマップ", "Normal Map"), EditorStyles.boldLabel);
+        s.generateNormal = EditorGUILayout.Toggle(MapGenL.L("有効", "Enable"), s.generateNormal);
         if (s.generateNormal)
         {
-            s.normalStrength = EditorGUILayout.Slider("Strength", s.normalStrength, 0.1f, 10f);
-            s.normalBlurRadius = EditorGUILayout.IntSlider("Blur", s.normalBlurRadius, 0, 10);
+            s.normalStrength = EditorGUILayout.Slider(MapGenL.L("強度", "Strength"), s.normalStrength, 0.1f, 10f);
+            s.normalBlurRadius = EditorGUILayout.IntSlider(MapGenL.L("ぼかし", "Blur"), s.normalBlurRadius, 0, 10);
         }
 
         EditorGUILayout.Space(5);
-        EditorGUILayout.LabelField("AO Map", EditorStyles.boldLabel);
-        s.generateAO = EditorGUILayout.Toggle("Enable", s.generateAO);
+        EditorGUILayout.LabelField(MapGenL.L("AOマップ", "AO Map"), EditorStyles.boldLabel);
+        s.generateAO = EditorGUILayout.Toggle(MapGenL.L("有効", "Enable"), s.generateAO);
         if (s.generateAO)
         {
-            s.aoRayCount = EditorGUILayout.IntSlider("Rays", s.aoRayCount, 8, 256);
-            s.aoMaxDistance = EditorGUILayout.FloatField("Max Distance", s.aoMaxDistance);
-            s.aoIntensity = EditorGUILayout.Slider("Intensity", s.aoIntensity, 0.1f, 5f);
+            s.aoRayCount = EditorGUILayout.IntSlider(MapGenL.L("レイ数", "Rays"), s.aoRayCount, 8, 256);
+            s.aoMaxDistance = EditorGUILayout.FloatField(MapGenL.L("最大距離", "Max Distance"), s.aoMaxDistance);
+            s.aoIntensity = EditorGUILayout.Slider(MapGenL.L("強度", "Intensity"), s.aoIntensity, 0.1f, 5f);
         }
 
         EditorGUILayout.Space(5);
-        EditorGUILayout.LabelField("Curvature Map", EditorStyles.boldLabel);
-        s.generateCurvature = EditorGUILayout.Toggle("Enable", s.generateCurvature);
+        EditorGUILayout.LabelField(MapGenL.L("カーブチャーマップ", "Curvature Map"), EditorStyles.boldLabel);
+        s.generateCurvature = EditorGUILayout.Toggle(MapGenL.L("有効", "Enable"), s.generateCurvature);
         if (s.generateCurvature)
         {
-            s.curvatureMultiplier = EditorGUILayout.Slider("Multiplier", s.curvatureMultiplier, 0.1f, 5f);
+            s.curvatureMultiplier = EditorGUILayout.Slider(MapGenL.L("倍率", "Multiplier"), s.curvatureMultiplier, 0.1f, 5f);
         }
 
         EditorGUILayout.Space(5);
-        EditorGUILayout.LabelField("Roughness Map", EditorStyles.boldLabel);
-        s.generateRoughness = EditorGUILayout.Toggle("Enable", s.generateRoughness);
+        EditorGUILayout.LabelField(MapGenL.L("ラフネスマップ", "Roughness Map"), EditorStyles.boldLabel);
+        s.generateRoughness = EditorGUILayout.Toggle(MapGenL.L("有効", "Enable"), s.generateRoughness);
         if (s.generateRoughness)
         {
-            s.roughnessBaseline = EditorGUILayout.Slider("Baseline", s.roughnessBaseline, 0f, 1f);
-            s.luminanceInfluence = EditorGUILayout.Slider("Luminance", s.luminanceInfluence, 0f, 1f);
-            s.saturationInfluence = EditorGUILayout.Slider("Saturation", s.saturationInfluence, 0f, 1f);
-            s.invertToSmoothness = EditorGUILayout.Toggle("Invert to Smoothness", s.invertToSmoothness);
-            s.roughnessBlur = EditorGUILayout.IntSlider("Blur", s.roughnessBlur, 0, 10);
+            s.roughnessBaseline = EditorGUILayout.Slider(MapGenL.L("ベースライン", "Baseline"), s.roughnessBaseline, 0f, 1f);
+            s.luminanceInfluence = EditorGUILayout.Slider(MapGenL.L("輝度", "Luminance"), s.luminanceInfluence, 0f, 1f);
+            s.saturationInfluence = EditorGUILayout.Slider(MapGenL.L("彩度", "Saturation"), s.saturationInfluence, 0f, 1f);
+            s.invertToSmoothness = EditorGUILayout.Toggle(MapGenL.L("スムーズネスに反転", "Invert to Smoothness"), s.invertToSmoothness);
+            s.roughnessBlur = EditorGUILayout.IntSlider(MapGenL.L("ぼかし", "Blur"), s.roughnessBlur, 0, 10);
         }
 
         EditorGUILayout.Space(5);
-        EditorGUILayout.LabelField("Shadow Map", EditorStyles.boldLabel);
-        s.generateShadow = EditorGUILayout.Toggle("Enable", s.generateShadow);
+        EditorGUILayout.LabelField(MapGenL.L("シャドウマップ", "Shadow Map"), EditorStyles.boldLabel);
+        s.generateShadow = EditorGUILayout.Toggle(MapGenL.L("有効", "Enable"), s.generateShadow);
         if (s.generateShadow)
         {
-            s.shadowLightDir = EditorGUILayout.Vector3Field("Light Dir", s.shadowLightDir);
-            s.shadowRayCount = EditorGUILayout.IntSlider("Rays", s.shadowRayCount, 4, 128);
-            s.shadowSpreadAngle = EditorGUILayout.Slider("Spread", s.shadowSpreadAngle, 0f, 30f);
-            s.shadowIntensity = EditorGUILayout.Slider("Intensity", s.shadowIntensity, 0f, 2f);
+            s.shadowLightDir = EditorGUILayout.Vector3Field(MapGenL.L("ライト方向", "Light Dir"), s.shadowLightDir);
+            s.shadowRayCount = EditorGUILayout.IntSlider(MapGenL.L("レイ数", "Rays"), s.shadowRayCount, 4, 128);
+            s.shadowSpreadAngle = EditorGUILayout.Slider(MapGenL.L("拡散", "Spread"), s.shadowSpreadAngle, 0f, 30f);
+            s.shadowIntensity = EditorGUILayout.Slider(MapGenL.L("強度", "Intensity"), s.shadowIntensity, 0f, 2f);
         }
 
         EditorGUILayout.Space(5);
-        EditorGUILayout.LabelField("Control Map", EditorStyles.boldLabel);
-        s.generateControl = EditorGUILayout.Toggle("Enable", s.generateControl);
+        EditorGUILayout.LabelField(MapGenL.L("コントロールマップ", "Control Map"), EditorStyles.boldLabel);
+        s.generateControl = EditorGUILayout.Toggle(MapGenL.L("有効", "Enable"), s.generateControl);
         if (s.generateControl)
         {
-            s.channelR = (ControlMapChannel)EditorGUILayout.EnumPopup("R", s.channelR);
-            s.channelG = (ControlMapChannel)EditorGUILayout.EnumPopup("G", s.channelG);
-            s.channelB = (ControlMapChannel)EditorGUILayout.EnumPopup("B", s.channelB);
-            s.channelA = (ControlMapChannel)EditorGUILayout.EnumPopup("A", s.channelA);
+            s.channelR = (ControlMapChannel)EditorGUILayout.EnumPopup(MapGenL.L("Rチャンネル", "R"), s.channelR);
+            s.channelG = (ControlMapChannel)EditorGUILayout.EnumPopup(MapGenL.L("Gチャンネル", "G"), s.channelG);
+            s.channelB = (ControlMapChannel)EditorGUILayout.EnumPopup(MapGenL.L("Bチャンネル", "B"), s.channelB);
+            s.channelA = (ControlMapChannel)EditorGUILayout.EnumPopup(MapGenL.L("Aチャンネル", "A"), s.channelA);
         }
 
         EditorGUILayout.Space(10);
 
         // Generate button
         GUI.backgroundColor = new Color(0.3f, 0.8f, 0.3f);
-        if (GUILayout.Button("★ Generate All Maps", GUILayout.Height(35)))
+        if (GUILayout.Button(MapGenL.L("★ 全マップ生成", "★ Generate All Maps"), GUILayout.Height(35)))
         {
             Undo.RecordObject(_target, "Generate All Maps");
             MapGenResult result = MapGeneratorEngine.GenerateAll(_target);
             if (result != null)
             {
                 EditorUtility.DisplayDialog("Map Generator",
-                    $"Done! ({result.processingTimeMs:F0}ms)", "OK");
+                    MapGenL.L($"完了！ ({result.processingTimeMs:F0}ms)", $"Done! ({result.processingTimeMs:F0}ms)"), "OK");
                 Repaint();
             }
         }
@@ -1529,7 +1584,7 @@ public class MapGeneratorWindow : EditorWindow
         EditorGUILayout.BeginVertical();
         _scrollRight = EditorGUILayout.BeginScrollView(_scrollRight);
 
-        EditorGUILayout.LabelField("Preview", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField(MapGenL.L("プレビュー", "Preview"), EditorStyles.boldLabel);
         _selectedPreview = GUILayout.Toolbar(_selectedPreview, _previewNames);
 
         Texture2D previewTex = GetPreviewTexture(_selectedPreview);
@@ -1545,7 +1600,7 @@ public class MapGeneratorWindow : EditorWindow
         }
         else
         {
-            EditorGUILayout.HelpBox("No preview available. Generate maps first.", MessageType.Info);
+            EditorGUILayout.HelpBox(MapGenL.L("プレビューがありません。先にマップを生成してください。", "No preview available. Generate maps first."), MessageType.Info);
         }
 
         EditorGUILayout.EndScrollView();
@@ -1624,7 +1679,7 @@ public static class MapGeneratorShortcuts
         if (go == null)
         {
             EditorUtility.DisplayDialog("Map Generator",
-                "Please select a GameObject with a Renderer in the Scene.", "OK");
+                MapGenL.L("シーン内のRendererを持つGameObjectを選択してください。", "Please select a GameObject with a Renderer in the Scene."), "OK");
             return;
         }
 
@@ -1632,7 +1687,7 @@ public static class MapGeneratorShortcuts
         if (renderer == null)
         {
             EditorUtility.DisplayDialog("Map Generator",
-                "Selected GameObject does not have a Renderer component.", "OK");
+                MapGenL.L("選択されたGameObjectにRendererコンポーネントがありません。", "Selected GameObject does not have a Renderer component."), "OK");
             return;
         }
 
@@ -1658,7 +1713,7 @@ public static class MapGeneratorShortcuts
         if (renderer == null)
         {
             EditorUtility.DisplayDialog("Map Generator",
-                "Selected GameObject does not have a Renderer component.", "OK");
+                MapGenL.L("選択されたGameObjectにRendererコンポーネントがありません。", "Selected GameObject does not have a Renderer component."), "OK");
             return;
         }
 
@@ -1699,14 +1754,14 @@ public static class MapGeneratorShortcuts
         // Validate
         if (gen.targetMesh == null)
         {
-            EditorUtility.DisplayDialog("Map Generator", "No mesh found on this object.", "OK");
+            EditorUtility.DisplayDialog("Map Generator", MapGenL.L("このオブジェクトにメッシュが見つかりません。", "No mesh found on this object."), "OK");
             if (wasAdded) Undo.PerformUndo();
             return;
         }
 
         if (gen.targetMesh.uv == null || gen.targetMesh.uv.Length == 0)
         {
-            EditorUtility.DisplayDialog("Map Generator", "Mesh has no UV data.", "OK");
+            EditorUtility.DisplayDialog("Map Generator", MapGenL.L("メッシュにUVデータがありません。", "Mesh has no UV data."), "OK");
             if (wasAdded) Undo.PerformUndo();
             return;
         }
@@ -1718,15 +1773,15 @@ public static class MapGeneratorShortcuts
         if (result != null)
         {
             EditorUtility.DisplayDialog("Map Generator",
-                $"All maps generated successfully!\n" +
-                $"Time: {result.processingTimeMs:F0}ms\n" +
-                $"Output: {gen.settings.outputFolder}",
+                MapGenL.L(
+                    $"全マップの生成が完了しました！\n処理時間: {result.processingTimeMs:F0}ms\n出力先: {gen.settings.outputFolder}",
+                    $"All maps generated successfully!\nTime: {result.processingTimeMs:F0}ms\nOutput: {gen.settings.outputFolder}"),
                 "OK");
         }
         else
         {
             EditorUtility.DisplayDialog("Map Generator",
-                "Generation failed or was cancelled. Check Console for details.", "OK");
+                MapGenL.L("生成に失敗またはキャンセルされました。Consoleを確認してください。", "Generation failed or was cancelled. Check Console for details."), "OK");
         }
     }
 }
@@ -1761,41 +1816,41 @@ public static class MapGeneratorMaterialExtension
 
         // Draw foldout section
         EditorGUILayout.Space(2);
-        _foldout = EditorGUILayout.BeginFoldoutHeaderGroup(_foldout, "☆ Map Generator");
+        _foldout = EditorGUILayout.BeginFoldoutHeaderGroup(_foldout, MapGenL.L("☆ マップジェネレーター", "☆ Map Generator"));
 
         if (_foldout)
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
             // Info line
-            string meshInfo = hasMesh ? $"{mesh.name} ({mesh.vertexCount} verts)" : "No mesh in scene";
-            string albedoInfo = albedo != null ? albedo.name : "No albedo";
-            EditorGUILayout.LabelField($"Mesh: {meshInfo}  |  Albedo: {albedoInfo}", EditorStyles.miniLabel);
+            string meshInfo = hasMesh ? $"{mesh.name} ({mesh.vertexCount} verts)" : MapGenL.L("シーンにメッシュなし", "No mesh in scene");
+            string albedoInfo = albedo != null ? albedo.name : MapGenL.L("アルベドなし", "No albedo");
+            EditorGUILayout.LabelField($"{MapGenL.L("メッシュ:", "Mesh:")} {meshInfo}  |  {MapGenL.L("アルベド:", "Albedo:")} {albedoInfo}", EditorStyles.miniLabel);
 
             EditorGUILayout.Space(3);
 
             // Resolution
-            _settings.outputResolution = EditorGUILayout.Vector2IntField("Resolution", _settings.outputResolution);
+            _settings.outputResolution = EditorGUILayout.Vector2IntField(MapGenL.L("解像度", "Resolution"), _settings.outputResolution);
 
             // Output folder
             EditorGUILayout.BeginHorizontal();
-            _settings.outputFolder = EditorGUILayout.TextField("Output Folder", _settings.outputFolder);
+            _settings.outputFolder = EditorGUILayout.TextField(MapGenL.L("出力フォルダ", "Output Folder"), _settings.outputFolder);
             if (GUILayout.Button("...", GUILayout.Width(25)))
             {
-                string selected = EditorUtility.OpenFolderPanel("Output Folder", "Assets", "");
+                string selected = EditorUtility.OpenFolderPanel(MapGenL.L("出力フォルダ", "Output Folder"), "Assets", "");
                 if (!string.IsNullOrEmpty(selected) && selected.StartsWith(Application.dataPath))
                     _settings.outputFolder = "Assets" + selected.Substring(Application.dataPath.Length);
             }
             EditorGUILayout.EndHorizontal();
 
-            _settings.autoAssignToMaterial = EditorGUILayout.Toggle("Auto Assign", _settings.autoAssignToMaterial);
+            _settings.autoAssignToMaterial = EditorGUILayout.Toggle(MapGenL.L("自動割り当て", "Auto Assign"), _settings.autoAssignToMaterial);
 
             EditorGUILayout.Space(5);
 
             // ===== Generate All =====
             GUI.backgroundColor = new Color(0.3f, 0.8f, 0.3f);
             EditorGUI.BeginDisabledGroup(!hasMesh && albedo == null);
-            if (GUILayout.Button("★ Generate All Maps", GUILayout.Height(28)))
+            if (GUILayout.Button(MapGenL.L("★ 全マップ生成", "★ Generate All Maps"), GUILayout.Height(28)))
             {
                 GenerateAllFromMaterial(mat, renderer, mesh, albedo);
             }
@@ -1805,13 +1860,13 @@ public static class MapGeneratorMaterialExtension
             EditorGUILayout.Space(3);
 
             // ===== Individual map buttons =====
-            EditorGUILayout.LabelField("Individual Maps", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(MapGenL.L("個別マップ", "Individual Maps"), EditorStyles.boldLabel);
 
             // Normal Map → _BumpMap + _UseNormalMap + _NORMALMAP
             EditorGUILayout.BeginHorizontal();
-            _settings.normalStrength = EditorGUILayout.Slider("Normal Strength", _settings.normalStrength, 0.1f, 10f);
+            _settings.normalStrength = EditorGUILayout.Slider(MapGenL.L("Normal 強度", "Normal Strength"), _settings.normalStrength, 0.1f, 10f);
             EditorGUI.BeginDisabledGroup(albedo == null && !hasMesh);
-            if (GUILayout.Button("Generate", GUILayout.Width(70), GUILayout.Height(18)))
+            if (GUILayout.Button(MapGenL.L("生成", "Generate"), GUILayout.Width(70), GUILayout.Height(18)))
             {
                 Texture2D result = MapGeneratorEngine.GenerateNormalMap(albedo, _settings, mesh, renderer);
                 SaveAndAssignSingleNatane(mat, result, "Normal", true,
@@ -1822,9 +1877,9 @@ public static class MapGeneratorMaterialExtension
 
             // AO Map → _AOMap + _UseAO + _USE_AO
             EditorGUILayout.BeginHorizontal();
-            _settings.aoRayCount = EditorGUILayout.IntSlider("AO Rays", _settings.aoRayCount, 8, 256);
+            _settings.aoRayCount = EditorGUILayout.IntSlider(MapGenL.L("AO レイ数", "AO Rays"), _settings.aoRayCount, 8, 256);
             EditorGUI.BeginDisabledGroup(!hasMesh);
-            if (GUILayout.Button("Generate", GUILayout.Width(70), GUILayout.Height(18)))
+            if (GUILayout.Button(MapGenL.L("生成", "Generate"), GUILayout.Width(70), GUILayout.Height(18)))
             {
                 Texture2D result = MapGeneratorEngine.GenerateAOMap(mesh, renderer, _settings);
                 SaveAndAssignSingleNatane(mat, result, "AO", false,
@@ -1835,9 +1890,9 @@ public static class MapGeneratorMaterialExtension
 
             // Curvature → _CavityMap
             EditorGUILayout.BeginHorizontal();
-            _settings.curvatureMultiplier = EditorGUILayout.Slider("Curvature", _settings.curvatureMultiplier, 0.1f, 5f);
+            _settings.curvatureMultiplier = EditorGUILayout.Slider(MapGenL.L("曲率", "Curvature"), _settings.curvatureMultiplier, 0.1f, 5f);
             EditorGUI.BeginDisabledGroup(!hasMesh);
-            if (GUILayout.Button("Generate", GUILayout.Width(70), GUILayout.Height(18)))
+            if (GUILayout.Button(MapGenL.L("生成", "Generate"), GUILayout.Width(70), GUILayout.Height(18)))
             {
                 Texture2D result = MapGeneratorEngine.GenerateCurvatureMap(mesh, _settings);
                 SaveAndAssignSingleNatane(mat, result, "Curvature", false,
@@ -1848,9 +1903,9 @@ public static class MapGeneratorMaterialExtension
 
             // Roughness → _RoughnessMap + _UseRoughnessMap + _USE_ROUGHNESS_MAP
             EditorGUILayout.BeginHorizontal();
-            _settings.roughnessBaseline = EditorGUILayout.Slider("Roughness", _settings.roughnessBaseline, 0f, 1f);
+            _settings.roughnessBaseline = EditorGUILayout.Slider(MapGenL.L("ラフネス", "Roughness"), _settings.roughnessBaseline, 0f, 1f);
             EditorGUI.BeginDisabledGroup(albedo == null);
-            if (GUILayout.Button("Generate", GUILayout.Width(70), GUILayout.Height(18)))
+            if (GUILayout.Button(MapGenL.L("生成", "Generate"), GUILayout.Width(70), GUILayout.Height(18)))
             {
                 Texture2D result = MapGeneratorEngine.GenerateRoughnessMap(albedo, _settings);
                 SaveAndAssignSingleNatane(mat, result, "Roughness", false,
@@ -1861,9 +1916,9 @@ public static class MapGeneratorMaterialExtension
 
             // Shadow → _ShadowReceiveMask
             EditorGUILayout.BeginHorizontal();
-            _settings.shadowLightDir = EditorGUILayout.Vector3Field("Shadow Dir", _settings.shadowLightDir);
+            _settings.shadowLightDir = EditorGUILayout.Vector3Field(MapGenL.L("シャドウ方向", "Shadow Dir"), _settings.shadowLightDir);
             EditorGUI.BeginDisabledGroup(!hasMesh);
-            if (GUILayout.Button("Generate", GUILayout.Width(70), GUILayout.Height(18)))
+            if (GUILayout.Button(MapGenL.L("生成", "Generate"), GUILayout.Width(70), GUILayout.Height(18)))
             {
                 Texture2D result = MapGeneratorEngine.GenerateShadowMap(mesh, renderer, _settings);
                 SaveAndAssignSingleNatane(mat, result, "Shadow", false,
@@ -1900,37 +1955,37 @@ public static class MapGeneratorMaterialExtension
             int total = 6;
 
             // Normal
-            EditorUtility.DisplayProgressBar("Map Generator", "Normal Map...", (float)done / total);
+            EditorUtility.DisplayProgressBar("Map Generator", MapGenL.L("ノーマルマップ...", "Normal Map..."), (float)done / total);
             Texture2D normal = (albedo != null || mesh != null) ? MapGeneratorEngine.GenerateNormalMap(albedo, _settings, mesh, renderer) : null;
             if (normal != null) MapGeneratorEngine.SaveTexture(normal, folder, $"{baseName}_Normal", _settings.outputFormat, true);
             done++;
 
             // AO
-            EditorUtility.DisplayProgressBar("Map Generator", "AO Map...", (float)done / total);
+            EditorUtility.DisplayProgressBar("Map Generator", MapGenL.L("AOマップ...", "AO Map..."), (float)done / total);
             Texture2D ao = mesh != null && renderer != null ? MapGeneratorEngine.GenerateAOMap(mesh, renderer, _settings) : null;
             if (ao != null) MapGeneratorEngine.SaveTexture(ao, folder, $"{baseName}_AO", _settings.outputFormat, false);
             done++;
 
             // Curvature
-            EditorUtility.DisplayProgressBar("Map Generator", "Curvature Map...", (float)done / total);
+            EditorUtility.DisplayProgressBar("Map Generator", MapGenL.L("カーブチャーマップ...", "Curvature Map..."), (float)done / total);
             Texture2D curvature = mesh != null ? MapGeneratorEngine.GenerateCurvatureMap(mesh, _settings) : null;
             if (curvature != null) MapGeneratorEngine.SaveTexture(curvature, folder, $"{baseName}_Curvature", _settings.outputFormat, false);
             done++;
 
             // Roughness
-            EditorUtility.DisplayProgressBar("Map Generator", "Roughness Map...", (float)done / total);
+            EditorUtility.DisplayProgressBar("Map Generator", MapGenL.L("ラフネスマップ...", "Roughness Map..."), (float)done / total);
             Texture2D roughness = albedo != null ? MapGeneratorEngine.GenerateRoughnessMap(albedo, _settings) : null;
             if (roughness != null) MapGeneratorEngine.SaveTexture(roughness, folder, $"{baseName}_Roughness", _settings.outputFormat, false);
             done++;
 
             // Shadow
-            EditorUtility.DisplayProgressBar("Map Generator", "Shadow Map...", (float)done / total);
+            EditorUtility.DisplayProgressBar("Map Generator", MapGenL.L("シャドウマップ...", "Shadow Map..."), (float)done / total);
             Texture2D shadow = mesh != null && renderer != null ? MapGeneratorEngine.GenerateShadowMap(mesh, renderer, _settings) : null;
             if (shadow != null) MapGeneratorEngine.SaveTexture(shadow, folder, $"{baseName}_Shadow", _settings.outputFormat, false);
             done++;
 
             // Control
-            EditorUtility.DisplayProgressBar("Map Generator", "Control Map...", (float)done / total);
+            EditorUtility.DisplayProgressBar("Map Generator", MapGenL.L("コントロールマップ...", "Control Map..."), (float)done / total);
             var sources = new MapGenResult { normal = normal, ao = ao, curvature = curvature, roughness = roughness, shadow = shadow };
             Texture2D control = MapGeneratorEngine.GenerateControlMap(_settings, sources);
             if (control != null) MapGeneratorEngine.SaveTexture(control, folder, $"{baseName}_Control", _settings.outputFormat, false);
@@ -1973,7 +2028,9 @@ public static class MapGeneratorMaterialExtension
 
             sw.Stop();
             EditorUtility.DisplayDialog("Map Generator",
-                $"All maps generated!\nTime: {sw.ElapsedMilliseconds}ms\nOutput: {folder}", "OK");
+                MapGenL.L(
+                    $"全マップの生成が完了しました！\n処理時間: {sw.ElapsedMilliseconds}ms\n出力先: {folder}",
+                    $"All maps generated!\nTime: {sw.ElapsedMilliseconds}ms\nOutput: {folder}"), "OK");
         }
         finally
         {
