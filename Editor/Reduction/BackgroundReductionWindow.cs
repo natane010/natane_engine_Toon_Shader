@@ -12,7 +12,7 @@ namespace Reduction.Editor
         private const string NormalShaderName  = "Hidden/Reduction/BakeNormal";
         private const string ParallaxShaderName = "Custom/ParallaxBackground";
 
-        private const string DefaultOutputRoot = "Assets/reduction/Generated";
+        private const string DefaultOutputRoot = "Assets/NataneToon/Reduction/Generated";
         private const string TextureFolderName = "Textures";
         private const string MeshFolderName    = "Meshes";
         private const string MaterialFolderName = "Materials";
