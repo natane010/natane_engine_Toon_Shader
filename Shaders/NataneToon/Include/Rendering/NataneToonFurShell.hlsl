@@ -7,6 +7,7 @@
 #include "UnityCG.cginc"
 #include "AutoLight.cginc"
 #include "Lighting.cginc"
+#define NATANE_UTILS_STANDALONE
 #include "../Utils/NataneToonUtils.hlsl"
 
 // FurShell passes are standalone CG programs with only 3 samplers (_MainTex,

@@ -376,6 +376,8 @@ half3 ApplyFinalShadowBlend(half3 color, half blendAmount, half threshold)
 
 // Apply both highlight and shadow blending with tone mapping
 // This is the main function to call for final color processing
+// Requires CBUFFER variables from NataneToonInput.hlsl — excluded in standalone passes (e.g. FurShell)
+#ifndef NATANE_UTILS_STANDALONE
 half3 ApplyFinalColorBlending(half3 color)
 {
     // Step 1: Apply smooth shoulder tone mapping for natural highlight compression
@@ -396,6 +398,7 @@ half3 ApplyFinalColorBlending(half3 color)
     // This allows some headroom for natural brightness while preventing extreme values
     return min(color, 1.05);
 }
+#endif
 
 // Compress bright diffuse lighting before it turns into flat white.
 // This is intentionally conservative so VRChat multi-light worlds keep color separation.
