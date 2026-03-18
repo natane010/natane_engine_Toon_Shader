@@ -365,6 +365,7 @@ CBUFFER_START(UnityPerMaterial)
     #if defined(_OUTLINE)
     half4 _OutlineColor;
     float _OutlineWidth;
+    float _OutlineDistCompMax;
     #endif
 
     // Outline Texture Color HSV

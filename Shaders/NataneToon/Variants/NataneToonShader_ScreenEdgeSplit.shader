@@ -447,6 +447,7 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
         [Toggle(_OUTLINE)] _Outline ("Enable Outline", Float) = 0
         [Enum(Inverted Hull,0,Back Face,1)] _OutlineMode ("Outline Mode", Float) = 0
         _OutlineWidth ("Outline Width", Range(0, 1)) = 0.1
+        _OutlineDistCompMax ("Outline Distance Compensation Max", Range(0, 10)) = 3.0
         _OutlineColor ("Outline Color", Color) = (0,0,0,1)
         [Toggle(_OUTLINE_MASK)] _UseOutlineMask ("Use Outline Mask", Float) = 0
         _OutlineMask ("Outline Mask", 2D) = "white" {}
@@ -1059,6 +1060,7 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             };
 
             float _OutlineWidth;
+            float _OutlineDistCompMax;
             float4 _OutlineColor;
             float4 _OutlineColor2;
             float _OutlineColorMix;
@@ -1140,7 +1142,7 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
                     // Calculate distance compensation for consistent outline width
                     float3 worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
                     float distanceToCamera = distance(worldPos, _WorldSpaceCameraPos);
-                    float distanceFactor = distanceToCamera * 0.1; // Scale factor for distance compensation
+                    float distanceFactor = min(distanceToCamera * 0.1, _OutlineDistCompMax);
 
                     // Get outline width from map if enabled
                     float widthMultiplier = 1.0;

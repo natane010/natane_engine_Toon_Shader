@@ -4525,6 +4525,19 @@ public class NataneToonShaderGUI : ShaderGUI
 
                 DrawProperty("_OutlineMode", L("描画方法", "Draw Method"));
                 DrawProperty("_OutlineWidth", L("アウトラインの幅", "Outline Width"));
+                DrawProperty("_OutlineDistCompMax", L("距離補正の上限", "Distance Compensation Max"));
+                DrawHelpToggle("OutlineDistCompMax",
+                    L("カメラから離れたときのアウトライン太さの上限を設定します。\n" +
+                    "• 値が小さいほど遠距離でのアウトライン膨張を抑えます\n" +
+                    "• デフォルト 3.0: 元の太さの最大4倍まで\n" +
+                    "• 0: 距離補正なし（近距離と同じ太さ）\n\n" +
+                    "💡 VRChat ミラーで離れたときの違和感を軽減できます。",
+                    "Sets the upper limit for outline width distance compensation.\n" +
+                    "• Lower value = less outline expansion at distance\n" +
+                    "• Default 3.0: up to 4x original width\n" +
+                    "• 0: no distance compensation (same width as close-up)\n\n" +
+                    "💡 Reduces visual inconsistency when moving away from VRChat mirrors."),
+                    MessageType.Info);
                 DrawColorProperty("_OutlineColor", L("アウトラインの色", "Outline Color"));
 
                 EditorGUILayout.Space(SECTION_SPACING);

@@ -435,6 +435,7 @@ Shader "Natane/Toon Shader (Fur Lite)"
         [Toggle(_OUTLINE)] _Outline ("Enable Outline", Float) = 0
         [Enum(Inverted Hull,0,Back Face,1)] _OutlineMode ("Outline Mode", Float) = 0
         _OutlineWidth ("Outline Width", Range(0, 1)) = 0.1
+        _OutlineDistCompMax ("Outline Distance Compensation Max", Range(0, 10)) = 3.0
         _OutlineColor ("Outline Color", Color) = (0,0,0,1)
         [Toggle(_OUTLINE_MASK)] _UseOutlineMask ("Use Outline Mask", Float) = 0
         _OutlineMask ("Outline Mask", 2D) = "white" {}
@@ -979,6 +980,7 @@ CGPROGRAM
             };
 
             float _OutlineWidth;
+            float _OutlineDistCompMax;
             float4 _OutlineColor;
             float4 _OutlineColor2;
             float _OutlineColorMix;
@@ -1059,7 +1061,7 @@ CGPROGRAM
                 #ifdef _OUTLINE
                     float3 worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
                     float distanceToCamera = distance(worldPos, _WorldSpaceCameraPos);
-                    float distanceFactor = distanceToCamera * 0.1;
+                    float distanceFactor = min(distanceToCamera * 0.1, _OutlineDistCompMax);
 
                     float widthMultiplier = 1.0;
                     #ifdef _OUTLINE_WIDTH_MAP
