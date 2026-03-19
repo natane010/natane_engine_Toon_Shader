@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Map Generator - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>Map Generator</h1>
+    <p class="page-subtitle">Automatically generate texture maps from Albedo textures and mesh geometry</p>
+
+    <div class="tool-meta">
+      <span>Menu: Tools &gt; MapGenerator &gt; Map Generator Window</span>
+      <span>Category: Texture Generation</span>
+    </div>
+
+    <h2 id="overview">Overview</h2>
+    <p>The Map Generator automatically creates Normal, AO, Curvature, Roughness, Shadow, and Control Maps from Albedo textures and mesh geometry. It uses GPU Compute Shaders for fast processing with full CPU fallback for unsupported environments. Generated maps are automatically assigned to NataneToon Shader properties.</p>
+
+    <h2 id="access">Access</h2>
+    <ul>
+      <li><strong>NataneToon Material Inspector</strong>: "Generate All Maps" button in the AO section, or individual map generation buttons</li>
+      <li><strong>Component</strong>: Attach MapGenerator component → use Inspector controls</li>
+      <li><strong>Menu</strong>: <code>Tools &gt; MapGenerator &gt; Map Generator Window</code></li>
+      <li><strong>Right-click</strong>: Context menu on Renderer / MeshFilter / SkinnedMeshRenderer components</li>
+    </ul>
+
+    <h2 id="maps">Generated Maps</h2>
+
+    <h3>Normal Map</h3>
+    <ul>
+      <li>Generates a height map from mesh curvature and vertex positions, then converts to normals via Sobel filter</li>
+      <li>Blends Albedo texture detail on top (70% mesh + 30% Albedo)</li>
+      <li>Assigns to: <code>_BumpMap</code> + enables <code>_NORMALMAP</code> keyword</li>
+      <li>Parameters: Strength, Blur Radius</li>
+    </ul>
+
+    <h3>AO Map (Ambient Occlusion)</h3>
+    <ul>
+      <li>Raycasts in hemisphere directions using Fibonacci distribution from each vertex</li>
+      <li>Uses a temporary collider on Layer 31 to avoid physics interference</li>
+      <li>Assigns to: <code>_AOMap</code> + enables <code>_USE_AO</code> keyword</li>
+      <li>Parameters: Ray Count, Max Distance, Intensity, Dilation</li>
+    </ul>
+
+    <h3>Curvature Map</h3>
+    <ul>
+      <li>Computes curvature from neighbor vertex normal differences (0.5 = flat, &gt;0.5 = convex, &lt;0.5 = concave)</li>
+      <li>Assigns to: <code>_CavityMap</code></li>
+      <li>Parameters: Multiplier, Dilation</li>
+    </ul>
+
+    <h3>Roughness Map</h3>
+    <ul>
+      <li>Estimates roughness from Albedo texture luminance and saturation</li>
+      <li>Option to invert to smoothness</li>
+      <li>Assigns to: <code>_RoughnessMap</code> + enables <code>_USE_ROUGHNESS_MAP</code> keyword</li>
+      <li>Parameters: Baseline, Luminance Influence, Saturation Influence, Blur Radius</li>
+    </ul>
+
+    <h3>Shadow Map</h3>
+    <ul>
+      <li>Directional raycasting with spread angle for occlusion calculation</li>
+      <li>Light direction adjustable via yellow arrow handle in Scene view</li>
+      <li>Assigns to: <code>_ShadowReceiveMask</code></li>
+      <li>Parameters: Light Direction, Ray Count, Spread Angle, Intensity, Dilation</li>
+    </ul>
+
+    <h3>Control Map</h3>
+    <ul>
+      <li>Packs R channels from generated maps into RGBA channels</li>
+      <li>Freely assign source for each channel (AO / Curvature / Roughness / Shadow / None)</li>
+      <li>Parameters: R / G / B / A Channel Source</li>
+    </ul>
+
+    <h2 id="usage">How to Use</h2>
+    <h3>Method 1: From NataneToon Inspector (Easiest)</h3>
+    <ol class="tool-steps">
+      <li>Select a material using NataneToon Shader</li>
+      <li>Expand the AO section</li>
+      <li>Click the "Generate All Maps" button</li>
+      <li>All maps are generated and assigned to the corresponding properties</li>
+    </ol>
+
+    <h3>Method 2: MapGenerator Component</h3>
+    <ol class="tool-steps">
+      <li>Attach the MapGenerator component to a GameObject with a Renderer</li>
+      <li>Albedo texture and mesh are auto-detected</li>
+      <li>Adjust parameters for each map</li>
+      <li>Click "Generate All Maps" for batch generation, or use individual section buttons</li>
+    </ol>
+
+    <h3>Method 3: Detailed Window</h3>
+    <ol class="tool-steps">
+      <li>Open <code>Tools &gt; MapGenerator &gt; Map Generator Window</code></li>
+      <li>Select the target MapGenerator component</li>
+      <li>Adjust settings in the left panel, preview results in the right panel</li>
+      <li>Click "Generate All Maps" to execute</li>
+    </ol>
+
+    <h2 id="technical">Technical Details</h2>
+    <ul>
+      <li><strong>GPU Processing</strong>: 5 Compute Shaders (UVBake, GaussianBlur, NormalFromHeight, Dilation, ChannelPack)</li>
+      <li><strong>CPU Fallback</strong>: All features work without Compute Shader support</li>
+      <li><strong>UV Baking</strong>: Triangle rasterization to bake vertex data into UV space</li>
+      <li><strong>Dilation</strong>: Automatically fills UV seam gaps from neighboring pixels</li>
+      <li><strong>SkinnedMeshRenderer Support</strong>: Uses BakeMesh for posed mesh capture</li>
+      <li><strong>Output Formats</strong>: PNG / TGA / EXR</li>
+    </ul>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>AO and Shadow Maps require mesh raycasting, so the object must be placed in the scene</li>
+      <li>Large meshes (100k+ vertices) may take longer for AO/Shadow generation. Cancel via progress bar</li>
+      <li>Normal Map uses mesh curvature + Albedo detail blend, so it works with mesh only or Albedo only</li>
+      <li>Drag the yellow arrow handle in Scene view to adjust Shadow Map light direction</li>
+      <li>Use the language toggle button to switch between Japanese and English</li>
+      <li>Ctrl+Z for Undo support</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>マップジェネレーター - Natane Toon Shader</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+<header class="site-header"></header>
+<div class="page-wrapper">
+  <aside class="sidebar"></aside>
+  <main class="main-content">
+    <nav class="breadcrumb"></nav>
+    <h1>マップジェネレーター</h1>
+    <p class="page-subtitle">Albedo テクスチャとメッシュから各種テクスチャマップを自動生成するツール</p>
+
+    <div class="tool-meta">
+      <span>メニュー: Tools &gt; MapGenerator &gt; Map Generator Window</span>
+      <span>カテゴリ: テクスチャ生成</span>
+    </div>
+
+    <h2 id="overview">概要</h2>
+    <p>マップジェネレーターは、Albedo テクスチャとメッシュジオメトリから Normal / AO / Curvature / Roughness / Shadow / Control Map を自動生成するツールです。GPU Compute Shader による高速処理と、Compute 非対応環境向けの CPU フォールバックを備えています。生成したマップは NataneToon Shader のプロパティに自動割り当てされます。</p>
+
+    <h2 id="access">アクセス方法</h2>
+    <ul>
+      <li><strong>NataneToon マテリアルインスペクター</strong>: AO セクション内の「★ 全マップ一括生成」ボタン、または各マップの個別生成ボタン</li>
+      <li><strong>コンポーネント</strong>: MapGenerator コンポーネントをアタッチ → インスペクターから操作</li>
+      <li><strong>メニュー</strong>: <code>Tools &gt; MapGenerator &gt; Map Generator Window</code></li>
+      <li><strong>右クリック</strong>: Renderer / MeshFilter / SkinnedMeshRenderer コンポーネントのコンテキストメニュー</li>
+    </ul>
+
+    <h2 id="maps">生成可能なマップ</h2>
+
+    <h3>Normal Map（ノーマルマップ）</h3>
+    <ul>
+      <li>メッシュの曲率と頂点位置からハイトマップを生成し、Sobel フィルタで法線マップに変換</li>
+      <li>Albedo テクスチャのディテールもブレンド（メッシュ 70% + Albedo 30%）</li>
+      <li>割り当て先: <code>_BumpMap</code> + <code>_NORMALMAP</code> キーワード有効化</li>
+      <li>パラメータ: 強度 (Strength)、ぼかし半径 (Blur Radius)</li>
+    </ul>
+
+    <h3>AO Map（アンビエントオクルージョンマップ）</h3>
+    <ul>
+      <li>各頂点から半球方向に Fibonacci 分布でレイキャスト、遮蔽率を計算</li>
+      <li>レイヤー31に一時コライダーを配置して物理干渉を回避</li>
+      <li>割り当て先: <code>_AOMap</code> + <code>_USE_AO</code> キーワード有効化</li>
+      <li>パラメータ: レイ数、最大距離、強度、ダイレーション</li>
+    </ul>
+
+    <h3>Curvature Map（カーブチャーマップ）</h3>
+    <ul>
+      <li>隣接頂点の法線差分から曲率を計算（0.5 = 平面、&gt;0.5 = 凸、&lt;0.5 = 凹）</li>
+      <li>割り当て先: <code>_CavityMap</code></li>
+      <li>パラメータ: 倍率、ダイレーション</li>
+    </ul>
+
+    <h3>Roughness Map（ラフネスマップ）</h3>
+    <ul>
+      <li>Albedo テクスチャの輝度と彩度からラフネスを推定</li>
+      <li>スムーズネスへの反転オプション付き</li>
+      <li>割り当て先: <code>_RoughnessMap</code> + <code>_USE_ROUGHNESS_MAP</code> キーワード有効化</li>
+      <li>パラメータ: ベースライン、輝度の影響、彩度の影響、ぼかし半径</li>
+    </ul>
+
+    <h3>Shadow Map（シャドウマップ）</h3>
+    <ul>
+      <li>指定したライト方向から散布角付きレイキャストで遮蔽を計算</li>
+      <li>Scene ビューで黄色のハンドルをドラッグしてライト方向を調整可能</li>
+      <li>割り当て先: <code>_ShadowReceiveMask</code></li>
+      <li>パラメータ: ライト方向、レイ数、拡散角度、強度、ダイレーション</li>
+    </ul>
+
+    <h3>Control Map（コントロールマップ）</h3>
+    <ul>
+      <li>生成した各マップの R チャンネルを RGBA にパッキング</li>
+      <li>各チャンネルのソースを自由に選択（AO / Curvature / Roughness / Shadow / None）</li>
+      <li>パラメータ: R / G / B / A チャンネルソース</li>
+    </ul>
+
+    <h2 id="usage">使い方</h2>
+    <h3>方法1: NataneToon インスペクターから（最も簡単）</h3>
+    <ol class="tool-steps">
+      <li>NataneToon シェーダーを使用しているマテリアルを選択</li>
+      <li>AO セクションを展開</li>
+      <li>「★ 全マップ一括生成」ボタンをクリック</li>
+      <li>全マップが自動生成され、対応プロパティに割り当てられます</li>
+    </ol>
+
+    <h3>方法2: MapGenerator コンポーネント</h3>
+    <ol class="tool-steps">
+      <li>Renderer を持つ GameObject に MapGenerator コンポーネントをアタッチ</li>
+      <li>Albedo テクスチャとメッシュが自動検出されます</li>
+      <li>各マップのパラメータを調整</li>
+      <li>「★ 全マップ生成」ボタンで一括生成、または各セクションの個別ボタンで生成</li>
+    </ol>
+
+    <h3>方法3: 詳細ウィンドウ</h3>
+    <ol class="tool-steps">
+      <li><code>Tools &gt; MapGenerator &gt; Map Generator Window</code> を開く</li>
+      <li>ターゲットの MapGenerator コンポーネントを選択</li>
+      <li>左パネルでパラメータ調整、右パネルでプレビュー確認</li>
+      <li>「★ 全マップ生成」で実行</li>
+    </ol>
+
+    <h2 id="technical">技術仕様</h2>
+    <ul>
+      <li><strong>GPU 処理</strong>: 5つの Compute Shader（UVBake, GaussianBlur, NormalFromHeight, Dilation, ChannelPack）</li>
+      <li><strong>CPU フォールバック</strong>: Compute Shader 非対応環境でも全機能動作</li>
+      <li><strong>UV ベイク</strong>: 三角形ラスタライゼーションで頂点データを UV 空間にベイク</li>
+      <li><strong>ダイレーション</strong>: UV 継ぎ目の隙間を近傍ピクセルで自動塗りつぶし</li>
+      <li><strong>SkinnedMeshRenderer 対応</strong>: BakeMesh でポーズ状態のメッシュを取得</li>
+      <li><strong>出力形式</strong>: PNG / TGA / EXR</li>
+    </ul>
+
+    <h2 id="tips">Tips</h2>
+    <ul class="tool-tips">
+      <li>AO と Shadow Map はメッシュのレイキャストを使用するため、シーンにオブジェクトが配置されている必要があります</li>
+      <li>大規模メッシュ（10万頂点以上）では AO / Shadow の生成に時間がかかる場合があります。プログレスバーからキャンセル可能です</li>
+      <li>Normal Map はメッシュの曲率 + Albedo ディテールのブレンドで生成されるため、メッシュだけ or Albedo だけでも動作します</li>
+      <li>Scene ビューで Shadow Map のライト方向ハンドル（黄色矢印）をドラッグして方向を調整できます</li>
+      <li>言語切り替えボタンで日本語 / English を切り替えられます</li>
+      <li>Ctrl+Z で Undo が効きます</li>
+    </ul>
+
+    <nav class="page-nav"></nav>
+  </main>
+</div>
+<footer class="site-footer">&copy; 2025 Natane Toon Shader.</footer>
+<script src="../nav.js"></script>
+</body>
+</html>
