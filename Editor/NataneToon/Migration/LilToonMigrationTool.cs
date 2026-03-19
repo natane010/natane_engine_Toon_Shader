@@ -1178,6 +1178,8 @@ namespace NataneToon.Editor
             targetMaterial.SetFloat("_ShadowSharpness", Mathf.Clamp(Mathf.Max(blur, 0.05f), 0.001f, 1.0f));
             targetMaterial.SetFloat("_ShadingGradientWidth", Mathf.Clamp(Mathf.Max(blur * 1.5f, 0.05f), 0.001f, 1.0f));
             targetMaterial.SetFloat("_ShadowSteps", 2.0f);
+            targetMaterial.SetFloat("_ShadowSmoothing", Mathf.Clamp(blur * 0.3f, 0.05f, 0.5f));
+            targetMaterial.SetFloat("_StepBorderSmooth", Mathf.Clamp(blur * 0.5f, 0.1f, 0.5f));
 
             string nataneModeLabel = nataneShadingMode >= 2.5f
                 ? "PBR-Like"

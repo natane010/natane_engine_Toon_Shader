@@ -1357,6 +1357,24 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawHelpToggle,
                 FindProperty
             );
+
+            // Shadow Map auto-generation button
+            EditorGUILayout.Space(8);
+            bool shadowHasMesh = NataneMeshAnalyzer.FindMeshForMaterial(targetMaterial) != null;
+            EditorGUI.BeginDisabledGroup(!shadowHasMesh);
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button(L("Shadow Map を自動生成", "Auto-Generate Shadow Map"), GUILayout.Height(22), GUILayout.Width(200)))
+            {
+                MapGeneratorGUIBridge.GenerateShadowForMaterial(targetMaterial);
+            }
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.EndHorizontal();
+            if (!shadowHasMesh)
+            {
+                EditorGUILayout.HelpBox(L("シーン内にメッシュが必要です", "Mesh required in scene"), MessageType.Info);
+            }
+            EditorGUI.EndDisabledGroup();
         }
         EndBoxedSection(GetFoldout("Shading"));
     }
@@ -2611,6 +2629,20 @@ public class NataneToonShaderGUI : ShaderGUI
                 {
                     DrawProperty("_SpecularDistFade", L("距離フェード強度", "Distance Fade Intensity"));
                 }
+
+                // Roughness Map auto-generation button
+                EditorGUILayout.Space(SECTION_SPACING);
+                bool specRoughnessHasAlbedo = targetMaterial != null && targetMaterial.HasProperty("_MainTex") && targetMaterial.GetTexture("_MainTex") != null;
+                EditorGUI.BeginDisabledGroup(!specRoughnessHasAlbedo);
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button(L("Roughness を自動生成", "Auto-Generate Roughness"), GUILayout.Height(22), GUILayout.Width(200)))
+                {
+                    MapGeneratorGUIBridge.GenerateRoughnessForMaterial(targetMaterial);
+                }
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.EndHorizontal();
+                EditorGUI.EndDisabledGroup();
 
                 EditorGUI.indentLevel--;
             }
@@ -5052,6 +5084,19 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_ReflectionIntensity", L("リフレクションの強さ", "Reflection Intensity"));
                 DrawProperty("_Smoothness", L("滑らかさ（光沢）", "Smoothness (Gloss)"));
                 DrawProperty("_Metallic", L("メタリック", "Metallic"));
+
+                // Roughness Map auto-generation button
+                bool roughnessHasAlbedo = targetMaterial != null && targetMaterial.HasProperty("_MainTex") && targetMaterial.GetTexture("_MainTex") != null;
+                EditorGUI.BeginDisabledGroup(!roughnessHasAlbedo);
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button(L("Roughness を自動生成", "Auto-Generate Roughness"), GUILayout.Height(22), GUILayout.Width(200)))
+                {
+                    MapGeneratorGUIBridge.GenerateRoughnessForMaterial(targetMaterial);
+                }
+                GUILayout.FlexibleSpace();
+                EditorGUILayout.EndHorizontal();
+                EditorGUI.EndDisabledGroup();
 
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField(L("フレネル設定（柔らかい反射）", "Fresnel Settings (Soft Reflection)"), EditorStyles.boldLabel);

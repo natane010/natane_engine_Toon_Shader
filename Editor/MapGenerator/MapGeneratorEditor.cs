@@ -209,6 +209,7 @@ public static class MapGeneratorEngine
                 Vector3 worldPos = xform.TransformPoint(vertices[i]);
                 Vector3 worldNormal = xform.TransformDirection(normals[i]).normalized;
 
+                // Outward hemisphere raycasting
                 int hits = 0;
                 for (int r = 0; r < s.aoRayCount; r++)
                 {
@@ -218,8 +219,21 @@ public static class MapGeneratorEngine
                         hits++;
                 }
 
-                ao[i] = 1.0f - (float)hits / s.aoRayCount;
-                ao[i] = Mathf.Pow(ao[i], s.aoIntensity);
+                // Inward raycasting for concave detection (eye sockets, cavities)
+                int inwardRayCount = Mathf.Max(1, s.aoRayCount / 4);
+                float inwardRayLength = rayLength * 0.3f;
+                int inwardHits = 0;
+                for (int r = 0; r < inwardRayCount; r++)
+                {
+                    Vector3 inwardDir = -MapGenUtils.GetHemisphereDirection(worldNormal, r, inwardRayCount);
+                    Ray inwardRay = new Ray(worldPos - worldNormal * 0.002f, inwardDir);
+                    if (Physics.Raycast(inwardRay, inwardRayLength, layerMask))
+                        inwardHits++;
+                }
+                float inwardOcclusion = (float)inwardHits / inwardRayCount;
+
+                float outwardOcclusion = 1.0f - (float)hits / s.aoRayCount;
+                ao[i] = Mathf.Pow(outwardOcclusion * (1f - inwardOcclusion * 0.5f), s.aoIntensity);
             }
 
             int w = s.outputResolution.x, h = s.outputResolution.y;
@@ -237,14 +251,19 @@ public static class MapGeneratorEngine
         if (mesh == null) return null;
 
         float[] curvature = MapGenUtils.ComputeVertexCurvature(mesh);
+        float[] concavity = MapGenUtils.ComputeVertexConcavity(mesh);
 
-        // Apply multiplier
-        if (Mathf.Abs(s.curvatureMultiplier - 1.0f) > 0.001f)
+        // Blend concavity into curvature and apply multiplier
+        for (int i = 0; i < curvature.Length; i++)
         {
-            for (int i = 0; i < curvature.Length; i++)
+            float combined = curvature[i] - concavity[i] * 0.3f;
+
+            if (Mathf.Abs(s.curvatureMultiplier - 1.0f) > 0.001f)
             {
-                curvature[i] = Mathf.Clamp01(0.5f + (curvature[i] - 0.5f) * s.curvatureMultiplier);
+                combined = 0.5f + (combined - 0.5f) * s.curvatureMultiplier;
             }
+
+            curvature[i] = Mathf.Clamp01(combined);
         }
 
         int w = s.outputResolution.x, h = s.outputResolution.y;

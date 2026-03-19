@@ -476,10 +476,57 @@ namespace NataneToon.Editor
                 result.actions.Add($"メッシュ解析: BumpScale = {recommendedBumpScale:F2} (テクセル密度ベース)");
             }
 
-            // スムースノーマルが必要かの情報を記録
+            // スムースノーマルが必要な場合、Renderer があれば自動ベイクを試行
             if (meshResult.needsSmoothNormals)
             {
-                result.warnings.Add("メッシュ解析: スムースノーマルのベイクが推奨されます（アウトラインの品質向上）");
+                Renderer renderer = FindRendererForMaterial(material);
+                if (renderer != null)
+                {
+                    try
+                    {
+                        Mesh bakedMesh = SmoothNormalBaker.BakeSmoothNormals(mesh, useTangentSpace: true);
+                        string sourcePath = AssetDatabase.GetAssetPath(mesh);
+                        string directory = !string.IsNullOrEmpty(sourcePath)
+                            ? System.IO.Path.GetDirectoryName(sourcePath)
+                            : "Assets";
+                        string savePath = directory + "/" + mesh.name + "_SmoothNormal.asset";
+                        savePath = AssetDatabase.GenerateUniqueAssetPath(savePath);
+
+                        AssetDatabase.CreateAsset(bakedMesh, savePath);
+                        AssetDatabase.SaveAssets();
+
+                        Mesh savedMesh = AssetDatabase.LoadAssetAtPath<Mesh>(savePath);
+                        if (savedMesh != null)
+                        {
+                            if (renderer is SkinnedMeshRenderer smr)
+                            {
+                                Undo.RecordObject(smr, "Auto Bake Smooth Normals");
+                                smr.sharedMesh = savedMesh;
+                                EditorUtility.SetDirty(smr);
+                            }
+                            else if (renderer is MeshRenderer)
+                            {
+                                var mf = renderer.GetComponent<MeshFilter>();
+                                if (mf != null)
+                                {
+                                    Undo.RecordObject(mf, "Auto Bake Smooth Normals");
+                                    mf.sharedMesh = savedMesh;
+                                    EditorUtility.SetDirty(mf);
+                                }
+                            }
+                            result.actions.Add($"メッシュ解析: スムースノーマルを自動ベイクしました → {savePath}");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"[NataneLilToonAutoFixer] スムースノーマル自動ベイク失敗: {e.Message}");
+                        result.warnings.Add("メッシュ解析: スムースノーマルのベイクが推奨されます（アウトラインの品質向上）");
+                    }
+                }
+                else
+                {
+                    result.warnings.Add("メッシュ解析: スムースノーマルのベイクが推奨されます（アウトラインの品質向上）");
+                }
             }
         }
 
@@ -630,6 +677,25 @@ namespace NataneToon.Editor
         private static bool WasExplicitlySetInLilToon(string propName, Dictionary<string, object> lilProps)
         {
             return lilProps.ContainsKey(propName);
+        }
+
+        /// <summary>
+        /// シーン内でこのマテリアルを使用している Renderer を検索する。
+        /// </summary>
+        private static Renderer FindRendererForMaterial(Material mat)
+        {
+            if (mat == null) return null;
+            var renderers = Object.FindObjectsOfType<Renderer>();
+            foreach (var renderer in renderers)
+            {
+                if (renderer.sharedMaterials == null) continue;
+                foreach (var sharedMat in renderer.sharedMaterials)
+                {
+                    if (sharedMat == mat)
+                        return renderer;
+                }
+            }
+            return null;
         }
     }
 }

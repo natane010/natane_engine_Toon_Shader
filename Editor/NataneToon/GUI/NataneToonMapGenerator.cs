@@ -31,6 +31,14 @@ namespace NataneToon.Editor
                 EditorUtility.DisplayProgressBar(L("Curvature Map", "Curvature Map"), L("曲率を計算中...", "Calculating curvature..."), 0.2f);
 
                 float[] curvature = ComputeVertexCurvature(mesh);
+                float[] concavity = MapGenUtils.ComputeVertexConcavity(mesh);
+
+                // Blend concavity into curvature
+                for (int i = 0; i < curvature.Length; i++)
+                {
+                    curvature[i] = Mathf.Clamp01(curvature[i] - concavity[i] * 0.3f);
+                }
+
                 EditorUtility.DisplayProgressBar(L("Curvature Map", "Curvature Map"), L("UV ベイク中...", "UV baking..."), 0.5f);
 
                 Texture2D baked = BakeScalarToUV(mesh, curvature, DefaultResolution);
@@ -253,6 +261,7 @@ namespace NataneToon.Editor
                     Vector3 worldPos = xform.TransformPoint(vertices[i]);
                     Vector3 worldNormal = xform.TransformDirection(normals[i]).normalized;
 
+                    // Outward hemisphere raycasting
                     int hits = 0;
                     for (int r = 0; r < rayCount; r++)
                     {
@@ -264,7 +273,23 @@ namespace NataneToon.Editor
                         }
                     }
 
-                    ao[i] = 1.0f - (float)hits / rayCount;
+                    // Inward raycasting for concave detection (eye sockets, cavities)
+                    int inwardRayCount = Mathf.Max(1, rayCount / 4);
+                    float inwardRayLength = rayLength * 0.3f;
+                    int inwardHits = 0;
+                    for (int r = 0; r < inwardRayCount; r++)
+                    {
+                        Vector3 inwardDir = -GetHemisphereDirection(worldNormal, r, inwardRayCount);
+                        Ray inwardRay = new Ray(worldPos - worldNormal * 0.002f, inwardDir);
+                        if (tempCollider.Raycast(inwardRay, out _, inwardRayLength))
+                        {
+                            inwardHits++;
+                        }
+                    }
+                    float inwardOcclusion = (float)inwardHits / inwardRayCount;
+
+                    float outwardOcclusion = 1.0f - (float)hits / rayCount;
+                    ao[i] = outwardOcclusion * (1f - inwardOcclusion * 0.5f);
                 }
 
                 EditorUtility.DisplayProgressBar(L("AO Map", "AO Map"), L("UV ベイク中...", "UV baking..."), 0.85f);

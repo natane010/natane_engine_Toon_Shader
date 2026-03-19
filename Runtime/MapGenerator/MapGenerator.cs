@@ -361,14 +361,10 @@ public static class MapGenUtils
     }
 
     /// <summary>
-    /// Compute per-vertex curvature from neighbor normal differences.
-    /// Returns values centered at 0.5 (flat), >0.5 = convex, <0.5 = concave.
+    /// Build adjacency map from triangle indices: for each vertex, collect neighbor vertex indices.
     /// </summary>
-    public static float[] ComputeVertexCurvature(Mesh mesh)
+    public static Dictionary<int, HashSet<int>> BuildAdjacency(int[] triangles, int vertexCount)
     {
-        Vector3[] normals = mesh.normals;
-        int[] triangles = mesh.triangles;
-
         var adjacency = new Dictionary<int, HashSet<int>>();
         for (int i = 0; i < triangles.Length; i += 3)
         {
@@ -377,6 +373,19 @@ public static class MapGenUtils
             AddEdge(adjacency, a, c);
             AddEdge(adjacency, b, c);
         }
+        return adjacency;
+    }
+
+    /// <summary>
+    /// Compute per-vertex curvature from neighbor normal differences.
+    /// Returns values centered at 0.5 (flat), >0.5 = convex, <0.5 = concave.
+    /// </summary>
+    public static float[] ComputeVertexCurvature(Mesh mesh)
+    {
+        Vector3[] normals = mesh.normals;
+        int[] triangles = mesh.triangles;
+
+        var adjacency = BuildAdjacency(triangles, normals.Length);
 
         float[] curvature = new float[normals.Length];
         for (int v = 0; v < normals.Length; v++)
@@ -397,6 +406,51 @@ public static class MapGenUtils
         }
 
         return curvature;
+    }
+
+    /// <summary>
+    /// Compute per-vertex concavity using position-based and normal-based analysis.
+    /// Returns values from 0 (flat) to 1 (deeply concave).
+    /// Useful for detecting concave geometry like anime eye sockets.
+    /// </summary>
+    public static float[] ComputeVertexConcavity(Mesh mesh)
+    {
+        Vector3[] vertices = mesh.vertices;
+        Vector3[] normals = mesh.normals;
+        int[] triangles = mesh.triangles;
+        int vertexCount = vertices.Length;
+        float[] concavity = new float[vertexCount];
+
+        var adjacency = BuildAdjacency(triangles, vertexCount);
+
+        for (int i = 0; i < vertexCount; i++)
+        {
+            if (!adjacency.TryGetValue(i, out HashSet<int> neighbors) || neighbors.Count == 0)
+                continue;
+
+            float positionConcavity = 0f;
+            float normalConcavity = 0f;
+            Vector3 normal = normals[i];
+
+            foreach (int neighbor in neighbors)
+            {
+                // Position-based: neighbor above surface = concave
+                Vector3 toNeighbor = vertices[neighbor] - vertices[i];
+                float dot = Vector3.Dot(toNeighbor.normalized, normal);
+                positionConcavity += Mathf.Max(0f, dot);
+
+                // Normal-based: diverging normals = concave
+                float normalDot = Vector3.Dot(normals[i], normals[neighbor]);
+                normalConcavity += Mathf.Max(0f, 1f - normalDot);
+            }
+
+            positionConcavity /= neighbors.Count;
+            normalConcavity /= neighbors.Count;
+
+            concavity[i] = Mathf.Clamp01(positionConcavity * 0.6f + normalConcavity * 0.4f);
+        }
+
+        return concavity;
     }
 
     // ===== Private Helpers =====
