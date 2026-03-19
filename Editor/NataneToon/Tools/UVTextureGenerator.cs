@@ -20,8 +20,17 @@ namespace NataneToon.Editor
         private enum FillMode { Solid, BoundaryGradient }
         private enum GradientDirection { Inward, Outward }
         private enum CombineMode { Multiply, MaskOnly }
-        private const float LeftPanelWidth = 320f;
-        private const float RightPanelWidth = 340f;
+        private const float LeftPanelMinWidth = 240f;
+        private const float RightPanelMinWidth = 300f;
+        private const float SplitterWidth = 6f;
+        private float leftPanelWidth = 320f;
+        private float rightPanelWidth = 380f;
+        private bool isDraggingLeftSplitter;
+        private bool isDraggingRightSplitter;
+        private float preview3DHeight = 260f;
+        private const float Preview3DMinHeight = 150f;
+        private const float Preview3DMaxHeight = 500f;
+        private bool isDraggingPreviewHandle;
 
         // ===== Tab State =====
         private GeneratorTab currentTab = GeneratorTab.Noise;
@@ -67,6 +76,9 @@ namespace NataneToon.Editor
         private MaskTextureShortcutState shortcutState = new MaskTextureShortcutState();
         private MaskTextureBrushStabilizer brushStabilizer = new MaskTextureBrushStabilizer();
         private string interactionStatus;
+        private bool settingsPanelOpen;
+        private Vector2 settingsPanelScroll;
+        private string rebindingActionId;
 
         // ===== Material Assignment =====
         private Material targetMaterial;
@@ -142,10 +154,10 @@ namespace NataneToon.Editor
             "_ShadowReceiveMask", "_2ndTexMask", "_3rdTexMask", "_4thTexMask", "_5thTexMask"
         };
 
-        [MenuItem("Tools/Natane/UVテクスチャ生成 UV Texture Generator", false, 141)]
+        [MenuItem("Tools/Natane/テクスチャスタジオ Texture Studio", false, 141)]
         public static void ShowWindow()
         {
-            var window = GetWindow<UVTextureGenerator>(L("UVテクスチャ生成", "UV Texture Generator"));
+            var window = GetWindow<UVTextureGenerator>(L("テクスチャスタジオ", "Texture Studio"));
             window.minSize = new Vector2(1260, 760);
             window.Show();
         }
@@ -166,6 +178,14 @@ namespace NataneToon.Editor
             if (brushStabilizer == null)
                 brushStabilizer = new MaskTextureBrushStabilizer();
             brush = new MaskTextureBrush(brushSettings);
+            string savedProfile = EditorPrefs.GetString("NataneToon_ShortcutProfile", "");
+            if (!string.IsNullOrEmpty(savedProfile))
+                shortcutProfile = MaskTextureShortcutProfile.FromJson(savedProfile);
+            if (shortcutProfile.bindings == null || shortcutProfile.bindings.Count == 0)
+            {
+                var def = MaskTextureShortcutProfile.CreateDefault();
+                shortcutProfile.bindings = def.bindings;
+            }
         }
 
         private void OnDisable()
@@ -201,7 +221,7 @@ namespace NataneToon.Editor
 
             EditorGUILayout.Space(10);
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-            NataneToonShaderGUIUtility.DrawHeaderWithHelp("UVテクスチャ生成", "UV Texture Generator", "UVTextureGenerator");
+            NataneToonShaderGUIUtility.DrawHeaderWithHelp("テクスチャスタジオ", "Texture Studio", "UVTextureGenerator");
             EditorGUILayout.LabelField(
                 L("マスクテクスチャの生成・編集・エクスポート", "Generate, edit, and export mask textures"),
                 EditorStyles.miniLabel);
@@ -213,9 +233,9 @@ namespace NataneToon.Editor
 
             EditorGUILayout.BeginHorizontal();
             DrawLeftStudioPanel();
-            EditorGUILayout.Space(6);
+            DrawSplitter(ref isDraggingLeftSplitter, ref leftPanelWidth, LeftPanelMinWidth, position.width - rightPanelWidth - 200f, false);
             DrawCenterStudioPanel();
-            EditorGUILayout.Space(6);
+            DrawSplitter(ref isDraggingRightSplitter, ref rightPanelWidth, RightPanelMinWidth, position.width - leftPanelWidth - 200f, true);
             DrawRightStudioPanel();
             EditorGUILayout.EndHorizontal();
             return;
@@ -295,9 +315,9 @@ namespace NataneToon.Editor
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-            EditorGUILayout.LabelField(L("ワークスペース", "Workspace"), EditorStyles.boldLabel, GUILayout.Width(100));
+            EditorGUILayout.LabelField(L("ワークスペース", "Workspace"), EditorStyles.boldLabel, GUILayout.MinWidth(110));
             GUILayout.FlexibleSpace();
-            GUILayout.Label(GetCurrentTabDisplayName(), EditorStyles.miniBoldLabel, GUILayout.Width(110));
+            GUILayout.Label(GetCurrentTabDisplayName(), EditorStyles.miniBoldLabel, GUILayout.MinWidth(130));
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.LabelField(
                 L("イラスト向け配置: 左にツール設定、中央にキャンバス、右にレイヤーと出力。",
@@ -308,7 +328,7 @@ namespace NataneToon.Editor
 
         private void DrawLeftStudioPanel()
         {
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox, GUILayout.Width(LeftPanelWidth), GUILayout.ExpandHeight(true));
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox, GUILayout.Width(leftPanelWidth), GUILayout.ExpandHeight(true));
             EditorGUILayout.LabelField(L("サブツール", "Sub Tool"), EditorStyles.boldLabel);
             DrawSubToolList();
             EditorGUILayout.Space(6);
@@ -329,7 +349,7 @@ namespace NataneToon.Editor
 
         private void DrawRightStudioPanel()
         {
-            EditorGUILayout.BeginVertical(EditorStyles.helpBox, GUILayout.Width(RightPanelWidth), GUILayout.ExpandHeight(true));
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox, GUILayout.Width(rightPanelWidth), GUILayout.ExpandHeight(true));
             rightPanelScrollPosition = EditorGUILayout.BeginScrollView(rightPanelScrollPosition, GUILayout.ExpandHeight(true));
 
             layerPanelFoldout = NataneToonShaderGUIUtility.DrawFoldoutHeader(
@@ -352,9 +372,6 @@ namespace NataneToon.Editor
             DrawFilterPanel();
 
             EditorGUILayout.Space(6);
-            Draw3DPreviewSection();
-
-            EditorGUILayout.Space(6);
             EditorGUILayout.LabelField(L("書き出し", "Export"), EditorStyles.boldLabel);
             MaskTextureExporter.DrawExportUI(previewTexture);
 
@@ -362,6 +379,14 @@ namespace NataneToon.Editor
             DrawMaterialAssignment();
 
             EditorGUILayout.EndScrollView();
+
+            // 3D Preview is outside ScrollView so scroll wheel zoom works
+            EditorGUILayout.Space(6);
+            Draw3DPreviewSection();
+
+            if (settingsPanelOpen)
+                DrawSettingsPanel();
+
             EditorGUILayout.EndVertical();
         }
 
@@ -374,11 +399,102 @@ namespace NataneToon.Editor
                 if (isSelected)
                     GUI.backgroundColor = new Color(0.45f, 0.67f, 0.96f);
 
-                if (GUILayout.Toggle(isSelected, GetStudioTabDisplayName((GeneratorTab)i), "Button", GUILayout.Height(28)))
+                if (GUILayout.Toggle(isSelected, new GUIContent(GetStudioTabDisplayName((GeneratorTab)i), GetStudioTabTooltip((GeneratorTab)i)), "Button", GUILayout.Height(28)))
                     currentTab = (GeneratorTab)i;
 
                 GUI.backgroundColor = previous;
             }
+        }
+
+        private void DrawSettingsPanel()
+        {
+            EditorGUILayout.Space(6);
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField(L("設定", "Settings"), EditorStyles.boldLabel);
+
+            // Preset buttons
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("Default", EditorStyles.miniButton))
+            {
+                var p = MaskTextureShortcutProfile.CreateDefault();
+                shortcutProfile.bindings = p.bindings;
+            }
+            if (GUILayout.Button("Photoshop", EditorStyles.miniButton))
+            {
+                var p = MaskTextureShortcutProfile.CreatePhotoshopLike();
+                shortcutProfile.bindings = p.bindings;
+            }
+            if (GUILayout.Button("ClipStudio", EditorStyles.miniButton))
+            {
+                var p = MaskTextureShortcutProfile.CreateClipStudioLike();
+                shortcutProfile.bindings = p.bindings;
+            }
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.Space(4);
+
+            // Canvas sensitivity
+            shortcutProfile.brushSizeDragSensitivity = EditorGUILayout.Slider(
+                new GUIContent(L("サイズ感度", "Size Sensitivity"), L("Alt+RMBドラッグのサイズ感度", "Alt+RMB drag size sensitivity")),
+                shortcutProfile.brushSizeDragSensitivity, 0.05f, 1f);
+            shortcutProfile.brushOpacityDragSensitivity = EditorGUILayout.Slider(
+                new GUIContent(L("不透明度感度", "Opacity Sensitivity"), L("Alt+RMBドラッグの不透明度感度", "Alt+RMB drag opacity sensitivity")),
+                shortcutProfile.brushOpacityDragSensitivity, 0.001f, 0.02f);
+
+            // Pan toggles
+            shortcutProfile.allowMiddleMousePan = EditorGUILayout.Toggle(
+                new GUIContent(L("中クリックでパン", "Middle Mouse Pan"), L("中ボタンドラッグでキャンバスをパン", "Pan canvas with middle mouse drag")),
+                shortcutProfile.allowMiddleMousePan);
+            shortcutProfile.allowSpacePan = EditorGUILayout.Toggle(
+                new GUIContent(L("スペースでパン", "Space Pan"), L("スペース+ドラッグでキャンバスをパン", "Pan canvas with Space+drag")),
+                shortcutProfile.allowSpacePan);
+            shortcutProfile.allowAltLeftPan = EditorGUILayout.Toggle(
+                new GUIContent(L("Alt+左クリックでパン", "Alt+Left Pan"), L("Alt+左ドラッグでキャンバスをパン", "Pan canvas with Alt+left drag")),
+                shortcutProfile.allowAltLeftPan);
+
+            EditorGUILayout.Space(4);
+            EditorGUILayout.LabelField(L("ショートカット", "Shortcuts"), EditorStyles.boldLabel);
+
+            // Shortcut list
+            if (shortcutProfile.bindings == null || shortcutProfile.bindings.Count == 0)
+            {
+                var def = MaskTextureShortcutProfile.CreateDefault();
+                shortcutProfile.bindings = def.bindings;
+            }
+
+            settingsPanelScroll = EditorGUILayout.BeginScrollView(settingsPanelScroll, GUILayout.Height(200));
+            foreach (var binding in shortcutProfile.bindings)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(binding.displayName, GUILayout.Width(120));
+
+                bool isRebinding = (rebindingActionId == binding.actionId);
+                string keyLabel = isRebinding
+                    ? L("キーを押してください...", "Press a key...")
+                    : binding.ToDisplayString();
+                if (GUILayout.Button(keyLabel, EditorStyles.miniButton, GUILayout.Width(130)))
+                {
+                    rebindingActionId = isRebinding ? null : binding.actionId;
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+            EditorGUILayout.EndScrollView();
+
+            // Save / Load
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button(L("保存", "Save"), EditorStyles.miniButton))
+            {
+                EditorPrefs.SetString("NataneToon_ShortcutProfile", shortcutProfile.ToJson());
+            }
+            if (GUILayout.Button(L("読込", "Load"), EditorStyles.miniButton))
+            {
+                string json = EditorPrefs.GetString("NataneToon_ShortcutProfile", "");
+                if (!string.IsNullOrEmpty(json))
+                    shortcutProfile = MaskTextureShortcutProfile.FromJson(json);
+            }
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.EndVertical();
         }
 
         private void DrawCurrentToolPanel()
@@ -437,6 +553,21 @@ namespace NataneToon.Editor
             }
         }
 
+        private static string GetStudioTabTooltip(GeneratorTab tab)
+        {
+            switch (tab)
+            {
+                case GeneratorTab.Noise: return L("パーリン・ボロノイ等のノイズ生成", "Generate Perlin, Voronoi and other noise");
+                case GeneratorTab.UVMask: return L("UVアイランド選択でマスク生成", "Generate masks from UV island selection");
+                case GeneratorTab.Gradient: return L("線形・放射状・高さベースのグラデーション", "Linear, radial, and height-based gradients");
+                case GeneratorTab.MeshInfo: return L("曲率・法線方向・頂点カラーの可視化", "Visualize curvature, normals, vertex colors");
+                case GeneratorTab.Combined: return L("ノイズとUVマスクの合成", "Combine noise with UV masks");
+                case GeneratorTab.Templates: return L("プリセットテンプレートを適用", "Apply preset templates");
+                case GeneratorTab.ChannelPack: return L("複数テクスチャをRGBAチャンネルに結合", "Pack multiple textures into RGBA channels");
+                default: return "";
+            }
+        }
+
         // ================================================================
         // Tab 1: Noise Generation
         // ================================================================
@@ -446,12 +577,24 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(L("ノイズ設定", "Noise Settings"), EditorStyles.boldLabel);
 
-            noiseType = (NoiseType)EditorGUILayout.EnumPopup(L("ノイズタイプ", "Noise Type"), noiseType);
-            textureSize = EditorGUILayout.IntPopup(L("テクスチャサイズ", "Texture Size"), textureSize, textureSizeLabels, textureSizes);
-            scale = EditorGUILayout.Slider(L("スケール", "Scale"), scale, 0.5f, 50f);
-            seed = EditorGUILayout.IntField(L("シード", "Seed"), seed);
-            contrast = EditorGUILayout.Slider(L("コントラスト", "Contrast"), contrast, 0.1f, 3f);
-            invert = EditorGUILayout.Toggle(L("反転", "Invert"), invert);
+            noiseType = (NoiseType)EditorGUILayout.EnumPopup(
+                new GUIContent(L("ノイズタイプ", "Noise Type"), L("ノイズアルゴリズムの種類", "Type of noise algorithm")),
+                noiseType);
+            textureSize = EditorGUILayout.IntPopup(
+                L("テクスチャサイズ", "Texture Size"),
+                textureSize, textureSizeLabels, textureSizes);
+            scale = EditorGUILayout.Slider(
+                new GUIContent(L("スケール", "Scale"), L("ノイズの拡大率", "Noise zoom level")),
+                scale, 0.5f, 50f);
+            seed = EditorGUILayout.IntField(
+                new GUIContent(L("シード", "Seed"), L("乱数シード値", "Random seed value")),
+                seed);
+            contrast = EditorGUILayout.Slider(
+                new GUIContent(L("コントラスト", "Contrast"), L("明暗のコントラスト調整", "Brightness contrast adjustment")),
+                contrast, 0.1f, 3f);
+            invert = EditorGUILayout.Toggle(
+                new GUIContent(L("反転", "Invert"), L("白黒を反転", "Invert black and white")),
+                invert);
 
             if (noiseType == NoiseType.FBM)
             {
@@ -600,9 +743,15 @@ namespace NataneToon.Editor
 
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button(L("全選択", "Select All"), GUILayout.Height(20)))
+            {
                 foreach (var island in islands) island.selected = true;
+                EditorApplication.delayCall += () => GenerateUVMaskTexture();
+            }
             if (GUILayout.Button(L("全解除", "Deselect All"), GUILayout.Height(20)))
+            {
                 foreach (var island in islands) island.selected = false;
+                EditorApplication.delayCall += () => GenerateUVMaskTexture();
+            }
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(3);
@@ -772,6 +921,7 @@ namespace NataneToon.Editor
                 if (hitIndex >= 0)
                 {
                     islands[hitIndex].selected = !islands[hitIndex].selected;
+                    EditorApplication.delayCall += () => GenerateUVMaskTexture();
                     e.Use();
                     Repaint();
                 }
@@ -1241,14 +1391,14 @@ namespace NataneToon.Editor
 
             showUVWireframe = GUILayout.Toggle(showUVWireframe,
                 new GUIContent("UV", L("UVワイヤーフレーム表示", "Show UV wireframe")),
-                EditorStyles.miniButton, GUILayout.Width(30));
+                EditorStyles.miniButton, GUILayout.MinWidth(32));
 
             if (currentTab == GeneratorTab.UVMask && islands.Count > 0)
             {
                 bool prevSelect = islandSelectMode;
                 islandSelectMode = GUILayout.Toggle(islandSelectMode,
                     new GUIContent("Select", L("クリックでアイランド選択", "Click to select islands")),
-                    EditorStyles.miniButton, GUILayout.Width(50));
+                    EditorStyles.miniButton, GUILayout.MinWidth(56));
                 if (islandSelectMode && !prevSelect) brushEnabled = false;
             }
             else
@@ -1259,34 +1409,39 @@ namespace NataneToon.Editor
             bool prevBrush = brushEnabled;
             brushEnabled = GUILayout.Toggle(brushEnabled,
                 new GUIContent("Brush", L("ブラシツール有効化", "Enable brush tool")),
-                EditorStyles.miniButton, GUILayout.Width(50));
+                EditorStyles.miniButton, GUILayout.MinWidth(56));
             if (brushEnabled && !prevBrush) islandSelectMode = false;
 
-            if (GUILayout.Button(L("全体", "Fit"), EditorStyles.miniButton, GUILayout.Width(40)))
+            if (GUILayout.Button(L("全体", "Fit"), EditorStyles.miniButton, GUILayout.MinWidth(48)))
             {
                 canvasZoom = 1f;
                 canvasPan = Vector2.zero;
             }
 
             GUI.enabled = brushHistory != null && brushHistory.CanUndo;
-            if (GUILayout.Button(L("戻す", "Undo"), EditorStyles.miniButton, GUILayout.Width(44)))
+            if (GUILayout.Button(new GUIContent(L("戻す", "Undo"), "Ctrl+Z"), EditorStyles.miniButton, GUILayout.MinWidth(50)))
             {
                 UndoBrushStroke();
             }
 
             GUI.enabled = brushHistory != null && brushHistory.CanRedo;
-            if (GUILayout.Button(L("やり直し", "Redo"), EditorStyles.miniButton, GUILayout.Width(64)))
+            if (GUILayout.Button(new GUIContent(L("やり直し", "Redo"), "Ctrl+Y"), EditorStyles.miniButton, GUILayout.MinWidth(72)))
             {
                 RedoBrushStroke();
             }
             GUI.enabled = true;
+
+            GUILayout.FlexibleSpace();
+            settingsPanelOpen = GUILayout.Toggle(settingsPanelOpen,
+                new GUIContent("\u2699", L("設定・ショートカット", "Settings & Shortcuts")),
+                EditorStyles.miniButton, GUILayout.Width(26));
 
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(3);
 
             // Canvas area
-            float availableWidth = Mathf.Max(360f, position.width - LeftPanelWidth - RightPanelWidth - 72f);
+            float availableWidth = Mathf.Max(360f, position.width - leftPanelWidth - rightPanelWidth - 72f);
             float availableHeight = Mathf.Max(360f, position.height - 190f);
             float canvasDisplaySize = Mathf.Clamp(Mathf.Min(availableWidth, availableHeight), 360f, 960f);
             Rect canvasRow = GUILayoutUtility.GetRect(10f, canvasDisplaySize, GUILayout.ExpandWidth(true), GUILayout.Height(canvasDisplaySize));
@@ -1470,6 +1625,30 @@ namespace NataneToon.Editor
         private void HandleGlobalInput(Event e)
         {
             MaskTextureShortcutUtility.UpdateKeyState(e, shortcutProfile, shortcutState);
+
+            // Rebind capture
+            if (rebindingActionId != null && e.type == EventType.KeyDown && e.keyCode != KeyCode.None)
+            {
+                if (e.keyCode == KeyCode.Escape)
+                {
+                    rebindingActionId = null;
+                }
+                else
+                {
+                    var binding = MaskTextureShortcutUtility.FindBinding(shortcutProfile, rebindingActionId);
+                    if (binding != null)
+                    {
+                        binding.keyCode = e.keyCode;
+                        binding.ctrl = e.control || e.command;
+                        binding.shift = e.shift;
+                        binding.alt = e.alt;
+                    }
+                    rebindingActionId = null;
+                }
+                e.Use();
+                Repaint();
+                return;
+            }
 
             if (e == null || e.type != EventType.KeyDown || EditorGUIUtility.editingTextField || !MaskTextureShortcutUtility.IsActionKey(e))
                 return;
@@ -1713,7 +1892,7 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginHorizontal();
             filterBlurSigma = EditorGUILayout.Slider(L("ブラー (sigma)", "Blur (sigma)"), filterBlurSigma, 0.1f, 20f);
             EditorGUI.BeginDisabledGroup(!hasLayer);
-            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(40)))
+            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(50)))
             {
                 ApplyFilterToActiveLayer((pixels, w, h) =>
                     MaskTextureFilters.GaussianBlur(pixels, w, h, filterBlurSigma));
@@ -1724,15 +1903,15 @@ namespace NataneToon.Editor
             // Levels
             EditorGUILayout.LabelField(L("レベル補正", "Levels"), EditorStyles.miniLabel);
             EditorGUILayout.BeginHorizontal();
-            filterLevelInputMin = EditorGUILayout.FloatField(L("入力Min", "Input Min"), filterLevelInputMin, GUILayout.Width(120));
-            filterLevelInputMax = EditorGUILayout.FloatField(L("入力Max", "Input Max"), filterLevelInputMax, GUILayout.Width(120));
+            filterLevelInputMin = EditorGUILayout.FloatField(L("入力Min", "Input Min"), filterLevelInputMin, GUILayout.Width(155));
+            filterLevelInputMax = EditorGUILayout.FloatField(L("入力Max", "Input Max"), filterLevelInputMax, GUILayout.Width(155));
             EditorGUILayout.EndHorizontal();
             filterLevelGamma = EditorGUILayout.Slider(L("ガンマ", "Gamma"), filterLevelGamma, 0.01f, 10f);
             EditorGUILayout.BeginHorizontal();
-            filterLevelOutputMin = EditorGUILayout.FloatField(L("出力Min", "Output Min"), filterLevelOutputMin, GUILayout.Width(120));
-            filterLevelOutputMax = EditorGUILayout.FloatField(L("出力Max", "Output Max"), filterLevelOutputMax, GUILayout.Width(120));
+            filterLevelOutputMin = EditorGUILayout.FloatField(L("出力Min", "Output Min"), filterLevelOutputMin, GUILayout.Width(155));
+            filterLevelOutputMax = EditorGUILayout.FloatField(L("出力Max", "Output Max"), filterLevelOutputMax, GUILayout.Width(155));
             EditorGUI.BeginDisabledGroup(!hasLayer);
-            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(40)))
+            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(50)))
             {
                 ApplyFilterToActiveLayer((pixels, w, h) =>
                     MaskTextureFilters.Levels(pixels, w, h,
@@ -1746,7 +1925,7 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginHorizontal();
             filterEdgeStrength = EditorGUILayout.Slider(L("エッジ検出", "Edge Detection"), filterEdgeStrength, 0.1f, 5f);
             EditorGUI.BeginDisabledGroup(!hasLayer);
-            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(40)))
+            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(50)))
             {
                 ApplyFilterToActiveLayer((pixels, w, h) =>
                     MaskTextureFilters.SobelEdge(pixels, w, h, filterEdgeStrength));
@@ -1758,7 +1937,7 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginHorizontal();
             filterSharpenAmount = EditorGUILayout.Slider(L("シャープ", "Sharpen"), filterSharpenAmount, 0f, 3f);
             EditorGUI.BeginDisabledGroup(!hasLayer);
-            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(40)))
+            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(50)))
             {
                 ApplyFilterToActiveLayer((pixels, w, h) =>
                     MaskTextureFilters.Sharpen(pixels, w, h, filterSharpenAmount, filterSharpenSigma));
@@ -1770,7 +1949,7 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginHorizontal();
             filterThreshold = EditorGUILayout.Slider(L("二値化", "Threshold"), filterThreshold, 0f, 1f);
             EditorGUI.BeginDisabledGroup(!hasLayer);
-            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(40)))
+            if (GUILayout.Button(L("適用", "Apply"), GUILayout.Width(50)))
             {
                 ApplyFilterToActiveLayer((pixels, w, h) =>
                     MaskTextureFilters.Threshold(pixels, w, h, filterThreshold));
@@ -1824,7 +2003,7 @@ namespace NataneToon.Editor
 
             preview3D.DrawPreviewUI();
 
-            Rect previewRect = GUILayoutUtility.GetRect(300, 200);
+            Rect previewRect = GUILayoutUtility.GetRect(0, preview3DHeight, GUILayout.ExpandWidth(true), GUILayout.Height(preview3DHeight));
             preview3D.HandleInput(previewRect);
             preview3D.DrawPreview(previewRect);
 
@@ -1832,6 +2011,8 @@ namespace NataneToon.Editor
                 Repaint();
 
             EditorGUILayout.EndVertical();
+
+            DrawPreview3DResizeHandle();
         }
 
         // ================================================================
@@ -2335,6 +2516,87 @@ namespace NataneToon.Editor
 
                     pixels[i] = new Color(value, value, value, 1f);
                 }
+            }
+        }
+        // ================================================================
+        // Panel Splitter
+        // ================================================================
+
+        private void DrawSplitter(ref bool isDragging, ref float panelWidth, float minWidth, float maxWidth, bool invertDrag)
+        {
+            Rect splitterRect = GUILayoutUtility.GetRect(SplitterWidth, 0, GUILayout.Width(SplitterWidth), GUILayout.ExpandHeight(true));
+            EditorGUIUtility.AddCursorRect(splitterRect, MouseCursor.ResizeHorizontal);
+
+            // Draw visual indicator
+            Color prevColor = GUI.color;
+            GUI.color = isDragging ? new Color(0.4f, 0.6f, 0.9f, 0.8f) : new Color(0.5f, 0.5f, 0.5f, 0.3f);
+            GUI.DrawTexture(splitterRect, EditorGUIUtility.whiteTexture);
+            GUI.color = prevColor;
+
+            Event e = Event.current;
+            switch (e.type)
+            {
+                case EventType.MouseDown:
+                    if (splitterRect.Contains(e.mousePosition))
+                    {
+                        isDragging = true;
+                        e.Use();
+                    }
+                    break;
+                case EventType.MouseDrag:
+                    if (isDragging)
+                    {
+                        float delta = invertDrag ? -e.delta.x : e.delta.x;
+                        panelWidth = Mathf.Clamp(panelWidth + delta, minWidth, maxWidth);
+                        e.Use();
+                        Repaint();
+                    }
+                    break;
+                case EventType.MouseUp:
+                    if (isDragging)
+                    {
+                        isDragging = false;
+                        e.Use();
+                    }
+                    break;
+            }
+        }
+
+        private void DrawPreview3DResizeHandle()
+        {
+            Rect handleRect = GUILayoutUtility.GetRect(0, 4, GUILayout.ExpandWidth(true));
+            EditorGUIUtility.AddCursorRect(handleRect, MouseCursor.ResizeVertical);
+
+            Color prevColor = GUI.color;
+            GUI.color = isDraggingPreviewHandle ? new Color(0.4f, 0.6f, 0.9f, 0.8f) : new Color(0.5f, 0.5f, 0.5f, 0.3f);
+            GUI.DrawTexture(handleRect, EditorGUIUtility.whiteTexture);
+            GUI.color = prevColor;
+
+            Event e = Event.current;
+            switch (e.type)
+            {
+                case EventType.MouseDown:
+                    if (handleRect.Contains(e.mousePosition))
+                    {
+                        isDraggingPreviewHandle = true;
+                        e.Use();
+                    }
+                    break;
+                case EventType.MouseDrag:
+                    if (isDraggingPreviewHandle)
+                    {
+                        preview3DHeight = Mathf.Clamp(preview3DHeight + e.delta.y, Preview3DMinHeight, Preview3DMaxHeight);
+                        e.Use();
+                        Repaint();
+                    }
+                    break;
+                case EventType.MouseUp:
+                    if (isDraggingPreviewHandle)
+                    {
+                        isDraggingPreviewHandle = false;
+                        e.Use();
+                    }
+                    break;
             }
         }
     }

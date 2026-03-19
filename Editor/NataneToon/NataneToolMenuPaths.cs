@@ -48,7 +48,7 @@ namespace NataneToon.Editor
 
         public const string SmoothNormalBaker = "Tools/Natane/メッシュ Mesh/スムース法線ベイク Smooth Normal Baker";
 
-        public const string UVTextureGenerator = "Tools/Natane/UVテクスチャ生成 UV Texture Generator";
+        public const string UVTextureGenerator = "Tools/Natane/テクスチャスタジオ Texture Studio";
         public const string ParticleEffectEditor = "Tools/Natane/パーティクルエフェクトエディタ Particle Effect Editor";
 
         // ===== Consolidated Windows =====

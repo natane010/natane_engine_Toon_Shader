@@ -135,7 +135,7 @@ namespace NataneToon.Editor
                 NataneToolMenuPaths.PrefabVariantConverter, "NataneToon.Editor.PrefabVariantConverter", ASSEMBLY_TOOLS),
 
             // --- Mask Texture / Generator Tools (Tools assembly) ---
-            new ToolRegistryEntry("UVTextureGenerator", "マスクテクスチャスタジオ Mask Texture Studio",
+            new ToolRegistryEntry("UVTextureGenerator", "テクスチャスタジオ Texture Studio",
                 NataneToolMenuPaths.UVTextureGenerator, "NataneToon.Editor.UVTextureGenerator", ASSEMBLY_TOOLS),
             new ToolRegistryEntry("ShaderPrewarming", "シェーダープリウォーミング Shader Prewarming",
                 NataneToolMenuPaths.ShaderPrewarming, "NataneToon.Editor.ShaderPrewarmingEditor", ASSEMBLY_TOOLS),

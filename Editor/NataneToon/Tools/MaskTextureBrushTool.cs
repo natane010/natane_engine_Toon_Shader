@@ -28,6 +28,10 @@ namespace NataneToon.Editor
         public float alphaEpsilon = 0.001f;
         public BrushMode mode = BrushMode.Paint;
         public BrushStabilizerSettings stabilizer = new BrushStabilizerSettings();
+        public bool pressureOpacityEnabled = true;
+        public bool pressureSizeEnabled = false;
+        public AnimationCurve pressureOpacityCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+        public AnimationCurve pressureSizeCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
     }
 
     internal readonly struct BrushStrokeCommit
@@ -89,7 +93,8 @@ namespace NataneToon.Editor
             Color[] pixels,
             int width,
             int height,
-            bool lockTransparentPixels)
+            bool lockTransparentPixels,
+            float pressure = 1f)
         {
             isStroking = true;
             lastStrokePosition = position;
@@ -98,7 +103,7 @@ namespace NataneToon.Editor
                 undoSnapshot = new Color[pixels.Length];
                 System.Array.Copy(pixels, undoSnapshot, pixels.Length);
             }
-            ApplyStamp(position, pixels, settings, width, height, lockTransparentPixels);
+            ApplyStamp(position, pixels, settings, width, height, lockTransparentPixels, pressure);
         }
 
         /// <summary>
@@ -127,7 +132,8 @@ namespace NataneToon.Editor
             Color[] pixels,
             int width,
             int height,
-            bool lockTransparentPixels)
+            bool lockTransparentPixels,
+            float pressure = 1f)
         {
             if (!isStroking) return;
 
@@ -137,7 +143,7 @@ namespace NataneToon.Editor
 
             if (distance < 0.5f)
             {
-                ApplyStamp(newPosition, pixels, settings, width, height, lockTransparentPixels);
+                ApplyStamp(newPosition, pixels, settings, width, height, lockTransparentPixels, pressure);
                 lastStrokePosition = newPosition;
                 return;
             }
@@ -151,7 +157,7 @@ namespace NataneToon.Editor
                 if (traveled > distance) traveled = distance;
 
                 Vector2 stampPos = lastStrokePosition + direction * traveled;
-                ApplyStamp(stampPos, pixels, settings, width, height, lockTransparentPixels);
+                ApplyStamp(stampPos, pixels, settings, width, height, lockTransparentPixels, pressure);
             }
 
             lastStrokePosition = newPosition;
@@ -166,12 +172,13 @@ namespace NataneToon.Editor
             Color[] pixels,
             int width,
             int height,
-            bool lockTransparentPixels)
+            bool lockTransparentPixels,
+            float pressure = 1f)
         {
             float distance = Vector2.Distance(startPosition, endPosition);
             if (distance <= 0.001f)
             {
-                ApplyStamp(endPosition, pixels, settings, width, height, lockTransparentPixels);
+                ApplyStamp(endPosition, pixels, settings, width, height, lockTransparentPixels, pressure);
                 return;
             }
 
@@ -180,10 +187,10 @@ namespace NataneToon.Editor
 
             for (float traveled = 0f; traveled <= distance; traveled += spacing)
             {
-                ApplyStamp(startPosition + direction * traveled, pixels, settings, width, height, lockTransparentPixels);
+                ApplyStamp(startPosition + direction * traveled, pixels, settings, width, height, lockTransparentPixels, pressure);
             }
 
-            ApplyStamp(endPosition, pixels, settings, width, height, lockTransparentPixels);
+            ApplyStamp(endPosition, pixels, settings, width, height, lockTransparentPixels, pressure);
         }
 
         /// <summary>
@@ -196,11 +203,14 @@ namespace NataneToon.Editor
             BrushSettings settings,
             int width,
             int height,
-            bool lockTransparentPixels)
+            bool lockTransparentPixels,
+            float pressure = 1f)
         {
             if (pixels == null || width <= 0 || height <= 0) return;
 
-            float radius = settings.size;
+            float radius = settings.pressureSizeEnabled && pressure > 0.001f
+                ? settings.size * Mathf.Clamp01(settings.pressureSizeCurve.Evaluate(pressure))
+                : settings.size;
             int minX = Mathf.Max(0, Mathf.FloorToInt(center.x - radius));
             int maxX = Mathf.Min(width - 1, Mathf.CeilToInt(center.x + radius));
             int minY = Mathf.Max(0, Mathf.FloorToInt(center.y - radius));
@@ -219,7 +229,10 @@ namespace NataneToon.Editor
                     if (!CanModifyPixel(current, lockTransparentPixels, settings.alphaEpsilon))
                         continue;
 
-                    float alpha = falloff * settings.opacity;
+                    float effOpacity = settings.pressureOpacityEnabled && pressure > 0.001f
+                        ? settings.opacity * Mathf.Clamp01(settings.pressureOpacityCurve.Evaluate(pressure))
+                        : settings.opacity;
+                    float alpha = falloff * effOpacity;
 
                     switch (settings.mode)
                     {
@@ -602,7 +615,7 @@ namespace NataneToon.Editor
                 else if (settings.mode == BrushMode.Erase)
                 {
                     settings.eraseRgb = EditorGUILayout.Toggle(
-                        new GUIContent("Clear RGB", "Also clear RGB while erasing"),
+                        new GUIContent(L("RGB消去", "Clear RGB"), L("消去時にRGBもクリア", "Also clear RGB while erasing")),
                         settings.eraseRgb);
                 }
 
@@ -617,6 +630,35 @@ namespace NataneToon.Editor
                         new GUIContent(L("補正強度", "Stabilizer Strength"), L("大きいほど補正を強くします", "Higher values stabilize more")),
                         settings.stabilizer.strength, 0f, 1f);
                 }
+
+                EditorGUILayout.Space(4);
+                EditorGUILayout.LabelField(
+                    new GUIContent(L("筆圧設定", "Pressure"), L("ペンタブ・液タブの筆圧設定", "Pen tablet pressure settings")),
+                    EditorStyles.boldLabel);
+
+                settings.pressureOpacityEnabled = EditorGUILayout.Toggle(
+                    new GUIContent(L("不透明度に適用", "Opacity by Pressure"),
+                        L("筆圧で不透明度を変える", "Modulate opacity with pen pressure")),
+                    settings.pressureOpacityEnabled);
+                if (settings.pressureOpacityEnabled)
+                    settings.pressureOpacityCurve = EditorGUILayout.CurveField(
+                        new GUIContent(L("不透明度カーブ", "Opacity Curve"),
+                            L("筆圧→不透明度の変換カーブ", "Pressure to opacity mapping")),
+                        settings.pressureOpacityCurve);
+
+                settings.pressureSizeEnabled = EditorGUILayout.Toggle(
+                    new GUIContent(L("サイズに適用", "Size by Pressure"),
+                        L("筆圧でブラシサイズを変える", "Modulate brush size with pen pressure")),
+                    settings.pressureSizeEnabled);
+                if (settings.pressureSizeEnabled)
+                    settings.pressureSizeCurve = EditorGUILayout.CurveField(
+                        new GUIContent(L("サイズカーブ", "Size Curve"),
+                            L("筆圧→サイズの変換カーブ", "Pressure to size mapping")),
+                        settings.pressureSizeCurve);
+
+                EditorGUILayout.LabelField(
+                    L("※マウス使用時は筆圧1.0として動作", "* Mouse = pressure 1.0 (full)"),
+                    EditorStyles.miniLabel);
 
                 EditorGUILayout.Space(2);
                 EditorGUILayout.LabelField(
@@ -708,9 +750,10 @@ namespace NataneToon.Editor
                 case EventType.MouseDown:
                     if (e.button == 0 && canvasRect.Contains(e.mousePosition))
                     {
+                        float pressure = (e.pressure > 0.001f) ? e.pressure : 1f;
                         stabilizer?.Reset();
                         canvasPos = FilterBrushPosition(rawCanvasPos, settings, stabilizer);
-                        brush.StartStroke(canvasPos, pixels, width, height, lockTransparentPixels);
+                        brush.StartStroke(canvasPos, pixels, width, height, lockTransparentPixels, pressure);
                         textureModified = true;
                         e.Use();
                         RequestRepaint();
@@ -721,7 +764,8 @@ namespace NataneToon.Editor
                 case EventType.MouseDrag:
                     if (e.button == 0 && brush.IsStroking)
                     {
-                        brush.StrokeToPosition(canvasPos, pixels, width, height, lockTransparentPixels);
+                        float pressure = (e.pressure > 0.001f) ? e.pressure : 1f;
+                        brush.StrokeToPosition(canvasPos, pixels, width, height, lockTransparentPixels, pressure);
                         textureModified = true;
                         e.Use();
                         RequestRepaint();

@@ -31,13 +31,17 @@ jobs:
         run: |
           VERSION="${{ steps.pkg.outputs.version }}"
           mkdir -p _build
-          # Copy package files (exclude CI, website, git, claude config)
+          # Copy package files (exclude CI, website, git, claude config, Documentation~)
+          # Documentation~ contains tilde which triggers Windows ERROR_DIRECTORY (267)
+          # when ALCOM/VCC extracts the zip on Windows
           rsync -av . _build/ \
             --exclude .git \
             --exclude .github \
             --exclude Website \
             --exclude _build \
-            --exclude .claude
+            --exclude .claude \
+            --exclude 'Documentation~' \
+            --exclude CLAUDE.md
           # VPM requires package.json at zip root (no subdirectory wrapper)
           cd _build
           zip -r ../${{ env.PACKAGE_NAME }}-${VERSION}.zip .

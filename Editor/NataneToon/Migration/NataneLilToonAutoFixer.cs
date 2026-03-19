@@ -685,7 +685,7 @@ namespace NataneToon.Editor
         private static Renderer FindRendererForMaterial(Material mat)
         {
             if (mat == null) return null;
-            var renderers = Object.FindObjectsOfType<Renderer>();
+            var renderers = UnityEngine.Object.FindObjectsOfType<Renderer>();
             foreach (var renderer in renderers)
             {
                 if (renderer.sharedMaterials == null) continue;

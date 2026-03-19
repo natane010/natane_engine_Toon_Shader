@@ -122,7 +122,7 @@ namespace NataneToon.Editor
             AddTool("スクリーンエフェクト設定", "Screen FX Setup", "VRC向け画面効果オーバーレイをカメラへ自動セットアップします。", "Automatically set up a VRC-friendly full-screen overlay on a camera.", NataneToolMenuPaths.ScreenFXSetup, ToolCategory.Advanced, "🖥");
             AddTool("リムライト方向ビジュアライザー", "Rim Light Direction Visualizer", "リムライト方向を視覚的に確認します。", "Visualize rim light direction before committing settings.", NataneToolMenuPaths.RimLightDirectionVisualizer, ToolCategory.Advanced, "💡");
             AddTool("屈折品質バランサー", "Refraction Quality Balancer", "屈折エフェクトの品質とパフォーマンスをバランス調整します。", "Balance refraction quality against performance.", NataneToolMenuPaths.RefractionQualityBalancer, ToolCategory.Advanced, "🔮");
-            AddTool("マスクテクスチャスタジオ", "Mask Texture Studio", "ノイズ、グラデーション、メッシュ情報からマスクテクスチャを生成・合成・ペイント・パックします。", "Generate, combine, paint, and pack mask textures from noise, gradients, and mesh data.", NataneToolMenuPaths.UVTextureGenerator, ToolCategory.Advanced, "🎭");
+            AddTool("テクスチャスタジオ", "Texture Studio", "ノイズ、グラデーション、メッシュ情報からマスクテクスチャを生成・合成・ペイント・パックします。", "Generate, combine, paint, and pack mask textures from noise, gradients, and mesh data.", NataneToolMenuPaths.UVTextureGenerator, ToolCategory.Advanced, "🎭");
             AddTool("パーティクルエフェクトエディタ", "Particle Effect Editor", "パーティクルエフェクトの見た目とプリセットを編集します。", "Edit particle effect visuals and presets.", NataneToolMenuPaths.ParticleEffectEditor, ToolCategory.Advanced, "✨");
 
             // Migration Tools

@@ -3,7 +3,8 @@
     "rootNamespace": "",
     "references": [
         "NataneToon.Editor",
-        "NataneToon.Runtime"
+        "NataneToon.Runtime",
+        "NataneToon.Editor.Tools"
     ],
     "includePlatforms": [
         "Editor"

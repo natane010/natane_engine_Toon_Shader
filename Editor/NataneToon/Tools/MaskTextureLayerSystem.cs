@@ -28,6 +28,15 @@ namespace NataneToon.Editor
         public bool locked;
         public bool lockTransparentPixels;
 
+        public Vector2 transformOffset = Vector2.zero;
+        public Vector2 transformScale = Vector2.one;
+
+        public bool HasTransform =>
+            !Mathf.Approximately(transformOffset.x, 0f) ||
+            !Mathf.Approximately(transformOffset.y, 0f) ||
+            !Mathf.Approximately(transformScale.x, 1f) ||
+            !Mathf.Approximately(transformScale.y, 1f);
+
         public enum SourceType { Empty, Noise, UVMask, Gradient, MeshInfo, Paint, Import }
         public SourceType sourceType;
 
@@ -50,6 +59,8 @@ namespace NataneToon.Editor
             clone.locked = locked;
             clone.lockTransparentPixels = lockTransparentPixels;
             clone.sourceType = sourceType;
+            clone.transformOffset = transformOffset;
+            clone.transformScale = transformScale;
             if (pixels != null && pixels.Length > 0)
             {
                 System.Array.Copy(pixels, clone.pixels, pixels.Length);
@@ -132,6 +143,17 @@ namespace NataneToon.Editor
             Color c0 = Color.Lerp(c00, c10, tx);
             Color c1 = Color.Lerp(c01, c11, tx);
             return Color.Lerp(c0, c1, ty);
+        }
+
+        /// <summary>
+        /// Sample with layer transform applied (offset + scale in UV space).
+        /// レイヤートランスフォーム適用済みサンプリング
+        /// </summary>
+        public Color SampleBilinearTransformed(float u, float v)
+        {
+            float tu = (u - 0.5f - transformOffset.x) / Mathf.Max(transformScale.x, 0.001f) + 0.5f;
+            float tv = (v - 0.5f - transformOffset.y) / Mathf.Max(transformScale.y, 0.001f) + 0.5f;
+            return SampleBilinear(tu, tv);
         }
 
         /// <summary>
@@ -315,13 +337,20 @@ namespace NataneToon.Editor
                 for (int i = 0; i < result.Length; i++)
                 {
                     Color topPixel;
-                    if (sameSize)
+                    if (layer.HasTransform)
+                    {
+                        int x = i % w;
+                        int y = i / w;
+                        float u = (float)x / Mathf.Max(1, w - 1);
+                        float v = (float)y / Mathf.Max(1, h - 1);
+                        topPixel = layer.SampleBilinearTransformed(u, v);
+                    }
+                    else if (sameSize)
                     {
                         topPixel = layer.pixels[i];
                     }
                     else
                     {
-                        // Resample if layer dimensions differ
                         int x = i % w;
                         int y = i / w;
                         float u = (float)x / Mathf.Max(1, w - 1);
@@ -435,6 +464,15 @@ namespace NataneToon.Editor
             }
         }
 
+        private static bool TryImportTexture(MaskLayerStack stack, Texture2D tex)
+        {
+            if (tex == null || stack == null) return false;
+            var layer = stack.AddLayer(tex.name);
+            layer.ImportFromTexture(tex);
+            layer.sourceType = MaskTextureLayer.SourceType.Import;
+            return true;
+        }
+
         /// <summary>
         /// Draw the full layer panel UI.
         /// レイヤーパネルUIを描画する
@@ -456,7 +494,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(3);
 
             // Layer list (top layer = highest index, drawn first)
-            float listHeight = Mathf.Min(stack.Layers.Count * 52f + 10f, 250f);
+            float listHeight = Mathf.Min(stack.Layers.Count * 52f + 36f, 280f);
             scrollPosition = EditorGUILayout.BeginScrollView(
                 scrollPosition, GUILayout.Height(Mathf.Max(listHeight, 60f)));
 
@@ -466,6 +504,29 @@ namespace NataneToon.Editor
             }
 
             EditorGUILayout.EndScrollView();
+
+            // Drag & drop texture import
+            Rect panelRect = GUILayoutUtility.GetLastRect();
+            Event evt = Event.current;
+            if (evt.type == EventType.DragUpdated || evt.type == EventType.DragPerform)
+            {
+                bool hasTexture = false;
+                foreach (var obj in DragAndDrop.objectReferences)
+                    if (obj is Texture2D) { hasTexture = true; break; }
+
+                if (hasTexture)
+                {
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                    if (evt.type == EventType.DragPerform)
+                    {
+                        DragAndDrop.AcceptDrag();
+                        foreach (var obj in DragAndDrop.objectReferences)
+                            if (obj is Texture2D tex)
+                                changed |= TryImportTexture(stack, tex);
+                        evt.Use();
+                    }
+                }
+            }
 
             // Active layer info
             if (stack.ActiveLayer != null)
@@ -529,7 +590,37 @@ namespace NataneToon.Editor
                 stack.MergeDown(stack.ActiveLayerIndex);
                 changed = true;
             }
+
             GUI.enabled = true;
+
+            if (GUILayout.Button(
+                new GUIContent(L("読込", "Import"), L("テクスチャをレイヤーとして追加", "Import texture as new layer")),
+                GUILayout.Width(44)))
+            {
+                string path = EditorUtility.OpenFilePanelWithFilters(
+                    L("テクスチャを開く", "Open Texture"),
+                    "Assets",
+                    new[] { "Image files", "png,tga,exr,jpg,jpeg,psd", "All files", "*" });
+
+                if (!string.IsNullOrEmpty(path))
+                {
+                    string assetPath = path.StartsWith(Application.dataPath)
+                        ? "Assets" + path.Substring(Application.dataPath.Length).Replace('\\', '/')
+                        : null;
+                    Texture2D tex = assetPath != null
+                        ? AssetDatabase.LoadAssetAtPath<Texture2D>(assetPath)
+                        : null;
+                    if (tex == null)
+                    {
+                        byte[] data = System.IO.File.ReadAllBytes(path);
+                        tex = new Texture2D(2, 2);
+                        tex.LoadImage(data);
+                        tex.name = System.IO.Path.GetFileNameWithoutExtension(path);
+                    }
+                    if (TryImportTexture(stack, tex))
+                        changed = true;
+                }
+            }
 
             EditorGUILayout.EndHorizontal();
             return changed;
@@ -589,14 +680,41 @@ namespace NataneToon.Editor
             EditorGUILayout.BeginHorizontal();
 
             EditorGUI.BeginChangeCheck();
-            layer.blendMode = (MaskBlendMode)EditorGUILayout.EnumPopup(layer.blendMode, GUILayout.Width(80));
+            layer.blendMode = (MaskBlendMode)EditorGUILayout.EnumPopup(
+                new GUIContent("", L("レイヤーブレンドモード", "Layer blend mode")),
+                layer.blendMode, GUILayout.Width(80));
             if (EditorGUI.EndChangeCheck()) changed = true;
 
             EditorGUI.BeginChangeCheck();
-            layer.opacity = EditorGUILayout.Slider(layer.opacity, 0f, 1f);
+            layer.opacity = EditorGUILayout.Slider(
+                new GUIContent("", L("レイヤー不透明度", "Layer opacity")),
+                layer.opacity, 0f, 1f);
             if (EditorGUI.EndChangeCheck()) changed = true;
 
             EditorGUILayout.EndHorizontal();
+
+            // Layer transform (active layer only)
+            if (isActive)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUI.BeginChangeCheck();
+                layer.transformOffset = EditorGUILayout.Vector2Field(
+                    new GUIContent(L("オフセット", "Offset"), L("レイヤーの位置をずらす", "Shift layer position")),
+                    layer.transformOffset);
+                if (EditorGUI.EndChangeCheck()) changed = true;
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUILayout.BeginHorizontal();
+                EditorGUI.BeginChangeCheck();
+                layer.transformScale = EditorGUILayout.Vector2Field(
+                    new GUIContent(L("スケール", "Scale"), L("レイヤーの拡大縮小", "Scale layer size")),
+                    layer.transformScale);
+                layer.transformScale = new Vector2(
+                    Mathf.Max(0.01f, layer.transformScale.x),
+                    Mathf.Max(0.01f, layer.transformScale.y));
+                if (EditorGUI.EndChangeCheck()) changed = true;
+                EditorGUILayout.EndHorizontal();
+            }
 
             EditorGUILayout.EndVertical();
             GUI.backgroundColor = bgColor;

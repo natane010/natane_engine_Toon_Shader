@@ -224,7 +224,42 @@ namespace NataneToon.Editor
                 displayMode = newMode;
                 needsTextureUpdate = true;
             }
+
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("\u2212", EditorStyles.miniButtonLeft, GUILayout.Width(24)))
+            {
+                zoom = Mathf.Clamp(zoom * 1.2f, 0.5f, 20f);
+            }
+            if (GUILayout.Button("+", EditorStyles.miniButtonMid, GUILayout.Width(24)))
+            {
+                zoom = Mathf.Clamp(zoom * 0.8f, 0.5f, 20f);
+            }
+            if (GUILayout.Button("\u21BA", EditorStyles.miniButtonRight, GUILayout.Width(24)))
+            {
+                ResetView();
+            }
             EditorGUILayout.EndHorizontal();
+        }
+
+        /// <summary>
+        /// Reset camera rotation and zoom to defaults.
+        /// カメラの回転とズームをデフォルトにリセット
+        /// </summary>
+        public void ResetView()
+        {
+            rotationX = 30f;
+            rotationY = -30f;
+            if (previewMesh != null)
+            {
+                Bounds bounds = previewMesh.bounds;
+                float maxExtent = Mathf.Max(bounds.extents.x, bounds.extents.y, bounds.extents.z);
+                zoom = maxExtent * 4f;
+                if (zoom < 0.5f) zoom = 3f;
+            }
+            else
+            {
+                zoom = 3f;
+            }
         }
 
         /// <summary>

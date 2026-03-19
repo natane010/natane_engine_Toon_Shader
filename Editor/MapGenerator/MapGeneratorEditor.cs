@@ -1813,6 +1813,7 @@ public static class MapGeneratorShortcuts
 public static class MapGeneratorMaterialExtension
 {
     private static bool _foldout;
+    private static bool _migrationFoldout;
     private static MapGenSettings _settings = new MapGenSettings();
 
     static MapGeneratorMaterialExtension()
@@ -1826,6 +1827,21 @@ public static class MapGeneratorMaterialExtension
         if (!(editor is MaterialEditor)) return;
         Material mat = editor.target as Material;
         if (mat == null) return;
+
+        // Shader type check: only show Map Generator for NataneToon, migration button for lilToon
+        string shaderName = mat.shader != null ? mat.shader.name : "";
+        bool isNatane = shaderName.StartsWith("Natane/", System.StringComparison.Ordinal);
+        bool isLilToon = shaderName.IndexOf("lilToon", System.StringComparison.OrdinalIgnoreCase) >= 0
+                      || shaderName.StartsWith("_lil/", System.StringComparison.OrdinalIgnoreCase);
+
+        if (!isNatane)
+        {
+            if (isLilToon)
+            {
+                DrawLilToonMigrationButton(mat);
+            }
+            return;
+        }
 
         // Find renderer + mesh for this material in scene
         Renderer renderer = FindRendererForMaterial(mat);
@@ -1952,6 +1968,43 @@ public static class MapGeneratorMaterialExtension
                 EditorGUILayout.HelpBox(
                     "メッシュベースのマップ (AO, Curvature, Shadow) はシーンにこのマテリアルを使用する Renderer が必要です。",
                     MessageType.Info);
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        EditorGUILayout.EndFoldoutHeaderGroup();
+    }
+
+    // ===== lilToon Migration Button =====
+
+    private static void DrawLilToonMigrationButton(Material mat)
+    {
+        EditorGUILayout.Space(2);
+        _migrationFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(
+            _migrationFoldout,
+            MapGenL.L("🔀 NataneToon に移行", "🔀 Migrate to NataneToon"));
+
+        if (_migrationFoldout)
+        {
+            Color prevBg = GUI.backgroundColor;
+            GUI.backgroundColor = new Color(1.0f, 0.8f, 0.5f, 0.3f);
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            GUI.backgroundColor = prevBg;
+
+            EditorGUILayout.LabelField(
+                MapGenL.L(
+                    "このマテリアルは lilToon シェーダーを使用しています。\nNatane Toon Shader に移行できます。",
+                    "This material uses lilToon shader.\nYou can migrate it to Natane Toon Shader."),
+                EditorStyles.wordWrappedMiniLabel);
+
+            EditorGUILayout.Space(4);
+            if (GUILayout.Button(
+                MapGenL.L("lilToon 移行ツールを開く", "Open lilToon Migration Tool"),
+                GUILayout.Height(28)))
+            {
+                EditorApplication.ExecuteMenuItem(
+                    "Tools/Natane/移行 Migration/lilToon Migration Tool");
             }
 
             EditorGUILayout.EndVertical();
