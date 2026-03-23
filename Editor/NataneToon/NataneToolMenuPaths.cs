@@ -48,7 +48,7 @@ namespace NataneToon.Editor
 
         public const string SmoothNormalBaker = "Tools/Natane/メッシュ Mesh/スムース法線ベイク Smooth Normal Baker";
 
-        public const string UVTextureGenerator = "Tools/Natane/テクスチャスタジオ Texture Studio";
+
         public const string ParticleEffectEditor = "Tools/Natane/パーティクルエフェクトエディタ Particle Effect Editor";
 
         // ===== Consolidated Windows =====
@@ -57,7 +57,6 @@ namespace NataneToon.Editor
         public const string OptimizationHub = "Tools/Natane/最適化 Optimization/最適化ハブ Optimization Hub";
         public const string ShaderBuildManager = "Tools/Natane/シェーダー Shader/ビルド管理 Build Manager";
         public const string MigrationHub = "Tools/Natane/移行 Migration/マイグレーションハブ Migration Hub";
-        public const string TextureTools = "Tools/Natane/テクスチャ Texture/テクスチャツール Texture Tools";
         public const string PresetManager = "Tools/Natane/プリセット Presets/プリセット管理 Preset Manager";
         public const string VRChatIntegration = "Tools/Natane/VRChat/VRChat統合 VRChat Integration";
 
@@ -113,7 +112,6 @@ namespace NataneToon.Editor
             { "SmoothNormalBaker", SmoothNormalBaker },
 
             // --- Generator / Other ---
-            { "UVTextureGenerator", UVTextureGenerator },
             { "ParticleEffectEditor", ParticleEffectEditor },
 
             // --- Consolidated Windows ---
@@ -122,7 +120,6 @@ namespace NataneToon.Editor
             { "OptimizationHub", OptimizationHub },
             { "ShaderBuildManager", ShaderBuildManager },
             { "MigrationHub", MigrationHub },
-            { "TextureTools", TextureTools },
             { "PresetManager", PresetManager },
             { "VRChatIntegration", VRChatIntegration },
         };
@@ -162,8 +159,6 @@ namespace NataneToon.Editor
             { ShaderPrewarming, ShaderBuildManager },
             { ShaderVariantStripper, ShaderBuildManager },
             { VRCLightVolumesHelper, VRChatIntegration },
-            { SmoothNormalBaker, TextureTools },
-            { UVTextureGenerator, TextureTools },
             { BatchMaterialConverter, MigrationHub },
             { PrefabVariantConverter, MigrationHub },
 
@@ -256,10 +251,10 @@ namespace NataneToon.Editor
                 LilToonMigration, BatchMaterialConverter, PrefabVariantConverter,
                 ShaderVariantCollector, ShaderPrewarming, ShaderVariantStripper, VRCLightVolumesHelper,
                 SmoothNormalBaker,
-                UVTextureGenerator, ParticleEffectEditor,
+                ParticleEffectEditor,
                 // Consolidated Windows
                 MaterialAnalysis, EffectStudio, OptimizationHub, ShaderBuildManager,
-                MigrationHub, TextureTools, PresetManager, VRChatIntegration,
+                MigrationHub, PresetManager, VRChatIntegration,
             };
             return paths;
         }

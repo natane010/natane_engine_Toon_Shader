@@ -122,7 +122,7 @@ namespace NataneToon.Editor
             AddTool("スクリーンエフェクト設定", "Screen FX Setup", "VRC向け画面効果オーバーレイをカメラへ自動セットアップします。", "Automatically set up a VRC-friendly full-screen overlay on a camera.", NataneToolMenuPaths.ScreenFXSetup, ToolCategory.Advanced, "🖥");
             AddTool("リムライト方向ビジュアライザー", "Rim Light Direction Visualizer", "リムライト方向を視覚的に確認します。", "Visualize rim light direction before committing settings.", NataneToolMenuPaths.RimLightDirectionVisualizer, ToolCategory.Advanced, "💡");
             AddTool("屈折品質バランサー", "Refraction Quality Balancer", "屈折エフェクトの品質とパフォーマンスをバランス調整します。", "Balance refraction quality against performance.", NataneToolMenuPaths.RefractionQualityBalancer, ToolCategory.Advanced, "🔮");
-            AddTool("テクスチャスタジオ", "Texture Studio", "ノイズ、グラデーション、メッシュ情報からマスクテクスチャを生成・合成・ペイント・パックします。", "Generate, combine, paint, and pack mask textures from noise, gradients, and mesh data.", NataneToolMenuPaths.UVTextureGenerator, ToolCategory.Advanced, "🎭");
+
             AddTool("パーティクルエフェクトエディタ", "Particle Effect Editor", "パーティクルエフェクトの見た目とプリセットを編集します。", "Edit particle effect visuals and presets.", NataneToolMenuPaths.ParticleEffectEditor, ToolCategory.Advanced, "✨");
 
             // Migration Tools
@@ -144,7 +144,6 @@ namespace NataneToon.Editor
             AddTool("最適化ハブ", "Optimization Hub", "テクスチャ・アウトライン・屈折の最適化を統合したウィンドウです。", "Unified window for texture, outline, and refraction optimization.", NataneToolMenuPaths.OptimizationHub, ToolCategory.Performance, "⚙");
             AddTool("シェーダービルド管理", "Shader Build Manager", "バリアント収集・プリウォーミング・ストリッピングを統合したウィンドウです。", "Unified window for variant collection, prewarming, and stripping.", NataneToolMenuPaths.ShaderBuildManager, ToolCategory.Performance, "🔨");
             AddTool("マイグレーションハブ", "Migration Hub", "lilToon移行・一括変換・Prefab変換を統合したウィンドウです。", "Unified window for lilToon migration, batch conversion, and prefab conversion.", NataneToolMenuPaths.MigrationHub, ToolCategory.Migration, "🔄");
-            AddTool("テクスチャツール", "Texture Tools", "法線ベイク・UVテクスチャ生成・マスクパックを統合したウィンドウです。", "Unified window for normal baking, UV texture generation, and mask packing.", NataneToolMenuPaths.TextureTools, ToolCategory.Advanced, "🖌");
             AddTool("プリセット管理", "Preset Manager", "プリセットブラウザ・カラーパレット・プリセット生成を統合したウィンドウです。", "Unified window for preset browsing, color palettes, and preset generation.", NataneToolMenuPaths.PresetManager, ToolCategory.Presets, "📦");
             AddTool("VRChat統合", "VRChat Integration", "Light Volumes・パッケージ設定・自動検出を統合したウィンドウです。", "Unified window for Light Volumes, package setup, and auto-detection.", NataneToolMenuPaths.VRChatIntegration, ToolCategory.Performance, "🌐");
 

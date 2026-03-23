@@ -5006,7 +5006,7 @@ public class NataneToonShaderGUI : ShaderGUI
         {
             NataneToonShaderGUIUtility.DrawOpenInStudioButton(
                 "→ 法線ベイクツールで開く", "→ Open Normal Baker",
-                () => NataneToolBridge.OpenConsolidatedWindow(NataneToolMenuPaths.TextureTools, 0, null));
+                () => NataneToolMenuPaths.TryExecute(NataneToolMenuPaths.SmoothNormalBaker));
             bool useNormalMap = DrawToggle("_NORMALMAP", "_UseNormalMap", L("ノーマルマップを使用", "Use Normal Map"));
 
             if (useNormalMap)
