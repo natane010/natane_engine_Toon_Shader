@@ -41,6 +41,55 @@ public static class MapGenL
     public static string L(string ja, string en) => IsJapanese ? ja : en;
 }
 
+internal static class MapGeneratorSettingsGUI
+{
+    public static void DrawHighQualitySettings(MapGenSettings settings, bool compact = false)
+    {
+        if (settings == null)
+            return;
+
+        EditorGUILayout.Space(compact ? 4 : 6);
+        EditorGUILayout.LabelField(MapGenL.L("高品質ベイク", "High Quality Bake"), EditorStyles.boldLabel);
+        settings.enableHighQualityBake = EditorGUILayout.Toggle(
+            MapGenL.L("高品質モード", "Enable High Quality"),
+            settings.enableHighQualityBake);
+
+        if (!settings.enableHighQualityBake)
+            return;
+
+        EditorGUI.indentLevel++;
+        settings.bakeSupersampleScale = EditorGUILayout.IntSlider(
+            MapGenL.L("スーパーサンプル", "Supersample"),
+            settings.bakeSupersampleScale, 1, 4);
+        settings.meshSubdivisionLevel = EditorGUILayout.IntSlider(
+            MapGenL.L("メッシュ細分化", "Mesh Subdivision"),
+            settings.meshSubdivisionLevel, 0, 2);
+        settings.useRendererPoseMesh = EditorGUILayout.Toggle(
+            MapGenL.L("Rendererのポーズを使用", "Use Renderer Pose"),
+            settings.useRendererPoseMesh);
+        settings.normalGeometryWeight = EditorGUILayout.Slider(
+            MapGenL.L("Normal: Geometry比率", "Normal: Geometry Weight"),
+            settings.normalGeometryWeight, 0f, 1f);
+        settings.normalAlbedoDetailWeight = EditorGUILayout.Slider(
+            MapGenL.L("Normal: Detail比率", "Normal: Detail Weight"),
+            settings.normalAlbedoDetailWeight, 0f, 1f);
+        settings.normalDetailBlurRadius = EditorGUILayout.IntSlider(
+            MapGenL.L("Detail抽出半径", "Detail Extract Radius"),
+            settings.normalDetailBlurRadius, 0, 12);
+        EditorGUI.indentLevel--;
+
+        EditorGUILayout.HelpBox(
+            compact
+                ? MapGenL.L(
+                    "高品質ベイクは重いですが、輪郭の安定と細部再現がかなり良くなるのです。",
+                    "High quality bake is slower, but edge stability and fine detail improve a lot.")
+                : MapGenL.L(
+                    "スーパーサンプル + メッシュ細分化 + ポーズ済みメッシュを使う重いベイクなのです。AO/Shadow は特に時間が増えるので、必要なときだけ上げるのがおすすめです。",
+                    "This is an expensive bake that uses supersampling, mesh subdivision, and posed renderer meshes. AO/Shadow get much slower, so raise it only when you need the extra quality."),
+            compact ? MessageType.None : MessageType.Info);
+    }
+}
+
 // =============================================================================
 // MapGeneratorEngine — Standalone texture map generation engine (Editor-only)
 // =============================================================================
@@ -57,15 +106,529 @@ public static class MapGeneratorEngine
     private static ComputeShader _normalCS;
     private static ComputeShader _dilationCS;
     private static ComputeShader _channelPackCS;
+    private const int MaxBakeResolution = 8192;
 
     // ===== Public Generation API =====
+
+    private static bool UseHighQualityBake(MapGenSettings settings)
+    {
+        return settings != null && settings.enableHighQualityBake;
+    }
+
+    private static void GetBakeResolution(MapGenSettings settings, int baseWidth, int baseHeight,
+        out int bakeWidth, out int bakeHeight, out int bakeScale)
+    {
+        bakeScale = UseHighQualityBake(settings) ? Mathf.Clamp(settings.bakeSupersampleScale, 1, 4) : 1;
+        bakeWidth = Mathf.Clamp(baseWidth * bakeScale, 1, MaxBakeResolution);
+        bakeHeight = Mathf.Clamp(baseHeight * bakeScale, 1, MaxBakeResolution);
+    }
+
+    private static int ScaleKernelRadius(int radius, int bakeScale)
+    {
+        if (radius <= 0)
+            return 0;
+        return Mathf.Max(1, Mathf.RoundToInt(radius * Mathf.Max(1, bakeScale)));
+    }
+
+    private static Mesh PrepareBakeMesh(Mesh mesh, Renderer renderer, MapGenSettings settings, out bool ownsMesh)
+    {
+        ownsMesh = false;
+        Mesh workingMesh = mesh;
+
+        if (workingMesh == null && renderer != null)
+            workingMesh = MapGenUtils.GetMesh(renderer);
+
+        if (renderer != null && settings != null && settings.useRendererPoseMesh)
+        {
+            Mesh posedMesh = MapGenUtils.GetBakedMesh(renderer);
+            if (posedMesh != null)
+            {
+                ownsMesh = !ReferenceEquals(posedMesh, mesh);
+                workingMesh = posedMesh;
+            }
+        }
+
+        int subdivisionLevel = UseHighQualityBake(settings) ? Mathf.Clamp(settings.meshSubdivisionLevel, 0, 2) : 0;
+        if (workingMesh != null && subdivisionLevel > 0)
+        {
+            Mesh subdividedMesh = MapGenUtils.CreateSubdividedMesh(workingMesh, subdivisionLevel);
+            if (subdividedMesh != null && !ReferenceEquals(subdividedMesh, workingMesh))
+            {
+                if (ownsMesh)
+                    UnityEngine.Object.DestroyImmediate(workingMesh);
+
+                workingMesh = subdividedMesh;
+                ownsMesh = true;
+            }
+        }
+
+        return workingMesh;
+    }
+
+    private static Texture2D DownsampleIfNeeded(Texture2D source, int targetWidth, int targetHeight, bool normalizeNormalMap)
+    {
+        if (source == null || (source.width == targetWidth && source.height == targetHeight))
+            return source;
+
+        Texture2D downsampled = MapGenUtils.DownsampleTexture(source, targetWidth, targetHeight, normalizeNormalMap);
+        if (!ReferenceEquals(downsampled, source))
+            UnityEngine.Object.DestroyImmediate(source);
+        return downsampled;
+    }
+
+    private static Texture2D BuildNormalAlbedoHeight(Texture2D albedo, MapGenSettings settings, int width, int height, int bakeScale)
+    {
+        if (albedo == null)
+            return null;
+
+        Texture2D readable = MapGenUtils.MakeReadable(albedo, width, height);
+        if (readable == null)
+            return null;
+
+        try
+        {
+            Color[] pixels = readable.GetPixels();
+            Color[] grayPixels = new Color[width * height];
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                float luminance = 0.299f * pixels[i].r + 0.587f * pixels[i].g + 0.114f * pixels[i].b;
+                grayPixels[i] = new Color(luminance, luminance, luminance, 1f);
+            }
+
+            if (UseHighQualityBake(settings))
+            {
+                Color[] lowFrequency = (Color[])grayPixels.Clone();
+                int detailRadius = ScaleKernelRadius(settings.normalDetailBlurRadius, bakeScale);
+                if (detailRadius > 0)
+                    MapGenUtils.GaussianBlur(lowFrequency, width, height, detailRadius);
+
+                for (int i = 0; i < grayPixels.Length; i++)
+                {
+                    float detail = Mathf.Clamp01(0.5f + (grayPixels[i].r - lowFrequency[i].r));
+                    float combined = Mathf.Clamp01(Mathf.Lerp(grayPixels[i].r, detail, 0.75f));
+                    grayPixels[i] = new Color(combined, combined, combined, 1f);
+                }
+            }
+
+            int blurRadius = ScaleKernelRadius(settings.normalBlurRadius, bakeScale);
+            if (blurRadius > 0)
+                MapGenUtils.GaussianBlur(grayPixels, width, height, blurRadius);
+
+            Texture2D albedoHeight = new Texture2D(width, height, TextureFormat.RGBAFloat, false, true);
+            albedoHeight.SetPixels(grayPixels);
+            albedoHeight.Apply(false, false);
+            return albedoHeight;
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(readable);
+        }
+    }
+
+    private static Texture2D GenerateNormalMapInternal(Texture2D albedo, MapGenSettings settings,
+        Mesh mesh, Renderer renderer, bool meshIsPrepared)
+    {
+        int width = settings.outputResolution.x;
+        int height = settings.outputResolution.y;
+        GetBakeResolution(settings, width, height, out int bakeWidth, out int bakeHeight, out int bakeScale);
+
+        Mesh workingMesh = mesh;
+        bool ownsMesh = false;
+        if (!meshIsPrepared)
+            workingMesh = PrepareBakeMesh(mesh, renderer, settings, out ownsMesh);
+
+        Texture2D meshHeight = null;
+        Texture2D albedoHeight = null;
+        Texture2D finalHeight = null;
+        try
+        {
+            if (workingMesh != null && workingMesh.uv != null && workingMesh.uv.Length > 0)
+            {
+                float[] curvature = MapGenUtils.ComputeVertexCurvature(workingMesh);
+                Vector3[] vertices = workingMesh.vertices;
+                Vector3[] normals = workingMesh.normals;
+                float[] posHeight = new float[vertices.Length];
+                Bounds bounds = workingMesh.bounds;
+                float boundsHeight = Mathf.Max(bounds.size.magnitude, 0.001f);
+
+                for (int i = 0; i < vertices.Length; i++)
+                {
+                    Vector3 normal = normals != null && normals.Length == vertices.Length
+                        ? normals[i]
+                        : Vector3.up;
+                    float projHeight = Vector3.Dot(vertices[i] - bounds.center, normal) / boundsHeight;
+                    posHeight[i] = Mathf.Clamp01(0.5f + projHeight * 0.5f);
+                }
+
+                float[] heightValues = new float[vertices.Length];
+                for (int i = 0; i < vertices.Length; i++)
+                {
+                    heightValues[i] = curvature[i] * 0.6f + posHeight[i] * 0.4f;
+                }
+
+                meshHeight = BakeAndPostProcess(
+                    workingMesh,
+                    heightValues,
+                    bakeWidth,
+                    bakeHeight,
+                    ScaleKernelRadius(settings.dilationPixels, bakeScale),
+                    ScaleKernelRadius(settings.normalBlurRadius, bakeScale));
+            }
+
+            albedoHeight = BuildNormalAlbedoHeight(albedo, settings, bakeWidth, bakeHeight, bakeScale);
+
+            if (meshHeight != null && albedoHeight != null)
+            {
+                float geometryWeight = Mathf.Max(0f, settings.normalGeometryWeight);
+                float detailWeight = Mathf.Max(0f, settings.normalAlbedoDetailWeight);
+                float totalWeight = geometryWeight + detailWeight;
+                if (totalWeight <= 0.0001f)
+                {
+                    geometryWeight = 0.7f;
+                    detailWeight = 0.3f;
+                    totalWeight = 1f;
+                }
+
+                Color[] meshPixels = meshHeight.GetPixels();
+                Color[] albedoPixels = albedoHeight.GetPixels();
+                Color[] blended = new Color[bakeWidth * bakeHeight];
+                for (int i = 0; i < blended.Length; i++)
+                {
+                    float blendedHeight = (meshPixels[i].r * geometryWeight + albedoPixels[i].r * detailWeight) / totalWeight;
+                    blended[i] = new Color(blendedHeight, blendedHeight, blendedHeight, 1f);
+                }
+
+                finalHeight = new Texture2D(bakeWidth, bakeHeight, TextureFormat.RGBAFloat, false, true);
+                finalHeight.SetPixels(blended);
+                finalHeight.Apply(false, false);
+            }
+            else if (meshHeight != null)
+            {
+                finalHeight = meshHeight;
+                meshHeight = null;
+            }
+            else if (albedoHeight != null)
+            {
+                finalHeight = albedoHeight;
+                albedoHeight = null;
+            }
+            else
+            {
+                return null;
+            }
+
+            Texture2D normalMap = null;
+            if (SystemInfo.supportsComputeShaders)
+            {
+                LoadShaders();
+                if (_normalCS != null)
+                    normalMap = GenerateNormalGPU(finalHeight, settings, bakeWidth, bakeHeight);
+            }
+
+            if (normalMap == null)
+                normalMap = GenerateNormalCPU(finalHeight, settings, bakeWidth, bakeHeight);
+
+            return DownsampleIfNeeded(normalMap, width, height, true);
+        }
+        finally
+        {
+            if (finalHeight != null)
+                UnityEngine.Object.DestroyImmediate(finalHeight);
+            if (meshHeight != null)
+                UnityEngine.Object.DestroyImmediate(meshHeight);
+            if (albedoHeight != null)
+                UnityEngine.Object.DestroyImmediate(albedoHeight);
+            if (ownsMesh && workingMesh != null)
+                UnityEngine.Object.DestroyImmediate(workingMesh);
+        }
+    }
+
+    private static Texture2D GenerateAOMapInternal(Mesh mesh, Renderer renderer, MapGenSettings settings, bool meshIsPrepared)
+    {
+        if (renderer == null)
+            return null;
+
+        Mesh workingMesh = mesh;
+        bool ownsMesh = false;
+        if (!meshIsPrepared)
+            workingMesh = PrepareBakeMesh(mesh, renderer, settings, out ownsMesh);
+
+        if (workingMesh == null)
+            return null;
+
+        Vector3[] vertices = workingMesh.vertices;
+        Vector3[] normals = workingMesh.normals;
+        Transform xform = renderer.transform;
+
+        float rayLength = settings.aoMaxDistance > 0 ? settings.aoMaxDistance : workingMesh.bounds.size.magnitude * 0.5f;
+        float[] ao = new float[vertices.Length];
+
+        GameObject tempObj = null;
+        try
+        {
+            tempObj = MapGenUtils.CreateTempMeshCollider(workingMesh, xform, out MeshCollider collider);
+            int layerMask = 1 << 31;
+
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                if (i % 200 == 0)
+                {
+                    float progress = (float)i / vertices.Length;
+                    if (EditorUtility.DisplayCancelableProgressBar(
+                        "AO Map", $"Raycasting... ({i}/{vertices.Length})", progress))
+                    {
+                        return null;
+                    }
+                }
+
+                Vector3 worldPos = xform.TransformPoint(vertices[i]);
+                Vector3 worldNormal = xform.TransformDirection(normals[i]).normalized;
+
+                int hits = 0;
+                for (int r = 0; r < settings.aoRayCount; r++)
+                {
+                    Vector3 dir = MapGenUtils.GetHemisphereDirection(worldNormal, r, settings.aoRayCount);
+                    Ray ray = new Ray(worldPos + worldNormal * 0.001f, dir);
+                    if (Physics.Raycast(ray, rayLength, layerMask))
+                        hits++;
+                }
+
+                int inwardRayCount = Mathf.Max(1, settings.aoRayCount / 4);
+                float inwardRayLength = rayLength * 0.3f;
+                int inwardHits = 0;
+                for (int r = 0; r < inwardRayCount; r++)
+                {
+                    Vector3 inwardDir = -MapGenUtils.GetHemisphereDirection(worldNormal, r, inwardRayCount);
+                    Ray inwardRay = new Ray(worldPos - worldNormal * 0.002f, inwardDir);
+                    if (Physics.Raycast(inwardRay, inwardRayLength, layerMask))
+                        inwardHits++;
+                }
+                float inwardOcclusion = (float)inwardHits / inwardRayCount;
+
+                float outwardOcclusion = 1.0f - (float)hits / settings.aoRayCount;
+                ao[i] = Mathf.Pow(outwardOcclusion * (1f - inwardOcclusion * 0.5f), settings.aoIntensity);
+            }
+
+            int width = settings.outputResolution.x;
+            int height = settings.outputResolution.y;
+            GetBakeResolution(settings, width, height, out int bakeWidth, out int bakeHeight, out int bakeScale);
+            Texture2D aoMap = BakeAndPostProcess(
+                workingMesh,
+                ao,
+                bakeWidth,
+                bakeHeight,
+                ScaleKernelRadius(settings.aoDilation, bakeScale),
+                ScaleKernelRadius(2, bakeScale));
+            return DownsampleIfNeeded(aoMap, width, height, false);
+        }
+        finally
+        {
+            if (tempObj != null) UnityEngine.Object.DestroyImmediate(tempObj);
+            if (ownsMesh && workingMesh != null) UnityEngine.Object.DestroyImmediate(workingMesh);
+            EditorUtility.ClearProgressBar();
+        }
+    }
+
+    private static Texture2D GenerateCurvatureMapInternal(Mesh mesh, MapGenSettings settings, bool meshIsPrepared)
+    {
+        Mesh workingMesh = mesh;
+        bool ownsMesh = false;
+        if (!meshIsPrepared)
+            workingMesh = PrepareBakeMesh(mesh, null, settings, out ownsMesh);
+
+        if (workingMesh == null)
+            return null;
+
+        try
+        {
+            float[] curvature = MapGenUtils.ComputeVertexCurvature(workingMesh);
+            float[] concavity = MapGenUtils.ComputeVertexConcavity(workingMesh);
+
+            for (int i = 0; i < curvature.Length; i++)
+            {
+                float combined = curvature[i] - concavity[i] * 0.3f;
+                if (Mathf.Abs(settings.curvatureMultiplier - 1.0f) > 0.001f)
+                    combined = 0.5f + (combined - 0.5f) * settings.curvatureMultiplier;
+
+                curvature[i] = Mathf.Clamp01(combined);
+            }
+
+            int width = settings.outputResolution.x;
+            int height = settings.outputResolution.y;
+            GetBakeResolution(settings, width, height, out int bakeWidth, out int bakeHeight, out int bakeScale);
+            Texture2D curvatureMap = BakeAndPostProcess(
+                workingMesh,
+                curvature,
+                bakeWidth,
+                bakeHeight,
+                ScaleKernelRadius(settings.curvatureDilation, bakeScale),
+                ScaleKernelRadius(2, bakeScale));
+            return DownsampleIfNeeded(curvatureMap, width, height, false);
+        }
+        finally
+        {
+            if (ownsMesh && workingMesh != null)
+                UnityEngine.Object.DestroyImmediate(workingMesh);
+        }
+    }
+
+    private static Texture2D GenerateShadowMapInternal(Mesh mesh, Renderer renderer, MapGenSettings settings, bool meshIsPrepared)
+    {
+        if (renderer == null)
+            return null;
+
+        Mesh workingMesh = mesh;
+        bool ownsMesh = false;
+        if (!meshIsPrepared)
+            workingMesh = PrepareBakeMesh(mesh, renderer, settings, out ownsMesh);
+
+        if (workingMesh == null)
+            return null;
+
+        Vector3[] vertices = workingMesh.vertices;
+        Vector3[] normals = workingMesh.normals;
+        Transform xform = renderer.transform;
+
+        Vector3 lightDir = settings.shadowLightDir.normalized;
+        float rayLength = workingMesh.bounds.size.magnitude;
+        float spreadRad = settings.shadowSpreadAngle * Mathf.Deg2Rad;
+        float[] shadow = new float[vertices.Length];
+
+        GameObject tempObj = null;
+        try
+        {
+            tempObj = MapGenUtils.CreateTempMeshCollider(workingMesh, xform, out MeshCollider collider);
+            int layerMask = 1 << 31;
+
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                if (i % 200 == 0)
+                {
+                    float progress = (float)i / vertices.Length;
+                    if (EditorUtility.DisplayCancelableProgressBar(
+                        "Shadow Map", $"Raycasting... ({i}/{vertices.Length})", progress))
+                    {
+                        return null;
+                    }
+                }
+
+                Vector3 worldPos = xform.TransformPoint(vertices[i]);
+                Vector3 worldNormal = xform.TransformDirection(normals[i]).normalized;
+                float ndotl = Mathf.Max(0, Vector3.Dot(worldNormal, -lightDir));
+
+                int occluded = 0;
+                for (int r = 0; r < settings.shadowRayCount; r++)
+                {
+                    Vector3 dir = SpreadDirection(-lightDir, spreadRad, r, settings.shadowRayCount);
+                    Ray ray = new Ray(worldPos + worldNormal * 0.001f, dir);
+                    if (Physics.Raycast(ray, rayLength, layerMask))
+                        occluded++;
+                }
+
+                float occlusionRate = (float)occluded / settings.shadowRayCount;
+                shadow[i] = ndotl * (1.0f - occlusionRate * settings.shadowIntensity);
+            }
+
+            int width = settings.outputResolution.x;
+            int height = settings.outputResolution.y;
+            GetBakeResolution(settings, width, height, out int bakeWidth, out int bakeHeight, out int bakeScale);
+            Texture2D shadowMap = BakeAndPostProcess(
+                workingMesh,
+                shadow,
+                bakeWidth,
+                bakeHeight,
+                ScaleKernelRadius(settings.shadowDilation, bakeScale),
+                ScaleKernelRadius(2, bakeScale));
+            return DownsampleIfNeeded(shadowMap, width, height, false);
+        }
+        finally
+        {
+            if (tempObj != null) UnityEngine.Object.DestroyImmediate(tempObj);
+            if (ownsMesh && workingMesh != null) UnityEngine.Object.DestroyImmediate(workingMesh);
+            EditorUtility.ClearProgressBar();
+        }
+    }
+
+    public static Texture2D GenerateNormalMap(Texture2D albedo, MapGenSettings s,
+        Mesh mesh = null, Renderer renderer = null)
+    {
+        return GenerateNormalMapInternal(albedo, s, mesh, renderer, false);
+    }
+
+    public static Texture2D GenerateAOMap(Mesh mesh, Renderer renderer, MapGenSettings s)
+    {
+        return GenerateAOMapInternal(mesh, renderer, s, false);
+    }
+
+    public static Texture2D GenerateCurvatureMap(Mesh mesh, MapGenSettings s)
+    {
+        return GenerateCurvatureMapInternal(mesh, s, false);
+    }
+
+    public static Texture2D GenerateRoughnessMap(Texture2D albedo, MapGenSettings s)
+    {
+        if (albedo == null)
+            return null;
+
+        int width = s.outputResolution.x;
+        int height = s.outputResolution.y;
+        GetBakeResolution(s, width, height, out int bakeWidth, out int bakeHeight, out int bakeScale);
+
+        Texture2D readable = MapGenUtils.MakeReadable(albedo, bakeWidth, bakeHeight);
+        if (readable == null)
+            return null;
+
+        try
+        {
+            Color[] pixels = readable.GetPixels();
+            Color[] result = new Color[bakeWidth * bakeHeight];
+
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                Color c = pixels[i];
+                float luminance = 0.299f * c.r + 0.587f * c.g + 0.114f * c.b;
+
+                float maxChannel = Mathf.Max(c.r, Mathf.Max(c.g, c.b));
+                float minChannel = Mathf.Min(c.r, Mathf.Min(c.g, c.b));
+                float saturation = maxChannel > 0.001f ? (maxChannel - minChannel) / maxChannel : 0f;
+
+                float roughness = s.roughnessBaseline
+                    - luminance * s.luminanceInfluence
+                    - saturation * s.saturationInfluence;
+                roughness = Mathf.Clamp01(roughness);
+
+                if (s.invertToSmoothness)
+                    roughness = 1.0f - roughness;
+
+                result[i] = new Color(roughness, roughness, roughness, 1f);
+            }
+
+            int blurRadius = ScaleKernelRadius(s.roughnessBlur, bakeScale);
+            if (blurRadius > 0)
+                MapGenUtils.GaussianBlur(result, bakeWidth, bakeHeight, blurRadius);
+
+            Texture2D roughnessMap = new Texture2D(bakeWidth, bakeHeight, TextureFormat.RGBAFloat, false, true);
+            roughnessMap.SetPixels(result);
+            roughnessMap.Apply(false, false);
+            return DownsampleIfNeeded(roughnessMap, width, height, false);
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(readable);
+        }
+    }
+
+    public static Texture2D GenerateShadowMap(Mesh mesh, Renderer renderer, MapGenSettings s)
+    {
+        return GenerateShadowMapInternal(mesh, renderer, s, false);
+    }
 
     /// <summary>
     /// Generate Normal Map. When mesh is provided, bakes mesh curvature into UV space
     /// as a height map, then applies Sobel filter. Albedo detail is blended on top.
     /// Falls back to albedo-only Sobel when no mesh is given.
     /// </summary>
-    public static Texture2D GenerateNormalMap(Texture2D albedo, MapGenSettings s,
+    public static Texture2D GenerateNormalMapLegacy(Texture2D albedo, MapGenSettings s,
         Mesh mesh = null, Renderer renderer = null)
     {
         int w = s.outputResolution.x, h = s.outputResolution.y;
@@ -177,7 +740,7 @@ public static class MapGeneratorEngine
         }
     }
 
-    public static Texture2D GenerateAOMap(Mesh mesh, Renderer renderer, MapGenSettings s)
+    public static Texture2D GenerateAOMapLegacy(Mesh mesh, Renderer renderer, MapGenSettings s)
     {
         if (mesh == null || renderer == null) return null;
 
@@ -246,7 +809,7 @@ public static class MapGeneratorEngine
         }
     }
 
-    public static Texture2D GenerateCurvatureMap(Mesh mesh, MapGenSettings s)
+    public static Texture2D GenerateCurvatureMapLegacy(Mesh mesh, MapGenSettings s)
     {
         if (mesh == null) return null;
 
@@ -270,7 +833,7 @@ public static class MapGeneratorEngine
         return BakeAndPostProcess(mesh, curvature, w, h, s.curvatureDilation, 2);
     }
 
-    public static Texture2D GenerateRoughnessMap(Texture2D albedo, MapGenSettings s)
+    public static Texture2D GenerateRoughnessMapLegacy(Texture2D albedo, MapGenSettings s)
     {
         if (albedo == null) return null;
         int w = s.outputResolution.x, h = s.outputResolution.y;
@@ -317,7 +880,7 @@ public static class MapGeneratorEngine
         }
     }
 
-    public static Texture2D GenerateShadowMap(Mesh mesh, Renderer renderer, MapGenSettings s)
+    public static Texture2D GenerateShadowMapLegacy(Mesh mesh, Renderer renderer, MapGenSettings s)
     {
         if (mesh == null || renderer == null) return null;
 
@@ -399,8 +962,92 @@ public static class MapGeneratorEngine
 
     /// <summary>
     /// Generate all enabled maps and return results.
+    /// Reuses a prepared high-quality mesh so subdivision and skinned pose baking only happen once.
     /// </summary>
     public static MapGenResult GenerateAll(MapGenerator gen)
+    {
+        if (gen == null)
+            return null;
+
+        var sw = Stopwatch.StartNew();
+        var result = new MapGenResult();
+
+        Mesh mesh = gen.targetMesh;
+        Renderer renderer = gen.targetRenderer;
+        Texture2D albedo = gen.albedoTexture;
+        MapGenSettings settings = gen.settings;
+
+        Mesh workingMesh = null;
+        bool ownsWorkingMesh = false;
+        try
+        {
+            if (mesh != null || renderer != null)
+                workingMesh = PrepareBakeMesh(mesh, renderer, settings, out ownsWorkingMesh);
+
+            if (settings.generateNormal && (albedo != null || workingMesh != null))
+            {
+                EditorUtility.DisplayProgressBar("Map Generator", "Generating Normal Map...", 0.0f);
+                result.normal = GenerateNormalMapInternal(albedo, settings, workingMesh, renderer, true);
+                gen.lastNormalMap = result.normal;
+            }
+
+            if (settings.generateAO && workingMesh != null && renderer != null)
+            {
+                EditorUtility.DisplayProgressBar("Map Generator", "Generating AO Map...", 0.15f);
+                result.ao = GenerateAOMapInternal(workingMesh, renderer, settings, true);
+                gen.lastAOMap = result.ao;
+            }
+
+            if (settings.generateCurvature && workingMesh != null)
+            {
+                EditorUtility.DisplayProgressBar("Map Generator", "Generating Curvature Map...", 0.4f);
+                result.curvature = GenerateCurvatureMapInternal(workingMesh, settings, true);
+                gen.lastCurvatureMap = result.curvature;
+            }
+
+            if (settings.generateRoughness && albedo != null)
+            {
+                EditorUtility.DisplayProgressBar("Map Generator", "Generating Roughness Map...", 0.55f);
+                result.roughness = GenerateRoughnessMap(albedo, settings);
+                gen.lastRoughnessMap = result.roughness;
+            }
+
+            if (settings.generateShadow && workingMesh != null && renderer != null)
+            {
+                EditorUtility.DisplayProgressBar("Map Generator", "Generating Shadow Map...", 0.65f);
+                result.shadow = GenerateShadowMapInternal(workingMesh, renderer, settings, true);
+                gen.lastShadowMap = result.shadow;
+            }
+
+            if (settings.generateControl)
+            {
+                EditorUtility.DisplayProgressBar("Map Generator", "Generating Control Map...", 0.85f);
+                result.controlMap = GenerateControlMap(settings, result);
+                gen.lastControlMap = result.controlMap;
+            }
+
+            EditorUtility.DisplayProgressBar("Map Generator", "Saving textures...", 0.95f);
+            SaveAllMaps(gen, result);
+
+            if (settings.autoAssignToMaterial && renderer != null && renderer.sharedMaterial != null)
+                AssignToMaterial(renderer.sharedMaterial, result, settings);
+        }
+        finally
+        {
+            if (ownsWorkingMesh && workingMesh != null)
+                UnityEngine.Object.DestroyImmediate(workingMesh);
+            EditorUtility.ClearProgressBar();
+        }
+
+        sw.Stop();
+        result.processingTimeMs = sw.ElapsedMilliseconds;
+        return result;
+    }
+
+    /// <summary>
+    /// Legacy implementation retained for rollback/debug purposes.
+    /// </summary>
+    public static MapGenResult GenerateAllLegacy(MapGenerator gen)
     {
         if (gen == null) return null;
 
@@ -1201,6 +1848,7 @@ public class MapGeneratorEditor : Editor
             gen.settings.outputFormat = (OutputFormat)EditorGUILayout.EnumPopup(MapGenL.L("出力形式", "Output Format"), gen.settings.outputFormat);
             gen.settings.autoAssignToMaterial = EditorGUILayout.Toggle(MapGenL.L("マテリアルに自動割り当て", "Auto Assign to Material"), gen.settings.autoAssignToMaterial);
             gen.settings.dilationPixels = EditorGUILayout.IntSlider(MapGenL.L("ダイレーションピクセル", "Dilation Pixels"), gen.settings.dilationPixels, 0, 16);
+            MapGeneratorSettingsGUI.DrawHighQualitySettings(gen.settings);
             EditorGUI.indentLevel--;
         }
 
@@ -1579,6 +2227,7 @@ public class MapGeneratorWindow : EditorWindow
             s.channelA = (ControlMapChannel)EditorGUILayout.EnumPopup(MapGenL.L("Aチャンネル", "A"), s.channelA);
         }
 
+        MapGeneratorSettingsGUI.DrawHighQualitySettings(s);
         EditorGUILayout.Space(10);
 
         // Generate button
@@ -1880,6 +2529,7 @@ public static class MapGeneratorMaterialExtension
 
             _settings.autoAssignToMaterial = EditorGUILayout.Toggle(MapGenL.L("自動割り当て", "Auto Assign"), _settings.autoAssignToMaterial);
 
+            MapGeneratorSettingsGUI.DrawHighQualitySettings(_settings, true);
             EditorGUILayout.Space(5);
 
             // ===== Generate All =====

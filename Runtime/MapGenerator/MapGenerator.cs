@@ -39,11 +39,18 @@ public class MapGenSettings
     public OutputFormat outputFormat = OutputFormat.PNG;
     public bool autoAssignToMaterial = true;
     public int dilationPixels = 4;
+    public bool enableHighQualityBake = true;
+    public int bakeSupersampleScale = 2;
+    public int meshSubdivisionLevel = 1;
+    public bool useRendererPoseMesh = true;
 
     // Normal Map
     public bool generateNormal = true;
     public float normalStrength = 1.0f;
     public int normalBlurRadius = 1;
+    public float normalGeometryWeight = 0.75f;
+    public float normalAlbedoDetailWeight = 0.25f;
+    public int normalDetailBlurRadius = 4;
 
     // AO Map
     public bool generateAO = true;
@@ -149,6 +156,44 @@ public class MapGenerator : MonoBehaviour
 /// </summary>
 public static class MapGenUtils
 {
+    private struct EdgeKey : IEquatable<EdgeKey>
+    {
+        public readonly int a;
+        public readonly int b;
+
+        public EdgeKey(int lhs, int rhs)
+        {
+            if (lhs < rhs)
+            {
+                a = lhs;
+                b = rhs;
+            }
+            else
+            {
+                a = rhs;
+                b = lhs;
+            }
+        }
+
+        public bool Equals(EdgeKey other)
+        {
+            return a == other.a && b == other.b;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is EdgeKey other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return (a * 397) ^ b;
+            }
+        }
+    }
+
     /// <summary>
     /// Create a readable copy of a texture via RenderTexture blit.
     /// Uses Linear color space to prevent sRGB double-conversion.
@@ -342,6 +387,174 @@ public static class MapGenUtils
     }
 
     /// <summary>
+    /// Create an editor-side tessellated mesh by recursively splitting every triangle.
+    /// Keeps UVs and interpolated normals so the result can be baked in UV space.
+    /// </summary>
+    public static Mesh CreateSubdividedMesh(Mesh source, int subdivisionLevel)
+    {
+        if (source == null || subdivisionLevel <= 0)
+            return source;
+
+        Vector3[] sourceVertices = source.vertices;
+        int vertexCount = source.vertexCount;
+        if (sourceVertices == null || sourceVertices.Length == 0 || source.triangles == null || source.triangles.Length == 0)
+            return source;
+
+        bool hasNormals = source.normals != null && source.normals.Length == vertexCount;
+        bool hasUVs = source.uv != null && source.uv.Length == vertexCount;
+
+        var vertices = new List<Vector3>(sourceVertices);
+        var normals = new List<Vector3>(vertexCount);
+        var uvs = new List<Vector2>(vertexCount);
+        var triangles = new List<int>(source.triangles);
+
+        for (int i = 0; i < vertexCount; i++)
+        {
+            normals.Add(hasNormals ? source.normals[i] : Vector3.zero);
+            uvs.Add(hasUVs ? source.uv[i] : Vector2.zero);
+        }
+
+        for (int level = 0; level < subdivisionLevel; level++)
+        {
+            var midpointCache = new Dictionary<EdgeKey, int>();
+            var subdividedTriangles = new List<int>(triangles.Count * 4);
+
+            for (int i = 0; i < triangles.Count; i += 3)
+            {
+                int i0 = triangles[i];
+                int i1 = triangles[i + 1];
+                int i2 = triangles[i + 2];
+
+                int a = GetMidpointVertex(i0, i1, vertices, normals, uvs, midpointCache);
+                int b = GetMidpointVertex(i1, i2, vertices, normals, uvs, midpointCache);
+                int c = GetMidpointVertex(i2, i0, vertices, normals, uvs, midpointCache);
+
+                subdividedTriangles.Add(i0); subdividedTriangles.Add(a);  subdividedTriangles.Add(c);
+                subdividedTriangles.Add(a);  subdividedTriangles.Add(i1); subdividedTriangles.Add(b);
+                subdividedTriangles.Add(c);  subdividedTriangles.Add(b);  subdividedTriangles.Add(i2);
+                subdividedTriangles.Add(a);  subdividedTriangles.Add(b);  subdividedTriangles.Add(c);
+            }
+
+            triangles = subdividedTriangles;
+        }
+
+        Mesh subdividedMesh = new Mesh
+        {
+            name = $"{source.name}_Subdivided"
+        };
+
+        if (vertices.Count > 65535)
+            subdividedMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+
+        subdividedMesh.SetVertices(vertices);
+        subdividedMesh.SetUVs(0, uvs);
+        subdividedMesh.SetTriangles(triangles, 0, true);
+
+        if (hasNormals)
+        {
+            for (int i = 0; i < normals.Count; i++)
+            {
+                normals[i] = normals[i].sqrMagnitude > 0.000001f ? normals[i].normalized : Vector3.forward;
+            }
+            subdividedMesh.SetNormals(normals);
+        }
+        else
+        {
+            subdividedMesh.RecalculateNormals();
+        }
+
+        subdividedMesh.RecalculateBounds();
+        return subdividedMesh;
+    }
+
+    /// <summary>
+    /// Downsample a texture by box filtering. For normal maps the averaged vectors are normalized again.
+    /// </summary>
+    public static Texture2D DownsampleTexture(Texture2D source, int targetWidth, int targetHeight, bool normalizeNormalMap)
+    {
+        if (source == null)
+            return null;
+
+        int sourceWidth = source.width;
+        int sourceHeight = source.height;
+        if (sourceWidth == targetWidth && sourceHeight == targetHeight)
+            return source;
+
+        Color[] src = source.GetPixels();
+        Color[] dst = new Color[targetWidth * targetHeight];
+
+        float scaleX = (float)sourceWidth / targetWidth;
+        float scaleY = (float)sourceHeight / targetHeight;
+
+        for (int y = 0; y < targetHeight; y++)
+        {
+            int yMin = Mathf.Clamp(Mathf.FloorToInt(y * scaleY), 0, sourceHeight - 1);
+            int yMax = Mathf.Clamp(Mathf.CeilToInt((y + 1) * scaleY), yMin + 1, sourceHeight);
+
+            for (int x = 0; x < targetWidth; x++)
+            {
+                int xMin = Mathf.Clamp(Mathf.FloorToInt(x * scaleX), 0, sourceWidth - 1);
+                int xMax = Mathf.Clamp(Mathf.CeilToInt((x + 1) * scaleX), xMin + 1, sourceWidth);
+
+                if (normalizeNormalMap)
+                {
+                    Vector3 sum = Vector3.zero;
+                    int count = 0;
+                    for (int sy = yMin; sy < yMax; sy++)
+                    {
+                        int row = sy * sourceWidth;
+                        for (int sx = xMin; sx < xMax; sx++)
+                        {
+                            Color sample = src[row + sx];
+                            Vector3 normal = new Vector3(sample.r * 2f - 1f, sample.g * 2f - 1f, sample.b * 2f - 1f);
+                            if (normal.sqrMagnitude <= 0.000001f)
+                                normal = Vector3.forward;
+                            else
+                                normal.Normalize();
+                            sum += normal;
+                            count++;
+                        }
+                    }
+
+                    Vector3 averaged = count > 0 ? sum / count : Vector3.forward;
+                    if (averaged.sqrMagnitude <= 0.000001f)
+                        averaged = Vector3.forward;
+                    else
+                        averaged.Normalize();
+
+                    dst[y * targetWidth + x] = new Color(
+                        averaged.x * 0.5f + 0.5f,
+                        averaged.y * 0.5f + 0.5f,
+                        averaged.z * 0.5f + 0.5f,
+                        1f);
+                }
+                else
+                {
+                    Color sum = Color.clear;
+                    int count = 0;
+                    for (int sy = yMin; sy < yMax; sy++)
+                    {
+                        int row = sy * sourceWidth;
+                        for (int sx = xMin; sx < xMax; sx++)
+                        {
+                            sum += src[row + sx];
+                            count++;
+                        }
+                    }
+
+                    dst[y * targetWidth + x] = count > 0 ? sum / count : Color.clear;
+                    dst[y * targetWidth + x].a = 1f;
+                }
+            }
+        }
+
+        Texture2D downsampled = new Texture2D(targetWidth, targetHeight, TextureFormat.RGBAFloat, false, true);
+        downsampled.SetPixels(dst);
+        downsampled.Apply(false, false);
+        return downsampled;
+    }
+
+    /// <summary>
     /// Fibonacci hemisphere sampling for uniform ray distribution.
     /// </summary>
     public static Vector3 GetHemisphereDirection(Vector3 normal, int index, int total)
@@ -461,6 +674,25 @@ public static class MapGenUtils
         Vector3 tangent = Vector3.Cross(up, normal).normalized;
         Vector3 bitangent = Vector3.Cross(normal, tangent);
         return tangent * localDir.x + normal * localDir.y + bitangent * localDir.z;
+    }
+
+    private static int GetMidpointVertex(int lhs, int rhs,
+        List<Vector3> vertices, List<Vector3> normals, List<Vector2> uvs,
+        Dictionary<EdgeKey, int> midpointCache)
+    {
+        EdgeKey key = new EdgeKey(lhs, rhs);
+        if (midpointCache.TryGetValue(key, out int existing))
+            return existing;
+
+        int index = vertices.Count;
+        vertices.Add((vertices[lhs] + vertices[rhs]) * 0.5f);
+
+        Vector3 normal = (normals[lhs] + normals[rhs]) * 0.5f;
+        normals.Add(normal.sqrMagnitude > 0.000001f ? normal.normalized : Vector3.forward);
+
+        uvs.Add((uvs[lhs] + uvs[rhs]) * 0.5f);
+        midpointCache[key] = index;
+        return index;
     }
 
     private static void AddEdge(Dictionary<int, HashSet<int>> adjacency, int a, int b)

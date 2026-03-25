@@ -10,6 +10,18 @@ public static class MapGeneratorGUIBridge
 {
     private static MapGenSettings _defaultSettings = new MapGenSettings();
 
+    public static bool CanGenerateNormalForMaterial(Material material)
+    {
+        if (material == null)
+            return false;
+
+        if (GetAlbedo(material) != null)
+            return true;
+
+        TryGetMeshAndRenderer(material, out Mesh mesh, out Renderer renderer, false);
+        return mesh != null;
+    }
+
     /// <summary>
     /// Generate Normal map from material's _MainTex and assign to _BumpMap.
     /// </summary>

@@ -5015,8 +5015,8 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_BumpMap", L("ノーマルマップ", "Normal Map"));
 
                 // Auto-generate Normal Map button
-                bool normalHasAlbedo = targetMaterial != null && targetMaterial.HasProperty("_MainTex") && targetMaterial.GetTexture("_MainTex") != null;
-                EditorGUI.BeginDisabledGroup(!normalHasAlbedo);
+                bool canAutoGenerateNormal = MapGeneratorGUIBridge.CanGenerateNormalForMaterial(targetMaterial);
+                EditorGUI.BeginDisabledGroup(!canAutoGenerateNormal);
                 EditorGUILayout.BeginHorizontal();
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button(L("Normal を自動生成", "Auto-Generate Normal"), GUILayout.Height(22), GUILayout.Width(180)))
@@ -5026,7 +5026,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.EndHorizontal();
                 EditorGUI.EndDisabledGroup();
-                if (!normalHasAlbedo)
+                if (!canAutoGenerateNormal)
                 {
                     EditorGUILayout.HelpBox(L("Albedo テクスチャ (_MainTex) が必要です。", "Albedo texture (_MainTex) is required."), MessageType.Info);
                 }
