@@ -5,6 +5,15 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.10] - 2026-03-27
+
+### Added
+- **High quality map bake**: Added editor-side supersampling, temporary mesh subdivision, posed renderer mesh baking, and normal-aware downsampling to the Map Generator workflow for cleaner VCC-ready texture outputs.
+
+### Changed
+- **VCC/VPM package metadata**: Updated `package.json` to `1.5.10` for the next VCC/VPM release.
+- **README version labels**: Synchronized the public version badge and package version text with the new VCC/VPM package version.
+
 ## [1.5.0] - 2026-03-13
 
 ### Added
