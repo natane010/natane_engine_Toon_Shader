@@ -116,6 +116,7 @@ namespace NataneToon.Editor
         private float strokeAccumulatedDistance;
         private float strokeRemainder; // サブピクセル移動の残余距離アキュムレータ
         private float lastStrokeTime;
+        private float lastStrokePressure = 1f;  // Previous frame's pressure for interpolation
 
         // Catmull-Rom spline interpolation / Catmull-Romスプライン補間用バッファ
         private Vector2[] splinePoints = new Vector2[4]; // 直近4点のリングバッファ
@@ -251,6 +252,7 @@ namespace NataneToon.Editor
             strokeAccumulatedDistance = 0f;
             strokeRemainder = 0f;
             lastStrokeTime = Time.realtimeSinceStartup;
+            lastStrokePressure = pressure;
             pressureFilter.Reset();
 
             // Catmull-Romスプラインバッファを初期化
@@ -403,9 +405,13 @@ namespace NataneToon.Editor
                         float t = Mathf.Clamp01(walked / segmentLength);
                         Vector2 stampPos = CatmullRom(p0, p1, p2, p3, t);
 
+                        // Interpolate pressure between previous and current frame
+                        // 前フレームと今フレーム間で筆圧を補間（はらい対応）
+                        float stampPressure = Mathf.Lerp(lastStrokePressure, pressure, t);
+
                         ExpandDirtyRect(prevStampPos, settings.size, width, height);
                         ExpandDirtyRect(stampPos, settings.size, width, height);
-                        ApplyStamp(stampPos, pixels, settings, width, height, lockTransparentPixels, pressure, wrapCoordinates,
+                        ApplyStamp(stampPos, pixels, settings, width, height, lockTransparentPixels, stampPressure, wrapCoordinates,
                             strokeAlphaBuffer, strokeColorBuffer, canvasSnapshot, velocityFactor, prevStampPos);
                         prevStampPos = stampPos;
                     }
@@ -432,9 +438,14 @@ namespace NataneToon.Editor
                     pressureFilter.AddStrokeDistance(spacing);
 
                     Vector2 stampPos = lastStrokePosition + direction * walked;
+
+                    // Interpolate pressure along segment for smooth trailing
+                    // セグメントに沿って筆圧を補間（滑らかなはらい対応）
+                    float stampPressure = Mathf.Lerp(lastStrokePressure, pressure, Mathf.Clamp01(walked / distance));
+
                     ExpandDirtyRect(prevStampPos, settings.size, width, height);
                     ExpandDirtyRect(stampPos, settings.size, width, height);
-                    ApplyStamp(stampPos, pixels, settings, width, height, lockTransparentPixels, pressure, wrapCoordinates,
+                    ApplyStamp(stampPos, pixels, settings, width, height, lockTransparentPixels, stampPressure, wrapCoordinates,
                         strokeAlphaBuffer, strokeColorBuffer, canvasSnapshot, velocityFactor, prevStampPos);
                     prevStampPos = stampPos;
                 }
@@ -443,6 +454,10 @@ namespace NataneToon.Editor
             }
 
             lastStrokePosition = newPosition;
+
+            // Save pressure for next frame's interpolation
+            // 次フレームの補間用に筆圧を保存
+            lastStrokePressure = pressure;
 
             // Live preview: composite stroke buffer onto canvas
             // ライブプレビュー: ストロークバッファをキャンバスに合成

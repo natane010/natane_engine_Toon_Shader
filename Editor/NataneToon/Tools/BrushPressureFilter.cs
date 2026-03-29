@@ -178,7 +178,7 @@ namespace NataneToon.Editor
             {
                 // exitPixels is used as the speed threshold (pixels/sec)
                 // Higher exitPixels = higher speed threshold = easier to trigger exit taper
-                float speedThreshold = exitPixels * 8f;  // Convert to reasonable speed range
+                float speedThreshold = exitPixels * 25f;  // Convert to reasonable speed range
                 if (currentSpeed < speedThreshold)
                 {
                     float t = Mathf.Clamp01(currentSpeed / speedThreshold);
