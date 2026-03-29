@@ -1067,6 +1067,8 @@ CGPROGRAM
             #pragma shader_feature_local _USE_RAMP
             #pragma shader_feature_local _USE_MULTI_SHADOW
             #pragma shader_feature_local _SHADOW_RECEIVE_MASK
+            #pragma shader_feature_local _SDF_MAP
+            #pragma shader_feature_local _FACE_SDF_ROTATION
             #pragma shader_feature_local _SHADING_GRADE_MAP
             #pragma shader_feature_local _USE_AO
             #pragma shader_feature_local _PROCEDURAL_AO
@@ -1098,6 +1100,7 @@ CGPROGRAM
             #pragma shader_feature_local _FAKE_REFLECTION
             #pragma shader_feature_local _IRIDESCENCE
             #pragma shader_feature_local _ENV_RIM
+            #pragma shader_feature_local _PARALLAX
             #pragma shader_feature_local _MATCAP_2
             #pragma shader_feature_local _MATCAP_3
             #pragma shader_feature_local _PROCEDURAL_MATCAP
@@ -1158,6 +1161,7 @@ CGPROGRAM
             #pragma shader_feature_local _USE_RAMP
             #pragma shader_feature_local _USE_MULTI_SHADOW
             #pragma shader_feature_local _SHADOW_RECEIVE_MASK
+            #pragma shader_feature_local _SDF_MAP
             #pragma shader_feature_local _SHADING_GRADE_MAP
             #pragma shader_feature_local _USE_AO
             #pragma shader_feature_local _PROCEDURAL_AO
@@ -1178,6 +1182,7 @@ CGPROGRAM
             #pragma shader_feature_local _NORMALMAP
             #pragma shader_feature_local _DISSOLVE
             #pragma shader_feature_local _ALPHA_MASK
+            #pragma shader_feature_local _PARALLAX
             #pragma shader_feature_local _HEIGHT_FADE
             #pragma shader_feature_local _DISTANCE_FADE
             #pragma shader_feature_local _SMOOTH_NORMAL

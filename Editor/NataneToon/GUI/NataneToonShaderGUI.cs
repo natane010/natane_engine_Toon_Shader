@@ -29,10 +29,10 @@ public class NataneToonShaderGUI : ShaderGUI
     private const int TAB_HEIGHT = 30;
 
     /// <summary>Vertical spacing between sections</summary>
-    private const int SECTION_SPACING = 5;
+    internal const int SECTION_SPACING = 5;
 
     /// <summary>Threshold for float comparisons (e.g., checking if a toggle is enabled)</summary>
-    private const float FLOAT_COMPARISON_THRESHOLD = 0.5f;
+    internal const float FLOAT_COMPARISON_THRESHOLD = 0.5f;
 
     /// <summary>Number of makeup texture layers supported (2nd, 3rd, 4th, 5th)</summary>
     private const int MAKEUP_TEXTURE_COUNT = 4;
@@ -213,13 +213,13 @@ public class NataneToonShaderGUI : ShaderGUI
 
     // ===== FIELD REFERENCES =====
     /// <summary>All shader properties for the current material</summary>
-    private MaterialProperty[] properties;
+    internal MaterialProperty[] properties;
 
     /// <summary>Unity's material editor instance</summary>
-    private MaterialEditor materialEditor;
+    internal MaterialEditor materialEditor;
 
     /// <summary>Target material being edited</summary>
-    private Material targetMaterial;
+    internal Material targetMaterial;
     private bool workflowShouldReturn;
     private bool workflowIsNonToon;
 
@@ -555,7 +555,7 @@ public class NataneToonShaderGUI : ShaderGUI
         "CurrentState", "Presets", "Performance", "MainTexture", "Shading"
     };
 
-    private bool GetFoldout(string key)
+    internal bool GetFoldout(string key)
     {
         if (!foldoutStates.ContainsKey(key))
         {
@@ -567,7 +567,7 @@ public class NataneToonShaderGUI : ShaderGUI
         return foldoutStates[key];
     }
 
-    private void SetFoldout(string key, bool value)
+    internal void SetFoldout(string key, bool value)
     {
         foldoutStates[key] = value;
         string prefsKey = foldoutPrefsKeys.ContainsKey(key) ? foldoutPrefsKeys[key] : "Show" + key;
@@ -729,7 +729,7 @@ public class NataneToonShaderGUI : ShaderGUI
             // P-12: 全タブ横断検索であることを明示するラベル
             GUILayout.Label(L("\ud83d\udd0d 全タブ検索", "\ud83d\udd0d Search All"), EditorStyles.miniLabel, GUILayout.Width(75));
             searchQuery = EditorGUILayout.TextField(searchQuery, EditorStyles.toolbarSearchField);
-            if (!string.IsNullOrEmpty(searchQuery) && GUILayout.Button(L("クリア", "Clear"), EditorStyles.toolbarButton, GUILayout.Width(45)))
+            if (!string.IsNullOrEmpty(searchQuery) && GUILayout.Button(L("クリア", "Clear"), EditorStyles.toolbarButton, GUILayout.Width(55)))
             {
                 searchQuery = "";
                 GUI.FocusControl(null);
@@ -848,7 +848,7 @@ public class NataneToonShaderGUI : ShaderGUI
         InvalidateInspectorCaches();
     }
 
-    private void SafeDrawSection(System.Action drawAction, string sectionName)
+    internal void SafeDrawSection(System.Action drawAction, string sectionName)
     {
         try
         {
@@ -870,7 +870,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>
     /// Determines whether a section should be shown based on current inspector mode and active-only filter.
     /// </summary>
-    private bool ShouldShowSection(string sectionKey)
+    internal bool ShouldShowSection(string sectionKey)
     {
         // Simple mode: only show whitelisted sections
         if (inspectorMode == InspectorMode.Simple && !SimpleModeVisibleSections.Contains(sectionKey))
@@ -911,7 +911,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// Wrapper around SafeDrawSection that respects section visibility filtering.
     /// In Advanced mode, non-active sections are auto-collapsed and dimmed.
     /// </summary>
-    private void FilteredDrawSection(System.Action drawAction, string sectionName, string sectionKey)
+    internal void FilteredDrawSection(System.Action drawAction, string sectionName, string sectionKey)
     {
         if (!ShouldShowSection(sectionKey))
             return;
@@ -1008,7 +1008,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// lilToon boxOuter/boxInner pattern.
     /// Returns the foldout state.
     /// </summary>
-    private bool DrawBoxedSection(string title, bool foldout, SectionCategory category, string toggleKeyword = null)
+    internal bool DrawBoxedSection(string title, bool foldout, SectionCategory category, string toggleKeyword = null)
     {
         Color catColor = NataneToonShaderGUIStyles.GetSectionColor(category);
         bool isDark = EditorGUIUtility.isProSkin;
@@ -1103,7 +1103,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>
     /// End a boxed section. Must be called after DrawBoxedSection.
     /// </summary>
-    private void EndBoxedSection(bool wasExpanded)
+    internal void EndBoxedSection(bool wasExpanded)
     {
         if (wasExpanded)
         {
@@ -1113,7 +1113,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EditorGUILayout.EndVertical(); // outer box
     }
 
-    private void DrawMainTextureSection()
+    internal void DrawMainTextureSection()
     {
         SetFoldout("MainTexture", DrawBoxedSection(L("メインテクスチャ", "Main Texture"), GetFoldout("MainTexture"), SectionCategory.Basic));
         if (GetFoldout("MainTexture"))
@@ -1188,7 +1188,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("MainTexture"));
     }
 
-    private void DrawSurfaceFinishSection()
+    internal void DrawSurfaceFinishSection()
     {
         DrawProperty("_Glossiness", L("Glossiness", "Glossiness"));
         DrawHelpToggle(
@@ -1206,7 +1206,7 @@ public class NataneToonShaderGUI : ShaderGUI
             MessageType.Info);
     }
 
-    private void DrawMakeupTexturesSection()
+    internal void DrawMakeupTexturesSection()
     {
         SetFoldout("MakeupTextures", DrawBoxedSection(L("追加テクスチャ (2nd-5th)", "Additional Textures (2nd-5th)"), GetFoldout("MakeupTextures"), SectionCategory.Basic));
         if (GetFoldout("MakeupTextures"))
@@ -1301,7 +1301,7 @@ public class NataneToonShaderGUI : ShaderGUI
         DrawUVAnimationSettings($"_{layerName}TexScrollSpeed", $"_{layerName}TexRotateSpeed", $"{layerName} Texture");
     }
 
-    private void DrawScreenToneSection()
+    internal void DrawScreenToneSection()
     {
         SetFoldout("ScreenTone", DrawBoxedSection(L("スクリーントーン (ハーフトーン重ね)", "Screen Tone (Halftone Overlay)"), GetFoldout("ScreenTone"), SectionCategory.Basic, "_SCREEN_TONE"));
         if (GetFoldout("ScreenTone"))
@@ -1326,7 +1326,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("ScreenTone"));
     }
 
-    private void DrawShadingSection()
+    internal void DrawShadingSection()
     {
         SetFoldout("Shading", DrawBoxedSection(L("Toon Shading", "Toon Shading"), GetFoldout("Shading"), SectionCategory.Shading));
         if (GetFoldout("Shading"))
@@ -1992,7 +1992,7 @@ public class NataneToonShaderGUI : ShaderGUI
         if (material.HasProperty("_ShadowBlend")) material.SetFloat("_ShadowBlend", shadowBlend);
     }
 
-    private void DrawAdvancedLightingSection()
+    internal void DrawAdvancedLightingSection()
     {
         SetFoldout("AdvancedLighting", DrawBoxedSection(L("ライティング詳細", "Advanced Lighting"), GetFoldout("AdvancedLighting"), SectionCategory.Lighting));
         if (GetFoldout("AdvancedLighting"))
@@ -2372,7 +2372,7 @@ public class NataneToonShaderGUI : ShaderGUI
         }
     }
 
-    private void DrawLightVolumeSection()
+    internal void DrawLightVolumeSection()
     {
         SetFoldout("LightVolume", DrawBoxedSection(L("VRC ライトボリューム", "VRC Light Volumes"), GetFoldout("LightVolume"), SectionCategory.Lighting, "_USE_LIGHT_VOLUME"));
         if (GetFoldout("LightVolume"))
@@ -2497,7 +2497,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("LightVolume"));
     }
 
-    private void DrawLTCGISection()
+    internal void DrawLTCGISection()
     {
         SetFoldout("LTCGI", DrawBoxedSection(L("LTCGI（リアルタイムエリアライト）", "LTCGI (Real-time Area Light)"), GetFoldout("LTCGI"), SectionCategory.Lighting, "_LTCGI"));
         if (GetFoldout("LTCGI"))
@@ -2589,7 +2589,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("LTCGI"));
     }
 
-    private void DrawSpecularSection()
+    internal void DrawSpecularSection()
     {
         SetFoldout("Specular", DrawBoxedSection(L("スペキュラー反射", "Specular Reflection"), GetFoldout("Specular"), SectionCategory.Effects, "_SPECULAR"));
         if (GetFoldout("Specular"))
@@ -2650,7 +2650,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Specular"));
     }
 
-    private void DrawHairSpecularSection()
+    internal void DrawHairSpecularSection()
     {
         SetFoldout("HairSpecular", DrawBoxedSection(L("ヘアハイライト（Kajiya-Kay）", "Hair Highlight (Kajiya-Kay)"), GetFoldout("HairSpecular"), SectionCategory.Effects, "_HAIR_SPECULAR"));
         if (GetFoldout("HairSpecular"))
@@ -2743,7 +2743,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("HairSpecular"));
     }
 
-    private void DrawRimLightSection()
+    internal void DrawRimLightSection()
     {
         SetFoldout("RimLight", DrawBoxedSection(L("リムライト（輪郭光）", "Rim Light (Edge Light)"), GetFoldout("RimLight"), SectionCategory.Effects, "_RIM_LIGHT"));
         if (GetFoldout("RimLight"))
@@ -3003,7 +3003,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("RimLight"));
     }
 
-    private void DrawSSSSection()
+    internal void DrawSSSSection()
     {
         SetFoldout("SSS", DrawBoxedSection(L("半透明表現（SSS）", "Subsurface Scattering (SSS)"), GetFoldout("SSS"), SectionCategory.Effects, "_SSS"));
         if (GetFoldout("SSS"))
@@ -3063,7 +3063,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("SSS"));
     }
 
-    private void DrawMatCapSection()
+    internal void DrawMatCapSection()
     {
         SetFoldout("MatCap", DrawBoxedSection(L("マットキャップ（MatCap）", "MatCap"), GetFoldout("MatCap"), SectionCategory.Effects, "_MATCAP"));
         if (GetFoldout("MatCap"))
@@ -3158,7 +3158,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("MatCap"));
     }
 
-    private void DrawGlitterSection()
+    internal void DrawGlitterSection()
     {
         SetFoldout("Glitter", DrawBoxedSection(L("グリッター（ラメ）", "Glitter"), GetFoldout("Glitter"), SectionCategory.Effects, "_GLITTER"));
         if (GetFoldout("Glitter"))
@@ -3255,7 +3255,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Glitter"));
     }
 
-    private void DrawDripSection()
+    internal void DrawDripSection()
     {
         SetFoldout("Drip", DrawBoxedSection(L("雫エフェクト", "Drip Effect"), GetFoldout("Drip"), SectionCategory.Effects, "_WATER_DRIP"));
         if (GetFoldout("Drip"))
@@ -3332,7 +3332,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Drip"));
     }
 
-    private void DrawSmearSection()
+    internal void DrawSmearSection()
     {
         SetFoldout("Smear", DrawBoxedSection(L("スミア（残像エフェクト）", "Smear (Afterimage Effect)"), GetFoldout("Smear"), SectionCategory.Effects, "_SMEAR"));
         if (GetFoldout("Smear"))
@@ -3459,7 +3459,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Smear"));
     }
 
-    private void DrawFurSection()
+    internal void DrawFurSection()
     {
         SetFoldout("Fur", DrawBoxedSection(L("ファー（シェルベース毛皮）", "Fur (Shell-Based)"), GetFoldout("Fur"), SectionCategory.Effects, "_FUR"));
         if (GetFoldout("Fur"))
@@ -3584,7 +3584,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Fur"));
     }
 
-    private void DrawBackgroundLightmapSection()
+    internal void DrawBackgroundLightmapSection()
     {
         RenderingMode currentMode = GetCurrentRenderingMode();
         if (currentMode != RenderingMode.Background) return;
@@ -3606,7 +3606,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("BackgroundLightmap"));
     }
 
-    private void DrawPBRSection()
+    internal void DrawPBRSection()
     {
         RenderingMode currentMode = GetCurrentRenderingMode();
         if (currentMode != RenderingMode.Background) return;
@@ -3638,7 +3638,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("PBR"));
     }
 
-    private void DrawHologramSection()
+    internal void DrawHologramSection()
     {
         SetFoldout("Hologram", DrawBoxedSection(L("ホログラム / グリッチ", "Hologram / Glitch"), GetFoldout("Hologram"), SectionCategory.Effects, "_HOLOGRAM"));
         if (GetFoldout("Hologram"))
@@ -3908,7 +3908,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Hologram"));
     }
 
-    private void DrawIllustrationStyleSection()
+    internal void DrawIllustrationStyleSection()
     {
         SetFoldout("IllustrationStyle", DrawBoxedSection(L("イラスト調スタイル", "Illustration Style"), GetFoldout("IllustrationStyle"), SectionCategory.Effects, "_COLOR_QUANTIZE"));
         if (GetFoldout("IllustrationStyle"))
@@ -4535,7 +4535,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("IllustrationStyle"));
     }
 
-    private void DrawOutlineSection()
+    internal void DrawOutlineSection()
     {
         SetFoldout("Outline", DrawBoxedSection(L("アウトライン（輪郭線）", "Outline (Contour)"), GetFoldout("Outline"), SectionCategory.Effects, "_OUTLINE"));
         if (GetFoldout("Outline"))
@@ -4814,7 +4814,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Outline"));
     }
 
-    private void DrawEmissionSection()
+    internal void DrawEmissionSection()
     {
         SetFoldout("Emission", DrawBoxedSection(L("エミッション（発光）", "Emission (Glow)"), GetFoldout("Emission"), SectionCategory.Effects, "_EMISSION"));
         if (GetFoldout("Emission"))
@@ -4876,7 +4876,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Emission"));
     }
 
-    private void DrawVirtualExpressionSection()
+    internal void DrawVirtualExpressionSection()
     {
         SetFoldout("VirtualExpression", DrawBoxedSection(L("バーチャル表現", "Virtual Expression"), GetFoldout("VirtualExpression"), SectionCategory.Effects));
         if (GetFoldout("VirtualExpression"))
@@ -4999,7 +4999,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("VirtualExpression"));
     }
 
-    private void DrawNormalMapSection()
+    internal void DrawNormalMapSection()
     {
         SetFoldout("NormalMap", DrawBoxedSection(L("ノーマルマップ", "Normal Map"), GetFoldout("NormalMap"), SectionCategory.Advanced, "_NORMALMAP"));
         if (GetFoldout("NormalMap"))
@@ -5069,7 +5069,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("NormalMap"));
     }
 
-    private void DrawReflectionSection()
+    internal void DrawReflectionSection()
     {
         SetFoldout("Reflection", DrawBoxedSection(L("反射 / キューブマップ", "Reflection / Cubemap"), GetFoldout("Reflection"), SectionCategory.Environment, "_REFLECTION"));
         if (GetFoldout("Reflection"))
@@ -5143,7 +5143,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Reflection"));
     }
 
-    private void DrawIridescenceSection()
+    internal void DrawIridescenceSection()
     {
         SetFoldout("Iridescence", DrawBoxedSection(L("イリデッセンス（玉虫色）", "Iridescence"), GetFoldout("Iridescence"), SectionCategory.Environment, "_IRIDESCENCE"));
         if (GetFoldout("Iridescence"))
@@ -5211,7 +5211,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Iridescence"));
     }
 
-    private void DrawEnvironmentalRimSection()
+    internal void DrawEnvironmentalRimSection()
     {
         SetFoldout("EnvironmentalRim", DrawBoxedSection(L("環境リム", "Environmental Rim"), GetFoldout("EnvironmentalRim"), SectionCategory.Environment, "_ENV_RIM"));
         if (GetFoldout("EnvironmentalRim"))
@@ -5246,7 +5246,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("EnvironmentalRim"));
     }
 
-    private void DrawParallaxSection()
+    internal void DrawParallaxSection()
     {
         SetFoldout("Parallax", DrawBoxedSection(L("視差マッピング（パララックス）", "Parallax Mapping"), GetFoldout("Parallax"), SectionCategory.Advanced, "_PARALLAX"));
         if (GetFoldout("Parallax"))
@@ -5268,7 +5268,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Parallax"));
     }
 
-    private void DrawVertexAnimationSection()
+    internal void DrawVertexAnimationSection()
     {
         SetFoldout("VertexAnimation", DrawBoxedSection(L("頂点アニメーション（風/呼吸/脈動）", "Vertex Animation (Wind/Breath/Pulse)"), GetFoldout("VertexAnimation"), SectionCategory.Advanced, "_VERTEX_ANIMATION"));
         if (GetFoldout("VertexAnimation"))
@@ -5336,7 +5336,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("VertexAnimation"));
     }
 
-    private void DrawVATSection()
+    internal void DrawVATSection()
     {
         SetFoldout("VAT", DrawBoxedSection(L("VAT（頂点アニメーション）", "VAT (Vertex Animation Texture)"), GetFoldout("VAT"), SectionCategory.Advanced, "_VAT"));
         if (GetFoldout("VAT"))
@@ -5423,7 +5423,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("VAT"));
     }
 
-    private void DrawTessellationSection()
+    internal void DrawTessellationSection()
     {
         SetFoldout("Tessellation", DrawBoxedSection(L("テッセレーション（曲面スムージング）", "Tessellation (Surface Smoothing)"), GetFoldout("Tessellation"), SectionCategory.Advanced, "_TESSELLATION"));
         if (GetFoldout("Tessellation"))
@@ -5522,7 +5522,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Tessellation"));
     }
 
-    private void DrawRefractionSection()
+    internal void DrawRefractionSection()
     {
         SetFoldout("Refraction", DrawBoxedSection(L("屈折（リフラクション）", "Refraction"), GetFoldout("Refraction"), SectionCategory.Environment, "_REFRACTION"));
         if (GetFoldout("Refraction"))
@@ -5562,7 +5562,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Refraction"));
     }
 
-    private void DrawRenderingSection()
+    internal void DrawRenderingSection()
     {
         SetFoldout("Rendering", DrawBoxedSection(L("レンダリング設定", "Rendering Settings"), GetFoldout("Rendering"), SectionCategory.Advanced));
         if (GetFoldout("Rendering"))
@@ -5805,7 +5805,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Rendering"));
     }
 
-    private void DrawAOSection()
+    internal void DrawAOSection()
     {
         SetFoldout("AO", DrawBoxedSection(L("アンビエントオクルージョン（AO）", "Ambient Occlusion (AO)"), GetFoldout("AO"), SectionCategory.Lighting, "_USE_AO"));
         if (GetFoldout("AO"))
@@ -5887,7 +5887,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("AO"));
     }
 
-    private void DrawDitheringSection()
+    internal void DrawDitheringSection()
     {
         SetFoldout("Dithering", DrawBoxedSection(L("ディザリング（スクリーントーン）", "Dithering (Screen Tone)"), GetFoldout("Dithering"), SectionCategory.Lighting, "_USE_DITHERING"));
         if (GetFoldout("Dithering"))
@@ -5938,7 +5938,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Dithering"));
     }
 
-    private void DrawDecalSection()
+    internal void DrawDecalSection()
     {
         SetFoldout("Decal", DrawBoxedSection(L("デカール（貼り付け）", "Decal"), GetFoldout("Decal"), SectionCategory.Effects, "_DECAL"));
         if (GetFoldout("Decal"))
@@ -5980,7 +5980,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Decal"));
     }
 
-    private void DrawBackfaceSection()
+    internal void DrawBackfaceSection()
     {
         SetFoldout("Backface", DrawBoxedSection(L("裏面テクスチャ", "Backface Texture"), GetFoldout("Backface"), SectionCategory.Advanced, "_BACKFACE_TEXTURE"));
         if (GetFoldout("Backface"))
@@ -6009,7 +6009,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Backface"));
     }
 
-    private void DrawVideoSection()
+    internal void DrawVideoSection()
     {
         SetFoldout("Video", DrawBoxedSection(L("ビデオテクスチャ", "Video Texture"), GetFoldout("Video"), SectionCategory.Advanced, "_VIDEO_TEXTURE"));
         if (GetFoldout("Video"))
@@ -6038,7 +6038,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Video"));
     }
 
-    private void DrawAudioLinkSection()
+    internal void DrawAudioLinkSection()
     {
         SetFoldout("AudioLink", DrawBoxedSection(L("AudioLink（音楽連動）", "AudioLink (Music Reactive)"), GetFoldout("AudioLink"), SectionCategory.Effects, "_AUDIOLINK"));
         if (GetFoldout("AudioLink"))
@@ -6101,7 +6101,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("AudioLink"));
     }
 
-    private void DrawGradientBaseColorSection()
+    internal void DrawGradientBaseColorSection()
     {
         SetFoldout("GradientBaseColor", DrawBoxedSection(L("グラデーションベースカラー", "Gradient Base Color"), GetFoldout("GradientBaseColor"), SectionCategory.Basic, "_GRADIENT_BASE_COLOR"));
         if (GetFoldout("GradientBaseColor"))
@@ -6140,7 +6140,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("GradientBaseColor"));
     }
 
-    private void DrawHeightFadeSection()
+    internal void DrawHeightFadeSection()
     {
         SetFoldout("HeightFade", DrawBoxedSection(L("高さフェード", "Height Fade"), GetFoldout("HeightFade"), SectionCategory.Advanced, "_HEIGHT_FADE"));
         if (GetFoldout("HeightFade"))
@@ -6199,7 +6199,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("HeightFade"));
     }
 
-    private void DrawIntersectionFadeSection()
+    internal void DrawIntersectionFadeSection()
     {
         SetFoldout("IntersectionFade", DrawBoxedSection(L("オブジェクト交差フェード", "Intersection Fade"), GetFoldout("IntersectionFade"), SectionCategory.Advanced, "_INTERSECTION_FADE"));
         if (GetFoldout("IntersectionFade"))
@@ -6254,7 +6254,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("IntersectionFade"));
     }
 
-    private void DrawDistanceFadeSection()
+    internal void DrawDistanceFadeSection()
     {
         SetFoldout("DistanceFade", DrawBoxedSection(L("距離フェード", "Distance Fade"), GetFoldout("DistanceFade"), SectionCategory.Advanced, "_DISTANCE_FADE"));
         if (GetFoldout("DistanceFade"))
@@ -6321,7 +6321,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
     // ===== Phase 2/3: New Background Shader Features =====
 
-    private void DrawDetailMapSection()
+    internal void DrawDetailMapSection()
     {
         SetFoldout("DetailMap", DrawBoxedSection(L("ディテールマップ", "Detail Map"), GetFoldout("DetailMap"), SectionCategory.Advanced, "_DETAIL_MAP"));
         if (GetFoldout("DetailMap"))
@@ -6363,7 +6363,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("DetailMap"));
     }
 
-    private void DrawTriplanarSection()
+    internal void DrawTriplanarSection()
     {
         SetFoldout("Triplanar", DrawBoxedSection(L("トライプレーナー", "Triplanar Mapping"), GetFoldout("Triplanar"), SectionCategory.Advanced, "_TRIPLANAR"));
         if (GetFoldout("Triplanar"))
@@ -6405,7 +6405,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Triplanar"));
     }
 
-    private void DrawHeightFogSection()
+    internal void DrawHeightFogSection()
     {
         SetFoldout("HeightFog", DrawBoxedSection(L("ハイトフォグ", "Height Fog"), GetFoldout("HeightFog"), SectionCategory.Environment, "_HEIGHT_FOG"));
         if (GetFoldout("HeightFog"))
@@ -6448,7 +6448,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("HeightFog"));
     }
 
-    private void DrawSurfaceCoverSection()
+    internal void DrawSurfaceCoverSection()
     {
         SetFoldout("SurfaceCover", DrawBoxedSection(L("サーフェスカバー（雪/砂）", "Surface Cover (Snow/Sand)"), GetFoldout("SurfaceCover"), SectionCategory.Effects, "_SURFACE_COVER"));
         if (GetFoldout("SurfaceCover"))
@@ -6495,7 +6495,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("SurfaceCover"));
     }
 
-    private void DrawMirrorControlSection()
+    internal void DrawMirrorControlSection()
     {
         SetFoldout("MirrorControl", DrawBoxedSection(L("ミラー・カメラ制御", "Mirror / Camera Control"), GetFoldout("MirrorControl"), SectionCategory.Advanced, "_MIRROR_CONTROL"));
         if (GetFoldout("MirrorControl"))
@@ -6550,7 +6550,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("MirrorControl"));
     }
 
-    private void DrawQuestLiteSection()
+    internal void DrawQuestLiteSection()
     {
         SetFoldout("QuestLite", DrawBoxedSection(L("Quest軽量パス", "Quest Lite"), GetFoldout("QuestLite"), SectionCategory.Advanced, "_QUEST_LITE"));
         if (GetFoldout("QuestLite"))
@@ -6683,7 +6683,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>
     /// Get current rendering mode based on shader name
     /// </summary>
-    private RenderingMode GetCurrentRenderingMode()
+    internal RenderingMode GetCurrentRenderingMode()
     {
         if (targetMaterial == null || targetMaterial.shader == null)
             return RenderingMode.Opaque;
@@ -6705,7 +6705,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>
     /// Set rendering mode by switching to appropriate shader variant
     /// </summary>
-    private bool SetRenderingMode(RenderingMode mode)
+    internal bool SetRenderingMode(RenderingMode mode)
     {
         if (targetMaterial == null)
         {
@@ -6829,17 +6829,66 @@ public class NataneToonShaderGUI : ShaderGUI
         }
     }
 
-    private void DrawProperty(string propertyName, string label)
+    internal void DrawProperty(string propertyName, string label)
     {
         MaterialProperty property = FindProperty(propertyName, properties, false);
         if (property != null)
         {
+            // For texture properties, add an Edit button to open Texture Studio
+            if (property.type == MaterialProperty.PropType.Texture)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.BeginVertical();
+            }
+
             EditorGUI.BeginChangeCheck();
             materialEditor.ShaderProperty(property, label);
             // Feature 4: Cross-variant sync — propagate changes to non-primary targets
             if (EditorGUI.EndChangeCheck())
             {
                 PropagatePropertyToOtherTargets(property);
+            }
+
+            if (property.type == MaterialProperty.PropType.Texture)
+            {
+                EditorGUILayout.EndVertical();
+                // Edit button - opens Texture Studio via reflection to avoid circular assembly reference
+                DrawTextureEditButton(materialEditor, property);
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Draw edit button for texture properties using reflection to call TextureStudioLauncher
+    /// from the Tools assembly without creating a circular reference.
+    /// </summary>
+    private void DrawTextureEditButton(MaterialEditor editor, MaterialProperty texProperty)
+    {
+        if (editor == null || texProperty == null) return;
+        Material mat = editor.target as Material;
+        if (mat == null) return;
+
+        string tooltip = L("テクスチャスタジオで編集", "Edit in Texture Studio");
+        if (GUILayout.Button(new GUIContent("\u270F", tooltip),
+            EditorStyles.miniButton, GUILayout.Width(24), GUILayout.Height(18)))
+        {
+            // Use reflection to call TextureStudioLauncher.OpenForProperty from Tools assembly
+            var launcherType = System.Type.GetType("NataneToon.Editor.TextureStudioLauncher, NataneToon.Editor.Tools");
+            if (launcherType != null)
+            {
+                var method = launcherType.GetMethod("OpenForProperty",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                if (method != null)
+                {
+                    Texture2D currentTex = texProperty.textureValue as Texture2D;
+                    method.Invoke(null, new object[] { mat, texProperty.name, currentTex });
+                }
+            }
+            else
+            {
+                // Fallback: just open the texture studio window
+                EditorApplication.ExecuteMenuItem("Tools/Natane/テクスチャスタジオ Texture Studio");
             }
         }
     }
@@ -6865,7 +6914,7 @@ public class NataneToonShaderGUI : ShaderGUI
         }
     }
 
-    private void DrawColorProperty(string propertyName, string label, bool defaultHDR = false)
+    internal void DrawColorProperty(string propertyName, string label, bool defaultHDR = false)
     {
         MaterialProperty property = FindProperty(propertyName, properties, false);
         if (property == null) return;
@@ -6909,7 +6958,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EditorGUILayout.EndHorizontal();
     }
 
-    private bool DrawToggle(string keyword, string propertyName, string label)
+    internal bool DrawToggle(string keyword, string propertyName, string label)
     {
         MaterialProperty property = FindProperty(propertyName, properties, false);
         if (property == null)
@@ -7001,7 +7050,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>
     /// Count how many of the given shader keywords are currently enabled on the target material.
     /// </summary>
-    private int CountEnabledKeywords(params string[] keywords)
+    internal int CountEnabledKeywords(params string[] keywords)
     {
         int count = 0;
         foreach (var kw in keywords)
@@ -7026,7 +7075,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>
     /// Draw a blend/softness parameter with help text (delegates to helper class)
     /// </summary>
-    private void DrawBlendParameter(string propertyName, string label, string helpText)
+    internal void DrawBlendParameter(string propertyName, string label, string helpText)
     {
         NataneToonShaderGUIHelpers.DrawBlendParameter(
             propertyName,
@@ -7041,7 +7090,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// Draw blend controls (blend mode + blend amount + optional blur) for an effect section
     /// Groups controls under a sub-section header with proper indentation
     /// </summary>
-    private void DrawBlendControls(MaterialEditor materialEditor, Material material, string blendProp, string blendModeProp = null, string blurProp = null)
+    internal void DrawBlendControls(MaterialEditor materialEditor, Material material, string blendProp, string blendModeProp = null, string blurProp = null)
     {
         bool hasBlend = material.HasProperty(blendProp);
         bool hasBlendMode = blendModeProp != null && material.HasProperty(blendModeProp);
@@ -7078,7 +7127,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>
     /// Draw UV animation settings (scroll speed XY + rotation speed) for any texture
     /// </summary>
-    private void DrawUVAnimationSettings(string scrollProp, string rotateProp, string label)
+    internal void DrawUVAnimationSettings(string scrollProp, string rotateProp, string label)
     {
         EditorGUILayout.Space(3);
         EditorGUILayout.LabelField(L($"UVアニメーション ({label})", $"UV Animation ({label})"), EditorStyles.miniLabel);
@@ -7089,7 +7138,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>
     /// Draw Emission-specific UV animation settings (backward-compatible Float×2 + Float layout)
     /// </summary>
-    private void DrawEmissionUVAnimationSettings()
+    internal void DrawEmissionUVAnimationSettings()
     {
         EditorGUILayout.Space(3);
         EditorGUILayout.LabelField(L("UVアニメーション (エミッション)", "UV Animation (Emission)"), EditorStyles.miniLabel);
@@ -7102,7 +7151,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// Draw presets and sharing section
     /// </summary>
 
-    private void DrawHalftoneShadowSection()
+    internal void DrawHalftoneShadowSection()
     {
         SetFoldout("HalftoneShadow", DrawBoxedSection(L("ハーフトーンシャドウ", "Halftone Shadow"), GetFoldout("HalftoneShadow"), SectionCategory.Effects, "_HALFTONE_SHADOW"));
         if (GetFoldout("HalftoneShadow"))
@@ -7141,7 +7190,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("HalftoneShadow"));
     }
 
-    private void DrawShadowEdgeNoiseSection()
+    internal void DrawShadowEdgeNoiseSection()
     {
         SetFoldout("ShadowEdgeNoise", DrawBoxedSection(L("影エッジノイズ", "Shadow Edge Noise"), GetFoldout("ShadowEdgeNoise"), SectionCategory.Effects, "_SHADOW_EDGE_NOISE"));
         if (GetFoldout("ShadowEdgeNoise"))
@@ -7174,7 +7223,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("ShadowEdgeNoise"));
     }
 
-    private void DrawCastShadowColorSection()
+    internal void DrawCastShadowColorSection()
     {
         SetFoldout("CastShadowColor", DrawBoxedSection(L("キャストシャドウカラー", "Cast Shadow Color"), GetFoldout("CastShadowColor"), SectionCategory.Lighting, "_CAST_SHADOW_COLOR"));
         if (GetFoldout("CastShadowColor"))
@@ -7201,7 +7250,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("CastShadowColor"));
     }
 
-    private void DrawLightSnapSection()
+    internal void DrawLightSnapSection()
     {
         SetFoldout("LightSnap", DrawBoxedSection(L("ライト方向スナップ", "Light Direction Snap"), GetFoldout("LightSnap"), SectionCategory.Lighting, "_LIGHT_SNAP"));
         if (GetFoldout("LightSnap"))
@@ -7230,7 +7279,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("LightSnap"));
     }
 
-    private void DrawProceduralMatCapSection()
+    internal void DrawProceduralMatCapSection()
     {
         SetFoldout("ProceduralMatCap", DrawBoxedSection(L("プロシージャルMatCap", "Procedural MatCap"), GetFoldout("ProceduralMatCap"), SectionCategory.Effects, "_PROCEDURAL_MATCAP"));
         if (GetFoldout("ProceduralMatCap"))
@@ -7262,7 +7311,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("ProceduralMatCap"));
     }
 
-    private void DrawFakeReflectionSection()
+    internal void DrawFakeReflectionSection()
     {
         SetFoldout("FakeReflection", DrawBoxedSection(L("フェイクリフレクション", "Fake Reflection"), GetFoldout("FakeReflection"), SectionCategory.Environment, "_FAKE_REFLECTION"));
         if (GetFoldout("FakeReflection"))
@@ -7297,7 +7346,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("FakeReflection"));
     }
 
-    private void DrawPerspectiveFlatSection()
+    internal void DrawPerspectiveFlatSection()
     {
         SetFoldout("PerspectiveFlat", DrawBoxedSection(L("パースフラット", "Perspective Flatten"), GetFoldout("PerspectiveFlat"), SectionCategory.Advanced, "_PERSPECTIVE_FLAT"));
         if (GetFoldout("PerspectiveFlat"))
@@ -7326,7 +7375,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("PerspectiveFlat"));
     }
 
-    private void DrawDepthColorFadeSection()
+    internal void DrawDepthColorFadeSection()
     {
         SetFoldout("DepthColorFade", DrawBoxedSection(L("深度カラーフェード", "Depth Color Fade"), GetFoldout("DepthColorFade"), SectionCategory.Environment, "_DEPTH_COLOR_FADE"));
         if (GetFoldout("DepthColorFade"))
@@ -7362,7 +7411,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("DepthColorFade"));
     }
 
-    private void DrawCurrentStateSection()
+    internal void DrawCurrentStateSection()
     {
         SetFoldout("CurrentState", DrawBoxedSection(L("編集ワークフロー", "Workflow"), GetFoldout("CurrentState"), SectionCategory.Basic));
         if (GetFoldout("CurrentState"))
@@ -7489,7 +7538,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// Draws a sub-group header with a left accent line and indented bold label
     /// to visually distinguish sub-groups from main section headers.
     /// </summary>
-    private void DrawSubGroupHeader(string label)
+    internal void DrawSubGroupHeader(string label)
     {
         EditorGUILayout.Space(2);
         Rect rect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
@@ -7712,7 +7761,7 @@ public class NataneToonShaderGUI : ShaderGUI
         return $"{summary} ({activeCount})";
     }
 
-    private void DrawPresetsSection()
+    internal void DrawPresetsSection()
     {
         SetFoldout("Presets", DrawBoxedSection(L("マテリアルプリセット＆共有", "Material Presets & Sharing"), GetFoldout("Presets"), SectionCategory.Basic));
         if (GetFoldout("Presets"))
@@ -7732,7 +7781,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// Draw Feature Overview panel - shows all feature ON/OFF states in a compact grid
     /// 機能一覧パネル - 全機能のON/OFF状態をコンパクトなグリッドで表示
     /// </summary>
-    private void DrawFeatureOverviewSection()
+    internal void DrawFeatureOverviewSection()
     {
         SetFoldout("FeatureOverview", DrawBoxedSection(L("機能一覧", "Feature Overview"), GetFoldout("FeatureOverview"), SectionCategory.Basic));
         if (GetFoldout("FeatureOverview"))
@@ -7859,7 +7908,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>
     /// Draw performance indicator section
     /// </summary>
-    private void DrawPerformanceSection()
+    internal void DrawPerformanceSection()
     {
         SetFoldout("Performance", DrawBoxedSection(L("パフォーマンス", "Performance"), GetFoldout("Performance"), SectionCategory.Basic));
         if (GetFoldout("Performance"))
@@ -7925,15 +7974,15 @@ public class NataneToonShaderGUI : ShaderGUI
     /// Draw expand all / collapse all buttons for a tab
     /// タブ用の全展開/全折畳ボタンを描画
     /// </summary>
-    private void DrawExpandCollapseButtons(System.Action<bool> setAllFoldouts)
+    internal void DrawExpandCollapseButtons(System.Action<bool> setAllFoldouts)
     {
         EditorGUILayout.BeginHorizontal();
         GUILayout.FlexibleSpace();
-        if (GUILayout.Button(L("全展開", "Expand All"), EditorStyles.miniButtonLeft, GUILayout.Width(50)))
+        if (GUILayout.Button(L("全展開", "Expand All"), EditorStyles.miniButtonLeft, GUILayout.Width(70)))
         {
             setAllFoldouts(true);
         }
-        if (GUILayout.Button(L("全折畳", "Collapse All"), EditorStyles.miniButtonRight, GUILayout.Width(50)))
+        if (GUILayout.Button(L("全折畳", "Collapse All"), EditorStyles.miniButtonRight, GUILayout.Width(75)))
         {
             setAllFoldouts(false);
         }
@@ -7966,7 +8015,7 @@ public class NataneToonShaderGUI : ShaderGUI
         // 2行目: アクションボタン（ツールバー風）
         EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
 
-        if (GUILayout.Button(new GUIContent(L("更新", "Sync"), L("キーワードとキャッシュを同期", "Synchronize keywords and caches")), EditorStyles.toolbarButton, GUILayout.Width(45)))
+        if (GUILayout.Button(new GUIContent(L("更新", "Sync"), L("キーワードとキャッシュを同期", "Synchronize keywords and caches")), EditorStyles.toolbarButton, GUILayout.Width(55)))
         {
             SynchronizeKeywordsAndRefreshInspectorCaches();
         }
@@ -7974,9 +8023,9 @@ public class NataneToonShaderGUI : ShaderGUI
         // Feature 1: Simple / Advanced mode toggle
         EditorGUI.BeginChangeCheck();
         bool isSimple = GUILayout.Toggle(inspectorMode == InspectorMode.Simple,
-            L("シンプル", "Simple"), EditorStyles.toolbarButton, GUILayout.Width(55));
+            L("シンプル", "Simple"), EditorStyles.toolbarButton, GUILayout.Width(72));
         bool isAdvanced = GUILayout.Toggle(inspectorMode == InspectorMode.Advanced,
-            L("アドバンス", "Advanced"), EditorStyles.toolbarButton, GUILayout.Width(65));
+            L("アドバンス", "Advanced"), EditorStyles.toolbarButton, GUILayout.Width(85));
         if (EditorGUI.EndChangeCheck())
         {
             // Only one can be active; whichever was just clicked wins
@@ -8006,14 +8055,14 @@ public class NataneToonShaderGUI : ShaderGUI
 
         GUILayout.FlexibleSpace();
 
-        if (GUILayout.Button(L("全展開", "Expand All"), EditorStyles.toolbarButton, GUILayout.Width(60)))
+        if (GUILayout.Button(L("全展開", "Expand All"), EditorStyles.toolbarButton, GUILayout.Width(70)))
         {
             ExpandAllSections(true);
             if (materialEditor != null) materialEditor.Repaint();
             GUIUtility.ExitGUI();
         }
 
-        if (GUILayout.Button(L("全折畳", "Collapse All"), EditorStyles.toolbarButton, GUILayout.Width(60)))
+        if (GUILayout.Button(L("全折畳", "Collapse All"), EditorStyles.toolbarButton, GUILayout.Width(75)))
         {
             ExpandAllSections(false);
             if (materialEditor != null) materialEditor.Repaint();
@@ -8058,151 +8107,42 @@ public class NataneToonShaderGUI : ShaderGUI
         FilteredDrawSection(DrawShadingSection, L("シェーディング", "Shading"), "Shading");
     }
 
-    private void DrawSharedInspectorSections()
+    internal void DrawSharedInspectorSections()
     {
         FilteredDrawSection(DrawPresetsSection, L("プリセット", "Presets"), "Presets");
         FilteredDrawSection(DrawFeatureOverviewSection, L("機能一覧", "Feature Overview"), "FeatureOverview");
     }
 
     /// <summary>
-    /// Draw Lighting tab content
+    /// Draw Lighting tab content — delegated to NataneToonLightingDrawer
     /// </summary>
     private void DrawLightingTab()
     {
-        DrawExpandCollapseButtons((state) => {
-            SetFoldout("AdvancedLighting", state); SetFoldout("CastShadowColor", state); SetFoldout("LightSnap", state);
-            SetFoldout("AO", state); SetFoldout("Dithering", state);
-            SetFoldout("LightVolume", state); SetFoldout("LTCGI", state);
-            SetFoldout("BackgroundLightmap", state); SetFoldout("PBR", state);
-        });
-        // ─── ライティング基本 ───
-        NataneToonShaderGUIUtility.DrawCategoryDivider(L("ライティング基本", "Lighting Basics"));
-        FilteredDrawSection(DrawAdvancedLightingSection, L("高度なライティング", "Advanced Lighting"), "AdvancedLighting");
-        FilteredDrawSection(DrawCastShadowColorSection, L("キャストシャドウカラー", "Cast Shadow Color"), "CastShadowColor");
-        FilteredDrawSection(DrawLightSnapSection, L("ライト方向スナップ", "Light Direction Snap"), "LightSnap");
-        FilteredDrawSection(DrawAOSection, "AO", "AO");
-        FilteredDrawSection(DrawDitheringSection, L("ディザリング", "Dithering"), "Dithering");
-
-        // ─── 外部ライティング ───
-        int extLightCount = CountEnabledKeywords("_USE_LIGHT_VOLUME", "_LTCGI");
-        NataneToonShaderGUIUtility.DrawCategoryDivider(
-            L($"外部ライティング ({extLightCount}/2)", $"External Lighting ({extLightCount}/2)"));
-        FilteredDrawSection(DrawLightVolumeSection, "Light Volume", "LightVolume");
-        FilteredDrawSection(DrawLTCGISection, "LTCGI", "LTCGI");
-
-        // ─── 背景シェーダー専用 ───
-        if (GetCurrentRenderingMode() == RenderingMode.Background)
-        {
-            NataneToonShaderGUIUtility.DrawCategoryDivider(L("背景シェーダー専用", "Background Shader Only"));
-            FilteredDrawSection(DrawBackgroundLightmapSection, L("背景ライトマップ", "Background Lightmap"), "BackgroundLightmap");
-            FilteredDrawSection(DrawPBRSection, L("PBR マテリアル", "PBR Material"), "PBR");
-        }
+        NataneToonLightingDrawer.Draw(this);
     }
 
     /// <summary>
-    /// Draw Effects tab content
+    /// Draw Effects tab content — delegated to NataneToonEffectsDrawer
     /// </summary>
     private void DrawEffectsTab()
     {
-        DrawExpandCollapseButtons((state) => {
-            SetFoldout("Specular", state); SetFoldout("HairSpecular", state); SetFoldout("RimLight", state); SetFoldout("SSS", state);
-            SetFoldout("MatCap", state); SetFoldout("ProceduralMatCap", state); SetFoldout("Glitter", state); SetFoldout("Drip", state); SetFoldout("Smear", state); SetFoldout("Fur", state); SetFoldout("Decal", state);
-            SetFoldout("Hologram", state); SetFoldout("Outline", state); SetFoldout("Emission", state);
-            SetFoldout("VirtualExpression", state); SetFoldout("AudioLink", state); SetFoldout("SurfaceCover", state);
-        });
-        // ─── 光源エフェクト ───
-        int lightCount = CountEnabledKeywords("_SPECULAR", "_HAIR_SPECULAR", "_RIM_LIGHT", "_SSS");
-        NataneToonShaderGUIUtility.DrawCategoryDivider(
-            L($"光源エフェクト ({lightCount}/4)", $"Light Source Effects ({lightCount}/4)"));
-        FilteredDrawSection(DrawSpecularSection, L("スペキュラー", "Specular"), "Specular");
-        FilteredDrawSection(DrawHairSpecularSection, L("ヘアスペキュラー", "Hair Specular"), "HairSpecular");
-        FilteredDrawSection(DrawRimLightSection, L("リムライト", "Rim Light"), "RimLight");
-        FilteredDrawSection(DrawSSSSection, "SSS", "SSS");
-
-        // ─── 表面エフェクト ───
-        int surfaceCount = CountEnabledKeywords("_MATCAP", "_PROCEDURAL_MATCAP", "_GLITTER", "_WATER_DRIP", "_SMEAR", "_FUR", "_DECAL", "_SURFACE_COVER");
-        NataneToonShaderGUIUtility.DrawCategoryDivider(
-            L($"表面エフェクト ({surfaceCount}/8)", $"Surface Effects ({surfaceCount}/8)"));
-        FilteredDrawSection(DrawMatCapSection, "MatCap", "MatCap");
-        FilteredDrawSection(DrawProceduralMatCapSection, L("プロシージャルMatCap", "Procedural MatCap"), "ProceduralMatCap");
-        FilteredDrawSection(DrawGlitterSection, L("グリッター", "Glitter"), "Glitter");
-        FilteredDrawSection(DrawDripSection, L("雫エフェクト", "Drip Effect"), "Drip");
-        FilteredDrawSection(DrawSmearSection, L("スミア", "Smear"), "Smear");
-        FilteredDrawSection(DrawFurSection, L("ファー", "Fur"), "Fur");
-        FilteredDrawSection(DrawDecalSection, L("デカール", "Decal"), "Decal");
-        FilteredDrawSection(DrawSurfaceCoverSection, L("サーフェスカバー", "Surface Cover"), "SurfaceCover");
-
-        // ─── ビジュアルエフェクト ───
-        int visualCount = CountEnabledKeywords("_COLOR_QUANTIZE", "_HOLOGRAM", "_OUTLINE", "_EMISSION", "_AUDIOLINK");
-        NataneToonShaderGUIUtility.DrawCategoryDivider(
-            L($"ビジュアルエフェクト ({visualCount}/5)", $"Visual Effects ({visualCount}/5)"));
-        FilteredDrawSection(DrawHologramSection, L("ホログラム＆グリッチ", "Hologram & Glitch"), "Hologram");
-        FilteredDrawSection(DrawIllustrationStyleSection, L("イラスト調スタイル", "Illustration Style"), "IllustrationStyle");
-        FilteredDrawSection(DrawOutlineSection, L("アウトライン", "Outline"), "Outline");
-        FilteredDrawSection(DrawEmissionSection, L("エミッション", "Emission"), "Emission");
-        FilteredDrawSection(DrawVirtualExpressionSection, L("バーチャル表現", "Virtual Expression"), "VirtualExpression");
-        FilteredDrawSection(DrawAudioLinkSection, "AudioLink", "AudioLink");
+        NataneToonEffectsDrawer.Draw(this);
     }
 
     /// <summary>
-    /// Draw Environment tab content
+    /// Draw Environment tab content — delegated to NataneToonEnvironmentDrawer
     /// </summary>
     private void DrawEnvironmentTab()
     {
-        DrawExpandCollapseButtons((state) => {
-            SetFoldout("Reflection", state); SetFoldout("FakeReflection", state); SetFoldout("Iridescence", state);
-            SetFoldout("EnvironmentalRim", state); SetFoldout("Refraction", state);
-            SetFoldout("HeightFog", state);
-        });
-        FilteredDrawSection(DrawReflectionSection, L("リフレクション", "Reflection"), "Reflection");
-        FilteredDrawSection(DrawFakeReflectionSection, L("フェイクリフレクション", "Fake Reflection"), "FakeReflection");
-        FilteredDrawSection(DrawIridescenceSection, L("イリデッセンス", "Iridescence"), "Iridescence");
-        FilteredDrawSection(DrawEnvironmentalRimSection, L("環境リム", "Environmental Rim"), "EnvironmentalRim");
-        FilteredDrawSection(DrawRefractionSection, L("屈折", "Refraction"), "Refraction");
-        FilteredDrawSection(DrawHeightFogSection, L("ハイトフォグ", "Height Fog"), "HeightFog");
-        FilteredDrawSection(DrawDepthColorFadeSection, L("深度カラーフェード", "Depth Color Fade"), "DepthColorFade");
+        NataneToonEnvironmentDrawer.Draw(this);
     }
 
     /// <summary>
-    /// Draw Advanced tab content
+    /// Draw Advanced tab content — delegated to NataneToonAdvancedDrawer
     /// </summary>
     private void DrawAdvancedTab()
     {
-        DrawExpandCollapseButtons((state) => {
-            SetFoldout("NormalMap", state); SetFoldout("Parallax", state); SetFoldout("VertexAnimation", state); SetFoldout("VAT", state);
-            SetFoldout("Backface", state); SetFoldout("Video", state); SetFoldout("HeightFade", state); SetFoldout("IntersectionFade", state);
-            SetFoldout("DistanceFade", state); SetFoldout("PerspectiveFlat", state); SetFoldout("Rendering", state); SetFoldout("Tessellation", state);
-            SetFoldout("DetailMap", state); SetFoldout("Triplanar", state); SetFoldout("MirrorControl", state); SetFoldout("QuestLite", state);
-        });
-        // ─── マッピング ───
-        int mapCount = CountEnabledKeywords("_NORMALMAP", "_PARALLAX");
-        NataneToonShaderGUIUtility.DrawCategoryDivider(
-            L($"マッピング ({mapCount}/2)", $"Mapping ({mapCount}/2)"));
-        FilteredDrawSection(DrawNormalMapSection, L("ノーマルマップ", "Normal Map"), "NormalMap");
-        FilteredDrawSection(DrawParallaxSection, L("視差マッピング", "Parallax Mapping"), "Parallax");
-        FilteredDrawSection(DrawDetailMapSection, L("ディテールマップ", "Detail Map"), "DetailMap");
-        FilteredDrawSection(DrawTriplanarSection, L("トライプレーナー", "Triplanar Mapping"), "Triplanar");
-
-        // ─── アニメーション＆特殊 ───
-        NataneToonShaderGUIUtility.DrawCategoryDivider(L("アニメーション＆特殊", "Animation & Special"));
-        FilteredDrawSection(DrawVertexAnimationSection, L("頂点アニメーション（風/呼吸/脈動）", "Vertex Animation (Wind/Breath/Pulse)"), "VertexAnimation");
-        FilteredDrawSection(DrawVATSection, L("VAT（頂点アニメーション）", "VAT (Vertex Animation Texture)"), "VAT");
-        FilteredDrawSection(DrawTessellationSection, L("テッセレーション（曲面スムージング）", "Tessellation (Surface Smoothing)"), "Tessellation");
-        FilteredDrawSection(DrawBackfaceSection, L("裏面テクスチャ", "Backface Texture"), "Backface");
-        FilteredDrawSection(DrawVideoSection, L("ビデオテクスチャ", "Video Texture"), "Video");
-        FilteredDrawSection(DrawHeightFadeSection, L("高さフェード", "Height Fade"), "HeightFade");
-        FilteredDrawSection(DrawIntersectionFadeSection, L("オブジェクト交差フェード", "Intersection Fade"), "IntersectionFade");
-        FilteredDrawSection(DrawDistanceFadeSection, L("距離フェード", "Distance Fade"), "DistanceFade");
-        FilteredDrawSection(DrawPerspectiveFlatSection, L("パースフラット", "Perspective Flatten"), "PerspectiveFlat");
-
-        // ─── VRChat＆パフォーマンス ───
-        NataneToonShaderGUIUtility.DrawCategoryDivider(L("VRChat＆パフォーマンス", "VRChat & Performance"));
-        FilteredDrawSection(DrawMirrorControlSection, L("ミラー・カメラ制御", "Mirror / Camera Control"), "MirrorControl");
-        FilteredDrawSection(DrawQuestLiteSection, L("Quest軽量パス", "Quest Lite"), "QuestLite");
-
-        // ─── レンダリング ───
-        NataneToonShaderGUIUtility.DrawCategoryDivider(L("レンダリング", "Rendering"));
-        FilteredDrawSection(DrawRenderingSection, L("レンダリング", "Rendering"), "Rendering");
+        NataneToonAdvancedDrawer.Draw(this);
     }
 
     /// <summary>
@@ -8460,7 +8400,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// 3.2 Quick Setup Section - Quick preset buttons with wizard/legacy mode toggle
     /// P-9: Wizard-style guided setup for beginners, with legacy button layout retained
     /// </summary>
-    private void DrawQuickSetupSection()
+    internal void DrawQuickSetupSection()
     {
         // Mode toggle: Auto Setup / Guided / Show All / Templates
         EditorGUILayout.BeginHorizontal();
@@ -9162,7 +9102,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>
     /// 3.3 Draw property with range indicator - Visual feedback for parameter values
     /// </summary>
-    private void DrawPropertyWithRangeInfo(string propertyName, string label, string recommendedRange = null)
+    internal void DrawPropertyWithRangeInfo(string propertyName, string label, string recommendedRange = null)
     {
         MaterialProperty property = FindProperty(propertyName, properties, false);
         if (property == null) return;
@@ -9215,7 +9155,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>
     /// Draw help toggle with collapsible preview (3.4 UX Improvement)
     /// </summary>
-    private bool DrawHelpToggle(string sectionKey, string helpText, MessageType messageType = MessageType.Info)
+    internal bool DrawHelpToggle(string sectionKey, string helpText, MessageType messageType = MessageType.Info)
     {
         // Get help state for this section (default: collapsed)
         string prefsKey = NataneToonMaterialPresetEditor.GetMaterialPrefsKey(targetMaterial, "Help_" + sectionKey);
@@ -9257,7 +9197,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// <summary>
     /// Draw category header with description
     /// </summary>
-    private void DrawCategoryHeader(string title, string description)
+    internal void DrawCategoryHeader(string title, string description)
     {
         EditorGUILayout.Space(SECTION_SPACING);
 
@@ -9285,7 +9225,7 @@ public class NataneToonShaderGUI : ShaderGUI
     /// Get all target materials from the material editor.
     /// Cached per OnGUI call (invalidated on material change via _lastLoadedMaterialInstanceId).
     /// </summary>
-    private Material[] GetAllTargetMaterials()
+    internal Material[] GetAllTargetMaterials()
     {
         if (_cachedAllTargetMaterials != null)
             return _cachedAllTargetMaterials;

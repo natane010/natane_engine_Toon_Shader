@@ -254,7 +254,7 @@ namespace NataneToon.Editor
 
                 using (new EditorGUI.DisabledScope(showAllCategories))
                 {
-                    EditorGUILayout.LabelField(L("カテゴリ", "Category") + ":", GUILayout.Width(70));
+                    EditorGUILayout.LabelField(L("カテゴリ", "Category") + ":", GUILayout.Width(80));
                     EditorGUI.BeginChangeCheck();
                     selectedCategory = (PresetCategory)EditorGUILayout.EnumPopup(selectedCategory, GUILayout.MinWidth(position.width < 760f ? 150f : 220f));
                     if (EditorGUI.EndChangeCheck())
@@ -267,7 +267,7 @@ namespace NataneToon.Editor
 
             using (new EditorGUILayout.HorizontalScope())
             {
-                EditorGUILayout.LabelField(L("検索", "Search") + ":", GUILayout.Width(55));
+                EditorGUILayout.LabelField(L("検索", "Search") + ":", GUILayout.Width(65));
                 EditorGUI.BeginChangeCheck();
                 searchQuery = EditorGUILayout.TextField(searchQuery, EditorStyles.toolbarSearchField);
                 if (EditorGUI.EndChangeCheck())

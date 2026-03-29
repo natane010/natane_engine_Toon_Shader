@@ -85,6 +85,440 @@ namespace NataneToon.Editor
             public float convertedOutlineWidth;
         }
 
+        // =============================================
+        // Dry Run / Migration Report
+        // =============================================
+
+        /// <summary>
+        /// 移行前の差分レポート。DryRun で生成され、実際のマテリアル変更は行わない。
+        /// </summary>
+        public class MigrationReport
+        {
+            public string materialName;
+            public string sourceShaderName;
+            public string targetShaderName;
+            public List<PropertyChange> changes = new List<PropertyChange>();
+            public List<string> warnings = new List<string>();
+            public List<string> unmappedProperties = new List<string>();
+            public List<string> infos = new List<string>();
+            public int successCount;
+            public int warningCount;
+            public int errorCount;
+        }
+
+        /// <summary>
+        /// 個別プロパティの変更情報。
+        /// </summary>
+        public class PropertyChange
+        {
+            public string propertyName;
+            public string sourceValue;
+            public string targetPropertyName;
+            public string targetValue;
+            public ChangeType changeType;
+            public string note;
+
+            public enum ChangeType
+            {
+                Direct,       // 1:1 マッピング
+                Converted,    // 値変換あり（スケーリング等）
+                Derived,      // 複数ソースから算出
+                DefaultSet,   // デフォルト値の設定
+                Skipped       // マッピングなし（スキップ）
+            }
+        }
+
+        private bool showDryRunResult = false;
+        private MigrationReport currentDryRunReport = null;
+        private Vector2 dryRunScrollPosition;
+        private Material dryRunTargetMaterial = null;
+
+        /// <summary>
+        /// lilToon マテリアルのマイグレーションをシミュレートし、差分レポートを返す。
+        /// マテリアルへの実際の変更は行わない。
+        /// </summary>
+        public static MigrationReport DryRun(Material sourceMaterial)
+        {
+            var report = new MigrationReport();
+
+            if (sourceMaterial == null)
+            {
+                report.errorCount = 1;
+                report.warnings.Add("Source material is null.");
+                return report;
+            }
+
+            report.materialName = sourceMaterial.name;
+            report.sourceShaderName = sourceMaterial.shader != null ? sourceMaterial.shader.name : "(null)";
+
+            // Detect target shader variant
+            string shaderNameLower = report.sourceShaderName.ToLower();
+            if (shaderNameLower.Contains("gem") || shaderNameLower.Contains("transparent") || shaderNameLower.Contains("fade"))
+                report.targetShaderName = "Natane/Toon Shader (Transparent)";
+            else if (shaderNameLower.Contains("cutout"))
+                report.targetShaderName = "Natane/Toon Shader (Cutout)";
+            else
+                report.targetShaderName = "Natane/Toon Shader";
+
+            // Capture source properties
+            var instance = new LilToonMigrationTool();
+            var sourceProps = instance.CaptureProperties(sourceMaterial);
+            sourceProps["__sourceShaderName"] = report.sourceShaderName;
+
+            // Simulate property mapping and build change list
+            SimulateMapping(sourceProps, sourceMaterial, report);
+
+            // Detect unmapped properties
+            DetectUnmappedProperties(sourceMaterial, sourceProps, report);
+
+            report.successCount = report.changes.Count(c => c.changeType != PropertyChange.ChangeType.Skipped);
+            report.warningCount = report.warnings.Count;
+
+            return report;
+        }
+
+        /// <summary>
+        /// lilToon マテリアルの全プロパティ名を取得する。
+        /// CaptureProperties でキャプチャされないプロパティも含む。
+        /// </summary>
+        private static List<string> GetAllMaterialPropertyNames(Material material)
+        {
+            var result = new List<string>();
+            if (material == null) return result;
+
+            var shader = material.shader;
+            if (shader == null) return result;
+
+            int count = shader.GetPropertyCount();
+            for (int i = 0; i < count; i++)
+            {
+                result.Add(shader.GetPropertyName(i));
+            }
+            return result;
+        }
+
+        // lilToon のプロパティのうち、キャプチャ対象外だがよく使われるもの
+        private static readonly HashSet<string> KnownLilToonOnlyProperties = new HashSet<string>
+        {
+            // UV / Tiling
+            "_MainTex_ScrollRotate", "_Main2ndTex", "_Main2ndTex_ScrollRotate",
+            "_Main2ndBlendMask", "_Main2ndTexAngle", "_Main2ndTexDecalAnimation",
+            "_Main2ndTexIsDecal", "_Main2ndTexIsMSDF", "_Main2ndTexBlendMode",
+            "_Main3rdTex", "_Main3rdTex_ScrollRotate", "_Main3rdBlendMask",
+            "_Main3rdTexAngle", "_Main3rdTexDecalAnimation", "_Main3rdTexIsDecal",
+            "_Main3rdTexIsMSDF", "_Main3rdTexBlendMode",
+            // Backlight
+            "_UseBacklight", "_BacklightColor", "_BacklightColorTex",
+            "_BacklightBorder", "_BacklightBlur", "_BacklightDirectivity",
+            "_BacklightViewStrength", "_BacklightReceiveShadow",
+            "_BacklightBackfaceMask",
+            // Parallax / Height
+            "_UseParallax", "_ParallaxMap", "_Parallax",
+            // AudioLink
+            "_UseAudioLink", "_AudioTexture", "_AudioLink2Main",
+            "_AudioLink2Emission", "_AudioLink2EmissionGrad",
+            // Fur
+            "_UseFur", "_FurNoiseMask", "_FurMask",
+            "_FurLength", "_FurVectorTex", "_FurGravity",
+            // Stencil
+            "_StencilRef", "_StencilReadMask", "_StencilWriteMask",
+            "_StencilComp", "_StencilPass", "_StencilFail", "_StencilZFail",
+            // Distance Fade
+            "_DistanceFade", "_DistanceFadeColor",
+            // Rendering
+            "_TransparentMode", "_RenderingMode",
+        };
+
+        // Natane 側で対応するプロパティへの既知マッピング
+        // (キャプチャ対象であり MapPropertiesWithReport で処理されるもの)
+        private static readonly HashSet<string> MappedSourceProperties = new HashSet<string>
+        {
+            "_MainTex", "_Color", "_Cutoff",
+            "_BumpMap", "_BumpScale",
+            "_UseShadow", "_UseRim", "_UseRimShade", "_UseMatCap", "_UseMatCap2nd",
+            "_UseEmission", "_UseEmission2nd", "_UseOutline",
+            "_ShadowColor", "_ShadowBorder", "_ShadowBlur", "_ShadowStrength",
+            "_ShadowMainStrength", "_ShadowBorderRange", "_BackfaceForceShadow",
+            "_ShadowMaskType", "_ShadowFlatBorder", "_ShadowFlatBlur",
+            "_ShadowPostAO", "_ShadowNormalStrength",
+            "_Shadow2ndColor", "_Shadow2ndBorder", "_Shadow2ndBlur",
+            "_Shadow3rdColor", "_Shadow3rdBorder", "_Shadow3rdBlur",
+            "_ShadowColorTex", "_ShadowStrengthMask", "_ShadowBorderMask", "_ShadowBlurMask",
+            "_ShadowEnvStrength", "_ShadowReceive",
+            "_RimColor", "_RimColorTex", "_RimBorder", "_RimBlur",
+            "_RimFresnelPower", "_RimBlendMode", "_RimEnableLighting", "_RimShadowMask",
+            "_OutlineColor", "_OutlineWidth", "_OutlineFixWidth",
+            "_OutlineTex", "_OutlineWidthMask", "_OutlineVectorTex",
+            "_OutlineEnableLighting", "_OutlineZBias", "_OutlineTexHSVG",
+            "_EmissionMap", "_EmissionColor", "_EmissionBlendMask",
+            "_EmissionMap_ScrollRotate", "_EmissionBlendMask_ScrollRotate",
+            "_EmissionBlend", "_EmissionBlendMode", "_EmissionGradTex",
+            "_EmissionGradSpeed", "_EmissionBlink",
+            "_Emission2ndMap", "_Emission2ndColor", "_Emission2ndBlendMask",
+            "_MatCapTex", "_MatCapBlendMask", "_MatCapColor", "_MatCapBlend", "_MatCapBlendMode",
+            "_MatCap2ndTex", "_MatCap2ndBlendMask", "_MatCap2ndColor", "_MatCap2ndBlend", "_MatCap2ndBlendMode",
+            "_Smoothness", "_Metallic", "_SpecularToon", "_SpecularBorder", "_SpecularBlur",
+            "_LightMinLimit", "_LightMaxLimit", "_MonochromeLighting", "_AsUnlit",
+            "_GemChromaticAberration", "_GemParticleColor", "_GemEnvContrast",
+            "_GemVRParallaxStrength", "_RefractionStrength", "_RefractionFresnelPower",
+            "_Cull", "_ZWrite", "_SrcBlend", "_DstBlend", "_AlphaToMask",
+            "_UseBacklight", "_BacklightColor", "_BacklightBorder", "_BacklightBlur",
+            "_BacklightDirectivity", "_BacklightViewStrength",
+            "_ReflectionSpecular", "_OutlineEnableLighting",
+        };
+
+        // Unity 内部やレンダリングステート用で、ユーザー関心外のプロパティ
+        private static readonly HashSet<string> IgnoredInternalProperties = new HashSet<string>
+        {
+            "_MainTex_ST", "_BumpMap_ST", "_EmissionMap_ST",
+            "_lilToonVersion", "_lilToonSetting",
+            "__dirty", "__lilToonFoldout",
+        };
+
+        /// <summary>
+        /// マッピングをシミュレートし、PropertyChange のリストを生成する。
+        /// </summary>
+        private static void SimulateMapping(Dictionary<string, object> sourceProps, Material sourceMaterial, MigrationReport report)
+        {
+            // --- Main Texture & Color ---
+            AddChangeIfExists(sourceProps, "_MainTex", "_MainTex", PropertyChange.ChangeType.Direct, report);
+            AddChangeIfExists(sourceProps, "_Color", "_Color", PropertyChange.ChangeType.Direct, report);
+
+            // --- Shadow ---
+            bool useShadow = GetFloatOrStatic(sourceProps, "_UseShadow", 0) > 0.5f;
+            if (useShadow)
+            {
+                AddChangeIfExists(sourceProps, "_ShadowColor", "_ShadowColor", PropertyChange.ChangeType.Converted, report,
+                    "ShadowStrength でブレンド後の値");
+                AddDerivedChange("_ShadowBorder/_ShadowBlur", "_ShadowOffset, _ShadowSharpness, _ShadingGradientWidth",
+                    "border/blur から Natane のシャドウパラメータを算出", report);
+                AddChangeIfExists(sourceProps, "_ShadowColorTex", "_ShadowColorTex", PropertyChange.ChangeType.Direct, report);
+                AddChangeIfExists(sourceProps, "_ShadowStrengthMask", "_ShadowStrengthMask", PropertyChange.ChangeType.Direct, report);
+                AddChangeIfExists(sourceProps, "_ShadowBorderMask", "_ShadowBorderMask", PropertyChange.ChangeType.Direct, report);
+                AddChangeIfExists(sourceProps, "_ShadowBlurMask", "_ShadowBlurMask", PropertyChange.ChangeType.Direct, report);
+
+                // Multi-shadow
+                bool has2nd = sourceProps.ContainsKey("_Shadow2ndColor");
+                bool has3rd = sourceProps.ContainsKey("_Shadow3rdColor");
+                if (has2nd)
+                    AddChangeIfExists(sourceProps, "_Shadow2ndColor", "_Shadow2ndColor", PropertyChange.ChangeType.Direct, report);
+                if (has3rd)
+                    AddChangeIfExists(sourceProps, "_Shadow3rdColor", "_Shadow3rdColor", PropertyChange.ChangeType.Direct, report);
+            }
+
+            // --- Normal Map ---
+            if (sourceProps.ContainsKey("_BumpMap") && sourceProps["_BumpMap"] != null)
+            {
+                AddChangeIfExists(sourceProps, "_BumpMap", "_BumpMap", PropertyChange.ChangeType.Direct, report);
+                AddChangeIfExists(sourceProps, "_BumpScale", "_BumpScale", PropertyChange.ChangeType.Converted, report,
+                    "ShadowNormalStrength でスケーリング");
+            }
+
+            // --- Rim Light ---
+            bool useRim = GetFloatOrStatic(sourceProps, "_UseRim", 0) > 0.5f;
+            if (useRim)
+            {
+                AddChangeIfExists(sourceProps, "_RimColor", "_RimColor", PropertyChange.ChangeType.Direct, report);
+                AddChangeIfExists(sourceProps, "_RimFresnelPower", "_RimPower", PropertyChange.ChangeType.Converted, report, "クランプ 0.1-10");
+                report.changes.Add(new PropertyChange
+                {
+                    propertyName = "_RimBorder",
+                    sourceValue = FormatValue(sourceProps, "_RimBorder"),
+                    targetPropertyName = "_RimSpread",
+                    targetValue = "(1 - RimBorder)",
+                    changeType = PropertyChange.ChangeType.Converted,
+                    note = "反転変換"
+                });
+                AddChangeIfExists(sourceProps, "_RimBlendMode", "_RimBlendMode", PropertyChange.ChangeType.Converted, report,
+                    "lilToon→Natane ブレンドモード変換");
+            }
+
+            // --- Outline ---
+            string sourceShaderName = sourceProps.ContainsKey("__sourceShaderName") ? (string)sourceProps["__sourceShaderName"] : "";
+            bool isOutlineVariant = sourceShaderName.ToLower().Contains("outline");
+            bool useOutlineFlag = GetFloatOrStatic(sourceProps, "_UseOutline", 0) > 0.5f;
+            bool hasOutline = isOutlineVariant || useOutlineFlag || (sourceProps.ContainsKey("_OutlineWidth") && (float)sourceProps["_OutlineWidth"] > 0);
+
+            if (hasOutline)
+            {
+                report.changes.Add(new PropertyChange
+                {
+                    propertyName = "_OutlineWidth",
+                    sourceValue = FormatValue(sourceProps, "_OutlineWidth"),
+                    targetPropertyName = "_OutlineWidth",
+                    targetValue = "(x 0.1 スケール)",
+                    changeType = PropertyChange.ChangeType.Converted,
+                    note = "lilToon→Natane 幅スケール 0.1x"
+                });
+                AddChangeIfExists(sourceProps, "_OutlineColor", "_OutlineColor", PropertyChange.ChangeType.Direct, report);
+                AddChangeIfExists(sourceProps, "_OutlineTex", "_OutlineTex", PropertyChange.ChangeType.Direct, report);
+                AddChangeIfExists(sourceProps, "_OutlineWidthMask", "_OutlineWidthMap", PropertyChange.ChangeType.Direct, report);
+                AddChangeIfExists(sourceProps, "_OutlineVectorTex", "_SmoothNormalTex", PropertyChange.ChangeType.Direct, report,
+                    "Smooth Normal として使用");
+            }
+
+            // --- Emission ---
+            bool useEmission = GetFloatOrStatic(sourceProps, "_UseEmission", 0) > 0.5f;
+            if (useEmission)
+            {
+                AddChangeIfExists(sourceProps, "_EmissionMap", "_EmissionMap", PropertyChange.ChangeType.Direct, report);
+                AddChangeIfExists(sourceProps, "_EmissionColor", "_EmissionColor", PropertyChange.ChangeType.Direct, report);
+                AddChangeIfExists(sourceProps, "_EmissionBlendMask", "_EmissionMask", PropertyChange.ChangeType.Direct, report,
+                    "名前変更: BlendMask→Mask");
+                AddChangeIfExists(sourceProps, "_EmissionBlend", "_EmissionBlend", PropertyChange.ChangeType.Direct, report);
+                AddChangeIfExists(sourceProps, "_EmissionBlendMode", "_EmissionBlendMode", PropertyChange.ChangeType.Converted, report,
+                    "ブレンドモード変換");
+
+                if (sourceProps.ContainsKey("_EmissionBlink"))
+                {
+                    Vector4 blink = (Vector4)sourceProps["_EmissionBlink"];
+                    if (blink.x > 0.001f)
+                    {
+                        AddDerivedChange("_EmissionBlink", "_EmissionPulse, _EmissionPulseAmplitude, _EmissionPulseSpeed",
+                            "Blink→Pulse 変換", report);
+                    }
+                }
+            }
+
+            bool useEmission2nd = GetFloatOrStatic(sourceProps, "_UseEmission2nd", 0) > 0.5f;
+            if (useEmission2nd)
+            {
+                report.warnings.Add("Emission 2nd は Natane に直接対応がありません。手動調整が必要です。");
+            }
+
+            // --- MatCap ---
+            bool useMatCap = GetFloatOrStatic(sourceProps, "_UseMatCap", 0) > 0.5f;
+            if (useMatCap)
+            {
+                AddChangeIfExists(sourceProps, "_MatCapTex", "_MatCapTex", PropertyChange.ChangeType.Direct, report);
+                AddChangeIfExists(sourceProps, "_MatCapBlendMask", "_MatCapMask", PropertyChange.ChangeType.Direct, report);
+                AddChangeIfExists(sourceProps, "_MatCapBlendMode", "_MatCapBlendMode", PropertyChange.ChangeType.Converted, report,
+                    "MatCap ブレンドモード変換");
+                report.warnings.Add("MatCap は lilToon と Natane で実装が異なります。手動確認が必要です。");
+            }
+
+            // --- Specular ---
+            float metallic = GetFloatOrStatic(sourceProps, "_Metallic", 0);
+            if (metallic > 0.01f)
+            {
+                AddDerivedChange("_Metallic/_Smoothness/_SpecularToon/_SpecularBorder",
+                    "_SpecularSize, _SpecularSoftness", "PBR/Toon スペキュラ変換", report);
+            }
+
+            // --- Render State ---
+            AddChangeIfExists(sourceProps, "_Cull", "_Cull", PropertyChange.ChangeType.Direct, report);
+            AddChangeIfExists(sourceProps, "_ZWrite", "_ZWrite", PropertyChange.ChangeType.Direct, report);
+            AddChangeIfExists(sourceProps, "_Cutoff", "_Cutoff", PropertyChange.ChangeType.Direct, report);
+
+            // --- Lighting defaults ---
+            report.changes.Add(new PropertyChange
+            {
+                propertyName = "(Natane defaults)",
+                sourceValue = "-",
+                targetPropertyName = "_LightIntensity, _ShadowMaxDarkness, etc.",
+                targetValue = "Natane 推奨デフォルト値",
+                changeType = PropertyChange.ChangeType.DefaultSet,
+                note = "移行後のライティングデフォルト設定"
+            });
+
+            // --- Unsupported features ---
+            if (GetFloatOrStatic(sourceProps, "_UseRimShade", 0) > 0.5f)
+                report.warnings.Add("Rim Shade は Natane に直接対応がありません。");
+            if (GetFloatOrStatic(sourceProps, "_ShadowBorderRange", 0) > 0.001f)
+                report.warnings.Add($"Shadow Border Range ({GetFloatOrStatic(sourceProps, "_ShadowBorderRange", 0):F2}) は Natane に直接対応がありません。");
+            if (GetFloatOrStatic(sourceProps, "_BackfaceForceShadow", 0) > 0.001f)
+                report.warnings.Add("Backface Force Shadow は Natane に対応がありません。");
+            if (GetFloatOrStatic(sourceProps, "_ShadowPostAO", 0) > 0.5f)
+                report.warnings.Add("Shadow Post AO は Natane に対応がありません。");
+            if (GetFloatOrStatic(sourceProps, "_UseBacklight", 0) > 0.5f)
+                report.warnings.Add("Backlight は Natane に直接対応がありません。Rim Light で近似できる場合があります。");
+        }
+
+        /// <summary>
+        /// CaptureProperties でキャプチャされなかった lilToon のプロパティを未マッピングとして報告する。
+        /// </summary>
+        private static void DetectUnmappedProperties(Material material, Dictionary<string, object> capturedProps, MigrationReport report)
+        {
+            var allProps = GetAllMaterialPropertyNames(material);
+
+            foreach (string prop in allProps)
+            {
+                // 内部プロパティは無視
+                if (IgnoredInternalProperties.Contains(prop)) continue;
+                // _ST (tiling/offset) サフィックスは無視
+                if (prop.EndsWith("_ST")) continue;
+                // 既にキャプチャ＆マッピング済みのプロパティ
+                if (MappedSourceProperties.Contains(prop)) continue;
+                // フラグ/トグルプロパティで既知のもの
+                if (prop.StartsWith("_Use") && capturedProps.ContainsKey(prop)) continue;
+                // __sourceShaderName は内部用
+                if (prop.StartsWith("__")) continue;
+
+                // 既知の lilToon-only プロパティ
+                if (KnownLilToonOnlyProperties.Contains(prop))
+                {
+                    // 実際に値が設定されているか確認
+                    if (material.HasProperty(prop))
+                    {
+                        report.unmappedProperties.Add(prop);
+                    }
+                }
+                // キャプチャ対象外の未知プロパティ
+                else if (!capturedProps.ContainsKey(prop))
+                {
+                    report.unmappedProperties.Add(prop);
+                }
+            }
+        }
+
+        private static float GetFloatOrStatic(Dictionary<string, object> props, string key, float defaultValue)
+        {
+            if (props.ContainsKey(key))
+                return (float)props[key];
+            return defaultValue;
+        }
+
+        private static void AddChangeIfExists(Dictionary<string, object> sourceProps, string sourceKey, string targetKey,
+            PropertyChange.ChangeType changeType, MigrationReport report, string note = null)
+        {
+            if (!sourceProps.ContainsKey(sourceKey)) return;
+
+            report.changes.Add(new PropertyChange
+            {
+                propertyName = sourceKey,
+                sourceValue = FormatValue(sourceProps, sourceKey),
+                targetPropertyName = targetKey,
+                targetValue = changeType == PropertyChange.ChangeType.Direct ? FormatValue(sourceProps, sourceKey) : "(変換後の値)",
+                changeType = changeType,
+                note = note
+            });
+        }
+
+        private static void AddDerivedChange(string sourceDesc, string targetDesc, string note, MigrationReport report)
+        {
+            report.changes.Add(new PropertyChange
+            {
+                propertyName = sourceDesc,
+                sourceValue = "(複数ソース)",
+                targetPropertyName = targetDesc,
+                targetValue = "(算出値)",
+                changeType = PropertyChange.ChangeType.Derived,
+                note = note
+            });
+        }
+
+        private static string FormatValue(Dictionary<string, object> props, string key)
+        {
+            if (!props.ContainsKey(key)) return "(N/A)";
+            object val = props[key];
+            if (val == null) return "(null)";
+            if (val is float f) return f.ToString("F3");
+            if (val is Color c) return $"({c.r:F2},{c.g:F2},{c.b:F2},{c.a:F2})";
+            if (val is Vector4 v) return $"({v.x:F2},{v.y:F2},{v.z:F2},{v.w:F2})";
+            if (val is Texture tex) return tex.name;
+            return val.ToString();
+        }
+
         [MenuItem(NataneToolMenuPaths.LilToonMigration, false, 51)]
         public static void ShowWindow()
         {
@@ -175,6 +609,13 @@ namespace NataneToon.Editor
                     EditorGUILayout.BeginVertical(EditorStyles.helpBox);
                     EditorGUILayout.ObjectField(material, typeof(Material), false);
 
+                    EditorGUILayout.BeginHorizontal();
+                    if (GUILayout.Button(L("Preview", "Preview"), GUILayout.Height(24f)))
+                    {
+                        currentDryRunReport = DryRun(material);
+                        dryRunTargetMaterial = material;
+                        showDryRunResult = true;
+                    }
                     if (GUILayout.Button(L("Convert", "Convert"), GUILayout.Height(24f)))
                     {
                         var report = ConvertMaterialWithReport(material);
@@ -185,6 +626,7 @@ namespace NataneToon.Editor
                             ScanForLilToonMaterials();
                         }
                     }
+                    EditorGUILayout.EndHorizontal();
 
                     EditorGUILayout.EndVertical();
                 }
@@ -193,6 +635,12 @@ namespace NataneToon.Editor
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.ObjectField(material, typeof(Material), false);
 
+                    if (GUILayout.Button(L("Preview", "Preview"), GUILayout.Width(70)))
+                    {
+                        currentDryRunReport = DryRun(material);
+                        dryRunTargetMaterial = material;
+                        showDryRunResult = true;
+                    }
                     if (GUILayout.Button(L("Convert", "Convert"), GUILayout.Width(80)))
                     {
                         var report = ConvertMaterialWithReport(material);
@@ -219,6 +667,133 @@ namespace NataneToon.Editor
                 ConvertAllMaterials();
             }
             GUI.enabled = true;
+
+            // Dry Run result display
+            if (showDryRunResult && currentDryRunReport != null)
+            {
+                DrawDryRunReport();
+            }
+        }
+
+        /// <summary>
+        /// ドライラン結果をUIに描画する。
+        /// </summary>
+        private void DrawDryRunReport()
+        {
+            EditorGUILayout.Space(8);
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+            // Header
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(
+                L($"移行プレビュー: {currentDryRunReport.materialName}", $"Migration Preview: {currentDryRunReport.materialName}"),
+                EditorStyles.boldLabel);
+            if (GUILayout.Button("x", GUILayout.Width(20)))
+            {
+                showDryRunResult = false;
+                currentDryRunReport = null;
+                dryRunTargetMaterial = null;
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.EndVertical();
+                return;
+            }
+            EditorGUILayout.EndHorizontal();
+
+            // Shader info
+            EditorGUILayout.LabelField(
+                L($"シェーダー: {currentDryRunReport.sourceShaderName} → {currentDryRunReport.targetShaderName}",
+                  $"Shader: {currentDryRunReport.sourceShaderName} -> {currentDryRunReport.targetShaderName}"),
+                EditorStyles.miniLabel);
+
+            EditorGUILayout.Space(4);
+
+            dryRunScrollPosition = EditorGUILayout.BeginScrollView(dryRunScrollPosition, GUILayout.Height(GetAdaptiveListHeight(150f, 300f, 0.25f)));
+
+            // Property changes
+            if (currentDryRunReport.changes.Count > 0)
+            {
+                EditorGUILayout.LabelField(
+                    L($"プロパティ変更 ({currentDryRunReport.changes.Count})", $"Property Changes ({currentDryRunReport.changes.Count})"),
+                    EditorStyles.boldLabel);
+
+                foreach (var change in currentDryRunReport.changes)
+                {
+                    string changeIcon;
+                    switch (change.changeType)
+                    {
+                        case PropertyChange.ChangeType.Direct: changeIcon = "="; break;
+                        case PropertyChange.ChangeType.Converted: changeIcon = "~"; break;
+                        case PropertyChange.ChangeType.Derived: changeIcon = "+"; break;
+                        case PropertyChange.ChangeType.DefaultSet: changeIcon = "*"; break;
+                        default: changeIcon = "?"; break;
+                    }
+
+                    string label = $"  {changeIcon} {change.propertyName} -> {change.targetPropertyName}";
+                    if (!string.IsNullOrEmpty(change.note))
+                        label += $"  ({change.note})";
+
+                    EditorGUILayout.LabelField(label, EditorStyles.miniLabel);
+                }
+            }
+
+            // Warnings
+            if (currentDryRunReport.warnings.Count > 0)
+            {
+                EditorGUILayout.Space(4);
+                EditorGUILayout.LabelField(
+                    L($"警告 ({currentDryRunReport.warnings.Count})", $"Warnings ({currentDryRunReport.warnings.Count})"),
+                    EditorStyles.boldLabel);
+
+                var warningStyle = new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = new Color(1f, 0.6f, 0f) } };
+                foreach (var warning in currentDryRunReport.warnings)
+                {
+                    EditorGUILayout.LabelField($"  ! {warning}", warningStyle);
+                }
+            }
+
+            // Unmapped properties
+            if (currentDryRunReport.unmappedProperties.Count > 0)
+            {
+                EditorGUILayout.Space(4);
+                EditorGUILayout.LabelField(
+                    L($"未マッピング ({currentDryRunReport.unmappedProperties.Count})", $"Unmapped ({currentDryRunReport.unmappedProperties.Count})"),
+                    EditorStyles.boldLabel);
+
+                var unmappedStyle = new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = Color.gray } };
+                foreach (var prop in currentDryRunReport.unmappedProperties)
+                {
+                    EditorGUILayout.LabelField($"  - {prop}", unmappedStyle);
+                }
+            }
+
+            EditorGUILayout.EndScrollView();
+
+            // Summary
+            EditorGUILayout.Space(2);
+            EditorGUILayout.LabelField(
+                L($"変更: {currentDryRunReport.successCount} | 警告: {currentDryRunReport.warningCount} | 未マッピング: {currentDryRunReport.unmappedProperties.Count}",
+                  $"Changes: {currentDryRunReport.successCount} | Warnings: {currentDryRunReport.warningCount} | Unmapped: {currentDryRunReport.unmappedProperties.Count}"),
+                EditorStyles.miniLabel);
+
+            // Convert button directly from preview
+            if (dryRunTargetMaterial != null)
+            {
+                if (GUILayout.Button(L("このマテリアルを変換", "Convert This Material"), GUILayout.Height(28)))
+                {
+                    var report = ConvertMaterialWithReport(dryRunTargetMaterial);
+                    if (report.success)
+                    {
+                        AssetDatabase.SaveAssets();
+                        ShowConversionReport(new List<ConversionReport> { report }, 1);
+                        showDryRunResult = false;
+                        currentDryRunReport = null;
+                        dryRunTargetMaterial = null;
+                        ScanForLilToonMaterials();
+                    }
+                }
+            }
+
+            EditorGUILayout.EndVertical();
         }
 
         private void DrawProjectPageControls()
@@ -406,10 +981,18 @@ namespace NataneToon.Editor
                         EditorGUILayout.EndHorizontal();
                     }
 
+                    EditorGUILayout.BeginHorizontal();
+                    if (GUILayout.Button(L("Preview", "Preview"), GUILayout.Height(24f)))
+                    {
+                        currentDryRunReport = DryRun(mat);
+                        dryRunTargetMaterial = mat;
+                        showDryRunResult = true;
+                    }
                     if (GUILayout.Button(L("Convert", "Convert"), GUILayout.Height(24f)))
                     {
                         ConvertSinglePrefabMaterial(mat);
                     }
+                    EditorGUILayout.EndHorizontal();
                 }
                 else
                 {
@@ -423,6 +1006,12 @@ namespace NataneToon.Editor
                         EditorGUILayout.ObjectField(entries[0].converted, typeof(Material), false);
                     }
 
+                    if (GUILayout.Button(L("Preview", "Preview"), GUILayout.Width(70)))
+                    {
+                        currentDryRunReport = DryRun(mat);
+                        dryRunTargetMaterial = mat;
+                        showDryRunResult = true;
+                    }
                     if (GUILayout.Button(L("Convert", "Convert"), GUILayout.Width(100)))
                     {
                         ConvertSinglePrefabMaterial(mat);
@@ -500,6 +1089,12 @@ namespace NataneToon.Editor
                     }
                     EditorGUILayout.EndHorizontal();
                 }
+            }
+
+            // Dry Run result display (Prefab mode)
+            if (showDryRunResult && currentDryRunReport != null)
+            {
+                DrawDryRunReport();
             }
         }
 
@@ -1009,6 +1604,20 @@ namespace NataneToon.Editor
             CaptureFloat(material, "_RefractionStrength", properties);
             CaptureFloat(material, "_RefractionFresnelPower", properties);
 
+            // === Backlight (lilToon specific, no Natane equivalent yet) ===
+            CaptureFloat(material, "_UseBacklight", properties);
+            CaptureColor(material, "_BacklightColor", properties);
+            CaptureFloat(material, "_BacklightBorder", properties);
+            CaptureFloat(material, "_BacklightBlur", properties);
+            CaptureFloat(material, "_BacklightDirectivity", properties);
+            CaptureFloat(material, "_BacklightViewStrength", properties);
+
+            // === Reflection (lilToon) ===
+            CaptureFloat(material, "_ReflectionSpecular", properties);
+
+            // === Outline Lighting ===
+            CaptureFloat(material, "_OutlineEnableLighting", properties);
+
             // === Render State ===
             CaptureFloat(material, "_Cull", properties);
             CaptureFloat(material, "_ZWrite", properties);
@@ -1465,8 +2074,41 @@ namespace NataneToon.Editor
             {
                 targetMaterial.SetFloat("_Outline", 1.0f);
                 targetMaterial.EnableKeyword("_OUTLINE");
+
+                // Outline Lighting
+                float outlineEnableLighting = GetFloatOr(sourceProps, "_OutlineEnableLighting", 1.0f);
+                if (targetMaterial.HasProperty("_OutlineLighting"))
+                {
+                    targetMaterial.SetFloat("_OutlineLighting", outlineEnableLighting);
+                    report.infos.Add($"Outline Lighting: {outlineEnableLighting:F2}");
+                }
+
                 if (isOutlineVariant)
                     report.infos.Add($"Outline enabled (source: {sourceShaderName}).");
+            }
+
+            // === Backlight → Rim Light approximation ===
+            bool useBacklight = GetFloatOr(sourceProps, "_UseBacklight", 0) > 0.5f;
+            if (useBacklight && !useRim)
+            {
+                // Backlight を Rim Light で近似する（Rim が既に有効でない場合のみ）
+                targetMaterial.SetFloat("_RimLight", 1.0f);
+                targetMaterial.EnableKeyword("_RIM_LIGHT");
+
+                if (sourceProps.ContainsKey("_BacklightColor"))
+                {
+                    targetMaterial.SetColor("_RimColor", (Color)sourceProps["_BacklightColor"]);
+                }
+
+                float backlightBorder = GetFloatOr(sourceProps, "_BacklightBorder", 0.35f);
+                float backlightBlur = GetFloatOr(sourceProps, "_BacklightBlur", 0.05f);
+                float rimPower = Mathf.Clamp(3.0f + (1.0f - backlightBorder) * 4.0f, 1.0f, 10.0f);
+                targetMaterial.SetFloat("_RimPower", rimPower);
+                targetMaterial.SetFloat("_RimSpread", Mathf.Clamp01(1.0f - backlightBorder));
+                targetMaterial.SetFloat("_RimIntensity", 1.0f);
+
+                report.infos.Add($"Backlight approximated as Rim Light: Power={rimPower:F2}, Spread={1.0f - backlightBorder:F2}");
+                report.warnings.Add("Backlight は Rim Light で近似しています。見た目が異なる場合があります。");
             }
 
             // === Emission ===

@@ -8,10 +8,17 @@ namespace NataneToon.Editor
     {
         public string actionId;
         public string displayName;
+        public string category; // カテゴリ分け (Tools, Color, Canvas, Edit, etc.)
         public KeyCode keyCode;
         public bool ctrl;
         public bool shift;
         public bool alt;
+
+        // Default values for reset / デフォルト値（リセット用）
+        [System.NonSerialized] public KeyCode defaultKeyCode;
+        [System.NonSerialized] public bool defaultCtrl;
+        [System.NonSerialized] public bool defaultShift;
+        [System.NonSerialized] public bool defaultAlt;
 
         public string ToDisplayString()
         {
@@ -21,6 +28,26 @@ namespace NataneToon.Editor
             if (alt)   sb.Append("Alt+");
             sb.Append(keyCode.ToString());
             return sb.ToString();
+        }
+
+        public bool IsModified =>
+            keyCode != defaultKeyCode || ctrl != defaultCtrl ||
+            shift != defaultShift || alt != defaultAlt;
+
+        public void ResetToDefault()
+        {
+            keyCode = defaultKeyCode;
+            ctrl = defaultCtrl;
+            shift = defaultShift;
+            alt = defaultAlt;
+        }
+
+        public void StoreDefaults()
+        {
+            defaultKeyCode = keyCode;
+            defaultCtrl = ctrl;
+            defaultShift = shift;
+            defaultAlt = alt;
         }
     }
 
@@ -38,19 +65,43 @@ namespace NataneToon.Editor
         public static MaskTextureShortcutProfile CreateDefault()
         {
             var p = new MaskTextureShortcutProfile();
+            string catEdit = "Edit";
+            string catTool = "Tools";
+            string catBrush = "Brush";
+            string catCanvas = "Canvas";
+            string catColor = "Color";
+
             p.bindings = new System.Collections.Generic.List<ShortcutBinding>
             {
-                new ShortcutBinding { actionId = "Undo", displayName = "Undo", keyCode = KeyCode.Z, ctrl = true },
-                new ShortcutBinding { actionId = "Redo", displayName = "Redo", keyCode = KeyCode.Y, ctrl = true },
-                new ShortcutBinding { actionId = "BrushSizeUp", displayName = "Brush Size Up", keyCode = KeyCode.RightBracket },
-                new ShortcutBinding { actionId = "BrushSizeDown", displayName = "Brush Size Down", keyCode = KeyCode.LeftBracket },
-                new ShortcutBinding { actionId = "FitCanvas", displayName = "Fit Canvas", keyCode = KeyCode.F },
-                new ShortcutBinding { actionId = "ToggleUV", displayName = "Toggle UV", keyCode = KeyCode.U },
-                new ShortcutBinding { actionId = "ToggleBrush", displayName = "Toggle Brush", keyCode = KeyCode.B },
-                new ShortcutBinding { actionId = "FlipHorizontal", displayName = "Flip Horizontal", keyCode = KeyCode.H },
-                new ShortcutBinding { actionId = "ZoomIn", displayName = "Zoom In", keyCode = KeyCode.Equals, ctrl = true },
-                new ShortcutBinding { actionId = "ZoomOut", displayName = "Zoom Out", keyCode = KeyCode.Minus, ctrl = true },
+                // Edit
+                new ShortcutBinding { actionId = "Undo", displayName = "Undo", category = catEdit, keyCode = KeyCode.Z, ctrl = true },
+                new ShortcutBinding { actionId = "Redo", displayName = "Redo", category = catEdit, keyCode = KeyCode.Y, ctrl = true },
+                new ShortcutBinding { actionId = "Save", displayName = "Save Project", category = catEdit, keyCode = KeyCode.S, ctrl = true },
+                new ShortcutBinding { actionId = "Open", displayName = "Open Project", category = catEdit, keyCode = KeyCode.O, ctrl = true },
+                // Tools
+                new ShortcutBinding { actionId = "ToolBrush", displayName = "Brush Tool", category = catTool, keyCode = KeyCode.B },
+                new ShortcutBinding { actionId = "ToolEraser", displayName = "Eraser Tool", category = catTool, keyCode = KeyCode.E },
+                new ShortcutBinding { actionId = "Eyedropper", displayName = "Eyedropper", category = catTool, keyCode = KeyCode.I },
+                new ShortcutBinding { actionId = "QuickMask", displayName = "Quick Mask", category = catTool, keyCode = KeyCode.Q },
+                // Brush
+                new ShortcutBinding { actionId = "BrushSizeUp", displayName = "Brush Size Up", category = catBrush, keyCode = KeyCode.RightBracket },
+                new ShortcutBinding { actionId = "BrushSizeDown", displayName = "Brush Size Down", category = catBrush, keyCode = KeyCode.LeftBracket },
+                new ShortcutBinding { actionId = "FlipHorizontal", displayName = "Flip Horizontal", category = catBrush, keyCode = KeyCode.H },
+                // Canvas
+                new ShortcutBinding { actionId = "FitCanvas", displayName = "Fit Canvas", category = catCanvas, keyCode = KeyCode.F },
+                new ShortcutBinding { actionId = "ToggleUV", displayName = "Toggle UV", category = catCanvas, keyCode = KeyCode.U },
+                new ShortcutBinding { actionId = "ZoomIn", displayName = "Zoom In", category = catCanvas, keyCode = KeyCode.Equals, ctrl = true },
+                new ShortcutBinding { actionId = "ZoomOut", displayName = "Zoom Out", category = catCanvas, keyCode = KeyCode.Minus, ctrl = true },
+                // Color
+                new ShortcutBinding { actionId = "SwapColors", displayName = "Swap FG/BG", category = catColor, keyCode = KeyCode.X },
+                new ShortcutBinding { actionId = "DefaultColors", displayName = "Default Colors", category = catColor, keyCode = KeyCode.D },
+                // System
+                new ShortcutBinding { actionId = "CommandPalette", displayName = "Command Palette", category = catEdit, keyCode = KeyCode.P, ctrl = true, shift = true },
+                new ShortcutBinding { actionId = "Help", displayName = "Help", category = catEdit, keyCode = KeyCode.F1 },
             };
+
+            // Store defaults for reset functionality
+            foreach (var b in p.bindings) b.StoreDefaults();
             return p;
         }
 
@@ -72,6 +123,7 @@ namespace NataneToon.Editor
             foreach (var b in p.bindings)
             {
                 if (b.actionId == "FitCanvas") { b.keyCode = KeyCode.Alpha0; b.ctrl = true; }
+                else if (b.actionId == "Redo") { b.keyCode = KeyCode.Z; b.ctrl = true; b.shift = true; }
             }
             return p;
         }
@@ -174,6 +226,23 @@ namespace NataneToon.Editor
             if (profile?.bindings == null) return null;
             foreach (var b in profile.bindings)
                 if (b.actionId == actionId) return b;
+            return null;
+        }
+
+        /// <summary>
+        /// Find duplicate binding (same key combo assigned to different action).
+        /// 重複バインディング検出（同じキーコンボが別アクションに割り当てられている）
+        /// </summary>
+        public static ShortcutBinding FindDuplicate(MaskTextureShortcutProfile profile, ShortcutBinding target)
+        {
+            if (profile?.bindings == null || target == null) return null;
+            foreach (var b in profile.bindings)
+            {
+                if (b.actionId == target.actionId) continue;
+                if (b.keyCode == target.keyCode && b.ctrl == target.ctrl &&
+                    b.shift == target.shift && b.alt == target.alt)
+                    return b;
+            }
             return null;
         }
     }

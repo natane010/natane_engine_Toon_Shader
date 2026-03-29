@@ -1865,6 +1865,25 @@ half4 frag(v2f i) : SV_Target
     } // if (_Emission >= 0.5)
     #endif
 
+    // ===== Flipbook Animation (ForwardBase only) =====
+    #if defined(_FLIPBOOK) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Flipbook >= 0.5)
+    {
+        float2 flipUV = FlipbookUV(TRANSFORM_TEX(uv, _FlipbookTex), _FlipbookColumns, _FlipbookRows, _FlipbookSpeed);
+        half4 flipCol = NATANE_SAMPLE_REPEAT(_FlipbookTex, flipUV) * _FlipbookColor;
+        flipCol.a *= _FlipbookAlpha;
+
+        // Blend mode: 0=Add, 1=Multiply, 2=Replace
+        half3 preFlipbook = col.rgb;
+        if (_FlipbookBlendMode < 0.5) // Add
+            col.rgb += flipCol.rgb * flipCol.a;
+        else if (_FlipbookBlendMode < 1.5) // Multiply
+            col.rgb = lerp(col.rgb, col.rgb * flipCol.rgb, flipCol.a);
+        else // Replace
+            col.rgb = lerp(col.rgb, flipCol.rgb, flipCol.a);
+    }
+    #endif
+
     // ===== Virtual Expression - Hue Shift =====
     // Optimized: removed branching (ApplyHueShift handles _HueShift=0 efficiently)
     #if defined(_HUE_SHIFT) && defined(UNITY_PASS_FORWARDBASE)
@@ -2182,6 +2201,90 @@ half4 frag(v2f i) : SV_Target
     } // if (_Decal >= 0.5)
     #endif
 
+    // ===== Decal Layer 2 (ForwardBase only) =====
+    #if defined(_DECAL2) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Decal2 >= 0.5)
+    {
+        float2 decalUV2 = CalculateDecalUV(uv, _DecalPosition2.xy, _DecalRotation2, _DecalScale2);
+        half decalInBounds2 = step(0.0, decalUV2.x) * step(decalUV2.x, 1.0) * step(0.0, decalUV2.y) * step(decalUV2.y, 1.0);
+        if (decalInBounds2 > 0.5)
+        {
+            half3 preDecal2 = col.rgb;
+            half4 decalSample2 = SampleTex2DBlurRepeat(_DecalTex2, decalUV2, _DecalBlur2) * _DecalColor2;
+            half decalAlpha2 = decalSample2.a;
+            half3 decalAdd2 = SafeAdditiveBlendFast(col.rgb, decalSample2.rgb * decalAlpha2, 1.0);
+            half3 decalMul2 = lerp(col.rgb, col.rgb * decalSample2.rgb, decalAlpha2);
+            half3 decalReplace2 = lerp(col.rgb, decalSample2.rgb, decalAlpha2);
+
+            half isDecalMul2 = step(0.5, _DecalBlendMode2) * step(_DecalBlendMode2, 1.5);
+            half isDecalReplace2 = step(2.5, _DecalBlendMode2);
+            col.rgb = lerp(decalAdd2, decalMul2, isDecalMul2);
+            col.rgb = lerp(col.rgb, decalReplace2, isDecalReplace2);
+            half decalBlendFaded2 = _DecalBlend2;
+            #ifdef _DISTANCE_FADE
+                decalBlendFaded2 *= lerp(1.0, distanceFade, _Decal2DistFade);
+            #endif
+            col.rgb = lerp(preDecal2, col.rgb, decalBlendFaded2);
+        }
+    }
+    #endif
+
+    // ===== Decal Layer 3 (ForwardBase only) =====
+    #if defined(_DECAL3) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Decal3 >= 0.5)
+    {
+        float2 decalUV3 = CalculateDecalUV(uv, _DecalPosition3.xy, _DecalRotation3, _DecalScale3);
+        half decalInBounds3 = step(0.0, decalUV3.x) * step(decalUV3.x, 1.0) * step(0.0, decalUV3.y) * step(decalUV3.y, 1.0);
+        if (decalInBounds3 > 0.5)
+        {
+            half3 preDecal3 = col.rgb;
+            half4 decalSample3 = SampleTex2DBlurRepeat(_DecalTex3, decalUV3, _DecalBlur3) * _DecalColor3;
+            half decalAlpha3 = decalSample3.a;
+            half3 decalAdd3 = SafeAdditiveBlendFast(col.rgb, decalSample3.rgb * decalAlpha3, 1.0);
+            half3 decalMul3 = lerp(col.rgb, col.rgb * decalSample3.rgb, decalAlpha3);
+            half3 decalReplace3 = lerp(col.rgb, decalSample3.rgb, decalAlpha3);
+
+            half isDecalMul3 = step(0.5, _DecalBlendMode3) * step(_DecalBlendMode3, 1.5);
+            half isDecalReplace3 = step(2.5, _DecalBlendMode3);
+            col.rgb = lerp(decalAdd3, decalMul3, isDecalMul3);
+            col.rgb = lerp(col.rgb, decalReplace3, isDecalReplace3);
+            half decalBlendFaded3 = _DecalBlend3;
+            #ifdef _DISTANCE_FADE
+                decalBlendFaded3 *= lerp(1.0, distanceFade, _Decal3DistFade);
+            #endif
+            col.rgb = lerp(preDecal3, col.rgb, decalBlendFaded3);
+        }
+    }
+    #endif
+
+    // ===== Decal Layer 4 (ForwardBase only) =====
+    #if defined(_DECAL4) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Decal4 >= 0.5)
+    {
+        float2 decalUV4 = CalculateDecalUV(uv, _DecalPosition4.xy, _DecalRotation4, _DecalScale4);
+        half decalInBounds4 = step(0.0, decalUV4.x) * step(decalUV4.x, 1.0) * step(0.0, decalUV4.y) * step(decalUV4.y, 1.0);
+        if (decalInBounds4 > 0.5)
+        {
+            half3 preDecal4 = col.rgb;
+            half4 decalSample4 = SampleTex2DBlurRepeat(_DecalTex4, decalUV4, _DecalBlur4) * _DecalColor4;
+            half decalAlpha4 = decalSample4.a;
+            half3 decalAdd4 = SafeAdditiveBlendFast(col.rgb, decalSample4.rgb * decalAlpha4, 1.0);
+            half3 decalMul4 = lerp(col.rgb, col.rgb * decalSample4.rgb, decalAlpha4);
+            half3 decalReplace4 = lerp(col.rgb, decalSample4.rgb, decalAlpha4);
+
+            half isDecalMul4 = step(0.5, _DecalBlendMode4) * step(_DecalBlendMode4, 1.5);
+            half isDecalReplace4 = step(2.5, _DecalBlendMode4);
+            col.rgb = lerp(decalAdd4, decalMul4, isDecalMul4);
+            col.rgb = lerp(col.rgb, decalReplace4, isDecalReplace4);
+            half decalBlendFaded4 = _DecalBlend4;
+            #ifdef _DISTANCE_FADE
+                decalBlendFaded4 *= lerp(1.0, distanceFade, _Decal4DistFade);
+            #endif
+            col.rgb = lerp(preDecal4, col.rgb, decalBlendFaded4);
+        }
+    }
+    #endif
+
     // ===== Virtual Expression - Dissolve =====
     #ifdef _DISSOLVE
     if (_Dissolve >= 0.5)
@@ -2453,6 +2556,24 @@ half4 frag(v2f i) : SV_Target
             float2 ditherScreenPos = ditherScreenUV * _ScreenParams.xy;
             clip(ApplyDitheringAlpha(col.a, StabilizeDitherCoord(ditherScreenPos), max(_DitheringAlphaScale, 1.0)));
         }
+    #endif
+
+    // ===== ID Mask System (領域マスクシステム) =====
+    #if defined(_IDMASK) && defined(UNITY_PASS_FORWARDBASE)
+    if (_IDMask >= 0.5)
+    {
+        float4 idMask = NATANE_SAMPLE_SHARED(_IDMaskTex, _MainTex, TRANSFORM_TEX(uv, _IDMaskTex));
+        half3 tintedColor = col.rgb;
+
+        // 各チャンネルのティントを適用 (Multiply blend)
+        // _IDMaskColorN.a はティント強度として使用
+        tintedColor = lerp(tintedColor, tintedColor * _IDMaskColor1.rgb, idMask.r * _IDMaskColor1.a);
+        tintedColor = lerp(tintedColor, tintedColor * _IDMaskColor2.rgb, idMask.g * _IDMaskColor2.a);
+        tintedColor = lerp(tintedColor, tintedColor * _IDMaskColor3.rgb, idMask.b * _IDMaskColor3.a);
+        tintedColor = lerp(tintedColor, tintedColor * _IDMaskColor4.rgb, idMask.a * _IDMaskColor4.a);
+
+        col.rgb = tintedColor;
+    }
     #endif
 
     // ===== Fog =====

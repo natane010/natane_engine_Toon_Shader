@@ -1,0 +1,50 @@
+// MaskTex_SobelEdge.compute
+// Sobel 3x3 edge detection for mask texture operations
+// Dispatch: (texWidth/8, texHeight/8, 1)
+
+#pragma kernel SobelEdge
+
+Texture2D<float4> _Input;
+RWTexture2D<float4> _Result;
+int2 _TexSize;
+float _Strength;
+
+float Luminance(float4 c)
+{
+    return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+}
+
+[numthreads(8, 8, 1)]
+void SobelEdge(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_TexSize.x || id.y >= (uint)_TexSize.y)
+        return;
+
+    int x = (int)id.x;
+    int y = (int)id.y;
+
+    // Clamp neighbor coordinates
+    int xm = max(x - 1, 0);
+    int xp = min(x + 1, _TexSize.x - 1);
+    int ym = max(y - 1, 0);
+    int yp = min(y + 1, _TexSize.y - 1);
+
+    // Sample luminance from 8 neighbors + center
+    float tl = Luminance(_Input[int2(xm, yp)]);
+    float tc = Luminance(_Input[int2(x,  yp)]);
+    float tr = Luminance(_Input[int2(xp, yp)]);
+    float ml = Luminance(_Input[int2(xm, y)]);
+    float mr = Luminance(_Input[int2(xp, y)]);
+    float bl = Luminance(_Input[int2(xm, ym)]);
+    float bc = Luminance(_Input[int2(x,  ym)]);
+    float br = Luminance(_Input[int2(xp, ym)]);
+
+    // Sobel kernels
+    float gx = (-tl - 2.0 * ml - bl) + (tr + 2.0 * mr + br);
+    float gy = (-tl - 2.0 * tc - tr) + (bl + 2.0 * bc + br);
+
+    float edge = clamp(sqrt(gx * gx + gy * gy) * _Strength, 0.0, 1.0);
+
+    float4 source = _Input[id.xy];
+    _Result[id.xy] = float4(edge, edge, edge, source.a);
+}

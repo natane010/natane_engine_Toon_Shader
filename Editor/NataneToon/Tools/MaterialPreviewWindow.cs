@@ -39,6 +39,9 @@ namespace NataneToon.Editor
         private void OnEnable()
         {
             previewRenderUtility = new PreviewRenderUtility();
+            // Fix "Invalid antiAliasing value" warning
+            if (previewRenderUtility.camera.targetTexture != null)
+                previewRenderUtility.camera.targetTexture.antiAliasing = 1;
             previewRenderUtility.camera.transform.position = new Vector3(0, 0, -6);
             previewRenderUtility.camera.transform.rotation = Quaternion.identity;
             CreatePreviewObject();

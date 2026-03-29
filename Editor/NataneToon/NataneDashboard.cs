@@ -240,6 +240,7 @@ namespace NataneToon.Editor
             DrawHeader();
             DrawToolbar();
             EditorGUILayout.Space(5);
+            DrawRecommendedWorkflow();
             DrawCategoryTabs();
             EditorGUILayout.Space(5);
             DrawSearchBar();
@@ -302,6 +303,41 @@ namespace NataneToon.Editor
             EditorGUILayout.LabelField(L($"{filteredToolCount} ツール", $"{filteredToolCount} tools"), EditorStyles.miniLabel, GUILayout.Width(90));
 
             EditorGUILayout.EndHorizontal();
+        }
+
+        private void DrawRecommendedWorkflow()
+        {
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            EditorGUILayout.LabelField(L("推奨ワークフロー", "Recommended Workflow"),
+                new GUIStyle(EditorStyles.boldLabel) { fontSize = 13 });
+            EditorGUILayout.BeginHorizontal();
+
+            string[] steps = {
+                L("1. マテリアル作成\nCreate Material", "1. Create Material\nマテリアル作成"),
+                L("2. プリセット適用\nApply Preset", "2. Apply Preset\nプリセット適用"),
+                L("3. テクスチャ編集\nEdit Textures", "3. Edit Textures\nテクスチャ編集"),
+                L("4. 微調整\nFine Tune", "4. Fine Tune\n微調整"),
+                L("5. 最適化\nOptimize", "5. Optimize\n最適化")
+            };
+
+            var stepStyle = new GUIStyle(EditorStyles.helpBox) {
+                alignment = TextAnchor.MiddleCenter, fontSize = 10,
+                fixedHeight = 50, wordWrap = true
+            };
+            var arrowStyle = new GUIStyle(EditorStyles.boldLabel) {
+                alignment = TextAnchor.MiddleCenter, fontSize = 16
+            };
+
+            for (int i = 0; i < steps.Length; i++)
+            {
+                if (i > 0)
+                    GUILayout.Label("\u2192", arrowStyle, GUILayout.Width(20));
+                GUILayout.Box(steps[i], stepStyle, GUILayout.Width(100), GUILayout.Height(50));
+            }
+
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.Space(6);
         }
 
         private void DrawCategoryTabs()
