@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 namespace NataneToon.Editor
 {
@@ -1713,23 +1716,51 @@ namespace NataneToon.Editor
 
         private static float ResolvePressure(Event e, Vector2 rawCanvasPos, MaskTextureBrush brush, BrushSettings settings)
         {
-            float rawPressure;
+            float rawPressure = 0f;
+            bool pressureFound = false;
 
-            // 1. Try Event.pressure (IMGUI pen pressure) — CSP/SAI compatible
-            // IMGUI ペン筆圧を試行 — CSP/SAI互換
-            if (e.pressure > 0.0001f)
+            // 1. Primary: Input System Pen.current (most reliable for pen tablets)
+            // 最優先: Input System Pen.current（ペンタブレットで最も信頼性が高い）
+#if ENABLE_INPUT_SYSTEM
+            try
+            {
+                var pen = Pen.current;
+                if (pen != null)
+                {
+                    float penPressure = pen.pressure.ReadValue();
+                    if (penPressure > 0.001f)
+                    {
+                        rawPressure = Mathf.Clamp01(penPressure);
+                        pressureFound = true;
+                        if (!penPressureLogShown)
+                        {
+                            penPressureLogShown = true;
+                            penPressureDetected = true;
+                            Debug.Log("[TextureStudio] ペンタブレット筆圧を検出しました - Input System (Pen pressure detected via Input System)");
+                        }
+                    }
+                }
+            }
+            catch (System.Exception) { /* Input System not available */ }
+#endif
+
+            // 2. Fallback: Event.pressure (IMGUI legacy)
+            // フォールバック: Event.pressure（IMGUIレガシー）
+            if (!pressureFound && e.pressure > 0.0001f)
             {
                 rawPressure = e.pressure;
+                pressureFound = true;
                 if (!penPressureLogShown)
                 {
                     penPressureLogShown = true;
                     penPressureDetected = true;
-                    Debug.Log("[TextureStudio] ペンタブレット筆圧を検出しました (Pen pressure detected)");
+                    Debug.Log("[TextureStudio] ペンタブレット筆圧を検出しました - Event.pressure (Pen pressure detected via IMGUI)");
                 }
             }
-            // 2. No pressure available — use fixed value (CSP/SAI style: constant size)
-            // 筆圧未検出 — 固定値を使用（CSP/SAI方式: 一定サイズ）
-            else
+
+            // 3. No pressure available — fixed value (CSP/SAI style)
+            // 筆圧未検出 — 固定値（CSP/SAI方式）
+            if (!pressureFound)
             {
                 rawPressure = 1f;
                 if (!penPressureLogShown && e.pointerType == UnityEngine.PointerType.Pen)
