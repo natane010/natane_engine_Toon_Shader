@@ -136,7 +136,7 @@ namespace NataneToon.Editor
                     pressureSizeMin = 0f,
                     pressureCurveType = PressureCurveType.Natural,
                     pressureDeadZone = 0.01f,
-                    mouseSpeedPressureEnabled = true,
+                    mouseSpeedPressureEnabled = false,
                 },
                 // 丸ペン: クリスタの丸ペン互換。Gペンより細く、急なカーブ
                 new BrushPreset
@@ -148,7 +148,7 @@ namespace NataneToon.Editor
                     pressureSizeMin = 0f,
                     pressureCurveType = PressureCurveType.Logarithmic,
                     pressureDeadZone = 0.01f,
-                    mouseSpeedPressureEnabled = true,
+                    mouseSpeedPressureEnabled = false,
                 },
 
                 // === スタンダードプリセット ===
@@ -165,7 +165,7 @@ namespace NataneToon.Editor
                     pressureHardnessEnabled = true,
                     entryExitEnabled = true, entryLength = 15f, exitLength = 15f,
                     pressureDeadZone = 0.02f,
-                    mouseSpeedPressureEnabled = true,
+                    mouseSpeedPressureEnabled = false,
                 },
                 // ハード丸: ペンタッチ。筆圧でサイズ変化
                 new BrushPreset
@@ -178,7 +178,7 @@ namespace NataneToon.Editor
                     pressureCurveType = PressureCurveType.Natural,
                     entryExitEnabled = true, entryLength = 10f, exitLength = 10f,
                     pressureDeadZone = 0.02f,
-                    mouseSpeedPressureEnabled = true,
+                    mouseSpeedPressureEnabled = false,
                 },
                 // エアブラシ: ふんわり塗り
                 new BrushPreset
@@ -202,7 +202,7 @@ namespace NataneToon.Editor
                     pressureHardnessEnabled = true,
                     entryExitEnabled = true, entryLength = 12f, exitLength = 12f,
                     pressureDeadZone = 0.02f,
-                    mouseSpeedPressureEnabled = true,
+                    mouseSpeedPressureEnabled = false,
                 },
 
                 // === 消しゴムプリセット ===
@@ -216,7 +216,7 @@ namespace NataneToon.Editor
                     pressureSizeEnabled = true,
                     pressureSizeMin = 0.3f,
                     pressureCurveType = PressureCurveType.SCurve,
-                    mouseSpeedPressureEnabled = true,
+                    mouseSpeedPressureEnabled = false,
                 },
                 // ハード消しゴム
                 new BrushPreset

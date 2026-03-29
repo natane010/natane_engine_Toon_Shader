@@ -1715,8 +1715,8 @@ namespace NataneToon.Editor
         {
             float rawPressure;
 
-            // 1. Try Event.pressure (IMGUI pen pressure)
-            // IMGUI ペン筆圧を試行
+            // 1. Try Event.pressure (IMGUI pen pressure) — CSP/SAI compatible
+            // IMGUI ペン筆圧を試行 — CSP/SAI互換
             if (e.pressure > 0.0001f)
             {
                 rawPressure = e.pressure;
@@ -1727,36 +1727,18 @@ namespace NataneToon.Editor
                     Debug.Log("[TextureStudio] ペンタブレット筆圧を検出しました (Pen pressure detected)");
                 }
             }
-            // 2. Try pointer type detection: pen may report pressure=0 but still be a pen
-            // ポインタータイプ検出: 筆圧0でもペンとして認識されている場合がある
-            else if (e.pointerType == UnityEngine.PointerType.Pen)
-            {
-                // Pen is detected but pressure is 0 - use speed simulation as substitute
-                // ペン検出されたが筆圧0 - 速度シミュレーションで代替
-                rawPressure = brush.PressureFilter.SimulateMousePressure(
-                    rawCanvasPos, true,
-                    settings.mouseSpeedMin, settings.mouseSpeedMax,
-                    settings.mouseSpeedCurve);
-                if (!penPressureLogShown)
-                {
-                    penPressureLogShown = true;
-                    Debug.LogWarning("[TextureStudio] ペンタブレットは検出されましたが筆圧が取得できません。速度シミュレーションで代替します。\n" +
-                        "タブレットドライバの設定で「Windows Ink」を有効にすると筆圧が使えるようになる場合があります。\n" +
-                        "(Pen detected but pressure=0. Using speed simulation. Enable 'Windows Ink' in tablet driver settings.)");
-                }
-            }
-            // 3. Mouse speed pressure simulation (always available fallback)
-            // マウス速度筆圧シミュレーション（常時利用可能なフォールバック）
-            else if (settings.mouseSpeedPressureEnabled)
-            {
-                rawPressure = brush.PressureFilter.SimulateMousePressure(
-                    rawCanvasPos, true,
-                    settings.mouseSpeedMin, settings.mouseSpeedMax,
-                    settings.mouseSpeedCurve);
-            }
+            // 2. No pressure available — use fixed value (CSP/SAI style: constant size)
+            // 筆圧未検出 — 固定値を使用（CSP/SAI方式: 一定サイズ）
             else
             {
                 rawPressure = 1f;
+                if (!penPressureLogShown && e.pointerType == UnityEngine.PointerType.Pen)
+                {
+                    penPressureLogShown = true;
+                    Debug.LogWarning("[TextureStudio] ペンタブレットは検出されましたが筆圧が取得できません。固定筆圧で描画します。\n" +
+                        "タブレットドライバの設定で「Windows Ink」を有効にすると筆圧が使えるようになる場合があります。\n" +
+                        "(Pen detected but pressure=0. Drawing with constant pressure. Enable 'Windows Ink' in tablet driver settings.)");
+                }
             }
 
             // Apply dead zone and smoothing filter
