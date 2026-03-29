@@ -17,19 +17,19 @@ CBUFFER_START(UnityPerMaterial)
     float _MainTexRotateSpeed;
 
     // Color Preservation
-    float _AlbedoPreservation;
-    float _Saturation;
-    float _Brightness;
+    half _AlbedoPreservation;
+    half _Saturation;
+    half _Brightness;
 
     // Surface Finish
-    float _Glossiness;
-    float _MatteEffect;
+    half _Glossiness;
+    half _MatteEffect;
 
     // Final Color Blending
-    float _FinalHighlightBlend;
-    float _HighlightThreshold;
-    float _FinalShadowBlend;
-    float _ShadowThreshold;
+    half _FinalHighlightBlend;
+    half _HighlightThreshold;
+    half _FinalShadowBlend;
+    half _ShadowThreshold;
 
     // ===== SECTION 2: Makeup Textures (マルチレイヤー) =====
     // 2nd〜5thテクスチャレイヤー（各8パラメータ）
@@ -37,71 +37,71 @@ CBUFFER_START(UnityPerMaterial)
 
     // Makeup Textures
     float4 _2ndTex_ST;
-    float _2ndTexHueShift;
-    float _2ndTexSaturation;
-    float _2ndTexValue;
-    float _2ndTexIntensity;
-    float _2ndTexBlendMode;
+    half _2ndTexHueShift;
+    half _2ndTexSaturation;
+    half _2ndTexValue;
+    half _2ndTexIntensity;
+    half _2ndTexBlendMode;
     float4 _2ndTexScrollSpeed;
     float _2ndTexRotateSpeed;
 
     float4 _3rdTex_ST;
-    float _3rdTexHueShift;
-    float _3rdTexSaturation;
-    float _3rdTexValue;
-    float _3rdTexIntensity;
-    float _3rdTexBlendMode;
+    half _3rdTexHueShift;
+    half _3rdTexSaturation;
+    half _3rdTexValue;
+    half _3rdTexIntensity;
+    half _3rdTexBlendMode;
     float4 _3rdTexScrollSpeed;
     float _3rdTexRotateSpeed;
 
     float4 _4thTex_ST;
-    float _4thTexHueShift;
-    float _4thTexSaturation;
-    float _4thTexValue;
-    float _4thTexIntensity;
-    float _4thTexBlendMode;
+    half _4thTexHueShift;
+    half _4thTexSaturation;
+    half _4thTexValue;
+    half _4thTexIntensity;
+    half _4thTexBlendMode;
     float4 _4thTexScrollSpeed;
     float _4thTexRotateSpeed;
 
     float4 _5thTex_ST;
-    float _5thTexHueShift;
-    float _5thTexSaturation;
-    float _5thTexValue;
-    float _5thTexIntensity;
-    float _5thTexBlendMode;
+    half _5thTexHueShift;
+    half _5thTexSaturation;
+    half _5thTexValue;
+    half _5thTexIntensity;
+    half _5thTexBlendMode;
     float4 _5thTexScrollSpeed;
     float _5thTexRotateSpeed;
 
     // Screen-Tone Overlay
     #if defined(_SCREEN_TONE)
     half4 _ScreenToneColor;
-    float _ScreenToneScale;
-    float _ScreenToneThreshold;
-    float _ScreenToneBlend;
-    float _ScreenToneBlendMode;
-    float _ScreenToneBlur;
+    half _ScreenToneScale;
+    half _ScreenToneThreshold;
+    half _ScreenToneBlend;
+    half _ScreenToneBlendMode;
+    half _ScreenToneBlur;
     #endif
 
     // Halftone Shadow
     #if defined(_HALFTONE_SHADOW)
     half4 _HalftoneShadowColor;
-    float _HalftoneShadowScale;
-    float _HalftoneShadowThreshold;
-    float _HalftoneShadowSoftness;
-    float _HalftoneShadowIntensity;
-    float _HalftoneShadowBlend;
+    half _HalftoneShadowScale;
+    half _HalftoneShadowThreshold;
+    half _HalftoneShadowSoftness;
+    half _HalftoneShadowIntensity;
+    half _HalftoneShadowBlend;
     #endif
 
     // Gradient Base Color
     #if defined(_GRADIENT_BASE_COLOR)
     half4 _GradientTopColor;
     half4 _GradientBottomColor;
-    float _GradientAxis;
-    float _GradientSpace;
-    float _GradientStart;
-    float _GradientEnd;
-    float _GradientBlend;
-    float _GradientBlendMode;
+    half _GradientAxis;
+    half _GradientSpace;
+    half _GradientStart;
+    half _GradientEnd;
+    half _GradientBlend;
+    half _GradientBlendMode;
     #endif
 
     // ===== SECTION 3: Lighting & Shading (ライティング基本) =====
@@ -109,119 +109,119 @@ CBUFFER_START(UnityPerMaterial)
     // トゥーンシェーディングの核となるライティング計算パラメータ群
 
     // Shading
-    float _ShadingMode;
-    float _SurfaceModel;
-    float _LookMode;
-    float _ToonWeight;
-    float _NprWeight;
-    float _PbrWeight;
-    float _ShadowMainStrength;
-    float _Shadow2ndBlur;
-    float _Shadow3rdBlur;
-    float _ShadingGradientWidth;
+    half _ShadingMode;
+    half _SurfaceModel;
+    half _LookMode;
+    half _ToonWeight;
+    half _NprWeight;
+    half _PbrWeight;
+    half _ShadowMainStrength;
+    half _Shadow2ndBlur;
+    half _Shadow3rdBlur;
+    half _ShadingGradientWidth;
     half4 _ShadowColor;
-    float _ShadowHueShift;
-    float _ShadowSaturation;
+    half _ShadowHueShift;
+    half _ShadowSaturation;
     half4 _Shadow2ndColor;
-    float _Shadow2ndBorder;
+    half _Shadow2ndBorder;
     half4 _Shadow3rdColor;
-    float _Shadow3rdBorder;
-    float _ShadowSteps;
-    float _ShadowSharpness;
-    float _StepBorderSmooth;
-    float _ShadowOffset;
-    float _WrapAmount;
-    float _LitSoftness;
-    float _ShadowBlend;
+    half _Shadow3rdBorder;
+    half _ShadowSteps;
+    half _ShadowSharpness;
+    half _StepBorderSmooth;
+    half _ShadowOffset;
+    half _WrapAmount;
+    half _LitSoftness;
+    half _ShadowBlend;
 
     // Vertex Color Shadow Threshold
     #if defined(_VERTEX_COLOR_SHADOW)
-    float _VCShadowThreshold;
-    float _VCShadowPush;
+    half _VCShadowThreshold;
+    half _VCShadowPush;
     #endif
 
     // SDF Shadow Map
-    float _SDFIntensity;
-    float _SDFSoftness;
-    float _SDFOffset;
+    half _SDFIntensity;
+    half _SDFSoftness;
+    half _SDFOffset;
 
     // Face SDF Rotation
     float4 _FaceForwardDirection;
     float4 _FaceRightDirection;
 
     // Shading Grade Map
-    float _ShadingGradeScale;
+    half _ShadingGradeScale;
 
     // Ambient Occlusion
-    float _AOIntensity;
-    float _AOBlend;
-    float _AOBlendMode;
-    float _AOBlur;
-    float _CavityStrength;
-    float _SpecularOcclusionStrength;
-    float _SkinSpecPrimaryStrength;
-    float _SkinSpecSecondaryStrength;
-    float _SkinSpecSecondarySmoothness;
+    half _AOIntensity;
+    half _AOBlend;
+    half _AOBlendMode;
+    half _AOBlur;
+    half _CavityStrength;
+    half _SpecularOcclusionStrength;
+    half _SkinSpecPrimaryStrength;
+    half _SkinSpecSecondaryStrength;
+    half _SkinSpecSecondarySmoothness;
     half4 _SkinSpecSecondaryColor;
-    float _SkinSpecFresnelPower;
+    half _SkinSpecFresnelPower;
 
     // Procedural AO
     #if defined(_PROCEDURAL_AO)
-    float _ProceduralAOHeightOffset;
-    float _ProceduralAOIntensity;
-    float _ProceduralAOSoftness;
+    half _ProceduralAOHeightOffset;
+    half _ProceduralAOIntensity;
+    half _ProceduralAOSoftness;
     #endif
 
     // Normal Warping
     #if defined(_NORMAL_WARP)
-    float _NormalFlattenY;
-    float _NormalRoundness;
+    half _NormalFlattenY;
+    half _NormalRoundness;
     #endif
 
     // Dithering
-    float _DitheringScale;
-    float _DitheringStrength;
-    float _DitheringBlend;
-    float _DitheringBlur;
-    float _DitherStabilize;
+    half _DitheringScale;
+    half _DitheringStrength;
+    half _DitheringBlend;
+    half _DitheringBlur;
+    half _DitherStabilize;
     #if defined(_BLUE_NOISE_DITHER)
-    float _BlueNoiseTemporal;
-    float _BlueNoiseAmount;
+    half _BlueNoiseTemporal;
+    half _BlueNoiseAmount;
     #endif
 
     // Advanced Lighting Controls
-    float _SoftLightingIntensity;
-    float _LightIntensity;
-    float _IndirectLightIntensity;
-    float _GIIntensity; // Environment Reflection (GI/Light Probes) intensity control
-    float _LightColorInfluence;
-    float _ShadowReceive;
-    float _ShadowSmoothing;
-    float _ShadowMaxDarkness;
-    float _SmoothNormalShadingBlend;
-    float _SmoothNormalMode;
-    float _LightColorMin;
-    float _LightColorMax;
-    float _MonochromeLighting;
-    float _LightMinInfluence;
-    float _LightMaxInfluence;
-    float _LightBlend;
-    float _HighlightSoftness;
-    float _BacklightIntensity;
+    half _SoftLightingIntensity;
+    half _LightIntensity;
+    half _IndirectLightIntensity;
+    half _GIIntensity; // Environment Reflection (GI/Light Probes) intensity control
+    half _LightColorInfluence;
+    half _ShadowReceive;
+    half _ShadowSmoothing;
+    half _ShadowMaxDarkness;
+    half _SmoothNormalShadingBlend;
+    half _SmoothNormalMode;
+    half _LightColorMin;
+    half _LightColorMax;
+    half _MonochromeLighting;
+    half _LightMinInfluence;
+    half _LightMaxInfluence;
+    half _LightBlend;
+    half _HighlightSoftness;
+    half _BacklightIntensity;
     half4 _BacklightColor;
-    float _BacklightBlend;
-    float _BacklightBlendMode;
-    float _BacklightBlur;
-    float _AdditionalLightIntensity;
+    half _BacklightBlend;
+    half _BacklightBlendMode;
+    half _BacklightBlur;
+    half _AdditionalLightIntensity;
 
     // VRC Light Volumes
-    float _LightVolumeIntensity;
-    float _LightVolumeBlendMode;
-    float _LightVolumeBlend;
+    half _LightVolumeIntensity;
+    half _LightVolumeBlendMode;
+    half _LightVolumeBlend;
 
     // Indirect Lighting (min color + max composition)
     half4 _IndirectLightMinColor;
-    float _ShadowEnvStrength;
+    half _ShadowEnvStrength;
 
     // ===== SECTION 4: Effects - Light Based (光源依存エフェクト) =====
     // スペキュラ、ヘアスペキュラ、リムライト、バックライト
@@ -230,59 +230,59 @@ CBUFFER_START(UnityPerMaterial)
     // Specular
     #if defined(_SPECULAR)
     half4 _SpecularColor;
-    float _SpecularSize;
-    float _SpecularSoftness;
-    float _SpecularIntensity;
-    float _SpecularBlend;
-    float _SpecularBlendMode;
-    float _SpecularBlur;
+    half _SpecularSize;
+    half _SpecularSoftness;
+    half _SpecularIntensity;
+    half _SpecularBlend;
+    half _SpecularBlendMode;
+    half _SpecularBlur;
     float4 _SpecularMaskScrollSpeed;
     float _SpecularMaskRotateSpeed;
     #endif
     #if defined(_SPECULAR_AA)
-    float _SpecularAAStrength;
+    half _SpecularAAStrength;
     #endif
     #if defined(_SPECULAR_DITHER)
-    float _SpecularDitherScale;
-    float _SpecularDitherStrength;
+    half _SpecularDitherScale;
+    half _SpecularDitherStrength;
     #endif
 
     // Hair Specular (Kajiya-Kay)
     #if defined(_HAIR_SPECULAR)
     half4 _HairSpecColor1;
-    float _HairSpecShift1;
-    float _HairSpecWidth1;
+    half _HairSpecShift1;
+    half _HairSpecWidth1;
     half4 _HairSpecColor2;
-    float _HairSpecShift2;
-    float _HairSpecWidth2;
-    float _HairSpecIntensity;
-    float _HairSpecBlend;
-    float _HairSpecBlendMode;
-    float _HairStrandDirectionStrength;
+    half _HairSpecShift2;
+    half _HairSpecWidth2;
+    half _HairSpecIntensity;
+    half _HairSpecBlend;
+    half _HairSpecBlendMode;
+    half _HairStrandDirectionStrength;
     half4 _HairTransmissionColor;
-    float _HairTransmissionStrength;
-    float _HairTransmissionPower;
+    half _HairTransmissionStrength;
+    half _HairTransmissionPower;
     #endif
 
     #if defined(_ANGEL_RING)
     float4 _AngelRingTex_ST;
     half4 _AngelRingColor;
-    float _AngelRingOffset;
-    float _AngelRingWidth;
-    float _AngelRingIntensity;
-    float _AngelRingBlend;
-    float _AngelRingBlendMode;
+    half _AngelRingOffset;
+    half _AngelRingWidth;
+    half _AngelRingIntensity;
+    half _AngelRingBlend;
+    half _AngelRingBlendMode;
     #endif
 
     // Rim Light
     #if defined(_RIM_LIGHT)
     half4 _RimColor;
-    float _RimPower;
-    float _RimIntensity;
-    float _RimSpread;
-    float _RimBlend;
-    float _RimBlendMode;
-    float _RimBlur;
+    half _RimPower;
+    half _RimIntensity;
+    half _RimSpread;
+    half _RimBlend;
+    half _RimBlendMode;
+    half _RimBlur;
     float4 _RimMaskScrollSpeed;
     float _RimMaskRotateSpeed;
     #endif
@@ -290,12 +290,12 @@ CBUFFER_START(UnityPerMaterial)
     // Rim Light 2
     #if defined(_RIM_LIGHT_2)
     half4 _RimColor2;
-    float _RimPower2;
-    float _RimIntensity2;
-    float _RimSpread2;
-    float _RimBlend2;
-    float _RimBlendMode2;
-    float _Rim2Blur;
+    half _RimPower2;
+    half _RimIntensity2;
+    half _RimSpread2;
+    half _RimBlend2;
+    half _RimBlendMode2;
+    half _Rim2Blur;
     float4 _RimMask2ScrollSpeed;
     float _RimMask2RotateSpeed;
     #endif
@@ -303,27 +303,27 @@ CBUFFER_START(UnityPerMaterial)
     // Offset Rim Light
     #if defined(_OFFSET_RIM_LIGHT)
     half4 _OffsetRimColor;
-    float _OffsetRimPower;
-    float _OffsetRimIntensity;
-    float _OffsetRimOffsetX;
-    float _OffsetRimOffsetY;
-    float _OffsetRimUseLightDir;
-    float _OffsetRimLightDirStrength;
-    float _OffsetRimSharpness;
-    float _OffsetRimShadowMask;
-    float _OffsetRimBlend;
-    float _OffsetRimBlendMode;
-    float _OffsetRimBlur;
+    half _OffsetRimPower;
+    half _OffsetRimIntensity;
+    half _OffsetRimOffsetX;
+    half _OffsetRimOffsetY;
+    half _OffsetRimUseLightDir;
+    half _OffsetRimLightDirStrength;
+    half _OffsetRimSharpness;
+    half _OffsetRimShadowMask;
+    half _OffsetRimBlend;
+    half _OffsetRimBlendMode;
+    half _OffsetRimBlur;
     #endif
 
     // Sheen
     #if defined(_SHEEN)
     float4 _SheenMask_ST;
     half4 _SheenColor;
-    float _SheenIntensity;
-    float _SheenPower;
-    float _SheenBlend;
-    float _SheenBlendMode;
+    half _SheenIntensity;
+    half _SheenPower;
+    half _SheenBlend;
+    half _SheenBlendMode;
     #endif
 
     // ===== SECTION 5: Effects - View Based (視線依存エフェクト) =====
@@ -332,10 +332,10 @@ CBUFFER_START(UnityPerMaterial)
 
     // MatCap
     #if defined(_MATCAP)
-    float _MatCapIntensity;
-    float _MatCapBlendMode;
-    float _MatCapBlend;
-    float _MatCapBlur;
+    half _MatCapIntensity;
+    half _MatCapBlendMode;
+    half _MatCapBlend;
+    half _MatCapBlur;
     #endif
 
     // ===== SECTION 6: Effects - Emission (発光効果) =====
@@ -345,42 +345,42 @@ CBUFFER_START(UnityPerMaterial)
     // Glitter
     #if defined(_GLITTER)
     half4 _GlitterColor;
-    float _GlitterSize;
-    float _GlitterDensity;
-    float _GlitterSpeed;
-    float _GlitterIntensity;
-    float _GlitterBlend;
-    float _GlitterBlendMode;
-    float _GlitterBlur;
+    half _GlitterSize;
+    half _GlitterDensity;
+    half _GlitterSpeed;
+    half _GlitterIntensity;
+    half _GlitterBlend;
+    half _GlitterBlendMode;
+    half _GlitterBlur;
     float4 _GlitterMaskScrollSpeed;
     float _GlitterMaskRotateSpeed;
     #endif
     #if defined(_GLINTS_ADVANCED)
-    float _GlintsSharpness;
-    float _GlintsTemporal;
-    float _GlintsNormalJitter;
+    half _GlintsSharpness;
+    half _GlintsTemporal;
+    half _GlintsNormalJitter;
     #endif
 
     // Outline
     #if defined(_OUTLINE)
     half4 _OutlineColor;
-    float _OutlineWidth;
-    float _OutlineDistCompMax;
+    half _OutlineWidth;
+    half _OutlineDistCompMax;
     #endif
 
     // Outline Texture Color HSV
     #if defined(_OUTLINE_TEXTURE_COLOR)
-    float _OutlineTexColorHueShift;
-    float _OutlineTexColorSaturation;
+    half _OutlineTexColorHueShift;
+    half _OutlineTexColorSaturation;
     #endif
 
     // Emission
     #if defined(_EMISSION)
     half4 _EmissionColor;
-    float _EmissionGlow;
-    float _EmissionBlend;
-    float _EmissionBlendMode;
-    float _EmissionBlur;
+    half _EmissionGlow;
+    half _EmissionBlend;
+    half _EmissionBlendMode;
+    half _EmissionBlur;
     #endif
 
     // ===== SECTION 7: Surface Modification (表面変形) =====
@@ -389,10 +389,10 @@ CBUFFER_START(UnityPerMaterial)
 
     // Normal Map
     float4 _BumpMap_ST;
-    float _BumpScale;
-    float _MicroNormalScale;
-    float _MicroNormalTiling;
-    float _MicroNormalStrength;
+    half _BumpScale;
+    half _MicroNormalScale;
+    half _MicroNormalTiling;
+    half _MicroNormalStrength;
     // Normal Map UV Animation
     float4 _BumpMapScrollSpeed;
     float _BumpMapRotateSpeed;
@@ -404,44 +404,44 @@ CBUFFER_START(UnityPerMaterial)
     // Subsurface Scattering
     #if defined(_SSS)
     half4 _SSSColor;
-    float _SSSIntensity;
-    float _SSSPower;
-    float _SSSDistortion;
-    float _ThicknessScale;
-    float _SSSBlend;
-    float _SSSBlendMode;
-    float _SSSBlur;
-    float _TransmissionStrength;
+    half _SSSIntensity;
+    half _SSSPower;
+    half _SSSDistortion;
+    half _ThicknessScale;
+    half _SSSBlend;
+    half _SSSBlendMode;
+    half _SSSBlur;
+    half _TransmissionStrength;
     #endif
 
     // SSS LUT (Pre-integrated Subsurface Scattering)
     #if defined(_SSS_LUT)
-    float _SSSLUTScale;
+    half _SSSLUTScale;
     #endif
 
     // Virtual Expression - Dissolve
     #if defined(_DISSOLVE)
-    float _DissolveAmount;
-    float _DissolveEdgeWidth;
+    half _DissolveAmount;
+    half _DissolveEdgeWidth;
     half4 _DissolveEdgeColor;
-    float _DissolveEdgeIntensity;
-    float _DissolveBlend;
-    float _DissolveBlendMode;
-    float _DissolveBlur;
+    half _DissolveEdgeIntensity;
+    half _DissolveBlend;
+    half _DissolveBlendMode;
+    half _DissolveBlur;
     float4 _DissolveTexScrollSpeed;
     float _DissolveTexRotateSpeed;
-    float _DissolveCoordMode;
-    float _DissolveWorldAxis;
+    half _DissolveCoordMode;
+    half _DissolveWorldAxis;
     float _DissolveWorldMin;
     float _DissolveWorldMax;
-    float _DissolveNoiseBlend;
+    half _DissolveNoiseBlend;
     #endif
 
     // Virtual Expression - Hue Shift
     #if defined(_HUE_SHIFT)
-    float _HueShift;
-    float _HueShiftBlend;
-    float _HueShiftBlur;
+    half _HueShift;
+    half _HueShiftBlend;
+    half _HueShiftBlur;
     #endif
 
     // Virtual Expression - Emission Animation
@@ -451,47 +451,47 @@ CBUFFER_START(UnityPerMaterial)
     float _EmissionRotateSpeed;
     float4 _EmissionMaskScrollSpeed;
     float _EmissionMaskRotateSpeed;
-    float _EmissionPulseSpeed;
-    float _EmissionPulseAmplitude;
+    half _EmissionPulseSpeed;
+    half _EmissionPulseAmplitude;
     #endif
 
     // Smoothness/Metallic - shared by reflection and realistic-character workflows
-    float _Smoothness;
-    float _Metallic;
+    half _Smoothness;
+    half _Metallic;
 
     // Cubemap Reflection (Environment Mapping)
     #if defined(_REFLECTION)
     half4 _ReflectionColor;
-    float _ReflectionIntensity;
-    float _FresnelPower;
-    float _FresnelSoftness;
-    float _ReflectionBlendMode;
-    float _ReflectionBlend;
+    half _ReflectionIntensity;
+    half _FresnelPower;
+    half _FresnelSoftness;
+    half _ReflectionBlendMode;
+    half _ReflectionBlend;
     #endif
-    float _ClearCoatIntensity;
-    float _ClearCoatSmoothness;
-    float _ClearCoatNormalScale;
-    float _ClearCoatFresnelPower;
+    half _ClearCoatIntensity;
+    half _ClearCoatSmoothness;
+    half _ClearCoatNormalScale;
+    half _ClearCoatFresnelPower;
 
     // Iridescence
     #if defined(_IRIDESCENCE)
     half4 _IridescenceColor;
-    float _IridescenceIntensity;
-    float _IridescenceHueShift;
-    float _IridescenceSize;
-    float _IridescenceBlend;
-    float _IridescenceBlendMode;
-    float _IridescenceBlur;
+    half _IridescenceIntensity;
+    half _IridescenceHueShift;
+    half _IridescenceSize;
+    half _IridescenceBlend;
+    half _IridescenceBlendMode;
+    half _IridescenceBlur;
     #endif
 
     // Environmental Rim
     #if defined(_ENV_RIM)
     half4 _EnvRimColor;
-    float _EnvRimPower;
-    float _EnvRimIntensity;
-    float _EnvRimBlend;
-    float _EnvRimBlendMode;
-    float _EnvRimBlur;
+    half _EnvRimPower;
+    half _EnvRimIntensity;
+    half _EnvRimBlend;
+    half _EnvRimBlendMode;
+    half _EnvRimBlur;
     #endif
 
     // Parallax Mapping
@@ -508,54 +508,54 @@ CBUFFER_START(UnityPerMaterial)
 
     // Refraction
     #if defined(_REFRACTION)
-    float _RefractionIndex;
-    float _RefractionIntensity;
-    float _RefractionBlur;
-    float _RefractionBlend;
-    float _RefractionBlendMode;
+    half _RefractionIndex;
+    half _RefractionIntensity;
+    half _RefractionBlur;
+    half _RefractionBlend;
+    half _RefractionBlendMode;
     #endif
 
     // MatCap 2 & 3
     #if defined(_MATCAP_2)
-    float _MatCapIntensity2;
-    float _MatCapBlendMode2;
-    float _MatCapBlend2;
-    float _MatCap2Blur;
+    half _MatCapIntensity2;
+    half _MatCapBlendMode2;
+    half _MatCapBlend2;
+    half _MatCap2Blur;
     #endif
     #if defined(_MATCAP_3)
-    float _MatCapIntensity3;
-    float _MatCapBlendMode3;
-    float _MatCapBlend3;
-    float _MatCap3Blur;
+    half _MatCapIntensity3;
+    half _MatCapBlendMode3;
+    half _MatCapBlend3;
+    half _MatCap3Blur;
     #endif
 
     // Rim Direction Control
     float4 _RimLightDirection;
-    float _RimDirectionRange;
-    float _RimDirStrength;
-    float _RimShadowMask;
+    half _RimDirectionRange;
+    half _RimDirStrength;
+    half _RimShadowMask;
 
     // Shadow Color Texture
-    float _ShadowColorTexStrength;
+    half _ShadowColorTexStrength;
 
     // Outline Multi-Color
     half4 _OutlineColor2;
-    float _OutlineColorMix;
+    half _OutlineColorMix;
 
     // AudioLink
     #if defined(_AUDIOLINK)
-    float _AudioLinkEmissionBand;
-    float _AudioLinkEmissionIntensity;
-    float _AudioLinkRimBand;
-    float _AudioLinkRimIntensity;
-    float _AudioLinkHueBand;
-    float _AudioLinkHueShiftIntensity;
-    float _AudioLinkDissolveBand;
-    float _AudioLinkDissolveIntensity;
-    float _AudioLinkOutlineBand;
-    float _AudioLinkOutlineIntensity;
-    float _AudioLinkBlend;
-    float _AudioLinkBlendMode;
+    half _AudioLinkEmissionBand;
+    half _AudioLinkEmissionIntensity;
+    half _AudioLinkRimBand;
+    half _AudioLinkRimIntensity;
+    half _AudioLinkHueBand;
+    half _AudioLinkHueShiftIntensity;
+    half _AudioLinkDissolveBand;
+    half _AudioLinkDissolveIntensity;
+    half _AudioLinkOutlineBand;
+    half _AudioLinkOutlineIntensity;
+    half _AudioLinkBlend;
+    half _AudioLinkBlendMode;
     #endif
 
     // ===== SECTION 9: Distance Fade System (距離フェード) =====
@@ -566,12 +566,12 @@ CBUFFER_START(UnityPerMaterial)
     #if defined(_DISTANCE_FADE)
     float _DistanceFadeStart;
     float _DistanceFadeEnd;
-    float _DistanceFadeMode;
-    float _DistanceFadeBlend;
-    float _DistFadeBlur;
+    half _DistanceFadeMode;
+    half _DistanceFadeBlend;
+    half _DistFadeBlur;
     float _NearFadeStart;
     float _NearFadeEnd;
-    float _DistFadeDitherScale;
+    half _DistFadeDitherScale;
     // ===== Per-Effect Distance Fade Blend =====
     // 各エフェクトに個別の距離フェードブレンド (0=フェード無し, 1=完全フェード)
     // Effect List:
@@ -580,51 +580,54 @@ CBUFFER_START(UnityPerMaterial)
     //   MatCap(1,2,3) / Reflection / Refraction
     //   Emission / AudioLink / Glitter / Iridescence
     //   Drip / Hologram / Glitch / Decal / Backlight
-    float _SpecularDistFade;
-    float _HairSpecDistFade;
-    float _SSSDistFade;
-    float _RimDistFade;
-    float _Rim2DistFade;
-    float _OffsetRimDistFade;
-    float _EnvRimDistFade;
-    float _MatCapDistFade;
-    float _MatCap2DistFade;
-    float _MatCap3DistFade;
-    float _ReflectionDistFade;
-    float _RefractionDistFade;
-    float _EmissionDistFade;
-    float _AudioLinkDistFade;
-    float _GlitterDistFade;
-    float _IridescenceDistFade;
-    float _DripDistFade;
-    float _HologramDistFade;
-    float _GlitchDistFade;
-    float _DecalDistFade;
-    float _BacklightDistFade;
-    float _SmearDistFade;
+    half _SpecularDistFade;
+    half _HairSpecDistFade;
+    half _SSSDistFade;
+    half _RimDistFade;
+    half _Rim2DistFade;
+    half _OffsetRimDistFade;
+    half _EnvRimDistFade;
+    half _MatCapDistFade;
+    half _MatCap2DistFade;
+    half _MatCap3DistFade;
+    half _ReflectionDistFade;
+    half _RefractionDistFade;
+    half _EmissionDistFade;
+    half _AudioLinkDistFade;
+    half _GlitterDistFade;
+    half _IridescenceDistFade;
+    half _DripDistFade;
+    half _HologramDistFade;
+    half _GlitchDistFade;
+    half _DecalDistFade;
+    half _Decal2DistFade;
+    half _Decal3DistFade;
+    half _Decal4DistFade;
+    half _BacklightDistFade;
+    half _SmearDistFade;
     #endif
 
     // Height Fade
     #if defined(_HEIGHT_FADE)
     float _HeightFadeStart;
     float _HeightFadeEnd;
-    float _HeightFadeAxis;
-    float _HeightFadeSpace;
-    float _HeightFadeInvert;
-    float _HeightFadeMode;
-    float _HeightFadeBlend;
-    float _HeightFadeDitherScale;
-    float _HeightFadeEdgeWidth;
+    half _HeightFadeAxis;
+    half _HeightFadeSpace;
+    half _HeightFadeInvert;
+    half _HeightFadeMode;
+    half _HeightFadeBlend;
+    half _HeightFadeDitherScale;
+    half _HeightFadeEdgeWidth;
     half4 _HeightFadeEdgeColor;
     #endif
 
     // Intersection Fade
     #if defined(_INTERSECTION_FADE)
-    float _IntersectionFadeDistance;
-    float _IntersectionFadeMode;
-    float _IntersectionFadeBlend;
-    float _IntersectionFadeDitherScale;
-    float _IntersectionFadeEdgeWidth;
+    half _IntersectionFadeDistance;
+    half _IntersectionFadeMode;
+    half _IntersectionFadeBlend;
+    half _IntersectionFadeDitherScale;
+    half _IntersectionFadeEdgeWidth;
     half4 _IntersectionFadeEdgeColor;
     #endif
 
@@ -634,60 +637,60 @@ CBUFFER_START(UnityPerMaterial)
 
     // Vertex Animation
     #if defined(_VERTEX_ANIMATION)
-    float _VertexAnimSpeed;
-    float _VertexAnimStrength;
-    float _VertexAnimFrequency;
-    float _VertexAnimType;
+    half _VertexAnimSpeed;
+    half _VertexAnimStrength;
+    half _VertexAnimFrequency;
+    half _VertexAnimType;
     #endif
 
     // Hologram & Glitch (conditionally compiled for optimization)
     #if defined(_HOLOGRAM)
-    float _HologramScanlineSpeed;
-    float _HologramScanlineIntensity;
-    float _HologramFlickerSpeed;
-    float _HologramFlickerAmount;
+    half _HologramScanlineSpeed;
+    half _HologramScanlineIntensity;
+    half _HologramFlickerSpeed;
+    half _HologramFlickerAmount;
     half4 _HologramColor;
-    float _HologramEdgeGlowPower;
-    float _HologramEdgeGlowIntensity;
-    float _HologramScanlineDensity;
-    float _HologramScanlineWidth;
-    float _HologramAlpha;
-    float _HologramNoiseIntensity;
-    float _HologramNoiseSpeed;
-    float _HologramMonochrome;
-    float _HologramBlend;
-    float _HologramBlendMode;
-    float _HologramBlur;
+    half _HologramEdgeGlowPower;
+    half _HologramEdgeGlowIntensity;
+    half _HologramScanlineDensity;
+    half _HologramScanlineWidth;
+    half _HologramAlpha;
+    half _HologramNoiseIntensity;
+    half _HologramNoiseSpeed;
+    half _HologramMonochrome;
+    half _HologramBlend;
+    half _HologramBlendMode;
+    half _HologramBlur;
     float4 _HologramMaskScrollSpeed;
     float _HologramMaskRotateSpeed;
     #endif
     #if defined(_GLITCH)
-    float _GlitchIntensity;
-    float _GlitchSpeed;
-    float _GlitchBlockSize;
-    float _GlitchRGBSplitIntensity;
-    float _GlitchFrequency;
-    float _GlitchBlend;
-    float _GlitchBlendMode;
-    float _GlitchBlur;
+    half _GlitchIntensity;
+    half _GlitchSpeed;
+    half _GlitchBlockSize;
+    half _GlitchRGBSplitIntensity;
+    half _GlitchFrequency;
+    half _GlitchBlend;
+    half _GlitchBlendMode;
+    half _GlitchBlur;
     float4 _GlitchMask_ST;
-    float _GlitchMaskScale;
-    float _GlitchMaskAffectsRGBSplit;
-    float _GlitchMaskAffectsFrequency;
+    half _GlitchMaskScale;
+    half _GlitchMaskAffectsRGBSplit;
+    half _GlitchMaskAffectsFrequency;
     float4 _GlitchNoiseTex_ST;
-    float _GlitchNoiseIntensity;
+    half _GlitchNoiseIntensity;
     float4 _GlitchNoiseScrollSpeed;
-    float _GlitchNoiseMode;
+    half _GlitchNoiseMode;
     #endif
 
     // ===== Glitch Stretch =====
     #if defined(_GLITCH_STRETCH)
-    float _GlitchStretchIntensity;
-    float _GlitchStretchSpeed;
-    float _GlitchStretchBlockSize;
-    float _GlitchStretchFrequency;
+    half _GlitchStretchIntensity;
+    half _GlitchStretchSpeed;
+    half _GlitchStretchBlockSize;
+    half _GlitchStretchFrequency;
     float4 _GlitchStretchMask_ST;
-    float _GlitchStretchMaskScale;
+    half _GlitchStretchMaskScale;
     #endif
 
     // Decal
@@ -696,53 +699,86 @@ CBUFFER_START(UnityPerMaterial)
     float4 _DecalPosition;
     float _DecalRotation;
     float _DecalScale;
-    float _DecalBlendMode;
-    float _DecalBlend;
-    float _DecalBlur;
+    half _DecalBlendMode;
+    half _DecalBlend;
+    half _DecalBlur;
+    #endif
+
+    // Decal Layer 2
+    #if defined(_DECAL2)
+    half4 _DecalColor2;
+    float4 _DecalPosition2;
+    float _DecalRotation2;
+    float _DecalScale2;
+    half _DecalBlendMode2;
+    half _DecalBlend2;
+    half _DecalBlur2;
+    #endif
+
+    // Decal Layer 3
+    #if defined(_DECAL3)
+    half4 _DecalColor3;
+    float4 _DecalPosition3;
+    float _DecalRotation3;
+    float _DecalScale3;
+    half _DecalBlendMode3;
+    half _DecalBlend3;
+    half _DecalBlur3;
+    #endif
+
+    // Decal Layer 4
+    #if defined(_DECAL4)
+    half4 _DecalColor4;
+    float4 _DecalPosition4;
+    float _DecalRotation4;
+    float _DecalScale4;
+    half _DecalBlendMode4;
+    half _DecalBlend4;
+    half _DecalBlur4;
     #endif
 
     // Backface Texture
     #if defined(_BACKFACE_TEXTURE)
     half4 _BackfaceColor;
-    float _BackfaceBlend;
-    float _BackfaceBlendMode;
+    half _BackfaceBlend;
+    half _BackfaceBlendMode;
     #endif
 
     // Video Texture
     #if defined(_VIDEO_TEXTURE)
-    float _VideoEmission;
-    float _VideoBlend;
-    float _VideoBlendMode;
+    half _VideoEmission;
+    half _VideoBlend;
+    half _VideoBlendMode;
     #endif
 
     // LTCGI
     #if defined(_LTCGI)
-    float _LTCGIIntensity;
-    float _LTCGISpecular;
-    float _LTCGIBlend;
-    float _LTCGIBlendMode;
+    half _LTCGIIntensity;
+    half _LTCGISpecular;
+    half _LTCGIBlend;
+    half _LTCGIBlendMode;
     #endif
 
     // Dithering Alpha
     #if defined(_DITHERING_ALPHA)
-    float _DitheringAlphaScale;
+    half _DitheringAlphaScale;
     #endif
     #if defined(_HASHED_ALPHA)
-    float _HashedAlphaScale;
+    half _HashedAlphaScale;
     #endif
 
     // Water Drip Effect
     #if defined(_WATER_DRIP)
     half4 _DripColor;
-    float _DripSpeed;
-    float _DripDensity;
-    float _DripSize;
-    float _DripTrailLength;
-    float _DripIntensity;
-    float _DripSharpness;
-    float _DripBlend;
-    float _DripBlendMode;
-    float _DripBlur;
+    half _DripSpeed;
+    half _DripDensity;
+    half _DripSize;
+    half _DripTrailLength;
+    half _DripIntensity;
+    half _DripSharpness;
+    half _DripBlend;
+    half _DripBlendMode;
+    half _DripBlur;
     float4 _DripMaskScrollSpeed;
     float _DripMaskRotateSpeed;
     #endif
@@ -751,98 +787,98 @@ CBUFFER_START(UnityPerMaterial)
     #if defined(_VAT)
     float4 _VATPositionMap_ST;
     float4 _VATNormalMap_ST;
-    float _VATNumOfFrames;
-    float _VATSpeed;
-    float _VATIntensity;
-    float _VATPadding;
+    half _VATNumOfFrames;
+    half _VATSpeed;
+    half _VATIntensity;
+    half _VATPadding;
     float _VATPositionMin;
     float _VATPositionMax;
     float _VATNormalMin;
     float _VATNormalMax;
-    float _VATPackingMode;
+    half _VATPackingMode;
     #endif
 
     // Tessellation
     #if defined(_TESSELLATION)
-    float _TessFactor;
-    float _TessPhongStrength;
-    float _TessNormalSmooth;
+    half _TessFactor;
+    half _TessPhongStrength;
+    half _TessNormalSmooth;
     float _TessDistanceMin;
     float _TessDistanceMax;
-    float _TessDispStrength;
-    float _TessDispOffset;
+    half _TessDispStrength;
+    half _TessDispOffset;
     #endif
 
     // Smear Effect (スミア / 残像エフェクト)
     #if defined(_SMEAR)
-    float _SmearStretch;
+    half _SmearStretch;
     float4 _SmearDirection;
-    float _SmearNoiseScale;
-    float _SmearNoiseStrength;
-    float _SmearTrailLength;
-    float _SmearTrailFade;
+    half _SmearNoiseScale;
+    half _SmearNoiseStrength;
+    half _SmearTrailLength;
+    half _SmearTrailFade;
     half4 _SmearGlowColor;
-    float _SmearGlowIntensity;
-    float _SmearGlowPower;
-    float _SmearEmission;
+    half _SmearGlowIntensity;
+    half _SmearGlowPower;
+    half _SmearEmission;
     half4 _SmearEmissionColor;
-    float _SmearBlend;
-    float _SmearBlendMode;
-    float _SmearBlur;
+    half _SmearBlend;
+    half _SmearBlendMode;
+    half _SmearBlur;
     float4 _SmearMaskScrollSpeed;
     float _SmearMaskRotateSpeed;
-    float _SmearAutoMagnitude;
-    float _SmearMotionSensitivity;
-    float _SmearVATVelocity;
+    half _SmearAutoMagnitude;
+    half _SmearMotionSensitivity;
+    half _SmearVATVelocity;
     #endif
 
     // ===== 11. Fur (Shell-Based) =====
     #if defined(_FUR)
-    float _FurLength;
-    float _FurDensity;
-    float _FurAlphaCutoff;
-    float _FurGravity;
+    half _FurLength;
+    half _FurDensity;
+    half _FurAlphaCutoff;
+    half _FurGravity;
     half4 _FurRootColor;
     half4 _FurTipColor;
-    float _FurColorBlend;
-    float _FurAO;
-    float _FurShadowStrength;
+    half _FurColorBlend;
+    half _FurAO;
+    half _FurShadowStrength;
     float4 _FurWindDirection;
-    float _FurWindSpeed;
-    float _FurWindStrength;
-    float _FurSpecular;
-    float _FurRimLight;
-    float _FurLODDistance;
-    float _FurLODMinLayers;
+    half _FurWindSpeed;
+    half _FurWindStrength;
+    half _FurSpecular;
+    half _FurRimLight;
+    half _FurLODDistance;
+    half _FurLODMinLayers;
     float4 _FurNoiseTex_ST;
     #endif
 
     // ===== 12. Background Mode (背景モード) =====
     #if defined(_BACKGROUND_MODE)
-        float _LightmapToonInfluence;
-        float _LightmapIntensity;
+        half _LightmapToonInfluence;
+        half _LightmapIntensity;
     #endif
 
     // ===== 13. PBR Mode (物理ベースレンダリング) =====
     #if defined(_PBR)
-        float _PBR_Metallic;
-        float _PBR_Smoothness;
-        float _PBR_OcclusionStrength;
-        float _PBR_ReflectionIntensity;
+        half _PBR_Metallic;
+        half _PBR_Smoothness;
+        half _PBR_OcclusionStrength;
+        half _PBR_ReflectionIntensity;
     #endif
 
     // ===== 14. Detail Map (ディテールマップ) =====
     #if defined(_DETAIL_MAP)
-        float _DetailNormalScale;
-        float _DetailAlbedoScale;
-        float _DetailUVSet;
-        float _DetailTiling;
+        half _DetailNormalScale;
+        half _DetailAlbedoScale;
+        half _DetailUVSet;
+        half _DetailTiling;
     #endif
 
     // ===== 15. Triplanar Mapping (トライプレーナー) =====
     #if defined(_TRIPLANAR)
-        float _TriplanarScale;
-        float _TriplanarBlendSharpness;
+        half _TriplanarScale;
+        half _TriplanarBlendSharpness;
         float _TriplanarOffsetX;
         float _TriplanarOffsetY;
         float _TriplanarOffsetZ;
@@ -853,25 +889,25 @@ CBUFFER_START(UnityPerMaterial)
         half4 _HeightFogColor;
         float _HeightFogStart;
         float _HeightFogEnd;
-        float _HeightFogDensity;
-        float _HeightFogMode;
+        half _HeightFogDensity;
+        half _HeightFogMode;
     #endif
 
     // ===== 17. Surface Cover (雪/砂堆積) =====
     #if defined(_SURFACE_COVER)
         half4 _CoverColor;
-        float _CoverAmount;
-        float _CoverThreshold;
-        float _CoverBlendSharpness;
-        float _CoverTiling;
+        half _CoverAmount;
+        half _CoverThreshold;
+        half _CoverBlendSharpness;
+        half _CoverTiling;
         float4 _CoverDirection;
     #endif
 
     // ===== 18. Mirror / Camera Control (ミラー・カメラ制御) =====
     #if defined(_MIRROR_CONTROL)
-        float _MirrorMode;
-        float _CameraMode;
-        float _MirrorEmissionMultiplier;
+        half _MirrorMode;
+        half _CameraMode;
+        half _MirrorEmissionMultiplier;
     #endif
 
     // ===== 19. Quest Lite (Quest軽量パス) =====
@@ -879,192 +915,218 @@ CBUFFER_START(UnityPerMaterial)
 
     // ===== 20. PCSS (Percentage Closer Soft Shadows) =====
     #if defined(_PCSS)
-    float _PCSSLightSize;
-    float _PCSSSoftness;
-    float _PCSSBlockerSearchRadius;
-    float _PCSSMinFilterRadius;
-    float _PCSSMaxFilterRadius;
-    float _PCSSSampleCount;
-    float _PCSSBlendMode;
-    float _PCSSBlend;
-    float _PCSSBlur;
+    half _PCSSLightSize;
+    half _PCSSSoftness;
+    half _PCSSBlockerSearchRadius;
+    half _PCSSMinFilterRadius;
+    half _PCSSMaxFilterRadius;
+    half _PCSSSampleCount;
+    half _PCSSBlendMode;
+    half _PCSSBlend;
+    half _PCSSBlur;
     #endif
 
     // ===== 21. Illustration Style (イラスト風技法) =====
     #ifdef _COLOR_QUANTIZE
-    float _QuantizeMode;
-    float _QuantizeLevels;
-    float _QuantizeHueLevels;
-    float _QuantizeSatLevels;
-    float _QuantizeValLevels;
-    float _QuantizeDither;
-    float _QuantizeBlend;
+    half _QuantizeMode;
+    half _QuantizeLevels;
+    half _QuantizeHueLevels;
+    half _QuantizeSatLevels;
+    half _QuantizeValLevels;
+    half _QuantizeDither;
+    half _QuantizeBlend;
     #endif
     #ifdef _LUT_3D
-    float _LUT3DIntensity;
-    float _LUT3DSize;
+    half _LUT3DIntensity;
+    half _LUT3DSize;
     #endif
     #ifdef _HATCHING
-    float _HatchingTiling;
-    float4 _HatchingColor;
-    float _HatchingBlend;
+    half _HatchingTiling;
+    half4 _HatchingColor;
+    half _HatchingBlend;
     #endif
     #ifdef _WATERCOLOR
-    float _WCEdgeDarkening;
-    float _WCWetEdge;
-    float _WCGranulation;
-    float _WCPaperIntensity;
-    float _WCPaperTiling;
-    float _WCBlend;
+    half _WCEdgeDarkening;
+    half _WCWetEdge;
+    half _WCGranulation;
+    half _WCPaperIntensity;
+    half _WCPaperTiling;
+    half _WCBlend;
     float4 _WCGranulationTex_ST;
     float4 _WCPaperTex_ST;
     float4 _WCMask_ST;
     #endif
     #ifdef _SOFT_FILTER
-    float _SoftFilterRadius;
-    float _SoftFilterBlend;
-    float _SoftFilterThreshold;
-    float _SoftFilterMode;
+    half _SoftFilterRadius;
+    half _SoftFilterBlend;
+    half _SoftFilterThreshold;
+    half _SoftFilterMode;
     #endif
     #ifdef _KUWAHARA_FILTER
-    float _KuwaharaRadius;
-    float _KuwaharaBlend;
+    half _KuwaharaRadius;
+    half _KuwaharaBlend;
     #endif
     #ifdef _SCREEN_EDGE
-    float4 _EdgeColor;
-    float _EdgeWidth;
-    float _EdgeDepthSensitivity;
-    float _EdgeNormalSensitivity;
-    float _EdgeBlend;
+    half4 _EdgeColor;
+    half _EdgeWidth;
+    half _EdgeDepthSensitivity;
+    half _EdgeNormalSensitivity;
+    half _EdgeBlend;
     #endif
     #ifdef _COLOR_BLEEDING
-    float _BleedingRadius;
-    float _BleedingBlend;
+    half _BleedingRadius;
+    half _BleedingBlend;
     #endif
     #ifdef _CHROMATIC_ABERRATION
-    float _CAIntensity;
-    float _CABlend;
+    half _CAIntensity;
+    half _CABlend;
     #endif
     #ifdef _OUTLINE_HAND_DRAWN
-    float _OutlineNoiseTiling;
-    float _OutlineWidthVariation;
-    float _OutlineJitterAmount;
+    half _OutlineNoiseTiling;
+    half _OutlineWidthVariation;
+    half _OutlineJitterAmount;
     #endif
     #if defined(_PROCEDURAL_MATCAP)
     half4 _ProcMatCapColor;
-    float _ProcMatCapPower;
-    float _ProcMatCapIntensity;
-    float _ProcMatCapFresnelPower;
-    float _ProcMatCapBlend;
-    float _ProcMatCapBlendMode;
+    half _ProcMatCapPower;
+    half _ProcMatCapIntensity;
+    half _ProcMatCapFresnelPower;
+    half _ProcMatCapBlend;
+    half _ProcMatCapBlendMode;
     #endif
     #if defined(_FAKE_REFLECTION)
     half4 _FakeReflSkyColor;
     half4 _FakeReflGroundColor;
-    float _FakeReflIntensity;
-    float _FakeReflFresnelPower;
-    float _FakeReflSmoothness;
-    float _FakeReflBlend;
-    float _FakeReflBlendMode;
+    half _FakeReflIntensity;
+    half _FakeReflFresnelPower;
+    half _FakeReflSmoothness;
+    half _FakeReflBlend;
+    half _FakeReflBlendMode;
     #endif
     #if defined(_SHADOW_EDGE_NOISE)
-    float _ShadowNoiseScale;
-    float _ShadowNoiseIntensity;
-    float _ShadowNoiseSpeed;
+    half _ShadowNoiseScale;
+    half _ShadowNoiseIntensity;
+    half _ShadowNoiseSpeed;
     #endif
     #if defined(_LIGHT_SNAP)
-    float _LightSnapAngle;
-    float _LightSnapSmooth;
+    half _LightSnapAngle;
+    half _LightSnapSmooth;
     #endif
     #if defined(_CAST_SHADOW_COLOR)
     half4 _CastShadowTint;
-    float _CastShadowIntensity;
+    half _CastShadowIntensity;
     #endif
     #if defined(_PERSPECTIVE_FLAT)
-    float _PerspectiveFlatAmount;
+    half _PerspectiveFlatAmount;
     #endif
     #if defined(_DEPTH_COLOR_FADE)
     half4 _DepthFadeColor;
     float _DepthFadeStart;
     float _DepthFadeEnd;
-    float _DepthFadeIntensity;
-    float _DepthFadeDesaturation;
+    half _DepthFadeIntensity;
+    half _DepthFadeDesaturation;
     #endif
 
     // ===== Feature Toggle Properties =====
     // [Toggle(_KEYWORD)] properties used for runtime feature guards.
     // These must be in the CBUFFER for the if(_Prop >= 0.5) checks
     // in Fragment.hlsl to compile.
-    float _MirrorControl;
-    float _MainTexAnimation;
-    float _GlitchStretch;
-    float _Triplanar;
-    float _GradientBaseColor;
-    float _Use2ndTexture;
-    float _Use3rdTexture;
-    float _Use4thTexture;
-    float _Use5thTexture;
-    float _SurfaceCover;
-    float _ScreenTone;
-    float _UseNormalMap;
-    float _DetailMap;
-    float _NormalWarp;
-    float _UseShadowReceiveMask;
-    float _LightSnap;
-    float _DistanceFade;
-    float _UsePCSS;
-    float _VertexColorShadow;
-    float _ProceduralAO;
-    float _ShadowEdgeNoise;
-    float _CastShadowColorEnable;
-    float _HalftoneShadow;
-    float _UseColorQuantize;
-    float _UseLUT3D;
-    float _UseHatching;
-    float _AngelRing;
+    half _MirrorControl;
+    half _MainTexAnimation;
+    half _GlitchStretch;
+    half _Triplanar;
+    half _GradientBaseColor;
+    half _Use2ndTexture;
+    half _Use3rdTexture;
+    half _Use4thTexture;
+    half _Use5thTexture;
+    half _SurfaceCover;
+    half _ScreenTone;
+    half _UseNormalMap;
+    half _DetailMap;
+    half _NormalWarp;
+    half _UseShadowReceiveMask;
+    half _LightSnap;
+    half _DistanceFade;
+    half _UsePCSS;
+    half _VertexColorShadow;
+    half _ProceduralAO;
+    half _ShadowEdgeNoise;
+    half _CastShadowColorEnable;
+    half _HalftoneShadow;
+    half _UseColorQuantize;
+    half _UseLUT3D;
+    half _UseHatching;
+    half _AngelRing;
     // _SSS: property name == keyword name (_SSS).
     // Unity auto-generates the uniform from Properties block,
     // so explicit CBUFFER declaration would cause redefinition.
     // When keyword active: _SSS is preprocessor define (1) → if(1 >= 0.5) → true.
     // When keyword inactive: _SSS is the auto-generated float uniform.
-    float _RimLight;
-    float _RimLight2;
-    float _OffsetRimLight;
-    float _Sheen;
-    float _EnvRim;
-    float _Specular;
-    float _HairSpecular;
-    float _MatCap;
-    float _MatCap2;
-    float _MatCap3;
-    float _ProceduralMatCap;
-    float _Reflection;
-    float _FakeReflection;
-    float _Refraction;
-    float _Emission;
-    float _HueShiftEnable;
-    float _AudioLink;
-    float _Glitter;
-    float _Iridescence;
-    float _Smear;
-    float _WaterDrip;
-    float _Hologram;
-    float _Glitch;
-    float _Decal;
-    float _Dissolve;
-    float _UseAlphaMask;
-    float _HeightFade;
-    float _IntersectionFade;
-    float _HeightFog;
-    float _DepthColorFade;
-    float _HashedAlpha;
-    float _DitheringAlpha;
-    float _UseWatercolor;
-    float _UseSoftFilter;
-    float _UseKuwahara;
-    float _UseScreenEdge;
-    float _UseColorBleeding;
-    float _UseChromaticAberration;
+    half _RimLight;
+    half _RimLight2;
+    half _OffsetRimLight;
+    half _Sheen;
+    half _EnvRim;
+    half _Specular;
+    half _HairSpecular;
+    half _MatCap;
+    half _MatCap2;
+    half _MatCap3;
+    half _ProceduralMatCap;
+    half _Reflection;
+    half _FakeReflection;
+    half _Refraction;
+    half _Emission;
+    half _HueShiftEnable;
+    half _AudioLink;
+    half _Glitter;
+    half _Iridescence;
+    half _Smear;
+    half _WaterDrip;
+    half _Hologram;
+    half _Glitch;
+    half _Decal;
+    half _Decal2;
+    half _Decal3;
+    half _Decal4;
+    half _Dissolve;
+    half _UseAlphaMask;
+    half _HeightFade;
+    half _IntersectionFade;
+    half _HeightFog;
+    half _DepthColorFade;
+    half _HashedAlpha;
+    half _DitheringAlpha;
+    half _UseWatercolor;
+    half _UseSoftFilter;
+    half _UseKuwahara;
+    half _UseScreenEdge;
+    half _UseColorBleeding;
+    half _UseChromaticAberration;
+    half _IDMask;
+
+    // ===== 22. ID Mask System (領域マスクシステム) =====
+    #if defined(_IDMASK)
+    float4 _IDMaskTex_ST;
+    half4 _IDMaskColor1;
+    half4 _IDMaskColor2;
+    half4 _IDMaskColor3;
+    half4 _IDMaskColor4;
+    half _IDMaskBlendMode;
+    #endif
+
+    // ===== 23. Flipbook Animation (フリップブックアニメーション) =====
+    #if defined(_FLIPBOOK)
+    float4 _FlipbookTex_ST;
+    half4 _FlipbookColor;
+    half _FlipbookColumns;
+    half _FlipbookRows;
+    half _FlipbookSpeed;
+    half _FlipbookBlendMode;
+    half _FlipbookAlpha;
+    #endif
+    half _Flipbook;
 
 CBUFFER_END
 
@@ -1307,6 +1369,21 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_RefractionMask);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_DecalTex);
 #endif
 
+// Decal Layer 2
+#if defined(_DECAL2)
+UNITY_DECLARE_TEX2D_NOSAMPLER(_DecalTex2);
+#endif
+
+// Decal Layer 3
+#if defined(_DECAL3)
+UNITY_DECLARE_TEX2D_NOSAMPLER(_DecalTex3);
+#endif
+
+// Decal Layer 4
+#if defined(_DECAL4)
+UNITY_DECLARE_TEX2D_NOSAMPLER(_DecalTex4);
+#endif
+
 // Backface
 #if defined(_BACKFACE_TEXTURE)
 UNITY_DECLARE_TEX2D_NOSAMPLER(_BackfaceTex);
@@ -1390,6 +1467,16 @@ UNITY_DECLARE_SCREENSPACE_TEXTURE(_CameraDepthNormalsTexture);
 #endif
 #ifdef _OUTLINE_HAND_DRAWN
 UNITY_DECLARE_TEX2D_NOSAMPLER(_OutlineNoiseTex);
+#endif
+
+// ID Mask
+#if defined(_IDMASK)
+UNITY_DECLARE_TEX2D_NOSAMPLER(_IDMaskTex);
+#endif
+
+// Flipbook Animation
+#if defined(_FLIPBOOK)
+UNITY_DECLARE_TEX2D_NOSAMPLER(_FlipbookTex);
 #endif
 
 // VAT

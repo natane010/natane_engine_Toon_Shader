@@ -1,3 +1,18 @@
+# Native DLL source (memo only, not tracked)
+NativeSource~/
+
+# Native DLL build artifacts (keep .dll and .dll.meta only)
+Plugins/**/*.exp
+Plugins/**/*.lib
+Plugins/**/*.pdb
+
+# Development-only files (not for public release)
+Whiteboard.md
+Whiteboard.md.meta
+TextCrushAudit*.md
+TextCrushAudit*.md.meta
+*AUDIT*.md
+
 # Unity generated files
 [Ll]ibrary/
 [Tt]emp/

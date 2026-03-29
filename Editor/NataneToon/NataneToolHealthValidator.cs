@@ -96,7 +96,7 @@ namespace NataneToon.Editor
             new ToolRegistryEntry("MaterialPresetBrowser", "Material Preset Browser",
                 NataneToolMenuPaths.MaterialPresetBrowser, "NataneToon.Editor.MaterialPresetBrowser", ASSEMBLY_EDITOR),
             new ToolRegistryEntry("ColorPaletteManager", "カラーパレット管理 Color Palette Manager",
-                NataneToolMenuPaths.ColorPaletteManager, "NataneToon.Editor.NataneToonColorPaletteManager", ASSEMBLY_EDITOR),
+                NataneToolMenuPaths.ColorPaletteManager, "NataneToon.Editor.ColorPaletteManager", ASSEMBLY_EDITOR),
 
             // --- Effects Tools (Tools assembly) ---
             new ToolRegistryEntry("ShadowAdjustmentWizard", "シャドウ調整ウィザード Shadow Wizard",

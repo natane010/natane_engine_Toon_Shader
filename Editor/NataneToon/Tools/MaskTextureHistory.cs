@@ -63,6 +63,11 @@ namespace NataneToon.Editor
 
         public void Clear()
         {
+            foreach (var entry in entries)
+            {
+                if (entry.beforePixels != null) ColorArrayPool.Release(entry.beforePixels);
+                if (entry.afterPixels != null) ColorArrayPool.Release(entry.afterPixels);
+            }
             entries.Clear();
             cursor = 0;
         }
@@ -82,13 +87,23 @@ namespace NataneToon.Editor
                 return false;
 
             if (cursor < entries.Count)
+            {
+                for (int i = cursor; i < entries.Count; i++)
+                {
+                    if (entries[i].beforePixels != null) ColorArrayPool.Release(entries[i].beforePixels);
+                    if (entries[i].afterPixels != null) ColorArrayPool.Release(entries[i].afterPixels);
+                }
                 entries.RemoveRange(cursor, entries.Count - cursor);
+            }
 
             entries.Add(new MaskTextureHistoryEntry(layer, beforePixels, afterPixels, label));
             cursor = entries.Count;
 
             if (entries.Count > MaxEntries)
             {
+                var oldest = entries[0];
+                if (oldest.beforePixels != null) ColorArrayPool.Release(oldest.beforePixels);
+                if (oldest.afterPixels != null) ColorArrayPool.Release(oldest.afterPixels);
                 entries.RemoveAt(0);
                 cursor = Mathf.Max(0, cursor - 1);
             }
@@ -142,7 +157,7 @@ namespace NataneToon.Editor
             if (source == null)
                 return null;
 
-            Color[] clone = new Color[source.Length];
+            Color[] clone = ColorArrayPool.Get(source.Length);
             System.Array.Copy(source, clone, source.Length);
             return clone;
         }

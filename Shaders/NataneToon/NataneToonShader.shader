@@ -689,6 +689,9 @@ Shader "Natane/Toon Shader"
         _HologramDistFade ("Hologram Distance Fade", Range(0, 1)) = 0
         _GlitchDistFade ("Glitch Distance Fade", Range(0, 1)) = 0
         _DecalDistFade ("Decal Distance Fade", Range(0, 1)) = 0
+        _Decal2DistFade ("Decal 2 Distance Fade", Range(0, 1)) = 0
+        _Decal3DistFade ("Decal 3 Distance Fade", Range(0, 1)) = 0
+        _Decal4DistFade ("Decal 4 Distance Fade", Range(0, 1)) = 0
         _BacklightDistFade ("Backlight Distance Fade", Range(0, 1)) = 0
 
         [Header(Vertex Offset Animation Wind Breathing)]
@@ -845,6 +848,39 @@ Shader "Natane/Toon Shader"
         _DecalBlend ("Decal Blend", Range(0, 1)) = 1
         _DecalBlur ("Decal Blur", Range(0, 1)) = 0
 
+        [Header(Decal Layer 2)]
+        [Toggle(_DECAL2)] _Decal2 ("Enable Decal 2", Float) = 0
+        _DecalTex2 ("Decal 2 Texture", 2D) = "white" {}
+        _DecalColor2 ("Decal 2 Color", Color) = (1,1,1,1)
+        _DecalPosition2 ("Decal 2 Position XY", Vector) = (0,0,0,0)
+        _DecalRotation2 ("Decal 2 Rotation", Range(0, 360)) = 0
+        _DecalScale2 ("Decal 2 Scale", Float) = 1
+        [Enum(Add,0,Multiply,1,Overlay,2,Replace,3)] _DecalBlendMode2 ("Decal 2 Blend Mode", Float) = 0
+        _DecalBlend2 ("Decal 2 Blend", Range(0, 1)) = 1
+        _DecalBlur2 ("Decal 2 Blur", Range(0, 1)) = 0
+
+        [Header(Decal Layer 3)]
+        [Toggle(_DECAL3)] _Decal3 ("Enable Decal 3", Float) = 0
+        _DecalTex3 ("Decal 3 Texture", 2D) = "white" {}
+        _DecalColor3 ("Decal 3 Color", Color) = (1,1,1,1)
+        _DecalPosition3 ("Decal 3 Position XY", Vector) = (0,0,0,0)
+        _DecalRotation3 ("Decal 3 Rotation", Range(0, 360)) = 0
+        _DecalScale3 ("Decal 3 Scale", Float) = 1
+        [Enum(Add,0,Multiply,1,Overlay,2,Replace,3)] _DecalBlendMode3 ("Decal 3 Blend Mode", Float) = 0
+        _DecalBlend3 ("Decal 3 Blend", Range(0, 1)) = 1
+        _DecalBlur3 ("Decal 3 Blur", Range(0, 1)) = 0
+
+        [Header(Decal Layer 4)]
+        [Toggle(_DECAL4)] _Decal4 ("Enable Decal 4", Float) = 0
+        _DecalTex4 ("Decal 4 Texture", 2D) = "white" {}
+        _DecalColor4 ("Decal 4 Color", Color) = (1,1,1,1)
+        _DecalPosition4 ("Decal 4 Position XY", Vector) = (0,0,0,0)
+        _DecalRotation4 ("Decal 4 Rotation", Range(0, 360)) = 0
+        _DecalScale4 ("Decal 4 Scale", Float) = 1
+        [Enum(Add,0,Multiply,1,Overlay,2,Replace,3)] _DecalBlendMode4 ("Decal 4 Blend Mode", Float) = 0
+        _DecalBlend4 ("Decal 4 Blend", Range(0, 1)) = 1
+        _DecalBlur4 ("Decal 4 Blur", Range(0, 1)) = 0
+
         [Header(Backface Texture Cloth Interior)]
         [Toggle(_BACKFACE_TEXTURE)] _BackfaceTexture ("Enable Backface Texture", Float) = 0
         _BackfaceTex ("Backface Texture", 2D) = "white" {}
@@ -858,6 +894,16 @@ Shader "Natane/Toon Shader"
         _VideoEmission ("Video Emission", Range(0, 5)) = 1
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _VideoBlendMode ("Video Blend Mode", Float) = 0
         _VideoBlend ("Video Blend", Range(0, 1)) = 1
+
+        [Header(Flipbook Animation)]
+        [Toggle(_FLIPBOOK)] _Flipbook ("Enable Flipbook", Float) = 0
+        _FlipbookTex ("Flipbook Texture (Sprite Sheet)", 2D) = "black" {}
+        [HDR] _FlipbookColor ("Flipbook Color", Color) = (1,1,1,1)
+        _FlipbookColumns ("Columns", Float) = 4
+        _FlipbookRows ("Rows", Float) = 4
+        _FlipbookSpeed ("Speed (Frames/sec)", Range(0.1, 60)) = 10
+        [Enum(Add,0,Multiply,1,Replace,2)] _FlipbookBlendMode ("Flipbook Blend Mode", Float) = 0
+        _FlipbookAlpha ("Flipbook Alpha", Range(0, 1)) = 1
 
         [Header(LTCGI Realtime GI Support)]
         [Toggle(_LTCGI)] _LTCGI ("Enable LTCGI", Float) = 0
@@ -946,6 +992,16 @@ Shader "Natane/Toon Shader"
         [Enum(Both,0,Mirror Only,1,Non Mirror Only,2)] _MirrorMode ("Mirror Mode", Float) = 0
         [Enum(Both,0,Camera Only,1,Non Camera Only,2)] _CameraMode ("Camera Mode", Float) = 0
         _MirrorEmissionMultiplier ("Mirror Emission Multiplier", Range(0, 2)) = 1
+
+        // ===== ID Mask System (領域マスクシステム) =====
+        [Header(ID Mask Region Control)]
+        [Toggle(_IDMASK)] _IDMask ("Enable ID Mask", Float) = 0
+        _IDMaskTex ("ID Mask Texture (RGBA)", 2D) = "black" {}
+        _IDMaskColor1 ("Region 1 Tint (R Channel)", Color) = (1,1,1,1)
+        _IDMaskColor2 ("Region 2 Tint (G Channel)", Color) = (1,1,1,1)
+        _IDMaskColor3 ("Region 3 Tint (B Channel)", Color) = (1,1,1,1)
+        _IDMaskColor4 ("Region 4 Tint (A Channel)", Color) = (1,1,1,1)
+        [Enum(Multiply,0,Overlay,1,Replace,2)] _IDMaskBlendMode ("ID Mask Blend Mode", Float) = 0
 
         // ===== Advanced (詳細設定) =====
         [Header(Rendering)]
@@ -1464,8 +1520,12 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature_local _CHROMATIC_ABERRATION
             #pragma shader_feature_local _HOLOGRAM_NOISE
             #pragma shader_feature_local _DECAL
+            #pragma shader_feature_local _DECAL2
+            #pragma shader_feature_local _DECAL3
+            #pragma shader_feature_local _DECAL4
             #pragma shader_feature_local _BACKFACE_TEXTURE
             #pragma shader_feature_local _VIDEO_TEXTURE
+            #pragma shader_feature_local _FLIPBOOK
             #pragma shader_feature_local _LTCGI
             #pragma shader_feature_local _WATER_DRIP
             #pragma shader_feature_local _SMEAR
@@ -1483,6 +1543,7 @@ Shader "Natane/Toon Shader"
             #pragma shader_feature_local _PERSPECTIVE_FLAT
             #pragma shader_feature_local _DEPTH_COLOR_FADE
             #pragma shader_feature_local _MIRROR_CONTROL
+            #pragma shader_feature_local _IDMASK
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Include/Core/NataneToonCore.hlsl"

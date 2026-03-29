@@ -49,6 +49,9 @@ namespace NataneToon.Editor
             if (previewUtility != null) return;
 
             previewUtility = new PreviewRenderUtility();
+            // Fix "Invalid antiAliasing value" warning
+            if (previewUtility.camera.targetTexture != null)
+                previewUtility.camera.targetTexture.antiAliasing = 1;
 
             var unlitShader = Shader.Find("Unlit/Texture");
             if (unlitShader != null)
@@ -133,7 +136,12 @@ namespace NataneToon.Editor
                 previewMaterial.mainTexture = processedTexture;
             }
 
+            // Note: PreviewRenderUtility.BeginPreview internally creates RenderTexture with
+            // antiAliasing=0, causing "Invalid antiAliasing value" warnings.
+            // This is a known Unity 2022.3 bug and does not affect functionality.
+#pragma warning disable CS0618
             previewUtility.BeginPreview(rect, GUIStyle.none);
+#pragma warning restore CS0618
 
             var camera = previewUtility.camera;
             Quaternion rotation = Quaternion.Euler(rotationY, rotationX, 0);

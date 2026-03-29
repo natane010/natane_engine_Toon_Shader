@@ -7,7 +7,8 @@ namespace NataneToon.Editor
     {
         Off,
         Basic,
-        Stabilized
+        Stabilized,
+        String      // ストリングメソッド: ペン先から紐で引っ張るような安定化
     }
 
     [System.Serializable]
@@ -54,8 +55,24 @@ namespace NataneToon.Editor
             }
 
             float strength = Mathf.Clamp01(settings.strength);
-            float baseFactor = settings.mode == BrushStabilizerMode.Basic ? 0.55f : 0.28f;
-            float lerpFactor = Mathf.Clamp01(Mathf.Lerp(0.08f, baseFactor, strength));
+
+            if (settings.mode == BrushStabilizerMode.String)
+            {
+                // ストリングメソッド: 一定長の紐でペン先から描画点を引っ張る
+                // ペンが紐の長さを超えて移動した場合のみ描画点が追従する
+                float stringLength = Mathf.Lerp(5f, 60f, strength);
+                float dist = Vector2.Distance(rawPoint, filteredPoint);
+                if (dist > stringLength)
+                {
+                    Vector2 dir = (rawPoint - filteredPoint).normalized;
+                    filteredPoint = rawPoint - dir * stringLength;
+                }
+                // dist <= stringLength の場合、描画点は移動しない（紐の範囲内）
+                return filteredPoint;
+            }
+
+            float baseFactor = settings.mode == BrushStabilizerMode.Basic ? 0.7f : 0.4f;
+            float lerpFactor = Mathf.Clamp01(Mathf.Lerp(0.15f, baseFactor, strength));
 
             filteredPoint = Vector2.Lerp(filteredPoint, rawPoint, lerpFactor);
             return filteredPoint;
@@ -76,7 +93,16 @@ namespace NataneToon.Editor
 
                 if (settings.mode != BrushStabilizerMode.Off)
                 {
-                    settings.strength = EditorGUILayout.Slider("Strength", settings.strength, 0.05f, 1f);
+                    string strengthLabel = settings.mode == BrushStabilizerMode.String
+                        ? "String Length"   // 紐の長さ（ピクセル単位: 5〜60px）
+                        : "Strength";
+                    settings.strength = EditorGUILayout.Slider(strengthLabel, settings.strength, 0.05f, 1f);
+
+                    if (settings.mode == BrushStabilizerMode.String)
+                    {
+                        float displayLength = Mathf.Lerp(5f, 60f, settings.strength);
+                        EditorGUILayout.HelpBox($"紐の長さ: {displayLength:F0}px — ペンが紐を超えて移動すると描画点が追従します", MessageType.Info);
+                    }
                 }
             }
         }

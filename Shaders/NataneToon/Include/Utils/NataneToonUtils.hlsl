@@ -1927,4 +1927,27 @@ half3 ApplyChromaticAberration(float2 grabUV, float intensity, float blend, half
 // ===== End of Illustration Style Functions ===================================
 // =============================================================================
 
+// =============================================================================
+// ===== Flipbook Animation ====================================================
+// =============================================================================
+
+// Flipbook animation UV calculation
+// フリップブックアニメーションUV計算
+// columns/rows: スプライトシートのカラム数/ロウ数
+// speed: アニメーション速度 (フレーム/秒)
+float2 FlipbookUV(float2 uv, float columns, float rows, float speed)
+{
+    float totalFrames = columns * rows;
+    float frame = floor(fmod(_Time.y * speed, totalFrames));
+    float col = fmod(frame, columns);
+    float row = floor(frame / columns);
+    // Flip row (top to bottom)
+    row = rows - 1.0 - row;
+
+    float2 frameUV;
+    frameUV.x = (uv.x + col) / columns;
+    frameUV.y = (uv.y + row) / rows;
+    return frameUV;
+}
+
 #endif // NATANE_TOON_UTILS_INCLUDED

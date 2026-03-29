@@ -23,6 +23,10 @@ namespace NataneToon.Editor
             if (pixels == null || pixels.Length != width * height) return;
             sigma = Mathf.Clamp(sigma, 0.1f, 100f);
 
+            // Try GPU path first / まずGPUパスを試行
+            if (MaskTextureComputeDispatcher.TryGaussianBlurGPU(pixels, width, height, sigma))
+                return;
+
             // Kernel radius: 3 sigma covers ~99.7% of the distribution
             int radius = Mathf.CeilToInt(sigma * 3f);
             if (radius < 1) radius = 1;
@@ -163,6 +167,10 @@ namespace NataneToon.Editor
         {
             if (pixels == null || pixels.Length != width * height) return;
             strength = Mathf.Clamp(strength, 0f, 10f);
+
+            // Try GPU path first / まずGPUパスを試行
+            if (MaskTextureComputeDispatcher.TrySobelEdgeGPU(pixels, width, height, strength))
+                return;
 
             // Work on a copy to avoid reading modified values
             Color[] source = new Color[pixels.Length];

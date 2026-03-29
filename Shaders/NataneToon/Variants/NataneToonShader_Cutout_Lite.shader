@@ -850,6 +850,16 @@ Shader "Natane/Toon Shader (Cutout Lite)"
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _VideoBlendMode ("Video Blend Mode", Float) = 0
         _VideoBlend ("Video Blend", Range(0, 1)) = 1
 
+        [Header(Flipbook Animation)]
+        [Toggle(_FLIPBOOK)] _Flipbook ("Enable Flipbook", Float) = 0
+        _FlipbookTex ("Flipbook Texture (Sprite Sheet)", 2D) = "black" {}
+        [HDR] _FlipbookColor ("Flipbook Color", Color) = (1,1,1,1)
+        _FlipbookColumns ("Columns", Float) = 4
+        _FlipbookRows ("Rows", Float) = 4
+        _FlipbookSpeed ("Speed (Frames/sec)", Range(0.1, 60)) = 10
+        [Enum(Add,0,Multiply,1,Replace,2)] _FlipbookBlendMode ("Flipbook Blend Mode", Float) = 0
+        _FlipbookAlpha ("Flipbook Alpha", Range(0, 1)) = 1
+
         [Header(LTCGI Realtime GI Support)]
         [Toggle(_LTCGI)] _LTCGI ("Enable LTCGI", Float) = 0
         _LTCGIIntensity ("LTCGI Intensity", Range(0, 2)) = 1
@@ -1438,6 +1448,7 @@ CGPROGRAM
             #pragma shader_feature_local _DECAL
             #pragma shader_feature_local _BACKFACE_TEXTURE
             #pragma shader_feature_local _VIDEO_TEXTURE
+            #pragma shader_feature_local _FLIPBOOK
             #pragma shader_feature_local _LTCGI
             #pragma shader_feature_local _WATER_DRIP
             #pragma shader_feature_local _SMEAR

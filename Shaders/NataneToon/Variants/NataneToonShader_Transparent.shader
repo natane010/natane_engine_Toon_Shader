@@ -849,6 +849,16 @@ Shader "Natane/Toon Shader (Transparent)"
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _VideoBlendMode ("Video Blend Mode", Float) = 0
         _VideoBlend ("Video Blend", Range(0, 1)) = 1
 
+        [Header(Flipbook Animation)]
+        [Toggle(_FLIPBOOK)] _Flipbook ("Enable Flipbook", Float) = 0
+        _FlipbookTex ("Flipbook Texture (Sprite Sheet)", 2D) = "black" {}
+        [HDR] _FlipbookColor ("Flipbook Color", Color) = (1,1,1,1)
+        _FlipbookColumns ("Columns", Float) = 4
+        _FlipbookRows ("Rows", Float) = 4
+        _FlipbookSpeed ("Speed (Frames/sec)", Range(0.1, 60)) = 10
+        [Enum(Add,0,Multiply,1,Replace,2)] _FlipbookBlendMode ("Flipbook Blend Mode", Float) = 0
+        _FlipbookAlpha ("Flipbook Alpha", Range(0, 1)) = 1
+
         [Header(LTCGI Realtime GI Support)]
         [Toggle(_LTCGI)] _LTCGI ("Enable LTCGI", Float) = 0
         _LTCGIIntensity ("LTCGI Intensity", Range(0, 2)) = 1
@@ -945,6 +955,16 @@ Shader "Natane/Toon Shader (Transparent)"
         [Enum(Both,0,Mirror Only,1,Non Mirror Only,2)] _MirrorMode ("Mirror Mode", Float) = 0
         [Enum(Both,0,Camera Only,1,Non Camera Only,2)] _CameraMode ("Camera Mode", Float) = 0
         _MirrorEmissionMultiplier ("Mirror Emission Multiplier", Range(0, 2)) = 1
+
+        // ===== ID Mask System (領域マスクシステム) =====
+        [Header(ID Mask Region Control)]
+        [Toggle(_IDMASK)] _IDMask ("Enable ID Mask", Float) = 0
+        _IDMaskTex ("ID Mask Texture (RGBA)", 2D) = "black" {}
+        _IDMaskColor1 ("Region 1 Tint (R Channel)", Color) = (1,1,1,1)
+        _IDMaskColor2 ("Region 2 Tint (G Channel)", Color) = (1,1,1,1)
+        _IDMaskColor3 ("Region 3 Tint (B Channel)", Color) = (1,1,1,1)
+        _IDMaskColor4 ("Region 4 Tint (A Channel)", Color) = (1,1,1,1)
+        [Enum(Multiply,0,Overlay,1,Replace,2)] _IDMaskBlendMode ("ID Mask Blend Mode", Float) = 0
 
         // ===== Advanced (詳細設定) =====
         [Header(Rendering)]
@@ -1448,6 +1468,7 @@ Blend [_SrcBlend] [_DstBlend]
             #pragma shader_feature_local _DECAL
             #pragma shader_feature_local _BACKFACE_TEXTURE
             #pragma shader_feature_local _VIDEO_TEXTURE
+            #pragma shader_feature_local _FLIPBOOK
             #pragma shader_feature_local _LTCGI
             #pragma shader_feature_local _WATER_DRIP
             #pragma shader_feature_local _SMEAR
@@ -1465,6 +1486,7 @@ Blend [_SrcBlend] [_DstBlend]
             #pragma shader_feature_local _PERSPECTIVE_FLAT
             #pragma shader_feature_local _DEPTH_COLOR_FADE
             #pragma shader_feature_local _MIRROR_CONTROL
+            #pragma shader_feature_local _IDMASK
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
             #define TRANSPARENT_VARIANT
 
