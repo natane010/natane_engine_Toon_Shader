@@ -182,7 +182,7 @@ namespace NataneToon.Editor
 
         // ===== Noise Parameters =====
         private NoiseType noiseType = NoiseType.Perlin;
-        private int textureSize = 512;
+        private int textureSize = 2048;
         private float scale = 5f;
         private int seed;
         private float contrast = 1f;
@@ -203,7 +203,7 @@ namespace NataneToon.Editor
         // ===== UV Mask Parameters =====
         private Object meshSource;
         private int uvChannel;
-        private int maskTextureSize = 512;
+        private int maskTextureSize = 2048;
         private int uvMaterialSlot = -1;
         private FillMode fillMode = FillMode.Solid;
         private GradientDirection gradientDirection = GradientDirection.Inward;
