@@ -38,8 +38,29 @@ namespace NataneToon.Editor
             {
                 try
                 {
-                    _pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
-                    await _pipe.ConnectAsync(5000, token);
+                    // Retry connection with delay (exe may still be starting)
+                    const int maxRetries = 6;
+                    for (int attempt = 0; attempt < maxRetries; attempt++)
+                    {
+                        try
+                        {
+                            _pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+                            await _pipe.ConnectAsync(3000, token);
+                            break; // Connected
+                        }
+                        catch (TimeoutException) when (attempt < maxRetries - 1)
+                        {
+                            _pipe?.Dispose();
+                            _pipe = null;
+                            await Task.Delay(1000, token); // Wait 1s before retry
+                        }
+                    }
+
+                    if (_pipe == null || !_pipe.IsConnected)
+                    {
+                        Debug.LogWarning("[TextureStudioBridge] Could not connect after retries.");
+                        return;
+                    }
 
                     _reader = new StreamReader(_pipe, Encoding.UTF8);
                     _writer = new StreamWriter(_pipe, Encoding.UTF8) { AutoFlush = true };
