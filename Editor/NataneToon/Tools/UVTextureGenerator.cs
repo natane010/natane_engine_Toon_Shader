@@ -1215,6 +1215,17 @@ namespace NataneToon.Editor
                 ToastNotification.Show($"Channel: {ChannelView.CurrentMode}");
             }
 
+            GUILayout.Space(2);
+            DrawToolbarSeparator();
+            GUILayout.Space(2);
+
+            // Canvas Resize / キャンバスサイズ変更
+            if (GUILayout.Button(new GUIContent("\u2922", L("キャンバスサイズ変更", "Canvas Resize")),
+                EditorStyles.toolbarButton, GUILayout.Width(26)))
+            {
+                ShowCanvasResizeDialog();
+            }
+
             GUILayout.FlexibleSpace();
 
             // Sub-window buttons
@@ -1335,6 +1346,47 @@ namespace NataneToon.Editor
         private static void DrawToolbarSeparator()
         {
             GUILayout.Box("", GUILayout.Width(1), GUILayout.Height(16));
+        }
+
+        // Canvas Resize dialog state / キャンバスサイズ変更ダイアログの状態
+        private int canvasResizeWidth = 1024;
+        private int canvasResizeHeight = 1024;
+        private bool canvasResizeBilinear = true;
+
+        /// <summary>
+        /// Show Canvas Resize dialog.
+        /// キャンバスサイズ変更ダイアログを表示する
+        /// </summary>
+        private void ShowCanvasResizeDialog()
+        {
+            if (layerStack == null) return;
+
+            canvasResizeWidth = layerStack.Width;
+            canvasResizeHeight = layerStack.Height;
+
+            var dialog = ScriptableObject.CreateInstance<CanvasResizeDialog>();
+            dialog.Init(canvasResizeWidth, canvasResizeHeight, canvasResizeBilinear, (newW, newH, bilinear) =>
+            {
+                if (newW == layerStack.Width && newH == layerStack.Height) return;
+
+                string msg = string.Format(
+                    L("キャンバスサイズを {0}x{1} → {2}x{3} に変更しますか？\n元に戻せません。",
+                      "Resize canvas from {0}x{1} to {2}x{3}?\nThis cannot be undone."),
+                    layerStack.Width, layerStack.Height, newW, newH);
+
+                if (EditorUtility.DisplayDialog(
+                    L("キャンバスサイズ変更", "Canvas Resize"), msg,
+                    L("変更", "Resize"), L("キャンセル", "Cancel")))
+                {
+                    layerStack.Resize(newW, newH, bilinear);
+                    brushHistory = new MaskTextureHistory();
+                    RefreshPreviewFromLayers();
+                    ToastNotification.Show(string.Format(
+                        L("キャンバスを {0}x{1} にリサイズしました", "Canvas resized to {0}x{1}"),
+                        newW, newH));
+                }
+            });
+            dialog.ShowUtility();
         }
 
         /// <summary>
@@ -5317,5 +5369,60 @@ namespace NataneToon.Editor
             EditorUtility.SetDirty(targetMaterial);
         }
 
+    }
+
+    /// <summary>
+    /// Small utility dialog for canvas resize settings.
+    /// キャンバスサイズ変更設定用の小型ユーティリティダイアログ
+    /// </summary>
+    internal class CanvasResizeDialog : EditorWindow
+    {
+        private static readonly int[] sizes = { 256, 512, 1024, 2048, 4096 };
+        private static readonly string[] sizeLabels = { "256", "512", "1024", "2048", "4096" };
+
+        private int newWidth;
+        private int newHeight;
+        private bool bilinear;
+        private System.Action<int, int, bool> onConfirm;
+
+        public void Init(int currentWidth, int currentHeight, bool defaultBilinear, System.Action<int, int, bool> callback)
+        {
+            newWidth = currentWidth;
+            newHeight = currentHeight;
+            bilinear = defaultBilinear;
+            onConfirm = callback;
+            titleContent = new GUIContent(NataneToonLocalization.L("キャンバスサイズ変更", "Canvas Resize"));
+            minSize = new Vector2(300, 140);
+            maxSize = new Vector2(300, 140);
+        }
+
+        private void OnGUI()
+        {
+            EditorGUILayout.Space(8);
+
+            newWidth = EditorGUILayout.IntPopup(
+                NataneToonLocalization.L("幅", "Width"), newWidth, sizeLabels, sizes);
+            newHeight = EditorGUILayout.IntPopup(
+                NataneToonLocalization.L("高さ", "Height"), newHeight, sizeLabels, sizes);
+
+            EditorGUILayout.Space(4);
+            bilinear = EditorGUILayout.Toggle(
+                NataneToonLocalization.L("バイリニア補間", "Bilinear Interpolation"), bilinear);
+
+            EditorGUILayout.Space(8);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button(NataneToonLocalization.L("変更", "Resize"), GUILayout.Width(80)))
+                {
+                    onConfirm?.Invoke(newWidth, newHeight, bilinear);
+                    Close();
+                }
+                if (GUILayout.Button(NataneToonLocalization.L("キャンセル", "Cancel"), GUILayout.Width(80)))
+                {
+                    Close();
+                }
+            }
+        }
     }
 }

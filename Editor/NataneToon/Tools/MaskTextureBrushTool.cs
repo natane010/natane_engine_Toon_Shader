@@ -1466,6 +1466,7 @@ namespace NataneToon.Editor
         private static bool taperFoldout;
         private static bool correctionFoldout;
         private static int selectedPressureParam = -1; // PS-style: which param's curve is shown
+        private static Texture2D grayscaleGradientTex;
 
         private static readonly string[] pressureParamNames = new string[]
         {
@@ -1490,17 +1491,35 @@ namespace NataneToon.Editor
             barRect = EditorGUI.IndentedRect(barRect);
             if (Event.current.type != EventType.Repaint) return;
 
-            int steps = Mathf.Max(1, (int)barRect.width);
-            for (int i = 0; i < steps; i++)
+            // Create cached gradient texture on first use
+            if (grayscaleGradientTex == null)
             {
-                float t = (float)i / steps;
-                EditorGUI.DrawRect(new Rect(barRect.x + i, barRect.y, 1, barRect.height - 2), new Color(t, t, t, 1f));
+                grayscaleGradientTex = new Texture2D(256, 1, TextureFormat.RGBA32, false);
+                grayscaleGradientTex.hideFlags = HideFlags.HideAndDontSave;
+                grayscaleGradientTex.wrapMode = TextureWrapMode.Clamp;
+                grayscaleGradientTex.filterMode = FilterMode.Bilinear;
+                Color[] colors = new Color[256];
+                for (int i = 0; i < 256; i++)
+                {
+                    float t = i / 255f;
+                    colors[i] = new Color(t, t, t, 1f);
+                }
+                grayscaleGradientTex.SetPixels(colors);
+                grayscaleGradientTex.Apply(false, true); // makeNoLongerReadable for GPU optimization
             }
+
+            // Draw gradient with single texture draw
+            Rect gradRect = new Rect(barRect.x, barRect.y, barRect.width, barRect.height - 2);
+            GUI.DrawTexture(gradRect, grayscaleGradientTex);
+
+            // Border
             Color borderColor = new Color(0.3f, 0.3f, 0.3f, 1f);
             EditorGUI.DrawRect(new Rect(barRect.x, barRect.y, barRect.width, 1), borderColor);
             EditorGUI.DrawRect(new Rect(barRect.x, barRect.y + barRect.height - 3, barRect.width, 1), borderColor);
             EditorGUI.DrawRect(new Rect(barRect.x, barRect.y, 1, barRect.height - 2), borderColor);
             EditorGUI.DrawRect(new Rect(barRect.x + barRect.width - 1, barRect.y, 1, barRect.height - 2), borderColor);
+
+            // Value marker
             float markerX = barRect.x + value * barRect.width;
             Color markerColor = value > 0.5f ? Color.black : Color.white;
             EditorGUI.DrawRect(new Rect(markerX - 1, barRect.y - 1, 3, barRect.height), markerColor);

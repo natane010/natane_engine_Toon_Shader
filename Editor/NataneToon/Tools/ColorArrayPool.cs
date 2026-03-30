@@ -10,6 +10,7 @@ namespace NataneToon.Editor
     internal static class ColorArrayPool
     {
         private static readonly Dictionary<int, Stack<Color[]>> pools = new Dictionary<int, Stack<Color[]>>();
+        private static readonly Dictionary<int, Stack<float[]>> floatPools = new Dictionary<int, Stack<float[]>>();
         private const int MaxPooledPerSize = 4;
 
         /// <summary>
@@ -54,12 +55,45 @@ namespace NataneToon.Editor
         }
 
         /// <summary>
+        /// Get a float[] array of the specified length. May return a recycled array.
+        /// 指定長のfloat[]配列を取得。リサイクル配列を返す可能性あり。
+        /// </summary>
+        public static float[] GetFloat(int length)
+        {
+            if (length <= 0) return new float[0];
+
+            if (floatPools.TryGetValue(length, out var stack) && stack.Count > 0)
+                return stack.Pop();
+
+            return new float[length];
+        }
+
+        /// <summary>
+        /// Return a float[] array to the pool for reuse.
+        /// float[]配列をプールに返却して再利用可能にする。
+        /// </summary>
+        public static void ReleaseFloat(float[] array)
+        {
+            if (array == null || array.Length == 0) return;
+
+            int key = array.Length;
+            if (!floatPools.ContainsKey(key))
+                floatPools[key] = new Stack<float[]>();
+
+            if (floatPools[key].Count < MaxPooledPerSize)
+            {
+                floatPools[key].Push(array);
+            }
+        }
+
+        /// <summary>
         /// Clear all pooled arrays (call on domain reload).
         /// 全プール配列をクリア（ドメインリロード時に呼ぶ）。
         /// </summary>
         public static void Clear()
         {
             pools.Clear();
+            floatPools.Clear();
         }
 
         /// <summary>Current pool statistics for debugging.</summary>

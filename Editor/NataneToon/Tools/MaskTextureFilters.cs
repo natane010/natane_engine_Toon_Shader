@@ -34,7 +34,7 @@ namespace NataneToon.Editor
             float[] kernel = BuildGaussianKernel(radius, sigma);
 
             // Temporary buffer for intermediate pass
-            Color[] temp = new Color[pixels.Length];
+            Color[] temp = ColorArrayPool.Get(pixels.Length);
 
             // Horizontal pass: source -> temp
             for (int y = 0; y < height; y++)
@@ -75,6 +75,8 @@ namespace NataneToon.Editor
                     pixels[y * width + x] = new Color(r, g, b, a);
                 }
             }
+
+            ColorArrayPool.Release(temp);
         }
 
         private static float[] BuildGaussianKernel(int radius, float sigma)
@@ -173,7 +175,7 @@ namespace NataneToon.Editor
                 return;
 
             // Work on a copy to avoid reading modified values
-            Color[] source = new Color[pixels.Length];
+            Color[] source = ColorArrayPool.Get(pixels.Length);
             System.Array.Copy(pixels, source, pixels.Length);
 
             for (int y = 0; y < height; y++)
@@ -198,6 +200,8 @@ namespace NataneToon.Editor
                     pixels[y * width + x] = new Color(edge, edge, edge, source[y * width + x].a);
                 }
             }
+
+            ColorArrayPool.Release(source);
         }
 
         private static Color SampleClamped(Color[] pixels, int width, int height, int x, int y)
@@ -227,7 +231,7 @@ namespace NataneToon.Editor
             amount = Mathf.Clamp(amount, 0f, 10f);
 
             // Create blurred copy
-            Color[] blurred = new Color[pixels.Length];
+            Color[] blurred = ColorArrayPool.Get(pixels.Length);
             System.Array.Copy(pixels, blurred, pixels.Length);
             GaussianBlur(blurred, width, height, sigma);
 
@@ -242,6 +246,8 @@ namespace NataneToon.Editor
                     Mathf.Clamp01(orig.b + amount * (orig.b - blur.b)),
                     Mathf.Clamp01(orig.a + amount * (orig.a - blur.a)));
             }
+
+            ColorArrayPool.Release(blurred);
         }
 
         /// <summary>

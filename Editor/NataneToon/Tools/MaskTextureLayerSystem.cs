@@ -87,16 +87,18 @@ namespace NataneToon.Editor
             if (thumbnailCache == null)
                 thumbnailCache = new Texture2D(ThumbnailSize, ThumbnailSize, TextureFormat.RGBA32, false);
 
-            // Downsample pixels to 40x40
+            // Downsample pixels to 40x40 using bulk SetPixels
+            Color[] thumbPixels = new Color[ThumbnailSize * ThumbnailSize];
             for (int ty = 0; ty < ThumbnailSize; ty++)
             {
                 float v = (float)ty / (ThumbnailSize - 1);
                 for (int tx = 0; tx < ThumbnailSize; tx++)
                 {
                     float u = (float)tx / (ThumbnailSize - 1);
-                    thumbnailCache.SetPixel(tx, ty, SampleBilinear(u, v));
+                    thumbPixels[ty * ThumbnailSize + tx] = SampleBilinear(u, v);
                 }
             }
+            thumbnailCache.SetPixels(thumbPixels);
             thumbnailCache.Apply();
             return thumbnailCache;
         }
@@ -440,6 +442,75 @@ namespace NataneToon.Editor
             return ComputeMaskHash();
         }
 
+        /// <summary>
+        /// Resize the layer to new dimensions, resampling pixel data.
+        /// レイヤーを新しいサイズにリサイズし、ピクセルデータをリサンプリングする
+        /// </summary>
+        public void Resize(int newWidth, int newHeight, bool bilinear)
+        {
+            newWidth = Mathf.Max(1, newWidth);
+            newHeight = Mathf.Max(1, newHeight);
+            if (newWidth == width && newHeight == height) return;
+
+            // Resample pixels
+            if (pixels != null && pixels.Length > 0)
+            {
+                Color[] newPixels = new Color[newWidth * newHeight];
+                for (int y = 0; y < newHeight; y++)
+                {
+                    float v = (float)y / Mathf.Max(1, newHeight - 1);
+                    for (int x = 0; x < newWidth; x++)
+                    {
+                        float u = (float)x / Mathf.Max(1, newWidth - 1);
+                        if (bilinear)
+                        {
+                            newPixels[y * newWidth + x] = SampleBilinear(u, v);
+                        }
+                        else
+                        {
+                            int srcX = Mathf.Clamp(Mathf.RoundToInt(u * (width - 1)), 0, width - 1);
+                            int srcY = Mathf.Clamp(Mathf.RoundToInt(v * (height - 1)), 0, height - 1);
+                            newPixels[y * newWidth + x] = pixels[srcY * width + srcX];
+                        }
+                    }
+                }
+                pixels = newPixels;
+            }
+            else
+            {
+                pixels = new Color[newWidth * newHeight];
+            }
+
+            // Resample mask
+            if (mask != null && mask.Length > 0)
+            {
+                Color[] newMask = new Color[newWidth * newHeight];
+                for (int y = 0; y < newHeight; y++)
+                {
+                    float v = (float)y / Mathf.Max(1, newHeight - 1);
+                    for (int x = 0; x < newWidth; x++)
+                    {
+                        float u = (float)x / Mathf.Max(1, newWidth - 1);
+                        if (bilinear)
+                        {
+                            newMask[y * newWidth + x] = SampleMaskBilinear(u, v);
+                        }
+                        else
+                        {
+                            int srcX = Mathf.Clamp(Mathf.RoundToInt(u * (width - 1)), 0, width - 1);
+                            int srcY = Mathf.Clamp(Mathf.RoundToInt(v * (height - 1)), 0, height - 1);
+                            newMask[y * newWidth + x] = mask[srcY * width + srcX];
+                        }
+                    }
+                }
+                mask = newMask;
+            }
+
+            width = newWidth;
+            height = newHeight;
+            DisposeThumbnail();
+        }
+
         private static int ComputeArrayHash(Color[] source, bool grayscaleOnly)
         {
             if (source == null || source.Length == 0) return 0;
@@ -584,7 +655,10 @@ namespace NataneToon.Editor
             if (flattenCacheValid && flattenCache != null && flattenCache.Length == w * h && flattenCacheHash == stateHash)
                 return flattenCache;
 
-            Color[] result = new Color[w * h];
+            Color[] result = ColorArrayPool.Get(w * h);
+            // Clear the array since pool may return dirty data
+            for (int i = 0; i < result.Length; i++)
+                result[i] = Color.clear;
 
             for (int layerIdx = 0; layerIdx < Layers.Count; layerIdx++)
             {
@@ -630,7 +704,7 @@ namespace NataneToon.Editor
                 float[] maskGray = null;
                 if (hasLayerMask && sameSize)
                 {
-                    maskGray = new float[result.Length];
+                    maskGray = ColorArrayPool.GetFloat(result.Length);
                     Color[] mask = layer.mask;
                     for (int mi = 0; mi < result.Length; mi++)
                     {
@@ -678,7 +752,16 @@ namespace NataneToon.Editor
 
                     result[i] = BlendPixels(result[i], topPixel, layer.blendMode, layer.opacity);
                 }
+
+                // Release per-layer mask grayscale buffer back to pool
+                if (maskGray != null)
+                {
+                    ColorArrayPool.ReleaseFloat(maskGray);
+                    maskGray = null;
+                }
             }
+            if (flattenCache != null && flattenCache != result)
+                ColorArrayPool.Release(flattenCache);
             flattenCache = result;
             flattenCacheHash = stateHash;
             flattenCacheValid = true;
@@ -1212,6 +1295,26 @@ namespace NataneToon.Editor
 
             Layers.RemoveAt(groupIndex);
             ActiveLayerIndex = Mathf.Clamp(ActiveLayerIndex, 0, Mathf.Max(0, Layers.Count - 1));
+            InvalidateFlattenCache();
+        }
+
+        /// <summary>
+        /// Resize all layers and the canvas to new dimensions.
+        /// 全レイヤーとキャンバスを新しいサイズにリサイズする
+        /// </summary>
+        public void Resize(int newWidth, int newHeight, bool bilinear)
+        {
+            newWidth = Mathf.Max(1, newWidth);
+            newHeight = Mathf.Max(1, newHeight);
+            if (newWidth == Width && newHeight == Height) return;
+
+            for (int i = 0; i < Layers.Count; i++)
+            {
+                Layers[i].Resize(newWidth, newHeight, bilinear);
+            }
+
+            Width = newWidth;
+            Height = newHeight;
             InvalidateFlattenCache();
         }
     }
