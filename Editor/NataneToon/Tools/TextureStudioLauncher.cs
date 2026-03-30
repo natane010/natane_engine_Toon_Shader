@@ -1,110 +1,165 @@
 using UnityEngine;
 using UnityEditor;
+using System.Diagnostics;
+using System.IO;
 
 namespace NataneToon.Editor
 {
-    using static NataneToonLocalization;
-
     /// <summary>
-    /// Launches Texture Studio from material inspector with pre-configured settings.
-    /// マテリアルインスペクタからテクスチャスタジオを起動するランチャー
+    /// Launches NataneTextureStudio.exe from the Unity package.
+    /// Unity パッケージから NataneTextureStudio.exe を起動するランチャー
     /// </summary>
-    public static class TextureStudioLauncher
+    internal static class TextureStudioLauncher
     {
+        private static Process _studioProcess;
+        private static string _currentPipeName;
+
+        /// <summary>Whether the studio process is currently running.</summary>
+        public static bool IsRunning => _studioProcess != null && !_studioProcess.HasExited;
+
+        /// <summary>Current pipe name for IPC.</summary>
+        public static string PipeName => _currentPipeName;
+
+        [MenuItem("Tools/Natane/Texture Studio (Standalone)")]
+        public static void Launch()
+        {
+            LaunchWithTexture(null, null);
+        }
+
         /// <summary>
-        /// Open Texture Studio for editing a specific texture property.
-        /// 特定のテクスチャプロパティの編集用にテクスチャスタジオを開く
+        /// Launch the studio, optionally opening a texture for editing.
+        /// スタジオを起動し、オプションでテクスチャを開いて編集する
+        /// </summary>
+        public static void LaunchWithTexture(string texturePath, string propertyName)
+        {
+            if (IsRunning)
+            {
+                // Already running -- send open command via bridge instead
+                if (texturePath != null)
+                    TextureStudioBridge.SendOpenTexture(texturePath, propertyName ?? "");
+                return;
+            }
+
+            string exePath = FindExePath();
+            if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+            {
+                // Fallback: try dotnet run from source
+                string projectDir = FindProjectDir();
+                if (!string.IsNullOrEmpty(projectDir))
+                {
+                    _currentPipeName = "NataneTSPipe_" + Process.GetCurrentProcess().Id;
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = "dotnet",
+                        Arguments = string.Format("run --project \"{0}\" -- --pipe {1}", projectDir, _currentPipeName),
+                        UseShellExecute = false,
+                        CreateNoWindow = false,
+                    };
+                    // Add texture path if specified
+                    if (!string.IsNullOrEmpty(texturePath))
+                        startInfo.Arguments += string.Format(" --open \"{0}\"", Path.GetFullPath(texturePath));
+                    if (!string.IsNullOrEmpty(propertyName))
+                        startInfo.Arguments += " --property " + propertyName;
+
+                    try
+                    {
+                        _studioProcess = Process.Start(startInfo);
+                        string pipeName = _currentPipeName;
+                        EditorApplication.delayCall += () => TextureStudioBridge.Connect(pipeName);
+                        UnityEngine.Debug.Log("[NataneTextureStudio] Launched via dotnet run (pipe: " + _currentPipeName + ")");
+                    }
+                    catch (System.Exception ex)
+                    {
+                        UnityEngine.Debug.LogError("[NataneTextureStudio] Failed to launch: " + ex.Message);
+                    }
+                    return;
+                }
+
+                EditorUtility.DisplayDialog("Natane Texture Studio",
+                    "NataneTextureStudio.exe \u304c\u898b\u3064\u304b\u308a\u307e\u305b\u3093\u3002\nPlugins/Tools/ \u30c7\u30a3\u30ec\u30af\u30c8\u30ea\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002",
+                    "OK");
+                return;
+            }
+
+            _currentPipeName = "NataneTSPipe_" + Process.GetCurrentProcess().Id;
+            var args = "--pipe " + _currentPipeName;
+            if (!string.IsNullOrEmpty(texturePath))
+                args += string.Format(" --open \"{0}\"", Path.GetFullPath(texturePath));
+            if (!string.IsNullOrEmpty(propertyName))
+                args += " --property " + propertyName;
+
+            try
+            {
+                _studioProcess = Process.Start(exePath, args);
+                string pipeNameCapture = _currentPipeName;
+                EditorApplication.delayCall += () => TextureStudioBridge.Connect(pipeNameCapture);
+                UnityEngine.Debug.Log("[NataneTextureStudio] Launched (pipe: " + _currentPipeName + ")");
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.LogError("[NataneTextureStudio] Failed to launch: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Legacy compatibility: called via reflection from ShaderGUI.
+        /// ShaderGUI からリフレクション経由で呼ばれる旧互換メソッド
         /// </summary>
         public static void OpenForProperty(Material material, string propertyName, Texture2D currentTexture)
         {
             if (material == null) return;
-
-            // [TEMPORARY] Password gate - remove at official release
-            // [一時的] パスワードゲート - 正式リリース時に削除
-            if (!TextureStudioPasswordGate.Verify()) return;
-
-            // Get or open the texture studio window
-            var window = EditorWindow.GetWindow<UVTextureGenerator>(false,
-                L("テクスチャスタジオ", "Texture Studio"));
-
-            // Configure for the target material/property
-            window.CurrentTargetMaterial = material;
-            window.CurrentPropertyName = propertyName;
-
-            // Find property index
-            string[] props = UVTextureGenerator.MaskPropertyNames;
-            int propIdx = -1;
-            for (int i = 0; i < props.Length; i++)
-            {
-                if (props[i] == propertyName) { propIdx = i; break; }
-            }
-
-            if (propIdx >= 0)
-                window.CurrentPropertyIndex = propIdx;
-
-            // Detect texture type and set appropriate mode
-            var texType = TextureTypeDetector.Detect(propertyName);
-
-            // Import existing texture if available
+            string texturePath = null;
             if (currentTexture != null)
             {
-                // Send message to import texture (the window will handle it)
-                window.ImportTextureForEditing(currentTexture, propertyName);
+                texturePath = AssetDatabase.GetAssetPath(currentTexture);
             }
-
-            window.Show();
-            window.Focus();
+            LaunchWithTexture(texturePath, propertyName);
         }
 
-        /// <summary>
-        /// Draw an "Edit" button next to a texture property in ShaderGUI.
-        /// ShaderGUIでテクスチャプロパティの横に「Edit」ボタンを描画
-        /// </summary>
-        /// <returns>True if the button was clicked.</returns>
-        public static bool DrawEditButton(MaterialEditor editor, MaterialProperty texProperty)
+        private static string FindExePath()
         {
-            if (editor == null || texProperty == null) return false;
-            if (texProperty.type != MaterialProperty.PropType.Texture) return false;
-
-            Material mat = editor.target as Material;
-            if (mat == null) return false;
-
-            // Detect type for icon/tooltip
-            var texType = TextureTypeDetector.Detect(texProperty.name);
-            string typeName = TextureTypeDetector.GetDisplayName(texType);
-
-            string tooltip = L(
-                $"テクスチャスタジオで編集 ({typeName})",
-                $"Edit in Texture Studio ({typeName})");
-
-            // Small edit button
-            if (GUILayout.Button(new GUIContent("Edit", tooltip),
-                EditorStyles.miniButton, GUILayout.Width(36), GUILayout.Height(18)))
+            // Search for exe in Plugins/Tools/
+            string[] guids = AssetDatabase.FindAssets("NataneTextureStudio");
+            foreach (var guid in guids)
             {
-                Texture2D currentTex = texProperty.textureValue as Texture2D;
-                OpenForProperty(mat, texProperty.name, currentTex);
-                return true;
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (path.EndsWith("NataneTextureStudio.exe"))
+                    return Path.GetFullPath(path);
             }
-            return false;
+
+            // Fallback: relative path from package root
+            string packageRoot = GetPackageRoot();
+            if (!string.IsNullOrEmpty(packageRoot))
+            {
+                string candidate = Path.Combine(packageRoot, "Plugins", "Tools", "NataneTextureStudio.exe");
+                if (File.Exists(candidate))
+                    return Path.GetFullPath(candidate);
+            }
+
+            return "";
         }
 
-        /// <summary>
-        /// Draw a compact edit button (icon only) for inline use.
-        /// インライン使用のためのコンパクトなEditボタンを描画
-        /// </summary>
-        public static bool DrawCompactEditButton(Material mat, string propertyName)
+        private static string FindProjectDir()
         {
-            if (mat == null || !mat.HasProperty(propertyName)) return false;
+            // Find the .csproj source directory for dotnet run fallback
+            string packageRoot = GetPackageRoot();
+            if (string.IsNullOrEmpty(packageRoot)) return "";
+            string projectDir = Path.Combine(packageRoot, "NativeSource~", "NataneTextureStudio");
+            if (File.Exists(Path.Combine(projectDir, "NataneTextureStudio.csproj")))
+                return projectDir;
+            return "";
+        }
 
-            if (GUILayout.Button(new GUIContent("E",
-                L("テクスチャスタジオで編集", "Edit in Texture Studio")),
-                EditorStyles.miniButton, GUILayout.Width(22), GUILayout.Height(16)))
+        private static string GetPackageRoot()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:TextAsset package");
+            foreach (var guid in guids)
             {
-                Texture2D tex = mat.GetTexture(propertyName) as Texture2D;
-                OpenForProperty(mat, propertyName, tex);
-                return true;
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (path.Contains("com.natane.toonshader") && path.EndsWith("package.json"))
+                    return Path.GetDirectoryName(Path.GetFullPath(path)) ?? "";
             }
-            return false;
+            return "";
         }
     }
 }
