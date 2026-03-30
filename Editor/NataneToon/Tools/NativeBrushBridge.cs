@@ -14,7 +14,7 @@ namespace NataneToon.Editor
 
         // ===== DllImport declarations =====
 
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(DllName, EntryPoint = "NataneGetVersion", CallingConvention = CallingConvention.Cdecl)]
         public static extern int GetVersion();
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -59,6 +59,32 @@ namespace NataneToon.Editor
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void Desaturate(IntPtr pixels, int totalPixels);
 
+        // ===== Pen Pressure (WM_POINTER API) =====
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int IsPenPressureAvailable();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int InitPenPressure(IntPtr hwnd);
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void ShutdownPenPressure();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float GetPenPressure();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float GetPenTiltX();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern float GetPenTiltY();
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        public static extern int IsPenActive();
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetActiveWindow();
+
         // ===== Initialization =====
 
         private static bool initialized;
@@ -86,6 +112,27 @@ namespace NataneToon.Editor
                 if (string.IsNullOrEmpty(simd)) simd = "Scalar ";
 
                 Debug.Log($"[NataneBrushNative] v{cachedVersion} loaded ({simd.Trim()})");
+
+                // Initialize pen pressure (WM_POINTER API)
+                try
+                {
+                    if (IsPenPressureAvailable() != 0)
+                    {
+                        IntPtr hwnd = GetActiveWindow();
+                        if (InitPenPressure(hwnd) != 0)
+                            Debug.Log("[NataneBrushNative] ペン筆圧キャプチャを初期化しました (Pen pressure capture initialized)");
+                    }
+                }
+                catch (System.EntryPointNotFoundException)
+                {
+                    // DLL doesn't have pen pressure functions (older version)
+                }
+
+                // Register cleanup on domain unload
+                AppDomain.CurrentDomain.DomainUnload += (s, ev) =>
+                {
+                    try { ShutdownPenPressure(); } catch { }
+                };
             }
             catch (DllNotFoundException)
             {

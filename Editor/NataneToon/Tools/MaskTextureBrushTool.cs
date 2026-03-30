@@ -1,9 +1,6 @@
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
 
 namespace NataneToon.Editor
 {
@@ -1719,30 +1716,28 @@ namespace NataneToon.Editor
             float rawPressure = 0f;
             bool pressureFound = false;
 
-            // 1. Primary: Input System Pen.current (most reliable for pen tablets)
-            // 最優先: Input System Pen.current（ペンタブレットで最も信頼性が高い）
-#if ENABLE_INPUT_SYSTEM
+            // 1. Primary: Native DLL pen pressure (WM_POINTER API, most reliable)
+            // 最優先: ネイティブDLLペン筆圧（WM_POINTER API、最も信頼性が高い）
             try
             {
-                var pen = Pen.current;
-                if (pen != null)
+                if (NativeBrushBridge.IsPenActive() != 0)
                 {
-                    float penPressure = pen.pressure.ReadValue();
-                    if (penPressure > 0.001f)
+                    float nativePressure = NativeBrushBridge.GetPenPressure();
+                    if (nativePressure > 0.001f)
                     {
-                        rawPressure = Mathf.Clamp01(penPressure);
+                        rawPressure = nativePressure;
                         pressureFound = true;
                         if (!penPressureLogShown)
                         {
                             penPressureLogShown = true;
                             penPressureDetected = true;
-                            Debug.Log("[TextureStudio] ペンタブレット筆圧を検出しました - Input System (Pen pressure detected via Input System)");
+                            Debug.Log("[TextureStudio] ペンタブレット筆圧を検出しました - Native WM_POINTER (Pen pressure detected via native API)");
                         }
                     }
                 }
             }
-            catch (System.Exception) { /* Input System not available */ }
-#endif
+            catch (System.EntryPointNotFoundException) { /* Old DLL without pen pressure */ }
+            catch (System.DllNotFoundException) { /* DLL not found */ }
 
             // 2. Fallback: Event.pressure (IMGUI legacy)
             // フォールバック: Event.pressure（IMGUIレガシー）
@@ -1763,13 +1758,6 @@ namespace NataneToon.Editor
             if (!pressureFound)
             {
                 rawPressure = 1f;
-                if (!penPressureLogShown && e.pointerType == UnityEngine.PointerType.Pen)
-                {
-                    penPressureLogShown = true;
-                    Debug.LogWarning("[TextureStudio] ペンタブレットは検出されましたが筆圧が取得できません。固定筆圧で描画します。\n" +
-                        "タブレットドライバの設定で「Windows Ink」を有効にすると筆圧が使えるようになる場合があります。\n" +
-                        "(Pen detected but pressure=0. Drawing with constant pressure. Enable 'Windows Ink' in tablet driver settings.)");
-                }
             }
 
             // Apply dead zone and smoothing filter
