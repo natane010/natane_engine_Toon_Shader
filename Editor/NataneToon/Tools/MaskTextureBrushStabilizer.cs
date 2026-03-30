@@ -8,7 +8,8 @@ namespace NataneToon.Editor
         Off,
         Basic,
         Stabilized,
-        String      // ストリングメソッド: ペン先から紐で引っ張るような安定化
+        String,            // ストリングメソッド: ペン先から紐で引っ張るような安定化
+        WeightedSmoothing  // ガウシアン重み付け: Krita方式の距離ベース平滑化
     }
 
     [System.Serializable]
@@ -71,6 +72,18 @@ namespace NataneToon.Editor
                 return filteredPoint;
             }
 
+            if (settings.mode == BrushStabilizerMode.WeightedSmoothing)
+            {
+                // Krita-style Gaussian weighted smoothing
+                // Krita方式ガウシアン重み付けスムージング
+                float dist = Vector2.Distance(rawPoint, filteredPoint);
+                float sigma = Mathf.Max(dist / 3f, 0.5f);
+                float weight = Mathf.Exp(-0.5f * (dist * dist) / (sigma * sigma));
+                float factor = Mathf.Lerp(0.1f, 0.8f, strength);
+                filteredPoint = Vector2.Lerp(filteredPoint, rawPoint, Mathf.Max(factor, weight));
+                return filteredPoint;
+            }
+
             float baseFactor = settings.mode == BrushStabilizerMode.Basic ? 0.7f : 0.4f;
             float lerpFactor = Mathf.Clamp01(Mathf.Lerp(0.15f, baseFactor, strength));
 
@@ -93,15 +106,29 @@ namespace NataneToon.Editor
 
                 if (settings.mode != BrushStabilizerMode.Off)
                 {
-                    string strengthLabel = settings.mode == BrushStabilizerMode.String
-                        ? "String Length"   // 紐の長さ（ピクセル単位: 5〜60px）
-                        : "Strength";
+                    string strengthLabel;
+                    switch (settings.mode)
+                    {
+                        case BrushStabilizerMode.String:
+                            strengthLabel = "String Length";
+                            break;
+                        case BrushStabilizerMode.WeightedSmoothing:
+                            strengthLabel = "Smoothness";
+                            break;
+                        default:
+                            strengthLabel = "Strength";
+                            break;
+                    }
                     settings.strength = EditorGUILayout.Slider(strengthLabel, settings.strength, 0.05f, 1f);
 
                     if (settings.mode == BrushStabilizerMode.String)
                     {
                         float displayLength = Mathf.Lerp(5f, 60f, settings.strength);
                         EditorGUILayout.HelpBox($"紐の長さ: {displayLength:F0}px — ペンが紐を超えて移動すると描画点が追従します", MessageType.Info);
+                    }
+                    else if (settings.mode == BrushStabilizerMode.WeightedSmoothing)
+                    {
+                        EditorGUILayout.HelpBox("Krita方式: 距離に基づくガウシアン重み付けスムージング", MessageType.Info);
                     }
                 }
             }

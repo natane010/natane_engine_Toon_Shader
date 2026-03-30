@@ -22,6 +22,9 @@ namespace NataneToon.Editor
         public float size = 20f;
         public float hardness = 0.8f;
         public float opacity = 1f;
+        public float flow = 1f;  // Per-dab paint amount (Krita: Flow) / ダブごとの塗布量
+        public bool pressureFlowEnabled = false;
+        public AnimationCurve pressureFlowCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
         public float strength = 1f;
         public Color paintColor = Color.white;
         public Color backgroundColor = Color.black;
@@ -665,10 +668,16 @@ namespace NataneToon.Editor
                 maxY = Mathf.Min(height - 1, maxY);
             }
 
-            // Evaluate pressure curve once outside pixel loop / ピクセルループ外で筆圧カーブを一度だけ評価
-            float effOpacity = settings.pressureOpacityEnabled && pressure > 0.0001f
-                ? settings.opacity * Mathf.Clamp01(settings.pressureOpacityCurve.Evaluate(pressure))
-                : settings.opacity;
+            // Opacity = per-stroke limit (Krita Wash mode)
+            // Flow = per-dab paint amount (Krita Flow)
+            // Effective = flow × opacity × pressure curves
+            float effOpacity = settings.opacity;
+            float effFlow = settings.flow;
+
+            if (settings.pressureOpacityEnabled && pressure > 0.0001f)
+                effOpacity *= Mathf.Clamp01(settings.pressureOpacityCurve.Evaluate(pressure));
+            if (settings.pressureFlowEnabled && pressure > 0.0001f)
+                effFlow *= Mathf.Clamp01(settings.pressureFlowCurve.Evaluate(pressure));
 
             // Pre-compute squared radius for distance comparison / 距離比較用に半径の二乗を事前計算
             float radiusSq = radius * radius;
@@ -718,7 +727,7 @@ namespace NataneToon.Editor
                     if (!CanModifyPixel(current, lockTransparentPixels, settings.alphaEpsilon))
                         continue;
 
-                    float alpha = falloff * effOpacity;
+                    float alpha = falloff * effFlow * effOpacity;
 
                     switch (settings.mode)
                     {
@@ -909,7 +918,26 @@ namespace NataneToon.Editor
                         pixels[i] = canvasSnapshot[i];
                         continue;
                     }
-                    pixels[i] = Color.Lerp(canvasSnapshot[i], strokeColorBuffer[i], sa);
+                    // Alpha-over compositing (Krita COMPOSITE_OVER style)
+                    // アルファオーバー合成（Krita COMPOSITE_OVER方式）
+                    Color src = strokeColorBuffer[i];
+                    Color dst = canvasSnapshot[i];
+                    float srcA = sa;
+                    float dstA = dst.a;
+                    float outA = srcA + dstA * (1f - srcA);
+                    if (outA > 0.0001f)
+                    {
+                        float invOutA = 1f / outA;
+                        pixels[i] = new Color(
+                            (src.r * srcA + dst.r * dstA * (1f - srcA)) * invOutA,
+                            (src.g * srcA + dst.g * dstA * (1f - srcA)) * invOutA,
+                            (src.b * srcA + dst.b * dstA * (1f - srcA)) * invOutA,
+                            outA);
+                    }
+                    else
+                    {
+                        pixels[i] = canvasSnapshot[i];
+                    }
                 }
             }
         }
@@ -1579,11 +1607,6 @@ namespace NataneToon.Editor
                         stabilizer?.Reset();
                         canvasPos = FilterBrushPosition(rawCanvasPos, settings, stabilizer);
                         brush.StartStroke(canvasPos, pixels, width, height, lockTransparentPixels, pressure, wrapCoordinates);
-                        if (strokeDebugCount < 3)
-                        {
-                            Debug.Log($"[TextureStudio Debug] StrokeStart: mouse={e.mousePosition}, pixel={canvasPos}, textureRect={textureRect}, canvasRect={canvasRect}");
-                            strokeDebugCount++;
-                        }
                         textureModified = true;
                         e.Use();
                         RequestRepaint();
@@ -1608,10 +1631,6 @@ namespace NataneToon.Editor
                         else
                             pressure *= taper;
                         brush.StrokeToPosition(canvasPos, pixels, width, height, lockTransparentPixels, pressure, wrapCoordinates);
-                        if (strokeDebugCount > 0 && strokeDebugCount < 3)
-                        {
-                            Debug.Log($"[TextureStudio Debug] StrokeDrag: mouse={e.mousePosition}, pixel={canvasPos}, lastPos={brush.LastStrokePosition}");
-                        }
                         textureModified = true;
                         e.Use();
                         RequestRepaint();
@@ -1701,10 +1720,6 @@ namespace NataneToon.Editor
         /// Resolve final pressure value from pen input, mouse simulation, and smoothing.
         /// ペン入力・マウスシミュレーション・スムージングから最終筆圧値を解決
         /// </summary>
-        // Debug: log first few stroke positions to diagnose coordinate issues
-        // デバッグ: 座標問題の診断用に最初の数ストローク位置をログ出力
-        private static int strokeDebugCount = 0;
-
         private static bool penPressureDetected;
         private static bool penPressureLogShown;
 

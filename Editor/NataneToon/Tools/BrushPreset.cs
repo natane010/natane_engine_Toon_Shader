@@ -10,6 +10,8 @@ namespace NataneToon.Editor
         public float size = 20f;
         public float hardness = 0.8f;
         public float opacity = 1f;
+        public float flow = 1f;
+        public bool pressureFlowEnabled = false;
         public float strength = 1f;
         public float paintAlpha = 1f;
         public Color paintColor = Color.white;
@@ -47,6 +49,10 @@ namespace NataneToon.Editor
             settings.mode = mode;
             settings.pressureOpacityEnabled = pressureOpacityEnabled;
             settings.pressureSizeEnabled = pressureSizeEnabled;
+            settings.flow = flow;
+            settings.pressureFlowEnabled = pressureFlowEnabled;
+            settings.pressureFlowCurve = pressureFlowEnabled
+                ? CreateCurve(pressureCurveType) : AnimationCurve.Linear(0f, 0f, 1f, 1f);
             // Apply curve type
             settings.pressureOpacityCurve = CreateCurve(pressureCurveType);
             settings.pressureSizeCurve = CreateCurve(pressureCurveType);
@@ -80,6 +86,8 @@ namespace NataneToon.Editor
                 mode = settings.mode,
                 pressureOpacityEnabled = settings.pressureOpacityEnabled,
                 pressureSizeEnabled = settings.pressureSizeEnabled,
+                flow = settings.flow,
+                pressureFlowEnabled = settings.pressureFlowEnabled,
                 paintColor = settings.paintColor,
                 colorMode = settings.colorMode,
                 pressureHardnessEnabled = settings.pressureHardnessEnabled,
@@ -130,7 +138,7 @@ namespace NataneToon.Editor
                 new BrushPreset
                 {
                     name = "Gペン",
-                    size = 6f, hardness = 1f, opacity = 1f, strength = 1f,
+                    size = 8f, hardness = 1f, opacity = 1f, strength = 1f,
                     pressureOpacityEnabled = false,
                     pressureSizeEnabled = true,
                     pressureSizeMin = 0f,
@@ -184,7 +192,7 @@ namespace NataneToon.Editor
                 new BrushPreset
                 {
                     name = "エアブラシ",
-                    size = 40f, hardness = 0.1f, opacity = 0.3f, strength = 0.5f,
+                    size = 40f, hardness = 0.1f, opacity = 0.3f, flow = 0.5f, pressureFlowEnabled = true, strength = 0.5f,
                     pressureOpacityEnabled = true,
                     pressureSizeEnabled = true,
                     pressureSizeMin = 0.4f,
@@ -194,7 +202,7 @@ namespace NataneToon.Editor
                 new BrushPreset
                 {
                     name = "鉛筆",
-                    size = 10f, hardness = 0.5f, opacity = 1f, strength = 1f,
+                    size = 10f, hardness = 0.5f, opacity = 1f, flow = 0.8f, pressureFlowEnabled = true, strength = 1f,
                     pressureOpacityEnabled = true,
                     pressureSizeEnabled = true,
                     pressureSizeMin = 0.2f,
