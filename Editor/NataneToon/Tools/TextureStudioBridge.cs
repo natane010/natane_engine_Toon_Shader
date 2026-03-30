@@ -21,7 +21,11 @@ namespace NataneToon.Editor
         private static CancellationTokenSource _cts;
         private static bool _connected;
 
+        // Live preview system
+        private static TextureStudioLivePreview _livePreview;
+
         public static bool IsConnected => _connected;
+        public static bool IsLivePreviewEnabled => _livePreview != null && _livePreview.IsEnabled;
 
         /// <summary>Connect to the studio's named pipe server.</summary>
         public static void Connect(string pipeName)
@@ -80,6 +84,12 @@ namespace NataneToon.Editor
             SendMessage("{\"method\":\"importLayer\",\"params\":{\"path\":\"" + EscapeJson(path) + "\",\"name\":\"" + EscapeJson(name) + "\",\"opacity\":" + opacity.ToString(System.Globalization.CultureInfo.InvariantCulture) + "}}");
         }
 
+        /// <summary>Send a raw JSON string to the studio (public wrapper for SendMessage).</summary>
+        public static void SendRaw(string json)
+        {
+            SendMessage(json);
+        }
+
         private static void SendMessage(string json)
         {
             if (!_connected || _writer == null)
@@ -130,11 +140,9 @@ namespace NataneToon.Editor
                 if (json.Contains("\"event\":\"saved\""))
                 {
                     // Extract path from JSON
-                    int pathStart = json.IndexOf("\"path\":\"") + 8;
-                    int pathEnd = json.IndexOf("\"", pathStart);
-                    if (pathStart > 7 && pathEnd > pathStart)
+                    string savedPath = ExtractJsonString(json, "path");
+                    if (!string.IsNullOrEmpty(savedPath))
                     {
-                        string savedPath = json.Substring(pathStart, pathEnd - pathStart);
                         // Reimport the asset in Unity
                         string assetPath = FileToAssetPath(savedPath);
                         if (!string.IsNullOrEmpty(assetPath))
@@ -144,11 +152,46 @@ namespace NataneToon.Editor
                         }
                     }
                 }
+                else if (json.Contains("\"event\":\"preview\""))
+                {
+                    // Live preview update from studio
+                    string tempPath = ExtractJsonString(json, "tempPath");
+                    if (!string.IsNullOrEmpty(tempPath))
+                    {
+                        _livePreview?.OnPreviewUpdate(tempPath);
+                    }
+                }
             }
             catch (Exception ex)
             {
                 Debug.LogWarning("[TextureStudioBridge] Event handling error: " + ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Enable live preview for a material property.
+        /// マテリアルプロパティのライブプレビューを有効にする
+        /// </summary>
+        public static void EnableLivePreview(Material material, string propertyName)
+        {
+            if (_livePreview == null)
+                _livePreview = new TextureStudioLivePreview();
+            _livePreview.Enable(material, propertyName);
+
+            // Notify the studio to start sending preview updates
+            SendMessage("{\"method\":\"enableLivePreview\",\"params\":{}}");
+        }
+
+        /// <summary>
+        /// Disable live preview and restore the original texture.
+        /// ライブプレビューを無効にし、元のテクスチャを復元する
+        /// </summary>
+        public static void DisableLivePreview()
+        {
+            _livePreview?.Disable();
+
+            // Notify the studio to stop sending preview updates
+            SendMessage("{\"method\":\"disableLivePreview\",\"params\":{}}");
         }
 
         private static string FileToAssetPath(string fullPath)
@@ -163,6 +206,21 @@ namespace NataneToon.Editor
         private static string EscapeJson(string s)
         {
             return s.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        /// <summary>
+        /// Extract a string value from a simple JSON object by key name.
+        /// シンプルな JSON オブジェクトからキー名で文字列値を抽出する
+        /// </summary>
+        private static string ExtractJsonString(string json, string key)
+        {
+            string search = "\"" + key + "\":\"";
+            int start = json.IndexOf(search);
+            if (start < 0) return null;
+            start += search.Length;
+            int end = json.IndexOf("\"", start);
+            if (end < 0) return null;
+            return json.Substring(start, end - start).Replace("\\\\", "\\").Replace("\\\"", "\"");
         }
     }
 }

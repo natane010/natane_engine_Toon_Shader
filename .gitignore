@@ -6,6 +6,19 @@ Plugins/**/*.exp
 Plugins/**/*.lib
 Plugins/**/*.pdb
 
+# Track published Texture Studio exe and essential DLLs
+!Plugins/Tools/NataneTextureStudio.exe
+!Plugins/Tools/NataneTextureStudio.dll
+!Plugins/Tools/NataneTextureStudio.deps.json
+!Plugins/Tools/NataneTextureStudio.runtimeconfig.json
+!Plugins/Tools/SkiaSharp.dll
+!Plugins/Tools/SkiaSharp.Views.WPF.dll
+!Plugins/Tools/SkiaSharp.Views.Desktop.Common.dll
+!Plugins/Tools/libSkiaSharp.dll
+
+# Exclude debug files from Texture Studio
+Plugins/Tools/*.pdb
+
 # Development-only files (not for public release)
 Whiteboard.md
 Whiteboard.md.meta
