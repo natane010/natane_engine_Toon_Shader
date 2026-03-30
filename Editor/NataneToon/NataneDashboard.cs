@@ -88,7 +88,7 @@ namespace NataneToon.Editor
         private void OnEnable()
         {
             RefreshWindowTitle();
-            EnsureStyles();
+            // Defer style initialization to OnGUI — EditorStyles is null during startup deserialization
             InitializeToolsList();
         }
 

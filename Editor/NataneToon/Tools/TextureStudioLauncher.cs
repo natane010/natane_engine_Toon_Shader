@@ -20,7 +20,7 @@ namespace NataneToon.Editor
         /// <summary>Current pipe name for IPC.</summary>
         public static string PipeName => _currentPipeName;
 
-        [MenuItem("Tools/Natane/Texture Studio (Standalone)")]
+        [MenuItem("Tools/Natane/テクスチャスタジオ Texture Studio")]
         public static void Launch()
         {
             LaunchWithTexture(null, null);
