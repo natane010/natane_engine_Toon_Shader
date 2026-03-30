@@ -774,6 +774,9 @@ public class NataneToonShaderGUI : ShaderGUI
                 }
             }
 
+            // Texture Studio integration section
+            DrawTextureStudioIntegration();
+
             if (GUI.changed)
             {
                 SynchronizeKeywordsAndRefreshInspectorCaches();
@@ -6869,26 +6872,85 @@ public class NataneToonShaderGUI : ShaderGUI
         Material mat = editor.target as Material;
         if (mat == null) return;
 
+        Texture2D tex = texProperty.textureValue as Texture2D;
+
+        // Edit button — opens standalone Texture Studio with this texture
         string tooltip = L("テクスチャスタジオで編集", "Edit in Texture Studio");
         if (GUILayout.Button(new GUIContent("\u270F", tooltip),
             EditorStyles.miniButton, GUILayout.Width(24), GUILayout.Height(18)))
         {
-            // Use reflection to call TextureStudioLauncher.OpenForProperty from Tools assembly
-            var launcherType = System.Type.GetType("NataneToon.Editor.TextureStudioLauncher, NataneToon.Editor.Tools");
-            if (launcherType != null)
+            if (tex != null)
             {
-                var method = launcherType.GetMethod("OpenForProperty",
-                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                if (method != null)
+                string path = UnityEditor.AssetDatabase.GetAssetPath(tex);
+                if (!string.IsNullOrEmpty(path))
                 {
-                    Texture2D currentTex = texProperty.textureValue as Texture2D;
-                    method.Invoke(null, new object[] { mat, texProperty.name, currentTex });
+                    NataneToon.Editor.TextureStudioLauncher.LaunchWithTexture(path, texProperty.name);
+
+                    // Also send UV wireframe from selected object
+                    var selectedGo = UnityEditor.Selection.activeGameObject;
+                    if (selectedGo != null)
+                    {
+                        // Delay to let the app start
+                        EditorApplication.delayCall += () =>
+                            EditorApplication.delayCall += () =>
+                                NataneToon.Editor.TextureStudioUVExporter.SendUVWireframe(
+                                    NataneToon.Editor.TextureStudioUVExporter.GetMeshFromSelection());
+                    }
+                    return;
                 }
             }
-            else
+            // Fallback: just open the texture studio
+            EditorApplication.ExecuteMenuItem("Tools/Natane/テクスチャスタジオ Texture Studio");
+        }
+    }
+
+    /// <summary>
+    /// Draw "All textures to layers" and "UV reference" buttons at the bottom of the inspector.
+    /// マテリアルレイヤー化とUV参照ボタンをインスペクタ下部に表示
+    /// </summary>
+    private void DrawTextureStudioIntegration()
+    {
+        EditorGUILayout.Space(4);
+        using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+        {
+            EditorGUILayout.LabelField(L("📦 テクスチャスタジオ連携", "📦 Texture Studio Integration"), EditorStyles.boldLabel);
+
+            // All textures to layers
+            if (targetMaterial != null)
             {
-                // Fallback: just open the texture studio window
-                EditorApplication.ExecuteMenuItem("Tools/Natane/テクスチャスタジオ Texture Studio");
+                if (GUILayout.Button(L("全テクスチャをレイヤー化して開く", "Open all textures as layers"), GUILayout.Height(22)))
+                {
+                    NataneToon.Editor.TextureStudioMaterialExporter.SendMaterialTextures(targetMaterial);
+                }
+            }
+
+            // UV wireframe from selected mesh
+            var selectedGo = UnityEditor.Selection.activeGameObject;
+            if (selectedGo != null)
+            {
+                var mesh = NataneToon.Editor.TextureStudioUVExporter.GetMeshFromSelection();
+                if (mesh != null)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField(L($"UV参照: {mesh.name}", $"UV Reference: {mesh.name}"), GUILayout.ExpandWidth(true));
+                    if (GUILayout.Button(L("送信", "Send"), GUILayout.Width(50)))
+                    {
+                        NataneToon.Editor.TextureStudioUVExporter.SendUVWireframe(mesh);
+                    }
+                    EditorGUILayout.EndHorizontal();
+
+                    // Per-submesh buttons
+                    if (mesh.subMeshCount > 1)
+                    {
+                        for (int s = 0; s < mesh.subMeshCount; s++)
+                        {
+                            if (GUILayout.Button(L($"  スロット {s} のUVを送信", $"  Send UV for slot {s}"), EditorStyles.miniButton))
+                            {
+                                NataneToon.Editor.TextureStudioUVExporter.SendUVWireframe(mesh, s);
+                            }
+                        }
+                    }
+                }
             }
         }
     }
