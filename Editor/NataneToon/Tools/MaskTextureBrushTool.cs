@@ -86,6 +86,28 @@ namespace NataneToon.Editor
 
         // Texture brush / テクスチャブラシ
         public TextureBrushSettings textureBrush = new TextureBrushSettings();
+
+        // Tilt → Parameters / ペン傾き→パラメータ
+        public bool tiltSizeEnabled = false;
+        public float tiltSizeInfluence = 0.5f;  // 0=no effect, 1=full effect
+        public bool tiltRotationEnabled = false;
+
+        // Drawing Angle → Rotation / 描画角度→回転
+        public bool drawingAngleRotationEnabled = false;
+
+        // Speed → Opacity/Hardness / 速度→不透明度/硬さ
+        public bool speedOpacityEnabled = false;
+        public float speedOpacityInfluence = 0.3f;
+        public bool speedHardnessEnabled = false;
+        public float speedHardnessInfluence = 0.3f;
+
+        // Per-stroke randomization / ストロークごとのランダム化
+        public float strokeRandomSizeJitter = 0f;    // 0-1: per-stroke size variation
+        public float strokeRandomOpacityJitter = 0f;  // 0-1: per-stroke opacity variation
+
+        // Time-based spacing (airbrush) / 時間ベーススペーシング（エアブラシ）
+        public bool airbrushMode = false;
+        public float airbrushRate = 0.05f;  // seconds between dabs when stationary
     }
 
     internal readonly struct BrushStrokeCommit
@@ -120,6 +142,12 @@ namespace NataneToon.Editor
         private float strokeRemainder; // サブピクセル移動の残余距離アキュムレータ
         private float lastStrokeTime;
         private float lastStrokePressure = 1f;  // Previous frame's pressure for interpolation
+
+        // Per-stroke random state (Krita Fuzzy Stroke) / ストロークごとのランダム状態
+        private float strokeRandomSize = 1f;     // Per-stroke random size factor
+        private float strokeRandomOpacity = 1f;   // Per-stroke random opacity factor
+        private float lastDrawingAngle;            // Drawing direction angle (radians)
+        private float lastAirbrushTime;            // Last airbrush dab time
 
         // Catmull-Rom spline interpolation / Catmull-Romスプライン補間用バッファ
         private Vector2[] splinePoints = new Vector2[4]; // 直近4点のリングバッファ
@@ -258,6 +286,13 @@ namespace NataneToon.Editor
             lastStrokePressure = pressure;
             pressureFilter.Reset();
 
+            // Per-stroke randomization (Krita: Fuzzy Stroke)
+            // ストロークごとのランダム化（Krita: ファジーストローク）
+            strokeRandomSize = 1f - settings.strokeRandomSizeJitter * Random.value;
+            strokeRandomOpacity = 1f - settings.strokeRandomOpacityJitter * Random.value;
+            lastDrawingAngle = 0f;
+            lastAirbrushTime = Time.realtimeSinceStartup;
+
             // Catmull-Romスプラインバッファを初期化
             splinePointCount = 1;
             splinePoints[0] = position;
@@ -295,7 +330,8 @@ namespace NataneToon.Editor
             hasDirtyRect = false;
             ExpandDirtyRect(position, settings.size, width, height);
             ApplyStamp(position, pixels, settings, width, height, lockTransparentPixels, pressure, wrapCoordinates,
-                strokeAlphaBuffer, strokeColorBuffer, canvasSnapshot, 1f);
+                strokeAlphaBuffer, strokeColorBuffer, canvasSnapshot, 1f, null,
+                strokeRandomSize, strokeRandomOpacity);
 
             // Live preview: composite stroke buffer onto canvas
             // ライブプレビュー: ストロークバッファをキャンバスに合成
@@ -359,6 +395,21 @@ namespace NataneToon.Editor
 
             if (distance <= 0f)
             {
+                // Airbrush mode: paint dabs even when stationary
+                // エアブラシモード: 静止中でもダブを描画
+                if (settings.airbrushMode)
+                {
+                    float currentTimeAb = Time.realtimeSinceStartup;
+                    if (currentTimeAb - lastAirbrushTime >= settings.airbrushRate)
+                    {
+                        lastAirbrushTime = currentTimeAb;
+                        ExpandDirtyRect(newPosition, settings.size, width, height);
+                        ApplyStamp(newPosition, pixels, settings, width, height, lockTransparentPixels, pressure, wrapCoordinates,
+                            strokeAlphaBuffer, strokeColorBuffer, canvasSnapshot, 1f, null,
+                            strokeRandomSize, strokeRandomOpacity);
+                        CompositeStrokeToCanvas(pixels, width, height);
+                    }
+                }
                 lastStrokePosition = newPosition;
                 return;
             }
@@ -371,12 +422,17 @@ namespace NataneToon.Editor
             pressureFilter.UpdateStrokeSpeed(distance, frameDeltaTime);
 
             float velocityFactor = 1f;
-            if (settings.velocitySizeEnabled)
+            if (settings.velocitySizeEnabled || settings.speedOpacityEnabled || settings.speedHardnessEnabled)
             {
                 float speed = distance / frameDeltaTime;
                 float normalizedSpeed = Mathf.Clamp01((speed - 50f) / (800f - 50f));
                 velocityFactor = 1f - normalizedSpeed;
             }
+
+            // Track drawing angle for angle-based rotation
+            // 角度ベース回転用の描画角度を追跡
+            if (distance > 0.5f)
+                lastDrawingAngle = Mathf.Atan2(delta.y, delta.x);
 
             // Use Catmull-Rom spline interpolation when 4+ points available (Clip Studio style)
             // 4点以上でCatmull-Romスプライン補間を使用（クリスタ方式）
@@ -415,7 +471,8 @@ namespace NataneToon.Editor
                         ExpandDirtyRect(prevStampPos, settings.size, width, height);
                         ExpandDirtyRect(stampPos, settings.size, width, height);
                         ApplyStamp(stampPos, pixels, settings, width, height, lockTransparentPixels, stampPressure, wrapCoordinates,
-                            strokeAlphaBuffer, strokeColorBuffer, canvasSnapshot, velocityFactor, prevStampPos);
+                            strokeAlphaBuffer, strokeColorBuffer, canvasSnapshot, velocityFactor, prevStampPos,
+                            strokeRandomSize, strokeRandomOpacity);
                         prevStampPos = stampPos;
                     }
 
@@ -449,7 +506,8 @@ namespace NataneToon.Editor
                     ExpandDirtyRect(prevStampPos, settings.size, width, height);
                     ExpandDirtyRect(stampPos, settings.size, width, height);
                     ApplyStamp(stampPos, pixels, settings, width, height, lockTransparentPixels, stampPressure, wrapCoordinates,
-                        strokeAlphaBuffer, strokeColorBuffer, canvasSnapshot, velocityFactor, prevStampPos);
+                        strokeAlphaBuffer, strokeColorBuffer, canvasSnapshot, velocityFactor, prevStampPos,
+                        strokeRandomSize, strokeRandomOpacity);
                     prevStampPos = stampPos;
                 }
 
@@ -599,7 +657,9 @@ namespace NataneToon.Editor
             Color[] strokeColor = null,
             Color[] canvasSnap = null,
             float velocityFactor = 1f,
-            Vector2? prevCenter = null)
+            Vector2? prevCenter = null,
+            float sizeMultiplier = 1f,
+            float opacityMultiplier = 1f)
         {
             if (pixels == null || width <= 0 || height <= 0) return;
 
@@ -622,6 +682,23 @@ namespace NataneToon.Editor
             // Velocity → Size modulation / 速度→サイズ変調
             if (settings.velocitySizeEnabled && velocityFactor < 1f)
                 radius *= Mathf.Lerp(velocityFactor, 1f, 1f - settings.velocitySizeInfluence);
+
+            // Tilt → Size modulation / ペン傾き→サイズ変調
+            if (settings.tiltSizeEnabled)
+            {
+                try
+                {
+                    float tiltMag = Mathf.Sqrt(
+                        NativeBrushBridge.GetPenTiltX() * NativeBrushBridge.GetPenTiltX() +
+                        NativeBrushBridge.GetPenTiltY() * NativeBrushBridge.GetPenTiltY()) / 90f;
+                    tiltMag = Mathf.Clamp01(tiltMag);
+                    radius *= Mathf.Lerp(1f, 1f + settings.tiltSizeInfluence, tiltMag);
+                }
+                catch (System.EntryPointNotFoundException) { }
+            }
+
+            // Per-stroke random size (Krita Fuzzy Stroke) / ストロークごとのランダムサイズ
+            radius *= sizeMultiplier;
 
             // Enforce minimum radius to prevent sub-pixel strokes
             // サブピクセルストロークを防止するための最小半径保証
@@ -678,6 +755,17 @@ namespace NataneToon.Editor
                 effOpacity *= Mathf.Clamp01(settings.pressureOpacityCurve.Evaluate(pressure));
             if (settings.pressureFlowEnabled && pressure > 0.0001f)
                 effFlow *= Mathf.Clamp01(settings.pressureFlowCurve.Evaluate(pressure));
+
+            // Speed → Opacity modulation / 速度→不透明度変調
+            if (settings.speedOpacityEnabled && velocityFactor < 1f)
+                effOpacity *= Mathf.Lerp(velocityFactor, 1f, 1f - settings.speedOpacityInfluence);
+
+            // Speed → Hardness modulation / 速度→硬さ変調
+            if (settings.speedHardnessEnabled && velocityFactor < 1f)
+                effHardness *= Mathf.Lerp(velocityFactor, 1f, 1f - settings.speedHardnessInfluence);
+
+            // Per-stroke random opacity (Krita Fuzzy Stroke) / ストロークごとのランダム不透明度
+            effOpacity *= opacityMultiplier;
 
             // Pre-compute squared radius for distance comparison / 距離比較用に半径の二乗を事前計算
             float radiusSq = radius * radius;
@@ -803,14 +891,17 @@ namespace NataneToon.Editor
             Color[] strokeColor = null,
             Color[] canvasSnap = null,
             float velocityFactor = 1f,
-            Vector2? prevCenter = null)
+            Vector2? prevCenter = null,
+            float sizeMultiplier = 1f,
+            float opacityMultiplier = 1f)
         {
             // Get all symmetry positions
             Vector2[] positions = SymmetryDrawing.GetMirroredPositions(center, width, height);
             foreach (var pos in positions)
             {
                 ApplyStamp(pos, pixels, settings, width, height, lockTransparentPixels, pressure, false,
-                    strokeAlpha, strokeColor, canvasSnap, velocityFactor, prevCenter);
+                    strokeAlpha, strokeColor, canvasSnap, velocityFactor, prevCenter,
+                    sizeMultiplier, opacityMultiplier);
             }
         }
 
@@ -1597,6 +1688,13 @@ namespace NataneToon.Editor
             Vector2 canvasPos = isMouseEvent
                 ? FilterBrushPosition(rawCanvasPos, settings, stabilizer)
                 : rawCanvasPos;
+
+            // Airbrush: repaint periodically while pen is down
+            // エアブラシ: ペンダウン中は定期的に再描画
+            if (brush.IsStroking && settings.airbrushMode)
+            {
+                RequestRepaint();
+            }
 
             switch (e.type)
             {

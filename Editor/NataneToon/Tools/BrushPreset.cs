@@ -33,7 +33,22 @@ namespace NataneToon.Editor
         public float velocitySizeInfluence = 0.3f;
         public BrushStabilizerMode stabilizerMode = BrushStabilizerMode.Off;
         public float stabilizerStrength = 0.45f;
+        public float stabilizerDelayDistance = 0f;
         public bool mouseSpeedPressureEnabled = false;
+
+        // Krita-compatible sensor/parameter mapping / Krita互換センサー/パラメータマッピング
+        public bool tiltSizeEnabled = false;
+        public float tiltSizeInfluence = 0.5f;
+        public bool tiltRotationEnabled = false;
+        public bool drawingAngleRotationEnabled = false;
+        public bool speedOpacityEnabled = false;
+        public float speedOpacityInfluence = 0.3f;
+        public bool speedHardnessEnabled = false;
+        public float speedHardnessInfluence = 0.3f;
+        public float strokeRandomSizeJitter = 0f;
+        public float strokeRandomOpacityJitter = 0f;
+        public bool airbrushMode = false;
+        public float airbrushRate = 0.05f;
 
         public enum PressureCurveType { Linear, SCurve, Logarithmic, Exponential, Natural }
 
@@ -70,7 +85,22 @@ namespace NataneToon.Editor
             settings.velocitySizeInfluence = velocitySizeInfluence;
             settings.stabilizer.mode = stabilizerMode;
             settings.stabilizer.strength = stabilizerStrength;
+            settings.stabilizer.delayDistance = stabilizerDelayDistance;
             settings.mouseSpeedPressureEnabled = mouseSpeedPressureEnabled;
+
+            // Krita-compatible sensor/parameter mapping / Krita互換センサー/パラメータマッピング
+            settings.tiltSizeEnabled = tiltSizeEnabled;
+            settings.tiltSizeInfluence = tiltSizeInfluence;
+            settings.tiltRotationEnabled = tiltRotationEnabled;
+            settings.drawingAngleRotationEnabled = drawingAngleRotationEnabled;
+            settings.speedOpacityEnabled = speedOpacityEnabled;
+            settings.speedOpacityInfluence = speedOpacityInfluence;
+            settings.speedHardnessEnabled = speedHardnessEnabled;
+            settings.speedHardnessInfluence = speedHardnessInfluence;
+            settings.strokeRandomSizeJitter = strokeRandomSizeJitter;
+            settings.strokeRandomOpacityJitter = strokeRandomOpacityJitter;
+            settings.airbrushMode = airbrushMode;
+            settings.airbrushRate = airbrushRate;
         }
 
         public static BrushPreset CreateFrom(BrushSettings settings, string name)
@@ -100,7 +130,21 @@ namespace NataneToon.Editor
                 velocitySizeInfluence = settings.velocitySizeInfluence,
                 stabilizerMode = settings.stabilizer.mode,
                 stabilizerStrength = settings.stabilizer.strength,
+                stabilizerDelayDistance = settings.stabilizer.delayDistance,
                 mouseSpeedPressureEnabled = settings.mouseSpeedPressureEnabled,
+                // Krita-compatible sensor/parameter mapping
+                tiltSizeEnabled = settings.tiltSizeEnabled,
+                tiltSizeInfluence = settings.tiltSizeInfluence,
+                tiltRotationEnabled = settings.tiltRotationEnabled,
+                drawingAngleRotationEnabled = settings.drawingAngleRotationEnabled,
+                speedOpacityEnabled = settings.speedOpacityEnabled,
+                speedOpacityInfluence = settings.speedOpacityInfluence,
+                speedHardnessEnabled = settings.speedHardnessEnabled,
+                speedHardnessInfluence = settings.speedHardnessInfluence,
+                strokeRandomSizeJitter = settings.strokeRandomSizeJitter,
+                strokeRandomOpacityJitter = settings.strokeRandomOpacityJitter,
+                airbrushMode = settings.airbrushMode,
+                airbrushRate = settings.airbrushRate,
             };
         }
 
@@ -188,7 +232,7 @@ namespace NataneToon.Editor
                     pressureDeadZone = 0.02f,
                     mouseSpeedPressureEnabled = false,
                 },
-                // エアブラシ: ふんわり塗り
+                // エアブラシ: ふんわり塗り（時間ベーススペーシング付き）
                 new BrushPreset
                 {
                     name = "エアブラシ",
@@ -197,6 +241,8 @@ namespace NataneToon.Editor
                     pressureSizeEnabled = true,
                     pressureSizeMin = 0.4f,
                     pressureCurveType = PressureCurveType.SCurve,
+                    airbrushMode = true,
+                    airbrushRate = 0.05f,
                 },
                 // 鉛筆: 細い線。筆圧でサイズ+硬さ+不透明度変化
                 new BrushPreset

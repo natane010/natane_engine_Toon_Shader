@@ -9,7 +9,9 @@ namespace NataneToon.Editor
         Basic,
         Stabilized,
         String,            // ストリングメソッド: ペン先から紐で引っ張るような安定化
-        WeightedSmoothing  // ガウシアン重み付け: Krita方式の距離ベース平滑化
+        WeightedSmoothing, // ガウシアン重み付け: Krita方式の距離ベース平滑化
+        QueueStabilizer,   // キューベース: Krita方式の遅延安定化
+        PixelPerfect       // ピクセルパーフェクト: ピクセルアート用グリッド量子化
     }
 
     [System.Serializable]
@@ -17,6 +19,7 @@ namespace NataneToon.Editor
     {
         public BrushStabilizerMode mode = BrushStabilizerMode.Off;
         public float strength = 0.45f;
+        public float delayDistance = 0f;  // Pixels to move before first dab / 最初のダブまでの最小移動距離
     }
 
     internal sealed class MaskTextureBrushStabilizer
@@ -24,15 +27,31 @@ namespace NataneToon.Editor
         private bool hasPoint;
         private Vector2 filteredPoint;
 
+        // Queue stabilizer state (Krita-style)
+        private readonly System.Collections.Generic.Queue<Vector2> pointQueue
+            = new System.Collections.Generic.Queue<Vector2>();
+        private int queueCapacity = 8;
+
+        // Delay distance state
+        private float accumulatedDistance;
+        private bool delayComplete;
+
         public void Reset()
         {
             hasPoint = false;
+            pointQueue.Clear();
+            accumulatedDistance = 0f;
+            delayComplete = false;
         }
 
         public void Reset(Vector2 startPoint)
         {
             hasPoint = true;
             filteredPoint = startPoint;
+            pointQueue.Clear();
+            pointQueue.Enqueue(startPoint);
+            accumulatedDistance = 0f;
+            delayComplete = false;
         }
 
         public void EndStroke()
@@ -56,6 +75,48 @@ namespace NataneToon.Editor
             }
 
             float strength = Mathf.Clamp01(settings.strength);
+
+            // Delay distance: don't draw until pen has moved enough
+            // 遅延距離: ペンが十分移動するまで描画しない
+            if (settings.delayDistance > 0f && !delayComplete && hasPoint)
+            {
+                accumulatedDistance += Vector2.Distance(rawPoint, filteredPoint);
+                if (accumulatedDistance < settings.delayDistance)
+                {
+                    // Don't update filteredPoint - suppress drawing
+                    return filteredPoint;  // Return old position (no movement)
+                }
+                delayComplete = true;
+            }
+
+            if (settings.mode == BrushStabilizerMode.QueueStabilizer)
+            {
+                // Krita-style queue stabilizer: average of last N points
+                // Krita方式キュースタビライザー: 直近N点の平均
+                queueCapacity = Mathf.Max(2, Mathf.RoundToInt(Mathf.Lerp(3f, 20f, strength)));
+                pointQueue.Enqueue(rawPoint);
+                while (pointQueue.Count > queueCapacity)
+                    pointQueue.Dequeue();
+
+                Vector2 avg = Vector2.zero;
+                foreach (var pt in pointQueue)
+                    avg += pt;
+                avg /= pointQueue.Count;
+
+                filteredPoint = avg;
+                return filteredPoint;
+            }
+
+            if (settings.mode == BrushStabilizerMode.PixelPerfect)
+            {
+                // Pixel perfect: quantize to pixel grid
+                // ピクセルパーフェクト: ピクセルグリッドに量子化
+                filteredPoint = new Vector2(
+                    Mathf.Round(rawPoint.x),
+                    Mathf.Round(rawPoint.y));
+                hasPoint = true;
+                return filteredPoint;
+            }
 
             if (settings.mode == BrushStabilizerMode.String)
             {
@@ -115,6 +176,12 @@ namespace NataneToon.Editor
                         case BrushStabilizerMode.WeightedSmoothing:
                             strengthLabel = "Smoothness";
                             break;
+                        case BrushStabilizerMode.QueueStabilizer:
+                            strengthLabel = "Queue Size";
+                            break;
+                        case BrushStabilizerMode.PixelPerfect:
+                            strengthLabel = "Grid Size";
+                            break;
                         default:
                             strengthLabel = "Strength";
                             break;
@@ -129,6 +196,23 @@ namespace NataneToon.Editor
                     else if (settings.mode == BrushStabilizerMode.WeightedSmoothing)
                     {
                         EditorGUILayout.HelpBox("Krita方式: 距離に基づくガウシアン重み付けスムージング", MessageType.Info);
+                    }
+                    else if (settings.mode == BrushStabilizerMode.QueueStabilizer)
+                    {
+                        int displaySize = Mathf.RoundToInt(Mathf.Lerp(3f, 20f, settings.strength));
+                        EditorGUILayout.HelpBox($"Krita方式: 直近{displaySize}点の平均で安定化。遅延あり", MessageType.Info);
+                    }
+                    else if (settings.mode == BrushStabilizerMode.PixelPerfect)
+                    {
+                        EditorGUILayout.HelpBox("ピクセルアート用: ブラシ位置をピクセルグリッドに量子化", MessageType.Info);
+                    }
+
+                    if (settings.mode != BrushStabilizerMode.Off && settings.mode != BrushStabilizerMode.PixelPerfect)
+                    {
+                        settings.delayDistance = EditorGUILayout.Slider(
+                            "Delay Distance", settings.delayDistance, 0f, 30f);
+                        if (settings.delayDistance > 0.1f)
+                            EditorGUILayout.HelpBox($"描画開始まで{settings.delayDistance:F0}px移動が必要", MessageType.Info);
                     }
                 }
             }
