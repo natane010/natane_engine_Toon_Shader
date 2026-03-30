@@ -9,10 +9,22 @@ namespace NataneToon.Editor
     /// Launches NataneTextureStudio.exe from the Unity package.
     /// Unity パッケージから NataneTextureStudio.exe を起動するランチャー
     /// </summary>
+    [InitializeOnLoad]
     internal static class TextureStudioLauncher
     {
         private static Process _studioProcess;
         private static string _currentPipeName;
+
+        static TextureStudioLauncher()
+        {
+            // Auto-send UV when Selection changes while studio is running
+            Selection.selectionChanged += OnSelectionChanged;
+        }
+
+        private static void OnSelectionChanged()
+        {
+            SendUVFromSelectionIfAvailable();
+        }
 
         /// <summary>Whether the studio process is currently running.</summary>
         public static bool IsRunning => _studioProcess != null && !_studioProcess.HasExited;
@@ -24,6 +36,26 @@ namespace NataneToon.Editor
         public static void Launch()
         {
             LaunchWithTexture(null, null);
+
+            // Auto-send UV wireframe from selected mesh after connection is established
+            EditorApplication.delayCall += () =>
+                EditorApplication.delayCall += () =>
+                    EditorApplication.delayCall += () => SendUVFromSelectionIfAvailable();
+        }
+
+        /// <summary>
+        /// Send UV wireframe from the currently selected GameObject (if it has a mesh).
+        /// 選択中のGameObjectからUVワイヤーフレームを送信（メッシュがある場合）
+        /// </summary>
+        public static void SendUVFromSelectionIfAvailable()
+        {
+            if (!IsRunning || !TextureStudioBridge.IsConnected) return;
+            var mesh = TextureStudioUVExporter.GetMeshFromSelection();
+            if (mesh != null)
+            {
+                TextureStudioUVExporter.SendUVWireframe(mesh);
+                UnityEngine.Debug.Log("[NataneTextureStudio] Auto-sent UV wireframe: " + mesh.name);
+            }
         }
 
         /// <summary>
