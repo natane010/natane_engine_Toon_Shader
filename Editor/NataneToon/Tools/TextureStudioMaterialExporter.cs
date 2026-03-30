@@ -20,11 +20,37 @@ namespace NataneToon.Editor
             if (!TextureStudioLauncher.IsRunning)
             {
                 TextureStudioLauncher.Launch();
-                // Wait for connection then send
-                EditorApplication.delayCall += () => EditorApplication.delayCall += () => SendMaterialTexturesInternal(material);
+            }
+            // Wait for connection with polling (pipe connection takes time)
+            WaitForConnectionAndSend(material, 0);
+        }
+
+        private static void WaitForConnectionAndSend(Material material, int attempt)
+        {
+            if (TextureStudioBridge.IsConnected)
+            {
+                SendMaterialTexturesInternal(material);
                 return;
             }
-            SendMaterialTexturesInternal(material);
+            if (attempt >= 30) // ~15 seconds max wait
+            {
+                Debug.LogWarning("[TextureStudioMaterialExporter] Texture Studio への接続がタイムアウトしました。");
+                return;
+            }
+            // Retry in 0.5 seconds
+            EditorApplication.delayCall += () =>
+            {
+                // delayCall fires once per frame (~16ms). Schedule next check.
+                double waitUntil = EditorApplication.timeSinceStartup + 0.5;
+                EditorApplication.update += CheckConnection;
+
+                void CheckConnection()
+                {
+                    if (EditorApplication.timeSinceStartup < waitUntil) return;
+                    EditorApplication.update -= CheckConnection;
+                    WaitForConnectionAndSend(material, attempt + 1);
+                }
+            };
         }
 
         private static void SendMaterialTexturesInternal(Material material)
@@ -32,7 +58,8 @@ namespace NataneToon.Editor
             var shader = material.shader;
             int propCount = ShaderUtil.GetPropertyCount(shader);
 
-            bool first = true;
+            // Collect texture entries first
+            var textures = new System.Collections.Generic.List<(string path, string propName, string displayName)>();
             for (int i = 0; i < propCount; i++)
             {
                 if (ShaderUtil.GetPropertyType(shader, i) != ShaderUtil.ShaderPropertyType.TexEnv)
@@ -45,19 +72,34 @@ namespace NataneToon.Editor
                 string texPath = AssetDatabase.GetAssetPath(tex2d);
                 if (string.IsNullOrEmpty(texPath)) continue;
 
-                string fullPath = Path.GetFullPath(texPath);
-                string displayName = ShaderUtil.GetPropertyDescription(shader, i);
+                textures.Add((Path.GetFullPath(texPath), propName, ShaderUtil.GetPropertyDescription(shader, i)));
+            }
 
-                if (first)
+            if (textures.Count == 0)
+            {
+                Debug.Log("[TextureStudioMaterialExporter] マテリアルにテクスチャがありません。");
+                return;
+            }
+
+            // Send first texture as base
+            TextureStudioBridge.SendOpenTexture(textures[0].path, textures[0].propName);
+            Debug.Log($"[TextureStudioMaterialExporter] Base: {textures[0].propName} → {textures[0].path}");
+
+            // Send remaining textures as layers with staggered delay
+            for (int idx = 1; idx < textures.Count; idx++)
+            {
+                int capturedIdx = idx;
+                double sendTime = EditorApplication.timeSinceStartup + idx * 0.5; // 500ms interval
+
+                EditorApplication.update += SendDelayed;
+                void SendDelayed()
                 {
-                    // First texture opens as the base
-                    TextureStudioBridge.SendOpenTexture(fullPath, propName);
-                    first = false;
-                }
-                else
-                {
-                    // Subsequent textures imported as layers
-                    TextureStudioBridge.SendImportLayer(fullPath, $"{displayName} ({propName})", 1f);
+                    if (EditorApplication.timeSinceStartup < sendTime) return;
+                    EditorApplication.update -= SendDelayed;
+
+                    var t = textures[capturedIdx];
+                    TextureStudioBridge.SendImportLayer(t.path, $"{t.displayName} ({t.propName})", 1f);
+                    Debug.Log($"[TextureStudioMaterialExporter] Layer: {t.propName} → {t.path}");
                 }
             }
         }
