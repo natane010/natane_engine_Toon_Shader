@@ -725,76 +725,78 @@ namespace NataneToon.Editor
                 }
             };
 
-            // ===== UVテクスチャ生成 =====
+            // ===== テクスチャスタジオ =====
             documentationDatabase["UVTextureGenerator"] = new ToolDocumentation
             {
-                toolName = "UV Texture Generator",
-                toolNameJP = "UVテクスチャ生成",
-                description = "Generate noise and mask textures from mesh UV islands",
-                descriptionJP = "メッシュのUVアイランドからノイズ・マスクテクスチャを生成",
+                toolName = "Texture Studio",
+                toolNameJP = "テクスチャスタジオ",
+                description = "Standalone paint tool with brushes, layers, filters, and UV reference",
+                descriptionJP = "ブラシ、レイヤー、フィルター、UV参照を備えたスタンドアロンペイントツール",
                 category = "Texture",
                 features = new List<string>
                 {
-                    "5 noise types (Perlin, Voronoi, Cellular, FBM, Value)",
-                    "UV island detection with Union-Find",
-                    "Island-based mask generation",
-                    "Boundary gradient with erosion",
-                    "Noise + Mask combined mode",
-                    "Direct material property assignment"
+                    "Standalone painting application with pen pressure support",
+                    "Multi-layer editing with blend modes",
+                    "Brush engine with customizable dynamics",
+                    "Filter effects (blur, sharpen, noise, etc.)",
+                    "UV wireframe overlay from selected mesh",
+                    "Live preview integration with material inspector",
+                    "Export all material textures as layers"
                 },
                 featuresJP = new List<string>
                 {
-                    "5種のノイズ (Perlin, Voronoi, Cellular, FBM, Value)",
-                    "Union-FindによるUVアイランド検出",
-                    "アイランド単位のマスク生成",
-                    "侵食法による境界グラデーション",
-                    "ノイズ＋マスクの複合モード",
-                    "マテリアルプロパティへの直接割当"
+                    "ペン筆圧対応のスタンドアロンペイントアプリ",
+                    "ブレンドモード付きマルチレイヤー編集",
+                    "カスタマイズ可能なダイナミクスのブラシエンジン",
+                    "フィルターエフェクト（ぼかし、シャープ、ノイズなど）",
+                    "選択メッシュからのUVワイヤーフレームオーバーレイ",
+                    "マテリアルインスペクターとのライブプレビュー連携",
+                    "マテリアルの全テクスチャをレイヤーとしてエクスポート"
                 },
                 steps = new List<UsageStep>
                 {
                     new UsageStep
                     {
-                        title = "Choose Tab",
-                        titleJP = "タブを選択",
-                        description = "Select Noise, UV Mask, or Combined mode",
-                        descriptionJP = "ノイズ、UVマスク、複合モードから選択"
+                        title = "Launch Studio",
+                        titleJP = "スタジオを起動",
+                        description = "Open via Tools > Natane > Texture Studio or the inspector integration button",
+                        descriptionJP = "Tools > Natane > テクスチャスタジオ、またはインスペクターの連携ボタンから起動"
                     },
                     new UsageStep
                     {
-                        title = "Configure Parameters",
-                        titleJP = "パラメータを設定",
-                        description = "Set noise type/scale or mesh source/UV channel",
-                        descriptionJP = "ノイズタイプ/スケール、またはメッシュソース/UVチャンネルを設定"
+                        title = "Paint & Edit",
+                        titleJP = "ペイント＆編集",
+                        description = "Use brushes, layers, and filters to create or edit textures",
+                        descriptionJP = "ブラシ、レイヤー、フィルターを使ってテクスチャを作成・編集"
                     },
                     new UsageStep
                     {
-                        title = "Generate Preview",
-                        titleJP = "プレビューを生成",
-                        description = "Click 'Generate Texture' to preview the result",
-                        descriptionJP = "「テクスチャを生成」でプレビューを確認"
+                        title = "Send UV Reference",
+                        titleJP = "UV参照を送信",
+                        description = "Select a mesh in the scene and send its UV wireframe as an overlay",
+                        descriptionJP = "シーンでメッシュを選択し、UVワイヤーフレームをオーバーレイとして送信"
                     },
                     new UsageStep
                     {
-                        title = "Save & Assign",
-                        titleJP = "保存＆割当",
-                        description = "Save as PNG and optionally assign to a material property",
-                        descriptionJP = "PNGとして保存し、必要に応じてマテリアルプロパティに割当"
+                        title = "Live Preview & Save",
+                        titleJP = "ライブプレビュー＆保存",
+                        description = "Enable live preview to see changes in real-time, then save and assign to material",
+                        descriptionJP = "ライブプレビューでリアルタイムに変更を確認し、保存してマテリアルに割当"
                     }
                 },
                 tips = new List<string>
                 {
-                    "Use FBM for natural-looking dissolve patterns",
-                    "Voronoi noise works great for cellular masks",
-                    "Combined mode lets you create island-specific noise",
-                    "512x512 is sufficient for most mask textures"
+                    "Use 'Open all textures as layers' to edit existing material textures",
+                    "Enable live preview for real-time feedback while painting",
+                    "Send UV wireframes per submesh slot for precise painting",
+                    "Pen pressure affects brush size and opacity automatically"
                 },
                 tipsJP = new List<string>
                 {
-                    "自然なディゾルブパターンにはFBMが最適",
-                    "ボロノイノイズはセルラーマスクに最適",
-                    "複合モードでアイランド固有のノイズを作成可能",
-                    "ほとんどのマスクテクスチャには512x512で十分"
+                    "「全テクスチャをレイヤー化して開く」で既存マテリアルテクスチャを編集",
+                    "ペイント中のリアルタイムフィードバックにはライブプレビューを有効に",
+                    "正確なペイントにはサブメッシュスロット単位でUVワイヤーフレームを送信",
+                    "ペン筆圧でブラシサイズと不透明度が自動的に変化"
                 }
             };
         }

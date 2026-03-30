@@ -6924,6 +6924,22 @@ public class NataneToonShaderGUI : ShaderGUI
                 }
             }
 
+            // Live Preview toggle
+            if (TextureStudioLauncher.IsRunning)
+            {
+                bool isLive = TextureStudioBridge.IsLivePreviewEnabled;
+                if (GUILayout.Button(
+                    isLive ? L("🔴 ライブプレビュー停止", "🔴 Stop Live Preview")
+                           : L("▶ ライブプレビュー開始", "▶ Start Live Preview"),
+                    GUILayout.Height(22)))
+                {
+                    if (isLive)
+                        TextureStudioBridge.DisableLivePreview();
+                    else
+                        TextureStudioBridge.EnableLivePreview(targetMaterial, "_MainTex");
+                }
+            }
+
             // UV wireframe from selected mesh
             var selectedGo = UnityEditor.Selection.activeGameObject;
             if (selectedGo != null)
