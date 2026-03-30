@@ -8,3 +8,4 @@ CLAUDE.md export-ignore
 CLAUDE.md.meta export-ignore
 Website/ export-ignore
 Website.meta export-ignore
+Plugins/Tools/NataneTextureStudio.exe filter=lfs diff=lfs merge=lfs -text
