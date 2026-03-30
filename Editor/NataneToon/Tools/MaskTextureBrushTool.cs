@@ -101,6 +101,10 @@ namespace NataneToon.Editor
         public bool speedHardnessEnabled = false;
         public float speedHardnessInfluence = 0.3f;
 
+        // Elliptical brush / 楕円ブラシ
+        public float brushAspectRatio = 1f;   // 1.0=circle, 0.5=2:1 ellipse / 1.0=正円, 0.5=2:1楕円
+        public float brushAngle = 0f;          // Ellipse rotation angle (degrees) / 楕円回転角（度）
+
         // Per-stroke randomization / ストロークごとのランダム化
         public float strokeRandomSizeJitter = 0f;    // 0-1: per-stroke size variation
         public float strokeRandomOpacityJitter = 0f;  // 0-1: per-stroke opacity variation
@@ -437,6 +441,7 @@ namespace NataneToon.Editor
             // Use Catmull-Rom spline interpolation when 4+ points available (Clip Studio style)
             // 4点以上でCatmull-Romスプライン補間を使用（クリスタ方式）
             bool useSpline = splinePointCount >= 4;
+            bool useBezier = !useSpline && splinePointCount >= 3;
 
             if (useSpline)
             {
@@ -477,6 +482,40 @@ namespace NataneToon.Editor
                     }
 
                     strokeRemainder = totalDistance;
+                }
+            }
+            else if (useBezier)
+            {
+                // Bezier interpolation for 3 points (smoother than linear)
+                // 3点でのベジェ補間（線形より滑らか）
+                Vector2 p0 = splinePoints[0], p1 = splinePoints[1], p2 = splinePoints[2];
+                // Quadratic Bezier (3 control points)
+                float segmentLength = Vector2.Distance(p0, p1) + Vector2.Distance(p1, p2);
+                if (segmentLength > 0.001f)
+                {
+                    float totalDist = strokeRemainder + segmentLength * 0.5f;
+                    float walked = 0f;
+                    Vector2 prevStampPos = lastStrokePosition;
+                    while (totalDist >= spacing)
+                    {
+                        float stepInSeg = (walked == 0f) ? (spacing - strokeRemainder) : spacing;
+                        walked += stepInSeg;
+                        totalDist -= spacing;
+                        strokeAccumulatedDistance += spacing;
+                        pressureFilter.AddStrokeDistance(spacing);
+                        float t = Mathf.Clamp01(walked / (segmentLength * 0.5f));
+                        // Quadratic Bezier: B(t) = (1-t)²p0 + 2(1-t)t·p1 + t²p2
+                        float u = 1f - t;
+                        Vector2 stampPos = u * u * p0 + 2f * u * t * p1 + t * t * p2;
+                        float stampPressure = Mathf.Lerp(lastStrokePressure, pressure, t);
+                        ExpandDirtyRect(prevStampPos, settings.size, width, height);
+                        ExpandDirtyRect(stampPos, settings.size, width, height);
+                        ApplyStamp(stampPos, pixels, settings, width, height, lockTransparentPixels, stampPressure, wrapCoordinates,
+                            strokeAlphaBuffer, strokeColorBuffer, canvasSnapshot, velocityFactor, prevStampPos,
+                            strokeRandomSize, strokeRandomOpacity);
+                        prevStampPos = stampPos;
+                    }
+                    strokeRemainder = totalDist;
                 }
             }
             else
@@ -579,6 +618,51 @@ namespace NataneToon.Editor
                 prev = current;
             }
             return length;
+        }
+
+        /// <summary>
+        /// Evaluate cubic Bezier curve at parameter t (0-1).
+        /// 3次ベジェ曲線をパラメータt(0-1)で評価
+        /// </summary>
+        private static Vector2 CubicBezier(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float t)
+        {
+            float u = 1f - t;
+            float uu = u * u;
+            float tt = t * t;
+            return uu * u * p0 + 3f * uu * t * p1 + 3f * u * tt * p2 + tt * t * p3;
+        }
+
+        /// <summary>
+        /// Estimate arc length of cubic Bezier by sampling N points.
+        /// N点サンプリングによるベジェ曲線の弧長推定
+        /// </summary>
+        private static float EstimateBezierLength(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, int samples = 16)
+        {
+            float length = 0f;
+            Vector2 prev = p0;
+            for (int i = 1; i <= samples; i++)
+            {
+                float t = (float)i / samples;
+                Vector2 current = CubicBezier(p0, p1, p2, p3, t);
+                length += Vector2.Distance(prev, current);
+                prev = current;
+            }
+            return length;
+        }
+
+        /// <summary>
+        /// Compute Bezier control points from tangent directions (Krita-style).
+        /// 接線方向からベジェ制御点を計算（Krita方式）
+        /// </summary>
+        private static void ComputeBezierControlPoints(Vector2 p0, Vector2 p1, Vector2 prev, Vector2 next,
+            out Vector2 cp1, out Vector2 cp2)
+        {
+            Vector2 tangent0 = (p1 - prev).normalized;
+            Vector2 tangent1 = (next - p0).normalized;
+            float dist = Vector2.Distance(p0, p1);
+            float coeff = dist * 0.33f;  // 1/3 of distance for natural curves
+            cp1 = p0 + tangent0 * coeff;
+            cp2 = p1 - tangent1 * coeff;
         }
 
         /// <summary>
@@ -737,6 +821,24 @@ namespace NataneToon.Editor
                 maxY = Mathf.CeilToInt(center.y + radius);
             }
 
+            // Expand bounding box for elliptical brush
+            // 楕円ブラシ用にバウンディングボックスを拡張
+            if (settings.brushAspectRatio < 0.999f && !prevCenter.HasValue)
+            {
+                float expand = radius / Mathf.Max(settings.brushAspectRatio, 0.01f);
+                minX = Mathf.FloorToInt(center.x - expand);
+                maxX = Mathf.CeilToInt(center.x + expand);
+                minY = Mathf.FloorToInt(center.y - expand);
+                maxY = Mathf.CeilToInt(center.y + expand);
+                if (!wrapCoordinates)
+                {
+                    minX = Mathf.Max(0, minX);
+                    maxX = Mathf.Min(width - 1, maxX);
+                    minY = Mathf.Max(0, minY);
+                    maxY = Mathf.Min(height - 1, maxY);
+                }
+            }
+
             if (!wrapCoordinates)
             {
                 minX = Mathf.Max(0, minX);
@@ -798,7 +900,25 @@ namespace NataneToon.Editor
                     {
                         float dx = x - center.x;
                         float dy = y - center.y;
-                        distSq = dx * dx + dy * dy;
+
+                        // Elliptical brush: transform to ellipse space
+                        // 楕円ブラシ: 楕円空間に変換
+                        if (settings.brushAspectRatio < 0.999f)
+                        {
+                            float angleRad = settings.brushAngle * Mathf.Deg2Rad;
+                            float cosA = Mathf.Cos(angleRad);
+                            float sinA = Mathf.Sin(angleRad);
+                            // Rotate to ellipse axes
+                            float rx = dx * cosA + dy * sinA;
+                            float ry = -dx * sinA + dy * cosA;
+                            // Scale minor axis by inverse aspect ratio
+                            ry /= Mathf.Max(settings.brushAspectRatio, 0.01f);
+                            distSq = rx * rx + ry * ry;
+                        }
+                        else
+                        {
+                            distSq = dx * dx + dy * dy;
+                        }
                     }
                     float falloff = BrushFalloffSq(distSq, radiusSq, radius, effHardness);
                     if (falloff <= 0f) continue;

@@ -50,6 +50,10 @@ namespace NataneToon.Editor
         public bool airbrushMode = false;
         public float airbrushRate = 0.05f;
 
+        // Elliptical brush / 楕円ブラシ
+        public float brushAspectRatio = 1f;
+        public float brushAngle = 0f;
+
         public enum PressureCurveType { Linear, SCurve, Logarithmic, Exponential, Natural }
 
         public void ApplyTo(BrushSettings settings)
@@ -101,6 +105,8 @@ namespace NataneToon.Editor
             settings.strokeRandomOpacityJitter = strokeRandomOpacityJitter;
             settings.airbrushMode = airbrushMode;
             settings.airbrushRate = airbrushRate;
+            settings.brushAspectRatio = brushAspectRatio;
+            settings.brushAngle = brushAngle;
         }
 
         public static BrushPreset CreateFrom(BrushSettings settings, string name)
@@ -145,6 +151,8 @@ namespace NataneToon.Editor
                 strokeRandomOpacityJitter = settings.strokeRandomOpacityJitter,
                 airbrushMode = settings.airbrushMode,
                 airbrushRate = settings.airbrushRate,
+                brushAspectRatio = settings.brushAspectRatio,
+                brushAngle = settings.brushAngle,
             };
         }
 

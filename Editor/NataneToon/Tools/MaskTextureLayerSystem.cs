@@ -46,6 +46,12 @@ namespace NataneToon.Editor
         public Vector2 transformOffset = Vector2.zero;
         public Vector2 transformScale = Vector2.one;
 
+        // Layer group support / レイヤーグループサポート
+        public bool isGroup;                     // True if this is a group header / グループヘッダーの場合true
+        public bool isGroupExpanded = true;       // UI expanded state / UI展開状態
+        public int groupDepth;                    // Nesting depth (0=root) / ネスト深度（0=ルート）
+        public int parentGroupIndex = -1;         // Index of parent group (-1=root) / 親グループのインデックス
+
         public bool HasTransform =>
             !Mathf.Approximately(transformOffset.x, 0f) ||
             !Mathf.Approximately(transformOffset.y, 0f) ||
@@ -128,6 +134,10 @@ namespace NataneToon.Editor
             clone.sourceType = sourceType;
             clone.transformOffset = transformOffset;
             clone.transformScale = transformScale;
+            clone.isGroup = isGroup;
+            clone.isGroupExpanded = isGroupExpanded;
+            clone.groupDepth = groupDepth;
+            clone.parentGroupIndex = parentGroupIndex;
             if (pixels != null && pixels.Length > 0)
             {
                 System.Array.Copy(pixels, clone.pixels, pixels.Length);
@@ -580,6 +590,12 @@ namespace NataneToon.Editor
             {
                 var layer = Layers[layerIdx];
                 if (!layer.visible || layer.opacity <= 0f) continue;
+                // Skip group headers (they don't render pixels directly)
+                // グループヘッダーはスキップ（直接ピクセルを描画しない）
+                if (layer.isGroup) continue;
+                // Skip layers inside invisible parent groups
+                // 非表示の親グループ内のレイヤーをスキップ
+                if (!IsLayerEffectivelyVisible(layerIdx)) continue;
                 if (layer.pixels == null) continue;
 
                 bool sameSize = (layer.width == w && layer.height == h && layer.pixels.Length == result.Length);
@@ -972,6 +988,8 @@ namespace NataneToon.Editor
             {
                 var layer = Layers[layerIdx];
                 if (!layer.visible || layer.opacity <= 0f) continue;
+                if (layer.isGroup) continue;
+                if (!IsLayerEffectivelyVisible(layerIdx)) continue;
                 if (layer.pixels == null) continue;
 
                 bool sameSize = (layer.width == w && layer.height == h && layer.pixels.Length == result.Length);
@@ -1028,6 +1046,173 @@ namespace NataneToon.Editor
                     }
                 }
             }
+        }
+
+        // ===== Layer Group Management / レイヤーグループ管理 =====
+
+        /// <summary>
+        /// Create a new layer group.
+        /// 新しいレイヤーグループを作成
+        /// </summary>
+        public MaskTextureLayer AddGroup(string name)
+        {
+            var group = new MaskTextureLayer(name, Width, Height);
+            group.isGroup = true;
+            group.isGroupExpanded = true;
+            Layers.Add(group);
+            ActiveLayerIndex = Layers.Count - 1;
+            InvalidateFlattenCache();
+            return group;
+        }
+
+        /// <summary>
+        /// Create a new layer group at a specific index.
+        /// 特定のインデックスに新しいレイヤーグループを作成
+        /// </summary>
+        public MaskTextureLayer InsertGroup(string name, int index)
+        {
+            var group = new MaskTextureLayer(name, Width, Height);
+            group.isGroup = true;
+            group.isGroupExpanded = true;
+            index = Mathf.Clamp(index, 0, Layers.Count);
+            Layers.Insert(index, group);
+            ActiveLayerIndex = index;
+            InvalidateFlattenCache();
+            return group;
+        }
+
+        /// <summary>
+        /// Get all layers belonging to a group (direct children only).
+        /// グループに属する全レイヤーを取得（直接の子のみ）
+        /// </summary>
+        public List<MaskTextureLayer> GetGroupChildren(int groupIndex)
+        {
+            var children = new List<MaskTextureLayer>();
+            if (groupIndex < 0 || groupIndex >= Layers.Count || !Layers[groupIndex].isGroup)
+                return children;
+
+            int targetDepth = Layers[groupIndex].groupDepth + 1;
+            for (int i = groupIndex + 1; i < Layers.Count; i++)
+            {
+                if (Layers[i].groupDepth < targetDepth) break;
+                if (Layers[i].groupDepth == targetDepth)
+                    children.Add(Layers[i]);
+            }
+            return children;
+        }
+
+        /// <summary>
+        /// Get all layers belonging to a group (all descendants).
+        /// グループに属する全レイヤーを取得（全子孫）
+        /// </summary>
+        public List<MaskTextureLayer> GetGroupDescendants(int groupIndex)
+        {
+            var descendants = new List<MaskTextureLayer>();
+            if (groupIndex < 0 || groupIndex >= Layers.Count || !Layers[groupIndex].isGroup)
+                return descendants;
+
+            int baseDepth = Layers[groupIndex].groupDepth;
+            for (int i = groupIndex + 1; i < Layers.Count; i++)
+            {
+                if (Layers[i].groupDepth <= baseDepth) break;
+                descendants.Add(Layers[i]);
+            }
+            return descendants;
+        }
+
+        /// <summary>
+        /// Toggle group expanded/collapsed state.
+        /// グループの展開/折りたたみ状態を切り替え
+        /// </summary>
+        public void ToggleGroupExpanded(int groupIndex)
+        {
+            if (groupIndex >= 0 && groupIndex < Layers.Count && Layers[groupIndex].isGroup)
+                Layers[groupIndex].isGroupExpanded = !Layers[groupIndex].isGroupExpanded;
+        }
+
+        /// <summary>
+        /// Check if a layer is visible considering parent group visibility.
+        /// 親グループの表示状態を考慮してレイヤーが表示されるかチェック
+        /// </summary>
+        public bool IsLayerEffectivelyVisible(int layerIndex)
+        {
+            if (layerIndex < 0 || layerIndex >= Layers.Count) return false;
+            var layer = Layers[layerIndex];
+            if (!layer.visible) return false;
+
+            // Walk up the hierarchy to check parent group visibility
+            // 階層を上方向に走査して親グループの表示状態を確認
+            if (layer.parentGroupIndex >= 0 && layer.parentGroupIndex < Layers.Count)
+            {
+                var parent = Layers[layer.parentGroupIndex];
+                if (!parent.visible) return false;
+                return IsLayerEffectivelyVisible(layer.parentGroupIndex);
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Add a layer into a group at the end of the group's children.
+        /// グループの子の末尾にレイヤーを追加
+        /// </summary>
+        public void AddLayerToGroup(int groupIndex, MaskTextureLayer layer)
+        {
+            if (groupIndex < 0 || groupIndex >= Layers.Count || !Layers[groupIndex].isGroup || layer == null)
+                return;
+
+            layer.groupDepth = Layers[groupIndex].groupDepth + 1;
+            layer.parentGroupIndex = groupIndex;
+
+            // Find the end of the group
+            int insertAt = groupIndex + 1;
+            int baseDepth = Layers[groupIndex].groupDepth;
+            for (int i = groupIndex + 1; i < Layers.Count; i++)
+            {
+                if (Layers[i].groupDepth <= baseDepth) break;
+                insertAt = i + 1;
+            }
+
+            Layers.Insert(insertAt, layer);
+            ActiveLayerIndex = insertAt;
+            InvalidateFlattenCache();
+        }
+
+        /// <summary>
+        /// Remove a group and optionally all its children.
+        /// グループとオプションでその全子を削除
+        /// </summary>
+        public void RemoveGroup(int groupIndex, bool removeChildren)
+        {
+            if (groupIndex < 0 || groupIndex >= Layers.Count || !Layers[groupIndex].isGroup)
+                return;
+
+            if (removeChildren)
+            {
+                var descendants = GetGroupDescendants(groupIndex);
+                // Remove from bottom up to preserve indices
+                for (int i = descendants.Count - 1; i >= 0; i--)
+                {
+                    int idx = Layers.IndexOf(descendants[i]);
+                    if (idx >= 0) Layers.RemoveAt(idx);
+                }
+            }
+            else
+            {
+                // Ungroup: promote children to parent depth
+                int baseDepth = Layers[groupIndex].groupDepth;
+                int parentGroup = Layers[groupIndex].parentGroupIndex;
+                for (int i = groupIndex + 1; i < Layers.Count; i++)
+                {
+                    if (Layers[i].groupDepth <= baseDepth) break;
+                    Layers[i].groupDepth--;
+                    if (Layers[i].groupDepth == baseDepth)
+                        Layers[i].parentGroupIndex = parentGroup;
+                }
+            }
+
+            Layers.RemoveAt(groupIndex);
+            ActiveLayerIndex = Mathf.Clamp(ActiveLayerIndex, 0, Mathf.Max(0, Layers.Count - 1));
+            InvalidateFlattenCache();
         }
     }
 

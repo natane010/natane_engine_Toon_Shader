@@ -87,7 +87,9 @@ namespace NataneToon.Editor
         private CanvasBackgroundSettings canvasBackground = new CanvasBackgroundSettings();
         private ReferenceImageOverlay referenceOverlay = new ReferenceImageOverlay();
         private QuickMaskSystem quickMask = new QuickMaskSystem();
-        private float canvasRotation;
+        private float canvasRotation;       // Canvas rotation in degrees / キャンバス回転（度）
+        private bool canvasFlipH;            // Horizontal flip / 水平反転
+        private bool canvasFlipV;            // Vertical flip / 垂直反転
 
         // ===== Right Panel Tab =====
         private int rightPanelTab; // 0=Layers, 1=Filters, 2=Settings
@@ -2995,7 +2997,31 @@ namespace NataneToon.Editor
                     texRect.x - canvasArea.x,
                     texRect.y - canvasArea.y,
                     texRect.width, texRect.height);
-                EditorGUI.DrawPreviewTexture(clippedRect, canvasTexture, null, ScaleMode.ScaleToFit);
+                // Apply canvas rotation and flip
+                // キャンバスの回転と反転を適用
+                if (canvasRotation != 0f || canvasFlipH || canvasFlipV)
+                {
+                    Matrix4x4 savedMatrix = GUI.matrix;
+                    Vector2 pivotScreen = new Vector2(
+                        clippedRect.x + clippedRect.width * 0.5f,
+                        clippedRect.y + clippedRect.height * 0.5f);
+
+                    GUIUtility.RotateAroundPivot(canvasRotation, pivotScreen);
+                    if (canvasFlipH || canvasFlipV)
+                    {
+                        Vector3 scale = new Vector3(canvasFlipH ? -1f : 1f, canvasFlipV ? -1f : 1f, 1f);
+                        GUI.matrix = Matrix4x4.TRS(
+                            new Vector3(canvasFlipH ? pivotScreen.x * 2f : 0f, canvasFlipV ? pivotScreen.y * 2f : 0f, 0f),
+                            Quaternion.identity, scale) * GUI.matrix;
+                    }
+
+                    EditorGUI.DrawPreviewTexture(clippedRect, canvasTexture, null, ScaleMode.ScaleToFit);
+                    GUI.matrix = savedMatrix;
+                }
+                else
+                {
+                    EditorGUI.DrawPreviewTexture(clippedRect, canvasTexture, null, ScaleMode.ScaleToFit);
+                }
 
                 // UV wireframe overlay
                 if (showUVWireframe)
@@ -3371,6 +3397,40 @@ namespace NataneToon.Editor
                 return;
             }
 
+            // Canvas rotation / flip shortcuts
+            // キャンバス回転・反転ショートカット
+            if (e.keyCode == KeyCode.R)
+            {
+                if (e.control || e.command)
+                {
+                    canvasRotation = 0f;  // Reset rotation / 回転リセット
+                    e.Use(); Repaint(); return;
+                }
+                else if (e.shift)
+                {
+                    canvasRotation = (canvasRotation - 15f + 360f) % 360f;
+                    e.Use(); Repaint(); return;
+                }
+                else if (!e.alt)
+                {
+                    canvasRotation = (canvasRotation + 15f) % 360f;
+                    e.Use(); Repaint(); return;
+                }
+            }
+            if (e.shift && !e.control && !e.command && !e.alt)
+            {
+                if (e.keyCode == KeyCode.H)
+                {
+                    canvasFlipH = !canvasFlipH;
+                    e.Use(); Repaint(); return;
+                }
+                else if (e.keyCode == KeyCode.V)
+                {
+                    canvasFlipV = !canvasFlipV;
+                    e.Use(); Repaint(); return;
+                }
+            }
+
             // Non-modifier shortcuts (B, E, V, G, M, L, [, ], U, F, number keys etc.)
             if (!e.control && !e.command && !e.alt)
             {
@@ -3432,6 +3492,7 @@ namespace NataneToon.Editor
                             e.Use(); Repaint(); return;
                         case "FitCanvas":
                             canvasZoom = 1f; canvasPan = Vector2.zero;
+                            canvasRotation = 0f; canvasFlipH = false; canvasFlipV = false;
                             e.Use(); Repaint(); return;
                         case "SwapColors":
                             colorPicker.SwapColors();

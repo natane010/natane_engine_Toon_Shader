@@ -115,6 +115,64 @@ namespace NataneToon.Editor
             float da = a.a - b.a;
             return Mathf.Sqrt(dr * dr + dg * dg + db * db + da * da);
         }
+
+        /// <summary>
+        /// Fill area with a tiling pattern texture.
+        /// タイリングパターンテクスチャで領域を塗りつぶし
+        /// </summary>
+        public static void PatternFill(Color[] pixels, int width, int height, Texture2D pattern, float patternScale = 1f, float opacity = 1f)
+        {
+            if (pixels == null || pattern == null || width <= 0 || height <= 0) return;
+            if (patternScale <= 0f) patternScale = 1f;
+
+            int patW = pattern.width;
+            int patH = pattern.height;
+            Color[] patPixels = pattern.GetPixels();
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    // Tiling: wrap pattern coordinates
+                    // タイリング: パターン座標をラップ
+                    int px = Mathf.FloorToInt((x / patternScale) % patW);
+                    int py = Mathf.FloorToInt((y / patternScale) % patH);
+                    if (px < 0) px += patW;
+                    if (py < 0) py += patH;
+
+                    Color patColor = patPixels[py * patW + px];
+                    int idx = y * width + x;
+                    pixels[idx] = Color.Lerp(pixels[idx], patColor, patColor.a * opacity);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fill selection mask area with a tiling pattern.
+        /// 選択マスク領域をタイリングパターンで塗りつぶし
+        /// </summary>
+        public static void PatternFillMasked(Color[] pixels, bool[] selectionMask, int width, int height, Texture2D pattern, float patternScale = 1f, float opacity = 1f)
+        {
+            if (pixels == null || selectionMask == null || pattern == null) return;
+            if (width <= 0 || height <= 0) return;
+            if (patternScale <= 0f) patternScale = 1f;
+
+            int patW = pattern.width;
+            int patH = pattern.height;
+            Color[] patPixels = pattern.GetPixels();
+
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                if (!selectionMask[i]) continue;
+                int x = i % width, y = i / width;
+                int px = Mathf.FloorToInt((x / patternScale) % patW);
+                int py = Mathf.FloorToInt((y / patternScale) % patH);
+                if (px < 0) px += patW;
+                if (py < 0) py += patH;
+                Color patColor = patPixels[py * patW + px];
+                pixels[i] = Color.Lerp(pixels[i], patColor, patColor.a * opacity);
+            }
+        }
     }
 
     /// <summary>

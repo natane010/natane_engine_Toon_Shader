@@ -149,6 +149,96 @@ namespace NataneToon.Editor
         }
 
         /// <summary>
+        /// Magic wand selection: selects pixels with similar color using flood fill or global match.
+        /// マジックワンド: フラッドフィルまたはグローバルマッチで類似色のピクセルを選択
+        /// </summary>
+        public void SelectMagicWand(Color[] pixels, int startX, int startY, float tolerance, bool contiguous, SelectionMode mode)
+        {
+            if (pixels == null || pixels.Length != width * height) return;
+            if (startX < 0 || startX >= width || startY < 0 || startY >= height) return;
+
+            if (mode == SelectionMode.Replace)
+                Clear();
+
+            Color targetColor = pixels[startY * width + startX];
+
+            if (contiguous)
+            {
+                // Flood fill approach for contiguous selection
+                // 連続選択用のフラッドフィルアプローチ
+                bool[] visited = new bool[width * height];
+                var queue = new Queue<int>();
+                int startIdx = startY * width + startX;
+                queue.Enqueue(startIdx);
+                visited[startIdx] = true;
+
+                while (queue.Count > 0)
+                {
+                    int idx = queue.Dequeue();
+                    switch (mode)
+                    {
+                        case SelectionMode.Replace:
+                        case SelectionMode.Add:
+                            mask[idx] = true;
+                            break;
+                        case SelectionMode.Subtract:
+                            mask[idx] = false;
+                            break;
+                    }
+
+                    int cx = idx % width;
+                    int cy = idx / width;
+                    int[] dx = { -1, 1, 0, 0 };
+                    int[] dy = { 0, 0, -1, 1 };
+                    for (int d = 0; d < 4; d++)
+                    {
+                        int nx = cx + dx[d], ny = cy + dy[d];
+                        if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+                        int ni = ny * width + nx;
+                        if (visited[ni]) continue;
+                        if (ColorDistance(pixels[ni], targetColor) <= tolerance)
+                        {
+                            visited[ni] = true;
+                            queue.Enqueue(ni);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Global selection: all pixels matching color within tolerance
+                // グローバル選択: 許容範囲内の全ピクセル
+                for (int i = 0; i < pixels.Length; i++)
+                {
+                    if (ColorDistance(pixels[i], targetColor) <= tolerance)
+                    {
+                        switch (mode)
+                        {
+                            case SelectionMode.Replace:
+                            case SelectionMode.Add:
+                                mask[i] = true;
+                                break;
+                            case SelectionMode.Subtract:
+                                mask[i] = false;
+                                break;
+                        }
+                    }
+                }
+            }
+            UpdateHasSelection();
+        }
+
+        /// <summary>
+        /// Color distance using Euclidean distance in RGBA space.
+        /// RGBA空間のユークリッド距離によるカラー距離
+        /// </summary>
+        private static float ColorDistance(Color a, Color b)
+        {
+            float dr = a.r - b.r, dg = a.g - b.g, db = a.b - b.b, da = a.a - b.a;
+            return Mathf.Sqrt(dr * dr + dg * dg + db * db + da * da);
+        }
+
+        /// <summary>
         /// Get the bounding rect of the current selection.
         /// </summary>
         public Rect GetBounds()
