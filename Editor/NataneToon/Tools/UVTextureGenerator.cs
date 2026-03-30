@@ -1185,6 +1185,7 @@ namespace NataneToon.Editor
                 fillSettings.colorMode = isColor;
                 if (isColor)
                 {
+                    ChannelView.CurrentMode = ChannelViewMode.RGBA;
                     brushSettings.paintColor = colorPicker.ForegroundColor;
                     brushSettings.backgroundColor = colorPicker.BackgroundColor;
                     fillSettings.fillColor = colorPicker.ForegroundColor;
@@ -4571,6 +4572,8 @@ namespace NataneToon.Editor
             {
                 canvasColorMode = CanvasColorMode.Color;
                 brushSettings.colorMode = true;
+                ChannelView.CurrentMode = ChannelViewMode.RGBA;
+                brushSettings.paintColor = colorPicker.ForegroundColor;
             }
 
             ChannelView.CurrentMode = SuggestChannelView(layer.pixels, texType);
@@ -4607,6 +4610,8 @@ namespace NataneToon.Editor
             {
                 canvasColorMode = CanvasColorMode.Color;
                 brushSettings.colorMode = true;
+                ChannelView.CurrentMode = ChannelViewMode.RGBA;
+                brushSettings.paintColor = colorPicker.ForegroundColor;
             }
 
             ChannelView.CurrentMode = SuggestChannelView(previewSource.pixels, texType);
@@ -4687,6 +4692,10 @@ namespace NataneToon.Editor
             if (updateLiveLink)
                 RequestLiveLinkSync(true);
             nextPreviewRefreshTime = EditorApplication.timeSinceStartup + InteractivePreviewRefreshInterval;
+
+            // Ensure the editor window repaints to display the updated brush stroke
+            // 更新されたブラシストロークを表示するためにエディタウィンドウを再描画
+            Repaint();
         }
 
         /// <summary>

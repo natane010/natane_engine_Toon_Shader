@@ -885,115 +885,130 @@ namespace NataneToon.Editor
                     strokeTargetColor = new Color(settings.strength, settings.strength, settings.strength, settings.paintAlpha);
             }
 
-            for (int y = minY; y <= maxY; y++)
+            // GPU fast path for large brushes without stroke buffer
+            // ストロークバッファなしの大きなブラシ用GPU高速パス
+            if (!useStrokeBuffer && settings.mode != BrushMode.Smooth && radius >= 30f)
             {
-                for (int x = minX; x <= maxX; x++)
+                if (MaskTextureComputeDispatcher.TryBrushStampGPU(
+                    pixels, width, height, center, radius, effHardness, effOpacity,
+                    settings.strength, settings.paintAlpha, settings.mode, settings.eraseRgb,
+                    settings.colorMode, settings.colorMode ? (Color?)settings.paintColor : null))
                 {
-                    float distSq;
-                    if (prevCenter.HasValue)
-                    {
-                        // Capsule distance: distance to line segment
-                        // カプセル距離: 線分への距離
-                        distSq = DistanceToSegmentSq(x, y, prevCenter.Value, center);
-                    }
-                    else
-                    {
-                        float dx = x - center.x;
-                        float dy = y - center.y;
+                    return; // GPU handled it
+                }
+            }
 
-                        // Elliptical brush: transform to ellipse space
-                        // 楕円ブラシ: 楕円空間に変換
-                        if (settings.brushAspectRatio < 0.999f)
+            {
+                for (int y = minY; y <= maxY; y++)
+                {
+                    for (int x = minX; x <= maxX; x++)
+                    {
+                        float distSq;
+                        if (prevCenter.HasValue)
                         {
-                            float angleRad = settings.brushAngle * Mathf.Deg2Rad;
-                            float cosA = Mathf.Cos(angleRad);
-                            float sinA = Mathf.Sin(angleRad);
-                            // Rotate to ellipse axes
-                            float rx = dx * cosA + dy * sinA;
-                            float ry = -dx * sinA + dy * cosA;
-                            // Scale minor axis by inverse aspect ratio
-                            ry /= Mathf.Max(settings.brushAspectRatio, 0.01f);
-                            distSq = rx * rx + ry * ry;
+                            // Capsule distance: distance to line segment
+                            // カプセル距離: 線分への距離
+                            distSq = DistanceToSegmentSq(x, y, prevCenter.Value, center);
                         }
                         else
                         {
-                            distSq = dx * dx + dy * dy;
-                        }
-                    }
-                    float falloff = BrushFalloffSq(distSq, radiusSq, radius, effHardness);
-                    if (falloff <= 0f) continue;
+                            float dx = x - center.x;
+                            float dy = y - center.y;
 
-                    int sampleX = wrapCoordinates ? RepeatIndex(x, width) : x;
-                    int sampleY = wrapCoordinates ? RepeatIndex(y, height) : y;
-                    if (!wrapCoordinates && (sampleX < 0 || sampleX >= width || sampleY < 0 || sampleY >= height))
-                        continue;
-
-                    int idx = sampleY * width + sampleX;
-                    // Use original canvas for lockTransparent check when stroke buffer is active
-                    // ストロークバッファ使用時はオリジナルキャンバスでlockTransparentチェック
-                    Color current = useStrokeBuffer ? canvasSnap[idx] : pixels[idx];
-                    if (!CanModifyPixel(current, lockTransparentPixels, settings.alphaEpsilon))
-                        continue;
-
-                    float alpha = falloff * effFlow * effOpacity;
-
-                    switch (settings.mode)
-                    {
-                        case BrushMode.Paint:
-                            if (useStrokeBuffer)
+                            // Elliptical brush: transform to ellipse space
+                            // 楕円ブラシ: 楕円空間に変換
+                            if (settings.brushAspectRatio < 0.999f)
                             {
-                                // Stroke buffer path: max-alpha accumulation
-                                // ストロークバッファパス: max-alpha累積
-                                if (alpha > strokeAlpha[idx])
-                                {
-                                    strokeAlpha[idx] = alpha;
-                                    strokeColor[idx] = strokeTargetColor;
-                                }
+                                float angleRad = settings.brushAngle * Mathf.Deg2Rad;
+                                float cosA = Mathf.Cos(angleRad);
+                                float sinA = Mathf.Sin(angleRad);
+                                // Rotate to ellipse axes
+                                float rx = dx * cosA + dy * sinA;
+                                float ry = -dx * sinA + dy * cosA;
+                                // Scale minor axis by inverse aspect ratio
+                                ry /= Mathf.Max(settings.brushAspectRatio, 0.01f);
+                                distSq = rx * rx + ry * ry;
                             }
                             else
                             {
-                                // Legacy direct paint path
-                                // レガシー直接ペイントパス
-                                if (useColorMix)
-                                    pixels[idx] = ApplyPaintColor(current, alpha, mixedColor);
-                                else if (settings.wetBrushEnabled)
+                                distSq = dx * dx + dy * dy;
+                            }
+                        }
+                        float falloff = BrushFalloffSq(distSq, radiusSq, radius, effHardness);
+                        if (falloff <= 0f) continue;
+
+                        int sampleX = wrapCoordinates ? RepeatIndex(x, width) : x;
+                        int sampleY = wrapCoordinates ? RepeatIndex(y, height) : y;
+                        if (!wrapCoordinates && (sampleX < 0 || sampleX >= width || sampleY < 0 || sampleY >= height))
+                            continue;
+
+                        int idx = sampleY * width + sampleX;
+                        // Use original canvas for lockTransparent check when stroke buffer is active
+                        // ストロークバッファ使用時はオリジナルキャンバスでlockTransparentチェック
+                        Color current = useStrokeBuffer ? canvasSnap[idx] : pixels[idx];
+                        if (!CanModifyPixel(current, lockTransparentPixels, settings.alphaEpsilon))
+                            continue;
+
+                        float alpha = falloff * effFlow * effOpacity;
+
+                        switch (settings.mode)
+                        {
+                            case BrushMode.Paint:
+                                if (useStrokeBuffer)
                                 {
-                                    Color brushColor = settings.colorMode ? settings.paintColor
-                                        : new Color(settings.strength, settings.strength, settings.strength, settings.paintAlpha);
-                                    pixels[idx] = WetBrushMixer.ApplyWetBrush(current, falloff, effOpacity, brushColor, settings.wetness);
+                                    // Stroke buffer path: max-alpha accumulation
+                                    // ストロークバッファパス: max-alpha累積
+                                    if (alpha > strokeAlpha[idx])
+                                    {
+                                        strokeAlpha[idx] = alpha;
+                                        strokeColor[idx] = strokeTargetColor;
+                                    }
                                 }
                                 else
-                                    pixels[idx] = ApplyPaint(current, alpha, settings);
-                            }
-                            break;
-
-                        case BrushMode.Erase:
-                        case BrushMode.EraseAlpha:
-                            if (useStrokeBuffer)
-                            {
-                                // Stroke buffer erase: max-alpha accumulation with erase target
-                                // ストロークバッファ消去: 消去ターゲットでmax-alpha累積
-                                if (alpha > strokeAlpha[idx])
                                 {
-                                    strokeAlpha[idx] = alpha;
-                                    if (settings.mode == BrushMode.EraseAlpha || !settings.eraseRgb)
-                                        strokeColor[idx] = new Color(current.r, current.g, current.b, 0f);
+                                    // Legacy direct paint path
+                                    // レガシー直接ペイントパス
+                                    if (useColorMix)
+                                        pixels[idx] = ApplyPaintColor(current, alpha, mixedColor);
+                                    else if (settings.wetBrushEnabled)
+                                    {
+                                        Color brushColor = settings.colorMode ? settings.paintColor
+                                            : new Color(settings.strength, settings.strength, settings.strength, settings.paintAlpha);
+                                        pixels[idx] = WetBrushMixer.ApplyWetBrush(current, falloff, effOpacity, brushColor, settings.wetness);
+                                    }
                                     else
-                                        strokeColor[idx] = Color.clear;
+                                        pixels[idx] = ApplyPaint(current, alpha, settings);
                                 }
-                            }
-                            else
-                            {
-                                pixels[idx] = ApplyErase(current, alpha,
-                                    settings.mode == BrushMode.Erase && settings.eraseRgb);
-                            }
-                            break;
+                                break;
 
-                        case BrushMode.Smooth:
-                            // Smooth mode always paints directly (needs live canvas state)
-                            // Smoothモードは常に直接ペイント（ライブキャンバス状態が必要）
-                            pixels[idx] = ApplySmooth(current, GetAverageNeighbors(pixels, sampleX, sampleY, width, height), alpha);
-                            break;
+                            case BrushMode.Erase:
+                            case BrushMode.EraseAlpha:
+                                if (useStrokeBuffer)
+                                {
+                                    // Stroke buffer erase: max-alpha accumulation with erase target
+                                    // ストロークバッファ消去: 消去ターゲットでmax-alpha累積
+                                    if (alpha > strokeAlpha[idx])
+                                    {
+                                        strokeAlpha[idx] = alpha;
+                                        if (settings.mode == BrushMode.EraseAlpha || !settings.eraseRgb)
+                                            strokeColor[idx] = new Color(current.r, current.g, current.b, 0f);
+                                        else
+                                            strokeColor[idx] = Color.clear;
+                                    }
+                                }
+                                else
+                                {
+                                    pixels[idx] = ApplyErase(current, alpha,
+                                        settings.mode == BrushMode.Erase && settings.eraseRgb);
+                                }
+                                break;
+
+                            case BrushMode.Smooth:
+                                // Smooth mode always paints directly (needs live canvas state)
+                                // Smoothモードは常に直接ペイント（ライブキャンバス状態が必要）
+                                pixels[idx] = ApplySmooth(current, GetAverageNeighbors(pixels, sampleX, sampleY, width, height), alpha);
+                                break;
+                        }
                     }
                 }
             }
