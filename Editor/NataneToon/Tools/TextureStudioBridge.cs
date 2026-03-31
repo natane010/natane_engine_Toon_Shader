@@ -6,6 +6,7 @@ using System.IO.Pipes;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Object = UnityEngine.Object;
 
 namespace NataneToon.Editor
 {
@@ -205,6 +206,18 @@ namespace NataneToon.Editor
                         _livePreview?.OnPreviewUpdate(tempPath);
                     }
                 }
+                else if (json.Contains("\"event\":\"requestSceneData\""))
+                {
+                    // Studio requests all scene renderers/materials/textures
+                    SendSceneData();
+                }
+                else if (json.Contains("\"event\":\"selectMaterialTexture\""))
+                {
+                    // Studio selected a specific material texture - open it
+                    string materialName = ExtractJsonString(json, "materialName");
+                    string propertyName = ExtractJsonString(json, "propertyName");
+                    HandleSelectMaterialTexture(materialName, propertyName);
+                }
             }
             catch (Exception ex)
             {
@@ -236,6 +249,130 @@ namespace NataneToon.Editor
 
             // Notify the studio to stop sending preview updates
             SendMessage("{\"method\":\"disableLivePreview\",\"params\":{}}");
+        }
+
+        /// <summary>
+        /// Collect all renderers, materials, and textures in the scene and send to studio.
+        /// シーン内の全レンダラー・マテリアル・テクスチャを収集してスタジオに送信する
+        /// </summary>
+        private static void SendSceneData()
+        {
+            var renderers = Object.FindObjectsOfType<Renderer>();
+            var sb = new StringBuilder();
+            sb.Append("{\"event\":\"sceneData\",\"params\":{\"objects\":[");
+
+            bool first = true;
+            foreach (var renderer in renderers)
+            {
+                if (renderer.sharedMaterials == null) continue;
+                var go = renderer.gameObject;
+
+                if (!first) sb.Append(",");
+                first = false;
+
+                sb.Append("{\"name\":\"").Append(EscapeJson(go.name));
+                sb.Append("\",\"rendererType\":\"").Append(EscapeJson(renderer.GetType().Name));
+                sb.Append("\",\"materials\":[");
+
+                bool firstMat = true;
+                for (int m = 0; m < renderer.sharedMaterials.Length; m++)
+                {
+                    var mat = renderer.sharedMaterials[m];
+                    if (mat == null) continue;
+
+                    if (!firstMat) sb.Append(",");
+                    firstMat = false;
+
+                    sb.Append("{\"name\":\"").Append(EscapeJson(mat.name));
+                    sb.Append("\",\"slot\":").Append(m);
+                    sb.Append(",\"shader\":\"").Append(EscapeJson(mat.shader != null ? mat.shader.name : ""));
+                    sb.Append("\",\"textures\":[");
+
+                    var shader = mat.shader;
+                    int propCount = ShaderUtil.GetPropertyCount(shader);
+                    bool firstTex = true;
+                    for (int p = 0; p < propCount; p++)
+                    {
+                        if (ShaderUtil.GetPropertyType(shader, p) != ShaderUtil.ShaderPropertyType.TexEnv) continue;
+                        string propName = ShaderUtil.GetPropertyName(shader, p);
+                        Texture tex = mat.GetTexture(propName);
+                        if (tex == null) continue;
+
+                        if (!firstTex) sb.Append(",");
+                        firstTex = false;
+
+                        string desc = ShaderUtil.GetPropertyDescription(shader, p);
+                        string path = AssetDatabase.GetAssetPath(tex);
+                        sb.Append("{\"property\":\"").Append(EscapeJson(propName));
+                        sb.Append("\",\"label\":\"").Append(EscapeJson(desc));
+                        sb.Append("\",\"path\":\"").Append(EscapeJson(!string.IsNullOrEmpty(path) ? Path.GetFullPath(path) : ""));
+                        sb.Append("\",\"width\":").Append(tex.width);
+                        sb.Append(",\"height\":").Append(tex.height).Append("}");
+                    }
+                    sb.Append("]}");
+                }
+                sb.Append("]}");
+            }
+            sb.Append("]}}");
+            SendMessage(sb.ToString());
+            Debug.Log("[TextureStudioBridge] Sent scene data (" + renderers.Length + " renderers)");
+        }
+
+        /// <summary>
+        /// Handle studio selecting a specific material texture - send it for editing.
+        /// スタジオが選択したマテリアルテクスチャを処理する
+        /// </summary>
+        private static void HandleSelectMaterialTexture(string materialName, string propertyName)
+        {
+            if (string.IsNullOrEmpty(materialName) || string.IsNullOrEmpty(propertyName))
+            {
+                Debug.LogWarning("[TextureStudioBridge] selectMaterialTexture: missing materialName or propertyName");
+                return;
+            }
+
+            var renderers = Object.FindObjectsOfType<Renderer>();
+            foreach (var renderer in renderers)
+            {
+                if (renderer.sharedMaterials == null) continue;
+                foreach (var mat in renderer.sharedMaterials)
+                {
+                    if (mat == null || mat.name != materialName) continue;
+
+                    Texture tex = mat.GetTexture(propertyName);
+                    if (tex == null) continue;
+
+                    string path = AssetDatabase.GetAssetPath(tex);
+                    if (string.IsNullOrEmpty(path)) continue;
+
+                    // Send the texture to studio for editing
+                    SendOpenTexture(Path.GetFullPath(path), propertyName);
+
+                    // Send UV wireframe from the renderer's mesh
+                    Mesh mesh = null;
+                    var mf = renderer.GetComponent<MeshFilter>();
+                    if (mf != null) mesh = mf.sharedMesh;
+                    else
+                    {
+                        var smr = renderer as SkinnedMeshRenderer;
+                        if (smr != null) mesh = smr.sharedMesh;
+                    }
+                    if (mesh != null)
+                    {
+                        int slotIdx = System.Array.IndexOf(renderer.sharedMaterials, mat);
+                        TextureStudioUVExporter.SendUVWireframe(mesh, slotIdx >= 0 ? slotIdx : -1);
+                    }
+
+                    // Auto-enable live preview for the selected texture
+                    EnableLivePreview(mat, propertyName);
+
+                    // Select the GameObject in Unity editor
+                    Selection.activeGameObject = renderer.gameObject;
+
+                    Debug.Log($"[TextureStudioBridge] Selected: {mat.name}.{propertyName}");
+                    return;
+                }
+            }
+            Debug.LogWarning($"[TextureStudioBridge] Material not found: {materialName}");
         }
 
         private static string FileToAssetPath(string fullPath)
@@ -283,7 +420,5 @@ namespace NataneToon.Editor
             return null;
         }
 
-        /// <summary>Whether live preview is currently enabled.</summary>
-        public static bool IsLivePreviewEnabled => _livePreview != null && _livePreview.IsEnabled;
     }
 }
