@@ -173,6 +173,29 @@ namespace NataneToon.Editor
                         }
                     }
                 }
+                else if (json.Contains("\"event\":\"enableLivePreviewRequest\""))
+                {
+                    // Studio requests Unity to enable live preview
+                    string propName = ExtractJsonString(json, "propertyName");
+                    if (string.IsNullOrEmpty(propName)) propName = "_MainTex";
+
+                    // Find the material from the currently selected object
+                    Material targetMat = FindTargetMaterial();
+                    if (targetMat != null)
+                    {
+                        EnableLivePreview(targetMat, propName);
+                        Debug.Log("[TextureStudioBridge] Live preview enabled: " + targetMat.name + "." + propName);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[TextureStudioBridge] Live preview: マテリアルが見つかりません。Scene内のオブジェクトを選択してください。");
+                    }
+                }
+                else if (json.Contains("\"event\":\"disableLivePreviewRequest\""))
+                {
+                    DisableLivePreview();
+                    Debug.Log("[TextureStudioBridge] Live preview disabled by studio.");
+                }
                 else if (json.Contains("\"event\":\"preview\""))
                 {
                     // Live preview update from studio
@@ -243,5 +266,24 @@ namespace NataneToon.Editor
             if (end < 0) return null;
             return json.Substring(start, end - start).Replace("\\\\", "\\").Replace("\\\"", "\"");
         }
+
+        /// <summary>
+        /// Find a material from the currently selected GameObject in the scene.
+        /// 選択中のGameObjectからマテリアルを取得する
+        /// </summary>
+        private static Material FindTargetMaterial()
+        {
+            var go = Selection.activeGameObject;
+            if (go == null) return null;
+
+            var renderer = go.GetComponent<Renderer>();
+            if (renderer != null && renderer.sharedMaterial != null)
+                return renderer.sharedMaterial;
+
+            return null;
+        }
+
+        /// <summary>Whether live preview is currently enabled.</summary>
+        public static bool IsLivePreviewEnabled => _livePreview != null && _livePreview.IsEnabled;
     }
 }
