@@ -180,16 +180,39 @@ namespace NataneToon.Editor
                     string propName = ExtractJsonString(json, "propertyName");
                     if (string.IsNullOrEmpty(propName)) propName = "_MainTex";
 
-                    // Find the material from the currently selected object
+                    // Try selected object first, then search all scene renderers
                     Material targetMat = FindTargetMaterial();
+                    if (targetMat == null)
+                    {
+                        // Search all renderers for a material with this property
+                        var renderers = Object.FindObjectsOfType<Renderer>();
+                        foreach (var r in renderers)
+                        {
+                            if (r.sharedMaterials == null) continue;
+                            foreach (var m in r.sharedMaterials)
+                            {
+                                if (m != null && m.HasProperty(propName) && m.GetTexture(propName) != null)
+                                {
+                                    targetMat = m;
+                                    Selection.activeGameObject = r.gameObject;
+                                    break;
+                                }
+                            }
+                            if (targetMat != null) break;
+                        }
+                    }
+
                     if (targetMat != null)
                     {
                         EnableLivePreview(targetMat, propName);
                         Debug.Log("[TextureStudioBridge] Live preview enabled: " + targetMat.name + "." + propName);
+                        // Notify studio that live preview is active
+                        SendMessage("{\"event\":\"livePreviewActive\",\"params\":{\"material\":\"" + EscapeJson(targetMat.name) + "\"}}");
                     }
                     else
                     {
-                        Debug.LogWarning("[TextureStudioBridge] Live preview: マテリアルが見つかりません。Scene内のオブジェクトを選択してください。");
+                        Debug.LogWarning("[TextureStudioBridge] Live preview: プロパティ '" + propName + "' を持つマテリアルが見つかりません。");
+                        SendMessage("{\"event\":\"livePreviewFailed\",\"params\":{\"reason\":\"マテリアルが見つかりません\"}}");
                     }
                 }
                 else if (json.Contains("\"event\":\"disableLivePreviewRequest\""))
