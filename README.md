@@ -1,6 +1,6 @@
 # Natane Toon Shader
 
-[![Version](https://img.shields.io/badge/version-1.5.10-blue)](https://github.com/natane010/natane_toon_shader/releases)
+[![Version](https://img.shields.io/badge/version-1.5.11-blue)](https://github.com/natane010/natane_toon_shader/releases)
 [![Unity](https://img.shields.io/badge/Unity-2019.4+-black)](https://unity.com/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -24,7 +24,7 @@ VRChat運用を意識した機能（AudioLink、VRC Light Volumes、LTCGI、最�
 ## 動作環境
 
 - Unity: `2019.4+`（Built-in Render Pipeline想定）
-- パッケージバージョン: `1.5.10`（`package.json`準拠）
+- パッケージバージョン: `1.5.11`（`package.json`準拠）
 
 ## 収録シェーダー
 

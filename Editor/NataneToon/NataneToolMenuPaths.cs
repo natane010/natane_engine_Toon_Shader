@@ -10,7 +10,7 @@ namespace NataneToon.Editor
     /// </summary>
     public static class NataneToolMenuPaths
     {
-        public const string Dashboard = "Tools/Natane/Dashboard _d";
+        public const string Dashboard = "Tools/Natane/Dashboard %d";
         public const string HelpWindow = "Tools/Natane/ヘルプ Help _h";
 
         public const string MaterialValidator = "Tools/Natane/マテリアル Material/マテリアル検証 Material Validator _m";
