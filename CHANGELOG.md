@@ -5,6 +5,13 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.12] - 2026-04-02
+
+### Fixed
+- **ダッシュボードショートカット**: Ctrl+J に変更（Ctrl+DはUnity標準のDuplicateと競合するため）
+
+---
+
 ## [1.5.11] - 2026-04-02
 
 ### Fixed
