@@ -6,58 +6,10 @@ using static NataneToon.Editor.NataneToonLocalization;
 namespace NataneToon.Editor
 {
     /// <summary>
-    /// Chord shortcut handler: Ctrl+D then A opens the Dashboard.
-    /// コードショートカット: Ctrl+D → A でダッシュボードを開く
-    /// </summary>
-    [InitializeOnLoad]
-    internal static class DashboardChordShortcut
-    {
-        private static bool _waitingForA;
-        private static double _chordStartTime;
-        private const double ChordTimeout = 1.0; // 1 second to press A after Ctrl+D
-
-        static DashboardChordShortcut()
-        {
-            EditorApplication.globalEventHandler += OnGlobalEvent;
-        }
-
-        private static void OnGlobalEvent()
-        {
-            Event e = Event.current;
-            if (e == null || e.type != EventType.KeyDown) return;
-
-            if (_waitingForA)
-            {
-                if (e.keyCode == KeyCode.A && !e.control && !e.shift && !e.alt)
-                {
-                    // Second key of chord: A pressed within timeout
-                    if (EditorApplication.timeSinceStartup - _chordStartTime < ChordTimeout)
-                    {
-                        _waitingForA = false;
-                        e.Use();
-                        NataneDashboard.ShowWindow();
-                        return;
-                    }
-                }
-                // Any other key or timeout → cancel chord
-                _waitingForA = false;
-            }
-
-            // First key of chord: Ctrl+D
-            if (e.keyCode == KeyCode.D && e.control && !e.shift && !e.alt)
-            {
-                _waitingForA = true;
-                _chordStartTime = EditorApplication.timeSinceStartup;
-                // Don't Use() the event — let Ctrl+D (Duplicate) work normally
-            }
-        }
-    }
-
-    /// <summary>
     /// Natane Toon Shader Dashboard - Central hub for all tools
     /// Natane Toon Shader ダッシュボード - 全ツールへの統合アクセス
     /// Provides categorized access to 25+ tools and features
-    /// Shortcut: Ctrl+D → A (chord)
+    /// Shortcut: Ctrl+J
     /// </summary>
     public class NataneDashboard : EditorWindow
     {
