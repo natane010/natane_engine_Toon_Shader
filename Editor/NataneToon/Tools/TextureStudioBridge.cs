@@ -211,6 +211,8 @@ namespace NataneToon.Editor
         {
             try
             {
+                Debug.Log("[TextureStudioBridge] RX: " + (json.Length > 100 ? json.Substring(0, 100) + "..." : json));
+
                 // Simple JSON parsing for event type
                 if (json.Contains("\"event\":\"saved\""))
                 {
