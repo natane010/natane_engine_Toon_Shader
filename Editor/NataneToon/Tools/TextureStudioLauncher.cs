@@ -222,7 +222,19 @@ namespace NataneToon.Editor
                     string propDesc = ShaderUtil.GetPropertyDescription(shader, p);
                     string texPath = AssetDatabase.GetAssetPath(tex);
                     if (string.IsNullOrEmpty(texPath)) continue;
-                    entries.Add((string.Format("{0} / {1} ({2})", mat.name, propDesc, propName), Path.GetFullPath(texPath), propName, i, mat));
+
+                    // Built-in textures (e.g. "Resources/unity_builtin_extra") need to be exported to temp file
+                    string fullPath;
+                    if (texPath.Contains("unity_builtin_extra") || texPath.Contains("unity_default_resources") || !File.Exists(Path.GetFullPath(texPath)))
+                    {
+                        fullPath = ExportTextureToTemp(tex as Texture2D, propName);
+                        if (string.IsNullOrEmpty(fullPath)) continue;
+                    }
+                    else
+                    {
+                        fullPath = Path.GetFullPath(texPath);
+                    }
+                    entries.Add((string.Format("{0} / {1} ({2})", mat.name, propDesc, propName), fullPath, propName, i, mat));
                 }
             }
 
@@ -267,19 +279,92 @@ namespace NataneToon.Editor
         {
             LaunchWithTexture(texPath, propName);
 
-            // Send UV + enable live preview after connection
+            // Wait for connection before sending UV + live preview
             int capturedSlot = slot;
             Material capturedMat = mat;
             string capturedProp = propName;
-            EditorApplication.delayCall += () =>
-                EditorApplication.delayCall += () =>
-                    EditorApplication.delayCall += () =>
-                    {
-                        var mesh = TextureStudioUVExporter.GetMeshFromSelection();
-                        if (mesh != null) TextureStudioUVExporter.SendUVWireframe(mesh, capturedSlot);
-                        if (TextureStudioBridge.IsConnected)
-                            TextureStudioBridge.EnableLivePreview(capturedMat, capturedProp);
-                    };
+            WaitForConnectionThen(0, () =>
+            {
+                // Send texture via IPC in case command-line didn't work
+                if (TextureStudioBridge.IsConnected)
+                {
+                    TextureStudioBridge.SendOpenTexture(texPath, capturedProp);
+                }
+                var mesh = TextureStudioUVExporter.GetMeshFromSelection();
+                if (mesh != null) TextureStudioUVExporter.SendUVWireframe(mesh, capturedSlot);
+                if (TextureStudioBridge.IsConnected)
+                    TextureStudioBridge.EnableLivePreview(capturedMat, capturedProp);
+            });
+        }
+
+        /// <summary>
+        /// Wait for TextureStudioBridge connection, then execute action.
+        /// 接続を待ってからアクションを実行する
+        /// </summary>
+        private static void WaitForConnectionThen(int attempt, System.Action action)
+        {
+            if (TextureStudioBridge.IsConnected)
+            {
+                action();
+                return;
+            }
+            if (attempt >= 20) // ~10 seconds max
+            {
+                UnityEngine.Debug.LogWarning("[NataneTextureStudio] Connection timeout, executing anyway.");
+                action();
+                return;
+            }
+            // Check again in 0.5 seconds
+            double waitUntil = EditorApplication.timeSinceStartup + 0.5;
+            EditorApplication.update += Check;
+            void Check()
+            {
+                if (EditorApplication.timeSinceStartup < waitUntil) return;
+                EditorApplication.update -= Check;
+                WaitForConnectionThen(attempt + 1, action);
+            }
+        }
+
+        /// <summary>
+        /// Export a built-in or non-file texture to a temp PNG for the standalone studio.
+        /// ビルトインテクスチャを一時PNGにエクスポートする
+        /// </summary>
+        private static string ExportTextureToTemp(Texture2D tex, string propName)
+        {
+            if (tex == null) return "";
+            try
+            {
+                // Make texture readable
+                RenderTexture tmp = RenderTexture.GetTemporary(tex.width, tex.height, 0, RenderTextureFormat.ARGB32);
+                Graphics.Blit(tex, tmp);
+                RenderTexture prev = RenderTexture.active;
+                RenderTexture.active = tmp;
+
+                Texture2D readable = new Texture2D(tex.width, tex.height, TextureFormat.RGBA32, false);
+                readable.ReadPixels(new Rect(0, 0, tex.width, tex.height), 0, 0);
+                readable.Apply();
+
+                RenderTexture.active = prev;
+                RenderTexture.ReleaseTemporary(tmp);
+
+                // Save to temp file
+                string tempDir = Path.Combine(Path.GetTempPath(), "NataneTextureStudio", "textures");
+                Directory.CreateDirectory(tempDir);
+                string fileName = $"{tex.name}_{propName}.png".Replace("/", "_").Replace("\\", "_");
+                string tempPath = Path.Combine(tempDir, fileName);
+
+                byte[] pngData = readable.EncodeToPNG();
+                Object.DestroyImmediate(readable);
+
+                File.WriteAllBytes(tempPath, pngData);
+                UnityEngine.Debug.Log($"[NataneTextureStudio] Exported built-in texture to: {tempPath}");
+                return tempPath;
+            }
+            catch (System.Exception ex)
+            {
+                UnityEngine.Debug.LogWarning($"[NataneTextureStudio] Failed to export texture: {ex.Message}");
+                return "";
+            }
         }
 
         [MenuItem("GameObject/Natane Texture Studio で編集", false, 49)]
