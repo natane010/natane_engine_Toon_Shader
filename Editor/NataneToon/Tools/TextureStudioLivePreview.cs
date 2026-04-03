@@ -139,7 +139,36 @@ namespace NataneToon.Editor
                 if (_pixelBuffer == null || _pixelBuffer.Length != pixelDataSize)
                     _pixelBuffer = new byte[pixelDataSize];
 
+                // Reopen accessor if size changed
+                long requiredSize = HeaderSize + pixelDataSize;
+                if (_accessor.Capacity < requiredSize)
+                {
+                    _accessor.Dispose();
+                    _mmf.Dispose();
+                    _mmf = MemoryMappedFile.OpenExisting(SharedMemoryName);
+                    _accessor = _mmf.CreateViewAccessor();
+                }
+
                 _accessor.ReadArray(HeaderSize, _pixelBuffer, 0, pixelDataSize);
+
+                // Convert premultiplied alpha → straight alpha (SkiaSharp → Unity)
+                for (int i = 0; i < pixelDataSize; i += 4)
+                {
+                    byte a = _pixelBuffer[i + 3];
+                    if (a > 0 && a < 255)
+                    {
+                        float inv = 255f / a;
+                        _pixelBuffer[i] = (byte)Mathf.Min(255, _pixelBuffer[i] * inv);
+                        _pixelBuffer[i + 1] = (byte)Mathf.Min(255, _pixelBuffer[i + 1] * inv);
+                        _pixelBuffer[i + 2] = (byte)Mathf.Min(255, _pixelBuffer[i + 2] * inv);
+                    }
+                }
+
+                // Unity textures are bottom-up, SkiaSharp is top-down — flip Y
+                int stride = width * 4;
+                byte[] flipped = new byte[pixelDataSize];
+                for (int y = 0; y < height; y++)
+                    System.Array.Copy(_pixelBuffer, y * stride, flipped, (height - 1 - y) * stride, stride);
 
                 // Update texture
                 if (_previewTexture == null || _previewTexture.width != width || _previewTexture.height != height)
@@ -150,7 +179,7 @@ namespace NataneToon.Editor
                     _previewTexture.filterMode = FilterMode.Bilinear;
                 }
 
-                _previewTexture.LoadRawTextureData(_pixelBuffer);
+                _previewTexture.LoadRawTextureData(flipped);
                 _previewTexture.Apply(false, false);
 
                 _targetMaterial.SetTexture(_targetProperty, _previewTexture);
