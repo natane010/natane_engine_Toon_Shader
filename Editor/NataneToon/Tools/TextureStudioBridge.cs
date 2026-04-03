@@ -244,6 +244,20 @@ namespace NataneToon.Editor
                     // Studio requests all scene renderers/materials/textures
                     SendSceneData();
                 }
+                else if (json.Contains("\"event\":\"requestUVData\""))
+                {
+                    // Studio requests UV wireframe from selected mesh
+                    var mesh = TextureStudioUVExporter.GetMeshFromSelection();
+                    if (mesh != null)
+                    {
+                        TextureStudioUVExporter.SendUVWireframe(mesh);
+                        Debug.Log("[TextureStudioBridge] Sent UV wireframe: " + mesh.name);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[TextureStudioBridge] UV要求: メッシュが選択されていません");
+                    }
+                }
                 else if (json.Contains("\"event\":\"selectMaterialTexture\""))
                 {
                     // Studio selected a specific material texture - open it
