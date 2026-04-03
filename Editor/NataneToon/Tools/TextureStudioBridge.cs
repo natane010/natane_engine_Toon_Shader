@@ -152,6 +152,16 @@ namespace NataneToon.Editor
                 }
             }
             _connected = false;
+
+            // Studio closed — restore original texture if live preview was active
+            EditorApplication.delayCall += () =>
+            {
+                if (_livePreview != null && _livePreview.IsEnabled)
+                {
+                    _livePreview.Disable();
+                    Debug.Log("[TextureStudioBridge] Studio disconnected — live preview disabled, original texture restored.");
+                }
+            };
         }
 
         private static void HandleEvent(string json)
