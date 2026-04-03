@@ -290,12 +290,23 @@ namespace NataneToon.Editor
 
         private static void LaunchWithTextureAndUV(string texPath, string propName, int slot, Material mat, GameObject go)
         {
+            // Cache mesh for later UV requests from studio
+            Mesh goMesh = null;
+            if (go != null)
+            {
+                var mf = go.GetComponent<MeshFilter>();
+                if (mf != null) goMesh = mf.sharedMesh;
+                else { var smr = go.GetComponent<SkinnedMeshRenderer>(); if (smr != null) goMesh = smr.sharedMesh; }
+            }
+            if (goMesh != null) TextureStudioBridge.CacheMesh(goMesh, slot);
+
             LaunchWithTexture(texPath, propName);
 
             // Wait for connection before sending UV + live preview
             int capturedSlot = slot;
             Material capturedMat = mat;
             string capturedProp = propName;
+            Mesh capturedMesh = goMesh;
             WaitForConnectionThen(0, () =>
             {
                 // Send texture via IPC in case command-line didn't work
@@ -303,7 +314,8 @@ namespace NataneToon.Editor
                 {
                     TextureStudioBridge.SendOpenTexture(texPath, capturedProp);
                 }
-                var mesh = TextureStudioUVExporter.GetMeshFromSelection();
+                // Send UV using cached mesh (not relying on Selection)
+                var mesh = capturedMesh ?? TextureStudioUVExporter.GetMeshFromSelection();
                 if (mesh != null) TextureStudioUVExporter.SendUVWireframe(mesh, capturedSlot);
                 if (TextureStudioBridge.IsConnected)
                     TextureStudioBridge.EnableLivePreview(capturedMat, capturedProp);

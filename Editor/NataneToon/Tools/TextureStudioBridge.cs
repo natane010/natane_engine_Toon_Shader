@@ -25,6 +25,17 @@ namespace NataneToon.Editor
         // Live preview system
         private static TextureStudioLivePreview _livePreview;
 
+        // Cached mesh for UV requests (when Selection changes while studio is active)
+        private static Mesh _lastKnownMesh;
+        private static int _lastKnownMeshSlot = -1;
+
+        /// <summary>Cache a mesh for later UV requests.</summary>
+        public static void CacheMesh(Mesh mesh, int slot = -1)
+        {
+            _lastKnownMesh = mesh;
+            _lastKnownMeshSlot = slot;
+        }
+
         public static bool IsConnected => _connected;
         public static bool IsLivePreviewEnabled => _livePreview != null && _livePreview.IsEnabled;
 
@@ -278,16 +289,32 @@ namespace NataneToon.Editor
                 }
                 else if (json.Contains("\"event\":\"requestUVData\""))
                 {
-                    // Studio requests UV wireframe from selected mesh
+                    // Studio requests UV wireframe — try Selection first, then cached mesh
                     var mesh = TextureStudioUVExporter.GetMeshFromSelection();
+                    if (mesh == null) mesh = _lastKnownMesh;
+
+                    // Also search all scene renderers as last resort
+                    if (mesh == null)
+                    {
+                        var renderers = Object.FindObjectsOfType<Renderer>();
+                        foreach (var r in renderers)
+                        {
+                            var mf = r.GetComponent<MeshFilter>();
+                            if (mf != null && mf.sharedMesh != null) { mesh = mf.sharedMesh; break; }
+                            var smr = r as SkinnedMeshRenderer;
+                            if (smr != null && smr.sharedMesh != null) { mesh = smr.sharedMesh; break; }
+                        }
+                    }
+
                     if (mesh != null)
                     {
-                        TextureStudioUVExporter.SendUVWireframe(mesh);
+                        TextureStudioUVExporter.SendUVWireframe(mesh, _lastKnownMeshSlot);
+                        _lastKnownMesh = mesh;
                         Debug.Log("[TextureStudioBridge] Sent UV wireframe: " + mesh.name);
                     }
                     else
                     {
-                        Debug.LogWarning("[TextureStudioBridge] UV要求: メッシュが選択されていません");
+                        Debug.LogWarning("[TextureStudioBridge] UV要求: シーンにメッシュが見つかりません");
                     }
                 }
                 else if (json.Contains("\"event\":\"selectMaterialTexture\""))
