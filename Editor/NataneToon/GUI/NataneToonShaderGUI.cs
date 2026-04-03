@@ -6907,21 +6907,47 @@ public class NataneToonShaderGUI : ShaderGUI
             EditorStyles.miniButton, GUILayout.Width(24), GUILayout.Height(18)))
         {
             EnsureToolsTypes();
-            if (tex != null)
+            if (tex != null && _tLauncher != null)
             {
-                string path = AssetDatabase.GetAssetPath(tex);
-                if (!string.IsNullOrEmpty(path))
+                string assetPath = AssetDatabase.GetAssetPath(tex);
+                string fullPath = "";
+
+                // Handle built-in textures (unity_builtin_extra etc.)
+                if (!string.IsNullOrEmpty(assetPath) &&
+                    (assetPath.Contains("unity_builtin_extra") || assetPath.Contains("unity_default_resources") ||
+                     !System.IO.File.Exists(System.IO.Path.GetFullPath(assetPath))))
                 {
-                    InvokeStatic(_tLauncher, "LaunchWithTexture", path, texProperty.name);
+                    // Export built-in texture to temp file
+                    var exportMethod = _tLauncher.GetMethod("ExportTextureToTemp",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                    if (exportMethod != null)
+                        fullPath = exportMethod.Invoke(null, new object[] { tex, texProperty.name }) as string ?? "";
+                }
+                else if (!string.IsNullOrEmpty(assetPath))
+                {
+                    fullPath = System.IO.Path.GetFullPath(assetPath);
+                }
+
+                if (!string.IsNullOrEmpty(fullPath))
+                {
+                    InvokeStatic(_tLauncher, "LaunchWithTexture", fullPath, texProperty.name);
+
+                    // Wait for connection then send UV
                     var selectedGo = Selection.activeGameObject;
                     if (selectedGo != null)
                     {
-                        EditorApplication.delayCall += () =>
-                            EditorApplication.delayCall += () =>
+                        var waitMethod = _tLauncher.GetMethod("WaitForConnectionThen",
+                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                        if (waitMethod != null)
+                        {
+                            waitMethod.Invoke(null, new object[] { 0, (System.Action)(() =>
                             {
                                 var mesh = InvokeStatic(_tUVExporter, "GetMeshFromSelection") as Mesh;
                                 if (mesh != null) InvokeStatic(_tUVExporter, "SendUVWireframe", mesh, -1);
-                            };
+                                // Also send texture via IPC as backup
+                                InvokeStatic(_tBridge, "SendOpenTexture", fullPath, texProperty.name);
+                            })});
+                        }
                     }
                     return;
                 }
