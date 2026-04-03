@@ -207,10 +207,13 @@ namespace NataneToon.Editor
             // Collect all available textures from all material slots
             var entries = new System.Collections.Generic.List<(string label, string path, string propName, int slot, Material mat)>();
             var materials = renderer.sharedMaterials;
+            UnityEngine.Debug.Log($"[NataneTextureStudio] Materials count: {materials.Length}");
             for (int i = 0; i < materials.Length; i++)
             {
                 Material mat = materials[i];
-                if (mat == null) continue;
+                if (mat == null) { UnityEngine.Debug.Log($"[NataneTextureStudio] Slot {i}: null material"); continue; }
+                UnityEngine.Debug.Log($"[NataneTextureStudio] Slot {i}: {mat.name} (shader: {mat.shader?.name})");
+
                 var shader = mat.shader;
                 int propCount = ShaderUtil.GetPropertyCount(shader);
                 for (int p = 0; p < propCount; p++)
@@ -221,18 +224,32 @@ namespace NataneToon.Editor
                     if (tex == null) continue;
                     string propDesc = ShaderUtil.GetPropertyDescription(shader, p);
                     string texPath = AssetDatabase.GetAssetPath(tex);
+                    UnityEngine.Debug.Log($"[NataneTextureStudio] Found tex: {propName}={tex.name} path={texPath}");
                     if (string.IsNullOrEmpty(texPath)) continue;
 
-                    // Built-in textures (e.g. "Resources/unity_builtin_extra") need to be exported to temp file
+                    // All textures: try export to temp (handles both built-in and project textures safely)
                     string fullPath;
-                    if (texPath.Contains("unity_builtin_extra") || texPath.Contains("unity_default_resources") || !File.Exists(Path.GetFullPath(texPath)))
+                    if (texPath.Contains("unity_builtin_extra") || texPath.Contains("unity_default_resources") || !texPath.EndsWith(".png", System.StringComparison.OrdinalIgnoreCase) && !texPath.EndsWith(".jpg", System.StringComparison.OrdinalIgnoreCase) && !texPath.EndsWith(".tga", System.StringComparison.OrdinalIgnoreCase))
                     {
+                        // Non-standard path or built-in: always export to temp
                         fullPath = ExportTextureToTemp(tex as Texture2D, propName);
+                        UnityEngine.Debug.Log($"[NataneTextureStudio] Exported to temp: {fullPath}");
                         if (string.IsNullOrEmpty(fullPath)) continue;
                     }
                     else
                     {
-                        fullPath = Path.GetFullPath(texPath);
+                        string candidate = Path.GetFullPath(texPath);
+                        if (File.Exists(candidate))
+                        {
+                            fullPath = candidate;
+                        }
+                        else
+                        {
+                            // File doesn't exist at that path, try export
+                            fullPath = ExportTextureToTemp(tex as Texture2D, propName);
+                            UnityEngine.Debug.Log($"[NataneTextureStudio] File not found, exported: {fullPath}");
+                            if (string.IsNullOrEmpty(fullPath)) continue;
+                        }
                     }
                     entries.Add((string.Format("{0} / {1} ({2})", mat.name, propDesc, propName), fullPath, propName, i, mat));
                 }
