@@ -204,64 +204,82 @@ namespace NataneToon.Editor
                 return;
             }
 
-            // Show material slot picker as a context menu
+            // Collect all available textures from all material slots
+            var entries = new System.Collections.Generic.List<(string label, string path, string propName, int slot, Material mat)>();
             var materials = renderer.sharedMaterials;
-            GenericMenu menu = new GenericMenu();
             for (int i = 0; i < materials.Length; i++)
             {
-                int slotIdx = i;
                 Material mat = materials[i];
-                string label = mat != null ? string.Format("スロット {0}: {1}", i, mat.name) : string.Format("スロット {0}: (なし)", i);
-                if (mat != null)
+                if (mat == null) continue;
+                var shader = mat.shader;
+                int propCount = ShaderUtil.GetPropertyCount(shader);
+                for (int p = 0; p < propCount; p++)
                 {
-                    // Sub-menu for each texture property in the material
-                    var shader = mat.shader;
-                    int propCount = ShaderUtil.GetPropertyCount(shader);
-                    bool hasTextures = false;
-                    for (int p = 0; p < propCount; p++)
-                    {
-                        if (ShaderUtil.GetPropertyType(shader, p) != ShaderUtil.ShaderPropertyType.TexEnv) continue;
-                        string propName = ShaderUtil.GetPropertyName(shader, p);
-                        string propDesc = ShaderUtil.GetPropertyDescription(shader, p);
-                        Texture tex = mat.GetTexture(propName);
-                        if (tex == null) continue;
-
-                        hasTextures = true;
-                        int capturedSlot = slotIdx;
-                        string capturedProp = propName;
-                        Material capturedMat = mat;
-                        Texture capturedTex = tex;
-                        menu.AddItem(new GUIContent(string.Format("{0}/{1} ({2})", label, propDesc, propName)), false, () =>
-                        {
-                            string path = AssetDatabase.GetAssetPath(capturedTex);
-                            if (!string.IsNullOrEmpty(path))
-                            {
-                                LaunchWithTexture(Path.GetFullPath(path), capturedProp);
-                                // Send UV for this specific slot after connection is established
-                                EditorApplication.delayCall += () =>
-                                    EditorApplication.delayCall += () =>
-                                        EditorApplication.delayCall += () =>
-                                        {
-                                            var mesh = TextureStudioUVExporter.GetMeshFromSelection();
-                                            if (mesh != null) TextureStudioUVExporter.SendUVWireframe(mesh, capturedSlot);
-                                            // Enable live preview for this material/property
-                                            if (TextureStudioBridge.IsConnected)
-                                                TextureStudioBridge.EnableLivePreview(capturedMat, capturedProp);
-                                        };
-                            }
-                        });
-                    }
-                    if (!hasTextures)
-                    {
-                        menu.AddDisabledItem(new GUIContent(string.Format("{0} (テクスチャなし)", label)));
-                    }
-                }
-                else
-                {
-                    menu.AddDisabledItem(new GUIContent(label));
+                    if (ShaderUtil.GetPropertyType(shader, p) != ShaderUtil.ShaderPropertyType.TexEnv) continue;
+                    string propName = ShaderUtil.GetPropertyName(shader, p);
+                    Texture tex = mat.GetTexture(propName);
+                    if (tex == null) continue;
+                    string propDesc = ShaderUtil.GetPropertyDescription(shader, p);
+                    string texPath = AssetDatabase.GetAssetPath(tex);
+                    if (string.IsNullOrEmpty(texPath)) continue;
+                    entries.Add((string.Format("{0} / {1} ({2})", mat.name, propDesc, propName), Path.GetFullPath(texPath), propName, i, mat));
                 }
             }
-            menu.ShowAsContext();
+
+            UnityEngine.Debug.Log("[NataneTextureStudio] Found " + entries.Count + " textures on " + go.name);
+
+            if (entries.Count == 0)
+            {
+                // No textures — just launch the studio empty
+                UnityEngine.Debug.Log("[NataneTextureStudio] No textures found, launching empty studio.");
+                Launch();
+                return;
+            }
+
+            if (entries.Count == 1)
+            {
+                // Only one texture — launch directly without menu
+                var e = entries[0];
+                UnityEngine.Debug.Log("[NataneTextureStudio] Single texture, launching directly: " + e.label);
+                LaunchWithTextureAndUV(e.path, e.propName, e.slot, e.mat, go);
+                return;
+            }
+
+            // Multiple textures — show picker via delayCall to avoid context menu timing issues
+            var capturedEntries = entries;
+            var capturedGo = go;
+            EditorApplication.delayCall += () =>
+            {
+                GenericMenu menu = new GenericMenu();
+                foreach (var entry in capturedEntries)
+                {
+                    var captured = entry;
+                    menu.AddItem(new GUIContent(captured.label), false, () =>
+                    {
+                        LaunchWithTextureAndUV(captured.path, captured.propName, captured.slot, captured.mat, capturedGo);
+                    });
+                }
+                menu.ShowAsContext();
+            };
+        }
+
+        private static void LaunchWithTextureAndUV(string texPath, string propName, int slot, Material mat, GameObject go)
+        {
+            LaunchWithTexture(texPath, propName);
+
+            // Send UV + enable live preview after connection
+            int capturedSlot = slot;
+            Material capturedMat = mat;
+            string capturedProp = propName;
+            EditorApplication.delayCall += () =>
+                EditorApplication.delayCall += () =>
+                    EditorApplication.delayCall += () =>
+                    {
+                        var mesh = TextureStudioUVExporter.GetMeshFromSelection();
+                        if (mesh != null) TextureStudioUVExporter.SendUVWireframe(mesh, capturedSlot);
+                        if (TextureStudioBridge.IsConnected)
+                            TextureStudioBridge.EnableLivePreview(capturedMat, capturedProp);
+                    };
         }
 
         [MenuItem("GameObject/Natane Texture Studio で編集", false, 49)]
