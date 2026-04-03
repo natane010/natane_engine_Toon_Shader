@@ -64,15 +64,19 @@ namespace NataneToon.Editor
         /// </summary>
         public static void LaunchWithTexture(string texturePath, string propertyName)
         {
+            UnityEngine.Debug.Log("[NataneTextureStudio] LaunchWithTexture called. texturePath=" + (texturePath ?? "null") + " propertyName=" + (propertyName ?? "null"));
+
             if (IsRunning)
             {
-                // Already running -- send open command via bridge instead
+                UnityEngine.Debug.Log("[NataneTextureStudio] Already running, sending open command.");
                 if (texturePath != null)
                     TextureStudioBridge.SendOpenTexture(texturePath, propertyName ?? "");
                 return;
             }
 
             string exePath = FindExePath();
+            UnityEngine.Debug.Log("[NataneTextureStudio] FindExePath result: " + (string.IsNullOrEmpty(exePath) ? "(empty)" : exePath) + " exists=" + (!string.IsNullOrEmpty(exePath) && File.Exists(exePath)));
+
             if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
             {
                 // Fallback: try dotnet run from source
@@ -188,6 +192,7 @@ namespace NataneToon.Editor
         /// </summary>
         public static void LaunchFromMesh(GameObject go)
         {
+            UnityEngine.Debug.Log("[NataneTextureStudio] LaunchFromMesh called. go=" + (go != null ? go.name : "null"));
             if (go == null) return;
 
             // Get renderer
