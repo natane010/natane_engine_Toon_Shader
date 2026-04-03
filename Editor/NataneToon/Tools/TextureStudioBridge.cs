@@ -114,8 +114,30 @@ namespace NataneToon.Editor
 
         private static void SendMessage(string json)
         {
-            if (!_connected || _writer == null)
+            // Check actual pipe state, not just the _connected flag
+            if (_writer == null || _pipe == null || !_pipe.IsConnected)
             {
+                // Try to reconnect if studio is running
+                if (TextureStudioLauncher.IsRunning && !string.IsNullOrEmpty(TextureStudioLauncher.PipeName))
+                {
+                    if (!_connected)
+                    {
+                        Debug.Log("[TextureStudioBridge] Reconnecting...");
+                        Connect(TextureStudioLauncher.PipeName);
+                    }
+                    // Queue the message for retry after connection
+                    string capturedJson = json;
+                    EditorApplication.delayCall += () =>
+                        EditorApplication.delayCall += () =>
+                        {
+                            if (_connected && _writer != null)
+                            {
+                                try { _writer.WriteLine(capturedJson); }
+                                catch { }
+                            }
+                        };
+                    return;
+                }
                 Debug.LogWarning("[TextureStudioBridge] Not connected. Launch Texture Studio first.");
                 return;
             }
@@ -152,6 +174,10 @@ namespace NataneToon.Editor
                 }
             }
             _connected = false;
+            // Clean up pipe resources so next Connect starts fresh
+            try { _writer?.Dispose(); } catch { } _writer = null;
+            try { _reader?.Dispose(); } catch { } _reader = null;
+            try { _pipe?.Dispose(); } catch { } _pipe = null;
 
             // Studio closed — restore original texture if live preview was active
             EditorApplication.delayCall += () =>
@@ -160,6 +186,12 @@ namespace NataneToon.Editor
                 {
                     _livePreview.Disable();
                     Debug.Log("[TextureStudioBridge] Studio disconnected — live preview disabled, original texture restored.");
+                }
+                // Auto-reconnect if studio was relaunched
+                if (TextureStudioLauncher.IsRunning && !string.IsNullOrEmpty(TextureStudioLauncher.PipeName))
+                {
+                    Debug.Log("[TextureStudioBridge] Auto-reconnecting to new studio instance...");
+                    Connect(TextureStudioLauncher.PipeName);
                 }
             };
         }
