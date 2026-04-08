@@ -50,8 +50,9 @@ namespace NataneToon.Editor
             {
                 try
                 {
-                    // Retry connection with delay (exe may still be starting)
-                    const int maxRetries = 6;
+                    // Retry connection with exponential backoff (exe may still be starting)
+                    const int maxRetries = 8;
+                    int delayMs = 500;
                     for (int attempt = 0; attempt < maxRetries; attempt++)
                     {
                         try
@@ -64,13 +65,15 @@ namespace NataneToon.Editor
                         {
                             _pipe?.Dispose();
                             _pipe = null;
-                            await Task.Delay(1000, token); // Wait 1s before retry
+                            Debug.Log($"[TextureStudioBridge] Attempt {attempt + 1}/{maxRetries} timed out, retrying in {delayMs}ms...");
+                            await Task.Delay(delayMs, token);
+                            delayMs = Math.Min(delayMs * 2, 8000); // Exponential backoff, cap at 8s
                         }
                     }
 
                     if (_pipe == null || !_pipe.IsConnected)
                     {
-                        Debug.LogWarning("[TextureStudioBridge] Could not connect after retries.");
+                        Debug.LogWarning($"[TextureStudioBridge] Could not connect after {maxRetries} attempts.");
                         return;
                     }
 
@@ -136,17 +139,35 @@ namespace NataneToon.Editor
                         Debug.Log("[TextureStudioBridge] Reconnecting...");
                         Connect(TextureStudioLauncher.PipeName);
                     }
-                    // Queue the message for retry after connection
+                    // Queue the message for retry after connection with 3 attempts
                     string capturedJson = json;
-                    EditorApplication.delayCall += () =>
-                        EditorApplication.delayCall += () =>
+                    int retryCount = 0;
+                    void RetryQueuedSend()
+                    {
+                        if (_connected && _writer != null && _pipe != null && _pipe.IsConnected)
                         {
-                            if (_connected && _writer != null)
+                            try
                             {
-                                try { _writer.WriteLine(capturedJson); }
-                                catch { }
+                                _writer.WriteLine(capturedJson);
+                                Debug.Log("[TextureStudioBridge] Queued message sent after reconnect.");
                             }
-                        };
+                            catch (Exception ex)
+                            {
+                                Debug.LogWarning("[TextureStudioBridge] Queued send failed: " + ex.Message);
+                                _connected = false;
+                            }
+                        }
+                        else if (retryCount < 3)
+                        {
+                            retryCount++;
+                            EditorApplication.delayCall += RetryQueuedSend;
+                        }
+                        else
+                        {
+                            Debug.LogWarning("[TextureStudioBridge] Queued message dropped after 3 retries.");
+                        }
+                    }
+                    EditorApplication.delayCall += RetryQueuedSend;
                     return;
                 }
                 Debug.LogWarning("[TextureStudioBridge] Not connected. Launch Texture Studio first.");

@@ -152,15 +152,18 @@ namespace NataneToon.Editor
                 _accessor.ReadArray(HeaderSize, _pixelBuffer, 0, pixelDataSize);
 
                 // Convert premultiplied alpha → straight alpha (SkiaSharp → Unity)
+                // Both sides use sRGB color space with premultiplied alpha (standard 8-bit convention).
+                // SkiaSharp premultiplies in sRGB space; Unity's RGBA32 also assumes sRGB, so no
+                // color space conversion is needed — only the alpha un-premultiply.
                 for (int i = 0; i < pixelDataSize; i += 4)
                 {
                     byte a = _pixelBuffer[i + 3];
                     if (a > 0 && a < 255)
                     {
                         float inv = 255f / a;
-                        _pixelBuffer[i] = (byte)Mathf.Min(255, _pixelBuffer[i] * inv);
-                        _pixelBuffer[i + 1] = (byte)Mathf.Min(255, _pixelBuffer[i + 1] * inv);
-                        _pixelBuffer[i + 2] = (byte)Mathf.Min(255, _pixelBuffer[i + 2] * inv);
+                        _pixelBuffer[i] = (byte)Mathf.Min(255, Mathf.RoundToInt(_pixelBuffer[i] * inv));
+                        _pixelBuffer[i + 1] = (byte)Mathf.Min(255, Mathf.RoundToInt(_pixelBuffer[i + 1] * inv));
+                        _pixelBuffer[i + 2] = (byte)Mathf.Min(255, Mathf.RoundToInt(_pixelBuffer[i + 2] * inv));
                     }
                 }
 
