@@ -590,15 +590,7 @@ Shader "Natane/Toon Shader (Fur Lite)"
         [Toggle(_EYE_PARALLAX)] _EyeParallax ("Enable Eye Parallax", Float) = 0
         _EyeParallaxDepth ("Eye Depth", Range(0, 0.5)) = 0.1
 
-        [Header(Refraction)]
-        [Toggle(_REFRACTION)] _Refraction ("Enable Refraction", Float) = 0
-        _RefractionIndex ("Refraction Index IOR", Range(1, 3)) = 1.5
-        _RefractionIntensity ("Refraction Intensity", Range(0, 1)) = 1
-        _RefractionBlur ("Refraction Blur", Range(0, 1)) = 0
-        [Toggle(_REFRACTION_MASK)] _UseRefractionMask ("Use Refraction Mask", Float) = 0
-        _RefractionMask ("Refraction Mask", 2D) = "white" {}
-        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _RefractionBlendMode ("Refraction Blend Mode", Float) = 0
-        _RefractionBlend ("Refraction Blend", Range(0, 1)) = 1
+        // _REFRACTION removed (Lite variant: no GrabPass)
 
         [Header(AudioLink VRChat Club Events)]
         [Toggle(_AUDIOLINK)] _AudioLink ("Enable AudioLink", Float) = 0
@@ -668,7 +660,6 @@ Shader "Natane/Toon Shader (Fur Lite)"
         _MatCap2DistFade ("MatCap 2 Distance Fade", Range(0, 1)) = 0
         _MatCap3DistFade ("MatCap 3 Distance Fade", Range(0, 1)) = 0
         _ReflectionDistFade ("Reflection Distance Fade", Range(0, 1)) = 0
-        _RefractionDistFade ("Refraction Distance Fade", Range(0, 1)) = 0
         _EmissionDistFade ("Emission Distance Fade", Range(0, 1)) = 0
         _AudioLinkDistFade ("AudioLink Distance Fade", Range(0, 1)) = 0
         _GlitterDistFade ("Glitter Distance Fade", Range(0, 1)) = 0
@@ -990,6 +981,7 @@ CGPROGRAM
             float _OutlineEdgeCompensation;
             float _VRChatMirrorMode;
             sampler2D _OutlineMask;
+            float4 _OutlineMask_ST;
             sampler2D _OutlineWidthMap;
             #ifdef _OUTLINE_TEXTURE_COLOR
                 sampler2D _MainTex;
@@ -1068,7 +1060,7 @@ CGPROGRAM
                         widthMultiplier = tex2Dlod(_OutlineWidthMap, float4(v.uv, 0, 0)).r;
                     #endif
                     #ifdef _OUTLINE_MASK
-                        widthMultiplier *= tex2Dlod(_OutlineMask, float4(v.uv, 0, 0)).r;
+                        widthMultiplier *= tex2Dlod(_OutlineMask, float4(TRANSFORM_TEX(v.uv, _OutlineMask), 0, 0)).r;
                     #endif
 
                     float3 outlineNormal = v.normal;
@@ -1172,7 +1164,7 @@ CGPROGRAM
                     #endif
 
                     #ifdef _OUTLINE_MASK
-                        float outlineMask = tex2D(_OutlineMask, i.uv).r;
+                        float outlineMask = tex2D(_OutlineMask, TRANSFORM_TEX(i.uv, _OutlineMask)).r;
                         // Clip directly by mask value so it works regardless of _OutlineColor.a
                         clip(outlineMask - 0.01);
                         col.a *= outlineMask;

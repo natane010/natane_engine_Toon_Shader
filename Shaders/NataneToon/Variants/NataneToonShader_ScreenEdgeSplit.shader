@@ -984,9 +984,9 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             WriteMask [_StencilWriteMask]
         }
 
-        // NOTE: GrabPass is required for _REFRACTION feature.
-        // For materials without refraction, consider using the non-GrabPass variant for better performance.
-        // TODO: Create NataneToonShader_NoRefraction variant without GrabPass
+        // NOTE: GrabPass is required for _REFRACTION, _SOFT_FILTER, _KUWAHARA_FILTER,
+        // _COLOR_BLEEDING, _CHROMATIC_ABERRATION features.
+        // If you don't need these, use NataneToonShader_Lite — no GrabPass, better perf.
         GrabPass
         {
             "_nataneBackgroundTexture"
@@ -1070,6 +1070,7 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             float _OutlineEdgeCompensation;
             float _VRChatMirrorMode;
             sampler2D _OutlineMask;
+            float4 _OutlineMask_ST;
             sampler2D _OutlineWidthMap;
             #ifdef _OUTLINE_TEXTURE_COLOR
                 sampler2D _MainTex;
@@ -1150,7 +1151,7 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
                         widthMultiplier = tex2Dlod(_OutlineWidthMap, float4(v.uv, 0, 0)).r;
                     #endif
                     #ifdef _OUTLINE_MASK
-                        widthMultiplier *= tex2Dlod(_OutlineMask, float4(v.uv, 0, 0)).r;
+                        widthMultiplier *= tex2Dlod(_OutlineMask, float4(TRANSFORM_TEX(v.uv, _OutlineMask), 0, 0)).r;
                     #endif
 
                     // Resolve outline normal (smooth normal or original)
@@ -1301,7 +1302,7 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
 
                     // Apply outline mask
                     #ifdef _OUTLINE_MASK
-                        float outlineMask = tex2D(_OutlineMask, i.uv).r;
+                        float outlineMask = tex2D(_OutlineMask, TRANSFORM_TEX(i.uv, _OutlineMask)).r;
                         // Clip directly by mask value so it works regardless of _OutlineColor.a
                         clip(outlineMask - 0.01);
                         col.a *= outlineMask;

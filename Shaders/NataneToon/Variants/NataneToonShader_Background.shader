@@ -846,6 +846,7 @@ CGPROGRAM
             float _OutlineEdgeCompensation;
             float _VRChatMirrorMode;
             sampler2D _OutlineMask;
+            float4 _OutlineMask_ST;
             sampler2D _OutlineWidthMap;
             #ifdef _OUTLINE_TEXTURE_COLOR
                 sampler2D _MainTex;
@@ -890,7 +891,7 @@ CGPROGRAM
                         widthMultiplier = tex2Dlod(_OutlineWidthMap, float4(v.uv, 0, 0)).r;
                     #endif
                     #ifdef _OUTLINE_MASK
-                        widthMultiplier *= tex2Dlod(_OutlineMask, float4(v.uv, 0, 0)).r;
+                        widthMultiplier *= tex2Dlod(_OutlineMask, float4(TRANSFORM_TEX(v.uv, _OutlineMask), 0, 0)).r;
                     #endif
 
                     float3 outlineNormal = v.normal;
@@ -994,7 +995,7 @@ CGPROGRAM
                     #endif
 
                     #ifdef _OUTLINE_MASK
-                        float outlineMask = tex2D(_OutlineMask, i.uv).r;
+                        float outlineMask = tex2D(_OutlineMask, TRANSFORM_TEX(i.uv, _OutlineMask)).r;
                         // Clip directly by mask value so it works regardless of _OutlineColor.a
                         clip(outlineMask - 0.01);
                         col.a *= outlineMask;

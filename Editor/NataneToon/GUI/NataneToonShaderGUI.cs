@@ -640,6 +640,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
             DrawDependencyInspectorWarnings();
             DrawSamplerBudgetInspectorWarning();
+            DrawGrabPassSuggestionBanner();
             NataneToonShaderGUIUtility.DrawCompactPerformanceSummary(targetMaterial, GetCurrentSamplerBudgetEstimate());
 
             // ===== Multi-material editing indicator (Feature 4: show variant names) =====
@@ -2332,6 +2333,83 @@ public class NataneToonShaderGUI : ShaderGUI
         }
 
         EditorGUILayout.Space(6);
+    }
+
+    // Shader name mapping: non-Lite → Lite counterpart (for GrabPass-free performance).
+    // Background and ScreenEdge Split intentionally omitted (no Lite counterpart exists).
+    private static readonly System.Collections.Generic.Dictionary<string, string> s_LiteShaderCounterparts =
+        new System.Collections.Generic.Dictionary<string, string>
+        {
+            { "Natane/Toon Shader",               "Natane/Toon Shader (Lite)" },
+            { "Natane/Toon Shader (Cutout)",      "Natane/Toon Shader (Cutout Lite)" },
+            { "Natane/Toon Shader (Transparent)", "Natane/Toon Shader (Transparent Lite)" },
+            { "Natane/Toon Shader (Fur)",         "Natane/Toon Shader (Fur Lite)" },
+        };
+
+    // Keys are the float property names (source of truth per keyword synchronizer).
+    private static readonly string[] s_GrabPassFeatureToggles =
+    {
+        "_Refraction",
+        "_UseSoftFilter",
+        "_UseKuwahara",
+        "_UseColorBleeding",
+        "_UseChromaticAberration",
+    };
+
+    private void DrawGrabPassSuggestionBanner()
+    {
+        if (targetMaterial == null || targetMaterial.shader == null) return;
+
+        // Only suggest when the current shader is a non-Lite variant that has a Lite counterpart.
+        if (!s_LiteShaderCounterparts.TryGetValue(targetMaterial.shader.name, out string liteShaderName))
+            return;
+
+        // Skip the banner if any GrabPass-dependent feature is actually in use.
+        foreach (var prop in s_GrabPassFeatureToggles)
+        {
+            if (IsMaterialToggleEnabled(targetMaterial, prop))
+                return;
+        }
+
+        EditorGUILayout.HelpBox(
+            L(
+                "このマテリアルは GrabPass 依存機能（屈折/ソフトフィルタ/クワハラ/カラーブリーディング/色収差）を使用していません。\n" +
+                "Lite バリアントに切り替えると GrabPass が無くなり、画面コピーのコストを丸ごと削減できます（VRChat Quest 向けに特に有効）。",
+                "This material doesn't use any GrabPass-dependent feature (Refraction/Soft Filter/Kuwahara/Color Bleeding/Chromatic Aberration).\n" +
+                "Switch to the Lite variant to drop the GrabPass and save a full-screen copy per frame (especially valuable on VRChat Quest)."),
+            MessageType.Info);
+
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button(L($"Lite バリアントに変換 ({liteShaderName})", $"Convert to Lite ({liteShaderName})"), GUILayout.Height(22)))
+            {
+                ConvertTargetsToLite(liteShaderName);
+                GUIUtility.ExitGUI();
+            }
+        }
+        EditorGUILayout.Space(6);
+    }
+
+    private void ConvertTargetsToLite(string liteShaderName)
+    {
+        Shader liteShader = Shader.Find(liteShaderName);
+        if (liteShader == null)
+        {
+            Debug.LogError($"[NataneToonShader] Lite シェーダーが見つかりません: {liteShaderName}");
+            return;
+        }
+
+        foreach (Material mat in GetAllTargetMaterials())
+        {
+            if (mat == null || mat.shader == null) continue;
+            if (!s_LiteShaderCounterparts.TryGetValue(mat.shader.name, out string expectedLite)) continue;
+            if (expectedLite != liteShaderName) continue;  // Mixed-shader selection — only convert matching ones.
+
+            Undo.RecordObject(mat, L("Lite バリアントに変換", "Convert to Lite Variant"));
+            mat.shader = liteShader;
+            EditorUtility.SetDirty(mat);
+        }
     }
 
     private void DrawSamplerBudgetInspectorWarning()

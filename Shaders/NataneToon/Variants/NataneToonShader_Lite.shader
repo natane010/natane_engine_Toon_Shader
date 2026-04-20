@@ -601,15 +601,7 @@ Shader "Natane/Toon Shader (Lite)"
         [Toggle(_EYE_PARALLAX)] _EyeParallax ("Enable Eye Parallax", Float) = 0
         _EyeParallaxDepth ("Eye Depth", Range(0, 0.5)) = 0.1
 
-        [Header(Refraction)]
-        [Toggle(_REFRACTION)] _Refraction ("Enable Refraction", Float) = 0
-        _RefractionIndex ("Refraction Index IOR", Range(1, 3)) = 1.5
-        _RefractionIntensity ("Refraction Intensity", Range(0, 1)) = 1
-        _RefractionBlur ("Refraction Blur", Range(0, 1)) = 0
-        [Toggle(_REFRACTION_MASK)] _UseRefractionMask ("Use Refraction Mask", Float) = 0
-        _RefractionMask ("Refraction Mask", 2D) = "white" {}
-        [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _RefractionBlendMode ("Refraction Blend Mode", Float) = 0
-        _RefractionBlend ("Refraction Blend", Range(0, 1)) = 1
+        // _REFRACTION removed (Lite variant: no GrabPass)
 
         [Header(AudioLink VRChat Club Events)]
         [Toggle(_AUDIOLINK)] _AudioLink ("Enable AudioLink", Float) = 0
@@ -679,7 +671,6 @@ Shader "Natane/Toon Shader (Lite)"
         _MatCap2DistFade ("MatCap 2 Distance Fade", Range(0, 1)) = 0
         _MatCap3DistFade ("MatCap 3 Distance Fade", Range(0, 1)) = 0
         _ReflectionDistFade ("Reflection Distance Fade", Range(0, 1)) = 0
-        _RefractionDistFade ("Refraction Distance Fade", Range(0, 1)) = 0
         _EmissionDistFade ("Emission Distance Fade", Range(0, 1)) = 0
         _AudioLinkDistFade ("AudioLink Distance Fade", Range(0, 1)) = 0
         _GlitterDistFade ("Glitter Distance Fade", Range(0, 1)) = 0
@@ -802,15 +793,7 @@ Shader "Natane/Toon Shader (Lite)"
         _WCBlend ("Watercolor Blend", Range(0, 1)) = 1
         _WCMask ("Watercolor Mask", 2D) = "white" {}
 
-        [Toggle(_SOFT_FILTER)] _UseSoftFilter ("Enable Soft Filter", Float) = 0
-        _SoftFilterRadius ("Filter Radius", Range(0, 10)) = 2
-        _SoftFilterBlend ("Filter Blend", Range(0, 1)) = 0.5
-        _SoftFilterThreshold ("Bloom Threshold", Range(0, 1)) = 0.6
-        [Enum(Full Blur,0,Selective Bloom,1)] _SoftFilterMode ("Filter Mode", Float) = 1
-
-        [Toggle(_KUWAHARA_FILTER)] _UseKuwahara ("Enable Kuwahara Filter", Float) = 0
-        _KuwaharaRadius ("Kuwahara Radius", Range(1, 6)) = 3
-        _KuwaharaBlend ("Kuwahara Blend", Range(0, 1)) = 1
+        // _SOFT_FILTER, _KUWAHARA_FILTER removed (Lite variant: no GrabPass)
 
         [Toggle(_SCREEN_EDGE)] _UseScreenEdge ("Enable Screen Edge", Float) = 0
         _EdgeColor ("Edge Color", Color) = (0, 0, 0, 1)
@@ -819,13 +802,7 @@ Shader "Natane/Toon Shader (Lite)"
         _EdgeNormalSensitivity ("Normal Sensitivity", Range(0, 10)) = 2
         _EdgeBlend ("Edge Blend", Range(0, 1)) = 1
 
-        [Toggle(_COLOR_BLEEDING)] _UseColorBleeding ("Enable Color Bleeding", Float) = 0
-        _BleedingRadius ("Bleeding Radius", Range(0, 5)) = 1
-        _BleedingBlend ("Bleeding Blend", Range(0, 1)) = 0.3
-
-        [Toggle(_CHROMATIC_ABERRATION)] _UseChromaticAberration ("Enable Chromatic Aberration", Float) = 0
-        _CAIntensity ("CA Intensity", Range(0, 20)) = 3
-        _CABlend ("CA Blend", Range(0, 1)) = 1
+        // _COLOR_BLEEDING, _CHROMATIC_ABERRATION removed (Lite variant: no GrabPass)
 
         [Toggle(_OUTLINE_HAND_DRAWN)] _UseHandDrawnOutline ("Enable Hand-drawn Outline", Float) = 0
         _OutlineNoiseTex ("Outline Noise Texture", 2D) = "gray" {}
@@ -1064,6 +1041,7 @@ CGPROGRAM
             float _OutlineEdgeCompensation;
             float _VRChatMirrorMode;
             sampler2D _OutlineMask;
+            float4 _OutlineMask_ST;
             sampler2D _OutlineWidthMap;
             #ifdef _OUTLINE_TEXTURE_COLOR
                 sampler2D _MainTex;
@@ -1144,7 +1122,7 @@ CGPROGRAM
                         widthMultiplier = tex2Dlod(_OutlineWidthMap, float4(v.uv, 0, 0)).r;
                     #endif
                     #ifdef _OUTLINE_MASK
-                        widthMultiplier *= tex2Dlod(_OutlineMask, float4(v.uv, 0, 0)).r;
+                        widthMultiplier *= tex2Dlod(_OutlineMask, float4(TRANSFORM_TEX(v.uv, _OutlineMask), 0, 0)).r;
                     #endif
 
                     // Resolve outline normal (smooth normal or original)
@@ -1295,7 +1273,7 @@ CGPROGRAM
 
                     // Apply outline mask
                     #ifdef _OUTLINE_MASK
-                        float outlineMask = tex2D(_OutlineMask, i.uv).r;
+                        float outlineMask = tex2D(_OutlineMask, TRANSFORM_TEX(i.uv, _OutlineMask)).r;
                         // Clip directly by mask value so it works regardless of _OutlineColor.a
                         clip(outlineMask - 0.01);
                         col.a *= outlineMask;
