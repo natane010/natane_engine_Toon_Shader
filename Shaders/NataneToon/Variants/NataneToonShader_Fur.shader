@@ -1067,6 +1067,9 @@ CGPROGRAM
                     #ifdef _OUTLINE_WIDTH_MAP
                         widthMultiplier = tex2Dlod(_OutlineWidthMap, float4(v.uv, 0, 0)).r;
                     #endif
+                    #ifdef _OUTLINE_MASK
+                        widthMultiplier *= tex2Dlod(_OutlineMask, float4(v.uv, 0, 0)).r;
+                    #endif
 
                     float3 outlineNormal = v.normal;
                     #ifdef _SMOOTH_NORMAL
@@ -1170,8 +1173,9 @@ CGPROGRAM
 
                     #ifdef _OUTLINE_MASK
                         float outlineMask = tex2D(_OutlineMask, i.uv).r;
+                        // Clip directly by mask value so it works regardless of _OutlineColor.a
+                        clip(outlineMask - 0.01);
                         col.a *= outlineMask;
-                        clip(col.a - 0.01);
                     #endif
 
                     #ifdef _HEIGHT_FADE

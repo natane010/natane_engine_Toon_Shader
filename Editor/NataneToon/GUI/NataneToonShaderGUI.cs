@@ -4575,7 +4575,11 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUILayout.Space(SECTION_SPACING);
                 EditorGUILayout.LabelField(L("アウトラインマスク", "Outline Mask"), EditorStyles.boldLabel);
 
-                DrawProperty("_OutlineMask", L("アウトラインマスク (R)", "Outline Mask (R)"));
+                bool useOutlineMask = DrawToggle("_OUTLINE_MASK", "_UseOutlineMask", L("アウトラインマスクを有効化", "Enable Outline Mask"));
+                if (useOutlineMask)
+                {
+                    DrawProperty("_OutlineMask", L("アウトラインマスク (R)", "Outline Mask (R)"));
+                }
                 DrawHelpToggle("OutlineMask",
                     L("アウトラインマスクのR(赤)チャンネルを使用してアウトラインの表示を制御します。\n" +
                     "• 白 (1.0): アウトラインを完全に表示\n" +
@@ -4590,7 +4594,11 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUILayout.Space(SECTION_SPACING);
                 EditorGUILayout.LabelField(L("アウトライン幅マップ", "Outline Width Map"), EditorStyles.boldLabel);
 
-                DrawProperty("_OutlineWidthMap", L("アウトライン幅マップ (R)", "Outline Width Map (R)"));
+                bool useOutlineWidthMap = DrawToggle("_OUTLINE_WIDTH_MAP", "_UseOutlineWidthMap", L("アウトライン幅マップを有効化", "Enable Outline Width Map"));
+                if (useOutlineWidthMap)
+                {
+                    DrawProperty("_OutlineWidthMap", L("アウトライン幅マップ (R)", "Outline Width Map (R)"));
+                }
                 DrawHelpToggle("OutlineWidthMap",
                     L("アウトライン幅マップのR(赤)チャンネルを使用してアウトラインの幅を制御します。\n" +
                     "• 白 (1.0): 通常の幅\n" +

@@ -242,6 +242,35 @@ namespace NataneToon.Editor
         // SaveAssets による再インポート→再同期の無限ループを防止
         private static bool _isSynchronizing;
 
+        // 起動/スクリプトリロード毎に1回だけ実行するためのフラグ（EditorPrefsに永続化しない＝ドメインリロード毎に走る）
+        private static bool _startupSyncScheduled;
+
+        /// <summary>
+        /// エディタ起動/スクリプトリロード時に全 Natane マテリアルのキーワードを自動同期する。
+        /// これにより Tools/Natane/Fix All Material Keywords の手動実行を不要にする。
+        /// </summary>
+        [InitializeOnLoadMethod]
+        private static void ScheduleStartupSynchronization()
+        {
+            if (_startupSyncScheduled) return;
+            _startupSyncScheduled = true;
+
+            // AssetDatabase が未準備の状態で走らないよう delayCall で1フレーム遅延
+            EditorApplication.delayCall += RunStartupSynchronization;
+        }
+
+        private static void RunStartupSynchronization()
+        {
+            // 既にコンパイル中/インポート中なら完了まで待つ
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                EditorApplication.delayCall += RunStartupSynchronization;
+                return;
+            }
+
+            SynchronizeAllNataneMaterials();
+        }
+
         private static void OnPostprocessAllAssets(
             string[] importedAssets,
             string[] deletedAssets,
@@ -388,6 +417,81 @@ namespace NataneToon.Editor
             }
 
             return anyChanges;
+        }
+    }
+
+    /// <summary>
+    /// Undo の記録イベントを監視して、Natane マテリアルのトグルプロパティ/キーワードが
+    /// 変更された瞬間にキーワードを再同期する。
+    /// - インスペクタのデバッグモード、アニメーションウィンドウ、外部スクリプトなど、
+    ///   Natane 専用 GUI を経由しない変更経路でもズレを即座に修正する。
+    /// </summary>
+    [InitializeOnLoad]
+    internal static class NataneMaterialChangeWatcher
+    {
+        // 再入防止（EnableKeyword / SetFloat 自体が別の変更通知をトリガしても無限ループしないように）
+        private static bool _isApplying;
+
+        static NataneMaterialChangeWatcher()
+        {
+            Undo.postprocessModifications -= OnPostprocessModifications;
+            Undo.postprocessModifications += OnPostprocessModifications;
+        }
+
+        private static UndoPropertyModification[] OnPostprocessModifications(UndoPropertyModification[] modifications)
+        {
+            if (_isApplying || modifications == null || modifications.Length == 0)
+                return modifications;
+
+            HashSet<Material> touched = null;
+
+            for (int i = 0; i < modifications.Length; i++)
+            {
+                var cur = modifications[i].currentValue;
+                if (cur == null) continue;
+
+                var mat = cur.target as Material;
+                if (mat == null || mat.shader == null) continue;
+
+                // Natane シェーダー以外は無視
+                if (!NataneShaderCatalog.IsNataneShader(mat.shader.name))
+                    continue;
+
+                // material プロパティのパス形式例:
+                //   "m_SavedProperties.m_Floats.Array.data[N].second"
+                //   "m_ShaderKeywords"
+                // どちらもキーワード同期対象として取り扱う。
+                string path = cur.propertyPath ?? string.Empty;
+                bool relevant =
+                    path.Contains("m_Floats") ||
+                    path.Contains("m_ShaderKeywords");
+
+                if (!relevant) continue;
+
+                if (touched == null) touched = new HashSet<Material>();
+                touched.Add(mat);
+            }
+
+            if (touched != null)
+            {
+                _isApplying = true;
+                try
+                {
+                    foreach (var mat in touched)
+                    {
+                        if (NataneShaderKeywordSynchronizer.SynchronizeMaterialKeywords(mat))
+                        {
+                            EditorUtility.SetDirty(mat);
+                        }
+                    }
+                }
+                finally
+                {
+                    _isApplying = false;
+                }
+            }
+
+            return modifications;
         }
     }
 }

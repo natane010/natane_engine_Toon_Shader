@@ -5,6 +5,18 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.13] - 2026-04-21
+
+### Fixed
+- **アウトラインマスク**: トグル UI の欠落により `_OUTLINE_MASK` キーワードが有効化されない問題を修正。シェーダー GUI にアウトラインマスク/幅マップ用のトグルを追加。
+- **アウトラインマスクの確実性向上**: 頂点段階で outline width にマスクを乗算して物理的にアウトラインを無効化。clip 処理を `_OutlineColor.a` に依存しない形に変更。全10シェーダーバリアントに反映。
+
+### Added
+- **キーワード自動同期**: エディタ起動/スクリプトリロード時に全 Natane マテリアルのキーワードを自動同期。
+- **変更検知による自動同期**: マテリアルの float プロパティやキーワードが変更された瞬間に再同期（`Undo.postprocessModifications` 監視）。`Tools/Natane/Fix All Material Keywords` の手動実行が不要に。
+
+---
+
 ## [1.5.12] - 2026-04-02
 
 ### Fixed
