@@ -361,11 +361,11 @@ LTCGI 1.7.1とのソース互換をUnityコンパイルレベルで検証済み�
 
 通常の `Blend Probes` は対応済みです。`ShadeSH9` によりRendererへ設定された補間済みSH係数を評価し、VRC Light Volumesを使用しない場合の間接光フォールバックにも利用します。
 
-#### 未対応: Light Probe Proxy Volume
+#### 対応済み: Light Probe Proxy Volume (2026-07-17)
 
-Light Probe Proxy Volume（LPPV）の3Dテクスチャサンプリングには未対応です。現状は `ShadeSH9` を直接使用するため、`LightProbeUsage.UseProxyVolume` を設定しても表面位置ごとの空間的な照明変化を取得できません。
+LPPV対応を実装しました。共通関数 `NataneShadeSH(worldNormal, worldPos)` (`Shaders/NataneToon/Include/Lighting/NataneToonSH.hlsl`) が `UNITY_LIGHT_PROBE_PROXY_VOLUME` かつ `unity_ProbeVolumeParams.x == 1` のときプローブボリュームをサンプリングし、それ以外では従来の `ShadeSH9` とビット一致の結果を返します。Fragment(Background含む)・FurShell・Particleを同関数へ統一済み。FORWARD_BASEのみに `multi_compile _ UNITY_LIGHT_PROBE_PROXY_VOLUME` を宣言(ForwardAddへの環境光重複なし)、VRC Light Volumes有効時はLight Volumesが優先。Sampler予算 +1 は `NataneToonSamplerBudgetEstimator.LppvProbeVolumeSamplerCost` として計上。詳細と検証チェックリストは `Documentation~/LPPV_SUPPORT.md` を参照。
 
-実装方針:
+当初の実装方針(記録):
 
 - Unity 2022.3 Built-inの `ShadeSHPerPixel(worldNormal, ambient, worldPos)` を使用する共通関数を追加する。
 - `UNITY_LIGHT_PROBE_PROXY_VOLUME` と `unity_ProbeVolumeParams.x` に応じてLPPVを評価し、通常環境では従来の `ShadeSH9` 結果を維持する。
