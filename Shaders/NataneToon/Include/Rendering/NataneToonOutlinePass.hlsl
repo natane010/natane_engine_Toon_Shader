@@ -148,6 +148,8 @@ sampler2D _OutlineWidthMap;
     float _FXModManual0;
     float _FXModDistMin0;
     float _FXModDistMax0;
+    float _FXModNoiseScale0;
+    float _FXModNoiseSpace0;
     float _FXModSource1;
     float _FXModTarget1;
     float _FXModAmount1;
@@ -160,6 +162,8 @@ sampler2D _OutlineWidthMap;
     float _FXModManual1;
     float _FXModDistMin1;
     float _FXModDistMax1;
+    float _FXModNoiseScale1;
+    float _FXModNoiseSpace1;
     #include "../Effects/NataneToonFXModulator.hlsl"
 #endif
 
@@ -265,7 +269,7 @@ v2f vert(appdata v)
             float3 fxWp = mul(unity_ObjectToWorld, v.vertex).xyz;
             float3 fxWn = UnityObjectToWorldNormal(v.normal);
             float3 fxVd = normalize(_WorldSpaceCameraPos - fxWp);
-            NataneFXModState fxOutline = NataneFXModCompute(fxWp, fxWn, fxVd, 1.0, 1.0);
+            NataneFXModState fxOutline = NataneFXModCompute(fxWp, fxWn, fxVd, v.uv, v.vertex.xyz, 1.0, 1.0);
             nataneOutlineWidthMod *= NataneFXModMul(fxOutline, NATANE_FXT_OUTLINE_WIDTH);
         }
         #endif

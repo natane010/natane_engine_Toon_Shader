@@ -1065,6 +1065,8 @@ CBUFFER_START(UnityPerMaterial)
     float _FXModManual0;
     float _FXModDistMin0;
     float _FXModDistMax0;
+    float _FXModNoiseScale0;
+    float _FXModNoiseSpace0;
     float _FXModSource1;
     float _FXModTarget1;
     float _FXModAmount1;
@@ -1077,6 +1079,8 @@ CBUFFER_START(UnityPerMaterial)
     float _FXModManual1;
     float _FXModDistMin1;
     float _FXModDistMax1;
+    float _FXModNoiseScale1;
+    float _FXModNoiseSpace1;
     #endif
 
     // ===== Expression Effects (v1.6.0 batch 2) =====

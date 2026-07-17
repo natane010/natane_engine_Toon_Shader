@@ -20,14 +20,52 @@
 #define NATANE_FXT_OUTLINE_WIDTH 4
 #define NATANE_FXT_LINEBOIL      5
 #define NATANE_FXT_TOPO_OFFSET   6
+#define NATANE_FXT_SHAPED_HL     7
+#define NATANE_FXT_CAUSTICS      8
+#define NATANE_FXT_LENTICULAR    9
+#define NATANE_FXT_SPECULAR      10
+#define NATANE_FXT_MATCAP        11
+#define NATANE_FXT_ALPHA_FADE    12
 
 float NataneFXMod_Hash1(float x) { return frac(sin(x * 12.9898) * 43758.5453); }
+
+// Self-contained hash / value-noise helpers for the noise sources. These are
+// defined locally (NOT reused from NataneToonUtils.hlsl) because this file is
+// also included in the standalone OUTLINE pass where Utils is absent.
+float NataneFXMod_Hash2(float2 p)
+{
+    p = frac(p * float2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return frac(p.x * p.y);
+}
+
+// Bilinear-smoothed value noise in [0,1].
+float NataneFXMod_ValueNoise(float2 p)
+{
+    float2 c = floor(p);
+    float2 f = frac(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float a = NataneFXMod_Hash2(c);
+    float b = NataneFXMod_Hash2(c + float2(1.0, 0.0));
+    float cc = NataneFXMod_Hash2(c + float2(0.0, 1.0));
+    float d = NataneFXMod_Hash2(c + float2(1.0, 1.0));
+    return lerp(lerp(a, b, f.x), lerp(cc, d, f.x), f.y);
+}
+
+// Project the selected space (0 UV / 1 Object / 2 World) into a 2D noise coord.
+float2 NataneFXMod_NoiseCoord(int space, float2 uv, float3 objectPos, float3 worldPos)
+{
+    if (space == 1) return float2(objectPos.x + objectPos.z * 0.5, objectPos.y + objectPos.z * 0.5); // Object
+    if (space == 2) return float2(worldPos.x + worldPos.z * 0.5, worldPos.y + worldPos.z * 0.5);      // World
+    return uv;                                                                                        // UV
+}
 
 // Raw source signal, normalized to [0,1]. source id matches the
 // [Enum(...)] _FXModSource order in the .shader.
 half NataneFXMod_Source(int source, float speed, float offset, float manual,
                         float3 worldPos, float3 worldNormal, float3 viewDir,
-                        float distMin, float distMax)
+                        float distMin, float distMax,
+                        float2 uv, float3 objectPos, float noiseScale, int noiseSpace)
 {
     float t = _Time.y * speed + offset;
     if (source == 0) return sin(t * 6.2831853) * 0.5 + 0.5;   // Sine
@@ -50,6 +88,22 @@ half NataneFXMod_Source(int source, float speed, float offset, float manual,
         return saturate((d - distMin) / max(distMax - distMin, 0.0001));
     }
     if (source == 11) return saturate(dot(normalize(worldNormal), normalize(viewDir))); // ViewAngle
+    if (source >= 13)
+    {
+        float2 nc = NataneFXMod_NoiseCoord(noiseSpace, uv, objectPos, worldPos) * max(noiseScale, 0.0001);
+        if (source == 13)                                     // StaticNoise (spatial, no time)
+            return NataneFXMod_ValueNoise(nc + offset);
+        if (source == 14)                                     // DynamicNoise (2-octave, scrolled)
+        {
+            float2 scroll = nc + _Time.y * speed + offset;
+            float n = NataneFXMod_ValueNoise(scroll) * 0.6
+                    + NataneFXMod_ValueNoise(scroll * 2.03 + 17.0) * 0.4;
+            return saturate(n);
+        }
+        // 15 DynamicNoiseSteps: time quantized to Speed-driven steps → flicker/glitch
+        float tq = floor(_Time.y * max(speed, 0.0001));
+        return NataneFXMod_ValueNoise(nc + tq * 1.37 + offset);
+    }
     return saturate(manual);                                  // Manual (12)
 }
 
@@ -65,9 +119,11 @@ struct NataneFXModState
 half NataneFXMod_Slot(int source, float speed, float offset, float manual,
                       float invert, float curve, float mn, float mx,
                       float amount, float mask,
-                      float3 wp, float3 wn, float3 vd, float distMin, float distMax)
+                      float3 wp, float3 wn, float3 vd, float distMin, float distMax,
+                      float2 uv, float3 op, float noiseScale, int noiseSpace)
 {
-    half s = NataneFXMod_Source(source, speed, offset, manual, wp, wn, vd, distMin, distMax);
+    half s = NataneFXMod_Source(source, speed, offset, manual, wp, wn, vd, distMin, distMax,
+                                uv, op, noiseScale, noiseSpace);
     s = pow(saturate(s), max(curve, 0.0001));
     half outv = lerp(mn, mx, s);
     outv = (invert >= 0.5) ? (mn + mx - outv) : outv;
@@ -76,15 +132,19 @@ half NataneFXMod_Slot(int source, float speed, float offset, float manual,
 
 #if defined(_FX_MODULATOR)
 // Compute both slots once. mask0/mask1 come from the shared mask texture (R/G).
-NataneFXModState NataneFXModCompute(float3 wp, float3 wn, float3 vd, float mask0, float mask1)
+// uv/op are needed by the spatial noise sources (13-15); op is object-space pos.
+NataneFXModState NataneFXModCompute(float3 wp, float3 wn, float3 vd, float2 uv, float3 op,
+                                    float mask0, float mask1)
 {
     NataneFXModState st;
     st.v0 = NataneFXMod_Slot((int)_FXModSource0, _FXModSpeed0, _FXModOffset0, _FXModManual0,
                              _FXModInvert0, _FXModCurve0, _FXModMin0, _FXModMax0, _FXModAmount0, mask0,
-                             wp, wn, vd, _FXModDistMin0, _FXModDistMax0);
+                             wp, wn, vd, _FXModDistMin0, _FXModDistMax0,
+                             uv, op, _FXModNoiseScale0, (int)_FXModNoiseSpace0);
     st.v1 = NataneFXMod_Slot((int)_FXModSource1, _FXModSpeed1, _FXModOffset1, _FXModManual1,
                              _FXModInvert1, _FXModCurve1, _FXModMin1, _FXModMax1, _FXModAmount1, mask1,
-                             wp, wn, vd, _FXModDistMin1, _FXModDistMax1);
+                             wp, wn, vd, _FXModDistMin1, _FXModDistMax1,
+                             uv, op, _FXModNoiseScale1, (int)_FXModNoiseSpace1);
     st.t0 = (int)_FXModTarget0;
     st.t1 = (int)_FXModTarget1;
     return st;
