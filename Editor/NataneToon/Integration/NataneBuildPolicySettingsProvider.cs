@@ -90,9 +90,25 @@ namespace NataneToon.Editor
             EditorGUILayout.Space();
             settings.HlslFeatureGuardMode = (NataneHlslFeatureGuardMode)EditorGUILayout.EnumPopup(
                 L("HLSL フィーチャーガード", "HLSL Feature Guard"), settings.HlslFeatureGuardMode);
+            if (settings.HlslFeatureGuardMode == NataneHlslFeatureGuardMode.Advanced)
+            {
+                EditorGUILayout.HelpBox(
+                    L("Advanced: ビルド前に HLSL を書換えて未使用機能をソースレベルで無効化します。全 Natane シェーダーの再インポートが発生します（キャッシュ一致時はスキップ）。" +
+                      "通常は統合ストリッパー(Safe)が同等以上の削減を行うため Off を推奨します。",
+                      "Advanced: rewrites HLSL before builds to disable unused features at the source level. Reimports all Natane shaders (skipped on cache hit). " +
+                      "The unified stripper (Safe) usually achieves equal or better reduction, so Off is recommended."),
+                    MessageType.Warning);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox(
+                    L("Off（推奨）: HLSL 書換えも全再インポートも行いません。統合ストリッパー(Safe)が上位互換で削減を担います。",
+                      "Off (recommended): no HLSL rewrite or full reimport. The unified stripper (Safe) handles reduction and is a superset."),
+                    MessageType.None);
+            }
             EditorGUILayout.HelpBox(
-                L("HLSL フィーチャーガードは Advanced 設定です（Stage E で参照）。現状は表示のみで挙動は変わりません。",
-                  "HLSL Feature Guard is an Advanced setting (used in Stage E). Currently display-only; no behavior change."),
+                L("Off / Advanced の削減効果は Tools > Natane > ビルド最適化 > HLSL方式との比較レポート で確認できます。",
+                  "Compare Off vs Advanced reduction via Tools > Natane > Build Optimization > Compare vs HLSL Method."),
                 MessageType.None);
 
             EditorGUILayout.Space();
