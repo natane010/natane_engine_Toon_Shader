@@ -11,8 +11,11 @@ namespace NataneToon.Editor.Tests
         [SetUp]
         public void SetUp()
         {
-            Shader shader = Shader.Find("Standard") ?? Shader.Find("UI/Default");
-            Assert.That(shader, Is.Not.Null, "Test shader could not be found.");
+            // Unity 2021.2以降、シェーダーに宣言されていないキーワードは
+            // EnableKeyword しても IsKeywordEnabled が false を返すため、
+            // Natane 本体シェーダー(全 shader_feature 宣言済み)を使う。
+            Shader shader = Shader.Find("Natane/Toon Shader");
+            Assert.That(shader, Is.Not.Null, "Natane/Toon Shader could not be found.");
             material = new Material(shader);
         }
 
@@ -55,27 +58,28 @@ namespace NataneToon.Editor.Tests
         [Test]
         public void EvaluateEnable_WithNearLimitMaterial_BlocksExtraHeavyFeature()
         {
-            // 6 dedicated-sampler features (1 each) + LV(1)+LTCGI(1)+reserve(3)
-            // + shared GrabPass consumer (_WATERCOLOR, +1) = Base(3) + 12 = 15.
+            // 5 dedicated-sampler features (1 each) + shared GrabPass (_WATERCOLOR, +1)
+            // + shared depth (_INTERSECTION_FADE, +1) + LV(1)+LTCGI(1)+reserve(3)
+            // = Base(3) + 12 = 15.
             EnableKeywords(
                 "_OUTLINE",
                 "_REFLECTION",
                 "_ENV_RIM",
                 "_VIDEO_TEXTURE",
-                "_FUR",
                 "_AUDIOLINK",
                 "_WATERCOLOR",
+                "_INTERSECTION_FADE",
                 "_LTCGI",
                 "_USE_LIGHT_VOLUME");
 
             var current = NataneToonSamplerBudgetEstimator.Estimate(material);
-            var evaluation = NataneToonSamplerBudgetEstimator.EvaluateEnable(material, "_PCSS");
+            var evaluation = NataneToonSamplerBudgetEstimator.EvaluateEnable(material, "_SCREEN_EDGE");
 
             Assert.That(current.IsNearLimit, Is.True);
-            // PCSS adds the shared depth texture (+1) and its shadow-map sampler (+1)
-            // → 17 > 16, so enabling must be blocked.
+            // Screen Edge adds depth-normals (+1) and, combined with LV+LTCGI,
+            // the screen-space lighting reserve (+2) → 18 > 16, so blocked.
             Assert.That(evaluation.CanEnable, Is.False);
-            Assert.That(evaluation.AddedSamplers, Is.EqualTo(2));
+            Assert.That(evaluation.AddedSamplers, Is.EqualTo(3));
             Assert.That(evaluation.AfterEnable.IsOverLimit, Is.True);
         }
 
@@ -154,6 +158,8 @@ namespace NataneToon.Editor.Tests
             for (int i = 0; i < keywords.Length; i++)
             {
                 material.EnableKeyword(keywords[i]);
+                Assert.That(material.IsKeywordEnabled(keywords[i]), Is.True,
+                    $"Keyword {keywords[i]} did not take effect — is it declared on the test shader?");
             }
         }
     }
