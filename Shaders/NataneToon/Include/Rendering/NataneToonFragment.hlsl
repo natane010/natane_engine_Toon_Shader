@@ -120,6 +120,18 @@ half4 frag(v2f i) : SV_Target
             mainUV = AnimateUV(uv, _MainTexScrollSpeed.xy, _MainTexRotateSpeed);
     #endif
 
+    // ===== Pixel Art: UV pixelation (snap mainUV before main texture sampling) =====
+    // Applied to mainUV only so other UV-driven features stay at native res.
+    // Screen / Object-Stable snapping intentionally omitted (see NataneToonPixelArt.hlsl).
+    #if defined(_PIXEL_ART)
+    if (_PixelArt >= 0.5)
+    {
+        half natanedPxMask = NATANE_SAMPLE_SHARED_R(_PixelArtMask, _MainTex, uv);
+        if (natanedPxMask > 0.001)
+            mainUV = lerp(mainUV, NatanePixelSnapUV(mainUV, _PixelArtSize), natanedPxMask);
+    }
+    #endif
+
     // ===== Glitch Stretch (UV modification before main texture sampling) =====
     #if defined(_GLITCH_STRETCH) && defined(UNITY_PASS_FORWARDBASE)
     if (_GlitchStretch >= 0.5)
@@ -235,6 +247,101 @@ half4 frag(v2f i) : SV_Target
             _5thTexHueShift, _5thTexSaturation, _5thTexValue,
             _5thTexIntensity, _5thTexBlendMode
         );
+    }
+    #endif
+
+    // ===== Lenticular / view-angle dependent atlas (base-color modifier) =====
+    #if defined(_LENTICULAR)
+    if (_Lenticular >= 0.5)
+    {
+        half lentMask = NATANE_SAMPLE_SHARED_R(_LenticularMask, _MainTex, uv);
+        lentMask = ApplySoftMask(lentMask);
+        if (lentMask > 0.001)
+        {
+            float frames = max(_LenticularFrames, 1.0);
+
+            // Object-space view direction (stable across eyes when StereoCenter).
+            float3 lentCamPos = NataneLenticularCameraPos(_LenticularStereoMode);
+            float3 lentVdW = normalize(lentCamPos - i.worldPos);
+            float3 lentVdObj = normalize(mul((float3x3)unity_WorldToObject, lentVdW));
+            float lentAngle = NataneLenticularAngle(lentVdObj, _LenticularViewAxis);
+
+            // Angle -> normalized frame position [0,1] (front-centered).
+            float lentT = lentAngle / max(_LenticularAngleRange, 0.0001) + 0.5;
+
+            // Optional normal skew of the selection. Uses the interpolated
+            // geometric normal (i.worldNormal): this hook runs before the
+            // normal-mapped `worldNormal` is resolved. Kept simple by design.
+            if (_LenticularNormalInfluence > 0.001)
+            {
+                float3 lentNObj = normalize(mul((float3x3)unity_WorldToObject, i.worldNormal));
+                float lentNSkew = (_LenticularViewAxis < 0.5) ? lentNObj.x : lentNObj.y;
+                lentT += lentNSkew * _LenticularNormalInfluence;
+            }
+            lentT = saturate(lentT);
+
+            float lentF = lentT * (frames - 1.0) + _LenticularFrameOffset;
+            int lentMode = (int)(_LenticularMode + 0.5);
+
+            float lentBaseIdx = floor(lentF);
+            float lentBlend = frac(lentF);
+            // Transition softness sharpens/loosens the crossfade.
+            lentBlend = smoothstep(0.5 - max(_LenticularSoftness, 0.0001) * 0.5,
+                                   0.5 + max(_LenticularSoftness, 0.0001) * 0.5, lentBlend);
+
+            float lentIdxA = lentBaseIdx;
+            float lentIdxB = min(lentBaseIdx + 1.0, frames - 1.0);
+            float lentMix = lentBlend;   // A->B crossfade weight
+            half lentReveal = 1.0;       // reveal weight over the base color
+            half lentEmit = 0.0;         // emission boost weight (revealed frame)
+
+            if (lentMode == 1) // HardStep
+            {
+                lentIdxA = round(lentF);
+                lentIdxB = lentIdxA;
+                lentMix = 0.0;
+            }
+            else if (lentMode == 2) // ScanBlend (thin UV stripes mix adjacent frames)
+            {
+                float lentStripe = step(0.5, frac(uv.x * max(_LenticularScanScale, 1.0)));
+                lentMix = lentStripe;
+            }
+            else if (lentMode == 3) // FrontReveal (alt frame near front only)
+            {
+                lentIdxA = _LenticularFrameOffset;                 // base frame
+                lentIdxB = frames - 1.0;                           // reveal frame
+                lentReveal = 1.0 - smoothstep(0.0, max(_LenticularAngleRange, 0.0001) * 0.5, abs(lentAngle));
+                lentMix = lentReveal;
+                lentEmit = lentReveal;
+            }
+            else if (lentMode == 4) // SideReveal (alt frame at sides only)
+            {
+                lentIdxA = _LenticularFrameOffset;
+                lentIdxB = frames - 1.0;
+                lentReveal = smoothstep(0.0, max(_LenticularAngleRange, 0.0001) * 0.5, abs(lentAngle));
+                lentMix = lentReveal;
+                lentEmit = lentReveal;
+            }
+            else if (lentMode == 5) // Flip (A/B by view side)
+            {
+                float lentSide = smoothstep(-max(_LenticularSoftness, 0.0001),
+                                            max(_LenticularSoftness, 0.0001), lentAngle);
+                lentIdxA = _LenticularFrameOffset;
+                lentIdxB = min(_LenticularFrameOffset + 1.0, frames - 1.0);
+                lentMix = lentSide;
+            }
+
+            float2 lentUVA = NataneLenticularFrameUV(uv, lentIdxA, frames, _LenticularDirection);
+            float2 lentUVB = NataneLenticularFrameUV(uv, lentIdxB, frames, _LenticularDirection);
+            half4 lentTexA = NATANE_SAMPLE_SHARED(_LenticularAtlas, _MainTex, lentUVA);
+            half4 lentTexB = NATANE_SAMPLE_SHARED(_LenticularAtlas, _MainTex, lentUVB);
+            half3 lentCol = lerp(lentTexA.rgb, lentTexB.rgb, saturate(lentMix));
+
+            // Emission boost brightens the revealed frame (HDR overshoot).
+            lentCol *= (1.0 + _LenticularEmission * saturate(lentEmit));
+
+            col.rgb = lerp(col.rgb, lentCol, saturate(_LenticularBlend * lentMask));
+        }
     }
     #endif
 
@@ -2084,6 +2191,59 @@ half4 frag(v2f i) : SV_Target
     } // if (_Topographic >= 0.5)
     #endif
 
+    // ===== Surface Caustics (ForwardBase only) =====
+    #if defined(_CAUSTICS) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Caustics >= 0.5)
+    {
+        float3 causObj = mul(unity_WorldToObject, float4(i.worldPos, 1.0)).xyz;
+        float2 causCoord = NataneCausticsCoord(_CausticsSpace, uv, causObj, i.worldPos, worldNormal);
+        causCoord = causCoord * _CausticsScale + _CausticsDirection.xy * (_Time.y * _CausticsSpeed);
+
+        float causTime = _Time.y * _CausticsSpeed;
+        float causPat;
+        if (_CausticsPatternMode > 0.5) // Texture: two scrolling samples multiplied
+        {
+            float2 causUV2 = causCoord * 0.73 - _CausticsDirection.xy * (_Time.y * _CausticsSpeed * 0.6);
+            half causA = NATANE_SAMPLE_SHARED_R(_CausticsTex, _MainTex, causCoord);
+            half causB = NATANE_SAMPLE_SHARED_R(_CausticsTex, _MainTex, causUV2);
+            causPat = causA * causB;
+        }
+        else
+        {
+            #ifdef _QUEST_LITE
+                causPat = NataneCausticsPatternLite(causCoord, causTime, _CausticsDistortion);
+            #else
+                causPat = NataneCausticsPattern(causCoord, causTime, _CausticsDistortion);
+            #endif
+        }
+        causPat = pow(saturate(causPat), max(_CausticsContrast, 0.0001));
+
+        half causMask = NATANE_SAMPLE_SHARED_R(_CausticsMask, _MainTex, uv);
+        causMask = ApplySoftMask(causMask);
+
+        half3 causContrib = _CausticsColor.rgb * (causPat * _CausticsIntensity * causMask);
+        int causComp = (int)(_CausticsComposite + 0.5);
+        half3 preCaus = col.rgb;
+        if (causComp == 1)      // BaseColor multiply-brighten
+            col.rgb *= (half3(1, 1, 1) + causContrib);
+        else if (causComp == 2) // LitOnly (scale by shading value)
+            col.rgb = SafeAdditiveBlend(col.rgb, causContrib * shadingValue, saturate(length(causContrib) * shadingValue));
+        else if (causComp == 3) // ShadowOnly (inverse shading)
+            col.rgb = SafeAdditiveBlend(col.rgb, causContrib * (1.0 - shadingValue), saturate(length(causContrib) * (1.0 - shadingValue)));
+        else                    // Emission-add
+            col.rgb = SafeAdditiveBlend(col.rgb, causContrib, saturate(length(causContrib) * 0.7));
+
+        #ifdef _DISTANCE_FADE
+            col.rgb = lerp(preCaus, col.rgb, distanceFade);
+        #endif
+        // Preserve HDR overshoot so emission-composite caustics can drive bloom.
+        #if defined(_EMISSION)
+            if (causComp == 0)
+                nataneHdrEmission += max(causContrib - half3(1, 1, 1), half3(0, 0, 0));
+        #endif
+    } // if (_Caustics >= 0.5)
+    #endif
+
     // ===== Virtual Expression - Hue Shift =====
     // Optimized: removed branching (ApplyHueShift handles _HueShift=0 efficiently)
     #if defined(_HUE_SHIFT) && defined(UNITY_PASS_FORWARDBASE)
@@ -2668,6 +2828,37 @@ half4 frag(v2f i) : SV_Target
             // Re-add the HDR emission overshoot after the LDR clamp so bloom works.
             col.rgb += nataneHdrEmission;
         #endif
+    #endif
+
+    // ===== Pixel Art: light/color posterize + palette + dither (post-lighting) =====
+    #if defined(_PIXEL_ART)
+    if (_PixelArt >= 0.5)
+    {
+        half natanePxMask = NATANE_SAMPLE_SHARED_R(_PixelArtMask, _MainTex, uv);
+        if (natanePxMask > 0.001)
+        {
+            half3 pxSrc = col.rgb;
+            half3 pxWork = col.rgb;
+            // Bayer dither breaks the posterization banding before the floor.
+            if (_PixelDither > 0.001)
+            {
+                half pxDith = (NataneBayerThreshold4x4(i.pos.xy, 1.0) - 0.5)
+                              / max(_PixelLightSteps, 1.0) * _PixelDither;
+                pxWork = saturate(pxWork + pxDith);
+            }
+            half3 pxQuant = NatanePixelPosterize(pxWork, _PixelLightSteps);
+            // Optional palette LUT remap by luminance (ForwardBase only — additive
+            // passes must not replace the accumulated base look with palette colors).
+            #ifdef UNITY_PASS_FORWARDBASE
+            if (_PixelPalette > 0.5)
+            {
+                half pxLum = dot(pxQuant, half3(0.299, 0.587, 0.114));
+                pxQuant = NATANE_SAMPLE_SHARED(_PixelPaletteTex, _MainTex, float2(saturate(pxLum), 0.5)).rgb;
+            }
+            #endif
+            col.rgb = lerp(pxSrc, pxQuant, natanePxMask);
+        }
+    }
     #endif
 
     // ===== Ghost appearance (GHOST variant only) =====
