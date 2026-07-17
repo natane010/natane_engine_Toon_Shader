@@ -385,7 +385,14 @@ half4 frag(v2f i) : SV_Target
     // _LightColorMin (default=0): 暗いワールドでもキャラが見える最低保証
     // _LightColorMax (default=1): 強いライトでもテクスチャが白飛びしない上限
     // _MonochromeLighting (default=0): ライトカラーの色味を除去（グレースケール化）
-    effectiveLightColor = clamp(effectiveLightColor, _LightColorMin, _LightColorMax);
+    // The _LightColorMin floor is a ForwardBase-only guarantee ("stay visible in
+    // dark worlds"). Applying it in ForwardAdd would give every point/spot light
+    // a distance-independent floor and over-brighten many-light worlds.
+    #ifdef UNITY_PASS_FORWARDBASE
+        effectiveLightColor = clamp(effectiveLightColor, _LightColorMin, _LightColorMax);
+    #else
+        effectiveLightColor = min(effectiveLightColor, _LightColorMax);
+    #endif
     half lightGray = CALC_LUMINANCE(effectiveLightColor);
     effectiveLightColor = lerp(effectiveLightColor, half3(lightGray, lightGray, lightGray), _MonochromeLighting);
     UNITY_LIGHT_ATTENUATION(atten, i, i.worldPos);
@@ -849,11 +856,13 @@ half4 frag(v2f i) : SV_Target
         half3 lightColorInfluenced = lerp(luminanceOnly, colorMultiplied, _LightColorInfluence);
         directResult = lightColorInfluenced * max(0.0, _LightIntensity);
 
-        // Light influence clamping
+        // Light influence clamping: rescale by luminance ratio to preserve hue.
+        // (normalize() here would darken neutral light by ~1/sqrt(3).)
         half directLum = CALC_LUMINANCE(directResult);
-        directLum = clamp(directLum, _LightMinInfluence, _LightMaxInfluence);
-        half3 directDir = normalize(max(directResult, 0.01));
-        directResult = directDir * directLum;
+        half directLumClamped = clamp(directLum, _LightMinInfluence, _LightMaxInfluence);
+        directResult = (directLum > 1e-4)
+            ? directResult * (directLumClamped / directLum)
+            : half3(1, 1, 1) * directLumClamped; // black input: neutral floor at _LightMinInfluence
 
         // ========== STEP 4: Additional Light ==========
         half3 additionalResult = half3(0, 0, 0);
@@ -1817,6 +1826,7 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Emission (ForwardBase only) =====
     #if defined(_EMISSION) && defined(UNITY_PASS_FORWARDBASE)
+    half3 nataneHdrEmission = half3(0, 0, 0); // HDR overshoot re-added after the final LDR clamp (keeps bloom alive)
     if (_Emission >= 0.5)
     {
         float2 emissionUV = uv;
@@ -1862,6 +1872,9 @@ half4 frag(v2f i) : SV_Target
             emissionBlendFaded *= lerp(1.0, distanceFade, _EmissionDistFade);
         #endif
         col.rgb = ApplyEffectBlendPost(preEmission, col.rgb, emissionBlendFaded, _EmissionBlendMode);
+        // Preserve the HDR portion (>1.0) of [HDR] _EmissionColor so it can
+        // drive bloom; SafeAdditiveBlend and the final clamp are LDR-bound.
+        nataneHdrEmission = max(emission - half3(1, 1, 1), half3(0, 0, 0)) * saturate(emissionBlendFaded);
     } // if (_Emission >= 0.5)
     #endif
 
@@ -2436,6 +2449,10 @@ half4 frag(v2f i) : SV_Target
     // This is applied at the very end before fog for the most natural result
     #ifdef UNITY_PASS_FORWARDBASE
         col.rgb = ApplyFinalColorBlending(col.rgb);
+        #if defined(_EMISSION)
+            // Re-add the HDR emission overshoot after the LDR clamp so bloom works.
+            col.rgb += nataneHdrEmission;
+        #endif
     #endif
 
     // ===== Hashed / Dithering Alpha =====

@@ -45,6 +45,9 @@ namespace NataneToon.Editor
             ("_Specular", "_SPECULAR"),
             ("_SpecularDither", "_SPECULAR_DITHER"),
             ("_HairSpecular", "_HAIR_SPECULAR"),
+            ("_UseHairSpecMask", "_HAIR_SPEC_MASK"),
+            ("_UseHairSpecShiftTex", "_HAIR_SPEC_SHIFT_TEX"),
+            ("_QuestLite", "_QUEST_LITE"),
 
             // Rim Light
             ("_RimLight", "_RIM_LIGHT"),

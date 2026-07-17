@@ -278,6 +278,7 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
 
         [Header(Hair Specular Kajiya Kay)]
         [Toggle(_HAIR_SPECULAR)] _HairSpecular ("Enable Hair Specular", Float) = 0
+        [Toggle(_QUEST_LITE)] _QuestLite ("Enable Quest Lite", Float) = 0
         _HairSpecColor1 ("Primary Spec Color", Color) = (1,1,1,1)
         _HairSpecShift1 ("Primary Tangent Shift", Range(-1, 1)) = 0.1
         _HairSpecWidth1 ("Primary Spec Width", Range(1, 256)) = 64
@@ -1038,6 +1039,7 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             #pragma domain domain
             #pragma fragment frag
             #pragma multi_compile_fwdbase
+            #pragma shader_feature_local _QUEST_LITE
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
             #pragma shader_feature_local _MAIN_TEX_ANIMATION
@@ -1069,6 +1071,8 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             #pragma shader_feature_local _SPECULAR_AA
             #pragma shader_feature_local _SPECULAR_DITHER
             #pragma shader_feature_local _HAIR_SPECULAR
+            #pragma shader_feature_local _HAIR_SPEC_MASK
+            #pragma shader_feature_local _HAIR_SPEC_SHIFT_TEX
             #pragma shader_feature_local _ANGEL_RING
             #pragma shader_feature_local _RIM_LIGHT
             #pragma shader_feature_local _RIM_LIGHT_2
@@ -1155,6 +1159,7 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             #pragma domain domain
             #pragma fragment frag
             #pragma multi_compile_fwdadd
+            #pragma shader_feature_local _QUEST_LITE
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
             #pragma shader_feature_local _MAIN_TEX_ANIMATION
@@ -1182,6 +1187,8 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             #pragma shader_feature_local _SPECULAR_AA
             #pragma shader_feature_local _SPECULAR_DITHER
             #pragma shader_feature_local _HAIR_SPECULAR
+            #pragma shader_feature_local _HAIR_SPEC_MASK
+            #pragma shader_feature_local _HAIR_SPEC_SHIFT_TEX
             #pragma shader_feature_local _RIM_LIGHT
             #pragma shader_feature_local _RIM_LIGHT_2
             #pragma shader_feature_local _OFFSET_RIM_LIGHT

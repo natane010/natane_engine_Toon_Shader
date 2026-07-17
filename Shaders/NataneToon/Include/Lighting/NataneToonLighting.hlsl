@@ -37,6 +37,9 @@ float ToonShading(float ndotl, float steps, float sharpness)
     // Use smaller smoothstep range for cleaner anime look
     // _StepBorderSmooth を追加して段階境界のなじませ幅を拡張
     float smoothRange = saturate(sharpness + _StepBorderSmooth) * 0.5;
+    // Floor the band by the screen-space derivative so the cel boundary stays
+    // ~1px anti-aliased at any distance/angle (prevents shimmering, esp. in VR).
+    smoothRange = min(max(smoothRange, fwidth(ndotl * steps) * 0.5), 0.5);
     float smoothedStep = smoothstep(0.5 - smoothRange, 0.5 + smoothRange, stepPosition);
 
     // Combine for final toon value with better precision
@@ -69,6 +72,8 @@ float GradientShading(float ndotl, float gradientWidth)
     // Create smooth gradient using smoothstep
     // gradientWidth controls the softness of the transition
     float halfWidth = gradientWidth * 0.5;
+    // Keep the boundary at least ~1px wide in screen space to avoid aliasing.
+    halfWidth = max(halfWidth, fwidth(ndotl) * 0.5);
     float gradient = smoothstep(shadowBoundary - halfWidth, shadowBoundary + halfWidth, ndotl);
 
     return saturate(gradient);
@@ -395,8 +400,11 @@ half3 SubsurfaceScattering(half3 normal, half3 lightDir, half3 viewDir, half thi
     // Distort the normal for more realistic scattering effect
     half3 distortedNormal = normal + normalize(viewDir) * _SSSDistortion;
 
-    // Calculate back-lit effect (light passing through the object)
-    half backLight = max(0.0, dot(-normalize(distortedNormal), lightDir));
+    // Calculate back-lit effect (light passing through the object).
+    // rsqrt with an epsilon guards the case where the distortion cancels
+    // the normal and the vector collapses to ~zero (normalize would NaN).
+    half3 backDir = -distortedNormal * rsqrt(max(dot(distortedNormal, distortedNormal), 1e-4));
+    half backLight = max(0.0, dot(backDir, lightDir));
 
     // Apply power function for falloff and multiply by inverse thickness
     // Thicker areas scatter less light

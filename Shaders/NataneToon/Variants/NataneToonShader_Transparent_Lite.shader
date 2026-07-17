@@ -278,6 +278,7 @@ Shader "Natane/Toon Shader (Transparent Lite)"
 
         [Header(Hair Specular Kajiya Kay)]
         [Toggle(_HAIR_SPECULAR)] _HairSpecular ("Enable Hair Specular", Float) = 0
+        [Toggle(_QUEST_LITE)] _QuestLite ("Enable Quest Lite", Float) = 0
         _HairSpecColor1 ("Primary Spec Color", Color) = (1,1,1,1)
         _HairSpecShift1 ("Primary Tangent Shift", Range(-1, 1)) = 0.1
         _HairSpecWidth1 ("Primary Spec Width", Range(1, 256)) = 64
@@ -1010,12 +1011,11 @@ Blend [_SrcBlend] [_DstBlend]
 Blend [_SrcBlend] [_DstBlend]
 
             CGPROGRAM
-            #pragma target 4.6
-            #pragma vertex tessVert
-            #pragma hull hull
-            #pragma domain domain
+            #pragma target 3.5
+            #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fwdbase
+            #pragma shader_feature_local _QUEST_LITE
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
             #pragma shader_feature_local _MAIN_TEX_ANIMATION
@@ -1047,6 +1047,8 @@ Blend [_SrcBlend] [_DstBlend]
             #pragma shader_feature_local _SPECULAR_AA
             #pragma shader_feature_local _SPECULAR_DITHER
             #pragma shader_feature_local _HAIR_SPECULAR
+            #pragma shader_feature_local _HAIR_SPEC_MASK
+            #pragma shader_feature_local _HAIR_SPEC_SHIFT_TEX
             #pragma shader_feature_local _ANGEL_RING
             #pragma shader_feature_local _RIM_LIGHT
             #pragma shader_feature_local _RIM_LIGHT_2
@@ -1102,8 +1104,6 @@ Blend [_SrcBlend] [_DstBlend]
             #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma shader_feature_local _VERTEX_COLOR_SHADOW
             #pragma shader_feature_local _PBR_LIKE
-            #pragma shader_feature_local _TESSELLATION
-            #pragma shader_feature_local _TESS_DISPLACEMENT
             #pragma shader_feature_local _PCSS
             #pragma shader_feature_local _PERSPECTIVE_FLAT
             #pragma shader_feature_local _DEPTH_COLOR_FADE
@@ -1126,12 +1126,11 @@ Blend [_SrcBlend] [_DstBlend]
             Cull [_Cull]
 
             CGPROGRAM
-            #pragma target 4.6
-            #pragma vertex tessVert
-            #pragma hull hull
-            #pragma domain domain
+            #pragma target 3.5
+            #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fwdadd
+            #pragma shader_feature_local _QUEST_LITE
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
             #pragma shader_feature_local _MAIN_TEX_ANIMATION
@@ -1164,6 +1163,8 @@ Blend [_SrcBlend] [_DstBlend]
             #pragma shader_feature_local _SPECULAR_AA
             #pragma shader_feature_local _SPECULAR_DITHER
             #pragma shader_feature_local _HAIR_SPECULAR
+            #pragma shader_feature_local _HAIR_SPEC_MASK
+            #pragma shader_feature_local _HAIR_SPEC_SHIFT_TEX
             #pragma shader_feature_local _RIM_LIGHT
             #pragma shader_feature_local _RIM_LIGHT_2
             #pragma shader_feature_local _OFFSET_RIM_LIGHT
@@ -1179,8 +1180,6 @@ Blend [_SrcBlend] [_DstBlend]
             #pragma shader_feature_local _SMOOTH_NORMAL
             #pragma shader_feature_local _VERTEX_COLOR_SHADOW
             #pragma shader_feature_local _PBR_LIKE
-            #pragma shader_feature_local _TESSELLATION
-            #pragma shader_feature_local _TESS_DISPLACEMENT
             #pragma shader_feature_local _MIRROR_CONTROL
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
             #define TRANSPARENT_VARIANT

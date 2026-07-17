@@ -45,13 +45,16 @@ Shader "Natane/Screen FX Overlay"
         Pass
         {
             CGPROGRAM
-            #pragma target 3.0
+            #pragma target 3.5
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
 
             #include "UnityCG.cginc"
 
-            sampler2D _NataneScreenGrab;
+            // Stereo-aware declaration: in VR Single Pass Instanced the grab
+            // target is a texture array — a plain sampler2D reads the wrong eye.
+            UNITY_DECLARE_SCREENSPACE_TEXTURE(_NataneScreenGrab);
             float4 _NataneScreenGrab_TexelSize;
 
             half _Intensity;
@@ -116,7 +119,7 @@ Shader "Natane/Screen FX Overlay"
 
             inline half3 SampleScreen(float2 screenUV)
             {
-                return tex2D(_NataneScreenGrab, screenUV).rgb;
+                return UNITY_SAMPLE_SCREENSPACE_TEXTURE(_NataneScreenGrab, screenUV).rgb;
             }
 
             half4 frag(v2f i) : SV_Target
