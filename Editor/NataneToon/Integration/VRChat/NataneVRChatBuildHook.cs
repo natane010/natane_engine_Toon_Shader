@@ -28,10 +28,36 @@ namespace NataneToon.Editor
         {
             try
             {
+                // 0. ビルドセッションを開始し、古い static cache / 前回 Snapshot の誤用を防ぐ。
+                NataneBuildSession.BeginBuildSession();
+
                 // 1. キーワード同期（プロパティ値 ↔ シェーダーキーワードのズレを解消）
                 NataneShaderKeywordSynchronizer.SynchronizeAllNataneMaterials();
 
-                // 2. Lite 変換候補のログ出力（このアバターに含まれるマテリアルのみ）
+                // 2. Build Usage Snapshot をプロジェクト全体で 1 回生成しセッションへ格納（消費は後続ステージ）。
+                //    生成失敗はエラーログのみで継続（VRChat では IPostprocessBuild が不発のため後始末しない）。
+                try
+                {
+                    SnapshotBuildResult result = NataneBuildUsageSnapshotBuilder.Build(
+                        EditorUserBuildSettings.activeBuildTarget,
+                        scenePathsOrNull: null,
+                        saveSyncToDisk: false);
+                    if (result.Succeeded)
+                    {
+                        NataneBuildUsageSnapshotStore.Save(result.Snapshot);
+                        NataneBuildSession.SetSnapshot(result.Snapshot);
+                    }
+                    else
+                    {
+                        Debug.LogError($"[Natane Snapshot] VRChat ビルド前 Snapshot 生成に失敗しました: {result.FailureReason}");
+                    }
+                }
+                catch (System.Exception snapshotEx)
+                {
+                    Debug.LogError($"[Natane Snapshot] VRChat ビルド前 Snapshot 生成で例外: {snapshotEx.Message}");
+                }
+
+                // 3. Lite 変換候補のログ出力（このアバターに含まれるマテリアルのみ）
                 LogLiteConvertibleMaterials(avatarGameObject);
             }
             catch (System.Exception ex)
