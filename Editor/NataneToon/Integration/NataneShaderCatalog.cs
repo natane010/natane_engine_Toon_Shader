@@ -35,6 +35,7 @@ namespace NataneToon.Editor
             new ShaderPassConfig("Natane/Toon Shader (Fur)", true, true),
             new ShaderPassConfig("Natane/Toon Shader (Fur Lite)", true, true),
             new ShaderPassConfig("Natane/Toon Shader (Background)", true, true, true),
+            new ShaderPassConfig("Natane/Toon Shader (Particle)", false, false),
             new ShaderPassConfig("Natane/Toon Shader Wirelight", false, false),
             new ShaderPassConfig("Natane/Eye", false, false),
             // new ShaderPassConfig("Natane/Screen FX Overlay", false, false),
@@ -52,6 +53,7 @@ namespace NataneToon.Editor
             "Natane/Toon Shader (Fur)",
             "Natane/Toon Shader (Fur Lite)",
             "Natane/Toon Shader (Background)",
+            "Natane/Toon Shader (Particle)",
             "Natane/Toon Shader Wirelight",
             "Natane/Eye",
             // "Natane/Screen FX Overlay"
