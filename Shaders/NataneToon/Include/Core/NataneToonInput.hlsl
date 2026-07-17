@@ -988,6 +988,12 @@ CBUFFER_START(UnityPerMaterial)
     float _FaceOrthoVRAmount;
     float4 _FaceOrthoPivot;
     #endif
+    #if defined(_MIRROR_TEXTURE)
+    half4 _MirrorAltColor;
+    float _MirrorTexBlend;
+    float _MirrorTexApplyMirror;
+    float _MirrorTexApplyCamera;
+    #endif
     #if defined(_DEPTH_COLOR_FADE)
     half4 _DepthFadeColor;
     float _DepthFadeStart;
@@ -1356,6 +1362,9 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_PBR_OcclusionMap);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_SmoothNormalTex);
 #if defined(_FACE_ORTHO_MASK)
 UNITY_DECLARE_TEX2D_NOSAMPLER(_FaceOrthoMaskTex);
+#endif
+#if defined(_MIRROR_TEXTURE)
+UNITY_DECLARE_TEX2D_NOSAMPLER(_MirrorAltTex);
 #endif
 #endif
 

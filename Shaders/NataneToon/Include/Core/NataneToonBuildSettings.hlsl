@@ -361,6 +361,11 @@
     #undef _FACE_ORTHO_MASK
 #endif
 
+// Mirror / Camera Alternate Texture
+#if defined(_MIRROR_TEXTURE) && !defined(NATANE_FEATURE_MIRROR_TEXTURE)
+    #undef _MIRROR_TEXTURE
+#endif
+
 // Height Fade / Intersection Fade
 #if defined(_HEIGHT_FADE) && !defined(NATANE_FEATURE_HEIGHT_FADE)
     #undef _HEIGHT_FADE

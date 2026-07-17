@@ -125,6 +125,25 @@ half4 frag(v2f i) : SV_Target
     #endif
     half4 col = mainTex * _Color;
 
+    // ===== Mirror / Camera Alternate Texture (鏡・カメラ写り分けテクスチャ) =====
+    // Swaps the base color when rendered by a VRChat mirror and/or VRChat
+    // camera, so the reflected/photographed appearance can differ from the
+    // directly-viewed one. Runs before makeup/lighting so the whole shading
+    // stack applies to the alternate look as well.
+    #ifdef _MIRROR_TEXTURE
+    {
+        half altBlend = 0.0;
+        if (_MirrorTexApplyMirror >= 0.5) altBlend = max(altBlend, NataneIsMirror());
+        if (_MirrorTexApplyCamera >= 0.5) altBlend = max(altBlend, NataneIsCamera());
+        altBlend *= _MirrorTexBlend;
+        if (altBlend > 0.001)
+        {
+            half4 altTex = NATANE_SAMPLE_REPEAT(_MirrorAltTex, mainUV) * _MirrorAltColor;
+            col = lerp(col, altTex, altBlend);
+        }
+    }
+    #endif
+
     // ===== Gradient Base Color =====
     #ifdef _GRADIENT_BASE_COLOR
     if (_GradientBaseColor >= 0.5)

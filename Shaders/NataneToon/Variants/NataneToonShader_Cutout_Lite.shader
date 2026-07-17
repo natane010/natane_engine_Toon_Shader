@@ -915,6 +915,12 @@ Shader "Natane/Toon Shader (Cutout Lite)"
         _FaceOrthoPivot ("Face Ortho Pivot (Object Space)", Vector) = (0, 1.4, 0, 0)
         [Toggle(_FACE_ORTHO_MASK)] _UseFaceOrthoMask ("Use Face Ortho Mask", Float) = 0
         [NoScaleOffset] _FaceOrthoMaskTex ("Face Ortho Mask (R)", 2D) = "white" {}
+        [Toggle(_MIRROR_TEXTURE)] _MirrorTexture ("Enable Mirror/Camera Alt Texture (鏡・カメラ写り分け)", Float) = 0
+        [NoScaleOffset] _MirrorAltTex ("Mirror Alt Texture", 2D) = "white" {}
+        _MirrorAltColor ("Mirror Alt Color", Color) = (1, 1, 1, 1)
+        _MirrorTexBlend ("Alt Texture Blend", Range(0, 1)) = 1
+        [Toggle] _MirrorTexApplyMirror ("Apply In Mirror", Float) = 1
+        [Toggle] _MirrorTexApplyCamera ("Apply In VRC Camera", Float) = 0
 
         [Header(Depth Color Fade)]
         [Toggle(_DEPTH_COLOR_FADE)] _DepthColorFade ("Enable Depth Color Fade", Float) = 0
@@ -1111,6 +1117,7 @@ CGPROGRAM
             #pragma shader_feature_local _PERSPECTIVE_FLAT
             #pragma shader_feature_local _FACE_ORTHO
             #pragma shader_feature_local _FACE_ORTHO_MASK
+            #pragma shader_feature_local _MIRROR_TEXTURE
             #pragma shader_feature_local _DEPTH_COLOR_FADE
             #pragma shader_feature_local _MIRROR_CONTROL
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
@@ -1157,6 +1164,7 @@ CGPROGRAM
             #pragma shader_feature_local _PERSPECTIVE_FLAT
             #pragma shader_feature_local _FACE_ORTHO
             #pragma shader_feature_local _FACE_ORTHO_MASK
+            #pragma shader_feature_local _MIRROR_TEXTURE
             #pragma shader_feature_local _QUEST_LITE
             #pragma multi_compile_fog
             #pragma multi_compile_instancing

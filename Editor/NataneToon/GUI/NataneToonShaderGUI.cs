@@ -334,6 +334,7 @@ public class NataneToonShaderGUI : ShaderGUI
         { "Refraction", "_REFRACTION" },
         { "DepthColorFade", "_DEPTH_COLOR_FADE" },
         { "MirrorControl", "_MIRROR_CONTROL" },
+        { "MirrorTexture", "_MIRROR_TEXTURE" },
         { "QuestLite", "_QUEST_LITE" },
         { "PerspectiveFlat", "_PERSPECTIVE_FLAT" },
         { "FaceOrtho", "_FACE_ORTHO" },
@@ -480,6 +481,7 @@ public class NataneToonShaderGUI : ShaderGUI
         new[] { "Video", "Video", "video texture render" },
         new[] { "BackgroundLightmap", "Background Lightmap", "lightmap background bake gi" },
         new[] { "MirrorControl", "Mirror / Camera Control", "mirror camera control vrchat reflection photo" },
+        new[] { "MirrorTexture", "Mirror/Camera Alt Texture", "mirror camera alt texture 鏡 写り分け hidden photo secret" },
         new[] { "QuestLite", "Quest Lite", "quest lite mobile performance optimization" },
     };
 
@@ -549,6 +551,7 @@ public class NataneToonShaderGUI : ShaderGUI
             { "FakeReflection", "ShowFakeReflection" },
             { "PerspectiveFlat", "ShowPerspectiveFlat" },
             { "FaceOrtho", "ShowFaceOrtho" },
+            { "MirrorTexture", "ShowMirrorTexture" },
             { "DepthColorFade", "ShowDepthColorFade" },
     };
 
@@ -5798,6 +5801,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
             EditorGUILayout.Space(5);
             EditorGUILayout.LabelField(L("Stencil", "Stencil"), EditorStyles.boldLabel);
+            DrawStencilPresetButtons();
             DrawProperty("_StencilRef", L("参照値 (Reference)", "Reference Value"));
             DrawProperty("_StencilComp", L("比較関数 (Comparison)", "Comparison Function"));
             DrawProperty("_StencilOp", L("Pass操作（テスト成功時）", "Pass Operation (On Success)"));
@@ -6637,6 +6641,91 @@ public class NataneToonShaderGUI : ShaderGUI
             }
         }
         EndBoxedSection(GetFoldout("MirrorControl"));
+    }
+
+    // ステンシルプリセット: Writer/Reader の定型設定をワンクリックで適用する。
+    // 「覗き窓」「鏡・窓越しにだけ見える模様」などの定番ステンシル演出を
+    // 手作業で5つの値を合わせずに組めるようにする。
+    private void DrawStencilPresetButtons()
+    {
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField(L("プリセット", "Preset"), GUILayout.Width(EditorGUIUtility.labelWidth - 4));
+        if (GUILayout.Button(L("標準", "Default"), EditorStyles.miniButtonLeft))
+        {
+            ApplyStencilPreset(0, 8 /*Always*/, 0 /*Keep*/);
+        }
+        if (GUILayout.Button(L("書き込み", "Writer"), EditorStyles.miniButtonMid))
+        {
+            ApplyStencilPreset(1, 8 /*Always*/, 2 /*Replace*/);
+        }
+        if (GUILayout.Button(L("一致で表示", "Reader"), EditorStyles.miniButtonMid))
+        {
+            ApplyStencilPreset(1, 3 /*Equal*/, 0 /*Keep*/);
+        }
+        if (GUILayout.Button(L("不一致で表示", "Reader (Inv)"), EditorStyles.miniButtonRight))
+        {
+            ApplyStencilPreset(1, 6 /*NotEqual*/, 0 /*Keep*/);
+        }
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.HelpBox(
+            L("書き込み側のマテリアルに「書き込み」、そのマスク越しにだけ見せたい側に「一致で表示」を適用します。参照値は両者で揃えてください。",
+              "Apply 'Writer' to the masking material and 'Reader' to the material that should only appear through that mask. Keep Reference values matching."),
+            MessageType.None);
+    }
+
+    private void ApplyStencilPreset(float reference, float comparison, float passOp)
+    {
+        foreach (Material mat in GetAllTargetMaterials())
+        {
+            if (mat == null) continue;
+            Undo.RecordObject(mat, "Apply Stencil Preset");
+            if (mat.HasProperty("_StencilRef")) mat.SetFloat("_StencilRef", reference);
+            if (mat.HasProperty("_StencilComp")) mat.SetFloat("_StencilComp", comparison);
+            if (mat.HasProperty("_StencilOp")) mat.SetFloat("_StencilOp", passOp);
+            if (mat.HasProperty("_StencilFail")) mat.SetFloat("_StencilFail", 0);
+            if (mat.HasProperty("_StencilZFail")) mat.SetFloat("_StencilZFail", 0);
+            if (mat.HasProperty("_StencilReadMask")) mat.SetFloat("_StencilReadMask", 255);
+            if (mat.HasProperty("_StencilWriteMask")) mat.SetFloat("_StencilWriteMask", 255);
+            EditorUtility.SetDirty(mat);
+        }
+    }
+
+    private void DrawMirrorTextureSection()
+    {
+        SetFoldout("MirrorTexture", DrawBoxedSection(L("鏡・カメラ写り分けテクスチャ", "Mirror/Camera Alt Texture"), GetFoldout("MirrorTexture"), SectionCategory.Advanced, "_MIRROR_TEXTURE"));
+        if (GetFoldout("MirrorTexture"))
+        {
+            bool enableMT = DrawToggle("_MIRROR_TEXTURE", "_MirrorTexture", L("写り分けテクスチャを有効化", "Enable Mirror/Camera Alt Texture"));
+            if (enableMT)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_MirrorAltTex", L("鏡・カメラ用テクスチャ", "Alt Texture (mirror/camera)"));
+                DrawColorProperty("_MirrorAltColor", L("鏡・カメラ用カラー", "Alt Color"));
+                DrawProperty("_MirrorTexBlend", L("ブレンド量", "Blend Amount"));
+                DrawProperty("_MirrorTexApplyMirror", L("ミラーに適用", "Apply In Mirror"));
+                DrawProperty("_MirrorTexApplyCamera", L("VRCカメラに適用", "Apply In VRC Camera"));
+                DrawHelpToggle("MirrorTexture",
+                    L("🪞 鏡・カメラ写り分けテクスチャ:\n" +
+                    "VRChatのミラーやカメラに映ったときだけ、ベースの見た目を\n" +
+                    "別のテクスチャ・カラーに切り替えます。\n\n" +
+                    "• 直接見ると普通なのに、鏡の中では違う姿が映る\n" +
+                    "• 写真にだけ写る模様やメッセージを仕込む\n" +
+                    "• ブレンド量で「うっすら透ける別の姿」も可能\n\n" +
+                    "💡 陰影やエフェクトは切り替え後の見た目にも適用されます。\n" +
+                    "💡 ミラー内だけ姿を消したい場合は「ミラー・カメラ制御」を使用してください。",
+                    "🪞 Mirror/Camera Alt Texture:\n" +
+                    "Swaps the base texture/color only when rendered in a VRChat\n" +
+                    "mirror or by the VRChat camera.\n\n" +
+                    "• Look normal directly, but show a different appearance in mirrors\n" +
+                    "• Hide patterns or messages that only appear in photos\n" +
+                    "• Partial blend gives a subtle 'second self' effect\n\n" +
+                    "💡 Shading and effects apply to the swapped look as well.\n" +
+                    "💡 To fully hide in mirrors, use Mirror/Camera Control instead."),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("MirrorTexture"));
     }
 
     private void DrawQuestLiteSection()
@@ -8331,6 +8420,7 @@ public class NataneToonShaderGUI : ShaderGUI
         // ─── VRChat＆パフォーマンス ───
         NataneToonShaderGUIUtility.DrawCategoryDivider(L("VRChat＆パフォーマンス", "VRChat & Performance"));
         FilteredDrawSection(DrawMirrorControlSection, L("ミラー・カメラ制御", "Mirror / Camera Control"), "MirrorControl");
+        FilteredDrawSection(DrawMirrorTextureSection, L("鏡・カメラ写り分けテクスチャ", "Mirror/Camera Alt Texture"), "MirrorTexture");
         FilteredDrawSection(DrawQuestLiteSection, L("Quest軽量パス", "Quest Lite"), "QuestLite");
 
         // ─── レンダリング ───
@@ -8454,6 +8544,7 @@ public class NataneToonShaderGUI : ShaderGUI
             case "HeightFog": return DrawHeightFogSection;
             case "SurfaceCover": return DrawSurfaceCoverSection;
             case "MirrorControl": return DrawMirrorControlSection;
+            case "MirrorTexture": return DrawMirrorTextureSection;
             case "QuestLite": return DrawQuestLiteSection;
             case "HalftoneShadow": return DrawHalftoneShadowSection;
             case "ShadowEdgeNoise": return DrawShadowEdgeNoiseSection;
