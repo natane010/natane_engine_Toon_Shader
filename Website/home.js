@@ -10,33 +10,41 @@
 
   var VERSION = 'v1.6.0';
 
+  /* Feature preview images (optional): drop a screenshot at
+     assets/previews/<preview>.jpg and it replaces the styled placeholder
+     automatically. Recommended size ~ 800x480, dark background. */
+  var PREVIEW_DIR = 'assets/previews/';
+
   var CONTENT = {
     featured: [
       {
         label: 'CHARACTER LOOK',
+        preview: 'face-ortho',
         title: { ja: '顔直交投影', en: 'Face Ortho Projection' },
         description: {
-          ja: 'カメラ距離やFOVに左右されず、顔のプロポーションを理想的に保ちます。VR用の個別強度、マスク、アウトライン追従にも対応。',
-          en: 'Keep ideal face proportions at any camera distance or FOV, with separate VR strength, mask support, and outline tracking.'
+          ja: 'カメラを近づけても遠ざけても、顔のパーツが歪まず理想の輪郭をキープ。自撮りや至近距離でも「盛れた顔」のまま。VR用の個別強度・マスク・アウトライン追従つき。',
+          en: 'Faces keep their ideal shape whether the camera is close or far — no more distorted features in selfies or close-ups. Includes separate VR strength, masking, and outline tracking.'
         },
         href: 'params/advanced/face-ortho.html',
         wide: true
       },
       {
         label: 'TRANSLUCENT FX',
+        preview: 'ghost',
         title: { ja: 'ゴーストバリアント', en: 'Ghost Variant' },
         description: {
-          ja: '重なりによる二重ブレンドを抑え、破綻しにくい半透明表現を実現します。',
-          en: 'Reliable translucent rendering that avoids double-blend artifacts where body parts overlap.'
+          ja: '半透明の体や服が重なっても、濃く沈んだり縁がチラつかない。破綻しない透け表現でお化け・幽霊・霊体アバターが綺麗に見えます。',
+          en: 'Overlapping transparent parts no longer darken or flicker at the edges — clean see-through rendering for ghost and spirit avatars.'
         },
         href: 'params/effects/ghost.html'
       },
       {
         label: 'MOTION & EFFECT',
+        preview: 'gpu-particles',
         title: { ja: 'GPUパーティクル', en: 'GPU Particles' },
         description: {
-          ja: 'アバターセーフな頂点アニメ方式。AudioLinkや疑似流体表現にも対応します。',
-          en: 'Avatar-safe vertex animation with AudioLink and math-based fake fluid effects.'
+          ja: 'スクリプト無しで動くアバターセーフな粒子演出。AudioLinkで音に反応させたり、疑似流体で水・炎のような流れも作れます。',
+          en: 'Script-free, avatar-safe particle motion — react to music with AudioLink or fake fluid-like water and fire flows.'
         },
         href: 'tools/gpu-particle-mesh.html'
       }
@@ -111,22 +119,47 @@
     return node;
   }
 
+  function assetRoot() {
+    return document.documentElement.lang === 'en' ? '../' : '';
+  }
+
+  function buildPreview(item, language) {
+    var preview = element('div', 'feature-preview');
+    preview.setAttribute('aria-hidden', 'true');
+    if (item.preview) {
+      var img = element('img');
+      img.alt = '';
+      img.loading = 'lazy';
+      img.src = assetRoot() + PREVIEW_DIR + item.preview + '.jpg';
+      /* Fall back to the styled placeholder if the screenshot is not present yet. */
+      img.addEventListener('error', function () { img.remove(); });
+      preview.appendChild(img);
+    }
+    preview.appendChild(element('span', 'preview-tag', 'PREVIEW'));
+    preview.appendChild(element('em', 'preview-name', localized(item.title, language)));
+    return preview;
+  }
+
   function renderFeatured(container, items, language) {
     items.forEach(function (item, index) {
       var card = element('a', 'feature-card' + (item.wide ? ' feature-card-wide' : ''));
       card.href = item.href;
 
-      var content = element('div');
-      content.appendChild(element('p', 'card-label', item.label));
+      card.appendChild(buildPreview(item, language));
+
+      var content = element('div', 'feature-text');
+      var head = element('div', 'feature-text-head');
+      head.appendChild(element('p', 'card-label', item.label));
+      head.appendChild(element('span', 'feature-number', numberLabel(index)));
+      content.appendChild(head);
       content.appendChild(element('h3', '', localized(item.title, language)));
       content.appendChild(element('p', '', localized(item.description, language)));
 
-      var arrow = element('span', 'card-arrow', '↗');
-      arrow.setAttribute('aria-hidden', 'true');
+      var cta = element('span', 'feature-cta', language === 'en' ? 'Learn more' : '詳しく見る');
+      cta.appendChild(element('span', 'card-arrow', ' ↗'));
+      content.appendChild(cta);
 
-      card.appendChild(element('span', 'feature-number', numberLabel(index)));
       card.appendChild(content);
-      card.appendChild(arrow);
       container.appendChild(card);
     });
   }
