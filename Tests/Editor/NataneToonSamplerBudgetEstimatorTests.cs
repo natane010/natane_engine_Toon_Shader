@@ -26,7 +26,7 @@ namespace NataneToon.Editor.Tests
         }
 
         [Test]
-        public void Estimate_WithDangerousLightingCombo_HitsLimitWithReserve()
+        public void Estimate_WithDangerousLightingCombo_AddsBothReserves()
         {
             EnableKeywords(
                 "_2ND_TEXTURE",
@@ -43,32 +43,37 @@ namespace NataneToon.Editor.Tests
 
             var estimate = NataneToonSamplerBudgetEstimator.Estimate(material);
 
-            Assert.That(estimate.IsAtLimit, Is.True);
-            Assert.That(estimate.EstimatedSamplers, Is.EqualTo(NataneToonSamplerBudgetEstimator.SamplerLimit));
+            // Current cost model: NOSAMPLER sharing makes the mask-style features
+            // free; only LV(1) + LTCGI(1) + combo reserve(3) + critical reserve(1)
+            // count on top of the base. Base(3) + 6 = 9.
             Assert.That(estimate.HasLightVolumeLtcgiCombo, Is.True);
             Assert.That(estimate.HasCriticalLightingCombo, Is.True);
+            Assert.That(estimate.EstimatedSamplers, Is.EqualTo(NataneToonSamplerBudgetEstimator.BaseSamplerCount + 6));
+            Assert.That(estimate.IsOverLimit, Is.False);
         }
 
         [Test]
         public void EvaluateEnable_WithNearLimitMaterial_BlocksExtraHeavyFeature()
         {
+            // 6 dedicated-sampler features (1 each) + LV(1)+LTCGI(1)+reserve(3)
+            // + shared GrabPass consumer (_WATERCOLOR, +1) = Base(3) + 12 = 15.
             EnableKeywords(
-                "_2ND_TEXTURE",
-                "_3RD_TEXTURE",
-                "_HAIR_SPECULAR",
-                "_EMISSION",
-                "_LTCGI",
-                "_MATCAP",
-                "_NORMALMAP",
+                "_OUTLINE",
                 "_REFLECTION",
-                "_RIM_LIGHT",
-                "_SCREEN_TONE",
+                "_ENV_RIM",
+                "_VIDEO_TEXTURE",
+                "_FUR",
+                "_AUDIOLINK",
+                "_WATERCOLOR",
+                "_LTCGI",
                 "_USE_LIGHT_VOLUME");
 
             var current = NataneToonSamplerBudgetEstimator.Estimate(material);
-            var evaluation = NataneToonSamplerBudgetEstimator.EvaluateEnable(material, "_HATCHING");
+            var evaluation = NataneToonSamplerBudgetEstimator.EvaluateEnable(material, "_PCSS");
 
             Assert.That(current.IsNearLimit, Is.True);
+            // PCSS adds the shared depth texture (+1) and its shadow-map sampler (+1)
+            // → 17 > 16, so enabling must be blocked.
             Assert.That(evaluation.CanEnable, Is.False);
             Assert.That(evaluation.AddedSamplers, Is.EqualTo(2));
             Assert.That(evaluation.AfterEnable.IsOverLimit, Is.True);
@@ -138,7 +143,10 @@ namespace NataneToon.Editor.Tests
             Assert.That(estimate.HasLightVolumeLtcgiCombo, Is.True);
             Assert.That(estimate.HasCriticalLightingCombo, Is.False);
             Assert.That(estimate.HasScreenSpaceLightingCombo, Is.True);
-            Assert.That(estimate.IsAtLimit, Is.True);
+            // LV(1)+LTCGI(1) + shared depth(+1) + depth-normals(+1)
+            // + combo reserve(3) + screen-space reserve(2) = Base(3) + 9 = 12.
+            Assert.That(estimate.EstimatedSamplers, Is.EqualTo(NataneToonSamplerBudgetEstimator.BaseSamplerCount + 9));
+            Assert.That(estimate.IsOverLimit, Is.False);
         }
 
         private void EnableKeywords(params string[] keywords)
