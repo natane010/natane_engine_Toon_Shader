@@ -65,9 +65,6 @@ namespace NataneToon.Editor
         // Registry のスキーマ版。schema 不一致の cache/snapshot は再利用しない判定に用いる。
         public const int RegistrySchemaVersion = 1;
 
-        // Migration 定義の版。まだ migration 未実装のため 0。
-        public const int MigrationVersion = 0;
-
         // Catalog と一致させる特殊シェーダー名（スコープ判定の一元管理）。
         private const string ParticleShaderName = "Natane/Toon Shader (Particle)";
         private const string WirelightShaderName = "Natane/Toon Shader Wirelight";
@@ -76,6 +73,7 @@ namespace NataneToon.Editor
 
         private static readonly Dictionary<string, NataneFeatureDefinition> ByKeyword;
         private static readonly List<NataneFeatureDefinition> All;
+        private static readonly List<NataneMigrationDefinition> Migrations;
 
         static NataneShaderFeatureRegistry()
         {
@@ -111,6 +109,144 @@ namespace NataneToon.Editor
             All = ByKeyword.Values
                 .OrderBy(d => d.Keyword, StringComparer.Ordinal)
                 .ToList();
+
+            Migrations = BuildMigrationTable();
+        }
+
+        /// <summary>
+        /// Migration 定義テーブル。実データ（CHANGELOG v1.3.6 の歴史的リネーム）を静的登録し、
+        /// 併せて各 FeatureDefinition の Legacy* フィールドから自動導出できる分を追加する
+        /// （現状 Legacy* は未設定のため導出分は 0 件）。
+        /// 新規移行を追加する際は下記コード例を参考に静的エントリを足すこと。
+        /// </summary>
+        private static List<NataneMigrationDefinition> BuildMigrationTable()
+        {
+            var list = new List<NataneMigrationDefinition>();
+
+            // --- 実データ: v1.3.6（2026-03-03）で確定した Property リネーム ---
+            // 旧名称は現行シェーダーに存在せず、新名称のみ実在することを確認済み。
+            // 値の意味は不変のため CopyAsIs。全 Natane マテリアル対象（oldShaderName=null）。
+            list.Add(PropertyRename("_ToonSteps", "_ShadowSteps", "1.3.6",
+                "v1.3.6 でリネーム。段階数の意味は不変。"));
+            list.Add(PropertyRename("_SpecularSharpness", "_SpecularSoftness", "1.3.6",
+                "v1.3.6 でリネーム。値はそのまま写す。"));
+            list.Add(PropertyRename("_EmissionIntensity", "_EmissionGlow", "1.3.6",
+                "v1.3.6 でリネーム。強度値は不変。"));
+
+            // --- 実データ: v1.3.6 の Keyword リネーム（_RIM -> _RIM_LIGHT）---
+            list.Add(new NataneMigrationDefinition
+            {
+                oldKeyword = "_RIM",
+                newKeyword = "_RIM_LIGHT",
+                introducedVersion = "1.3.6",
+                removedVersion = "1.3.6",
+                valueConversion = NataneValueConversion.None,
+                autoApplicable = true,
+                requiresManualReview = false,
+                note = "v1.3.6 でリムライトの Keyword を統一。"
+            });
+
+            // --- 自動導出: FeatureDefinition.Legacy* から旧→新の Keyword/Property を補完する ---
+            // （新機能追加時に Legacy* を埋めれば、ここで移行候補が自動生成される足場）。
+            foreach (NataneFeatureDefinition def in All)
+            {
+                if (def.LegacyKeywords != null)
+                {
+                    foreach (string legacy in def.LegacyKeywords)
+                    {
+                        if (string.IsNullOrEmpty(legacy) || legacy == def.Keyword)
+                            continue;
+                        if (list.Exists(m => m.oldKeyword == legacy && m.newKeyword == def.Keyword))
+                            continue;
+
+                        list.Add(new NataneMigrationDefinition
+                        {
+                            oldKeyword = legacy,
+                            newKeyword = def.Keyword,
+                            introducedVersion = def.IntroducedVersion,
+                            valueConversion = NataneValueConversion.None,
+                            autoApplicable = true,
+                            note = def.MigrationNote
+                        });
+                    }
+                }
+
+                if (def.LegacyPropertyNames != null && !string.IsNullOrEmpty(def.PropertyName))
+                {
+                    foreach (string legacy in def.LegacyPropertyNames)
+                    {
+                        if (string.IsNullOrEmpty(legacy) || legacy == def.PropertyName)
+                            continue;
+                        if (list.Exists(m => m.oldPropertyName == legacy && m.newPropertyName == def.PropertyName))
+                            continue;
+
+                        list.Add(PropertyRename(legacy, def.PropertyName, def.IntroducedVersion, def.MigrationNote));
+                    }
+                }
+            }
+
+            // --- コード例（無効化）: Shader リネーム＋値スケール＋手動確認要のパターン ---
+            // list.Add(new NataneMigrationDefinition
+            // {
+            //     oldShaderName = "Natane/Old Shader Name",
+            //     newShaderName = "Natane/New Shader Name",
+            //     oldPropertyName = "_OldRange", newPropertyName = "_NewRange",
+            //     valueConversion = NataneValueConversion.FloatScale, scale = 0.01f,
+            //     introducedVersion = "1.7.0", removedVersion = "1.7.0",
+            //     autoApplicable = false, requiresManualReview = true,
+            //     note = "スケール変更を伴うため手動確認必須。"
+            // });
+
+            return list;
+        }
+
+        private static NataneMigrationDefinition PropertyRename(
+            string oldProperty, string newProperty, string version, string note)
+        {
+            return new NataneMigrationDefinition
+            {
+                oldPropertyName = oldProperty,
+                newPropertyName = newProperty,
+                introducedVersion = version,
+                removedVersion = version,
+                valueConversion = NataneValueConversion.CopyAsIs,
+                autoApplicable = true,
+                requiresManualReview = false,
+                note = note
+            };
+        }
+
+        /// <summary>移行定義（読み取り専用）。プレビュー/プランナが唯一の情報源として参照する。</summary>
+        public static IReadOnlyList<NataneMigrationDefinition> MigrationDefinitions => Migrations;
+
+        /// <summary>
+        /// Migration テーブル内容に連動した版番号（int）。テーブルが変われば値が変化し、
+        /// Snapshot/cache の鮮度判定（registryMigrationVersion）に反映される。
+        /// </summary>
+        public static int MigrationVersion => ComputeMigrationVersion();
+
+        private static int ComputeMigrationVersion()
+        {
+            var sb = new StringBuilder();
+            foreach (NataneMigrationDefinition m in Migrations)
+            {
+                sb.Append(m.oldShaderName ?? "").Append('|')
+                  .Append(m.newShaderName ?? "").Append('|')
+                  .Append(m.oldPropertyName ?? "").Append('|')
+                  .Append(m.newPropertyName ?? "").Append('|')
+                  .Append(m.oldKeyword ?? "").Append('|')
+                  .Append(m.newKeyword ?? "").Append('|')
+                  .Append((int)m.valueConversion).Append('|')
+                  .Append(m.scale.ToString("R")).Append('\n');
+            }
+
+            using (var sha1 = SHA1.Create())
+            {
+                byte[] hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
+                // 先頭 4 バイトを非負 int へ畳み込む（安定・決定的）。
+                int value = (hash[0] << 23) ^ (hash[1] << 16) ^ (hash[2] << 8) ^ hash[3];
+                return value & 0x7fffffff;
+            }
         }
 
         /// <summary>
