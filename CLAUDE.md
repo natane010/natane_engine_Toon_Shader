@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Natane Toon Shader is a Unity package providing a comprehensive cel-shading/NPR toon shader for Unity's Built-in Render Pipeline. It is distributed as a Unity Package Manager (UPM) compatible package and includes extensive editor tooling, material presets, and migration utilities.
 
-**Version**: 1.2.0 (v1.1.5 branch)
+**Version**: see `package.json` (branch `v1.1.5` is the release branch; day-to-day development happens on `develop`)
 **Unity Compatibility**: 2019.4+
 **Target Platform**: Built-in Render Pipeline (VRChat optimized)
 
@@ -93,7 +93,18 @@ When adding a new shader effect (e.g., a new lighting model or visual effect):
    }
    ```
 
-6. **Update all three shader variants**: Main shader, Cutout variant, Transparent variant must all include the new feature.
+6. **Update ALL 10 shader variants** (`NataneToonShader.shader` + `Variants/*.shader`): each carries its own copy of the `Properties` block and per-pass `#pragma shader_feature_local` lists. Keep them in sync — drift here has caused real compile bugs.
+
+### Shared pass includes (do NOT re-inline)
+
+The OUTLINE and SHADOW_CASTER passes are shared across all variants via includes:
+
+- `Include/Rendering/NataneToonOutlinePass.hlsl` — full outline pass (vert/frag + helpers). Feature blocks are `#ifdef`-guarded; each variant controls availability with its own `#pragma shader_feature_local` list. Changes to outline behavior go HERE, never inline in a `.shader`.
+- `Include/Rendering/NataneToonShadowCasterPass.hlsl` — shadow caster; cutout variants `#define NATANE_SHADOWCASTER_CUTOUT` before including it to get alpha-tested shadows.
+
+### VRChat tags
+
+Every variant's SubShader Tags must declare `"VRCFallback"` ("Toon", "ToonCutout", or "ToonTransparent" as appropriate) so safety-blocked avatars fall back to a sane toon shader.
 
 ### Adding a New Editor Tool
 
@@ -141,8 +152,9 @@ Material presets use ScriptableObjects stored in `Runtime/Presets/`. When creati
 ### Git Workflow
 
 Current branch structure:
-- **v1.1.5** - Current stable branch (main development)
-- **v1.2.0** - Future feature branch (AudioLink, multiple MatCaps, vertex animation)
+- **develop** - Main development branch (branch feature work off this)
+- **v1.1.5** - Release/distribution branch (VCC releases are tagged here)
+- **gh-pages** - Documentation website
 
 ## Important Files
 
