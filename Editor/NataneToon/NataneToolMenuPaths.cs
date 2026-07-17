@@ -49,6 +49,9 @@ namespace NataneToon.Editor
         public const string SmoothNormalBaker = "Tools/Natane/メッシュ Mesh/スムース法線ベイク Smooth Normal Baker";
         public const string EyeSetupTool = "Tools/Natane/メッシュ Mesh/目のセットアップ Eye Setup Tool";
 
+        public const string MaskPainter = "Tools/Natane/テクスチャ Texture/マスクペインター Mask Painter";
+        public const string TextureStudio = "Tools/Natane/テクスチャ Texture/テクスチャスタジオ Texture Studio";
+
 
         public const string ParticleEffectEditor = "Tools/Natane/パーティクルエフェクトエディタ Particle Effect Editor";
 
@@ -112,6 +115,10 @@ namespace NataneToon.Editor
             // --- Mesh ---
             { "SmoothNormalBaker", SmoothNormalBaker },
             { "EyeSetupTool", EyeSetupTool },
+
+            // --- Texture ---
+            { "MaskPainter", MaskPainter },
+            { "TextureStudio", TextureStudio },
 
             // --- Generator / Other ---
             { "ParticleEffectEditor", ParticleEffectEditor },
@@ -253,6 +260,7 @@ namespace NataneToon.Editor
                 LilToonMigration, BatchMaterialConverter, PrefabVariantConverter,
                 ShaderVariantCollector, ShaderPrewarming, ShaderVariantStripper, VRCLightVolumesHelper,
                 SmoothNormalBaker,
+                MaskPainter, TextureStudio,
                 ParticleEffectEditor,
                 // Consolidated Windows
                 MaterialAnalysis, EffectStudio, OptimizationHub, ShaderBuildManager,

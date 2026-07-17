@@ -179,6 +179,7 @@ namespace NataneToon.Editor
             AddTool("パーティクルエフェクトエディタ", "Particle Effect Editor", "パーティクルエフェクトの見た目とプリセットを編集します。", "Edit particle effect visuals and presets.", NataneToolMenuPaths.ParticleEffectEditor, ToolCategory.Advanced, "✨");
             AddTool("スムース法線ベイク", "Smooth Normal Baker", "アウトライン向けのスムース法線をメッシュへベイクします。", "Bake smooth normals into meshes for stable outlines.", NataneToolMenuPaths.SmoothNormalBaker, ToolCategory.Advanced, "🧊");
             AddTool("目のセットアップ", "Eye Setup Tool", "目の表現に必要なメッシュとマテリアル設定をガイドします。", "Guide mesh and material setup for eye rendering.", NataneToolMenuPaths.EyeSetupTool, ToolCategory.Advanced, "👁");
+            AddTool("マスクペインター", "Mask Painter", "シーンビューでマスクテクスチャを直接ペイントします。R/G/Bチャンネル対応。", "Paint mask textures directly in the Scene view with per-channel control.", NataneToolMenuPaths.MaskPainter, ToolCategory.Advanced, "🖌");
 
             // Migration Tools
             AddTool("lilToon移行ツール", "lilToon Migration Tool", "lilToon シェーダーからマテリアルを自動移行します。", "Migrate materials from lilToon automatically.", NataneToolMenuPaths.LilToonMigration, ToolCategory.Migration, "🔀");
@@ -204,6 +205,7 @@ namespace NataneToon.Editor
             AddTool("マイグレーションハブ", "Migration Hub", "lilToon移行・一括変換・Prefab変換を統合したウィンドウです。", "Unified window for lilToon migration, batch conversion, and prefab conversion.", NataneToolMenuPaths.MigrationHub, ToolCategory.Migration, "🔄");
             AddTool("プリセット管理", "Preset Manager", "プリセットブラウザ・カラーパレット・プリセット生成を統合したウィンドウです。", "Unified window for preset browsing, color palettes, and preset generation.", NataneToolMenuPaths.PresetManager, ToolCategory.Presets, "📦");
             AddTool("VRChat統合", "VRChat Integration", "Light Volumes・パッケージ設定・自動検出を統合したウィンドウです。", "Unified window for Light Volumes, package setup, and auto-detection.", NataneToolMenuPaths.VRChatIntegration, ToolCategory.Performance, "🌐");
+            AddTool("テクスチャスタジオ", "Texture Studio", "マスクペイント・テクスチャ最適化・生成ツールを統合したウィンドウです。", "Unified window for mask painting, texture optimization, and generation tools.", NataneToolMenuPaths.TextureStudio, ToolCategory.Advanced, "🖼");
 
             // Help & Documentation
             AddTool("ツールヘルプ", "Tool Help", "全ツールの使い方と説明を確認します。", "Browse usage guides and explanations for every tool.", NataneToolMenuPaths.HelpToolTab, ToolCategory.Help, "❓");
