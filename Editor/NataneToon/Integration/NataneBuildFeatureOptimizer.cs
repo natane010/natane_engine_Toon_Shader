@@ -30,6 +30,22 @@ namespace NataneToon.Editor
             "_EYE_PARALLAX",
         };
 
+        /// <summary>
+        /// #undef ガードが対象とするキーワード全集合（KeywordMappings + ExtraKeywords）。
+        /// 比較レポートが「HLSL 方式が #undef し得るキーワード」の母集合として参照する。
+        /// </summary>
+        public static IReadOnlyList<string> GetGuardKeywords()
+        {
+            var list = new List<string>();
+            foreach (var mapping in NataneShaderKeywordSynchronizer.KeywordMappings)
+                if (!string.IsNullOrEmpty(mapping.keyword) && !list.Contains(mapping.keyword))
+                    list.Add(mapping.keyword);
+            foreach (string extra in ExtraKeywords)
+                if (!list.Contains(extra))
+                    list.Add(extra);
+            return list;
+        }
+
         // 遅延初期化: static readonly だと AssetDatabase 未準備時に null になる
         private static string _buildSettingsPath;
         private static string BuildSettingsPath
@@ -73,8 +89,11 @@ namespace NataneToon.Editor
         /// 使用されている機能キーワードを収集する。
         /// AnimationClip はプレハブ経由で参照される可能性があるため、
         /// インデックス内のプレハブが参照するクリップのみをスキャンする。
+        ///
+        /// 比較レポート(NataneStrippingComparisonReport)から再利用できるよう public な純関数として公開する。
+        /// 副作用は AssetIndex の差分同期のみで、返り値はプロジェクト状態に対し決定的（挙動不変）。
         /// </summary>
-        private static HashSet<string> CollectUsedFeatures()
+        public static HashSet<string> CollectUsedFeatures()
         {
             var usedKeywords = new HashSet<string>(StringComparer.Ordinal);
 

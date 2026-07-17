@@ -69,6 +69,13 @@ namespace NataneToon.Editor
 
         public void OnProcessShader(Shader shader, ShaderSnippetData snippet, IList<ShaderCompilerData> data)
         {
+            // 統合ストリッパー(NataneUnifiedVariantStripper, callbackOrder=110)へ移行済み。
+            // 本差分式ストリッパーの IPreprocessShaders 経路は無効化する（即 return）。
+            // クラスは後方互換とレビュー容易性のため残置し、静的ヘルパ
+            // (CollectUsedKeywords/BuildKnownKeywordSet/EnumerateNataneMaterials) は
+            // NataneBuildOptimizationReport 等が引き続き利用する。
+            return;
+#pragma warning disable CS0162 // 到達不能コード（移行済みの旧実装を保全）
             // 有効判定は設定資産(variantStrippingEnabled)を正とする。
             // 旧 EditorPrefs は初回移行で設定資産へ取り込み済み（以降は資産が唯一の情報源）。
             if (!NataneBuildPolicySettings.instance.VariantStrippingEnabled)
@@ -114,6 +121,7 @@ namespace NataneToon.Editor
                     $"[{snippet.passType} / {snippet.shaderType}] {before} → {after} " +
                     $"({before - after} 破棄)");
             }
+#pragma warning restore CS0162
         }
 
         /// <summary>

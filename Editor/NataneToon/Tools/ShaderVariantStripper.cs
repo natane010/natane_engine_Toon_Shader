@@ -29,6 +29,11 @@ namespace NataneToon.Editor
 
         public void OnProcessShader(Shader shader, ShaderSnippetData snippet, IList<ShaderCompilerData> data)
         {
+            // 統合ストリッパー(NataneUnifiedVariantStripper, callbackOrder=110)へ移行済み。
+            // 本レガシー完全一致式ストリッパーの IPreprocessShaders 経路は無効化する（即 return）。
+            // クラス/設定ウィンドウは後方互換とレビュー容易性のため残置する。
+            return;
+#pragma warning disable CS0162 // 到達不能コード（移行済みの旧実装を保全）
             // 有効判定は設定資産(legacyExactSetStrippingEnabled, 既定 false)を正とする。
             if (!NataneBuildPolicySettings.instance.LegacyExactSetStrippingEnabled)
             {
@@ -68,6 +73,7 @@ namespace NataneToon.Editor
             {
                 Debug.Log($"[Natane Toon Stripper] {shader.name} ({snippet.passType}): kept={keptCount}, stripped={strippedCount}");
             }
+#pragma warning restore CS0162
         }
 
         private static void InitializeKeywordWhitelist()

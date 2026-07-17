@@ -31,6 +31,11 @@ namespace NataneToon.Editor
                 // 0. ビルドセッションを開始し、古い static cache / 前回 Snapshot の誤用を防ぐ。
                 NataneBuildSession.BeginBuildSession();
 
+                // 統合ストリッパーの集計を初期化する。VRChat では IPostprocessBuild が不発のため、
+                // 前回アバタービルドで溜まったストリップ集計をここで掃き出して永続化する
+                // （IPreprocessShaders は本コールバックより後に発火するため保存は 1 ビルド遅延する）。
+                NataneUnifiedVariantStripper.BeginSession();
+
                 // 1. キーワード同期（プロパティ値 ↔ シェーダーキーワードのズレを解消）
                 NataneShaderKeywordSynchronizer.SynchronizeAllNataneMaterials();
 

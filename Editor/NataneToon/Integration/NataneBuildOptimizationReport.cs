@@ -92,26 +92,32 @@ namespace NataneToon.Editor
             sb.AppendLine(L.L("■ シェーダーバリアントのストリップ",
                               "■ Shader Variant Stripping"));
 
-            if (EditorPrefs.GetBool(NataneShaderVariantStripper.OptOutPrefKey, false))
+            // 統合ストリッパー(NataneUnifiedVariantStripper)の集計を参照する。
+            // 有効判定は設定資産(VariantStrippingEnabled)を正とする（旧 EditorPrefs オプトアウトは廃止）。
+            if (!NataneBuildPolicySettings.instance.VariantStrippingEnabled)
             {
-                sb.AppendLine(L.L("  (無効化されています: EditorPrefs オプトアウト)",
-                                  "  (disabled via EditorPrefs opt-out)"));
+                sb.AppendLine(L.L("  (無効化されています: VariantStrippingEnabled=false)",
+                                  "  (disabled via VariantStrippingEnabled=false)"));
                 return;
             }
 
-            if (!NataneShaderVariantStripper.RanThisBuild)
+            if (!NataneStrippingSessionReport.HasData)
             {
                 sb.AppendLine(L.L("  このビルドではバリアント処理が実行されませんでした。",
                                   "  Variant processing did not run for this build."));
                 return;
             }
 
-            int seen = NataneShaderVariantStripper.TotalVariantsSeen;
-            int stripped = NataneShaderVariantStripper.VariantsStripped;
-            int kept = seen - stripped;
+            int seen = NataneStrippingSessionReport.TotalSeen;
+            int stripped = NataneStrippingSessionReport.TotalStripped;
+            int kept = NataneStrippingSessionReport.TotalKept;
+            sb.AppendLine(L.L($"  最適化モード: {NataneBuildPolicySettings.instance.OptimizationMode}",
+                              $"  Optimization mode: {NataneBuildPolicySettings.instance.OptimizationMode}"));
             sb.AppendLine(L.L($"  処理対象バリアント: {seen}", $"  Variants processed: {seen}"));
             sb.AppendLine(L.L($"  破棄したバリアント: {stripped}", $"  Variants stripped:  {stripped}"));
             sb.AppendLine(L.L($"  残したバリアント:   {kept}", $"  Variants kept:      {kept}"));
+            sb.AppendLine(L.L($"  削除候補(Safe基準): {NataneStrippingSessionReport.TotalCandidates}",
+                              $"  Strip candidates (Safe): {NataneStrippingSessionReport.TotalCandidates}"));
         }
 
         private static void AppendFeatureOptimizerSection(StringBuilder sb)
