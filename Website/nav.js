@@ -106,7 +106,8 @@
       { file: 'fake-reflection.html',    label: 'フェイクリフレクション' },
       { file: 'glitch-stretch.html',     label: 'グリッチストレッチ' },
       { file: 'procedural-matcap.html',  label: 'プロシージャルMatCap' },
-      { file: 'sss-lut.html',            label: 'SSS LUT' }
+      { file: 'sss-lut.html',            label: 'SSS LUT' },
+      { file: 'ghost.html',              label: 'ゴースト' }
     ],
     environment: [
       { file: 'reflection.html',         label: 'リフレクション' },
@@ -136,6 +137,8 @@
       { file: 'eye-parallax.html',       label: 'アイパララックス' },
       { file: 'screen-edge.html',        label: 'スクリーンエッジ' },
       { file: 'perspective-flat.html',   label: 'パースペクティブフラット' },
+      { file: 'face-ortho.html',         label: '顔直交投影' },
+      { file: 'mirror-alt-texture.html', label: '鏡・カメラ写り分けテクスチャ' },
       { file: 'normal-warp.html',        label: 'ノーマルワープ' },
       { file: 'smooth-normal.html',      label: 'スムースノーマル' }
     ]
@@ -200,7 +203,8 @@
       { file: 'fake-reflection.html',    label: 'Fake Reflection' },
       { file: 'glitch-stretch.html',     label: 'Glitch Stretch' },
       { file: 'procedural-matcap.html',  label: 'Procedural MatCap' },
-      { file: 'sss-lut.html',            label: 'SSS LUT' }
+      { file: 'sss-lut.html',            label: 'SSS LUT' },
+      { file: 'ghost.html',              label: 'Ghost' }
     ],
     environment: [
       { file: 'reflection.html',         label: 'Reflection' },
@@ -230,6 +234,8 @@
       { file: 'eye-parallax.html',       label: 'Eye Parallax' },
       { file: 'screen-edge.html',        label: 'Screen Edge' },
       { file: 'perspective-flat.html',   label: 'Perspective Flat' },
+      { file: 'face-ortho.html',         label: 'Face Ortho Projection' },
+      { file: 'mirror-alt-texture.html', label: 'Mirror/Camera Alt Texture' },
       { file: 'normal-warp.html',        label: 'Normal Warp' },
       { file: 'smooth-normal.html',      label: 'Smooth Normal' }
     ]
@@ -271,7 +277,11 @@
     { file: 'ltcgi-auto-detect.html',     label: 'LTCGI自動検出',               cat: 'shader' },
     { file: 'light-volumes-auto-detect.html', label: 'Light Volumes自動検出',    cat: 'shader' },
     { file: 'variant-stripper.html',      label: 'バリアントストリッピング',     cat: 'shader' },
-    { file: 'shader-prewarming.html',     label: 'シェーダープリウォーミング',   cat: 'shader' }
+    { file: 'shader-prewarming.html',     label: 'シェーダープリウォーミング',   cat: 'shader' },
+    { file: 'eye-setup.html',             label: '目のセットアップ',             cat: 'material' },
+    { file: 'gpu-particle-mesh.html',     label: 'GPUパーティクルメッシュ生成',  cat: 'effect' },
+    { file: 'stencil-presets.html',       label: 'ステンシルプリセット',         cat: 'shader' },
+    { file: 'build-optimization.html',    label: 'ビルド時最適化',               cat: 'optimization' }
   ];
 
   var TOOL_ORDER_EN = [
@@ -310,7 +320,11 @@
     { file: 'ltcgi-auto-detect.html',     label: 'LTCGI Auto-Detect',            cat: 'shader' },
     { file: 'light-volumes-auto-detect.html', label: 'Light Volumes Auto-Detect', cat: 'shader' },
     { file: 'variant-stripper.html',      label: 'Variant Stripping Settings',   cat: 'shader' },
-    { file: 'shader-prewarming.html',     label: 'Shader Prewarming',            cat: 'shader' }
+    { file: 'shader-prewarming.html',     label: 'Shader Prewarming',            cat: 'shader' },
+    { file: 'eye-setup.html',             label: 'Eye Setup Tool',               cat: 'material' },
+    { file: 'gpu-particle-mesh.html',     label: 'GPU Particle Mesh Generator',  cat: 'effect' },
+    { file: 'stencil-presets.html',       label: 'Stencil Presets',              cat: 'shader' },
+    { file: 'build-optimization.html',    label: 'Build Optimization',           cat: 'optimization' }
   ];
 
   /* ---------- Header Nav Data ---------- */

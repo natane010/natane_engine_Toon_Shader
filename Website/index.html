@@ -18,7 +18,7 @@
         <!-- Hero -->
         <section class="hero">
             <h1>Natane Toon Shader</h1>
-            <div class="version-badge">v1.3.0 | Built-in RP | Unity 2019.4+</div>
+            <div class="version-badge">v1.6.0 | Built-in RP + URP (Unity 6) | Unity 2019.4+</div>
             <p class="description">
                 VRChat対応の高機能トゥーンシェーダー。<br>
                 AudioLink、マルチMatCap、ホログラム、グリッチ、デカル、<br>
@@ -35,6 +35,61 @@
                 <code>https://natanetoon.com/index.json</code>
             </div>
         </section>
+
+        <!-- What's New in v1.6.0 -->
+        <h2 id="whats-new">v1.6.0 の新機能</h2>
+        <div class="cards-grid">
+            <a class="card-link" href="params/advanced/face-ortho.html">
+                <div class="card-icon">🙂</div>
+                <h3>顔直交投影</h3>
+                <p>ピボット中心に透視→直交投影をブレンドし、カメラ距離・FOV・カメラ種別によらず顔のプロポーションを理想的に保ちます。VR時は別強度、マスク対応、アウトライン追従。</p>
+            </a>
+            <a class="card-link" href="params/advanced/mirror-alt-texture.html">
+                <div class="card-icon">🪞</div>
+                <h3>鏡・カメラ写り分けテクスチャ</h3>
+                <p>VRChatのミラー/カメラに映るときだけベースの見た目を別テクスチャ・カラーへ切り替え。「鏡の中だけ違う姿」「写真にだけ写る模様」が作れます。</p>
+            </a>
+            <a class="card-link" href="params/effects/ghost.html">
+                <div class="card-icon">👻</div>
+                <h3>ゴーストバリアント</h3>
+                <p>深度プリパス+ZTest Equalで、体の重なりの二重ブレンドや裏面透けが構造的に発生しない半透明の幽霊表現。フレネル中心フェード+HDR縁発光。</p>
+            </a>
+            <a class="card-link" href="tools/gpu-particle-mesh.html">
+                <div class="card-icon">🎆</div>
+                <h3>パーティクル / GPUパーティクル / 疑似流体</h3>
+                <p>軽量トゥーンパーティクルバリアントに加え、状態レス頂点アニメ方式のGPUパーティクル(アバター安全・AudioLink対応)と数式ベースの容器内液体シェーダーを追加。</p>
+            </a>
+            <a class="card-link" href="tools/eye-setup.html">
+                <div class="card-icon">👁️</div>
+                <h3>目のセットアップツール</h3>
+                <p>目のマテリアル分離(トライアングル抽出→新規サブメッシュ)とUV再配置(重ね/並べ)を非破壊で行うエディタウィンドウ。分離後は専用シェーダー "Natane/Eye" がそのまま使えます。</p>
+            </a>
+            <div class="card-link">
+                <div class="card-icon">🚀</div>
+                <h3>Unity 6 URP対応</h3>
+                <p>メインシェーダーにURP SubShaderを条件分岐で追加。SRP Batcher対応CBUFFERとGPU Resident Drawer(DOTSインスタンシング)に対応し、BiRPと同一プロパティで中核機能をカバーします。</p>
+            </div>
+            <div class="card-link">
+                <div class="card-icon">🛡️</div>
+                <h3>VRCFallback対応</h3>
+                <p>全バリアントにVRCFallbackタグを追加。セーフティでシェーダーがブロックされてもトゥーン系フォールバックで表示されます。</p>
+            </div>
+            <a class="card-link" href="tools/stencil-presets.html">
+                <div class="card-icon">🕳️</div>
+                <h3>ステンシルプリセット</h3>
+                <p>書き込み/一致で表示/不一致で表示をワンクリック適用。覗き窓・隠し模様・消える体などのステンシル演出が簡単に組めます。</p>
+            </a>
+            <a class="card-link" href="tools/build-optimization.html">
+                <div class="card-icon">📦</div>
+                <h3>ビルド時自動最適化</h3>
+                <p>未使用キーワードのシェーダーバリアント削減、VRChat SDKアップロードフック(キーワード同期+Lite変換提案)、ビルド後最適化レポートを自動実行します。</p>
+            </a>
+            <div class="card-link">
+                <div class="card-icon">💡</div>
+                <h3>ライティング品質修正</h3>
+                <p>白色光が約42%暗くなるライト強度クランプのバグを修正。トゥーン境界にfwidthベースの最小AA帯を導入し、VRでのシマーも抑制しました。</p>
+            </div>
+        </div>
 
         <!-- Documentation Cards -->
         <h2 id="docs">ドキュメント</h2>

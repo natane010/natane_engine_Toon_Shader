@@ -18,7 +18,7 @@
         <!-- Hero -->
         <section class="hero">
             <h1>Natane Toon Shader</h1>
-            <div class="version-badge">v1.3.0 | Built-in RP | Unity 2019.4+</div>
+            <div class="version-badge">v1.6.0 | Built-in RP + URP (Unity 6) | Unity 2019.4+</div>
             <p class="description">
                 A feature-rich toon shader optimized for VRChat.<br>
                 Packed with AudioLink, multi MatCap, hologram, glitch, decal,<br>
@@ -35,6 +35,61 @@
                 <code>https://natanetoon.com/index.json</code>
             </div>
         </section>
+
+        <!-- What's New in v1.6.0 -->
+        <h2 id="whats-new">What's New in v1.6.0</h2>
+        <div class="cards-grid">
+            <a class="card-link" href="params/advanced/face-ortho.html">
+                <div class="card-icon">🙂</div>
+                <h3>Face Ortho Projection</h3>
+                <p>Blends perspective toward orthographic projection around a pivot, keeping face proportions ideal at any camera distance, FOV, or camera type. Separate VR strength, mask support, and outline tracking.</p>
+            </a>
+            <a class="card-link" href="params/advanced/mirror-alt-texture.html">
+                <div class="card-icon">🪞</div>
+                <h3>Mirror/Camera Alt Texture</h3>
+                <p>Swaps the base look to an alternate texture/color only in VRChat mirrors or the camera. Build "a different self in the mirror" or "patterns that only appear in photos".</p>
+            </a>
+            <a class="card-link" href="params/effects/ghost.html">
+                <div class="card-icon">👻</div>
+                <h3>Ghost Variant</h3>
+                <p>A depth prepass + ZTest Equal translucent ghost that structurally avoids double-blend where body parts overlap and backface bleed-through. Fresnel center fade plus an HDR rim glow.</p>
+            </a>
+            <a class="card-link" href="tools/gpu-particle-mesh.html">
+                <div class="card-icon">🎆</div>
+                <h3>Particles / GPU Particles / Fake Fluid</h3>
+                <p>A lightweight toon particle variant, plus stateless vertex-animated GPU particles (avatar-safe, AudioLink-ready) and a math-based in-container liquid shader.</p>
+            </a>
+            <a class="card-link" href="tools/eye-setup.html">
+                <div class="card-icon">👁️</div>
+                <h3>Eye Setup Tool</h3>
+                <p>An editor window for non-destructive eye material separation (triangle extraction into a new submesh) and UV relayout (overlap/side-by-side). The dedicated "Natane/Eye" shader works out of the box afterwards.</p>
+            </a>
+            <div class="card-link">
+                <div class="card-icon">🚀</div>
+                <h3>Unity 6 URP Support</h3>
+                <p>A conditionally-included URP SubShader on the main shader, with SRP Batcher CBUFFERs and GPU Resident Drawer (DOTS instancing) support, covering the core features with the same properties as BiRP.</p>
+            </div>
+            <div class="card-link">
+                <div class="card-icon">🛡️</div>
+                <h3>VRCFallback Support</h3>
+                <p>VRCFallback tags added to all variants, so safety-blocked avatars fall back to a sane toon shader.</p>
+            </div>
+            <a class="card-link" href="tools/stencil-presets.html">
+                <div class="card-icon">🕳️</div>
+                <h3>Stencil Presets</h3>
+                <p>One-click Writer / Reader (Equal) / Reader (NotEqual) presets for building peepholes, hidden patterns, and vanishing-body effects with ease.</p>
+            </a>
+            <a class="card-link" href="tools/build-optimization.html">
+                <div class="card-icon">📦</div>
+                <h3>Automatic Build Optimization</h3>
+                <p>Automatically strips shader variants with unused keywords, hooks VRChat SDK uploads (keyword sync + Lite conversion suggestions), and emits a post-build optimization report.</p>
+            </a>
+            <div class="card-link">
+                <div class="card-icon">💡</div>
+                <h3>Lighting Quality Fixes</h3>
+                <p>Fixed a light-intensity clamp bug that dimmed white light by about 42%, and added an fwidth-based minimum AA band on toon boundaries to suppress shimmer in VR.</p>
+            </div>
+        </div>
 
         <!-- Documentation Cards -->
         <h2 id="docs">Documentation</h2>
