@@ -322,7 +322,16 @@ VRC Light Volumes 3.0.0-dev系は正式な対応対象に含めません。3.0.0
 
 ### LTCGI
 
-LTCGI 1.7.1とはソース互換ですが、パッケージ導入状態でのUnityコンパイルとVRChat実機確認が未実施です。
+LTCGI 1.7.1とのソース互換をUnityコンパイルレベルで検証済みです(2026-07-17)。VRChat実機確認のみ未実施です。
+
+検証済み(Unity 2022.3.28f1、公式VPMの at.pimaker.ltcgi 1.7.1 / zipSHA256一致確認済み):
+
+- LTCGI導入状態で `LTCGIAutoDetector.ForceRedetect` により `NATANE_LTCGI_AVAILABLE` が生成されること
+- Main / Cutout / Transparent / Lite / Fur の5シェーダーで `_LTCGI` ON/OFF 両方ともエラー0・警告0
+- LTCGI削除後の再検出でconfigが未定義状態へ正しく復元され、ベースラインもエラー0・警告0
+- VRCSDK非導入でもLTCGIのC#はdefineガードによりコンパイル可能(CS0414警告1件はLTCGI側既存)
+
+未検証(VRChat Build & Testが必要): 実機でのDiffuse/Specular/動画色変化の見た目、Light Volumes同時使用時の白飛び・二重加算・Sampler上限、Quest実機、VRCFallback発動時の見た目。
 
 - `Packages/at.pimaker.ltcgi/Shaders/LTCGI.cginc` を自動検出します。
 - LTCGI API v2のカスタム入力とDiffuse/Specular callbackを使用します。
