@@ -47,6 +47,7 @@ namespace NataneToon.Editor
         public const string VRCLightVolumesHelper = "Tools/Natane/VRChat/VRCライトボリュームヘルパー VRC Light Volumes Helper";
 
         public const string SmoothNormalBaker = "Tools/Natane/メッシュ Mesh/スムース法線ベイク Smooth Normal Baker";
+        public const string EyeSetupTool = "Tools/Natane/メッシュ Mesh/目のセットアップ Eye Setup Tool";
 
 
         public const string ParticleEffectEditor = "Tools/Natane/パーティクルエフェクトエディタ Particle Effect Editor";
@@ -110,6 +111,7 @@ namespace NataneToon.Editor
 
             // --- Mesh ---
             { "SmoothNormalBaker", SmoothNormalBaker },
+            { "EyeSetupTool", EyeSetupTool },
 
             // --- Generator / Other ---
             { "ParticleEffectEditor", ParticleEffectEditor },
