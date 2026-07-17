@@ -6,8 +6,26 @@
 (function () {
   'use strict';
 
+  /* ---------- Theme (dark default, light opt-in, persisted) ----------
+     Applied synchronously here in <head> to avoid a flash of the wrong theme. */
+  var THEME_KEY = 'natane-theme';
+  try {
+    var savedTheme = localStorage.getItem(THEME_KEY);
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+  } catch (e) { /* storage unavailable */ }
+
   /* ---------- Language Detection ---------- */
   var IS_EN = location.pathname.indexOf('/en/') !== -1;
+
+  /* ---------- Site links (footer) ---------- */
+  var SITE_LINKS = {
+    github: 'https://github.com/natane010/natane_toon_shader',
+    changelog: 'https://github.com/natane010/natane_toon_shader/blob/develop/CHANGELOG.md',
+    /* TODO: replace with the official Booth product URL when available */
+    booth: 'https://booth.pm/ja/search/Natane%20Toon%20Shader'
+  };
 
   /* ---------- Site Map Data (JA) ---------- */
   var CATEGORIES_JA = {
@@ -393,11 +411,15 @@
   var L = IS_EN ? {
     home: 'Home', params: 'Parameters', tools: 'Tools',
     toc: 'Contents', menu: 'Menu', openToc: 'Open table of contents',
-    pages: ' pages'
+    pages: ' pages',
+    canDo: 'What this feature does', canDoTool: 'What this tool does',
+    theme: 'Toggle light / dark theme'
   } : {
     home: 'ホーム', params: 'パラメータ', tools: 'ツール',
     toc: '目次', menu: 'メニュー', openToc: '目次を開く',
-    pages: ' ページ'
+    pages: ' ページ',
+    canDo: 'この機能でできること', canDoTool: 'このツールでできること',
+    theme: 'ライト / ダークテーマ切り替え'
   };
 
   /* ---------- Utilities ---------- */
@@ -558,6 +580,27 @@
     langLink.textContent = IS_EN ? '日本語' : 'English';
     langLink.href = getLangToggleHref();
     nav.appendChild(langLink);
+
+    /* Theme toggle (dark <-> light, persisted) */
+    var themeBtn = document.createElement('button');
+    themeBtn.type = 'button';
+    themeBtn.className = 'theme-toggle';
+    themeBtn.setAttribute('aria-label', L.theme);
+    themeBtn.setAttribute('title', L.theme);
+    function currentTheme() {
+      return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    }
+    function paintThemeBtn() {
+      themeBtn.textContent = currentTheme() === 'light' ? '☾' : '☀';
+    }
+    paintThemeBtn();
+    themeBtn.addEventListener('click', function () {
+      var next = currentTheme() === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+      paintThemeBtn();
+    });
+    nav.appendChild(themeBtn);
 
     /* Hamburger */
     var hamburger = document.createElement('button');
@@ -823,6 +866,64 @@
     document.body.appendChild(btn);
   }
 
+  /* ---------- Build unified footer (GitHub / Booth / CHANGELOG) ---------- */
+  function buildFooter() {
+    var footer = document.querySelector('.site-footer');
+    if (!footer) return;
+
+    var inner = document.createElement('div');
+    inner.className = 'footer-inner';
+
+    var brand = document.createElement('div');
+    brand.className = 'footer-brand';
+    brand.textContent = '© 2026 Natane Studio · Natane Toon Shader';
+
+    var links = document.createElement('nav');
+    links.className = 'footer-links';
+    links.setAttribute('aria-label', 'Site links');
+
+    [
+      { label: 'GitHub', href: SITE_LINKS.github },
+      { label: 'Booth', href: SITE_LINKS.booth },
+      { label: 'CHANGELOG', href: SITE_LINKS.changelog }
+    ].forEach(function (l) {
+      var a = document.createElement('a');
+      a.href = l.href;
+      a.textContent = l.label;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      links.appendChild(a);
+    });
+
+    footer.textContent = '';
+    inner.appendChild(brand);
+    inner.appendChild(links);
+    footer.appendChild(inner);
+  }
+
+  /* ---------- Enhance doc page header with a "できること" summary box ---------- */
+  function enhancePageHeader() {
+    var ctx = getPageContext();
+    if (!ctx) return;
+    var main = document.querySelector('.main-content');
+    if (!main) return;
+    var subtitle = main.querySelector('.page-subtitle');
+    if (!subtitle || subtitle.dataset.enhanced) return;
+
+    var box = document.createElement('div');
+    box.className = 'doc-summary';
+    var label = document.createElement('span');
+    label.className = 'doc-summary-label';
+    label.textContent = ctx.section === 'tools' ? L.canDoTool : L.canDo;
+    var text = document.createElement('p');
+    text.className = 'doc-summary-text';
+    text.textContent = subtitle.textContent;
+    box.appendChild(label);
+    box.appendChild(text);
+    box.dataset.enhanced = '1';
+    subtitle.replaceWith(box);
+  }
+
   /* ---------- Expose data for portal pages ---------- */
   window.NataneNav = {
     PAGE_ORDER: PAGE_ORDER,
@@ -839,8 +940,10 @@
   document.addEventListener('DOMContentLoaded', function () {
     buildHeader();
     buildBreadcrumb();
+    enhancePageHeader();
     buildCategorySidebar();
     buildPageNav();
     buildSidebarToggle();
+    buildFooter();
   });
 })();
