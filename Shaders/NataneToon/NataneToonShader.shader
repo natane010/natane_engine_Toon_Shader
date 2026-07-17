@@ -964,6 +964,198 @@ Shader "Natane/Toon Shader"
         _StencilWriteMask ("Write Mask", Range(0, 255)) = 255
     }
 
+    // ===== URP (Universal Render Pipeline) SubShader =====
+    // Unity 2022.2+ / URP 14+ 専用。PackageRequirements により URP 未導入の
+    // プロジェクト (BiRP / VRChat) では自動的にスキップされ、下の BiRP SubShader が使われる。
+    // Unity 6 の GPU Resident Drawer (BatchRendererGroup / DOTS Instancing) に対応。
+    // 機能スコープはトゥーンのコア機能のみ (詳細は Documentation~/URP_SUPPORT.md 参照)。
+    SubShader
+    {
+        PackageRequirements
+        {
+            "com.unity.render-pipelines.universal": "14.0.0"
+        }
+
+        Tags
+        {
+            "RenderType" = "Opaque"
+            "Queue" = "Geometry"
+            "RenderPipeline" = "UniversalPipeline"
+            "UniversalMaterialType" = "Lit"
+            "IgnoreProjector" = "True"
+            "VRCFallback" = "Toon"
+        }
+
+        Stencil
+        {
+            Ref [_StencilRef]
+            Comp [_StencilComp]
+            Pass [_StencilOp]
+            Fail [_StencilFail]
+            ZFail [_StencilZFail]
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
+        }
+
+        // Main Toon Forward Pass
+        Pass
+        {
+            Name "ForwardLit"
+            Tags { "LightMode" = "UniversalForward" }
+            Cull [_Cull]
+            ZWrite [_ZWrite]
+            AlphaToMask [_AlphaToMask]
+
+            HLSLPROGRAM
+            #pragma target 3.0
+            #pragma vertex NataneToonPassVertex
+            #pragma fragment NataneToonPassFragment
+
+            // -------------------------------------
+            // Material Keywords (BiRP と同一キーワード)
+            #pragma shader_feature_local _USE_RAMP
+            #pragma shader_feature_local _NORMALMAP
+            #pragma shader_feature_local_fragment _RIM_LIGHT
+            #pragma shader_feature_local_fragment _MATCAP
+            #pragma shader_feature_local_fragment _EMISSION
+
+            // -------------------------------------
+            // Universal Pipeline Keywords
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
+            #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
+            #pragma multi_compile _ _FORWARD_PLUS
+            #pragma multi_compile_fog
+
+            // -------------------------------------
+            // GPU Instancing + DOTS Instancing (GPU Resident Drawer)
+            #pragma multi_compile_instancing
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+
+            #include "Include/URP/NataneToonURPInput.hlsl"
+            #include "Include/URP/NataneToonURPForwardPass.hlsl"
+            ENDHLSL
+        }
+
+        // Outline Pass (inverted hull) - SRPDefaultUnlit は URP 標準レンダラーで描画される
+        Pass
+        {
+            Name "Outline"
+            Tags { "LightMode" = "SRPDefaultUnlit" }
+            Cull Front
+            ZWrite [_ZWrite]
+
+            HLSLPROGRAM
+            #pragma target 3.0
+            #pragma vertex NataneToonOutlineVertex
+            #pragma fragment NataneToonOutlineFragment
+
+            // -------------------------------------
+            // Material Keywords (BiRP と同一キーワード)
+            #pragma shader_feature_local _OUTLINE
+            #pragma shader_feature_local _OUTLINE_TEXTURE_COLOR
+            #pragma shader_feature_local _OUTLINE_WIDTH_MAP
+            #pragma shader_feature_local _OUTLINE_MULTI_COLOR
+            #pragma shader_feature_local _OUTLINE_MASK
+            #pragma shader_feature_local _SMOOTH_NORMAL
+
+            #pragma multi_compile_fog
+
+            // -------------------------------------
+            // GPU Instancing + DOTS Instancing (GPU Resident Drawer)
+            #pragma multi_compile_instancing
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+
+            #include "Include/URP/NataneToonURPInput.hlsl"
+            #include "Include/URP/NataneToonURPOutlinePass.hlsl"
+            ENDHLSL
+        }
+
+        // Shadow Caster Pass
+        Pass
+        {
+            Name "ShadowCaster"
+            Tags { "LightMode" = "ShadowCaster" }
+
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+            Cull [_Cull]
+
+            HLSLPROGRAM
+            #pragma target 2.0
+            #pragma vertex ShadowPassVertex
+            #pragma fragment ShadowPassFragment
+
+            // -------------------------------------
+            // Universal Pipeline Keywords
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+
+            // -------------------------------------
+            // GPU Instancing + DOTS Instancing (GPU Resident Drawer)
+            #pragma multi_compile_instancing
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+
+            #include "Include/URP/NataneToonURPInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
+            ENDHLSL
+        }
+
+        // Depth Only Pass
+        Pass
+        {
+            Name "DepthOnly"
+            Tags { "LightMode" = "DepthOnly" }
+
+            ZWrite On
+            ColorMask R
+            Cull [_Cull]
+
+            HLSLPROGRAM
+            #pragma target 2.0
+            #pragma vertex DepthOnlyVertex
+            #pragma fragment DepthOnlyFragment
+
+            // -------------------------------------
+            // GPU Instancing + DOTS Instancing (GPU Resident Drawer)
+            #pragma multi_compile_instancing
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+
+            #include "Include/URP/NataneToonURPInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthOnlyPass.hlsl"
+            ENDHLSL
+        }
+
+        // Depth Normals Pass (SSAO / Depth Normals Texture 用)
+        Pass
+        {
+            Name "DepthNormalsOnly"
+            Tags { "LightMode" = "DepthNormalsOnly" }
+
+            ZWrite On
+            Cull [_Cull]
+
+            HLSLPROGRAM
+            #pragma target 2.0
+            #pragma vertex DepthNormalsVertex
+            #pragma fragment DepthNormalsFragment
+
+            // -------------------------------------
+            // Universal Pipeline Keywords
+            #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
+
+            // -------------------------------------
+            // GPU Instancing + DOTS Instancing (GPU Resident Drawer)
+            #pragma multi_compile_instancing
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+
+            #include "Include/URP/NataneToonURPInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthNormalsPass.hlsl"
+            ENDHLSL
+        }
+    }
+
     SubShader
     {
         Tags
