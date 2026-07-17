@@ -90,6 +90,15 @@ QUALITY_AUDIT_COMPREHENSIVE_REPORT.md.meta
 en/
 en.meta
 Website/
+!Website/
+Website/*
+!Website/home.js
+!Website/home.js.meta
+!Website/assets.meta
+!Website/assets/
+Website/assets/*
+!Website/assets/natane-studio-icon.jpg
+!Website/assets/natane-studio-icon.jpg.meta
 Website/en.meta
 params/
 params.meta

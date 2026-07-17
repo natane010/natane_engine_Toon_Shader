@@ -41,6 +41,66 @@ namespace NataneToon.Editor
         public static readonly Color ToggleOn = new Color(0.3f, 0.8f, 0.3f);
         public static readonly Color ToggleOff = new Color(0.5f, 0.5f, 0.5f);
 
+        public static Color PanelBackground
+        {
+            get
+            {
+                return UnityEditor.EditorGUIUtility.isProSkin
+                    ? new Color(0.16f, 0.17f, 0.19f, 1f)
+                    : new Color(0.92f, 0.93f, 0.95f, 1f);
+            }
+        }
+
+        public static Color PanelBackgroundElevated
+        {
+            get
+            {
+                return UnityEditor.EditorGUIUtility.isProSkin
+                    ? new Color(0.205f, 0.215f, 0.235f, 1f)
+                    : new Color(0.975f, 0.978f, 0.985f, 1f);
+            }
+        }
+
+        public static Color Divider
+        {
+            get
+            {
+                return UnityEditor.EditorGUIUtility.isProSkin
+                    ? new Color(1f, 1f, 1f, 0.10f)
+                    : new Color(0f, 0f, 0f, 0.12f);
+            }
+        }
+
+        public static Color PrimaryText
+        {
+            get
+            {
+                return UnityEditor.EditorGUIUtility.isProSkin
+                    ? new Color(0.91f, 0.92f, 0.94f, 1f)
+                    : new Color(0.16f, 0.17f, 0.19f, 1f);
+            }
+        }
+
+        public static Color SecondaryText
+        {
+            get
+            {
+                return UnityEditor.EditorGUIUtility.isProSkin
+                    ? new Color(0.68f, 0.70f, 0.74f, 1f)
+                    : new Color(0.35f, 0.37f, 0.42f, 1f);
+            }
+        }
+
+        public static Color DisabledText
+        {
+            get
+            {
+                return UnityEditor.EditorGUIUtility.isProSkin
+                    ? new Color(0.50f, 0.52f, 0.56f, 1f)
+                    : new Color(0.52f, 0.54f, 0.58f, 1f);
+            }
+        }
+
         /// <summary>
         /// Get performance rating color by rating string
         /// パフォーマンス評価文字列から色を取得

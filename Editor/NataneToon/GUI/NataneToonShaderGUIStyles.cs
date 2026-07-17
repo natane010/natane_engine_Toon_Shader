@@ -21,14 +21,6 @@ namespace NataneToon.Editor
     /// </summary>
     public static class NataneToonShaderGUIStyles
     {
-        // ===== Section Colors =====
-        private static readonly Color BasicColor       = new Color(0.35f, 0.70f, 0.95f); // 水色
-        private static readonly Color ShadingColor     = new Color(0.55f, 0.45f, 0.85f); // 紫
-        private static readonly Color LightingColor    = new Color(0.95f, 0.75f, 0.30f); // 橙
-        private static readonly Color EffectsColor     = new Color(0.40f, 0.85f, 0.55f); // 緑
-        private static readonly Color EnvironmentColor = new Color(0.45f, 0.80f, 0.90f); // ティール
-        private static readonly Color AdvancedColor    = new Color(0.75f, 0.55f, 0.55f); // 赤茶
-
         // ===== Toggle Status Colors =====
         public static readonly Color ToggleEnabledColor    = new Color(0.3f, 0.8f, 0.3f);
         public static readonly Color ToggleDisabledColor   = new Color(0.6f, 0.6f, 0.6f);
@@ -42,13 +34,13 @@ namespace NataneToon.Editor
         {
             switch (category)
             {
-                case SectionCategory.Basic:       return BasicColor;
-                case SectionCategory.Shading:     return ShadingColor;
-                case SectionCategory.Lighting:    return LightingColor;
-                case SectionCategory.Effects:     return EffectsColor;
-                case SectionCategory.Environment: return EnvironmentColor;
-                case SectionCategory.Advanced:    return AdvancedColor;
-                default:                          return BasicColor;
+                case SectionCategory.Basic:       return NataneToonColorPalette.SectionBasic;
+                case SectionCategory.Shading:     return NataneToonColorPalette.SectionShading;
+                case SectionCategory.Lighting:    return NataneToonColorPalette.SectionLighting;
+                case SectionCategory.Effects:     return NataneToonColorPalette.SectionEffects;
+                case SectionCategory.Environment: return NataneToonColorPalette.SectionEnvironment;
+                case SectionCategory.Advanced:    return NataneToonColorPalette.SectionAdvanced;
+                default:                          return NataneToonColorPalette.SectionBasic;
             }
         }
 

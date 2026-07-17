@@ -24,8 +24,24 @@ namespace NataneToon.Editor
             Material material = materialEditor.target as Material;
             if (material == null) return;
 
+            NataneToonSamplerBudgetEstimator.SamplerBudgetEstimate budget = NataneToonSamplerBudgetEstimator.Estimate(material);
+            NataneToonInspectorComponents.DrawInspectorHeader(
+                "Natane Toon Shader",
+                L("軽量トゥーンパーティクル", "Lightweight Toon Particle"),
+                "Particle",
+                $"S {budget.EstimatedSamplers}/{budget.Limit}",
+                budget.IsOverLimit
+                    ? NataneInspectorStatus.Error
+                    : budget.IsWarning ? NataneInspectorStatus.Warning : NataneInspectorStatus.Success,
+                () =>
+                {
+                    NataneToonLocalization.ToggleLanguage();
+                    materialEditor.Repaint();
+                },
+                null);
+
             // ===== Main =====
-            EditorGUILayout.LabelField(L("メイン", "Main"), EditorStyles.boldLabel);
+            NataneToonInspectorComponents.DrawGroupHeader(L("メイン", "Main"));
             MaterialProperty mainTex = FindProperty("_MainTex", properties, false);
             MaterialProperty color = FindProperty("_Color", properties, false);
             if (mainTex != null)
@@ -40,7 +56,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(8);
 
             // ===== Blend Mode =====
-            EditorGUILayout.LabelField(L("ブレンド", "Blending"), EditorStyles.boldLabel);
+            NataneToonInspectorComponents.DrawGroupHeader(L("ブレンド", "Blending"));
             MaterialProperty blendMode = FindProperty("_BlendMode", properties, false);
             if (blendMode != null)
             {
@@ -67,7 +83,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(8);
 
             // ===== Toon Lighting =====
-            EditorGUILayout.LabelField(L("トゥーンライティング", "Toon Lighting"), EditorStyles.boldLabel);
+            NataneToonInspectorComponents.DrawGroupHeader(L("トゥーンライティング", "Toon Lighting"));
             MaterialProperty toonLighting = FindProperty("_ParticleToonLighting", properties, false);
             if (toonLighting != null)
             {
@@ -92,7 +108,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(8);
 
             // ===== Soft Particles =====
-            EditorGUILayout.LabelField(L("ソフトパーティクル", "Soft Particles"), EditorStyles.boldLabel);
+            NataneToonInspectorComponents.DrawGroupHeader(L("ソフトパーティクル", "Soft Particles"));
             MaterialProperty softParticles = FindProperty("_SoftParticlesEnabled", properties, false);
             if (softParticles != null)
             {
@@ -115,7 +131,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(8);
 
             // ===== Flipbook =====
-            EditorGUILayout.LabelField(L("フリップブック", "Flipbook"), EditorStyles.boldLabel);
+            NataneToonInspectorComponents.DrawGroupHeader(L("フリップブック", "Flipbook"));
             MaterialProperty flipbook = FindProperty("_FlipbookBlending", properties, false);
             if (flipbook != null)
             {
@@ -135,7 +151,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(8);
 
             // ===== Emission =====
-            EditorGUILayout.LabelField(L("エミッション", "Emission"), EditorStyles.boldLabel);
+            NataneToonInspectorComponents.DrawGroupHeader(L("エミッション", "Emission"));
             MaterialProperty emission = FindProperty("_EmissionEnabled", properties, false);
             if (emission != null)
             {
@@ -159,7 +175,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(8);
 
             // ===== Camera Fade =====
-            EditorGUILayout.LabelField(L("カメラフェード", "Camera Fade"), EditorStyles.boldLabel);
+            NataneToonInspectorComponents.DrawGroupHeader(L("カメラフェード", "Camera Fade"));
             MaterialProperty cameraFade = FindProperty("_CameraFadeEnabled", properties, false);
             if (cameraFade != null)
             {
@@ -179,7 +195,7 @@ namespace NataneToon.Editor
             EditorGUILayout.Space(12);
 
             // ===== Advanced =====
-            EditorGUILayout.LabelField(L("詳細設定", "Advanced"), EditorStyles.boldLabel);
+            NataneToonInspectorComponents.DrawGroupHeader(L("出力", "Output"));
             materialEditor.RenderQueueField();
             materialEditor.EnableInstancingField();
         }

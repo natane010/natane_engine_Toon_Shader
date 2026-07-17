@@ -491,21 +491,38 @@
 
     var logo = document.createElement('div');
     logo.className = 'site-logo';
-    logo.innerHTML = '<a href="' + makePath('index.html') + '">Natane Toon Shader</a>';
+    logo.innerHTML = '<a href="' + makePath('index.html') + '">' +
+      '<img src="' + ROOT + 'assets/natane-studio-icon.jpg" alt="">' +
+      '<span>Natane Toon Shader</span></a>';
 
     var nav = document.createElement('nav');
     nav.className = 'nav-links';
+    nav.id = 'site-navigation';
 
-    NAV.forEach(function (item) {
+    function closeDropdowns(except) {
+      nav.querySelectorAll('.nav-dropdown.open').forEach(function (dropdown) {
+        if (dropdown === except) return;
+        dropdown.classList.remove('open');
+        var button = dropdown.querySelector('.nav-dropdown-trigger');
+        if (button) button.setAttribute('aria-expanded', 'false');
+      });
+    }
+
+    NAV.forEach(function (item, navIndex) {
       if (item.children) {
         var dd = document.createElement('div');
         dd.className = 'nav-dropdown';
-        var span = document.createElement('span');
-        span.textContent = item.label + ' ▾';
-        dd.appendChild(span);
+        var trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'nav-dropdown-trigger';
+        trigger.textContent = item.label + ' ▾';
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.setAttribute('aria-controls', 'nav-dropdown-' + navIndex);
+        dd.appendChild(trigger);
 
         var menu = document.createElement('div');
         menu.className = 'nav-dropdown-menu';
+        menu.id = 'nav-dropdown-' + navIndex;
         item.children.forEach(function (child) {
           var a = document.createElement('a');
           a.href = resolveHref(child.href);
@@ -515,8 +532,15 @@
         });
         dd.appendChild(menu);
 
+        trigger.addEventListener('click', function () {
+          var isOpen = !dd.classList.contains('open');
+          closeDropdowns(dd);
+          dd.classList.toggle('open', isOpen);
+          trigger.setAttribute('aria-expanded', String(isOpen));
+        });
+
         if (item.children.some(function (c) { return isActive(c.href); })) {
-          span.classList.add('active');
+          trigger.classList.add('active');
         }
         nav.appendChild(dd);
       } else {
@@ -539,10 +563,39 @@
     var hamburger = document.createElement('button');
     hamburger.className = 'hamburger';
     hamburger.setAttribute('aria-label', L.menu);
+    hamburger.setAttribute('aria-controls', nav.id);
+    hamburger.setAttribute('aria-expanded', 'false');
     hamburger.innerHTML = '<span></span><span></span><span></span>';
+
+    function closeMobileNav() {
+      hamburger.classList.remove('open');
+      nav.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+      document.body.classList.remove('nav-open');
+    }
+
     hamburger.addEventListener('click', function () {
-      hamburger.classList.toggle('open');
-      nav.classList.toggle('open');
+      var isOpen = !nav.classList.contains('open');
+      hamburger.classList.toggle('open', isOpen);
+      nav.classList.toggle('open', isOpen);
+      hamburger.setAttribute('aria-expanded', String(isOpen));
+      document.body.classList.toggle('nav-open', isOpen);
+    });
+
+    nav.addEventListener('click', function (event) {
+      if (event.target.closest('a')) closeMobileNav();
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key !== 'Escape') return;
+      closeDropdowns();
+      if (!nav.classList.contains('open')) return;
+      closeMobileNav();
+      hamburger.focus();
+    });
+
+    document.addEventListener('click', function (event) {
+      if (!nav.contains(event.target)) closeDropdowns();
     });
 
     inner.appendChild(logo);
