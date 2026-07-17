@@ -36,7 +36,8 @@ namespace NataneToon.Tests.Editor
             IEnumerable<string> animation = null,
             IEnumerable<string> runtime = null,
             IEnumerable<string> alwaysKeepKeywords = null,
-            IEnumerable<string> alwaysKeepShaderNames = null)
+            IEnumerable<string> alwaysKeepShaderNames = null,
+            IReadOnlyDictionary<string, IReadOnlyCollection<IReadOnlyCollection<string>>> configs = null)
         {
             return new NataneStripSnapshotView(
                 hasSnapshot: true,
@@ -44,7 +45,22 @@ namespace NataneToon.Tests.Editor
                 animationDrivenKeywords: animation,
                 runtimeDynamicKeywords: runtime,
                 alwaysKeepKeywords: alwaysKeepKeywords,
-                alwaysKeepShaderNames: alwaysKeepShaderNames);
+                alwaysKeepShaderNames: alwaysKeepShaderNames,
+                configsByShader: configs);
+        }
+
+        // Aggressive 用: 1 シェーダーの実在 Material 構成集合を作る（各 string[] が 1 構成）。
+        private static IReadOnlyDictionary<string, IReadOnlyCollection<IReadOnlyCollection<string>>> Configs(
+            string shader, params string[][] configs)
+        {
+            var list = new List<IReadOnlyCollection<string>>();
+            foreach (var c in configs) list.Add(c);
+            return new Dictionary<string, IReadOnlyCollection<IReadOnlyCollection<string>>> { { shader, list } };
+        }
+
+        private static NataneStripPolicyView AggressivePolicy(bool gatePassed)
+        {
+            return new NataneStripPolicyView { Mode = NataneOptimizationMode.Aggressive, AggressiveGatePassed = gatePassed };
         }
 
         private static Dictionary<string, IReadOnlyCollection<string>> Used(string shader, params string[] keywords)
@@ -177,13 +193,105 @@ namespace NataneToon.Tests.Editor
         }
 
         [Test]
-        public void Aggressive_DowngradesToSafe()
+        public void Aggressive_GateFailed_DowngradesToSafe()
         {
+            // 続行ガード不通過（AggressiveGatePassed=false）のとき Safe へ降格して判定する。
             var view = MakeView(Used(CoreShader));
-            var d = Decide(CoreShader, new[] { SafeKeyword }, view, NataneOptimizationMode.Aggressive);
+            var d = NataneUnifiedStripDecider.Decide(CoreShader, new[] { SafeKeyword }, view, AggressivePolicy(gatePassed: false));
 
             Assert.That(d.AggressiveDowngraded, Is.True);
-            Assert.That(d.Action, Is.EqualTo(NataneStripAction.Strip), "Aggressive は Safe へ降格して判定する");
+            Assert.That(d.Action, Is.EqualTo(NataneStripAction.Strip), "降格後は Safe 判定（未使用 → strip）");
+        }
+
+        // ---- Aggressive（続行ガード通過時の本判定） ----
+
+        [Test]
+        public void Aggressive_KeepsExistingMaterialConfig()
+        {
+            Assume.That(NataneShaderFeatureRegistry.TryGetByKeyword(SafeKeyword, out var def) && def.AggressiveStrippable, Is.True);
+
+            // 実在構成: _EMISSION を使う Material が 1 つ存在する。
+            var view = MakeView(Used(CoreShader), configs: Configs(CoreShader, new[] { SafeKeyword }));
+            var d = NataneUnifiedStripDecider.Decide(CoreShader, new[] { SafeKeyword }, view, AggressivePolicy(gatePassed: true));
+
+            Assert.That(d.AggressiveDowngraded, Is.False);
+            Assert.That(d.Action, Is.EqualTo(NataneStripAction.Keep), "実在構成に一致するバリアントは保持");
+        }
+
+        [Test]
+        public void Aggressive_StripsNonExistingConfig()
+        {
+            // 実在構成はベース（キーワードなし）のみ。_EMISSION 構成は存在しない → strip。
+            var view = MakeView(Used(CoreShader), configs: Configs(CoreShader, new string[0]));
+            var d = NataneUnifiedStripDecider.Decide(CoreShader, new[] { SafeKeyword }, view, AggressivePolicy(gatePassed: true));
+
+            Assert.That(d.Action, Is.EqualTo(NataneStripAction.Strip));
+            Assert.That(d.TriggerKeywords, Does.Contain(SafeKeyword));
+        }
+
+        [Test]
+        public void Aggressive_KeepsAnimationDrivenApproximation()
+        {
+            // 実在構成はベースのみだが、_EMISSION が Animation 由来 → 実在構成に加算した構成として保持。
+            var view = MakeView(Used(CoreShader), animation: new[] { SafeKeyword },
+                configs: Configs(CoreShader, new string[0]));
+            var d = NataneUnifiedStripDecider.Decide(CoreShader, new[] { SafeKeyword }, view, AggressivePolicy(gatePassed: true));
+
+            Assert.That(d.Action, Is.EqualTo(NataneStripAction.Keep), "Animation 由来加算近似で保持");
+        }
+
+        [Test]
+        public void Aggressive_KeepsNonAggressiveStrippableKeyword()
+        {
+            const string derived = "_PBR_LIKE"; // AggressiveStrippable=false / AlwaysKeep=true
+            Assume.That(NataneShaderFeatureRegistry.TryGetByKeyword(derived, out var def) &&
+                        !def.AggressiveStrippable, Is.True, "前提: _PBR_LIKE は Aggressive 非対象");
+
+            var view = MakeView(Used(CoreShader), configs: Configs(CoreShader, new string[0]));
+            var d = NataneUnifiedStripDecider.Decide(CoreShader, new[] { derived }, view, AggressivePolicy(gatePassed: true));
+
+            Assert.That(d.Action, Is.EqualTo(NataneStripAction.Keep), "Aggressive 非対象キーワードを含む構成は保持");
+        }
+
+        [Test]
+        public void Aggressive_KeepsUnknownKeyword()
+        {
+            Assume.That(NataneShaderFeatureRegistry.IsKnownKeyword(UnknownKeyword), Is.False);
+            var view = MakeView(Used(CoreShader), configs: Configs(CoreShader, new string[0]));
+            var d = NataneUnifiedStripDecider.Decide(CoreShader, new[] { UnknownKeyword }, view, AggressivePolicy(gatePassed: true));
+
+            Assert.That(d.Action, Is.EqualTo(NataneStripAction.Keep), "未知キーワード（判定不能）は保持");
+        }
+
+        // ---- Aggressive 続行ガード（純関数） ----
+
+        [Test]
+        public void Gate_AllClear_Proceeds()
+        {
+            var r = NataneAggressiveGate.Evaluate(false, false, false, false);
+            Assert.That(r.Proceed, Is.True);
+            Assert.That(NataneAggressiveGate.Resolve(r.Proceed, NataneStrictFailurePolicy.FallbackKeepAll),
+                Is.EqualTo(NataneAggressiveResolution.Proceed));
+        }
+
+        [Test]
+        public void Gate_UnknownKeyword_DowngradesUnderNormalPolicy()
+        {
+            var r = NataneAggressiveGate.Evaluate(hasUnknownKeywords: true, registrySchemaMismatch: false,
+                auditStale: false, hasUnparseableItems: false);
+            Assert.That(r.Proceed, Is.False);
+            Assert.That(NataneAggressiveGate.Resolve(r.Proceed, NataneStrictFailurePolicy.FallbackKeepAll),
+                Is.EqualTo(NataneAggressiveResolution.DowngradeToSafe));
+        }
+
+        [Test]
+        public void Gate_Failure_FailsBuildUnderStrict()
+        {
+            var r = NataneAggressiveGate.Evaluate(hasUnknownKeywords: false, registrySchemaMismatch: false,
+                auditStale: true, hasUnparseableItems: false);
+            Assert.That(r.Proceed, Is.False);
+            Assert.That(NataneAggressiveGate.Resolve(r.Proceed, NataneStrictFailurePolicy.FailBuild),
+                Is.EqualTo(NataneAggressiveResolution.FailBuild));
         }
 
         // ---- シェーダー間の非波及 ----

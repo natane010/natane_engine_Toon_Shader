@@ -236,6 +236,7 @@ namespace NataneToon.Editor
                 packageVersion = NataneShaderFeatureRegistry.ShaderCompatibilityVersion
             };
 
+            var buildStopwatch = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 if (TestFailureHook != null)
@@ -251,7 +252,10 @@ namespace NataneToon.Editor
                 PopulateKeepLists(snapshot);
 
                 // ① AssetIndex 最新化（差分キャッチアップ）。
+                var indexStopwatch = System.Diagnostics.Stopwatch.StartNew();
                 NataneAssetIndexService.RunSynchronousCatchUp();
+                indexStopwatch.Stop();
+                NataneBuildStageTimings.SetIndexCatchUpMs(indexStopwatch.Elapsed.TotalMilliseconds);
                 if (NataneAssetIndexStore.TryLoadIndex(out var indexData) && indexData != null)
                 {
                     snapshot.assetIndexGeneratedAtUtcTicks = indexData.generatedAtUtcTicks;
@@ -269,7 +273,10 @@ namespace NataneToon.Editor
                 else
                 {
                     // ② Update Audit。
+                    var auditStopwatch = System.Diagnostics.Stopwatch.StartNew();
                     NataneShaderAuditData audit = NataneShaderUpdateAudit.Run();
+                    auditStopwatch.Stop();
+                    NataneBuildStageTimings.SetAuditMs(auditStopwatch.Elapsed.TotalMilliseconds);
                     PopulateAuditSummary(snapshot, audit);
                     // 監査由来の依存ハッシュを採用（同一計算だが監査結果と整合させる）。
                     if (!string.IsNullOrEmpty(audit.shaderDependencyFingerprint))
@@ -297,11 +304,15 @@ namespace NataneToon.Editor
                 snapshot.generatedAtUtcTicks = DateTime.UtcNow.Ticks;
                 snapshot.snapshotFingerprint = snapshot.ComputeFingerprint();
 
+                buildStopwatch.Stop();
+                NataneBuildStageTimings.SetSnapshotBuildMs(buildStopwatch.Elapsed.TotalMilliseconds);
                 return new SnapshotBuildResult { Snapshot = snapshot, Succeeded = true, FailureReason = null };
             }
             catch (Exception ex)
             {
                 // 例外は握りつぶさず理由として返す。生成途中の snapshot も参考用に添える。
+                buildStopwatch.Stop();
+                NataneBuildStageTimings.SetSnapshotBuildMs(buildStopwatch.Elapsed.TotalMilliseconds);
                 snapshot.warnings.Add("Snapshot 生成に失敗しました: " + ex.Message);
                 snapshot.generatedAtUtcTicks = DateTime.UtcNow.Ticks;
                 return new SnapshotBuildResult
