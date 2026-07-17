@@ -53,6 +53,14 @@ namespace NataneToon.Tests.Editor
         [TestCase("topographic", "Topographic")]
         [TestCase("modulator", "FXModulator")]
         [TestCase("catchlight", "ShapedHighlight")]
+        [TestCase("pixel", "PixelArt")]
+        [TestCase("ピクセル", "PixelArt")]
+        [TestCase("caustics", "Caustics")]
+        [TestCase("コースティクス", "Caustics")]
+        [TestCase("lenticular", "Lenticular")]
+        [TestCase("レンチキュラー", "Lenticular")]
+        [TestCase("x-ray", "XRay")]
+        [TestCase("透視", "XRay")]
         public void Search_FindsExpectedSection(string query, string expectedKey)
         {
             string[] resultKeys = NataneToonInspectorSectionRegistry.Search(query)
@@ -81,11 +89,15 @@ namespace NataneToon.Tests.Editor
             Assert.That(missing, Is.Empty, "Sections without a JP+EN one-line description: " + string.Join(", ", missing));
         }
 
-        // v1.6.x で追加した4つの表現機能が登録から漏れていないことを担保する。
+        // v1.6.x / v1.7.x で追加した表現機能が登録から漏れていないことを担保する。
+        // これらはトグルキーワード付きの Effects タブ機能。
         [TestCase("LineBoil", "_LINE_BOIL", "_LineBoil")]
         [TestCase("ShapedHighlight", "_SHAPED_HIGHLIGHT", "_ShapedHighlight")]
         [TestCase("Topographic", "_TOPOGRAPHIC", "_Topographic")]
         [TestCase("FXModulator", "_FX_MODULATOR", "_FXModulator")]
+        [TestCase("PixelArt", "_PIXEL_ART", "_PixelArt")]
+        [TestCase("Caustics", "_CAUSTICS", "_Caustics")]
+        [TestCase("Lenticular", "_LENTICULAR", "_Lenticular")]
         public void NewExpressionSections_AreRegistered(string key, string expectedKeyword, string expectedProperty)
         {
             NataneInspectorSectionDescriptor descriptor = NataneToonInspectorSectionRegistry.Find(key);
@@ -103,6 +115,20 @@ namespace NataneToon.Tests.Editor
             NataneInspectorSectionDescriptor descriptor = NataneToonInspectorSectionRegistry.Find("FXModulator");
             Assert.That(descriptor.GroupEN, Is.EqualTo("Control"));
             Assert.That(descriptor.GroupJP, Is.EqualTo("制御"));
+        }
+
+        // X-Ray は Ghost と同じくバリアント専用（HasProperty ガード）のため、
+        // トグルキーワードを持たない。誤ってキーワードを付けていないことを保証する。
+        [Test]
+        public void XRay_IsRegisteredAsKeywordlessVariantSection()
+        {
+            NataneInspectorSectionDescriptor descriptor = NataneToonInspectorSectionRegistry.Find("XRay");
+
+            Assert.That(descriptor, Is.Not.Null, "XRay is not registered");
+            Assert.That(descriptor.Tab, Is.EqualTo(NataneInspectorTab.Output));
+            Assert.That(descriptor.Difficulty, Is.EqualTo(NataneInspectorDifficulty.Advanced));
+            Assert.That(string.IsNullOrEmpty(descriptor.ToggleKeyword), Is.True, "XRay must not carry a shader keyword (variant-only, like Ghost)");
+            Assert.That(descriptor.GroupEN, Is.EqualTo("Variant"));
         }
     }
 

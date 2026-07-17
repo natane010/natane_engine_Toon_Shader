@@ -520,6 +520,10 @@ public class NataneToonShaderGUI : ShaderGUI
             { "ShapedHighlight", "ShowShapedHighlight" },
             { "Topographic", "ShowTopographic" },
             { "FXModulator", "ShowFXModulator" },
+            { "PixelArt", "ShowPixelArt" },
+            { "Caustics", "ShowCaustics" },
+            { "Lenticular", "ShowLenticular" },
+            { "XRay", "ShowXRay" },
     };
 
     // Default values: keys listed here default to true; all others default to false
@@ -7851,6 +7855,187 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("FXModulator"));
     }
 
+    // ===== v1.7.x 表現機能: Pixel Art / Caustics / Lenticular / X-Ray =====
+
+    private void DrawPixelArtSection()
+    {
+        SetFoldout("PixelArt", DrawBoxedSection(L("ピクセルアート化", "Pixel Art"), GetFoldout("PixelArt"), SectionCategory.Effects, "_PIXEL_ART", sectionKey: "PixelArt"));
+        if (GetFoldout("PixelArt"))
+        {
+            bool enable = DrawToggle("_PIXEL_ART", "_PixelArt", L("ピクセルアート化を有効化", "Enable Pixel Art"));
+            if (enable)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_PixelArtSize", L("解像度（ドットの粗さ）", "Resolution (Dot Size)"),
+                    "48〜96。小さいほど粗いドット絵に。", "48 to 96. Smaller gives chunkier pixels.");
+                DrawProperty("_PixelLightSteps", L("色・陰影の段数", "Light / Color Steps"),
+                    "4〜8。少ないほどレトロな階調に。", "4 to 8. Fewer steps looks more retro.");
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("パレット", "Palette"), EditorStyles.boldLabel);
+                DrawProperty("_PixelPalette", L("パレットLUTを使う", "Use Palette LUT"));
+                // パレットLUT使用時のみLUTテクスチャを表示
+                if (GetPropFloat("_PixelPalette") >= 0.5f)
+                {
+                    DrawProperty("_PixelPaletteTex", L("パレット (横並びLUT)", "Palette (horizontal LUT)"));
+                }
+                DrawProperty("_PixelDither", L("ディザ", "Dither"));
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                DrawProperty("_PixelArtMask", L("マスク (R)", "Mask (R)"));
+
+                DrawHelpToggle("PixelArt",
+                    L("🎮 ピクセルアート化:\n3Dモデルをドット絵・レトロゲーム風に加工します。\n\n• 解像度: 画面をどれくらい粗いドットに区切るか（小さいほど粗い）\n• 色・陰影の段数: 使う色数。少ないほどレトロ\n• パレットLUT: 横並びの色見本で色を固定できます（ゲーム機風の限定色）\n• ディザ: 段差を点々でぼかして中間色を表現\n\n💡 段数を絞ってからパレットLUTを割り当てると『8bitゲーム』感が出ます。",
+                      "🎮 Pixel Art:\nRestyles the 3D model into pixel art / retro-game look.\n\n• Resolution: how coarsely the screen is diced into dots (smaller = chunkier)\n• Light/Color Steps: how many tones are used; fewer looks more retro\n• Palette LUT: lock colors to a horizontal swatch strip (console-style limited palette)\n• Dither: dots the banding to fake in-between shades\n\n💡 Lower the steps, then assign a palette LUT for an '8-bit game' feel."),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("PixelArt"));
+    }
+
+    private void DrawCausticsSection()
+    {
+        SetFoldout("Caustics", DrawBoxedSection(L("サーフェス・コースティクス", "Surface Caustics"), GetFoldout("Caustics"), SectionCategory.Effects, "_CAUSTICS", sectionKey: "Caustics"));
+        if (GetFoldout("Caustics"))
+        {
+            bool enable = DrawToggle("_CAUSTICS", "_Caustics", L("コースティクスを有効化", "Enable Caustics"));
+            if (enable)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.LabelField(L("パターン", "Pattern"), EditorStyles.boldLabel);
+                DrawProperty("_CausticsPatternMode", L("パターンモード", "Pattern Mode"));
+                // Texture(1) のときだけコースティクステクスチャを表示
+                if (Mathf.RoundToInt(GetPropFloat("_CausticsPatternMode")) == 1)
+                {
+                    DrawProperty("_CausticsTex", L("コースティクステクスチャ", "Caustics Texture"));
+                }
+                DrawProperty("_CausticsSpace", L("投影空間", "Space"));
+                DrawProperty("_CausticsComposite", L("合成方法", "Composite"));
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("色と動き", "Color & Motion"), EditorStyles.boldLabel);
+                DrawColorProperty("_CausticsColor", L("色 (HDR)", "Color (HDR)"), true);
+                DrawProperty("_CausticsIntensity", L("強さ", "Intensity"),
+                    "1〜3。発光合成なら少し高めが映えます。", "1 to 3. A bit higher pops with additive compositing.");
+                DrawProperty("_CausticsScale", L("スケール", "Scale"));
+                DrawProperty("_CausticsSpeed", L("流れる速さ", "Speed"));
+                DrawProperty("_CausticsDirection", L("流れる方向 (XY)", "Direction (XY)"));
+                DrawProperty("_CausticsDistortion", L("歪み", "Distortion"));
+                DrawProperty("_CausticsContrast", L("コントラスト", "Contrast"));
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                DrawProperty("_CausticsMask", L("マスク (R)", "Mask (R)"));
+
+                DrawHelpToggle("Caustics",
+                    L("🌊 サーフェス・コースティクス:\n水中の揺れる光や魔法の光模様を表面に流します。\n\n• パターンモード: 数式で作る/テクスチャを使う\n• 投影空間: UV/オブジェクト/ワールド/簡易トライプレーナー\n• 合成方法: 発光加算/ベース乗算/明部のみ/影のみ\n• 強さ・スケール・速さ・方向で見た目を調整\n\n💡 プール床や水面、魔法陣、SF演出に。影のみ合成にすると神秘的な陰影になります。",
+                      "🌊 Surface Caustics:\nFlows shimmering underwater light or magical light patterns across the surface.\n\n• Pattern Mode: procedural math or a texture\n• Space: UV / Object / World / Triplanar-lite\n• Composite: emission add / base multiply / lit only / shadow only\n• Tune with Intensity, Scale, Speed, Direction\n\n💡 Great for pool floors, water, magic circles, and sci-fi. Shadow-only compositing gives a mystical shading."),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("Caustics"));
+    }
+
+    private void DrawLenticularSection()
+    {
+        SetFoldout("Lenticular", DrawBoxedSection(L("レンチキュラー", "Lenticular"), GetFoldout("Lenticular"), SectionCategory.Effects, "_LENTICULAR", sectionKey: "Lenticular"));
+        if (GetFoldout("Lenticular"))
+        {
+            bool enable = DrawToggle("_LENTICULAR", "_Lenticular", L("レンチキュラーを有効化", "Enable Lenticular"));
+            if (enable)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.LabelField(L("フレーム", "Frames"), EditorStyles.boldLabel);
+                DrawProperty("_LenticularAtlas", L("アトラス（コマ並び画像）", "Atlas (frame sheet)"));
+                DrawProperty("_LenticularFrames", L("コマ数", "Frame Count"));
+                DrawProperty("_LenticularDirection", L("コマの並び", "Frame Layout"));
+                DrawProperty("_LenticularFrameOffset", L("開始コマオフセット", "Frame Offset"));
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("切り替え", "Switching"), EditorStyles.boldLabel);
+                DrawProperty("_LenticularMode", L("切り替えモード", "Mode"));
+                DrawProperty("_LenticularViewAxis", L("視線の判定軸", "View Axis"));
+                DrawProperty("_LenticularAngleRange", L("切り替え角度範囲 (度)", "Angle Range (deg)"),
+                    "60〜120。狭いほど少しの角度で切り替わります。", "60 to 120. Narrower switches with smaller angle changes.");
+                DrawProperty("_LenticularSoftness", L("切り替えのやわらかさ", "Transition Softness"));
+                // ScanBlend(2) のときだけスキャン縞スケールを表示
+                if (Mathf.RoundToInt(GetPropFloat("_LenticularMode")) == 2)
+                {
+                    DrawProperty("_LenticularScanScale", L("スキャン縞スケール", "Scan Stripe Scale"));
+                }
+                DrawProperty("_LenticularStereoMode", L("ステレオモード", "Stereo Mode"),
+                    "VRでちらつくときは StereoCenter に。", "Use StereoCenter if it flickers in VR.");
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("仕上げ", "Finish"), EditorStyles.boldLabel);
+                DrawProperty("_LenticularEmission", L("発光強度", "Emission"));
+                DrawProperty("_LenticularNormalInfluence", L("法線の影響", "Normal Influence"));
+                DrawProperty("_LenticularBlend", L("ブレンド", "Blend"));
+                DrawProperty("_LenticularMask", L("マスク (R)", "Mask (R)"));
+
+                DrawHelpToggle("Lenticular",
+                    L("🃏 レンチキュラー:\n見る角度によって絵柄や表情が切り替わる、ホログラムカードのような表現です。\n\n• アトラス: 切り替えるコマを並べた1枚の画像\n• コマ数/並び: 横並びかグリッドか\n• 切り替えモード: なめらか/カクッと/スキャン/正面のみ表示/横から表示/反転\n• 視線の判定軸・角度範囲: どの向きの変化で切り替えるか\n• ステレオモード: VRでちらつく場合は StereoCenter\n\n💡 表情差分カードや、名刺・グッズ風の『動く絵』に最適です。",
+                      "🃏 Lenticular:\nArtwork or expression switches with the viewing angle, like a hologram card.\n\n• Atlas: one image holding the frames to switch between\n• Frame Count/Layout: horizontal strip or grid\n• Mode: SmoothBlend / HardStep / ScanBlend / FrontReveal / SideReveal / Flip\n• View Axis & Angle Range: which viewing change drives the switch\n• Stereo Mode: use StereoCenter if it flickers in VR\n\n💡 Perfect for expression-swap cards and moving-picture merch effects."),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("Lenticular"));
+    }
+
+    private void DrawXRaySection()
+    {
+        if (targetMaterial == null || !targetMaterial.HasProperty("_XRayMode")) return; // X-Ray variant only
+        SetFoldout("XRay", DrawBoxedSection("X-Ray", GetFoldout("XRay"), SectionCategory.Advanced, null, sectionKey: "XRay"));
+        if (GetFoldout("XRay"))
+        {
+            DrawProperty("_XRayMode", L("表示モード", "Display Mode"));
+            DrawColorProperty("_XRayColor", L("色 (HDR)", "Color (HDR)"), true);
+            DrawProperty("_XRayOccludedAlpha", L("隠れ部分の不透明度", "Occluded Alpha"));
+
+            int mode = Mathf.RoundToInt(GetPropFloat("_XRayMode"));
+
+            // OutlineOnly(0) / Fresnel(4): フレネル系パラメータ
+            if (mode == 0)
+            {
+                DrawProperty("_XRayOutlineWidth", L("輪郭の太さ", "Outline Width"));
+            }
+            if (mode == 0 || mode == 4)
+            {
+                DrawProperty("_XRayFresnelPower", L("フレネル強度", "Fresnel Power"));
+            }
+            // Scanline(3)
+            if (mode == 3)
+            {
+                DrawProperty("_XRayScanlineScale", L("走査線スケール", "Scanline Scale"));
+                DrawProperty("_XRayScanlineSpeed", L("走査線の速さ", "Scanline Speed"));
+                DrawProperty("_XRayScanlineSpace", L("走査線の基準", "Scanline Space"));
+            }
+            // Pulse(5)
+            if (mode == 5)
+            {
+                DrawProperty("_XRayPulseSpeed", L("パルスの速さ", "Pulse Speed"));
+            }
+            // DepthGradient(6)
+            if (mode == 6)
+            {
+                DrawProperty("_XRayDepthFade", L("深度フェード", "Depth Fade"));
+            }
+
+            EditorGUILayout.Space(SECTION_SPACING);
+            EditorGUILayout.LabelField(L("ブレンド（上級）", "Blending (advanced)"), EditorStyles.boldLabel);
+            DrawProperty("_XRaySrcBlend", L("ソースブレンド", "Src Blend"));
+            DrawProperty("_XRayDstBlend", L("デスティネーションブレンド", "Dst Blend"));
+
+            DrawHelpToggle("XRay",
+                L("🩻 X-Ray:\nこのバリアントは、壁や物に隠れた部分だけを輪郭やパターンで浮かび上がらせます。\n\n• 表示モード: 輪郭のみ/塗りつぶし/ディザ/走査線/フレネル/パルス/深度グラデーション\n• 隠れ部分の不透明度: 遮蔽された箇所の見え具合\n• 各モード専用パラメータ（輪郭の太さ・走査線・フレネル・パルス・深度）は選んだモードでのみ表示されます\n• ブレンド: 加算で光る/アルファで透過など描画の合成方法\n\n💡 敵位置マーカーやスキャン演出、SFの透視表現に。",
+                  "🩻 X-Ray:\nThis variant reveals only the parts hidden behind walls or objects, as an outline or pattern.\n\n• Display Mode: OutlineOnly / SolidFill / DitherFill / Scanline / Fresnel / Pulse / DepthGradient\n• Occluded Alpha: how visible the hidden portion is\n• Mode-specific parameters (outline width, scanline, fresnel, pulse, depth) only appear for the selected mode\n• Blending: additive glow, alpha transparency, and so on\n\n💡 Great for enemy locators, scan effects, and sci-fi see-through looks."),
+                MessageType.Info);
+        }
+        EndBoxedSection(GetFoldout("XRay"));
+    }
+
     private void DrawCurrentStateSection()
     {
         SetFoldout("CurrentState", DrawBoxedSection(L("マテリアルとシェーダー", "Material & Shader"), GetFoldout("CurrentState"), SectionCategory.Basic, sectionKey: "CurrentState"));
@@ -8582,6 +8767,7 @@ public class NataneToonShaderGUI : ShaderGUI
     {
         if (section == null || targetMaterial == null) return false;
         if (section.Key == "Ghost") return targetMaterial.HasProperty("_GhostFresnelAlpha");
+        if (section.Key == "XRay") return targetMaterial.HasProperty("_XRayMode");
         if (section.Key == "BackgroundLightmap" || section.Key == "PBR")
             return GetCurrentRenderingMode() == RenderingMode.Background;
         if (section.Key == "Fur")
@@ -9015,6 +9201,10 @@ public class NataneToonShaderGUI : ShaderGUI
             case "ShapedHighlight": return DrawShapedHighlightSection;
             case "Topographic": return DrawTopographicSection;
             case "FXModulator": return DrawFXModulatorSection;
+            case "PixelArt": return DrawPixelArtSection;
+            case "Caustics": return DrawCausticsSection;
+            case "Lenticular": return DrawLenticularSection;
+            case "XRay": return DrawXRaySection;
             default: return null;
         }
     }
