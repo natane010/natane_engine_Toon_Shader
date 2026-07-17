@@ -5,6 +5,43 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-07-17
+
+### Added
+- **顔直交投影 (_FACE_ORTHO)**: ピボット中心に透視→直交投影をブレンドし、カメラ距離・FOV・カメラ種別(デスクトップ/VRCカメラ/ミラー)によらず顔のプロポーションを理想的に保つ。VR時は別強度(既定0.3)、Rチャンネルマスク対応、アウトライン追従。
+- **鏡・カメラ写り分けテクスチャ (_MIRROR_TEXTURE)**: VRChatミラー/カメラに映るときだけベースの見た目を別テクスチャ・カラーへ切替(ブレンド量指定可)。「鏡の中だけ違う姿」「写真にだけ写る模様」など。
+- **ゴーストバリアント (Natane/Toon Shader (Ghost))**: 深度プリパス+ZTest Equalで、体の重なり部分の二重ブレンドや裏面透けが構造的に発生しない幽霊表現。フレネル中心フェード+HDR縁発光。
+- **パーティクルバリアント (Natane/Toon Shader (Particle))**: 軽量トゥーンパーティクル。ブレンドモード切替/トゥーンライティング/ソフトパーティクル/フリップブック/カメラフェード。VRCFallback=Particle。
+- **GPUパーティクル (Natane/Effects/GPU Particles (Stateless))**: 状態レス頂点アニメ方式(CRT/カメラ/スクリプト不要、アバター安全)。Rise/Fall/Orbit/Burstの4モード、AudioLink変調対応、クアッドクラウドメッシュ生成ツール付属。
+- **疑似流体 (Natane/Effects/Fake Fluid)**: 数式ベースの容器内液体表現(充填量/揺れ/泡/フレネル/トゥーン陰影)。
+- **目のセットアップツール**: 目のマテリアル分離(トライアングル抽出→新規サブメッシュ/マテリアル)とUV再配置(島検出、重ね/並べ、uv0/uv1)を非破壊で行うエディタウィンドウ。
+- **Unity 6 URP対応(条件分岐)**: メインシェーダーにPackageRequirements付きURP SubShaderを追加。SRP Batcher対応CBUFFER、GPU Resident Drawer(DOTSインスタンシング)対応。BiRPと同一プロパティで中核機能(トゥーン段階/ランプ/ノーマル/リム/MatCap/エミッション/アウトライン)をカバー。
+- **VRCFallbackタグ**: 全バリアントに追加(Toon/ToonCutout/ToonTransparent)。セーフティでブロックされてもトゥーン系フォールバックに。
+- **ステンシルプリセット**: 書き込み/一致で表示/不一致で表示をワンクリック適用(覗き窓・隠し模様など)。
+- **ビルド時最適化**: 未使用キーワードのシェーダーバリアント削減(IPreprocessShaders)、VRChat SDKアップロードフック(キーワード同期+Lite変換提案)、ビルド後最適化レポート出力。
+
+### Fixed
+- **白色光が約42%暗くなる問題**: ライト強度クランプでベクトルnormalize()を誤用していたため、無彩色ライトが1/√3に減光していた。輝度比率での補正に修正(全ForwardBaseピクセルに影響)。
+- **手描き風アウトラインのコンパイルエラー**: Cutout/Transparent/Lite/ScreenEdgeSplitで関数定義が欠落しており有効化するとコンパイル不能だった(アウトラインパスの共有include化で解消)。
+- **パースフラット有効時に追加ライトが消える**: FORWARD_ADDにキーワード宣言が無く深度不一致でZテスト落ちしていた。
+- **死んでいたトグルの復旧**: `_HAIR_SPEC_MASK` / `_HAIR_SPEC_SHIFT_TEX` / `_QUEST_LITE` はGUIにトグルがあるのにpragma未宣言で無効だった。全バリアントに宣言を追加。
+- **HDRエミッションのBloom不能**: 最終カラーの1.05クランプでHDR超過分が潰されていた。クランプ後に超過分を再加算しBloomが効くように。
+- **Lite系がQuestで動作不能**: 全Lite変種が `target 4.6`+テッセレーションステージを強制していた。`target 3.5`+通常頂点パスに変更。
+- **VR(Single Pass Instanced)の不具合**: テッセレーション使用時に目のインデックスがdomainステージで失われる問題、ScreenFXOverlayが誤った目をサンプルする問題を修正。
+- **ForwardAddの光量フロア誤適用**: `_LightColorMin` がポイント/スポットライトにも距離非依存の下駄を履かせていた(ForwardBase限定に)。
+- **トゥーン境界のちらつき**: シェード境界にfwidthベースの最小AA帯を導入(VRでのシマー抑制)。
+- **Eyeシェーダーの未初期化警告**: DoColor()を単一出口構造に修正。
+- **Unity 6の非推奨API警告16件**: FindObjectsOfType系をバージョン分岐ヘルパー経由に。
+
+### Changed
+- **リファクタリング**: OUTLINE/SHADOW_CASTERパスを共有includeへ抽出(重複約3,400行削減)、バリアント間のプロパティラベルのドリフト8件を統一、生成物ファイルをパッケージから除去。
+- **開発ブランチ**: 日常開発は `develop` ブランチに移行(`v1.1.5` はリリースブランチ)。
+
+### Verified
+- Unity 2022.3.28f1(VRChat相当)および Unity 6000.0.55f1 でシェーダー・C#ともにエラー0/警告0。
+
+---
+
 ## [1.5.13] - 2026-04-21
 
 ### Fixed

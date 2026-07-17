@@ -2474,6 +2474,18 @@ half4 frag(v2f i) : SV_Target
         #endif
     #endif
 
+    // ===== Ghost appearance (GHOST variant only) =====
+    // Fresnel-shaped alpha: the silhouette edge stays visible while the
+    // center fades out, plus an additive spectral rim tint.
+    #ifdef GHOST_VARIANT
+    {
+        half ghostNdotV = saturate(dot(normalize(worldNormal), normalize(viewDir)));
+        half ghostFresnel = pow(1.0 - ghostNdotV, max(_GhostFresnelPower, 0.001));
+        col.a *= lerp(1.0, ghostFresnel, _GhostFresnelAlpha);
+        col.rgb += _GhostRimColor.rgb * ghostFresnel * _GhostRimStrength * col.a;
+    }
+    #endif
+
     // ===== Hashed / Dithering Alpha =====
     #if defined(_HASHED_ALPHA)
         if (_HashedAlpha >= 0.5)

@@ -994,6 +994,13 @@ CBUFFER_START(UnityPerMaterial)
     float _MirrorTexApplyMirror;
     float _MirrorTexApplyCamera;
     #endif
+    #if defined(GHOST_VARIANT)
+    half4 _GhostRimColor;
+    float _GhostFresnelAlpha;
+    float _GhostFresnelPower;
+    float _GhostRimStrength;
+    float _GhostDepthCutoff;
+    #endif
     #if defined(_DEPTH_COLOR_FADE)
     half4 _DepthFadeColor;
     float _DepthFadeStart;

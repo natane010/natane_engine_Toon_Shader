@@ -483,6 +483,7 @@ public class NataneToonShaderGUI : ShaderGUI
         new[] { "MirrorControl", "Mirror / Camera Control", "mirror camera control vrchat reflection photo" },
         new[] { "MirrorTexture", "Mirror/Camera Alt Texture", "mirror camera alt texture 鏡 写り分け hidden photo secret" },
         new[] { "QuestLite", "Quest Lite", "quest lite mobile performance optimization" },
+        new[] { "Ghost", "Ghost", "ghost spectral transparent fresnel rim depth prepass 幽霊 ゴースト" },
     };
 
     // ===== SHADER TYPE DRAWER INSTANCES =====
@@ -552,6 +553,7 @@ public class NataneToonShaderGUI : ShaderGUI
             { "PerspectiveFlat", "ShowPerspectiveFlat" },
             { "FaceOrtho", "ShowFaceOrtho" },
             { "MirrorTexture", "ShowMirrorTexture" },
+            { "Ghost", "ShowGhost" },
             { "DepthColorFade", "ShowDepthColorFade" },
     };
 
@@ -6728,6 +6730,26 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("MirrorTexture"));
     }
 
+
+    private void DrawGhostSection()
+    {
+        if (targetMaterial == null || !targetMaterial.HasProperty("_GhostFresnelAlpha")) return; // Ghost variant only
+        SetFoldout("Ghost", DrawBoxedSection(L("ゴースト(幽霊)", "Ghost"), GetFoldout("Ghost"), SectionCategory.Advanced, null));
+        if (GetFoldout("Ghost"))
+        {
+            DrawColorProperty("_GhostRimColor", L("縁の色 (HDR)", "Rim Color (HDR)"));
+            DrawProperty("_GhostFresnelAlpha", L("中心の透け具合", "Center Fade"));
+            DrawProperty("_GhostFresnelPower", L("フレネル強度", "Fresnel Power"));
+            DrawProperty("_GhostRimStrength", L("縁の発光強度", "Rim Glow Strength"));
+            DrawProperty("_GhostDepthCutoff", L("深度カットオフ", "Depth Cutoff"));
+            DrawHelpToggle("Ghost",
+                L("👻 ゴースト:\nこのバリアントは深度プリパスにより、体の重なり部分が二重に透けたり裏面が見えたりしません。\n\n• 中心の透け具合: 正面ほど透明、輪郭ほど不透明\n• 縁の色/発光: シルエットの霊的な光\n• 全体の透明度は Color のアルファで調整\n• 足元を消すには「高さフェード」(アルファモード) を併用\n\n💡 アウトラインパスはこのバリアントにはありません。",
+                  "👻 Ghost:\nThis variant uses a depth prepass so overlapping body parts never double-blend and backfaces never bleed through.\n\n• Center Fade: transparent at the center, opaque at the silhouette\n• Rim Color/Glow: spectral edge light\n• Overall opacity via Color alpha\n• Combine with Height Fade (alpha mode) to fade the feet\n\n💡 The outline pass is not available on this variant."),
+                MessageType.Info);
+        }
+        EndBoxedSection(GetFoldout("Ghost"));
+    }
+
     private void DrawQuestLiteSection()
     {
         SetFoldout("QuestLite", DrawBoxedSection(L("Quest軽量パス", "Quest Lite"), GetFoldout("QuestLite"), SectionCategory.Advanced, "_QUEST_LITE"));
@@ -8393,7 +8415,7 @@ public class NataneToonShaderGUI : ShaderGUI
             SetFoldout("NormalMap", state); SetFoldout("Parallax", state); SetFoldout("VertexAnimation", state); SetFoldout("VAT", state);
             SetFoldout("Backface", state); SetFoldout("Video", state); SetFoldout("HeightFade", state); SetFoldout("IntersectionFade", state);
             SetFoldout("DistanceFade", state); SetFoldout("PerspectiveFlat", state); SetFoldout("Rendering", state); SetFoldout("Tessellation", state);
-            SetFoldout("DetailMap", state); SetFoldout("Triplanar", state); SetFoldout("MirrorControl", state); SetFoldout("QuestLite", state);
+            SetFoldout("DetailMap", state); SetFoldout("Triplanar", state); SetFoldout("MirrorControl", state); SetFoldout("Ghost", state); SetFoldout("QuestLite", state);
         });
         // ─── マッピング ───
         int mapCount = CountEnabledKeywords("_NORMALMAP", "_PARALLAX");
@@ -8421,6 +8443,7 @@ public class NataneToonShaderGUI : ShaderGUI
         NataneToonShaderGUIUtility.DrawCategoryDivider(L("VRChat＆パフォーマンス", "VRChat & Performance"));
         FilteredDrawSection(DrawMirrorControlSection, L("ミラー・カメラ制御", "Mirror / Camera Control"), "MirrorControl");
         FilteredDrawSection(DrawMirrorTextureSection, L("鏡・カメラ写り分けテクスチャ", "Mirror/Camera Alt Texture"), "MirrorTexture");
+        FilteredDrawSection(DrawGhostSection, L("ゴースト(幽霊)", "Ghost"), "Ghost");
         FilteredDrawSection(DrawQuestLiteSection, L("Quest軽量パス", "Quest Lite"), "QuestLite");
 
         // ─── レンダリング ───
@@ -8545,6 +8568,7 @@ public class NataneToonShaderGUI : ShaderGUI
             case "SurfaceCover": return DrawSurfaceCoverSection;
             case "MirrorControl": return DrawMirrorControlSection;
             case "MirrorTexture": return DrawMirrorTextureSection;
+            case "Ghost": return DrawGhostSection;
             case "QuestLite": return DrawQuestLiteSection;
             case "HalftoneShadow": return DrawHalftoneShadowSection;
             case "ShadowEdgeNoise": return DrawShadowEdgeNoiseSection;
@@ -8675,6 +8699,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 new[] { "PerspectiveFlat", L("パースフラット", "Perspective Flat") },
                 new[] { "FaceOrtho", L("顔直交投影", "Face Ortho") },
                 new[] { "MirrorControl", L("ミラー・カメラ制御", "Mirror / Camera Control") },
+                new[] { "Ghost", L("ゴースト(幽霊)", "Ghost") },
                 new[] { "QuestLite", L("Quest軽量", "Quest Lite") },
                 new[] { "Rendering", L("レンダリング", "Rendering") }
             };
