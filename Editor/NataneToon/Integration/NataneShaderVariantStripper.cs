@@ -21,7 +21,8 @@ namespace NataneToon.Editor
     /// - 収集対象: プロジェクト内の全 Natane マテリアルで有効な既知キーワードの和集合。
     /// - 判定対象: 既知の Natane キーワードのみ。multi_compile 由来のビルトイン
     ///   キーワード (DIRECTIONAL / SHADOWS_SCREEN / INSTANCING_ON 等) には一切触れない。
-    /// - オプトアウト: EditorPrefs["NataneToon_DisableVariantStripping"] = true で無効化。
+    /// - 有効判定: NataneBuildPolicySettings.VariantStrippingEnabled（既定 true）。
+    ///   旧 EditorPrefs["NataneToon_DisableVariantStripping"] は初回移行で反転取込み済み。
     /// </summary>
     public sealed class NataneShaderVariantStripper : IPreprocessShaders, IPreprocessBuildWithReport
     {
@@ -68,8 +69,9 @@ namespace NataneToon.Editor
 
         public void OnProcessShader(Shader shader, ShaderSnippetData snippet, IList<ShaderCompilerData> data)
         {
-            // オプトアウト
-            if (EditorPrefs.GetBool(OptOutPrefKey, false))
+            // 有効判定は設定資産(variantStrippingEnabled)を正とする。
+            // 旧 EditorPrefs は初回移行で設定資産へ取り込み済み（以降は資産が唯一の情報源）。
+            if (!NataneBuildPolicySettings.instance.VariantStrippingEnabled)
                 return;
 
             // Natane シェーダー以外は一切触れない

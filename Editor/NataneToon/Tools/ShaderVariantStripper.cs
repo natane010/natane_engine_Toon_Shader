@@ -11,11 +11,13 @@ namespace NataneToon.Editor
     using static NataneToonLocalization;
 
     /// <summary>
-    /// Build-time shader variant stripper for Natane Toon shaders.
+    /// レガシー完全一致式(exact keyword-set match)のビルド時バリアントストリッパー。
+    /// マニフェスト由来の whitelist に完全一致するキーワードセットのみを残す方式で、
+    /// 差分式の NataneShaderVariantStripper とは判定方式が異なる（将来 Unified Stripper へ統合予定）。
+    /// 有効判定は NataneBuildPolicySettings.LegacyExactSetStrippingEnabled（既定 false）。
     /// </summary>
     public class ShaderVariantStripper : IPreprocessShaders
     {
-        private const string STRIP_ENABLED_KEY = "NataneToon_VariantStrippingEnabled";
         private const string STRIP_LOG_KEY = "NataneToon_VariantStrippingLog";
 
         private static HashSet<string> whitelistedKeywordSets;
@@ -27,7 +29,8 @@ namespace NataneToon.Editor
 
         public void OnProcessShader(Shader shader, ShaderSnippetData snippet, IList<ShaderCompilerData> data)
         {
-            if (!EditorPrefs.GetBool(STRIP_ENABLED_KEY, false))
+            // 有効判定は設定資産(legacyExactSetStrippingEnabled, 既定 false)を正とする。
+            if (!NataneBuildPolicySettings.instance.LegacyExactSetStrippingEnabled)
             {
                 return;
             }
@@ -139,7 +142,6 @@ namespace NataneToon.Editor
     /// </summary>
     public class ShaderVariantStripperSettingsWindow : EditorWindow
     {
-        private const string STRIP_ENABLED_KEY = "NataneToon_VariantStrippingEnabled";
         private const string STRIP_LOG_KEY = "NataneToon_VariantStrippingLog";
 
         private bool strippingEnabled;
@@ -154,7 +156,8 @@ namespace NataneToon.Editor
 
         private void OnEnable()
         {
-            strippingEnabled = EditorPrefs.GetBool(STRIP_ENABLED_KEY, false);
+            // 有効フラグは設定資産(legacyExactSetStrippingEnabled)を正とする。ログ詳細度は UI 状態として EditorPrefs のまま。
+            strippingEnabled = NataneBuildPolicySettings.instance.LegacyExactSetStrippingEnabled;
             logEnabled = EditorPrefs.GetBool(STRIP_LOG_KEY, true);
         }
 
@@ -179,7 +182,8 @@ namespace NataneToon.Editor
                 strippingEnabled);
             if (EditorGUI.EndChangeCheck())
             {
-                EditorPrefs.SetBool(STRIP_ENABLED_KEY, strippingEnabled);
+                NataneBuildPolicySettings.instance.LegacyExactSetStrippingEnabled = strippingEnabled;
+                NataneBuildPolicySettings.instance.SaveSettings();
             }
 
             EditorGUILayout.Space(5);

@@ -23,7 +23,7 @@ namespace NataneToon.Editor
     ///     共有アセットは一切書き換えない（非破壊）。renderer.sharedMaterials を
     ///     コピー済みマテリアルに差し替えることでアップロード対象のみ変更する。
     ///
-    /// オプトイン: EditorPrefs["NataneToon_BuildTextureConsolidation"]（既定 true）。
+    /// 有効判定: NataneBuildPolicySettings.BuildTextureConsolidation（既定 true）。
     /// false にするとビルド時のテクスチャ統合を無効化できる。
     /// </summary>
     public sealed class NataneVRChatTextureConsolidation : IVRCSDKPreprocessAvatarCallback
@@ -38,7 +38,8 @@ namespace NataneToon.Editor
         {
             try
             {
-                if (!EditorPrefs.GetBool(OptInPrefKey, true))
+                // 有効判定は設定資産(buildTextureConsolidation, 既定 true)を正とする。
+                if (!NataneBuildPolicySettings.instance.BuildTextureConsolidation)
                 {
                     Debug.Log(L.L(
                         "[NataneToonShader] VRChat: テクスチャ統合はオプトアウトされています（スキップ）。",
