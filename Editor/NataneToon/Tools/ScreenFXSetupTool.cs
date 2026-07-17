@@ -90,7 +90,7 @@ namespace NataneToon.Editor
                 return Camera.main;
             }
 
-            return Object.FindObjectOfType<Camera>();
+            return NataneEditorCompat.FindObjectOfTypeCompat<Camera>();
         }
 
         private static void EnsureFolders()

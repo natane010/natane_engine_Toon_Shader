@@ -273,7 +273,7 @@ public static class MapGeneratorGUIBridge
         mesh = null;
         renderer = null;
 
-        var renderers = Object.FindObjectsOfType<Renderer>();
+        var renderers = NataneToon.Editor.NataneEditorCompat.FindObjectsOfTypeCompat<Renderer>();
         foreach (var r in renderers)
         {
             if (r.sharedMaterials == null) continue;

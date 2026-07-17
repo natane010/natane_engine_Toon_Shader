@@ -2834,7 +2834,7 @@ public static class MapGeneratorMaterialExtension
     private static Renderer FindRendererForMaterial(Material mat)
     {
         if (mat == null) return null;
-        var renderers = UnityEngine.Object.FindObjectsOfType<Renderer>();
+        var renderers = NataneToon.Editor.NataneEditorCompat.FindObjectsOfTypeCompat<Renderer>();
         foreach (var r in renderers)
         {
             if (r.sharedMaterials == null) continue;
