@@ -240,7 +240,14 @@ code {
 }
 
 /* Wide content (tables) scroll inside their own container, never the page */
-.main-content table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+.main-content table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 4px 0 22px; }
+.main-content table th, .main-content table td {
+  padding: 9px 14px; border: 1px solid var(--border); text-align: left;
+  font-size: .84rem; line-height: 1.6; vertical-align: top;
+}
+.main-content table th { color: var(--text); font-weight: 600; background: var(--bg-card); white-space: nowrap; }
+.main-content table td { color: var(--text-dim); }
+.main-content table td code, .main-content table th code { white-space: nowrap; }
 .table-scroll { max-width: 100%; overflow-x: auto; }
 
 pre {
@@ -746,6 +753,14 @@ pre code { background: none; padding: 0; }
 }
 .section-heading > div > p { margin: 0; color: var(--text-muted); font-size: .85rem; }
 
+/* Sub-group heading inside a home section (e.g. Expression feature update) */
+.home-subheading { margin: 72px 0 24px; }
+.home-subheading .section-index { margin: 0 0 10px; }
+.home-subheading h3 {
+  margin: 0; color: var(--text);
+  font-size: clamp(1.4rem, 2.6vw, 2.1rem); font-weight: 500; letter-spacing: -.03em; line-height: 1.2;
+}
+
 .feature-showcase {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;
 }
@@ -931,6 +946,8 @@ pre code { background: none; padding: 0; }
   position: relative; z-index: 1; font-style: normal; color: var(--text);
   font-size: .96rem; font-weight: 600; letter-spacing: .01em; padding: 0 14px;
 }
+/* Preview placeholder used at the top of a doc page (not a home card) */
+.main-content > .feature-preview { margin: 4px 0 34px; min-height: 210px; }
 
 @media (max-width: 960px) {
   .home-page .site-header { padding: 0 20px; }
