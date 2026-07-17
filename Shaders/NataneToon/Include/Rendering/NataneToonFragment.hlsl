@@ -77,7 +77,9 @@ half4 frag(v2f i) : SV_Target
         half4 fxm = NATANE_SAMPLE_SHARED(_FXModMaskTex, _MainTex, i.uv);
         nataneFXMask = half2(fxm.r, fxm.g);
     }
+    float3 nataneFXObjPos = mul(unity_WorldToObject, float4(i.worldPos, 1.0)).xyz;
     NataneFXModState nataneFXState = NataneFXModCompute(i.worldPos, i.worldNormal, nataneFXViewDir,
+                                                        i.uv, nataneFXObjPos,
                                                         nataneFXMask.x, nataneFXMask.y);
     #endif
 
@@ -340,7 +342,11 @@ half4 frag(v2f i) : SV_Target
             // Emission boost brightens the revealed frame (HDR overshoot).
             lentCol *= (1.0 + _LenticularEmission * saturate(lentEmit));
 
-            col.rgb = lerp(col.rgb, lentCol, saturate(_LenticularBlend * lentMask));
+            half lentBlendMod = _LenticularBlend;
+            #if defined(_FX_MODULATOR)
+                lentBlendMod *= NataneFXModMul(nataneFXState, NATANE_FXT_LENTICULAR);
+            #endif
+            col.rgb = lerp(col.rgb, lentCol, saturate(lentBlendMod * lentMask));
         }
     }
     #endif
@@ -1411,7 +1417,11 @@ half4 frag(v2f i) : SV_Target
         }
         #endif
 
-        half3 specContrib = spec * _SpecularColor.rgb * _SpecularIntensity * effectiveLightColor * atten;
+        half specIntensityMod = _SpecularIntensity;
+        #if defined(_FX_MODULATOR)
+            specIntensityMod *= NataneFXModMul(nataneFXState, NATANE_FXT_SPECULAR);
+        #endif
+        half3 specContrib = spec * _SpecularColor.rgb * specIntensityMod * effectiveLightColor * atten;
 
         // Apply mask texture with soft blending
         float2 specMaskUV = AnimateUVIfNeeded(uv, _SpecularMaskScrollSpeed.xy, _SpecularMaskRotateSpeed);
@@ -1498,7 +1508,11 @@ half4 frag(v2f i) : SV_Target
         half shpMask = NATANE_SAMPLE_SHARED_R(_ShapedHLMask, _MainTex, uv);
         shpMask = ApplySoftMask(shpMask);
 
-        half3 shaped = shpCov * shpPulse * _ShapedHLColor.rgb * _ShapedHLIntensity
+        half shpIntensityMod = _ShapedHLIntensity;
+        #if defined(_FX_MODULATOR)
+            shpIntensityMod *= NataneFXModMul(nataneFXState, NATANE_FXT_SHAPED_HL);
+        #endif
+        half3 shaped = shpCov * shpPulse * _ShapedHLColor.rgb * shpIntensityMod
                        * effectiveLightColor * atten * shpMask;
 
         #ifndef UNITY_PASS_FORWARDBASE
@@ -1835,7 +1849,11 @@ half4 frag(v2f i) : SV_Target
     #if defined(_MATCAP) && defined(UNITY_PASS_FORWARDBASE)
     if (_MatCap >= 0.5)
     {
-        half3 matcap = SampleTex2DBlur3Repeat(_MatCapTex, sharedMatCapUV, _MatCapBlur) * _MatCapIntensity;
+        half matCapIntMod = _MatCapIntensity;
+        #if defined(_FX_MODULATOR)
+            matCapIntMod *= NataneFXModMul(nataneFXState, NATANE_FXT_MATCAP);
+        #endif
+        half3 matcap = SampleTex2DBlur3Repeat(_MatCapTex, sharedMatCapUV, _MatCapBlur) * matCapIntMod;
 
         // Apply mask texture with soft blending
         half matcapMask = NATANE_SAMPLE_SHARED_R(_MatCapMask, _MatCapTex, uv);
@@ -1848,10 +1866,10 @@ half4 frag(v2f i) : SV_Target
 
         // Blend modes: 0=Add (safe), 1=Multiply, 2=Replace - Optimized: no branching
         half3 preMatCap = col.rgb;
-        half matcapStrength = saturate(_MatCapIntensity * matcapMask);
+        half matcapStrength = saturate(matCapIntMod * matcapMask);
         half3 addResult = SafeAdditiveBlend(col.rgb, matcap, matcapStrength);
-        half3 multiplyResult = BlendWithSoftMask(col.rgb, col.rgb * matcap, saturate(_MatCapIntensity * matcapMask));
-        half3 replaceResult = BlendWithSoftMask(col.rgb, matcap, saturate(_MatCapIntensity * matcapMask));
+        half3 multiplyResult = BlendWithSoftMask(col.rgb, col.rgb * matcap, saturate(matCapIntMod * matcapMask));
+        half3 replaceResult = BlendWithSoftMask(col.rgb, matcap, saturate(matCapIntMod * matcapMask));
 
         // Select blend mode using lerp
         half isMultiply = step(HALF_VALUE, _MatCapBlendMode) * step(_MatCapBlendMode, 1.5);
@@ -2221,7 +2239,11 @@ half4 frag(v2f i) : SV_Target
         half causMask = NATANE_SAMPLE_SHARED_R(_CausticsMask, _MainTex, uv);
         causMask = ApplySoftMask(causMask);
 
-        half3 causContrib = _CausticsColor.rgb * (causPat * _CausticsIntensity * causMask);
+        half causIntensityMod = _CausticsIntensity;
+        #if defined(_FX_MODULATOR)
+            causIntensityMod *= NataneFXModMul(nataneFXState, NATANE_FXT_CAUSTICS);
+        #endif
+        half3 causContrib = _CausticsColor.rgb * (causPat * causIntensityMod * causMask);
         int causComp = (int)(_CausticsComposite + 0.5);
         half3 preCaus = col.rgb;
         if (causComp == 1)      // BaseColor multiply-brighten
@@ -2689,6 +2711,13 @@ half4 frag(v2f i) : SV_Target
         half alphaMask = NATANE_SAMPLE_SHARED_R(_AlphaMask, _MainTex, uv);
         col.a *= alphaMask;
     }
+    #endif
+
+    // ===== FX Modulator: AlphaFade target =====
+    // Multiplies col.a. Only visible on a transparent-capable variant
+    // (Transparent / Fade / X-Ray); opaque output ignores alpha.
+    #if defined(_FX_MODULATOR)
+        col.a *= NataneFXModMul(nataneFXState, NATANE_FXT_ALPHA_FADE);
     #endif
 
     // ===== Height Fade (Local Height-Based Transparency) =====

@@ -989,8 +989,8 @@ Shader "Natane/Toon Shader (Transparent)"
 
         // D. FX Modulator (汎用FXモジュレーター)
         [Toggle(_FX_MODULATOR)] _FXModulator ("Enable FX Modulator (FXモジュレーター)", Float) = 0
-        [Enum(Sine,0,Saw,1,Triangle,2,Pulse,3,RandomStep,4,AudioBass,5,AudioLowMid,6,AudioHighMid,7,AudioTreble,8,Chronotensity,9,CameraDistance,10,ViewAngle,11,Manual,12)] _FXModSource0 ("FX Slot0 Source", Float) = 0
-        [Enum(None,0,EmissionIntensity,1,HueShift,2,RimIntensity,3,OutlineWidth,4,LineBoilStrength,5,TopographicOffset,6)] _FXModTarget0 ("FX Slot0 Target", Float) = 0
+        [Enum(Sine,0,Saw,1,Triangle,2,Pulse,3,RandomStep,4,AudioBass,5,AudioLowMid,6,AudioHighMid,7,AudioTreble,8,Chronotensity,9,CameraDistance,10,ViewAngle,11,Manual,12,StaticNoise,13,DynamicNoise,14,DynamicNoiseSteps,15)] _FXModSource0 ("FX Slot0 Source", Float) = 0
+        [Enum(None,0,EmissionIntensity,1,HueShift,2,RimIntensity,3,OutlineWidth,4,LineBoilStrength,5,TopographicOffset,6,ShapedHighlightIntensity,7,CausticsIntensity,8,LenticularBlend,9,SpecularIntensity,10,MatCapIntensity,11,AlphaFade,12)] _FXModTarget0 ("FX Slot0 Target", Float) = 0
         _FXModAmount0 ("FX Slot0 Amount", Float) = 0
         _FXModOffset0 ("FX Slot0 Phase Offset", Float) = 0
         _FXModSpeed0 ("FX Slot0 Speed", Float) = 1
@@ -1001,8 +1001,10 @@ Shader "Natane/Toon Shader (Transparent)"
         _FXModManual0 ("FX Slot0 Manual Value", Range(0, 1)) = 0.5
         _FXModDistMin0 ("FX Slot0 Distance Min", Float) = 0
         _FXModDistMax0 ("FX Slot0 Distance Max", Float) = 10
-        [Enum(Sine,0,Saw,1,Triangle,2,Pulse,3,RandomStep,4,AudioBass,5,AudioLowMid,6,AudioHighMid,7,AudioTreble,8,Chronotensity,9,CameraDistance,10,ViewAngle,11,Manual,12)] _FXModSource1 ("FX Slot1 Source", Float) = 0
-        [Enum(None,0,EmissionIntensity,1,HueShift,2,RimIntensity,3,OutlineWidth,4,LineBoilStrength,5,TopographicOffset,6)] _FXModTarget1 ("FX Slot1 Target", Float) = 0
+        _FXModNoiseScale0 ("FX Slot0 Noise Scale", Float) = 5
+        [Enum(UV,0,Object,1,World,2)] _FXModNoiseSpace0 ("FX Slot0 Noise Space", Float) = 0
+        [Enum(Sine,0,Saw,1,Triangle,2,Pulse,3,RandomStep,4,AudioBass,5,AudioLowMid,6,AudioHighMid,7,AudioTreble,8,Chronotensity,9,CameraDistance,10,ViewAngle,11,Manual,12,StaticNoise,13,DynamicNoise,14,DynamicNoiseSteps,15)] _FXModSource1 ("FX Slot1 Source", Float) = 0
+        [Enum(None,0,EmissionIntensity,1,HueShift,2,RimIntensity,3,OutlineWidth,4,LineBoilStrength,5,TopographicOffset,6,ShapedHighlightIntensity,7,CausticsIntensity,8,LenticularBlend,9,SpecularIntensity,10,MatCapIntensity,11,AlphaFade,12)] _FXModTarget1 ("FX Slot1 Target", Float) = 0
         _FXModAmount1 ("FX Slot1 Amount", Float) = 0
         _FXModOffset1 ("FX Slot1 Phase Offset", Float) = 0
         _FXModSpeed1 ("FX Slot1 Speed", Float) = 1
@@ -1013,6 +1015,8 @@ Shader "Natane/Toon Shader (Transparent)"
         _FXModManual1 ("FX Slot1 Manual Value", Range(0, 1)) = 0.5
         _FXModDistMin1 ("FX Slot1 Distance Min", Float) = 0
         _FXModDistMax1 ("FX Slot1 Distance Max", Float) = 10
+        _FXModNoiseScale1 ("FX Slot1 Noise Scale", Float) = 5
+        [Enum(UV,0,Object,1,World,2)] _FXModNoiseSpace1 ("FX Slot1 Noise Space", Float) = 0
         [NoScaleOffset] _FXModMaskTex ("FX Modulator Mask (R=Slot0, G=Slot1)", 2D) = "white" {}
         // ===== Expression Effects (v1.6.0 batch 2) =====
         // A. Lenticular (レンチキュラー)

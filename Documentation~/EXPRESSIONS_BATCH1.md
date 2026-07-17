@@ -120,19 +120,27 @@ FORWARD_ADD では `_AdditionalLightIntensity` でスケール、`_Glossiness`�
 2 スロットの信号ソースを選択し、任意のターゲットパラメータを時間 / オーディオ / 幾何情報で変調します。
 スロット値はフラグメント冒頭で一度だけ計算し、各ターゲット地点で乗算 / 加算します。
 
-**ソース (Source)**: 0 Sine / 1 Saw / 2 Triangle / 3 Pulse / 4 RandomStep / 5-8 AudioLink Bass·LowMid·HighMid·Treble / 9 Chronotensity / 10 CameraDistance / 11 ViewAngle / 12 Manual
+**ソース (Source)**: 0 Sine / 1 Saw / 2 Triangle / 3 Pulse / 4 RandomStep / 5-8 AudioLink Bass·LowMid·HighMid·Treble / 9 Chronotensity / 10 CameraDistance / 11 ViewAngle / 12 Manual / **13 StaticNoise / 14 DynamicNoise / 15 DynamicNoiseSteps**
 (AudioLink 系は `_AUDIOLINK` 併用時のみ、非対応時は中立 0。Source 9 は既存の `SampleAudioLinkChronotensity` を利用。)
 
-**ターゲット (Target, 本フェーズ)**: 0 None / 1 EmissionIntensity / 2 HueShift / 3 RimIntensity / 4 OutlineWidth / 5 LineBoilStrength / 6 TopographicOffset
-(強度系は乗算、Hue / Offset 系は加算。OutlineWidth は OUTLINE パスでも動作。)
+| ノイズソース | 内容 |
+|---|---|
+| 13 StaticNoise | 位置ハッシュのバリューノイズ（時間項なし）。フラグメント / 頂点ごとの空間的まだら。時間で動かない静的ノイズ。 |
+| 14 DynamicNoise | 2 オクターブのバリューノイズを `_Time.y × Speed` でスクロール。滑らかにゆらめく動的ノイズ。 |
+| 15 DynamicNoiseSteps | 時間を Speed 段でフロア量子化した動的ノイズ。カクついた明滅 / グリッチ感。 |
+
+ノイズは自己完結ヘルパー (`NataneFXMod_ValueNoise`) を使用（OUTLINE パスに Utils が無いため Utils のハッシュは流用せず、`NataneToonFXModulator.hlsl` 内にローカル定義）。座標は Noise Space で選択（0 UV / 1 Object / 2 World）。OUTLINE パスでは頂点単位で `v.uv` と `v.vertex.xyz`（オブジェクト空間）を使用するため OutlineWidth ターゲットでも動作。
+
+**ターゲット (Target)**: 0 None / 1 EmissionIntensity / 2 HueShift / 3 RimIntensity / 4 OutlineWidth / 5 LineBoilStrength / 6 TopographicOffset / **7 ShapedHighlightIntensity / 8 CausticsIntensity / 9 LenticularBlend / 10 SpecularIntensity / 11 MatCapIntensity / 12 AlphaFade**
+(強度系は乗算、Hue / Offset 系は加算。OutlineWidth は OUTLINE パスでも動作。7-11 は対応機能キーワードが OFF のとき自動でノーオペ。**12 AlphaFade は `col.a` を乗算するため、Transparent / Fade / X-Ray など透過対応バリアントでのみ視認可能**。)
 
 各スロット (`0`/`1`) のプロパティ:
 
 | プロパティ | 型 | 既定 | 説明 |
 |---|---|---|---|
 | `_FXModulator` | `[Toggle(_FX_MODULATOR)]` | 0 | 有効化 |
-| `_FXModSource{n}` | Enum(0-12) | 0 | 信号ソース |
-| `_FXModTarget{n}` | Enum(0-6) | 0 | 適用先 |
+| `_FXModSource{n}` | Enum(0-15) | 0 | 信号ソース |
+| `_FXModTarget{n}` | Enum(0-12) | 0 | 適用先 |
 | `_FXModAmount{n}` | Float | 0 | 変調量 (0 で中立) |
 | `_FXModOffset{n}` | Float | 0 | 位相オフセット |
 | `_FXModSpeed{n}` | Float | 1 | 速度 |
@@ -142,10 +150,20 @@ FORWARD_ADD では `_AdditionalLightIntensity` でスケール、`_Glossiness`�
 | `_FXModCurve{n}` | Range(0.1,5) | 1 | カーブ (pow) |
 | `_FXModManual{n}` | Range(0,1) | 0.5 | Manual ソース値 |
 | `_FXModDistMin{n}` / `_FXModDistMax{n}` | Float | 0 / 10 | CameraDistance 正規化範囲 |
+| `_FXModNoiseScale{n}` | Float | 5 | ノイズソース(13-15)のスケール |
+| `_FXModNoiseSpace{n}` | Enum(0-2) | 0 | ノイズ座標空間 (0 UV / 1 Object / 2 World) |
 | `_FXModMaskTex` | 2D (NOSAMPLER) | white | 共有マスク (R=スロット0, G=スロット1) |
 
 **ヘルパー** (`Include/Effects/NataneToonFXModulator.hlsl`)
-`half NataneFXMod_Source(...)` / `NataneFXModState NataneFXModCompute(...)` / `half NataneFXModMul(state, target)` / `half NataneFXModAdd(state, target)`
+`half NataneFXMod_Source(...)` / `NataneFXModState NataneFXModCompute(...)` / `half NataneFXModMul(state, target)` / `half NataneFXModAdd(state, target)` / `float NataneFXMod_ValueNoise(float2)`
+
+**レシピ例**:
+
+| ソース | ターゲット | 効果 | 設定の勘所 |
+|---|---|---|---|
+| 13 StaticNoise | 1 EmissionIntensity | まだら発光（斑点状に光る面） | Noise Space=Object, Noise Scale=8, Amount=1, Min=0/Max=1。時間で動かない斑発光。 |
+| 14 DynamicNoise | 3 RimIntensity | ゆらめくオーラ | Noise Space=World, Speed=0.5, Amount=1.5, Curve=2。リム光が有機的に脈動。 |
+| 15 DynamicNoiseSteps | 12 AlphaFade | グリッチ明滅（透過が飛び飛びに消える） | Transparent バリアントで使用。Speed=8, Amount=-1, Min=0/Max=1 で `col.a` が段階的に明滅。 |
 
 ---
 

@@ -7829,6 +7829,12 @@ public class NataneToonShaderGUI : ShaderGUI
             DrawProperty($"_FXModDistMin{slot}", L("距離 最小", "Distance Min"));
             DrawProperty($"_FXModDistMax{slot}", L("距離 最大", "Distance Max"));
         }
+        // Noise系(13〜15)のときだけノイズ設定を表示
+        if (source >= 13)
+        {
+            DrawProperty($"_FXModNoiseScale{slot}", L("ノイズスケール", "Noise Scale"));
+            DrawProperty($"_FXModNoiseSpace{slot}", L("ノイズ空間", "Noise Space"));
+        }
         // AudioLink系(5〜8)のときはAudioLinkセクションが必要
         if (source >= 5 && source <= 8)
         {
@@ -7864,7 +7870,7 @@ public class NataneToonShaderGUI : ShaderGUI
 
                 DrawHelpToggle("FXModulator",
                     L("🎛 FXモジュレーター:\nサイン波や音の強さなどを『ソース』にして、エミッションやリム、アウトライン幅などの『ターゲット』を自動で動かします。\n\n• ソース: Sine/Saw/Triangle/Pulse/RandomStep/AudioLink各帯域/Chronotensity/カメラ距離/視線角度/手動\n• ターゲット: エミッション強度/色相/リム強度/アウトライン幅/ラインボイル/等高線オフセット\n• 効き幅・最小/最大・カーブで動きを整えます\n\n💡 AudioLinkソースは『AudioLink』セクションの有効化が必要です。",
-                      "🎛 FX Modulator:\nUses a 'source' (sine wave, audio band, etc.) to automatically drive a 'target' such as emission, rim, or outline width.\n\n• Source: Sine/Saw/Triangle/Pulse/RandomStep/AudioLink bands/Chronotensity/CameraDistance/ViewAngle/Manual\n• Target: Emission Intensity / Hue Shift / Rim Intensity / Outline Width / Line Boil / Topographic Offset\n• Shape the motion with Amount, Min/Max, and Curve\n\n💡 AudioLink sources require the 'AudioLink' section to be enabled."),
+                      "🎛 FX Modulator:\nUses a 'source' (sine wave, audio band, noise, etc.) to automatically drive a 'target' such as emission, rim, or outline width.\n\n• Source: Sine/Saw/Triangle/Pulse/RandomStep/AudioLink bands/Chronotensity/CameraDistance/ViewAngle/Manual/StaticNoise/DynamicNoise/DynamicNoiseSteps\n• Target: Emission / Hue Shift / Rim / Outline Width / Line Boil / Topographic / Shaped Highlight / Caustics / Lenticular / Specular / MatCap / AlphaFade\n• Shape the motion with Amount, Min/Max, and Curve\n\n💡 Noise sources (13-15) expose Noise Scale and Noise Space (UV/Object/World). StaticNoise is spatial only; Dynamic scrolls with Speed.\n💡 AudioLink sources require the 'AudioLink' section to be enabled.\n💡 AlphaFade needs a transparent-capable variant (Transparent / Fade / X-Ray) to be visible."),
                     MessageType.Info);
                 EditorGUI.indentLevel--;
             }
