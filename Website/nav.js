@@ -125,7 +125,15 @@
       { file: 'glitch-stretch.html',     label: 'グリッチストレッチ' },
       { file: 'procedural-matcap.html',  label: 'プロシージャルMatCap' },
       { file: 'sss-lut.html',            label: 'SSS LUT' },
-      { file: 'ghost.html',              label: 'ゴースト' }
+      { file: 'ghost.html',              label: 'ゴースト' },
+      { file: 'line-boil.html',          label: 'ラインボイル' },
+      { file: 'shaped-highlight.html',   label: '形状付きハイライト' },
+      { file: 'topographic.html',        label: '等高線 / 断層スライス' },
+      { file: 'fx-modulator.html',       label: 'FXモジュレーター' },
+      { file: 'lenticular.html',         label: 'レンチキュラー' },
+      { file: 'caustics.html',           label: 'コースティクス' },
+      { file: 'pixel-art.html',          label: 'ピクセルアート' },
+      { file: 'xray.html',               label: 'X-Ray' }
     ],
     environment: [
       { file: 'reflection.html',         label: 'リフレクション' },
@@ -222,7 +230,15 @@
       { file: 'glitch-stretch.html',     label: 'Glitch Stretch' },
       { file: 'procedural-matcap.html',  label: 'Procedural MatCap' },
       { file: 'sss-lut.html',            label: 'SSS LUT' },
-      { file: 'ghost.html',              label: 'Ghost' }
+      { file: 'ghost.html',              label: 'Ghost' },
+      { file: 'line-boil.html',          label: 'Line Boil' },
+      { file: 'shaped-highlight.html',   label: 'Shaped Highlight' },
+      { file: 'topographic.html',        label: 'Topographic / Slice Lines' },
+      { file: 'fx-modulator.html',       label: 'FX Modulator' },
+      { file: 'lenticular.html',         label: 'Lenticular' },
+      { file: 'caustics.html',           label: 'Surface Caustics' },
+      { file: 'pixel-art.html',          label: 'Pixel Art' },
+      { file: 'xray.html',               label: 'X-Ray' }
     ],
     environment: [
       { file: 'reflection.html',         label: 'Reflection' },
