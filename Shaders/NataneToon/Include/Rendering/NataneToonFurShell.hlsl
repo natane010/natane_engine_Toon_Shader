@@ -191,7 +191,10 @@ fixed4 furFrag(v2f_fur i) : SV_Target
 
     // Apply lighting
     float3 directLight = _LightColor0.rgb * toonShading;
-    float3 ambient = ShadeSH9(float4(worldNormal, 1.0));
+    // Unified SH ambient (LPPV-aware in ForwardBase; fur shells run in "Always"
+    // passes where UNITY_LIGHT_PROBE_PROXY_VOLUME is 0 and this collapses to the
+    // classic ShadeSH9 result).
+    float3 ambient = NataneShadeSH(worldNormal, i.worldPos);
 
     // Runtime branch: FurShell always compiles LV/LTCGI helpers (via NATANE_FORCE_*),
     // unlike the main shader which uses shader_feature keywords for compile-time stripping.

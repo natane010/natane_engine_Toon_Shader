@@ -1052,6 +1052,7 @@ CGPROGRAM
             #pragma domain domain
             #pragma fragment frag
             #pragma multi_compile_fwdbase
+            #pragma multi_compile _ UNITY_LIGHT_PROBE_PROXY_VOLUME
             #pragma shader_feature_local _QUEST_LITE
             #pragma multi_compile_fog
             #pragma multi_compile_instancing

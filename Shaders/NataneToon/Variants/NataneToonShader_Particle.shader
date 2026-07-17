@@ -109,10 +109,14 @@ Shader "Natane/Toon Shader (Particle)"
 
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
+            // LPPV support (ForwardBase). Doubles this pass's variant count but
+            // lets billboard particles pick up Light Probe Proxy Volume ambient.
+            #pragma multi_compile _ UNITY_LIGHT_PROBE_PROXY_VOLUME
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "UnityCG.cginc"
             #include "Lighting.cginc"
+            #include "../Include/Lighting/NataneToonSH.hlsl"
 
             sampler2D _MainTex;
             float4 _MainTex_ST;
@@ -171,6 +175,7 @@ Shader "Natane/Toon Shader (Particle)"
                 #endif
                 #ifdef _PARTICLE_TOON_LIGHTING
                     float3 worldNormal : TEXCOORD4;
+                    float3 worldPos : TEXCOORD5; // for LPPV sampling
                 #endif
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -200,6 +205,7 @@ Shader "Natane/Toon Shader (Particle)"
 
                 #ifdef _PARTICLE_TOON_LIGHTING
                     o.worldNormal = UnityObjectToWorldNormal(v.normal);
+                    o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
                 #endif
 
                 UNITY_TRANSFER_FOG(o, o.pos);
@@ -229,7 +235,7 @@ Shader "Natane/Toon Shader (Particle)"
                         _ShadowThreshold - _ShadowSmoothness,
                         _ShadowThreshold + _ShadowSmoothness,
                         ndl);
-                    half3 ambient = ShadeSH9(half4(normal, 1.0));
+                    half3 ambient = NataneShadeSH(normal, i.worldPos);
                     half3 litColor = col.rgb * saturate(_LightColor0.rgb + ambient);
                     half3 shadeColor = litColor * _ShadowColor.rgb;
                     col.rgb = lerp(shadeColor, litColor, toonShade);

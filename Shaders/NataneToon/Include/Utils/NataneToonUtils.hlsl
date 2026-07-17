@@ -1,6 +1,11 @@
 #ifndef NATANE_TOON_UTILS_INCLUDED
 #define NATANE_TOON_UTILS_INCLUDED
 
+// Shared SH / LPPV ambient evaluator (NataneShadeSH). Included here because
+// Utils is pulled in by every SH consumer (Fragment, Fur Shell, Background)
+// and always after UnityCG.cginc, satisfying NataneToonSH.hlsl's dependencies.
+#include "../Lighting/NataneToonSH.hlsl"
+
 // ===== NOSAMPLER Function Argument Helpers =====
 // Portable type for passing NOSAMPLER textures as function arguments.
 // SEPARATE platforms (DX11+): Texture2D, others: sampler2D.
