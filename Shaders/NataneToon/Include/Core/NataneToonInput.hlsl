@@ -983,6 +983,11 @@ CBUFFER_START(UnityPerMaterial)
     #if defined(_PERSPECTIVE_FLAT)
     float _PerspectiveFlatAmount;
     #endif
+    #if defined(_FACE_ORTHO)
+    float _FaceOrthoAmount;
+    float _FaceOrthoVRAmount;
+    float4 _FaceOrthoPivot;
+    #endif
     #if defined(_DEPTH_COLOR_FADE)
     half4 _DepthFadeColor;
     float _DepthFadeStart;
@@ -1349,6 +1354,9 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_PBR_OcclusionMap);
 // Smooth Normal Texture (for Mode 2: Baked Normal Texture)
 #if defined(_SMOOTH_NORMAL)
 UNITY_DECLARE_TEX2D_NOSAMPLER(_SmoothNormalTex);
+#if defined(_FACE_ORTHO_MASK)
+UNITY_DECLARE_TEX2D_NOSAMPLER(_FaceOrthoMaskTex);
+#endif
 #endif
 
 // Hologram (conditionally compiled)

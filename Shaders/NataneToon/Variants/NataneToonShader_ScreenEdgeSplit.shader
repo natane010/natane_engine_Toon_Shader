@@ -932,6 +932,12 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
         [Header(Perspective Flattening)]
         [Toggle(_PERSPECTIVE_FLAT)] _PerspectiveFlat ("Enable Perspective Flatten", Float) = 0
         _PerspectiveFlatAmount ("Flatten Amount", Range(0, 1)) = 0.5
+        [Toggle(_FACE_ORTHO)] _FaceOrtho ("Enable Face Ortho Projection (顔直交投影)", Float) = 0
+        _FaceOrthoAmount ("Face Ortho Amount", Range(0, 1)) = 1
+        _FaceOrthoVRAmount ("Face Ortho VR Amount", Range(0, 1)) = 0.3
+        _FaceOrthoPivot ("Face Ortho Pivot (Object Space)", Vector) = (0, 1.4, 0, 0)
+        [Toggle(_FACE_ORTHO_MASK)] _UseFaceOrthoMask ("Use Face Ortho Mask", Float) = 0
+        [NoScaleOffset] _FaceOrthoMaskTex ("Face Ortho Mask (R)", 2D) = "white" {}
 
         [Header(Depth Color Fade)]
         [Toggle(_DEPTH_COLOR_FADE)] _DepthColorFade ("Enable Depth Color Fade", Float) = 0
@@ -1015,6 +1021,8 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             #pragma shader_feature_local _HEIGHT_FADE
             #pragma shader_feature_local _OUTLINE_HAND_DRAWN
             #pragma shader_feature_local _PERSPECTIVE_FLAT
+            #pragma shader_feature_local _FACE_ORTHO
+            #pragma shader_feature_local _FACE_ORTHO_MASK
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
@@ -1133,6 +1141,8 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             #pragma shader_feature_local _TESS_DISPLACEMENT
             #pragma shader_feature_local _PCSS
             #pragma shader_feature_local _PERSPECTIVE_FLAT
+            #pragma shader_feature_local _FACE_ORTHO
+            #pragma shader_feature_local _FACE_ORTHO_MASK
             #pragma shader_feature_local _DEPTH_COLOR_FADE
             #pragma shader_feature_local _MIRROR_CONTROL
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
@@ -1159,6 +1169,9 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             #pragma domain domain
             #pragma fragment frag
             #pragma multi_compile_fwdadd
+            #pragma shader_feature_local _PERSPECTIVE_FLAT
+            #pragma shader_feature_local _FACE_ORTHO
+            #pragma shader_feature_local _FACE_ORTHO_MASK
             #pragma shader_feature_local _QUEST_LITE
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
@@ -1244,6 +1257,8 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             #pragma shader_feature_local _TESSELLATION
             #pragma shader_feature_local _TESS_DISPLACEMENT
             #pragma shader_feature_local _PERSPECTIVE_FLAT
+            #pragma shader_feature_local _FACE_ORTHO
+            #pragma shader_feature_local _FACE_ORTHO_MASK
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "UnityCG.cginc"

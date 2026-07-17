@@ -187,6 +187,8 @@ namespace NataneToon.Editor
 
             // Perspective Flat
             ("_PerspectiveFlat", "_PERSPECTIVE_FLAT"),
+            ("_FaceOrtho", "_FACE_ORTHO"),
+            ("_UseFaceOrthoMask", "_FACE_ORTHO_MASK"),
 
             // Height Fade / Intersection Fade
             ("_HeightFade", "_HEIGHT_FADE"),

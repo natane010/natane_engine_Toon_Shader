@@ -336,6 +336,7 @@ public class NataneToonShaderGUI : ShaderGUI
         { "MirrorControl", "_MIRROR_CONTROL" },
         { "QuestLite", "_QUEST_LITE" },
         { "PerspectiveFlat", "_PERSPECTIVE_FLAT" },
+        { "FaceOrtho", "_FACE_ORTHO" },
     };
 
     // Reverse lookup: keyword → section key (for auto-expand on toggle ON)
@@ -459,6 +460,7 @@ public class NataneToonShaderGUI : ShaderGUI
         new[] { "GradientBaseColor", "Gradient Base Color", "gradient base color position tint" },
         new[] { "DepthColorFade", "Depth Color Fade", "depth color fade aerial perspective atmosphere desaturation distance" },
         new[] { "PerspectiveFlat", "Perspective Flat", "perspective flat flatten depth compression 2d illustration" },
+        new[] { "FaceOrtho", "Face Ortho", "face ortho orthographic projection 顔 直交投影 fov distortion" },
         // --- Effects: Geometry & Animation ---
         new[] { "Parallax", "Parallax", "parallax height map" },
         new[] { "VertexAnimation", "Vertex Animation", "vertex animation wind breath pulse" },
@@ -546,6 +548,7 @@ public class NataneToonShaderGUI : ShaderGUI
             { "ProceduralMatCap", "ShowProceduralMatCap" },
             { "FakeReflection", "ShowFakeReflection" },
             { "PerspectiveFlat", "ShowPerspectiveFlat" },
+            { "FaceOrtho", "ShowFaceOrtho" },
             { "DepthColorFade", "ShowDepthColorFade" },
     };
 
@@ -7412,6 +7415,48 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("PerspectiveFlat"));
     }
 
+    private void DrawFaceOrthoSection()
+    {
+        SetFoldout("FaceOrtho", DrawBoxedSection(L("顔直交投影", "Face Ortho Projection"), GetFoldout("FaceOrtho"), SectionCategory.Advanced, "_FACE_ORTHO"));
+        if (GetFoldout("FaceOrtho"))
+        {
+            bool enableFO = DrawToggle("_FACE_ORTHO", "_FaceOrtho", L("顔直交投影を有効化", "Enable Face Ortho Projection"));
+            if (enableFO)
+            {
+                EditorGUI.indentLevel++;
+                DrawProperty("_FaceOrthoAmount", L("直交化の強さ", "Ortho Amount"));
+                DrawProperty("_FaceOrthoVRAmount", L("VR時の強さ", "VR Amount"));
+                DrawProperty("_FaceOrthoPivot", L("ピボット位置 (オブジェクト空間)", "Pivot (Object Space)"));
+                bool useMask = DrawToggle("_FACE_ORTHO_MASK", "_UseFaceOrthoMask", L("マスクテクスチャを使用", "Use Mask Texture"));
+                if (useMask)
+                {
+                    DrawProperty("_FaceOrthoMaskTex", L("マスク (R: 適用度)", "Mask (R: amount)"));
+                }
+                DrawHelpToggle("FaceOrtho",
+                    L("顔直交投影:\n" +
+                    "顔まわりの頂点をピボット中心に透視投影→直交投影へブレンドし、\n" +
+                    "カメラ距離やFOVによる顔の歪みを抑えて常に理想的な見た目を保ちます。\n\n" +
+                    "• 直交化の強さ: 0=通常、1=完全に直交投影\n" +
+                    "• VR時の強さ: VR(ステレオ)では立体視と干渉するため別指定 (推奨 0〜0.3)\n" +
+                    "• ピボット位置: 頭部の位置をオブジェクト空間で指定 (Humanoidなら約 Y=1.4)\n" +
+                    "• マスク: 顔部分のみ適用する場合はRチャンネルのマスクを指定\n\n" +
+                    "💡 顔以外を含むマテリアルではマスク併用を推奨。首の境目はマスクをぼかしてください。",
+                    "Face Ortho Projection:\n" +
+                    "Blends masked vertices from perspective toward an orthographic projection\n" +
+                    "around a pivot, keeping the face ideally proportioned at any camera\n" +
+                    "distance, FOV, or camera type.\n\n" +
+                    "• Ortho Amount: 0=normal, 1=fully orthographic\n" +
+                    "• VR Amount: separate strength in VR (recommended 0-0.3; full ortho fights stereo depth)\n" +
+                    "• Pivot: head position in object space (about Y=1.4 for humanoids)\n" +
+                    "• Mask: R-channel mask to restrict the effect to the face\n\n" +
+                    "💡 Use the mask on materials that include non-face geometry; feather the neck boundary."),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("FaceOrtho"));
+    }
+
     private void DrawDepthColorFadeSection()
     {
         SetFoldout("DepthColorFade", DrawBoxedSection(L("深度カラーフェード", "Depth Color Fade"), GetFoldout("DepthColorFade"), SectionCategory.Environment, "_DEPTH_COLOR_FADE"));
@@ -7730,6 +7775,7 @@ public class NataneToonShaderGUI : ShaderGUI
             new[] { "_PROCEDURAL_MATCAP", L("プロシージャルMatCap", "Procedural MatCap"), "_ProceduralMatCap" },
             new[] { "_FAKE_REFLECTION", L("フェイクリフレクション", "Fake Reflection"), "_FakeReflection" },
             new[] { "_PERSPECTIVE_FLAT", L("パースフラット", "Perspective Flatten"), "_PerspectiveFlat" },
+            new[] { "_FACE_ORTHO", L("顔直交投影", "Face Ortho Projection"), "_FaceOrtho" },
             new[] { "_DEPTH_COLOR_FADE", L("深度カラーフェード", "Depth Color Fade"), "_DepthColorFade" },
             new[] { "_EMISSION", L("エミッション", "Emission"), "_Emission" },
             new[] { "_AUDIOLINK", "AudioLink", "_AudioLink" },
@@ -8280,6 +8326,7 @@ public class NataneToonShaderGUI : ShaderGUI
         FilteredDrawSection(DrawIntersectionFadeSection, L("オブジェクト交差フェード", "Intersection Fade"), "IntersectionFade");
         FilteredDrawSection(DrawDistanceFadeSection, L("距離フェード", "Distance Fade"), "DistanceFade");
         FilteredDrawSection(DrawPerspectiveFlatSection, L("パースフラット", "Perspective Flatten"), "PerspectiveFlat");
+        FilteredDrawSection(DrawFaceOrthoSection, L("顔直交投影", "Face Ortho Projection"), "FaceOrtho");
 
         // ─── VRChat＆パフォーマンス ───
         NataneToonShaderGUIUtility.DrawCategoryDivider(L("VRChat＆パフォーマンス", "VRChat & Performance"));
@@ -8415,6 +8462,7 @@ public class NataneToonShaderGUI : ShaderGUI
             case "ProceduralMatCap": return DrawProceduralMatCapSection;
             case "FakeReflection": return DrawFakeReflectionSection;
             case "PerspectiveFlat": return DrawPerspectiveFlatSection;
+            case "FaceOrtho": return DrawFaceOrthoSection;
             case "DepthColorFade": return DrawDepthColorFadeSection;
             default: return null;
         }
@@ -8534,6 +8582,7 @@ public class NataneToonShaderGUI : ShaderGUI
                 new[] { "IntersectionFade", L("交差フェード", "Intersection Fade") },
                 new[] { "DistanceFade", L("距離フェード", "Distance Fade") },
                 new[] { "PerspectiveFlat", L("パースフラット", "Perspective Flat") },
+                new[] { "FaceOrtho", L("顔直交投影", "Face Ortho") },
                 new[] { "MirrorControl", L("ミラー・カメラ制御", "Mirror / Camera Control") },
                 new[] { "QuestLite", L("Quest軽量", "Quest Lite") },
                 new[] { "Rendering", L("レンダリング", "Rendering") }

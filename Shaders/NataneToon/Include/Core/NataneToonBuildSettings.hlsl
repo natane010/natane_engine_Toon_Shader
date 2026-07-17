@@ -353,6 +353,14 @@
     #undef _PERSPECTIVE_FLAT
 #endif
 
+// Face Ortho Projection
+#if defined(_FACE_ORTHO) && !defined(NATANE_FEATURE_FACE_ORTHO)
+    #undef _FACE_ORTHO
+#endif
+#if defined(_FACE_ORTHO_MASK) && !defined(NATANE_FEATURE_FACE_ORTHO_MASK)
+    #undef _FACE_ORTHO_MASK
+#endif
+
 // Height Fade / Intersection Fade
 #if defined(_HEIGHT_FADE) && !defined(NATANE_FEATURE_HEIGHT_FADE)
     #undef _HEIGHT_FADE

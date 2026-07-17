@@ -93,6 +93,14 @@ sampler2D _OutlineWidthMap;
 #ifdef _PERSPECTIVE_FLAT
     float _PerspectiveFlatAmount;
 #endif
+#ifdef _FACE_ORTHO
+    float _FaceOrthoAmount;
+    float _FaceOrthoVRAmount;
+    float4 _FaceOrthoPivot;
+    #ifdef _FACE_ORTHO_MASK
+        sampler2D _FaceOrthoMaskTex;
+    #endif
+#endif
 #ifdef _OUTLINE_HAND_DRAWN
     sampler2D _OutlineNoiseTex;
     float _OutlineNoiseTiling;
@@ -269,6 +277,29 @@ v2f vert(appdata v)
         {
             float flatZ = lerp(o.pos.z, o.pos.w * 0.5, _PerspectiveFlatAmount);
             o.pos.z = flatZ;
+        }
+        #endif
+
+        // Face Orthographic Projection — must mirror NataneToonVertex.hlsl
+        // exactly so the outline hull stays aligned with the flattened face.
+        #ifdef _FACE_ORTHO
+        {
+            float faceOrthoAmount = _FaceOrthoAmount;
+            #if defined(USING_STEREO_MATRICES)
+                faceOrthoAmount = _FaceOrthoVRAmount;
+            #endif
+            #ifdef _FACE_ORTHO_MASK
+                faceOrthoAmount *= tex2Dlod(_FaceOrthoMaskTex, float4(v.uv, 0, 0)).r;
+            #endif
+
+            float4 faceOrthoPivotCS = UnityObjectToClipPos(float4(_FaceOrthoPivot.xyz, 1.0));
+            if (faceOrthoAmount > 0.001 && faceOrthoPivotCS.w > 0.01 && o.pos.w > 0.01)
+            {
+                float2 ndcPersp = o.pos.xy / o.pos.w;
+                float2 ndcOrtho = o.pos.xy / faceOrthoPivotCS.w;
+                float2 ndcBlend = lerp(ndcPersp, ndcOrtho, saturate(faceOrthoAmount));
+                o.pos.xy = ndcBlend * o.pos.w;
+            }
         }
         #endif
 
