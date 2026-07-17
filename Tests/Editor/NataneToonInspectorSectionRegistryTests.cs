@@ -47,6 +47,12 @@ namespace NataneToon.Tests.Editor
         [TestCase("顔", "FaceOrtho")]
         [TestCase("stencil", "Rendering")]
         [TestCase("sampler", "Performance")]
+        [TestCase("boil", "LineBoil")]
+        [TestCase("ボイル", "LineBoil")]
+        [TestCase("等高線", "Topographic")]
+        [TestCase("topographic", "Topographic")]
+        [TestCase("modulator", "FXModulator")]
+        [TestCase("catchlight", "ShapedHighlight")]
         public void Search_FindsExpectedSection(string query, string expectedKey)
         {
             string[] resultKeys = NataneToonInspectorSectionRegistry.Search(query)
@@ -61,6 +67,50 @@ namespace NataneToon.Tests.Editor
         {
             foreach (NataneInspectorTab tab in System.Enum.GetValues(typeof(NataneInspectorTab)))
                 Assert.That(NataneToonInspectorSectionRegistry.ForTab(tab), Is.Not.Empty, tab.ToString());
+        }
+
+        [Test]
+        public void EverySection_HasBeginnerDescriptions()
+        {
+            string[] missing = NataneToonInspectorSectionRegistry.All
+                .Where(section => string.IsNullOrWhiteSpace(section.DescriptionJP)
+                               || string.IsNullOrWhiteSpace(section.DescriptionEN))
+                .Select(section => section.Key)
+                .ToArray();
+
+            Assert.That(missing, Is.Empty, "Sections without a JP+EN one-line description: " + string.Join(", ", missing));
+        }
+
+        // v1.6.x で追加した4つの表現機能が登録から漏れていないことを担保する。
+        [TestCase("LineBoil", "_LINE_BOIL", "_LineBoil")]
+        [TestCase("ShapedHighlight", "_SHAPED_HIGHLIGHT", "_ShapedHighlight")]
+        [TestCase("Topographic", "_TOPOGRAPHIC", "_Topographic")]
+        [TestCase("FXModulator", "_FX_MODULATOR", "_FXModulator")]
+        public void NewExpressionSections_AreRegistered(string key, string expectedKeyword, string expectedProperty)
+        {
+            NataneInspectorSectionDescriptor descriptor = NataneToonInspectorSectionRegistry.Find(key);
+
+            Assert.That(descriptor, Is.Not.Null, key + " is not registered");
+            Assert.That(descriptor.ToggleKeyword, Is.EqualTo(expectedKeyword));
+            Assert.That(descriptor.ToggleProperty, Is.EqualTo(expectedProperty));
+            Assert.That(descriptor.Tab, Is.EqualTo(NataneInspectorTab.Effects));
+            Assert.That(descriptor.FindByKeywordRoundTrips(), Is.True);
+        }
+
+        [Test]
+        public void FXModulator_IsUnderControlGroup()
+        {
+            NataneInspectorSectionDescriptor descriptor = NataneToonInspectorSectionRegistry.Find("FXModulator");
+            Assert.That(descriptor.GroupEN, Is.EqualTo("Control"));
+            Assert.That(descriptor.GroupJP, Is.EqualTo("制御"));
+        }
+    }
+
+    internal static class NataneInspectorSectionDescriptorTestExtensions
+    {
+        public static bool FindByKeywordRoundTrips(this NataneInspectorSectionDescriptor descriptor)
+        {
+            return NataneToonInspectorSectionRegistry.FindByKeyword(descriptor.ToggleKeyword) == descriptor;
         }
     }
 }
