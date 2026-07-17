@@ -243,6 +243,12 @@ namespace NataneToon.Editor
 
             // Fur (Fur variant only)
             ("_Fur", "_FUR"),
+
+            // Expression Effects (v1.6.0 batch 1)
+            ("_LineBoil", "_LINE_BOIL"),
+            ("_ShapedHighlight", "_SHAPED_HIGHLIGHT"),
+            ("_Topographic", "_TOPOGRAPHIC"),
+            ("_FXModulator", "_FX_MODULATOR"),
         };
 
         // SaveAssets による再インポート→再同期の無限ループを防止

@@ -123,6 +123,46 @@ sampler2D _OutlineWidthMap;
     }
 #endif
 
+// ===== Line Boil (outline position + width jitter) =====
+#ifdef _LINE_BOIL
+    float _LineBoilFPS;
+    float _LineBoilPositionJitter;
+    float _LineBoilWidthJitter;
+    float _LineBoilHoldFrames;
+    float _LineBoilRandomSeed;
+    float _LineBoilAffectOutline;
+    #include "../Effects/NataneToonLineBoil.hlsl"
+#endif
+
+// ===== FX Modulator (OutlineWidth target) =====
+#ifdef _FX_MODULATOR
+    float _FXModSource0;
+    float _FXModTarget0;
+    float _FXModAmount0;
+    float _FXModOffset0;
+    float _FXModSpeed0;
+    float _FXModMin0;
+    float _FXModMax0;
+    float _FXModInvert0;
+    float _FXModCurve0;
+    float _FXModManual0;
+    float _FXModDistMin0;
+    float _FXModDistMax0;
+    float _FXModSource1;
+    float _FXModTarget1;
+    float _FXModAmount1;
+    float _FXModOffset1;
+    float _FXModSpeed1;
+    float _FXModMin1;
+    float _FXModMax1;
+    float _FXModInvert1;
+    float _FXModCurve1;
+    float _FXModManual1;
+    float _FXModDistMin1;
+    float _FXModDistMax1;
+    #include "../Effects/NataneToonFXModulator.hlsl"
+#endif
+
 v2f vert(appdata v)
 {
     v2f o;
@@ -208,6 +248,28 @@ v2f vert(appdata v)
             }
         #endif
 
+        // ===== Line Boil + FX Modulator outline modulation =====
+        // Object-space position jitter (before projection) + width multiplier.
+        float nataneOutlineWidthMod = 1.0;
+        #ifdef _LINE_BOIL
+        if (_LineBoilAffectOutline >= 0.5)
+        {
+            float boilPhase = NataneLineBoilPhase();
+            v.vertex.xyz += NataneLineBoilOffset(v.vertex.xyz, boilPhase, _LineBoilPositionJitter * 0.001);
+            float boilW = NataneLineBoilOffset(v.vertex.xyz, boilPhase + 7.3, 1.0).x;
+            nataneOutlineWidthMod *= 1.0 + boilW * _LineBoilWidthJitter;
+        }
+        #endif
+        #ifdef _FX_MODULATOR
+        {
+            float3 fxWp = mul(unity_ObjectToWorld, v.vertex).xyz;
+            float3 fxWn = UnityObjectToWorldNormal(v.normal);
+            float3 fxVd = normalize(_WorldSpaceCameraPos - fxWp);
+            NataneFXModState fxOutline = NataneFXModCompute(fxWp, fxWn, fxVd, 1.0, 1.0);
+            nataneOutlineWidthMod *= NataneFXModMul(fxOutline, NATANE_FXT_OUTLINE_WIDTH);
+        }
+        #endif
+
         if (_OutlineMode < 0.5)
         {
             // Mode 0: Inverted Hull - Extrusion along normals in view space
@@ -221,7 +283,7 @@ v2f vert(appdata v)
 
             // Apply distance compensation for consistent outline width
             // Scale down by 0.01 to maintain original scale with new range (0-1)
-            float outlineWidth = _OutlineWidth * 0.1 * (1.0 + distanceFactor) * widthMultiplier;
+            float outlineWidth = _OutlineWidth * 0.1 * (1.0 + distanceFactor) * widthMultiplier * nataneOutlineWidthMod;
 
             // Edge width compensation
             if (_OutlineEdgeCompensation > 0.001)
@@ -248,7 +310,7 @@ v2f vert(appdata v)
             // Mode 1: Back Face - Scale up vertices along normals in object space
             // Improved with distance compensation
             // Scale down by 0.1 to maintain original scale with new range (0-1)
-            float outlineWidth = _OutlineWidth * 0.1 * (1.0 + distanceFactor * 0.5) * widthMultiplier;
+            float outlineWidth = _OutlineWidth * 0.1 * (1.0 + distanceFactor * 0.5) * widthMultiplier * nataneOutlineWidthMod;
 
             // Edge width compensation
             if (_OutlineEdgeCompensation > 0.001)
