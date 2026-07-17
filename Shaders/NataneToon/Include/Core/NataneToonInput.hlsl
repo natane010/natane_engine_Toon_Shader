@@ -1009,10 +1009,84 @@ CBUFFER_START(UnityPerMaterial)
     float _DepthFadeDesaturation;
     #endif
 
+    // ===== Expression Effects (v1.6.0 batch 1) =====
+    #if defined(_LINE_BOIL)
+    float _LineBoilFPS;
+    float _LineBoilPositionJitter;
+    float _LineBoilWidthJitter;
+    float _LineBoilUVJitter;
+    float _LineBoilHoldFrames;
+    float _LineBoilRandomSeed;
+    float _LineBoilAffectOutline;
+    float _LineBoilAffectHatching;
+    float _LineBoilAffectWatercolor;
+    #endif
+    #if defined(_SHAPED_HIGHLIGHT)
+    float _ShapedHLShape;
+    half4 _ShapedHLColor;
+    float _ShapedHLIntensity;
+    float _ShapedHLSize;
+    float _ShapedHLSoftness;
+    float4 _ShapedHLStretch;
+    float _ShapedHLRotation;
+    float _ShapedHLLightFollow;
+    float _ShapedHLCameraFollow;
+    float _ShapedHLShape2;
+    float _ShapedHLIntensity2;
+    float _ShapedHLSize2;
+    float _ShapedHLSparkleSpeed;
+    #endif
+    #if defined(_TOPOGRAPHIC)
+    float _TopoSpace;
+    float _TopoAxis;
+    float4 _TopoCustomDir;
+    float _TopoMode;
+    float _TopoSpacing;
+    float _TopoOffset;
+    float _TopoSpeed;
+    float _TopoLineWidth;
+    half4 _TopoColor;
+    half4 _TopoColor2;
+    float _TopoEmission;
+    float _TopoNoiseScale;
+    float _TopoNoiseStrength;
+    float _TopoBlend;
+    #endif
+    #if defined(_FX_MODULATOR)
+    float _FXModSource0;
+    float _FXModTarget0;
+    float _FXModAmount0;
+    float _FXModOffset0;
+    float _FXModSpeed0;
+    float _FXModMin0;
+    float _FXModMax0;
+    float _FXModInvert0;
+    float _FXModCurve0;
+    float _FXModManual0;
+    float _FXModDistMin0;
+    float _FXModDistMax0;
+    float _FXModSource1;
+    float _FXModTarget1;
+    float _FXModAmount1;
+    float _FXModOffset1;
+    float _FXModSpeed1;
+    float _FXModMin1;
+    float _FXModMax1;
+    float _FXModInvert1;
+    float _FXModCurve1;
+    float _FXModManual1;
+    float _FXModDistMin1;
+    float _FXModDistMax1;
+    #endif
+
     // ===== Feature Toggle Properties =====
     // [Toggle(_KEYWORD)] properties used for runtime feature guards.
     // These must be in the CBUFFER for the if(_Prop >= 0.5) checks
     // in Fragment.hlsl to compile.
+    float _LineBoil;
+    float _ShapedHighlight;
+    float _Topographic;
+    float _FXModulator;
     float _MirrorControl;
     float _MainTexAnimation;
     float _GlitchStretch;
@@ -1416,6 +1490,21 @@ UNITY_DECLARE_SCREENSPACE_TEXTURE(_CameraDepthNormalsTexture);
 #endif
 #ifdef _OUTLINE_HAND_DRAWN
 UNITY_DECLARE_TEX2D_NOSAMPLER(_OutlineNoiseTex);
+#endif
+
+// Expression Effects (v1.6.0 batch 1) — masks / custom SDF (NOSAMPLER, shared samplers)
+#ifdef _LINE_BOIL
+UNITY_DECLARE_TEX2D_NOSAMPLER(_LineBoilMaskTex);
+#endif
+#ifdef _SHAPED_HIGHLIGHT
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ShapedHLTex);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ShapedHLMask);
+#endif
+#ifdef _TOPOGRAPHIC
+UNITY_DECLARE_TEX2D_NOSAMPLER(_TopoMask);
+#endif
+#ifdef _FX_MODULATOR
+UNITY_DECLARE_TEX2D_NOSAMPLER(_FXModMaskTex);
 #endif
 
 // VAT

@@ -38,6 +38,12 @@
 // Organized by functionality for better maintainability
 #include "NataneToonInput.hlsl"
 #include "../Utils/NataneToonUtils.hlsl"
+// Expression effect modules (v1.6.0 batch 1). Included after Utils so the
+// FX Modulator can call SampleAudioLink*; all four are #ifdef-guarded internally.
+#include "../Effects/NataneToonLineBoil.hlsl"
+#include "../Effects/NataneToonShapedHighlight.hlsl"
+#include "../Effects/NataneToonTopographic.hlsl"
+#include "../Effects/NataneToonFXModulator.hlsl"
 #include "../Lighting/NataneToonLighting.hlsl"
 #include "../Lighting/NataneToonLightmap.hlsl"
 #include "../Lighting/NataneToonPBR.hlsl"

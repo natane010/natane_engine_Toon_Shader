@@ -938,6 +938,84 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
         _FaceOrthoPivot ("Face Ortho Pivot (Object Space)", Vector) = (0, 1.4, 0, 0)
         [Toggle(_FACE_ORTHO_MASK)] _UseFaceOrthoMask ("Use Face Ortho Mask", Float) = 0
         [NoScaleOffset] _FaceOrthoMaskTex ("Face Ortho Mask (R)", 2D) = "white" {}
+        // ===== Expression Effects (v1.6.0 batch 1) =====
+        // A. Line Boil (ラインボイル)
+        [Toggle(_LINE_BOIL)] _LineBoil ("Enable Line Boil (ラインボイル)", Float) = 0
+        _LineBoilFPS ("Line Boil FPS", Range(1, 24)) = 8
+        _LineBoilPositionJitter ("Line Boil Position Jitter", Range(0, 5)) = 1
+        _LineBoilWidthJitter ("Line Boil Width Jitter", Range(0, 1)) = 0.2
+        _LineBoilUVJitter ("Line Boil UV Jitter", Range(0, 0.05)) = 0.005
+        _LineBoilHoldFrames ("Line Boil Hold Frames", Range(1, 8)) = 1
+        _LineBoilRandomSeed ("Line Boil Random Seed", Float) = 0
+        [Toggle] _LineBoilAffectOutline ("Line Boil Affect Outline", Float) = 1
+        [Toggle] _LineBoilAffectHatching ("Line Boil Affect Hatching/ScreenTone", Float) = 1
+        [Toggle] _LineBoilAffectWatercolor ("Line Boil Affect Watercolor", Float) = 1
+        [NoScaleOffset] _LineBoilMaskTex ("Line Boil Mask (R)", 2D) = "white" {}
+
+        // B. Shaped Toon Highlight (形状付きトゥーンハイライト)
+        [Toggle(_SHAPED_HIGHLIGHT)] _ShapedHighlight ("Enable Shaped Highlight (形状ハイライト)", Float) = 0
+        [Enum(Circle,0,Ring,1,Cross,2,Star,3,Heart,4,Diamond,5,Crescent,6,Line,7,Custom,8)] _ShapedHLShape ("Shaped HL Shape", Float) = 3
+        [HDR] _ShapedHLColor ("Shaped HL Color", Color) = (1,1,1,1)
+        _ShapedHLIntensity ("Shaped HL Intensity", Range(0, 10)) = 1
+        _ShapedHLSize ("Shaped HL Size", Range(0.01, 2)) = 0.5
+        _ShapedHLSoftness ("Shaped HL Softness", Range(0.001, 1)) = 0.1
+        _ShapedHLStretch ("Shaped HL Stretch XY", Vector) = (1,1,0,0)
+        _ShapedHLRotation ("Shaped HL Rotation", Range(0, 360)) = 0
+        _ShapedHLLightFollow ("Shaped HL Light Follow", Range(0, 1)) = 1
+        _ShapedHLCameraFollow ("Shaped HL Camera Follow", Range(0, 1)) = 0
+        [Enum(Circle,0,Ring,1,Cross,2,Star,3,Heart,4,Diamond,5,Crescent,6,Line,7)] _ShapedHLShape2 ("Shaped HL Secondary Shape", Float) = 0
+        _ShapedHLIntensity2 ("Shaped HL Secondary Intensity", Range(0, 10)) = 0
+        _ShapedHLSize2 ("Shaped HL Secondary Size", Range(0.01, 2)) = 0.3
+        _ShapedHLSparkleSpeed ("Shaped HL Sparkle Pulse Speed", Range(0, 20)) = 0
+        [NoScaleOffset] _ShapedHLTex ("Shaped HL Custom SDF", 2D) = "black" {}
+        [NoScaleOffset] _ShapedHLMask ("Shaped HL Mask (R)", 2D) = "white" {}
+
+        // C. Topographic / Fault-Slice (等高線/断層スライス)
+        [Toggle(_TOPOGRAPHIC)] _Topographic ("Enable Topographic (等高線)", Float) = 0
+        [Enum(Object,0,World,1,View,2)] _TopoSpace ("Topo Space", Float) = 1
+        [Enum(X,0,Y,1,Z,2,Custom,3)] _TopoAxis ("Topo Axis", Float) = 1
+        _TopoCustomDir ("Topo Custom Direction", Vector) = (0,1,0,0)
+        [Enum(Lines,0,Bands,1,GradientBands,2,DoubleLines,3,PulseRings,4,NoiseDistorted,5)] _TopoMode ("Topo Mode", Float) = 0
+        _TopoSpacing ("Topo Spacing", Range(0.001, 2)) = 0.1
+        _TopoOffset ("Topo Offset", Float) = 0
+        _TopoSpeed ("Topo Scroll Speed", Float) = 0
+        _TopoLineWidth ("Topo Line Width", Range(0.001, 0.5)) = 0.1
+        [HDR] _TopoColor ("Topo Primary Color", Color) = (1,1,1,1)
+        [HDR] _TopoColor2 ("Topo Secondary Color", Color) = (0,0,0,1)
+        _TopoEmission ("Topo Emission Strength", Range(0, 10)) = 1
+        _TopoNoiseScale ("Topo Noise Scale", Range(0, 10)) = 1
+        _TopoNoiseStrength ("Topo Noise Strength", Range(0, 1)) = 0.3
+        _TopoBlend ("Topo Blend", Range(0, 1)) = 1
+        [NoScaleOffset] _TopoMask ("Topo Mask (R)", 2D) = "white" {}
+
+        // D. FX Modulator (汎用FXモジュレーター)
+        [Toggle(_FX_MODULATOR)] _FXModulator ("Enable FX Modulator (FXモジュレーター)", Float) = 0
+        [Enum(Sine,0,Saw,1,Triangle,2,Pulse,3,RandomStep,4,AudioBass,5,AudioLowMid,6,AudioHighMid,7,AudioTreble,8,Chronotensity,9,CameraDistance,10,ViewAngle,11,Manual,12)] _FXModSource0 ("FX Slot0 Source", Float) = 0
+        [Enum(None,0,EmissionIntensity,1,HueShift,2,RimIntensity,3,OutlineWidth,4,LineBoilStrength,5,TopographicOffset,6)] _FXModTarget0 ("FX Slot0 Target", Float) = 0
+        _FXModAmount0 ("FX Slot0 Amount", Float) = 0
+        _FXModOffset0 ("FX Slot0 Phase Offset", Float) = 0
+        _FXModSpeed0 ("FX Slot0 Speed", Float) = 1
+        _FXModMin0 ("FX Slot0 Min", Float) = 0
+        _FXModMax0 ("FX Slot0 Max", Float) = 1
+        [Toggle] _FXModInvert0 ("FX Slot0 Invert", Float) = 0
+        _FXModCurve0 ("FX Slot0 Curve (pow)", Range(0.1, 5)) = 1
+        _FXModManual0 ("FX Slot0 Manual Value", Range(0, 1)) = 0.5
+        _FXModDistMin0 ("FX Slot0 Distance Min", Float) = 0
+        _FXModDistMax0 ("FX Slot0 Distance Max", Float) = 10
+        [Enum(Sine,0,Saw,1,Triangle,2,Pulse,3,RandomStep,4,AudioBass,5,AudioLowMid,6,AudioHighMid,7,AudioTreble,8,Chronotensity,9,CameraDistance,10,ViewAngle,11,Manual,12)] _FXModSource1 ("FX Slot1 Source", Float) = 0
+        [Enum(None,0,EmissionIntensity,1,HueShift,2,RimIntensity,3,OutlineWidth,4,LineBoilStrength,5,TopographicOffset,6)] _FXModTarget1 ("FX Slot1 Target", Float) = 0
+        _FXModAmount1 ("FX Slot1 Amount", Float) = 0
+        _FXModOffset1 ("FX Slot1 Phase Offset", Float) = 0
+        _FXModSpeed1 ("FX Slot1 Speed", Float) = 1
+        _FXModMin1 ("FX Slot1 Min", Float) = 0
+        _FXModMax1 ("FX Slot1 Max", Float) = 1
+        [Toggle] _FXModInvert1 ("FX Slot1 Invert", Float) = 0
+        _FXModCurve1 ("FX Slot1 Curve (pow)", Range(0.1, 5)) = 1
+        _FXModManual1 ("FX Slot1 Manual Value", Range(0, 1)) = 0.5
+        _FXModDistMin1 ("FX Slot1 Distance Min", Float) = 0
+        _FXModDistMax1 ("FX Slot1 Distance Max", Float) = 10
+        [NoScaleOffset] _FXModMaskTex ("FX Modulator Mask (R=Slot0, G=Slot1)", 2D) = "white" {}
+
         [Toggle(_MIRROR_TEXTURE)] _MirrorTexture ("Enable Mirror/Camera Alt Texture (鏡・カメラ写り分け)", Float) = 0
         [NoScaleOffset] _MirrorAltTex ("Mirror Alt Texture", 2D) = "white" {}
         _MirrorAltColor ("Mirror Alt Color", Color) = (1, 1, 1, 1)
@@ -1029,6 +1107,8 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             #pragma shader_feature_local _PERSPECTIVE_FLAT
             #pragma shader_feature_local _FACE_ORTHO
             #pragma shader_feature_local _FACE_ORTHO_MASK
+            #pragma shader_feature_local _LINE_BOIL
+            #pragma shader_feature_local _FX_MODULATOR
             #pragma multi_compile_fog
             #pragma multi_compile_instancing
             #pragma skip_variants LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
@@ -1150,6 +1230,10 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             #pragma shader_feature_local _PERSPECTIVE_FLAT
             #pragma shader_feature_local _FACE_ORTHO
             #pragma shader_feature_local _FACE_ORTHO_MASK
+            #pragma shader_feature_local _LINE_BOIL
+            #pragma shader_feature_local _SHAPED_HIGHLIGHT
+            #pragma shader_feature_local _TOPOGRAPHIC
+            #pragma shader_feature_local _FX_MODULATOR
             #pragma shader_feature_local _MIRROR_TEXTURE
             #pragma shader_feature_local _DEPTH_COLOR_FADE
             #pragma shader_feature_local _MIRROR_CONTROL
@@ -1180,6 +1264,10 @@ Shader "Natane/Toon Shader (ScreenEdge Split)"
             #pragma shader_feature_local _PERSPECTIVE_FLAT
             #pragma shader_feature_local _FACE_ORTHO
             #pragma shader_feature_local _FACE_ORTHO_MASK
+            #pragma shader_feature_local _LINE_BOIL
+            #pragma shader_feature_local _SHAPED_HIGHLIGHT
+            #pragma shader_feature_local _TOPOGRAPHIC
+            #pragma shader_feature_local _FX_MODULATOR
             #pragma shader_feature_local _MIRROR_TEXTURE
             #pragma shader_feature_local _QUEST_LITE
             #pragma multi_compile_fog

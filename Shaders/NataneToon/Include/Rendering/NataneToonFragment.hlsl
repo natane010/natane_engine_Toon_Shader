@@ -68,6 +68,30 @@ half4 frag(v2f i) : SV_Target
     // ハイトマップから擬似的な凹凸の奥行き表現を生成する。
     // 全後続テクスチャサンプリングの基準UVとなる。
     float2 uv = i.uv;
+
+    // ===== FX Modulator state (computed once, used at each target site) =====
+    #if defined(_FX_MODULATOR)
+    float3 nataneFXViewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
+    half2 nataneFXMask = half2(1.0, 1.0);
+    {
+        half4 fxm = NATANE_SAMPLE_SHARED(_FXModMaskTex, _MainTex, i.uv);
+        nataneFXMask = half2(fxm.r, fxm.g);
+    }
+    NataneFXModState nataneFXState = NataneFXModCompute(i.worldPos, i.worldNormal, nataneFXViewDir,
+                                                        nataneFXMask.x, nataneFXMask.y);
+    #endif
+
+    // ===== Line Boil precompute (time-quantized hand-drawn UV jitter) =====
+    #if defined(_LINE_BOIL)
+    float nataneBoilStrength = 1.0;
+    #if defined(_FX_MODULATOR)
+        nataneBoilStrength *= NataneFXModMul(nataneFXState, NATANE_FXT_LINEBOIL);
+    #endif
+    half nataneBoilMask = NATANE_SAMPLE_SHARED_R(_LineBoilMaskTex, _MainTex, i.uv);
+    float2 nataneBoilUV = NataneLineBoilOffset(i.worldPos, NataneLineBoilPhase(), 1.0).xy
+                          * _LineBoilUVJitter * nataneBoilMask * nataneBoilStrength;
+    #endif
+
     #if defined(_EYE_PARALLAX) && !defined(_PARALLAX)
     {
         // 軽量アイパララックス: ビュー方向のXY成分でUVオフセット
@@ -230,10 +254,19 @@ half4 frag(v2f i) : SV_Target
     #ifdef _SCREEN_TONE
     if (_ScreenTone >= 0.5)
     {
-        half screenToneMask = NATANE_SAMPLE_SHARED_BLUR_R(_ScreenToneMask, _MainTex, uv, _ScreenToneBlur);
+        float2 screenToneUV = uv;
+        float2 screenTonePatternPos = i.pos.xy;
+        #if defined(_LINE_BOIL)
+        if (_LineBoilAffectHatching >= 0.5)
+        {
+            screenToneUV += nataneBoilUV;
+            screenTonePatternPos += nataneBoilUV * _ScreenParams.xy;
+        }
+        #endif
+        half screenToneMask = NATANE_SAMPLE_SHARED_BLUR_R(_ScreenToneMask, _MainTex, screenToneUV, _ScreenToneBlur);
         screenToneMask = ApplySoftMask(screenToneMask);
         half3 preScreenTone = col.rgb;
-        col.rgb = ApplyScreenTone(col.rgb, i.pos.xy, screenToneMask);
+        col.rgb = ApplyScreenTone(col.rgb, screenTonePatternPos, screenToneMask);
         col.rgb = ApplyEffectBlendPost(preScreenTone, col.rgb, _ScreenToneBlend, _ScreenToneBlendMode);
     }
     #endif
@@ -726,6 +759,10 @@ half4 frag(v2f i) : SV_Target
             // Value noise from world position
             float2 noiseUV = i.worldPos.xz * _ShadowNoiseScale * 0.01;
             noiseUV += _Time.y * _ShadowNoiseSpeed * 0.1;
+            #if defined(_LINE_BOIL)
+            if (_LineBoilAffectHatching >= 0.5)
+                noiseUV += nataneBoilUV;
+            #endif
             float noise = frac(sin(dot(noiseUV, float2(12.9898, 78.233))) * 43758.5453);
             noise = noise * 2.0 - 1.0; // remap to [-1, 1]
             shadingValue += noise * _ShadowNoiseIntensity * edgeMask;
@@ -1224,10 +1261,15 @@ half4 frag(v2f i) : SV_Target
     #if defined(_HATCHING) && defined(UNITY_PASS_FORWARDBASE)
     if (_UseHatching >= 0.5)
     {
-        half hMask = NATANE_SAMPLE_SHARED_R(_HatchingMask, _MainTex, uv);
+        float2 hatchUV = uv;
+        #if defined(_LINE_BOIL)
+        if (_LineBoilAffectHatching >= 0.5)
+            hatchUV += nataneBoilUV;
+        #endif
+        half hMask = NATANE_SAMPLE_SHARED_R(_HatchingMask, _MainTex, hatchUV);
         // Use luminance of current color as proxy for shading value
         half hatchShading = dot(col.rgb, half3(0.299, 0.587, 0.114));
-        col.rgb = ApplyHatching(col.rgb, uv, hatchShading, hMask,
+        col.rgb = ApplyHatching(col.rgb, hatchUV, hatchShading, hMask,
             _HatchTex0, _HatchTex1, _HatchingTiling, _HatchingColor, _HatchingBlend * nprWeight);
     }
     #endif
@@ -1288,6 +1330,82 @@ half4 frag(v2f i) : SV_Target
         #endif
         col.rgb = ApplyEffectBlendPost(preSpec, col.rgb, specBlendFaded, _SpecularBlendMode);
     } // if (_Specular >= 0.5)
+    #endif
+
+    // ===== Shaped Toon Highlight (procedural SDF specular) =====
+    #ifdef _SHAPED_HIGHLIGHT
+    if (_ShapedHighlight >= 0.5)
+    {
+        // Peak-centered 2D coordinate: deviation of the half-vector from the
+        // surface normal, projected into the view plane (mirror-safe).
+        half3 shpH = normalize(lightDir + viewDir);
+        float3 shpVN = mul((float3x3)UNITY_MATRIX_V, worldNormal);
+        float3 shpVH = mul((float3x3)UNITY_MATRIX_V, shpH);
+        float3 shpVL = mul((float3x3)UNITY_MATRIX_V, lightDir);
+        shpVN.x *= NataneMirrorSign();
+        shpVH.x *= NataneMirrorSign();
+        shpVL.x *= NataneMirrorSign();
+        float2 shpCoord = (shpVH.xy - shpVN.xy);
+
+        // Orientation: base rotation + light-follow + camera-follow terms.
+        float shpAng = radians(_ShapedHLRotation);
+        shpAng += _ShapedHLLightFollow * atan2(shpVL.y, shpVL.x);
+        shpAng += _ShapedHLCameraFollow * atan2(UNITY_MATRIX_V[1].x, UNITY_MATRIX_V[0].x);
+        float shpS = sin(shpAng);
+        float shpC = cos(shpAng);
+        shpCoord = float2(shpCoord.x * shpC - shpCoord.y * shpS,
+                          shpCoord.x * shpS + shpCoord.y * shpC);
+
+        // Scale by size and per-axis stretch.
+        shpCoord /= max(_ShapedHLSize, 0.001);
+        shpCoord /= max(_ShapedHLStretch.xy, float2(0.001, 0.001));
+
+        // Sparkle pulse (breathing intensity).
+        half shpPulse = 1.0;
+        if (_ShapedHLSparkleSpeed > 0.001)
+            shpPulse = 0.5 + 0.5 * sin(_Time.y * _ShapedHLSparkleSpeed);
+
+        // Primary coverage: procedural SDF or custom SDF texture (shape 8).
+        half shpCov;
+        if (_ShapedHLShape > 7.5)
+        {
+            float2 shpTexUV = shpCoord * 0.5 + 0.5;
+            shpCov = NATANE_SAMPLE_SHARED_R(_ShapedHLTex, _MainTex, saturate(shpTexUV));
+        }
+        else
+        {
+            half shpSDF = NataneShapeSDF(shpCoord, _ShapedHLShape);
+            shpCov = NataneShapeCoverage(shpSDF, _ShapedHLSoftness);
+        }
+
+        // Optional secondary procedural shape (additive coverage).
+        if (_ShapedHLIntensity2 > 0.001)
+        {
+            float2 shpCoord2 = shpCoord * (_ShapedHLSize / max(_ShapedHLSize2, 0.001));
+            half shpSDF2 = NataneShapeSDF(shpCoord2, _ShapedHLShape2);
+            half shpCov2 = NataneShapeCoverage(shpSDF2, _ShapedHLSoftness)
+                           * (_ShapedHLIntensity2 / max(_ShapedHLIntensity, 0.0001));
+            shpCov = max(shpCov, shpCov2);
+        }
+
+        half shpMask = NATANE_SAMPLE_SHARED_R(_ShapedHLMask, _MainTex, uv);
+        shpMask = ApplySoftMask(shpMask);
+
+        half3 shaped = shpCov * shpPulse * _ShapedHLColor.rgb * _ShapedHLIntensity
+                       * effectiveLightColor * atten * shpMask;
+
+        #ifndef UNITY_PASS_FORWARDBASE
+            shaped *= _AdditionalLightIntensity;
+        #endif
+        shaped *= _Glossiness * specularOcclusion;
+        shaped = ApplyMatteQuality(shaped, col.rgb, _MatteEffect);
+
+        half3 preShaped = col.rgb;
+        col.rgb = SafeAdditiveBlend(col.rgb, shaped, saturate(length(shaped) * 0.8));
+        #ifdef _DISTANCE_FADE
+            col.rgb = lerp(preShaped, col.rgb, distanceFade);
+        #endif
+    } // if (_ShapedHighlight >= 0.5)
     #endif
 
     // ===== Hair Specular (Kajiya-Kay) =====
@@ -1441,6 +1559,11 @@ half4 frag(v2f i) : SV_Target
             // Shadow-based rim suppression (independent of direction)
             rim *= lerp(1.0, shadingValue, _RimShadowMask);
 
+            // FX Modulator: RimIntensity target
+            #if defined(_FX_MODULATOR)
+                rim *= NataneFXModMul(nataneFXState, NATANE_FXT_RIM);
+            #endif
+
             // Use safe additive blending to prevent white-out
             half rimStrength = saturate(length(rim) * 0.5);
             half3 preRim = col.rgb;
@@ -1494,6 +1617,11 @@ half4 frag(v2f i) : SV_Target
         }
         // Shadow-based rim suppression
         rim2 *= lerp(1.0, shadingValue, _RimShadowMask);
+
+        // FX Modulator: RimIntensity target
+        #if defined(_FX_MODULATOR)
+            rim2 *= NataneFXModMul(nataneFXState, NATANE_FXT_RIM);
+        #endif
 
         // Use fast additive blending (secondary effect)
         half rim2Strength = saturate(length(rim2) * 0.5);
@@ -1861,6 +1989,11 @@ half4 frag(v2f i) : SV_Target
 
         half3 emission = SampleTex2DBlur3Repeat(_EmissionMap, emissionUV, _EmissionBlur) * _EmissionColor.rgb;
 
+        // FX Modulator: EmissionIntensity target
+        #if defined(_FX_MODULATOR)
+            emission *= NataneFXModMul(nataneFXState, NATANE_FXT_EMISSION);
+        #endif
+
         // Apply pulse animation
         if (_EmissionPulseSpeed > 0.001)
         {
@@ -1900,6 +2033,57 @@ half4 frag(v2f i) : SV_Target
     } // if (_Emission >= 0.5)
     #endif
 
+    // ===== Topographic / Fault-Slice overlay (ForwardBase only) =====
+    #if defined(_TOPOGRAPHIC) && defined(UNITY_PASS_FORWARDBASE)
+    if (_Topographic >= 0.5)
+    {
+        // Build the slicing coordinate from the selected space + axis.
+        float3 topoObj  = mul(unity_WorldToObject, float4(i.worldPos, 1.0)).xyz;
+        float3 topoView = mul(UNITY_MATRIX_V, float4(i.worldPos, 1.0)).xyz;
+        float3 topoSrc  = (_TopoSpace < 0.5) ? topoObj : ((_TopoSpace < 1.5) ? i.worldPos : topoView);
+
+        float3 topoDir;
+        if (_TopoAxis < 0.5)      topoDir = float3(1.0, 0.0, 0.0);
+        else if (_TopoAxis < 1.5) topoDir = float3(0.0, 1.0, 0.0);
+        else if (_TopoAxis < 2.5) topoDir = float3(0.0, 0.0, 1.0);
+        else                      topoDir = normalize(_TopoCustomDir.xyz + float3(0.0, 0.0001, 0.0));
+
+        float topoCoord  = dot(topoSrc, topoDir);
+        float topoOffset = _TopoOffset;
+        #if defined(_FX_MODULATOR)
+            topoOffset += NataneFXModAdd(nataneFXState, NATANE_FXT_TOPO_OFFSET);
+        #endif
+        float topoPhase = (topoCoord + topoOffset + _Time.y * _TopoSpeed) / max(_TopoSpacing, 0.0001);
+
+        // Optional noise distortion of the band coordinate.
+        if (_TopoNoiseStrength > 0.001)
+        {
+            float topoN = NataneTopo_Noise(topoSrc.xy * _TopoNoiseScale + topoSrc.zz * _TopoNoiseScale);
+            topoPhase += (topoN - 0.5) * _TopoNoiseStrength;
+        }
+
+        float2 topoBand = NataneTopoBand(topoPhase, _TopoMode, _TopoLineWidth, _Time.y * _TopoSpeed);
+
+        half3 topoColor = lerp(_TopoColor.rgb, _TopoColor2.rgb, topoBand.y);
+        half  topoAlpha = topoBand.x * _TopoBlend;
+
+        half topoMask = NATANE_SAMPLE_SHARED_R(_TopoMask, _MainTex, uv);
+        topoMask = ApplySoftMask(topoMask);
+        topoAlpha *= topoMask;
+
+        half3 topoContrib = topoColor * _TopoEmission;
+        half3 preTopo = col.rgb;
+        col.rgb = SafeAdditiveBlend(col.rgb, topoContrib, saturate(topoAlpha));
+        #ifdef _DISTANCE_FADE
+            col.rgb = lerp(preTopo, col.rgb, distanceFade);
+        #endif
+        // Preserve HDR overshoot so emission-strength contour lines drive bloom.
+        #if defined(_EMISSION)
+            nataneHdrEmission += max(topoContrib - half3(1, 1, 1), half3(0, 0, 0)) * saturate(topoAlpha);
+        #endif
+    } // if (_Topographic >= 0.5)
+    #endif
+
     // ===== Virtual Expression - Hue Shift =====
     // Optimized: removed branching (ApplyHueShift handles _HueShift=0 efficiently)
     #if defined(_HUE_SHIFT) && defined(UNITY_PASS_FORWARDBASE)
@@ -1907,6 +2091,10 @@ half4 frag(v2f i) : SV_Target
     {
         half3 preHue = col.rgb;
         float hueShiftBlurred = _HueShift * (1.0 - _HueShiftBlur * 0.7);
+        // FX Modulator: HueShift target
+        #if defined(_FX_MODULATOR)
+            hueShiftBlurred += NataneFXModAdd(nataneFXState, NATANE_FXT_HUESHIFT);
+        #endif
         col.rgb = ApplyHueShift(col.rgb, hueShiftBlurred);
         col.rgb = lerp(preHue, col.rgb, _HueShiftBlend);
     }
@@ -2281,9 +2469,14 @@ half4 frag(v2f i) : SV_Target
         #ifdef _WATERCOLOR
         if (_UseWatercolor >= 0.5)
         {
-            half wcMask = NATANE_SAMPLE_REPEAT(_WCMask, TRANSFORM_TEX(uv, _WCMask)).r;
+            float2 wcUV = uv;
+            #if defined(_LINE_BOIL)
+            if (_LineBoilAffectWatercolor >= 0.5)
+                wcUV += nataneBoilUV;
+            #endif
+            half wcMask = NATANE_SAMPLE_REPEAT(_WCMask, TRANSFORM_TEX(wcUV, _WCMask)).r;
             half wcShading = dot(col.rgb, half3(0.299, 0.587, 0.114));
-            col.rgb = ApplyWatercolor(col.rgb, uv, illustScreenUV, wcShading, wcMask,
+            col.rgb = ApplyWatercolor(col.rgb, wcUV, illustScreenUV, wcShading, wcMask,
                 _WCGranulationTex, _WCGranulationTex_ST, _WCPaperTex, _WCPaperTex_ST,
                 _WCEdgeDarkening, _WCWetEdge, _WCGranulation, _WCPaperIntensity, _WCPaperTiling, _WCBlend * nprWeight);
         }
