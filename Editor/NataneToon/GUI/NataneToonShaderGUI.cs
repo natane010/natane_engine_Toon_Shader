@@ -2307,27 +2307,17 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawDependencyInspectorWarnings()
     {
-        bool missingLightVolumePackage = IsMaterialToggleEnabled(targetMaterial, "_UseLightVolume") &&
-                                         !IsVRCLightVolumesPackageInstalled();
+        // VRC Light Volumes は同梱の LightVolumes.cginc(パッケージ版と同一内容)で
+        // 完全に動作するため、未導入警告やインストール案内は表示しない。
         bool missingLtcgiPackage = IsMaterialToggleEnabled(targetMaterial, "_LTCGI") &&
                                    !IsLTCGIPackageInstalled();
 
-        if (!missingLightVolumePackage && !missingLtcgiPackage)
+        if (!missingLtcgiPackage)
         {
             return;
         }
 
         DrawDependencyInstallStatus();
-
-        if (missingLightVolumePackage)
-        {
-            EditorGUILayout.HelpBox(
-                L("このマテリアルは Light Volume を有効化しています。VRC Light Volumes パッケージは未導入ですが、同梱版フォールバックで動作は継続します。完全対応に寄せるなら package の導入を推奨します。",
-                  "This material has Light Volume enabled. The VRC Light Volumes package is missing, but the bundled fallback remains active. Install the package if you want full package integration."),
-                MessageType.Warning);
-            DrawDependencyActionButtons(NataneDependencyStatus.VRCLightVolumes, false);
-            EditorGUILayout.Space(4);
-        }
 
         if (missingLtcgiPackage)
         {
@@ -2480,18 +2470,9 @@ public class NataneToonShaderGUI : ShaderGUI
             else
             {
                 EditorGUILayout.HelpBox(
-                    L("VRC Light Volumes パッケージ: 未検出\n" +
-                      "同梱版 LightVolumes.cginc を使用します。\n\n" +
-                      "パッケージ版を使うには:\n" +
-                      "VCC から red.sim.lightvolumes をインストール\n" +
-                      "https://redsim.github.io/vpmlisting/",
-                      "VRC Light Volumes Package: Not Detected\n" +
-                      "Using the bundled LightVolumes.cginc.\n\n" +
-                      "To use the package version:\n" +
-                      "Install red.sim.lightvolumes from VCC\n" +
-                      "https://redsim.github.io/vpmlisting/"),
+                    L("同梱版 LightVolumes.cginc を使用します(対応ワールドで自動的に動作します)",
+                      "Using the bundled LightVolumes.cginc (works automatically in compatible worlds)"),
                     MessageType.Info);
-                DrawDependencyActionButtons(NataneDependencyStatus.VRCLightVolumes);
             }
 
             EditorGUILayout.Space(3);
@@ -2510,14 +2491,6 @@ public class NataneToonShaderGUI : ShaderGUI
                         ? L("現在はパッケージ版 LightVolumes.cginc を使用しています。", "Currently using the package LightVolumes.cginc.")
                         : L("現在は同梱版 LightVolumes.cginc を使用しています。", "Currently using the bundled LightVolumes.cginc.")),
                     MessageType.Info);
-
-                if (!packageInstalled)
-                {
-                    EditorGUILayout.HelpBox(
-                        L("パッケージ未導入のため、現在は同梱版 LightVolumes.cginc を使用しています。対応ワールドでは動作しますが、完全対応に寄せるなら red.sim.lightvolumes の導入を推奨します。",
-                          "The package is not installed, so the bundled LightVolumes.cginc is active. It still works in compatible worlds, but installing red.sim.lightvolumes is recommended for full integration."),
-                        MessageType.Warning);
-                }
 
                 EditorGUILayout.Space();
                 DrawProperty("_LightVolumeIntensity", L("Light Volume 強度", "Light Volume Intensity"));
