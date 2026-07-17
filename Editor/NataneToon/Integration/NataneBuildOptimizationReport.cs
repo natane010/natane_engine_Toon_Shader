@@ -79,6 +79,7 @@ namespace NataneToon.Editor
             AppendVariantStrippingSection(sb);
             AppendFeatureOptimizerSection(sb);
             AppendLiteConversionSection(sb);
+            AppendTextureConsolidationSection(sb);
             AppendTextureSuggestionSection(sb);
 
             sb.AppendLine("========================================");
@@ -149,6 +150,67 @@ namespace NataneToon.Editor
                               $"  {candidates.Count} material(s) can switch to a Lite shader (removes GrabPass):"));
             foreach (var c in candidates)
                 sb.AppendLine($"    - {c.materialPath}  [{c.currentShader} → {c.liteShader}]");
+        }
+
+        private static void AppendTextureConsolidationSection(StringBuilder sb)
+        {
+            sb.AppendLine();
+            sb.AppendLine(L.L("■ テクスチャ統合（完全一致の重複を検出）",
+                              "■ Texture Consolidation (byte-identical duplicates)"));
+
+            NataneTextureConsolidator.ConsolidationResult result;
+            try
+            {
+                // レポートは検出のみ（近似一致は O(n^2) のためスキップ）。実際の統合は
+                // VRChat アップロード時 (NataneVRChatTextureConsolidation) に行われる。
+                result = NataneTextureConsolidator.Analyze(
+                    NataneShaderVariantStripper.EnumerateNataneMaterials(),
+                    includeNearIdentical: false);
+            }
+            catch (Exception ex)
+            {
+                sb.AppendLine(L.L($"  解析に失敗しました: {ex.Message}",
+                                  $"  Analysis failed: {ex.Message}"));
+                return;
+            }
+
+            sb.AppendLine(L.L(
+                $"  スキャンしたマテリアル: {result.materialsScanned}  テクスチャ: {result.texturesScanned}",
+                $"  Materials scanned: {result.materialsScanned}  Textures: {result.texturesScanned}"));
+
+            if (result.ExactDuplicateGroupCount == 0)
+            {
+                sb.AppendLine(L.L("  完全一致の重複テクスチャはありません。",
+                                  "  No byte-identical duplicate textures found."));
+            }
+            else
+            {
+                sb.AppendLine(L.L(
+                    $"  重複グループ: {result.ExactDuplicateGroupCount}  余剰テクスチャ: {result.ExactDuplicateRedundantCount}  推定 VRAM 削減: {NataneTextureConsolidator.FormatBytes(result.ExactDuplicateSavingsBytes)}",
+                    $"  Duplicate groups: {result.ExactDuplicateGroupCount}  Redundant textures: {result.ExactDuplicateRedundantCount}  Estimated VRAM saved: {NataneTextureConsolidator.FormatBytes(result.ExactDuplicateSavingsBytes)}"));
+                foreach (var group in result.exactDuplicateGroups)
+                {
+                    sb.AppendLine(L.L($"    - 正規: {group.canonicalPath}",
+                                      $"    - canonical: {group.canonicalPath}"));
+                    foreach (var tr in group.textures)
+                    {
+                        if (tr.isCanonical)
+                            continue;
+                        sb.AppendLine($"        = {tr.path}");
+                    }
+                }
+                sb.AppendLine(L.L(
+                    "  ※ 実際の統合は VRChat アップロード時にクローン上で行われます（プロジェクト資産は非変更）。",
+                    "  * Actual merging happens on the avatar clone during VRChat upload (project assets untouched)."));
+            }
+
+            if (result.oversizedMaskGroups.Count > 0)
+            {
+                sb.AppendLine(L.L($"  過大なマスク（提案のみ）: {result.oversizedMaskGroups.Count}",
+                                  $"  Oversized masks (advisory): {result.oversizedMaskGroups.Count}"));
+                foreach (var group in result.oversizedMaskGroups)
+                    sb.AppendLine($"    - {group.canonicalPath}: {group.note}");
+            }
         }
 
         private static void AppendTextureSuggestionSection(StringBuilder sb)
