@@ -837,14 +837,17 @@ half4 frag(v2f i) : SV_Target
             // LV使用時はUnityのAmbient Colorを使用しない（LVが環境光を提供するため）
             ambient = float3(0, 0, 0);
         #else
-            // Fallback: Unity Light Probes
+            // Fallback: Unity Light Probes (LPPV-aware via NataneShadeSH).
+            // When a Light Probe Proxy Volume drives this renderer the SH terms
+            // are sampled per-pixel from the probe volume; otherwise this is
+            // identical to the classic ShadeSH9() path.
             // L0 (uniform ambient) for indirect
-            float3 shAverage = ShadeSH9(float4(0, 0, 0, 1));
+            float3 shAverage = NataneShadeSH(half3(0, 0, 0), i.worldPos);
             indirectResult = max(0, shAverage);
 
             // Directional SH for ambient contribution
-            float3 shDirect = ShadeSH9(float4(worldNormal, 1.0));
-            float3 shIndirect = ShadeSH9(float4(-worldNormal, 1.0));
+            float3 shDirect = NataneShadeSH(worldNormal, i.worldPos);
+            float3 shIndirect = NataneShadeSH(-worldNormal, i.worldPos);
             ambient = lerp(shIndirect, shDirect, SH_INDIRECT_BLEND);
             ambient *= _IndirectLightIntensity * _GIIntensity;
         #endif

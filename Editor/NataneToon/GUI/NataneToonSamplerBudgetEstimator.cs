@@ -17,6 +17,16 @@ namespace NataneToon.Editor
         public const int WarningThreshold = 13;
         public const int NearLimitThreshold = 15;
 
+        // Light Probe Proxy Volume (LPPV) binds one additional global sampler
+        // (unity_ProbeVolumeSH, a filtered 3D texture) but ONLY in the
+        // `UNITY_LIGHT_PROBE_PROXY_VOLUME` ForwardBase variant, and only while a
+        // renderer is actually driven by an LPPV component. It is a global,
+        // tier-driven keyword rather than a per-material feature toggle, so it
+        // is not part of the FeatureCosts table below and is not added to the
+        // per-material estimate. The BaseSamplerCount headroom (3 of 16) covers
+        // this worst-case +1. See Documentation~/LPPV_SUPPORT.md.
+        public const int LppvProbeVolumeSamplerCost = 1;
+
         private const int LightVolumeLtcgiReserve = 3;
         private const int CriticalLightingReserve = 1;
         private const int ScreenSpaceLightingReserve = 2;
