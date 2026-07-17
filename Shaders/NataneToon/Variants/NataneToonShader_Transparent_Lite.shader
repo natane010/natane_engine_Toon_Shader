@@ -991,6 +991,47 @@ Shader "Natane/Toon Shader (Transparent Lite)"
         _FXModDistMin1 ("FX Slot1 Distance Min", Float) = 0
         _FXModDistMax1 ("FX Slot1 Distance Max", Float) = 10
         [NoScaleOffset] _FXModMaskTex ("FX Modulator Mask (R=Slot0, G=Slot1)", 2D) = "white" {}
+        // ===== Expression Effects (v1.6.0 batch 2) =====
+        // A. Lenticular (レンチキュラー)
+        [Toggle(_LENTICULAR)] _Lenticular ("Enable Lenticular (レンチキュラー)", Float) = 0
+        [NoScaleOffset] _LenticularAtlas ("Lenticular Atlas", 2D) = "white" {}
+        _LenticularFrames ("Lenticular Frame Count", Range(1, 16)) = 4
+        [Enum(Horizontal,0,Grid,1)] _LenticularDirection ("Lenticular Direction", Float) = 0
+        [Enum(SmoothBlend,0,HardStep,1,ScanBlend,2,FrontReveal,3,SideReveal,4,Flip,5)] _LenticularMode ("Lenticular Mode", Float) = 0
+        [Enum(X,0,Y,1)] _LenticularViewAxis ("Lenticular View Axis", Float) = 0
+        _LenticularAngleRange ("Lenticular Angle Range (deg)", Range(1, 180)) = 90
+        _LenticularFrameOffset ("Lenticular Frame Offset", Float) = 0
+        [Enum(PerEye,0,StereoCenter,1)] _LenticularStereoMode ("Lenticular Stereo Mode", Float) = 1
+        _LenticularEmission ("Lenticular Emission", Range(0, 10)) = 0
+        _LenticularNormalInfluence ("Lenticular Normal Influence", Range(0, 1)) = 0
+        _LenticularBlend ("Lenticular Blend", Range(0, 1)) = 1
+        _LenticularScanScale ("Lenticular Scan Stripe Scale", Range(1, 200)) = 40
+        _LenticularSoftness ("Lenticular Transition Softness", Range(0.001, 1)) = 0.25
+        [NoScaleOffset] _LenticularMask ("Lenticular Mask (R)", 2D) = "white" {}
+
+        // B. Surface Caustics (サーフェス・コースティクス)
+        [Toggle(_CAUSTICS)] _Caustics ("Enable Caustics (コースティクス)", Float) = 0
+        [Enum(Procedural,0,Texture,1)] _CausticsPatternMode ("Caustics Pattern Mode", Float) = 0
+        [NoScaleOffset] _CausticsTex ("Caustics Texture", 2D) = "black" {}
+        [Enum(UV,0,Object,1,World,2,TriplanarLite,3)] _CausticsSpace ("Caustics Space", Float) = 2
+        [Enum(EmissionAdd,0,BaseMultiply,1,LitOnly,2,ShadowOnly,3)] _CausticsComposite ("Caustics Composite", Float) = 0
+        [HDR] _CausticsColor ("Caustics Color", Color) = (0.6, 0.9, 1.0, 1)
+        _CausticsIntensity ("Caustics Intensity", Range(0, 10)) = 1
+        _CausticsScale ("Caustics Scale", Range(0.1, 20)) = 4
+        _CausticsSpeed ("Caustics Speed", Float) = 0.5
+        _CausticsDirection ("Caustics Direction (XY)", Vector) = (1, 0.5, 0, 0)
+        _CausticsDistortion ("Caustics Distortion", Range(0, 1)) = 0.2
+        _CausticsContrast ("Caustics Contrast", Range(0.1, 8)) = 2
+        [NoScaleOffset] _CausticsMask ("Caustics Mask (R)", 2D) = "white" {}
+
+        // C. Pixel Art (ピクセルアート化)
+        [Toggle(_PIXEL_ART)] _PixelArt ("Enable Pixel Art (ピクセルアート)", Float) = 0
+        _PixelArtSize ("Pixel Art Resolution", Range(4, 512)) = 64
+        _PixelLightSteps ("Pixel Light/Color Steps", Range(2, 32)) = 6
+        [Toggle] _PixelPalette ("Pixel Use Palette LUT", Float) = 0
+        [NoScaleOffset] _PixelPaletteTex ("Pixel Palette (horizontal LUT)", 2D) = "white" {}
+        _PixelDither ("Pixel Dither", Range(0, 1)) = 0
+        [NoScaleOffset] _PixelArtMask ("Pixel Art Mask (R)", 2D) = "white" {}
 
         [Toggle(_MIRROR_TEXTURE)] _MirrorTexture ("Enable Mirror/Camera Alt Texture (鏡・カメラ写り分け)", Float) = 0
         [NoScaleOffset] _MirrorAltTex ("Mirror Alt Texture", 2D) = "white" {}
@@ -1207,6 +1248,9 @@ Blend [_SrcBlend] [_DstBlend]
             #pragma shader_feature_local _SHAPED_HIGHLIGHT
             #pragma shader_feature_local _TOPOGRAPHIC
             #pragma shader_feature_local _FX_MODULATOR
+            #pragma shader_feature_local _LENTICULAR
+            #pragma shader_feature_local _CAUSTICS
+            #pragma shader_feature_local _PIXEL_ART
             #pragma shader_feature_local _MIRROR_TEXTURE
             #pragma shader_feature_local _DEPTH_COLOR_FADE
             #pragma shader_feature_local _MIRROR_CONTROL
@@ -1239,6 +1283,9 @@ Blend [_SrcBlend] [_DstBlend]
             #pragma shader_feature_local _SHAPED_HIGHLIGHT
             #pragma shader_feature_local _TOPOGRAPHIC
             #pragma shader_feature_local _FX_MODULATOR
+            #pragma shader_feature_local _LENTICULAR
+            #pragma shader_feature_local _CAUSTICS
+            #pragma shader_feature_local _PIXEL_ART
             #pragma shader_feature_local _MIRROR_TEXTURE
             #pragma shader_feature_local _QUEST_LITE
             #pragma multi_compile_fog

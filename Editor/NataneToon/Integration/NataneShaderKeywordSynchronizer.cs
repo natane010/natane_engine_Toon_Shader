@@ -249,6 +249,11 @@ namespace NataneToon.Editor
             ("_ShapedHighlight", "_SHAPED_HIGHLIGHT"),
             ("_Topographic", "_TOPOGRAPHIC"),
             ("_FXModulator", "_FX_MODULATOR"),
+
+            // Expression Effects (v1.6.0 batch 2)
+            ("_Lenticular", "_LENTICULAR"),
+            ("_Caustics", "_CAUSTICS"),
+            ("_PixelArt", "_PIXEL_ART"),
         };
 
         // SaveAssets による再インポート→再同期の無限ループを防止

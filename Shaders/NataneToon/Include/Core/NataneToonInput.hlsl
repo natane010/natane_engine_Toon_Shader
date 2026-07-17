@@ -1079,6 +1079,40 @@ CBUFFER_START(UnityPerMaterial)
     float _FXModDistMax1;
     #endif
 
+    // ===== Expression Effects (v1.6.0 batch 2) =====
+    #if defined(_LENTICULAR)
+    float _LenticularFrames;
+    float _LenticularDirection;
+    float _LenticularMode;
+    float _LenticularViewAxis;
+    float _LenticularAngleRange;
+    float _LenticularFrameOffset;
+    float _LenticularStereoMode;
+    float _LenticularEmission;
+    float _LenticularNormalInfluence;
+    float _LenticularBlend;
+    float _LenticularScanScale;
+    float _LenticularSoftness;
+    #endif
+    #if defined(_CAUSTICS)
+    float _CausticsPatternMode;
+    float _CausticsSpace;
+    float _CausticsComposite;
+    half4 _CausticsColor;
+    float _CausticsIntensity;
+    float _CausticsScale;
+    float _CausticsSpeed;
+    float4 _CausticsDirection;
+    float _CausticsDistortion;
+    float _CausticsContrast;
+    #endif
+    #if defined(_PIXEL_ART)
+    float _PixelArtSize;
+    float _PixelLightSteps;
+    float _PixelPalette;
+    float _PixelDither;
+    #endif
+
     // ===== Feature Toggle Properties =====
     // [Toggle(_KEYWORD)] properties used for runtime feature guards.
     // These must be in the CBUFFER for the if(_Prop >= 0.5) checks
@@ -1087,6 +1121,9 @@ CBUFFER_START(UnityPerMaterial)
     float _ShapedHighlight;
     float _Topographic;
     float _FXModulator;
+    float _Lenticular;
+    float _Caustics;
+    float _PixelArt;
     float _MirrorControl;
     float _MainTexAnimation;
     float _GlitchStretch;
@@ -1505,6 +1542,20 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_TopoMask);
 #endif
 #ifdef _FX_MODULATOR
 UNITY_DECLARE_TEX2D_NOSAMPLER(_FXModMaskTex);
+#endif
+
+// Expression Effects (v1.6.0 batch 2) — atlas / pattern / palette / masks (NOSAMPLER)
+#ifdef _LENTICULAR
+UNITY_DECLARE_TEX2D_NOSAMPLER(_LenticularAtlas);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_LenticularMask);
+#endif
+#ifdef _CAUSTICS
+UNITY_DECLARE_TEX2D_NOSAMPLER(_CausticsTex);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_CausticsMask);
+#endif
+#ifdef _PIXEL_ART
+UNITY_DECLARE_TEX2D_NOSAMPLER(_PixelPaletteTex);
+UNITY_DECLARE_TEX2D_NOSAMPLER(_PixelArtMask);
 #endif
 
 // VAT
