@@ -5,6 +5,36 @@ All notable changes to Natane Toon Shader will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.5] - 2026-07-18
+
+### Added
+- **表現系エフェクト（バッチ1）**: Line Boil / Shaped Highlight / Topographic / FX Modulator。
+- **表現系エフェクト（バッチ2）**: Lenticular / Surface Caustics / Pixel Art。
+- **X-Ray バリアント** (`Natane/Toon Shader (X-Ray)`): 遮蔽シルエット表現。
+- **Light Probe Proxy Volume (LPPV)**: Built-in RP 向け対応。
+- **FX Modulator 拡張**: Static/Dynamic Noise ソースと追加ターゲット。
+- **Mask Painter / Texture Studio**: Scene ビューでのマスクペイントとテクスチャ統合ウィンドウ。
+- **ビルド時テクスチャ統合**: 重複テクスチャのビルド/アップロード時 consolidation。
+- **初心者向けインスペクター**: 説明文・難易度・ヒント表示、表現系セクション登録。
+- **AWBO (Asset Workspace & Build Optimizer) Stage A〜I**:
+  - Project Settings 統合設定、Shader Feature Feature Registry / Update Audit
+  - Build Usage Snapshot、統合バリアントストリッパー（ReportOnly / Safe / Aggressive）
+  - HLSL ガード既定 Off、Runtime プリウォーム固定化、HLSL 方式比較レポート
+  - Asset Organizer（GUID 維持の整理）、Scene Workspace（Scene Profile）
+  - Shader/Property Migration プレビュー、統合ワークスペース UI（`Tools > Natane > ワークスペース`）
+
+### Fixed
+- **鏡・カメラ写り分けテクスチャのコンパイルエラー**: `_MirrorAltTex` 宣言が `_SMOOTH_NORMAL` ブロック内に誤ネストされ、Smooth Normal 無効時に `undeclared identifier` となる問題を修正。
+- **X-Ray バリアント**: バッチ2 表現系キーワードの欠落をバックポート。
+- **VRC Light Volumes 導入案内**: インスペクターから不要なインストール誘導を削除。
+
+### Changed
+- **インスペクター**: セクション登録をデータ駆動化しタブ構成を再編。
+- **ドキュメントサイト**: v1.6.x 表現機能ページ追加、デザイン刷新。
+- **VCC/VPM パッケージメタデータ**: `package.json` / README を `1.6.5` に同期。
+
+---
+
 ## [1.6.0] - 2026-07-17
 
 ### Added
