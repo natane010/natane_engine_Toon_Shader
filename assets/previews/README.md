@@ -8,11 +8,24 @@ home page (and, later, doc pages).
 `assets/previews/<slug>.jpg`
 
 The `<slug>` matches the `preview` key of each feature in `Website/home.js`.
+The same `<slug>.jpg` also fills the placeholder block at the top of the matching
+`params/effects/<slug>.html` doc page.
 Current slugs:
 
 - `face-ortho.jpg`   — Face Ortho Projection
 - `ghost.jpg`        — Ghost variant (artifact-free transparency)
 - `gpu-particles.jpg`— GPU Particles
+
+### v1.6.x expression features (doc pages + What's New)
+
+- `line-boil.jpg`        — Line Boil (hand-drawn frame-stepped wobble)
+- `shaped-highlight.jpg` — Shaped Highlight (star / heart / cross speculars)
+- `topographic.jpg`      — Topographic / Slice Lines
+- `fx-modulator.jpg`     — FX Modulator
+- `lenticular.jpg`       — Lenticular (angle-dependent artwork)
+- `caustics.jpg`         — Surface Caustics
+- `pixel-art.jpg`        — Pixel Art
+- `xray.jpg`             — X-Ray variant (occluded silhouette)
 
 ## Recommended
 

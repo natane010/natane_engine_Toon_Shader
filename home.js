@@ -58,6 +58,88 @@
       { title: { ja: 'ビルド時自動最適化', en: 'Automatic Build Optimization' }, href: 'tools/build-optimization.html', status: 'VIEW' },
       { title: { ja: 'ライティング品質修正', en: 'Lighting Quality Fixes' }, status: 'UPDATE' }
     ],
+    expression: [
+      {
+        label: 'HAND-DRAWN',
+        preview: 'line-boil',
+        title: { ja: 'ラインボイル', en: 'Line Boil' },
+        description: {
+          ja: '線が手描きアニメのようにコマ打ちで揺れます。輪郭・ハッチング・水彩の粒が数コマごとに切り替わり、鉛筆やクレヨンの手描き感を再現。',
+          en: 'Lines wobble in frame steps like hand-drawn animation — outlines, hatching, and grain snap every few frames for a pencil or crayon feel.'
+        },
+        href: 'params/effects/line-boil.html'
+      },
+      {
+        label: 'STYLIZED LIGHT',
+        preview: 'shaped-highlight',
+        title: { ja: '形状付きハイライト', en: 'Shaped Highlight' },
+        description: {
+          ja: '反射光を丸ではなく星・ハート・十字などの形に。瞳の星形ハイライトや宝石の十字反射など、記号的な光をそのまま描けます。',
+          en: 'Turn the specular into a star, heart, or cross — draw the symbolic highlights of illustration, like eye sparkles or gem flares.'
+        },
+        href: 'params/effects/shaped-highlight.html'
+      },
+      {
+        label: 'SCAN & LINES',
+        preview: 'topographic',
+        title: { ja: '等高線 / 断層スライス', en: 'Topographic' },
+        description: {
+          ja: '表面に等間隔の線や帯を走らせます。地形図の等高線、身体を上昇する SF スキャンライン、積層線のような周期的なラインを描けます。',
+          en: 'Run evenly spaced lines or bands across the surface — map contours, sci-fi scan lines rising up the body, or printer layer lines.'
+        },
+        href: 'params/effects/topographic.html'
+      },
+      {
+        label: 'CONTROL',
+        preview: 'fx-modulator',
+        title: { ja: 'FXモジュレーター', en: 'FX Modulator' },
+        description: {
+          ja: '時間・音・距離で他の機能を自動で動かす制御装置。心拍のような脈動、近づくと覚醒、Bass で流れる等高線などを作れます。',
+          en: 'A controller that drives other features from time, audio, or distance — heartbeat pulses, awakening on approach, bass-driven lines.'
+        },
+        href: 'params/effects/fx-modulator.html'
+      },
+      {
+        label: 'ANGLE VIEW',
+        preview: 'lenticular',
+        title: { ja: 'レンチキュラー', en: 'Lenticular' },
+        description: {
+          ja: '見る角度で絵柄そのものが切り替わります。左右で表情が変わる、正面と横で別の顔が現れる、ホログラムカード風の演出。',
+          en: 'The artwork itself changes with angle — expressions shift side to side, a different face appears, a hologram-card effect.'
+        },
+        href: 'params/effects/lenticular.html'
+      },
+      {
+        label: 'FLOWING LIGHT',
+        preview: 'caustics',
+        title: { ja: 'サーフェス・コースティクス', en: 'Surface Caustics' },
+        description: {
+          ja: '表面を複雑な光模様が流れます。水中のキャラ、水面の反射光、魔力が皮膚を流れる表現、木漏れ日のような揺らめく光。',
+          en: 'Complex light patterns flow over the surface — underwater characters, rippling reflections, magic on skin, dappled sunlight.'
+        },
+        href: 'params/effects/caustics.html'
+      },
+      {
+        label: 'RETRO',
+        preview: 'pixel-art',
+        title: { ja: 'ピクセルアート', en: 'Pixel Art' },
+        description: {
+          ja: '3D モデルをドット絵風に。テクスチャをピクセル単位に丸め、ライティングと色を段階化して、レトロゲームや PS1 風のルックに。',
+          en: 'Make a 3D model look like pixel art — snap textures to a grid and quantize lighting and color for a retro-game or PS1 look.'
+        },
+        href: 'params/effects/pixel-art.html'
+      },
+      {
+        label: 'SEE-THROUGH',
+        preview: 'xray',
+        title: { ja: 'X-Ray', en: 'X-Ray' },
+        description: {
+          ja: '壁に隠れた部分だけを透かして表示。壁越しのキャラ輪郭、索敵表示、幽霊の「隠れると見える」表現を作れる専用バリアント。',
+          en: 'Show only the part hidden behind walls — a dedicated variant for see-through silhouettes, target markers, and ghost looks.'
+        },
+        href: 'params/effects/xray.html'
+      }
+    ],
     docs: [
       {
         title: { ja: '基本', en: 'Basic' },
@@ -229,6 +311,7 @@
     var language = document.documentElement.lang === 'en' ? 'en' : 'ja';
     var featured = document.querySelector('[data-home-featured]');
     var updates = document.querySelector('[data-home-updates]');
+    var expression = document.querySelector('[data-home-expression]');
     var docs = document.querySelector('[data-home-docs]');
     var capabilities = document.querySelector('[data-home-capabilities]');
 
@@ -238,6 +321,7 @@
 
     if (featured) renderFeatured(featured, CONTENT.featured, language);
     if (updates) renderUpdates(updates, CONTENT.updates, CONTENT.featured.length, language);
+    if (expression) renderFeatured(expression, CONTENT.expression, language);
     if (docs) renderDocs(docs, CONTENT.docs, language);
     if (capabilities) renderCapabilities(capabilities, CONTENT.capabilities);
     setupMotion();
