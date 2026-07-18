@@ -8,7 +8,7 @@
 (function () {
   'use strict';
 
-  var VERSION = 'v1.6.0';
+  var VERSION = 'v1.6.5';
 
   /* Feature preview images (optional): drop a screenshot at
      assets/previews/<preview>.jpg and it replaces the styled placeholder
@@ -50,13 +50,13 @@
       }
     ],
     updates: [
-      { title: { ja: '鏡・カメラ写り分けテクスチャ', en: 'Mirror / Camera Alt Texture' }, href: 'params/advanced/mirror-alt-texture.html', status: 'VIEW' },
-      { title: { ja: '目のセットアップツール', en: 'Eye Setup Tool' }, href: 'tools/eye-setup.html', status: 'VIEW' },
-      { title: { ja: 'Unity 6 URP対応', en: 'Unity 6 URP Support' }, status: 'NEW' },
-      { title: { ja: 'VRCFallback対応', en: 'VRCFallback Support' }, status: 'NEW' },
-      { title: { ja: 'ステンシルプリセット', en: 'Stencil Presets' }, href: 'tools/stencil-presets.html', status: 'VIEW' },
-      { title: { ja: 'ビルド時自動最適化', en: 'Automatic Build Optimization' }, href: 'tools/build-optimization.html', status: 'VIEW' },
-      { title: { ja: 'ライティング品質修正', en: 'Lighting Quality Fixes' }, status: 'UPDATE' }
+      { title: { ja: 'AWBO 統合ワークスペース', en: 'AWBO Workspace Hub' }, href: 'tools/build-optimization.html', status: 'NEW' },
+      { title: { ja: '統合バリアントストリッパー', en: 'Unified Variant Stripper' }, href: 'tools/build-optimization.html', status: 'NEW' },
+      { title: { ja: 'Mask Painter / Texture Studio', en: 'Mask Painter / Texture Studio' }, status: 'NEW' },
+      { title: { ja: 'ビルド時テクスチャ統合', en: 'Build-time Texture Consolidation' }, status: 'NEW' },
+      { title: { ja: 'Light Probe Proxy Volume', en: 'Light Probe Proxy Volume' }, status: 'NEW' },
+      { title: { ja: '初心者向けインスペクター', en: 'Beginner-friendly Inspector' }, status: 'NEW' },
+      { title: { ja: '鏡写り分けテクスチャのコンパイル修正', en: 'Mirror Alt Texture Compile Fix' }, href: 'params/advanced/mirror-alt-texture.html', status: 'UPDATE' }
     ],
     expression: [
       {
