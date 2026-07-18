@@ -1485,9 +1485,11 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_SmoothNormalTex);
 #if defined(_FACE_ORTHO_MASK)
 UNITY_DECLARE_TEX2D_NOSAMPLER(_FaceOrthoMaskTex);
 #endif
+#endif
+
+// Mirror / Camera Alternate Texture
 #if defined(_MIRROR_TEXTURE)
 UNITY_DECLARE_TEX2D_NOSAMPLER(_MirrorAltTex);
-#endif
 #endif
 
 // Hologram (conditionally compiled)
