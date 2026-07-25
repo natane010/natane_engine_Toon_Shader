@@ -209,9 +209,71 @@ namespace NataneToon.Editor
         private static readonly FeatureCost PcssShadowMapCost =
             new FeatureCost("__PCSS_SHADOWMAP", "Shadow Map", "Shadow Map", PcssShadowMapSamplerCost);
 
+        // ===== Shared estimate cache =====
+        // Estimate() はインスペクターの複数のドロワーから毎リペイント呼ばれる。
+        // キーワード状態のビットマスク(fingerprint)が変わらない限り、
+        // List/配列の確保・ソートを含む再計算を省いて前回結果を使い回す。
+
+        private struct CachedEstimate
+        {
+            public ulong Fingerprint;
+            public int ShaderInstanceId;
+            public SamplerBudgetEstimate Estimate;
+        }
+
+        private static readonly Dictionary<int, CachedEstimate> _estimateCache = new Dictionary<int, CachedEstimate>();
+        private const int EstimateCacheCapacity = 64;
+
+        /// <summary>
+        /// FeatureCosts のキーワード有効状態を1ビットずつ詰めたフィンガープリント。
+        /// アロケーションなしで「前回から機能構成が変わったか」を判定できる。
+        /// FeatureCosts が64件を超えたらビット割当を見直すこと（現在61件）。
+        /// </summary>
+        private static ulong ComputeFingerprint(Material material)
+        {
+            ulong mask = 0UL;
+            for (int i = 0; i < FeatureCosts.Length; i++)
+            {
+                if (material.IsKeywordEnabled(FeatureCosts[i].Keyword))
+                {
+                    mask |= 1UL << (i & 63);
+                }
+            }
+            return mask;
+        }
+
         public static SamplerBudgetEstimate Estimate(Material material)
         {
-            return Estimate(material, null, false);
+            if (material == null)
+            {
+                return Estimate(material, null, false);
+            }
+
+            int materialId = material.GetInstanceID();
+            int shaderId = material.shader != null ? material.shader.GetInstanceID() : 0;
+            ulong fingerprint = ComputeFingerprint(material);
+
+            CachedEstimate cached;
+            if (_estimateCache.TryGetValue(materialId, out cached) &&
+                cached.Fingerprint == fingerprint &&
+                cached.ShaderInstanceId == shaderId)
+            {
+                return cached.Estimate;
+            }
+
+            SamplerBudgetEstimate estimate = Estimate(material, null, false);
+
+            if (_estimateCache.Count >= EstimateCacheCapacity)
+            {
+                _estimateCache.Clear();
+            }
+            _estimateCache[materialId] = new CachedEstimate
+            {
+                Fingerprint = fingerprint,
+                ShaderInstanceId = shaderId,
+                Estimate = estimate
+            };
+            return estimate;
         }
 
         public static SamplerBudgetEstimate Estimate(Material material, string overrideKeyword, bool overrideEnabled)

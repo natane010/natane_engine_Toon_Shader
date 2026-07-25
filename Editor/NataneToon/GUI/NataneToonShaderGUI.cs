@@ -593,128 +593,143 @@ public class NataneToonShaderGUI : ShaderGUI
             LoadUIState();
             EnsureKeywordsValidatedForCurrentMaterial();
 
-            DrawInspectorHeaderV2();
-
-            // P-10: Onboarding guide (first time only)
-            if (!_onboardingDismissed && !EditorPrefs.GetBool(OnboardingPrefsKey, false))
+            // Task A3: サイト固定モード(SiteDark/SiteLight)のときだけ、インスペクター全体を
+            // --bg-deep で塗りつぶす。FollowUnityではUnity純正の背景をそのまま活かすため何もしない。
+            // BeginVertical/EndVerticalはtry/finallyで対応させ、途中のreturnやExitGUIException
+            // (GUIUtility.ExitGUI()由来)が起きても必ずペアで閉じるようにする。
+            Rect fullInspectorRect = EditorGUILayout.BeginVertical();
+            try
             {
-                DrawOnboardingPanel();
-            }
+                if (Event.current.type == EventType.Repaint && NataneToonEditorTheme.IsSiteMode)
+                    EditorGUI.DrawRect(fullInspectorRect, NataneToonEditorTheme.BgDeep);
 
-            workflowShouldReturn = false;
-            workflowIsNonToon = false;
-            SafeDrawSection(DrawCurrentStateSection, L("編集ワークフロー", "Workflow"));
-            if (workflowShouldReturn)
-            {
-                SaveUIState();
-                GUIUtility.ExitGUI();
-                return;
-            }
-            if (workflowIsNonToon)
-            {
-                DrawNonToonShaderGUI(NataneToon.Editor.NataneToonShaderTypeSwitcher.DetectShaderType(targetMaterial));
-                return;
-            }
+                DrawInspectorHeaderV2();
 
-            DrawDependencyInspectorWarnings();
-            DrawSamplerBudgetInspectorWarning();
-            DrawGrabPassSuggestionBanner();
-
-            // ===== Multi-material editing indicator (Feature 4: show variant names) =====
-            if (materialEditor.targets != null && materialEditor.targets.Length > 1)
-            {
-                // Collect unique shader variant names
-                var variantNames = new HashSet<string>();
-                foreach (Material mat in GetAllTargetMaterials())
+                // P-10: Onboarding guide (first time only)
+                if (!_onboardingDismissed && !EditorPrefs.GetBool(OnboardingPrefsKey, false))
                 {
-                    if (mat != null && mat.shader != null)
-                        variantNames.Add(mat.shader.name);
+                    DrawOnboardingPanel();
                 }
 
-                string variantInfo = variantNames.Count > 1
-                    ? L($"{materialEditor.targets.Length} 個のマテリアルを同時編集中（{variantNames.Count}バリアント: {string.Join(", ", variantNames)}）",
-                        $"Editing {materialEditor.targets.Length} materials ({variantNames.Count} variants: {string.Join(", ", variantNames)})")
-                    : L($"{materialEditor.targets.Length} 個のマテリアルを同時編集中です。混在する値は「-」で表示されます。",
-                        $"Editing {materialEditor.targets.Length} materials simultaneously. Mixed values are shown as '-'.");
-
-                NataneToonInspectorComponents.DrawInlineMessage(variantInfo, NataneInspectorStatus.Neutral);
-            }
-
-            // Cross-variant editor button: show when Selection contains Natane materials with different variants
-            if (NataneToon.Editor.NataneCrossVariantEditor.HasCrossVariantSelection())
-            {
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.HelpBox(
-                    L("異なるバリアントのマテリアルが選択されています。一括編集ウインドウを使うと共通パラメータを一括変更できます。",
-                      "Materials with different variants are selected. Use the cross-variant editor to bulk-edit common parameters."),
-                    MessageType.Info);
-                if (GUILayout.Button(
-                    L("一括編集\nウインドウ", "Cross-Variant\nEditor"),
-                    GUILayout.Width(80), GUILayout.Height(38)))
+                workflowShouldReturn = false;
+                workflowIsNonToon = false;
+                SafeDrawSection(DrawCurrentStateSection, L("編集ワークフロー", "Workflow"));
+                if (workflowShouldReturn)
                 {
-                    NataneToon.Editor.NataneCrossVariantEditor.ShowWindow();
-                }
-                EditorGUILayout.EndHorizontal();
-            }
-
-            EditorGUILayout.Space(SECTION_SPACING);
-
-            // ===== Tab Navigation =====
-            // P-22: タブのキーボードショートカット (Ctrl+1~5)
-            if (Event.current.type == EventType.KeyDown && Event.current.control)
-            {
-                int targetTab = -1;
-                switch (Event.current.keyCode)
-                {
-                    case KeyCode.Alpha1: targetTab = 0; break;
-                    case KeyCode.Alpha2: targetTab = 1; break;
-                    case KeyCode.Alpha3: targetTab = 2; break;
-                    case KeyCode.Alpha4: targetTab = 3; break;
-                    case KeyCode.Alpha5: targetTab = 4; break;
-                }
-                if (targetTab >= 0 && targetTab != selectedTab)
-                {
-                    selectedTab = targetTab;
                     SaveUIState();
-                    Event.current.Use();
-                    if (materialEditor != null) materialEditor.Repaint();
+                    GUIUtility.ExitGUI();
+                    return;
+                }
+                if (workflowIsNonToon)
+                {
+                    DrawNonToonShaderGUI(NataneToon.Editor.NataneToonShaderTypeSwitcher.DetectShaderType(targetMaterial));
+                    return;
+                }
+
+                DrawDependencyInspectorWarnings();
+                DrawSamplerBudgetInspectorWarning();
+                DrawGrabPassSuggestionBanner();
+
+                // ===== Multi-material editing indicator (Feature 4: show variant names) =====
+                if (materialEditor.targets != null && materialEditor.targets.Length > 1)
+                {
+                    // Collect unique shader variant names
+                    var variantNames = new HashSet<string>();
+                    foreach (Material mat in GetAllTargetMaterials())
+                    {
+                        if (mat != null && mat.shader != null)
+                            variantNames.Add(mat.shader.name);
+                    }
+
+                    string variantInfo = variantNames.Count > 1
+                        ? L($"{materialEditor.targets.Length} 個のマテリアルを同時編集中（{variantNames.Count}バリアント: {string.Join(", ", variantNames)}）",
+                            $"Editing {materialEditor.targets.Length} materials ({variantNames.Count} variants: {string.Join(", ", variantNames)})")
+                        : L($"{materialEditor.targets.Length} 個のマテリアルを同時編集中です。混在する値は「-」で表示されます。",
+                            $"Editing {materialEditor.targets.Length} materials simultaneously. Mixed values are shown as '-'.");
+
+                    NataneToonInspectorComponents.DrawInlineMessage(variantInfo, NataneInspectorStatus.Neutral);
+                }
+
+                // Cross-variant editor button: show when Selection contains Natane materials with different variants
+                if (NataneToon.Editor.NataneCrossVariantEditor.HasCrossVariantSelection())
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.HelpBox(
+                        L("異なるバリアントのマテリアルが選択されています。一括編集ウインドウを使うと共通パラメータを一括変更できます。",
+                          "Materials with different variants are selected. Use the cross-variant editor to bulk-edit common parameters."),
+                        MessageType.Info);
+                    if (GUILayout.Button(
+                        L("一括編集\nウインドウ", "Cross-Variant\nEditor"),
+                        GUILayout.Width(80), GUILayout.Height(38)))
+                    {
+                        NataneToon.Editor.NataneCrossVariantEditor.ShowWindow();
+                    }
+                    EditorGUILayout.EndHorizontal();
+                }
+
+                EditorGUILayout.Space(SECTION_SPACING);
+
+                // ===== Tab Navigation =====
+                // P-22: タブのキーボードショートカット (Ctrl+1~5)
+                if (Event.current.type == EventType.KeyDown && Event.current.control)
+                {
+                    int targetTab = -1;
+                    switch (Event.current.keyCode)
+                    {
+                        case KeyCode.Alpha1: targetTab = 0; break;
+                        case KeyCode.Alpha2: targetTab = 1; break;
+                        case KeyCode.Alpha3: targetTab = 2; break;
+                        case KeyCode.Alpha4: targetTab = 3; break;
+                        case KeyCode.Alpha5: targetTab = 4; break;
+                    }
+                    if (targetTab >= 0 && targetTab != selectedTab)
+                    {
+                        selectedTab = targetTab;
+                        SaveUIState();
+                        Event.current.Use();
+                        if (materialEditor != null) materialEditor.Repaint();
+                        GUIUtility.ExitGUI();
+                    }
+                }
+
+                EditorGUI.BeginChangeCheck();
+                selectedTab = NataneToonInspectorComponents.DrawTabBar(selectedTab, TabNames, CompactTabNames);
+                if (EditorGUI.EndChangeCheck())
+                {
+                    SaveUIState();
+                    GUI.FocusControl(null); // Clear focus to update UI
+
+                    // Force repaint and exit GUI to prevent layout conflicts
+                    if (materialEditor != null)
+                    {
+                        materialEditor.Repaint();
+                    }
                     GUIUtility.ExitGUI();
                 }
-            }
 
-            EditorGUI.BeginChangeCheck();
-            selectedTab = NataneToonInspectorComponents.DrawTabBar(selectedTab, TabNames, CompactTabNames);
-            if (EditorGUI.EndChangeCheck())
-            {
-                SaveUIState();
-                GUI.FocusControl(null); // Clear focus to update UI
+                DrawNavigationToolbar();
 
-                // Force repaint and exit GUI to prevent layout conflicts
-                if (materialEditor != null)
+                // ===== Tab Content or Search Results =====
+                if (!string.IsNullOrEmpty(searchQuery))
                 {
-                    materialEditor.Repaint();
+                    DrawSearchResults(searchQuery);
                 }
-                GUIUtility.ExitGUI();
+                else
+                {
+                    DrawConfiguredTab((NataneInspectorTab)Mathf.Clamp(selectedTab, 0, 4));
+                }
+
+                if (GUI.changed)
+                {
+                    SynchronizeKeywordsAndRefreshInspectorCaches();
+                }
+
+                // Foldout states are persisted immediately via SetFoldout() - no batch save needed.
             }
-
-            DrawNavigationToolbar();
-
-            // ===== Tab Content or Search Results =====
-            if (!string.IsNullOrEmpty(searchQuery))
+            finally
             {
-                DrawSearchResults(searchQuery);
+                EditorGUILayout.EndVertical();
             }
-            else
-            {
-                DrawConfiguredTab((NataneInspectorTab)Mathf.Clamp(selectedTab, 0, 4));
-            }
-
-            if (GUI.changed)
-            {
-                SynchronizeKeywordsAndRefreshInspectorCaches();
-            }
-
-            // Foldout states are persisted immediately via SetFoldout() - no batch save needed.
         }
         catch (ExitGUIException)
         {
@@ -870,6 +885,17 @@ public class NataneToonShaderGUI : ShaderGUI
         SafeDrawSection(drawAction, sectionName);
     }
 
+    // ===== GROUP CARD STATE (Phase 4: グループの一体感) =====
+    // DrawConfiguredTabのグループループが同一グループのセクションを描画している間だけ
+    // trueにする。DrawBoxedSection/EndBoxedSectionはこれを見てフラット表示(枠なし)に
+    // 切り替える。Begin側で読んだ値をスタックに積み、End側はスタックから取り出す
+    // (値自体は使わず捨てるだけ)ことで、たとえ将来ループ側の実装が変わって
+    // _insideGroupCardがセクション途中で書き換わっても、Begin/EndのBeginVertical回数は
+    // 常に1:1のまま保たれる(スタックのpush/popはBeginVertical/EndVerticalの回数に一切
+    // 影響しないため、対応が崩れようがない)。
+    private static bool _insideGroupCard;
+    private static readonly Stack<bool> _boxedSectionFlatStack = new Stack<bool>();
+
     // ===== BOXED SECTION STYLES (Cached) =====
     private static GUIStyle _boxedSectionOuter;
     private static GUIStyle BoxedSectionOuter
@@ -883,6 +909,44 @@ public class NataneToonShaderGUI : ShaderGUI
                 _boxedSectionOuter.margin = new RectOffset(0, 0, 2, 2);
             }
             return _boxedSectionOuter;
+        }
+    }
+
+    // グループカード内のフラット表示用。helpBoxの背景/枠を持たず、余白だけ
+    // BoxedSectionOuterと揃えて中身の位置がズレないようにする。
+    private static GUIStyle _boxedSectionFlat;
+    private static GUIStyle BoxedSectionFlat
+    {
+        get
+        {
+            if (_boxedSectionFlat == null)
+            {
+                _boxedSectionFlat = new GUIStyle();
+                _boxedSectionFlat.padding = new RectOffset(0, 0, 0, 0);
+                _boxedSectionFlat.margin = new RectOffset(0, 0, 2, 2);
+            }
+            return _boxedSectionFlat;
+        }
+    }
+
+    // グループカードの外枠。塗りはSurfaceCard、枠線はSurfaceBorderを手描きする
+    // (BeginGroupCard/EndGroupCard参照)。
+    private static GUIStyle _groupCardStyle;
+    private static int _groupCardStyleThemeKey = int.MinValue;
+    private static GUIStyle GroupCardStyle
+    {
+        get
+        {
+            int themeKey = ThemeKey(NataneToonEditorTheme.IsDark);
+            if (_groupCardStyle == null || _groupCardStyleThemeKey != themeKey)
+            {
+                _groupCardStyle = new GUIStyle();
+                _groupCardStyle.padding = new RectOffset(6, 6, 4, 6);
+                _groupCardStyle.margin = new RectOffset(0, 0, 0, 0);
+                _groupCardStyle.normal.background = NataneToonEditorTextures.Solid(NataneToonEditorTheme.SurfaceCard);
+                _groupCardStyleThemeKey = themeKey;
+            }
+            return _groupCardStyle;
         }
     }
 
@@ -901,41 +965,53 @@ public class NataneToonShaderGUI : ShaderGUI
         }
     }
 
+    private static int ThemeKey(bool isDark)
+    {
+        return (NataneToonEditorTheme.Version << 1) | (isDark ? 1 : 0);
+    }
+
     private static GUIStyle _badgeStyleOn;
+    private static int _badgeStyleOnThemeKey = int.MinValue;
     private static GUIStyle BadgeStyleOn
     {
         get
         {
-            if (_badgeStyleOn == null)
+            bool isDark = NataneToonEditorTheme.IsDark;
+            int themeKey = ThemeKey(isDark);
+            if (_badgeStyleOn == null || _badgeStyleOnThemeKey != themeKey)
             {
                 _badgeStyleOn = new GUIStyle(EditorStyles.miniLabel);
-                _badgeStyleOn.normal.textColor = Color.white;
+                // Pages .param-badge パターン: 薄色地に同色文字。背景はDrawBoxedSection側で
+                // 状態別に描画するため、ここではベースのアクセント文字色のみ持たせる
+                // （MIX/LOCK時はDrawBoxedSectionが一時的にtextColorを差し替える）。
+                _badgeStyleOn.normal.textColor = NataneToonEditorTheme.Accent;
                 _badgeStyleOn.fontStyle = FontStyle.Bold;
                 _badgeStyleOn.fontSize = 9;
                 _badgeStyleOn.alignment = TextAnchor.MiddleCenter;
                 _badgeStyleOn.padding = new RectOffset(4, 4, 1, 1);
+                _badgeStyleOnThemeKey = themeKey;
             }
             return _badgeStyleOn;
         }
     }
 
     private static GUIStyle _badgeStyleOff;
-    private static bool _badgeStyleOffWasDark;
+    private static int _badgeStyleOffThemeKey = int.MinValue;
     private static GUIStyle BadgeStyleOff
     {
         get
         {
-            bool isDark = EditorGUIUtility.isProSkin;
-            if (_badgeStyleOff == null || _badgeStyleOffWasDark != isDark)
+            bool isDark = NataneToonEditorTheme.IsDark;
+            int themeKey = ThemeKey(isDark);
+            if (_badgeStyleOff == null || _badgeStyleOffThemeKey != themeKey)
             {
                 _badgeStyleOff = new GUIStyle(EditorStyles.miniLabel);
-                _badgeStyleOff.normal.textColor = isDark
-                    ? new Color(0.6f, 0.6f, 0.6f, 0.8f)
-                    : new Color(0.3f, 0.3f, 0.3f, 0.6f);
+                // Pages .param-badge パターン: ミュート文字（背景はDrawBoxedSection側で描画）
+                _badgeStyleOff.normal.textColor = NataneToonEditorTheme.TextMuted;
                 _badgeStyleOff.fontSize = 9;
                 _badgeStyleOff.alignment = TextAnchor.MiddleCenter;
                 _badgeStyleOff.padding = new RectOffset(4, 4, 1, 1);
-                _badgeStyleOffWasDark = isDark;
+                _badgeStyleOffThemeKey = themeKey;
             }
             return _badgeStyleOff;
         }
@@ -951,11 +1027,17 @@ public class NataneToonShaderGUI : ShaderGUI
     private bool DrawBoxedSection(string title, bool foldout, SectionCategory category, string toggleKeyword = null, string sectionKey = null)
     {
         Color catColor = NataneToonShaderGUIStyles.GetSectionColor(category);
-        bool isDark = EditorGUIUtility.isProSkin;
+        bool isDark = NataneToonEditorTheme.IsDark;
+
+        // グループカード内かどうかをBegin時点で確定させ、Endが対応する値を取り出せるよう
+        // スタックへ積んでおく(このBeginVerticalの呼び出し回数はflatVariantの値に関係なく
+        // 常に1回なので、スタックのpush/popが多少ズレてもBegin/Endの対応自体は崩れない)。
+        bool flatVariant = _insideGroupCard;
+        _boxedSectionFlatStack.Push(flatVariant);
 
         // Outer box
         EditorGUILayout.Space(2);
-        EditorGUILayout.BeginVertical(BoxedSectionOuter);
+        EditorGUILayout.BeginVertical(flatVariant ? BoxedSectionFlat : BoxedSectionOuter);
 
         // Reserve header space (single row, fixed height)
         Rect headerRect = GUILayoutUtility.GetRect(0, NataneUIConstants.INSPECTOR_SECTION_HEADER_HEIGHT, GUILayout.ExpandWidth(true));
@@ -973,7 +1055,11 @@ public class NataneToonShaderGUI : ShaderGUI
         // Draw header background + accent bar on Repaint
         if (Event.current.type == EventType.Repaint)
         {
-            float bgAlpha = isDark ? 0.08f : 0.04f;
+            // カード内(flatVariant)ではカード自体が既に面を作っているため、
+            // ヘッダー帯のティントをわずかに弱めて重ね塗り感を抑える。
+            float bgAlpha = flatVariant
+                ? (isDark ? 0.06f : 0.03f)
+                : (isDark ? 0.08f : 0.04f);
             Color headerBg = new Color(catColor.r, catColor.g, catColor.b, bgAlpha);
             EditorGUI.DrawRect(headerRect, headerBg);
 
@@ -1025,28 +1111,36 @@ public class NataneToonShaderGUI : ShaderGUI
                 addedSamplers = evaluation.AddedSamplers;
             }
 
+            // Pages .param-badge のtint-badgeパターン: 同色15%地に同色文字。
+            // MIX/LOCKはセマンティックカラー(オレンジ)を保ったまま同じ薄色地に揃える。
+            Color warnColor = NataneToonColorPalette.Warning;
+            Color mutedColor = NataneToonEditorTheme.TextMuted;
+            bool locked = !mixed && !allEnabled && !canEnable;
             Color badgeBackground = allEnabled
-                ? new Color(NataneToonColorPalette.Success.r, NataneToonColorPalette.Success.g, NataneToonColorPalette.Success.b, 0.72f)
-                : mixed
-                    ? new Color(NataneToonColorPalette.Warning.r, NataneToonColorPalette.Warning.g, NataneToonColorPalette.Warning.b, 0.65f)
-                    : canEnable
-                        ? (isDark ? new Color(1f, 1f, 1f, 0.08f) : new Color(0f, 0f, 0f, 0.08f))
-                        : new Color(NataneToonColorPalette.Warning.r, NataneToonColorPalette.Warning.g, NataneToonColorPalette.Warning.b, 0.22f);
+                ? NataneToonEditorTheme.AccentSoft
+                : (mixed || locked)
+                    ? new Color(warnColor.r, warnColor.g, warnColor.b, 0.15f)
+                    : new Color(mutedColor.r, mutedColor.g, mutedColor.b, 0.08f);
             if (Event.current.type == EventType.Repaint)
                 EditorGUI.DrawRect(badgeRect, badgeBackground);
 
             string badgeLabel = allEnabled ? "ON" : mixed ? "MIX" : canEnable ? "OFF" : "LOCK";
-            if (enabledCount == totalCount && totalCount > 0)
+            if (allEnabled)
             {
                 GUI.Label(badgeRect, badgeLabel, BadgeStyleOn);
             }
-            else if (mixed)
+            else if (mixed || locked)
             {
-                GUI.Label(badgeRect, badgeLabel, BadgeStyleOn);
+                // BadgeStyleOnの文字色を一時的にオレンジへ差し替えて描画（DrawStatusChipと同じ手法）
+                GUIStyle warnStyle = BadgeStyleOn;
+                Color prevColor = warnStyle.normal.textColor;
+                warnStyle.normal.textColor = warnColor;
+                GUI.Label(badgeRect, badgeLabel, warnStyle);
+                warnStyle.normal.textColor = prevColor;
             }
             else
             {
-                GUI.Label(badgeRect, badgeLabel, canEnable ? BadgeStyleOff : BadgeStyleOn);
+                GUI.Label(badgeRect, badgeLabel, BadgeStyleOff);
             }
 
             if (toggleProperty != null)
@@ -1083,6 +1177,13 @@ public class NataneToonShaderGUI : ShaderGUI
         {
             EditorGUILayout.BeginVertical();
             GUILayout.Space(2);
+
+            // 全セクション共通の「公式ドキュメントを開く」ミニリンク。
+            // descriptorにDocSlugが設定されている場合のみ表示される、単一の集約フック。
+            if (descriptor != null && !string.IsNullOrEmpty(descriptor.DocSlug))
+            {
+                NataneToonInspectorComponents.DrawDocLink(descriptor.DocSlug);
+            }
         }
 
         return foldout;
@@ -1113,6 +1214,13 @@ public class NataneToonShaderGUI : ShaderGUI
     /// </summary>
     private void EndBoxedSection(bool wasExpanded)
     {
+        // Begin側でpushしたflatVariantを取り出す。値自体はここでは使わない
+        // (Begin/EndのBeginVertical回数はflatVariantに関わらず常に1回のため、
+        // popし忘れてスタックが伸びても対応関係が崩れることはない)。念のため
+        // 空でも例外にならないようCount>0を確認してから取り出す。
+        if (_boxedSectionFlatStack.Count > 0)
+            _boxedSectionFlatStack.Pop();
+
         if (wasExpanded)
         {
             GUILayout.Space(4);
@@ -1128,6 +1236,7 @@ public class NataneToonShaderGUI : ShaderGUI
         {
             DrawProperty("_MainTex", L("メインテクスチャ", "Main Texture"));
             DrawColorProperty("_Color", L("色", "Color"));
+            DrawColorPaletteSwatchRow("_Color");
             NataneToonInspectorComponents.DrawRecommendationHint(
                 L("色は白(1,1,1)を基準に。暗くしすぎると影が潰れます。",
                   "Start from white (1,1,1). Too dark crushes the shadows."));
@@ -1234,8 +1343,10 @@ public class NataneToonShaderGUI : ShaderGUI
             for (int i = 0; i < layerNames.Length; i++)
             {
                 bool layerOn = targetMaterial.IsKeywordEnabled(layerKeywords[i]);
-                Color badgeCol = layerOn ? new Color(0.2f, 0.7f, 0.3f, 0.9f) : new Color(0.4f, 0.4f, 0.4f, 0.4f);
-                Color textCol = layerOn ? Color.white : new Color(0.6f, 0.6f, 0.6f);
+                Color layerBrand = NataneToonColorPalette.BrandPrimary;
+                Color layerMuted = NataneToonEditorTheme.TextMuted;
+                Color badgeCol = layerOn ? new Color(layerBrand.r, layerBrand.g, layerBrand.b, 0.9f) : new Color(layerMuted.r, layerMuted.g, layerMuted.b, 0.35f);
+                Color textCol = layerOn ? NataneToonShaderGUIStyles.AccentInk : layerMuted;
                 string label = $"{layerNames[i]}:{(layerOn ? "ON" : "OFF")}";
                 Rect rect = GUILayoutUtility.GetRect(new GUIContent(label), EditorStyles.miniLabel, GUILayout.Height(18));
                 if (Event.current.type == EventType.Repaint)
@@ -1398,7 +1509,8 @@ public class NataneToonShaderGUI : ShaderGUI
         }
 
         Color prevBg = GUI.backgroundColor;
-        GUI.backgroundColor = new Color(0.55f, 0.75f, 1.0f, 0.3f);
+        Color migAccent = NataneToonEditorTheme.Accent;
+        GUI.backgroundColor = new Color(migAccent.r, migAccent.g, migAccent.b, 0.3f);
         EditorGUILayout.BeginVertical(EditorStyles.helpBox);
         GUI.backgroundColor = prevBg;
 
@@ -7107,6 +7219,58 @@ public class NataneToonShaderGUI : ShaderGUI
         EditorGUILayout.EndHorizontal();
     }
 
+    private static NataneToon.MaterialSystem.ColorPalette _cachedColorPaletteAsset;
+    private static bool _colorPaletteAssetLookupDone;
+
+    /// <summary>
+    /// プロジェクト内のColorPaletteアセットを1つ探して返す（無ければnull）。
+    /// AssetDatabase検索は初回のみ行い、以降はキャッシュを再利用する（毎フレーム検索しない）。
+    /// </summary>
+    private static NataneToon.MaterialSystem.ColorPalette FindProjectColorPalette()
+    {
+        if (_colorPaletteAssetLookupDone) return _cachedColorPaletteAsset;
+
+        _colorPaletteAssetLookupDone = true;
+        string[] guids = AssetDatabase.FindAssets("t:ColorPalette");
+        if (guids != null && guids.Length > 0)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+            _cachedColorPaletteAsset = AssetDatabase.LoadAssetAtPath<NataneToon.MaterialSystem.ColorPalette>(path);
+        }
+        return _cachedColorPaletteAsset;
+    }
+
+    /// <summary>
+    /// プロジェクトにColorPaletteアセットがある場合のみ、指定プロパティ用のコンパクトな
+    /// スウォッチ行を描く（無ければ何も表示しない）。クリックで色を適用する。
+    /// Undoは他のDrawColorPropertyと同じMaterialProperty経由の仕組みに乗せる。
+    /// </summary>
+    private void DrawColorPaletteSwatchRow(string colorPropertyName)
+    {
+        NataneToon.MaterialSystem.ColorPalette palette = FindProjectColorPalette();
+        if (palette == null || palette.colors == null || palette.colors.Count == 0) return;
+
+        MaterialProperty colorProperty = FindProperty(colorPropertyName, properties, false);
+        if (colorProperty == null) return;
+
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Label(L("パレット", "Palette"), EditorStyles.miniLabel, GUILayout.Width(50f));
+        foreach (NataneToon.MaterialSystem.ColorPalette.ColorEntry entry in palette.colors)
+        {
+            if (entry == null) continue;
+            Color oldBg = GUI.backgroundColor;
+            GUI.backgroundColor = entry.color;
+            string tooltip = string.IsNullOrEmpty(entry.description) ? entry.name : $"{entry.name}\n{entry.description}";
+            if (GUILayout.Button(new GUIContent(string.Empty, tooltip), EditorStyles.miniButton, GUILayout.Width(18f), GUILayout.Height(18f)))
+            {
+                colorProperty.colorValue = entry.color;
+                PropagateColorToOtherTargets(colorPropertyName, entry.color);
+            }
+            GUI.backgroundColor = oldBg;
+        }
+        EditorGUILayout.EndHorizontal();
+    }
+
     private bool DrawToggle(string keyword, string propertyName, string label)
     {
         MaterialProperty property = FindProperty(propertyName, properties, false);
@@ -8171,7 +8335,7 @@ public class NataneToonShaderGUI : ShaderGUI
         float lineX = rect.x + 4;
         if (Event.current.type == EventType.Repaint)
         {
-            EditorGUI.DrawRect(new Rect(lineX, rect.y, 2, rect.height), new Color(0.5f, 0.5f, 0.5f, 0.4f));
+            EditorGUI.DrawRect(new Rect(lineX, rect.y, 2, rect.height), NataneToonEditorTheme.BorderStrong);
         }
         // Indented label
         Rect labelRect = new Rect(rect.x + 12, rect.y, rect.width - 12, rect.height);
@@ -8431,10 +8595,16 @@ public class NataneToonShaderGUI : ShaderGUI
                 bool canEnable = isEnabled || toggleEvaluation.CanEnable;
                 if (isEnabled) enabledCount++;
 
+                Color overviewBrand = NataneToonColorPalette.BrandPrimary;
+                Color overviewMuted = NataneToonEditorTheme.TextMuted;
+                Color overviewWarn = NataneToonEditorTheme.Warning;
                 Color badgeColor = isEnabled
-                    ? new Color(0.2f, 0.7f, 0.3f, 0.9f)
-                    : (canEnable ? new Color(0.4f, 0.4f, 0.4f, 0.4f) : new Color(0.85f, 0.55f, 0.2f, 0.75f));
-                Color textColor = isEnabled ? Color.white : (canEnable ? new Color(0.6f, 0.6f, 0.6f) : Color.white);
+                    ? new Color(overviewBrand.r, overviewBrand.g, overviewBrand.b, 0.9f)
+                    : (canEnable
+                        ? new Color(overviewMuted.r, overviewMuted.g, overviewMuted.b, 0.35f)
+                        : new Color(overviewWarn.r, overviewWarn.g, overviewWarn.b, 0.75f));
+                // ブロック時もAccentInk: 明るいWarning地(ダーク)では暗色、暗いWarning地(ライト)では白になる
+                Color textColor = isEnabled || !canEnable ? NataneToonShaderGUIStyles.AccentInk : overviewMuted;
 
                 string tooltip = !isEnabled && !canEnable
                     ? L(
@@ -8450,11 +8620,8 @@ public class NataneToonShaderGUI : ShaderGUI
 
                 var oldColor = GUI.contentColor;
                 GUI.contentColor = textColor;
-                GUI.Label(btnRect, new GUIContent(features[i][1], tooltip), new GUIStyle(EditorStyles.miniLabel)
-                {
-                    alignment = TextAnchor.MiddleCenter,
-                    fontStyle = isEnabled ? FontStyle.Bold : FontStyle.Normal
-                });
+                GUI.Label(btnRect, new GUIContent(features[i][1], tooltip),
+                    isEnabled ? NataneToonShaderGUIStyles.CenteredMiniLabelBold : NataneToonShaderGUIStyles.CenteredMiniLabel);
                 GUI.contentColor = oldColor;
 
                 // クリックでトグル
@@ -8627,6 +8794,12 @@ public class NataneToonShaderGUI : ShaderGUI
         string subtitle = $"{shaderName}  ·  {GetRenderingModeLabel(GetCurrentRenderingMode())}";
         string sampler = $"S {budget.EstimatedSamplers}/{budget.Limit}";
 
+        FeaturePerformanceRating rating = GetFeaturePerformanceRating();
+        string ratingText = L($"負荷 {rating.Grade}", $"Perf {rating.Grade}");
+        string ratingTooltip = L(
+            $"有効な機能セクション: {rating.EnabledCount}個  (A:0-3 / B:4-6 / C:7-9 / D:10+)",
+            $"{rating.EnabledCount} feature section(s) enabled  (A:0-3 / B:4-6 / C:7-9 / D:10+)");
+
         NataneToonInspectorComponents.DrawInspectorHeader(
             "Natane Toon Shader",
             subtitle,
@@ -8638,7 +8811,69 @@ public class NataneToonShaderGUI : ShaderGUI
                 NataneToonLocalization.ToggleLanguage();
                 materialEditor?.Repaint();
             },
-            ShowInspectorOptionsMenu);
+            ShowInspectorOptionsMenu,
+            ratingText,
+            rating.Status,
+            ratingTooltip);
+    }
+
+    private struct FeaturePerformanceRating
+    {
+        public int EnabledCount;
+        public char Grade;
+        public NataneInspectorStatus Status;
+    }
+
+    /// <summary>
+    /// CLAUDE.mdのパフォーマンスレーティング基準（A:0-3, B:4-6, C:7-9, D:10+の有効機能数）を、
+    /// セクションレジストリのToggleKeywordを流用して算出する。
+    /// LINQは使わずシンプルなforループのみ（OnGUI毎の再計算を許容できる軽さを保つ）。
+    /// </summary>
+    private FeaturePerformanceRating GetFeaturePerformanceRating()
+    {
+        int enabledCount = 0;
+        if (targetMaterial != null)
+        {
+            IReadOnlyList<NataneInspectorSectionDescriptor> sections = NataneToonInspectorSectionRegistry.All;
+            for (int i = 0; i < sections.Count; i++)
+            {
+                string keyword = sections[i].ToggleKeyword;
+                if (!string.IsNullOrEmpty(keyword) && targetMaterial.IsKeywordEnabled(keyword))
+                {
+                    enabledCount++;
+                }
+            }
+        }
+
+        char grade;
+        NataneInspectorStatus perfStatus;
+        if (enabledCount <= 3)
+        {
+            grade = 'A';
+            perfStatus = NataneInspectorStatus.Success;
+        }
+        else if (enabledCount <= 6)
+        {
+            grade = 'B';
+            perfStatus = NataneInspectorStatus.Neutral;
+        }
+        else if (enabledCount <= 9)
+        {
+            grade = 'C';
+            perfStatus = NataneInspectorStatus.Warning;
+        }
+        else
+        {
+            grade = 'D';
+            perfStatus = NataneInspectorStatus.Error;
+        }
+
+        return new FeaturePerformanceRating
+        {
+            EnabledCount = enabledCount,
+            Grade = grade,
+            Status = perfStatus
+        };
     }
 
     private void ShowInspectorOptionsMenu()
@@ -8709,6 +8944,12 @@ public class NataneToonShaderGUI : ShaderGUI
             materialEditor?.Repaint();
         }
 
+        if (GUILayout.Button(
+                new GUIContent("◐", L("テーマ切替 (Unityに追従 / サイト ダーク / サイト ライト)",
+                                      "Switch theme (Follow Unity / Site Dark / Site Light)")),
+                EditorStyles.toolbarDropDown, GUILayout.Width(28f)))
+            ShowThemeMenu();
+
         if (GUILayout.Button("≡", EditorStyles.toolbarDropDown, GUILayout.Width(28f)))
             ShowJumpMenu();
 
@@ -8718,6 +8959,11 @@ public class NataneToonShaderGUI : ShaderGUI
 
     private void DrawConfiguredTab(NataneInspectorTab tab)
     {
+        // 前フレームで例外等により後片付け(EndGroupCard/フラグ解除)が飛ばされていた
+        // 場合に備え、タブ描画の入口で必ずクリアしておく。検索結果など、カードを
+        // 前提としない別の描画経路にフラット表示が意図せず引き継がれるのを防ぐ。
+        _insideGroupCard = false;
+
         List<NataneInspectorSectionDescriptor> visibleSections =
             NataneToonInspectorSectionRegistry.ForTab(tab)
                 .Where(IsSectionAvailable)
@@ -8736,18 +8982,92 @@ public class NataneToonShaderGUI : ShaderGUI
             return;
         }
 
+        // Phase 4: 同じグループの連続セクションを1枚の「グループカード」にまとめる。
+        // グループが無い(Group未設定の)セクションは、従来どおり単独のboxedセクションのまま。
         string currentGroup = null;
-        foreach (NataneInspectorSectionDescriptor section in visibleSections)
+        int groupIndex = -1;
+        bool cardOpen = false;
+
+        for (int i = 0; i < visibleSections.Count; i++)
         {
+            NataneInspectorSectionDescriptor section = visibleSections[i];
+
             if (!string.Equals(currentGroup, section.Group, StringComparison.Ordinal))
             {
+                // グループが切り替わるので、開いていれば前のカードを閉じる
+                if (cardOpen)
+                {
+                    EndGroupCard();
+                    cardOpen = false;
+                }
+                _insideGroupCard = false;
+
                 currentGroup = section.Group;
-                NataneToonInspectorComponents.DrawGroupHeader(currentGroup, GetGroupStatus(visibleSections, currentGroup));
+                groupIndex++;
+                if (groupIndex > 0)
+                    EditorGUILayout.Space(10f);
+
+                if (!string.IsNullOrEmpty(currentGroup))
+                {
+                    BeginGroupCard();
+                    cardOpen = true;
+                    _insideGroupCard = true;
+                }
+
+                // グループ未設定(単独)のセクションには見出しを出さない
+                if (!string.IsNullOrEmpty(currentGroup))
+                    NataneToonInspectorComponents.DrawGroupHeader(currentGroup, GetGroupStatus(visibleSections, currentGroup), groupIndex);
+            }
+            else if (cardOpen)
+            {
+                // カード内で連続するセクションの間だけ区切り線を引く
+                // (ループが末尾を知っているので、最後に余分な線は残らない)
+                DrawGroupCardDivider();
             }
 
             System.Action drawAction = GetSectionDrawAction(section.Key);
             if (drawAction != null)
                 FilteredDrawSection(drawAction, section.Label, section.Key);
+        }
+
+        if (cardOpen)
+            EndGroupCard();
+        _insideGroupCard = false;
+    }
+
+    /// <summary>
+    /// 同一グループのセクションをまとめる「カード」を開く。
+    /// 塗りはGroupCardStyle.normal.background(SurfaceCard)、枠線はSurfaceBorderを
+    /// DrawInspectorHeaderと同じ手法(BeginVerticalのRectを使って手描き)で描く。
+    /// </summary>
+    private Rect BeginGroupCard()
+    {
+        Rect rect = EditorGUILayout.BeginVertical(GroupCardStyle);
+        if (Event.current.type == EventType.Repaint)
+        {
+            Color border = NataneToonEditorTheme.SurfaceBorder;
+            EditorGUI.DrawRect(new Rect(rect.x, rect.y, rect.width, 1f), border);
+            EditorGUI.DrawRect(new Rect(rect.x, rect.yMax - 1f, rect.width, 1f), border);
+            EditorGUI.DrawRect(new Rect(rect.x, rect.y, 1f, rect.height), border);
+            EditorGUI.DrawRect(new Rect(rect.xMax - 1f, rect.y, 1f, rect.height), border);
+        }
+        return rect;
+    }
+
+    /// <summary>BeginGroupCardと必ず対で呼ぶ。</summary>
+    private void EndGroupCard()
+    {
+        EditorGUILayout.EndVertical();
+    }
+
+    /// <summary>カード内で連続する2セクションの間に、薄い1px区切り線を引く。</summary>
+    private void DrawGroupCardDivider()
+    {
+        Rect rect = EditorGUILayout.GetControlRect(false, 1f);
+        if (Event.current.type == EventType.Repaint)
+        {
+            Color c = NataneToonEditorTheme.SurfaceBorder;
+            EditorGUI.DrawRect(rect, new Color(c.r, c.g, c.b, c.a * 0.6f));
         }
     }
 
@@ -8760,7 +9080,7 @@ public class NataneToonShaderGUI : ShaderGUI
         if (groupSections.Count == 0) return null;
 
         int active = groupSections.Count(section => IsSectionActive(section.Key));
-        return $"{active}/{groupSections.Count}";
+        return $"{active}/{groupSections.Count} ON";
     }
 
     private bool IsSectionAvailable(NataneInspectorSectionDescriptor section)
@@ -9091,6 +9411,10 @@ public class NataneToonShaderGUI : ShaderGUI
     /// </summary>
     private void DrawSearchResults(string query)
     {
+        // 検索結果はグループカードを使わない(常に従来のboxedセクション見た目)。
+        // 前フレームでDrawConfiguredTab側の後片付けが飛ばされていた場合の保険としても効く。
+        _insideGroupCard = false;
+
         List<NataneInspectorSectionDescriptor> matches = NataneToonInspectorSectionRegistry
             .Search(query)
             .Where(IsSectionAvailable)
@@ -9252,7 +9576,39 @@ public class NataneToonShaderGUI : ShaderGUI
                 if (materialEditor != null) materialEditor.Repaint();
             });
         }
+
+        menu.AddSeparator(string.Empty);
+        AddThemeMenuItem(menu, L("テーマ/Unityに追従", "Theme/Follow Unity"), NataneEditorThemeMode.FollowUnity);
+        AddThemeMenuItem(menu, L("テーマ/サイト ダーク", "Theme/Site Dark"), NataneEditorThemeMode.SiteDark);
+        AddThemeMenuItem(menu, L("テーマ/サイト ライト", "Theme/Site Light"), NataneEditorThemeMode.SiteLight);
+
         menu.ShowAsContext();
+    }
+
+    /// <summary>
+    /// ツールバーの◐ボタンから開く、テーマ切り替え専用メニュー。
+    /// ジャンプメニュー下部の項目と同じ動作（発見性向上のための入口追加）。
+    /// </summary>
+    private void ShowThemeMenu()
+    {
+        GenericMenu menu = new GenericMenu();
+        AddThemeMenuItem(menu, L("Unityに追従", "Follow Unity"), NataneEditorThemeMode.FollowUnity);
+        AddThemeMenuItem(menu, L("サイト ダーク", "Site Dark"), NataneEditorThemeMode.SiteDark);
+        AddThemeMenuItem(menu, L("サイト ライト", "Site Light"), NataneEditorThemeMode.SiteLight);
+        menu.ShowAsContext();
+    }
+
+    /// <summary>
+    /// ジャンプメニュー下部に置くテーマ切り替え項目を1つ追加する。
+    /// クリックで NataneToonEditorTheme.Mode を切り替え、インスペクターを再描画する。
+    /// </summary>
+    private void AddThemeMenuItem(GenericMenu menu, string label, NataneEditorThemeMode mode)
+    {
+        menu.AddItem(new GUIContent(label), NataneToonEditorTheme.Mode == mode, () =>
+        {
+            NataneToonEditorTheme.Mode = mode;
+            if (materialEditor != null) materialEditor.Repaint();
+        });
     }
 
     /// <summary>
@@ -9615,9 +9971,9 @@ public class NataneToonShaderGUI : ShaderGUI
                 : EditorStyles.miniLabel;
             Color oldColor = GUI.contentColor;
             if (i < quickSetupWizardStep)
-                GUI.contentColor = new Color(0.3f, 0.8f, 0.3f); // Completed step = green
+                GUI.contentColor = NataneToonColorPalette.Success; // Completed step
             else if (i == quickSetupWizardStep)
-                GUI.contentColor = new Color(0.3f, 0.6f, 1f); // Current step = blue
+                GUI.contentColor = NataneToonEditorTheme.Accent; // Current step
             EditorGUILayout.LabelField(stepLabels[i], stepStyle);
             GUI.contentColor = oldColor;
         }
@@ -9760,13 +10116,14 @@ public class NataneToonShaderGUI : ShaderGUI
     private void DrawOnboardingPanel()
     {
         Color oldBg = GUI.backgroundColor;
-        GUI.backgroundColor = new Color(0.3f, 0.5f, 0.9f, 0.3f);
+        Color onboardAccent = NataneToonEditorTheme.Accent;
+        GUI.backgroundColor = new Color(onboardAccent.r, onboardAccent.g, onboardAccent.b, 0.3f);
         EditorGUILayout.BeginVertical(EditorStyles.helpBox);
         GUI.backgroundColor = oldBg;
 
         EditorGUILayout.LabelField(
             L("はじめての方へ", "Getting Started"),
-            new GUIStyle(EditorStyles.boldLabel) { fontSize = 13 });
+            NataneToonShaderGUIStyles.PanelTitleLabel);
 
         EditorGUILayout.Space(2);
 
@@ -9808,13 +10165,7 @@ public class NataneToonShaderGUI : ShaderGUI
         EditorGUILayout.BeginHorizontal();
 
         // Step number
-        GUIStyle numberStyle = new GUIStyle(EditorStyles.boldLabel)
-        {
-            alignment = TextAnchor.MiddleCenter,
-            fontSize = 12
-        };
-        numberStyle.normal.textColor = new Color(0.3f, 0.6f, 1f);
-        EditorGUILayout.LabelField(number, numberStyle, GUILayout.Width(20), GUILayout.Height(20));
+        EditorGUILayout.LabelField(number, NataneToonShaderGUIStyles.StepNumberLabel, GUILayout.Width(20), GUILayout.Height(20));
 
         // Step content
         EditorGUILayout.BeginVertical();
@@ -10043,9 +10394,7 @@ public class NataneToonShaderGUI : ShaderGUI
         // Show recommended range
         if (recommendedRange != null)
         {
-            GUIStyle miniStyle = new GUIStyle(EditorStyles.miniLabel);
-            miniStyle.normal.textColor = new Color(0.5f, 0.8f, 1.0f);
-            EditorGUILayout.LabelField(L("推奨: ", "Recommended: ") + recommendedRange, miniStyle);
+            EditorGUILayout.LabelField(L("推奨: ", "Recommended: ") + recommendedRange, NataneToonShaderGUIStyles.RecommendedRangeLabel);
         }
 
         // Draw visual bar for Range/Float properties

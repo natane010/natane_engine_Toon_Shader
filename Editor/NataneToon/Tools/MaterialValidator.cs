@@ -105,6 +105,7 @@ namespace NataneToon.Editor
 
         private void OnGUI()
         {
+            NataneToonInspectorComponents.DrawWindowBackground(position);
             DrawHeader();
             EditorGUILayout.Space(SPACE_SMALL);
             DrawMaterialSelection();

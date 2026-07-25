@@ -35,7 +35,7 @@ namespace NataneToon.Editor
         private GUIStyle toolSecondaryNameStyle;
         private GUIStyle toolDescriptionStyle;
         private GUIStyle toolLaunchButtonStyle;
-        private bool cachedProSkin;
+        private int cachedThemeKey = int.MinValue;
 
         private enum DashboardView
         {
@@ -372,26 +372,22 @@ namespace NataneToon.Editor
 
         private void EnsureStyles()
         {
-            if (titleStyle != null && cachedProSkin == EditorGUIUtility.isProSkin)
+            if (titleStyle != null && cachedThemeKey == NataneToonEditorTheme.CacheKey)
             {
                 return;
             }
 
-            cachedProSkin = EditorGUIUtility.isProSkin;
+            cachedThemeKey = NataneToonEditorTheme.CacheKey;
 
-            var secondaryTextColor = EditorGUIUtility.isProSkin
-                ? new Color(0.72f, 0.72f, 0.72f)
-                : new Color(0.35f, 0.35f, 0.35f);
-            var descriptionTextColor = EditorGUIUtility.isProSkin
-                ? new Color(0.78f, 0.78f, 0.78f)
-                : new Color(0.4f, 0.4f, 0.4f);
+            var secondaryTextColor = NataneToonEditorTheme.TextDim;
+            var descriptionTextColor = NataneToonEditorTheme.TextDim;
 
             titleStyle = new GUIStyle(EditorStyles.boldLabel)
             {
                 fontSize = 18,
                 alignment = TextAnchor.MiddleCenter
             };
-            titleStyle.normal.textColor = new Color(0.3f, 0.7f, 1.0f);
+            titleStyle.normal.textColor = NataneToonEditorTheme.Accent;
 
             subtitleStyle = new GUIStyle(EditorStyles.label)
             {
@@ -399,12 +395,21 @@ namespace NataneToon.Editor
                 alignment = TextAnchor.MiddleCenter,
                 wordWrap = true
             };
-            subtitleStyle.normal.textColor = Color.gray;
+            subtitleStyle.normal.textColor = NataneToonEditorTheme.TextMuted;
 
             selectedCategoryButtonStyle = new GUIStyle(GUI.skin.button)
             {
                 fontStyle = FontStyle.Bold
             };
+            // ヘルプウィンドウの選択ハイライトと同じ、ブランドアクセントの薄色地
+            Color accent = NataneToonEditorTheme.Accent;
+            Texture2D selectedBg = NataneToonEditorTextures.Solid(
+                new Color(accent.r, accent.g, accent.b, NataneToonEditorTheme.IsDark ? 0.30f : 0.18f));
+            selectedCategoryButtonStyle.normal.background = selectedBg;
+            selectedCategoryButtonStyle.hover.background = selectedBg;
+            selectedCategoryButtonStyle.active.background = selectedBg;
+            selectedCategoryButtonStyle.focused.background = selectedBg;
+            selectedCategoryButtonStyle.normal.textColor = NataneToonEditorTheme.Text;
 
             toolIconStyle = new GUIStyle(EditorStyles.boldLabel)
             {
@@ -440,6 +445,7 @@ namespace NataneToon.Editor
 
         private void OnGUI()
         {
+            NataneToonInspectorComponents.DrawWindowBackground(position);
             EnsureStyles();
             RefreshWindowTitle();
             DrawHeader();

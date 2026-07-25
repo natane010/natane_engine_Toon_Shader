@@ -42,7 +42,10 @@ namespace NataneToon.Editor
 
         // ===== Tab Active Indicator (H-5) =====
         public const float TAB_INDICATOR_HEIGHT = 2f;
-        public static readonly Color TAB_ACTIVE_INDICATOR_COLOR = new Color(0.3f, 0.6f, 1f, 1f);
+        public static Color TAB_ACTIVE_INDICATOR_COLOR
+        {
+            get { return NataneToonEditorTheme.Accent; }
+        }
 
         // ===== Inspector Header =====
         public const float HEADER_LANG_BUTTON_WIDTH = 30f;
