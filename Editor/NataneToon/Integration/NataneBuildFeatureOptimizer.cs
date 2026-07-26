@@ -32,10 +32,22 @@ namespace NataneToon.Editor
 
         /// <summary>
         /// KeywordMappings に含まれない追加キーワード（派生・特殊用途）。
+        ///
+        /// ここに載せないと NataneToonBuildSettings.hlsl の #undef ガードが
+        /// 自動生成されず、ビルド機能最適化でその機能を無効化してもストリップされない。
+        /// 追加漏れは NataneShaderConsistencyAudit の「AWBOガード穴」で検出できる。
         /// </summary>
         private static readonly string[] ExtraKeywords =
         {
             "_EYE_PARALLAX",
+
+            // PBR 系。トグルプロパティ _EnablePBR は Background にしか無く、
+            // _PBR_LIKE に至っては単一トグルで駆動されない派生キーワードのため
+            // KeywordMappings(プロパティ名→キーワード)では表現できない。
+            // 実体は 12 バリアントすべての shader_feature_local に存在し、
+            // NataneToonFragment.hlsl / NataneToonInput.hlsl のコードを実際に切り替える。
+            "_PBR",
+            "_PBR_LIKE",
         };
 
         /// <summary>
