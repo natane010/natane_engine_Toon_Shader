@@ -150,6 +150,7 @@ namespace NataneToon.Editor
             AuditPropertyDrift(variants, findings);
             AuditPassKeywordDrift(variants, findings);
             AuditGuardCoverage(variants, findings);
+            AuditPerformanceCoverage(variants, findings);
             AuditUnparseable(variants, findings);
 
             reportMarkdown = BuildReport(findings, variants, excludedFiles);
@@ -507,7 +508,69 @@ namespace NataneToon.Editor
             }
         }
 
-        // ---- 検出4: パース不能行（安全網） ----
+        // ---- 検出4: パフォーマンス評価の計上漏れ ----
+
+        /// <summary>
+        /// インスペクターにセクションとして登録されている（＝ユーザーが意識して
+        /// 有効化する）機能のうち、パフォーマンス評価に計上されていないものを報告する。
+        ///
+        /// 計上対象は手で維持している集合なので、全キーワードとの差集合を出すと
+        /// 軽微なものまで並んでノイズになる。セクション登録の有無で「ユーザーが
+        /// 機能として認識するもの」に絞ってから突き合わせる。
+        /// </summary>
+        private static void AuditPerformanceCoverage(List<VariantInfo> variants, List<NataneConsistencyFinding> findings)
+        {
+            var used = new HashSet<string>(StringComparer.Ordinal);
+            foreach (VariantInfo v in variants)
+                foreach (string kw in v.FeatureKeywords)
+                    used.Add(kw);
+
+            var sectionKeywords = new HashSet<string>(
+                NataneToonInspectorSectionRegistry.All
+                    .Select(s => s.ToggleKeyword)
+                    .Where(k => !string.IsNullOrEmpty(k)),
+                StringComparer.Ordinal);
+
+            var uncounted = used
+                .Where(sectionKeywords.Contains)
+                .Where(kw => !NatanePerformanceFeatureKeywords.IsCounted(kw))
+                // 「負荷を増やさない」と判断して意図的に外したものは再提示しない。
+                .Where(kw => !NatanePerformanceFeatureKeywords.IsIntentionallyNotCounted(kw))
+                .OrderBy(kw => kw, StringComparer.Ordinal)
+                .ToList();
+
+            if (uncounted.Count > 0)
+            {
+                findings.Add(new NataneConsistencyFinding
+                {
+                    Severity = NataneConsistencySeverity.Warning,
+                    Category = "パフォーマンス評価の計上漏れ",
+                    Message = $"インスペクターに登録済みの {uncounted.Count} 機能が評価に計上されていない",
+                    Detail =
+                        "これらを有効にしても A/B/C/D の判定に反映されないため、実際より軽い評価が出る。\n" +
+                        "計上すべきかは機能ごとの負荷次第なので、追加は個別に判断すること。\n" +
+                        string.Join(", ", uncounted)
+                });
+            }
+
+            var stale = NatanePerformanceFeatureKeywords.Counted
+                .Where(kw => !used.Contains(kw))
+                .OrderBy(kw => kw, StringComparer.Ordinal)
+                .ToList();
+
+            if (stale.Count > 0)
+            {
+                findings.Add(new NataneConsistencyFinding
+                {
+                    Severity = NataneConsistencySeverity.Info,
+                    Category = "パフォーマンス評価の死んだ項目",
+                    Message = $"計上対象の {stale.Count} 件が Toon バリアントに存在しない",
+                    Detail = string.Join(", ", stale)
+                });
+            }
+        }
+
+        // ---- 検出5: パース不能行（安全網） ----
 
         private static void AuditUnparseable(List<VariantInfo> variants, List<NataneConsistencyFinding> findings)
         {

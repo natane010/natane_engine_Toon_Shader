@@ -29,16 +29,10 @@ namespace NataneToon.Editor
             "_MainTex", "_BumpMap", "_MicroNormalMap", "_ClearCoatMask", "_ClearCoatNormalMap", "_CavityMap", "_TransmissionMask", "_SkinSpecMask", "_HairStrandDirectionMap", "_HairTransmissionMask", "_EmissionMap", "_MatCapTex", "_MatCapTex2", "_MatCapTex3", "_RampTex", "_ParallaxMap"
         };
 
-        private static readonly string[] ActiveFeatureKeywords =
-        {
-            "_SPECULAR", "_RIM_LIGHT", "_RIM_LIGHT_2", "_OFFSET_RIM_LIGHT", "_SSS", "_MATCAP", "_OUTLINE", "_EMISSION",
-            "_DISSOLVE", "_HUE_SHIFT", "_NORMALMAP", "_REFLECTION", "_ENV_RIM", "_PARALLAX", "_REFRACTION",
-            "_IRIDESCENCE", "_GLITTER", "_MATCAP_2", "_MATCAP_3", "_AUDIOLINK", "_HOLOGRAM", "_GLITCH",
-            "_HOLOGRAM_NOISE", "_DECAL", "_VAT", "_VERTEX_ANIMATION", "_PIXEL_VERTEX_LIGHTS", "_DETAIL_MAP",
-            "_TRIPLANAR", "_HEIGHT_FOG", "_SURFACE_COVER", "_MIRROR_CONTROL", "_QUEST_LITE", "_WATER_DRIP",
-            "_VIDEO_TEXTURE", "_INTERSECTION_FADE", "_SCREEN_TONE", "_SCREEN_EDGE", "_HATCHING", "_USE_LIGHT_VOLUME",
-            "_LTCGI", "_HAIR_SPECULAR", "_WATERCOLOR", "_SMEAR", "_BACKFACE_TEXTURE", "_FUR"
-        };
+        // 実体は NatanePerformanceFeatureKeywords（上流の NataneToon.Editor 側）。
+        // ここに private で置いていた間は監査から突合できず、v1.6/1.7 で追加された
+        // 機能の登録漏れが検出されないままになっていた。
+        private static string[] ActiveFeatureKeywords => NatanePerformanceFeatureKeywords.Counted;
 
         private static readonly string[] LookMixerNprKeywords =
         {
