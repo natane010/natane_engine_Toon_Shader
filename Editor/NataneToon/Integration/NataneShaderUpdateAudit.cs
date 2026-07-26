@@ -225,7 +225,8 @@ namespace NataneToon.Editor
         }
 
         // 文字列リテラルを保護しつつ // 行コメントと /* */ ブロックコメントを空白へ置換（改行は保持）。
-        private static string StripComments(string src)
+        // NataneShaderConsistencyAudit が Pass 単位の再解析に流用するため internal。
+        internal static string StripComments(string src)
         {
             var sb = new StringBuilder(src.Length);
             int i = 0;
