@@ -413,7 +413,13 @@ namespace NataneToon.Editor
 
                     foreach (string kw in group.Value.OrderBy(x => x, StringComparer.Ordinal))
                     {
-                        var unexplained = missingIn.Where(v => !v.IntentionallyRemoved.Contains(kw)).ToList();
+                        var unexplained = missingIn
+                            .Where(v => !v.IntentionallyRemoved.Contains(kw))
+                            // そのキーワードがシェーダー内のどのパスにも無いなら、
+                            // 「このパスだけ書き忘れた」ではなく機能ごと非搭載。
+                            // 例: Background は _SMEAR をプロパティごと持たない。
+                            .Where(v => v.FeatureKeywords.Contains(kw))
+                            .ToList();
                         if (unexplained.Count == 0) continue;
 
                         findings.Add(new NataneConsistencyFinding

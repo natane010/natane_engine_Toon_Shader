@@ -202,11 +202,21 @@ namespace NataneToon.Editor
             section.Lines.Add($"対象 {variantCount} バリアント / 要修正 {errors} / 要確認 {warnings}");
 
             // 既知の未修正項目があるため、ここでは失敗扱いにしない（記録のみ）。
+            // 要修正・要確認とも本文に出す。件数だけだと何が残っているのか追えない。
             foreach (NataneConsistencyFinding f in findings
                          .Where(f => f.Severity == NataneConsistencySeverity.Error)
                          .Take(20))
             {
-                section.Lines.Add($"- [{f.Category}] {f.Message}");
+                section.Lines.Add($"- **要修正** [{f.Category}] {f.Message}");
+            }
+
+            foreach (NataneConsistencyFinding f in findings
+                         .Where(f => f.Severity == NataneConsistencySeverity.Warning)
+                         .Take(20))
+            {
+                section.Lines.Add($"- 要確認 [{f.Category}] {f.Message}");
+                if (!string.IsNullOrEmpty(f.Detail))
+                    section.Lines.Add($"  - {f.Detail.Split('\n')[0]}");
             }
 
             return section;
@@ -256,6 +266,11 @@ namespace NataneToon.Editor
                 section.Lines.Add("対象シェーダーが見つかりませんでした。");
                 return section;
             }
+
+            // 生成側と同じ条件で見るため、追加定義もここで合流させる。
+            // 未反映の追加分があれば「差分あり」として現れ、再生成が要ることが分かる。
+            int merged = NataneShaderPropertyAdditions.Merge(catalog);
+            if (merged > 0) section.Lines.Add($"追加定義から {merged} プロパティを合流");
 
             var results = entries
                 .Select(e => NataneShaderPropertyWriter.Apply(e, catalog, dryRun: true))

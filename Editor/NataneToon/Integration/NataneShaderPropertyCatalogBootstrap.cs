@@ -102,6 +102,8 @@ namespace NataneToon.Editor
             }
 
             // 整合チェックが通らない状態で生成するとプロパティが失われる。ここで必ず止める。
+            // 追加分を合流させる前に見るのが重要で、後に見ると
+            // 「まだどのシェーダーにも無い新規プロパティ」が余分として検出されてしまう。
             List<string> failures = Verify(catalog, sets);
             if (failures.Count > 0)
             {
@@ -113,6 +115,12 @@ namespace NataneToon.Editor
                     "OK");
                 return;
             }
+
+            // 新規プロパティの定義表を合流させる。
+            // 導出だけでは「1 箇所に足して全バリアントへ展開」ができないため。
+            int mergedCount = NataneShaderPropertyAdditions.Merge(catalog);
+            if (mergedCount > 0)
+                Debug.Log($"[NataneToonShader] 追加定義から {mergedCount} プロパティを合流させました。");
 
             var targets = entries.Where(e => onlyFileName == null || e.FileName == onlyFileName).ToList();
             if (targets.Count == 0)
