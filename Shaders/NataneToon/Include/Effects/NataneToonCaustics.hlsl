@@ -9,10 +9,11 @@
 #ifndef NATANE_TOON_CAUSTICS_INCLUDED
 #define NATANE_TOON_CAUSTICS_INCLUDED
 
+// 実体は NataneToonUtils.hlsl の共通ハッシュ。定数は従来値のまま渡しており、
+// 出力はビット単位で変更前と同一。
 float2 NataneCaustics_Hash2(float2 p)
 {
-    p = float2(dot(p, float2(127.1, 311.7)), dot(p, float2(269.5, 183.3)));
-    return frac(sin(p) * 43758.5453);
+    return NataneHash22(p, float2(127.1, 311.7), float2(269.5, 183.3));
 }
 
 // Animated Voronoi F1 distance (single 3x3 cell scan). Returns the distance to
@@ -58,16 +59,10 @@ float NataneCausticsPatternLite(float2 uv, float time, float distortion)
 
 // Build the 2D sampling coordinate from a coordinate-space selector.
 // space: 0 UV, 1 Object, 2 World, 3 Triplanar-lite (dominant world axis plane).
+// 実体は NataneToonUtils.hlsl の NataneProjectionCoord（モード番号は同一）。
 float2 NataneCausticsCoord(float space, float2 uv, float3 objPos, float3 worldPos, float3 worldNormal)
 {
-    if (space < 0.5) return uv;
-    if (space < 1.5) return objPos.xy;
-    if (space < 2.5) return worldPos.xz;
-    // Triplanar-lite: pick the plane facing away from the dominant normal axis.
-    float3 an = abs(worldNormal);
-    if (an.y >= an.x && an.y >= an.z) return worldPos.xz;
-    if (an.x >= an.z)                 return worldPos.zy;
-    return worldPos.xy;
+    return NataneProjectionCoord(space, uv, objPos, worldPos, worldNormal);
 }
 
 #endif // NATANE_TOON_CAUSTICS_INCLUDED

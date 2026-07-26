@@ -32,6 +32,13 @@ float NataneFXMod_Hash1(float x) { return frac(sin(x * 12.9898) * 43758.5453); }
 // Self-contained hash / value-noise helpers for the noise sources. These are
 // defined locally (NOT reused from NataneToonUtils.hlsl) because this file is
 // also included in the standalone OUTLINE pass where Utils is absent.
+//
+// 【集約しないこと】NataneToonUtils.hlsl に NataneHash21 / NataneHash22 /
+// NataneProjectionCoord があるが、ここからは呼べない。
+// NataneToonOutlinePass.hlsl は Input も Utils も include せずこのファイルだけを
+// 取り込むため、Utils を参照した瞬間に OUTLINE パスがコンパイルできなくなる。
+// なお NataneFXMod_Hash2 は sin ベースではなく別系統のハッシュなので、
+// そもそも共通版とは出力が一致しない（統一すると見た目が変わる）。
 float NataneFXMod_Hash2(float2 p)
 {
     p = frac(p * float2(123.34, 456.21));

@@ -13,10 +13,13 @@ float NataneTopo_Noise(float2 p)
     float2 ip = floor(p);
     float2 fp = frac(p);
     fp = fp * fp * (3.0 - 2.0 * fp);
-    float a = frac(sin(dot(ip + float2(0.0, 0.0), float2(12.9898, 78.233))) * 43758.5453);
-    float b = frac(sin(dot(ip + float2(1.0, 0.0), float2(12.9898, 78.233))) * 43758.5453);
-    float c = frac(sin(dot(ip + float2(0.0, 1.0), float2(12.9898, 78.233))) * 43758.5453);
-    float d = frac(sin(dot(ip + float2(1.0, 1.0), float2(12.9898, 78.233))) * 43758.5453);
+    // 実体は NataneToonUtils.hlsl の共通ハッシュ。定数は従来値のまま渡しており、
+    // 出力はビット単位で変更前と同一。
+    const float2 k = float2(12.9898, 78.233);
+    float a = NataneHash21(ip + float2(0.0, 0.0), k);
+    float b = NataneHash21(ip + float2(1.0, 0.0), k);
+    float c = NataneHash21(ip + float2(0.0, 1.0), k);
+    float d = NataneHash21(ip + float2(1.0, 1.0), k);
     return lerp(lerp(a, b, fp.x), lerp(c, d, fp.x), fp.y);
 }
 

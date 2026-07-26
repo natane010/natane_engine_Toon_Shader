@@ -1932,4 +1932,61 @@ half3 ApplyChromaticAberration(float2 grabUV, float intensity, float blend, half
 // ===== End of Illustration Style Functions ===================================
 // =============================================================================
 
+// =============================================================================
+// ===== Shared Procedural Helpers =============================================
+// =============================================================================
+// ハッシュ定数は「呼び出し側が渡す」設計にしている。シェーダー内には
+// frac(sin(...) * 43758.5453) 系の実装が多数あるが、定数が箇所ごとに異なる。
+// 定数まで統一するとノイズパターンが変わり、既存マテリアルの見た目が変わって
+// しまうため、関数の実体だけを共通化して定数は各呼び出し側に据え置く。
+//
+// 【重要】NataneToonFXModulator.hlsl / NataneToonLineBoil.hlsl からは使えない。
+// OUTLINE パス (NataneToonOutlinePass.hlsl) は Input も Utils も include せず
+// あの2ファイルだけを取り込むため、あちらは self-contained を維持すること。
+// ここを使ってよいのは NataneToonCore.hlsl 経由でのみ読まれるファイル
+// (Caustics / Topographic / Fragment / Lighting など) に限る。
+
+// float2 -> float。k は dot に使うハッシュ定数。
+float NataneHash21(float2 p, float2 k)
+{
+    return frac(sin(dot(p, k)) * 43758.5453);
+}
+
+// float2 -> float2。k0/k1 は各成分の dot に使うハッシュ定数。
+float2 NataneHash22(float2 p, float2 k0, float2 k1)
+{
+    float2 q = float2(dot(p, k0), dot(p, k1));
+    return frac(sin(q) * 43758.5453);
+}
+
+// 座標空間セレクタ。0 UV / 1 Object / 2 World / 3 Triplanar-lite。
+// モード番号は _CausticsSpace の [Enum(UV,0,Object,1,World,2,TriplanarLite,3)]
+// と一致させること（既存マテリアルの値がそのまま意味を保つ）。
+float2 NataneProjectionCoord(float space, float2 uv, float3 objPos, float3 worldPos, float3 worldNormal)
+{
+    if (space < 0.5) return uv;
+    if (space < 1.5) return objPos.xy;
+    if (space < 2.5) return worldPos.xz;
+    // Triplanar-lite: 支配的な法線軸に対して正対する平面を選ぶ。
+    float3 an = abs(worldNormal);
+    if (an.y >= an.x && an.y >= an.z) return worldPos.xz;
+    if (an.x >= an.z)                 return worldPos.zy;
+    return worldPos.xy;
+}
+
+// 光源方向に垂直な平面へワールド座標を投影する（木漏れ日など、光が上から
+// 差し込む表現用）。NataneProjectionCoord とは別関数にしてあるのは、
+// normalize/cross のコストを Caustics 側の既存パスに載せないため。
+//
+// lightDir は「光源へ向かう方向」を想定。真上/真下ライトでは cross(up, axis)
+// が縮退するので up を退避させる（この分岐を外すと基底が壊れる）。
+float2 NataneLightPlaneCoord(float3 worldPos, float3 lightDir)
+{
+    float3 axis = normalize(lightDir);
+    float3 up = (abs(axis.y) > 0.99) ? float3(0.0, 0.0, 1.0) : float3(0.0, 1.0, 0.0);
+    float3 t = normalize(cross(up, axis));
+    float3 b = cross(axis, t);
+    return float2(dot(worldPos, t), dot(worldPos, b));
+}
+
 #endif // NATANE_TOON_UTILS_INCLUDED
