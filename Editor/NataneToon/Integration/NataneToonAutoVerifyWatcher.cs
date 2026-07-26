@@ -91,7 +91,25 @@ namespace NataneToon.Editor
 
             try
             {
-                Debug.Log("[NataneAutoVerify] 検証を開始します。要求: " + request.Trim());
+                string body = request.Trim();
+                Debug.Log("[NataneAutoVerify] 要求: " + body);
+
+                // 要求に "generate" が含まれていれば、検証の前に Properties を生成する。
+                // 新規プロパティを追加定義に書いた直後は、生成しないと全バリアントへ広がらない。
+                if (body.IndexOf("generate", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    bool ok = NataneShaderPropertyCatalogBootstrap.ApplyGenerationHeadless(
+                        out int written, out int genProblems, out string genMessage);
+                    Debug.Log($"[NataneAutoVerify] 生成: {(ok ? "OK" : "NG")} / {genMessage}");
+
+                    if (!ok)
+                    {
+                        WriteResponse("FAIL", "生成に失敗: " + genMessage);
+                        DeleteRequest();
+                        return;
+                    }
+                }
+
                 bool failed = NataneToonBatchVerify.RunForWatcher(out string reportPath);
                 status = failed ? "FAIL" : "PASS";
                 detail = reportPath;

@@ -92,6 +92,22 @@ CBUFFER_START(UnityPerMaterial)
     float _HalftoneShadowBlend;
     #endif
 
+    // Shadow Bokeh（影の玉ボケ / 木漏れ日）
+    #if defined(_SHADOW_BOKEH)
+    half4 _ShadowBokehColor;
+    float _ShadowBokehIntensity;
+    float _ShadowBokehScale;
+    float _ShadowBokehSize;
+    float _ShadowBokehSoftness;
+    float _ShadowBokehBlades;
+    float _ShadowBokehRimGain;
+    float _ShadowBokehSpeed;
+    float4 _ShadowBokehDirection;
+    float _ShadowBokehComposite;
+    float _ShadowBokehShadowMin;
+    float _ShadowBokehBlend;
+    #endif
+
     // Gradient Base Color
     #if defined(_GRADIENT_BASE_COLOR)
     half4 _GradientTopColor;
@@ -1151,6 +1167,7 @@ CBUFFER_START(UnityPerMaterial)
     float _ShadowEdgeNoise;
     float _CastShadowColorEnable;
     float _HalftoneShadow;
+    float _ShadowBokeh;
     float _UseColorQuantize;
     float _UseLUT3D;
     float _UseHatching;
@@ -1301,6 +1318,11 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_RampTex);
 UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowReceiveMask);
 #endif
 UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowColorTex);
+#if defined(_SHADOW_BOKEH)
+// 共有サンプラー経由で読む（NATANE_SAMPLE_SHARED_R）。専用サンプラーを取ると
+// サンプラー予算を消費するため、_CausticsMask と同じ扱いに揃えている。
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowBokehMask);
+#endif
 
 // SDF & Grade Maps
 #if defined(_SDF_MAP)

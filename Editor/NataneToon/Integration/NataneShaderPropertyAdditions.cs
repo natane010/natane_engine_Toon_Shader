@@ -46,17 +46,36 @@ namespace NataneToon.Editor
         /// </summary>
         public static readonly Addition[] Items =
         {
-            // 例:
-            // new Addition
-            // {
-            //     GroupId = "CORE",
-            //     AfterProperty = "_CausticsMask",
-            //     LeadingLines = new[] { string.Empty, "[Header(Shadow Bokeh)]" },
-            //     Declarations = new[]
-            //     {
-            //         "[Toggle(_SHADOW_BOKEH)] _ShadowBokeh (\"Enable Shadow Bokeh\", Float) = 0",
-            //     },
-            // },
+            // 影の玉ボケ（木漏れ日）。全バリアント共通なので CORE。
+            // Caustics の直後に置く（同じサーフェスFX の系統で、ShadowOnly 合成という
+            // 発想も共有しているため、インスペクターでも隣り合うのが自然）。
+            new Addition
+            {
+                GroupId = "CORE",
+                AfterProperty = "_CausticsMask",
+                LeadingLines = new[]
+                {
+                    string.Empty,
+                    "// D. Shadow Bokeh (影の玉ボケ / 木漏れ日)",
+                },
+                Declarations = new[]
+                {
+                    "[Toggle(_SHADOW_BOKEH)] _ShadowBokeh (\"Enable Shadow Bokeh (影の玉ボケ)\", Float) = 0",
+                    "[Enum(ShadowOnly,0,LitOnly,1,All,2)] _ShadowBokehComposite (\"Shadow Bokeh Composite\", Float) = 0",
+                    "[HDR] _ShadowBokehColor (\"Shadow Bokeh Color\", Color) = (1, 0.95, 0.8, 1)",
+                    "_ShadowBokehIntensity (\"Shadow Bokeh Intensity\", Range(0, 10)) = 2",
+                    "_ShadowBokehScale (\"Shadow Bokeh Scale\", Range(0.1, 20)) = 3",
+                    "_ShadowBokehSize (\"Shadow Bokeh Size\", Range(0.05, 1)) = 0.35",
+                    "_ShadowBokehSoftness (\"Shadow Bokeh Softness\", Range(0, 1)) = 0.5",
+                    "_ShadowBokehBlades (\"Shadow Bokeh Aperture Blades\", Range(0, 8)) = 0",
+                    "_ShadowBokehRimGain (\"Shadow Bokeh Rim Gain\", Range(0, 1)) = 0.25",
+                    "_ShadowBokehSpeed (\"Shadow Bokeh Drift Speed\", Float) = 0.05",
+                    "_ShadowBokehDirection (\"Shadow Bokeh Drift Direction (XY)\", Vector) = (1, 0.3, 0, 0)",
+                    "_ShadowBokehShadowMin (\"Shadow Bokeh Shadow Threshold\", Range(0, 1)) = 0.35",
+                    "_ShadowBokehBlend (\"Shadow Bokeh Blend\", Range(0, 1)) = 1",
+                    "[NoScaleOffset] _ShadowBokehMask (\"Shadow Bokeh Mask (R)\", 2D) = \"white\" {}",
+                },
+            },
         };
 
         /// <summary>
@@ -64,14 +83,15 @@ namespace NataneToon.Editor
         /// 既に導出済みのプロパティ（＝どこかの .shader に書かれている）は、
         /// 現物を正とみなして飛ばす。
         /// </summary>
-        public static int Merge(NataneShaderPropertyCatalog catalog)
+        /// <returns>実際に合流させたプロパティ名。生成器の安全検査に渡して、
+        /// 「意図した追加」と「生成器が勝手に増やした宣言」を区別させる。</returns>
+        public static List<string> Merge(NataneShaderPropertyCatalog catalog)
         {
-            if (catalog == null || Items.Length == 0) return 0;
+            var addedNames = new List<string>();
+            if (catalog == null || Items.Length == 0) return addedNames;
 
             var existing = new HashSet<string>(
                 catalog.Declarations.Select(d => d.Name), StringComparer.Ordinal);
-
-            int merged = 0;
 
             foreach (Addition addition in Items)
             {
@@ -120,11 +140,11 @@ namespace NataneToon.Editor
 
                     group.PropertyNames.Add(decl.Name);
                     existing.Add(decl.Name);
-                    merged++;
+                    addedNames.Add(decl.Name);
                 }
             }
 
-            return merged;
+            return addedNames;
         }
     }
 }

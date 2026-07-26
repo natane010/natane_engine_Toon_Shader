@@ -2266,6 +2266,70 @@ half4 frag(v2f i) : SV_Target
     } // if (_Caustics >= 0.5)
     #endif
 
+    // ===== Shadow Bokeh / 影の玉ボケ（ForwardBase only） =====
+    #if defined(_SHADOW_BOKEH) && defined(UNITY_PASS_FORWARDBASE)
+    if (_ShadowBokeh >= 0.5)
+    {
+        // 光源方向に垂直な平面へ投影する。ワールド座標を使うので、
+        // カメラを動かしても光斑は面に貼り付いたままになる。
+        float2 bokehCoord = NataneLightPlaneCoord(i.worldPos, lightDir);
+        bokehCoord = bokehCoord * _ShadowBokehScale
+                   + _ShadowBokehDirection.xy * (_Time.y * _ShadowBokehSpeed);
+
+        float bokehPat;
+        #ifdef _QUEST_LITE
+            bokehPat = NataneShadowBokehPatternLite(
+                bokehCoord, _ShadowBokehSize, _ShadowBokehSoftness);
+        #else
+            bokehPat = NataneShadowBokehPattern(
+                bokehCoord, _ShadowBokehSize, _ShadowBokehSoftness,
+                _ShadowBokehBlades, _ShadowBokehRimGain);
+        #endif
+
+        half bokehMask = NATANE_SAMPLE_SHARED_R(_ShadowBokehMask, _MainTex, uv);
+        bokehMask = ApplySoftMask(bokehMask);
+
+        // どれだけ影に入ったら出すか。半影に薄く出て輪郭が濁るのを防ぐ。
+        float shadowAmount = 1.0 - shadingValue;
+        float shadowGate = smoothstep(
+            _ShadowBokehShadowMin, min(_ShadowBokehShadowMin + 0.25, 1.0), shadowAmount);
+
+        half3 bokehContrib = _ShadowBokehColor.rgb
+                           * (bokehPat * _ShadowBokehIntensity * bokehMask * _ShadowBokehBlend);
+
+        int bokehComp = (int)(_ShadowBokehComposite + 0.5);
+        half3 preBokeh = col.rgb;
+
+        if (bokehComp == 1)
+        {
+            // LitOnly: 光の中に葉影を落とす。暗くする側。
+            half leaf = saturate(bokehPat * _ShadowBokehIntensity * bokehMask * _ShadowBokehBlend);
+            col.rgb = lerp(col.rgb, col.rgb * _ShadowBokehColor.rgb, leaf * shadingValue);
+        }
+        else if (bokehComp == 2)
+        {
+            // All: 影の内外に関係なく加算。
+            col.rgb = SafeAdditiveBlend(col.rgb, bokehContrib, saturate(length(bokehContrib)));
+        }
+        else
+        {
+            // ShadowOnly（既定）: 影の中にだけ光斑を落とす＝木漏れ日。
+            half w = shadowGate;
+            col.rgb = SafeAdditiveBlend(col.rgb, bokehContrib * w, saturate(length(bokehContrib) * w));
+        }
+
+        #ifdef _DISTANCE_FADE
+            col.rgb = lerp(preBokeh, col.rgb, distanceFade);
+        #endif
+
+        // HDR のはみ出しを残して Bloom を焚けるようにする（Caustics と同じ扱い）。
+        #if defined(_EMISSION)
+            if (bokehComp != 1)
+                nataneHdrEmission += max(bokehContrib - half3(1, 1, 1), half3(0, 0, 0));
+        #endif
+    } // if (_ShadowBokeh >= 0.5)
+    #endif
+
     // ===== Virtual Expression - Hue Shift =====
     // Optimized: removed branching (ApplyHueShift handles _HueShift=0 efficiently)
     #if defined(_HUE_SHIFT) && defined(UNITY_PASS_FORWARDBASE)

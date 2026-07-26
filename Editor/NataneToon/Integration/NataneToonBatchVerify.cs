@@ -101,6 +101,7 @@ namespace NataneToon.Editor
             var sections = new List<Section>
             {
                 VerifyShaderCompilation(),
+                VerifyKeywordVariantsCompile(),
                 VerifyConsistencyAudit(),
                 VerifyPropertyCatalog(),
                 VerifyGenerationDryRun(),
@@ -189,6 +190,117 @@ namespace NataneToon.Editor
             return section;
         }
 
+        /// <summary>
+        /// 検証したいキーワードの組み合わせ。
+        ///
+        /// shader_feature は「使われている変種」しかコンパイルされないため、
+        /// 通常のインポートでは #if defined(...) の中身が一度も通らないことがある。
+        /// 新しいキーワードを足したら、ここに入れて明示的に変種を焼く。
+        /// </summary>
+        private static readonly string[][] KeywordSetsToCompile =
+        {
+            new[] { "_SHADOW_BOKEH" },
+            new[] { "_SHADOW_BOKEH", "_QUEST_LITE" },   // Lite 経路
+            new[] { "_SHADOW_BOKEH", "_EMISSION" },     // HDR オーバーシュート経路
+            new[] { "_SHADOW_BOKEH", "_DISTANCE_FADE" },
+        };
+
+        /// <summary>
+        /// 指定キーワードを有効にした変種を実際にコンパイルさせ、エラーを拾う。
+        /// ShaderVariantCollection.WarmUp() がコンパイルを強制する。
+        /// </summary>
+        private static Section VerifyKeywordVariantsCompile()
+        {
+            var section = new Section { Title = "キーワード有効時のコンパイル" };
+
+            List<NataneToonVariantLocator.Entry> entries =
+                NataneToonVariantLocator.Load(out _);
+
+            if (entries.Count == 0)
+            {
+                section.Failed = true;
+                section.Lines.Add("対象シェーダーが見つかりませんでした。");
+                return section;
+            }
+
+            var collection = new ShaderVariantCollection();
+            int added = 0;
+            var skipped = new List<string>();
+
+            foreach (NataneToonVariantLocator.Entry e in entries)
+            {
+                var shader = AssetDatabase.LoadAssetAtPath<Shader>(e.AssetPath);
+                if (shader == null) continue;
+
+                ShaderUtil.ClearShaderMessages(shader);
+
+                foreach (string[] keywords in KeywordSetsToCompile)
+                {
+                    try
+                    {
+                        // 該当変種が存在しない組み合わせだとコンストラクタが投げる。
+                        var variant = new ShaderVariantCollection.ShaderVariant(
+                            shader, UnityEngine.Rendering.PassType.ForwardBase, keywords);
+                        if (collection.Add(variant)) added++;
+                    }
+                    catch (Exception ex)
+                    {
+                        skipped.Add($"{e.FileName} [{string.Join(",", keywords)}]: {ex.Message}");
+                    }
+                }
+            }
+
+            section.Lines.Add($"変種 {added} 件を登録 / 登録できず {skipped.Count} 件");
+
+            if (added == 0)
+            {
+                section.Failed = true;
+                section.Lines.Add("**変種を 1 件も登録できませんでした。検証が成立していません。**");
+                foreach (string s in skipped.Take(10)) section.Lines.Add("- " + s);
+                return section;
+            }
+
+            try
+            {
+                collection.WarmUp();
+            }
+            catch (Exception ex)
+            {
+                section.Failed = true;
+                section.Lines.Add("WarmUp で例外: " + ex.Message);
+                return section;
+            }
+
+            int errorTotal = 0;
+            foreach (NataneToonVariantLocator.Entry e in entries)
+            {
+                var shader = AssetDatabase.LoadAssetAtPath<Shader>(e.AssetPath);
+                if (shader == null) continue;
+                if (ShaderUtil.GetShaderMessageCount(shader) <= 0) continue;
+
+                var errors = ShaderUtil.GetShaderMessages(shader)
+                    .Where(m => m.severity == UnityEditor.Rendering.ShaderCompilerMessageSeverity.Error)
+                    .ToList();
+                if (errors.Count == 0) continue;
+
+                errorTotal += errors.Count;
+                section.Failed = true;
+                section.Lines.Add($"- **{e.FileName}**: エラー {errors.Count} 件");
+                foreach (ShaderMessage m in errors.Take(8))
+                    section.Lines.Add($"  - `{m.file}:{m.line}` {m.message}");
+            }
+
+            section.Lines.Add($"コンパイル後のエラー合計: {errorTotal}");
+
+            if (skipped.Count > 0)
+            {
+                section.Lines.Add("登録できなかった組み合わせ（キーワード未定義など）:");
+                foreach (string s in skipped.Take(5)) section.Lines.Add("- " + s);
+            }
+
+            return section;
+        }
+
         private static Section VerifyConsistencyAudit()
         {
             var section = new Section { Title = "バリアント整合性監査" };
@@ -269,11 +381,11 @@ namespace NataneToon.Editor
 
             // 生成側と同じ条件で見るため、追加定義もここで合流させる。
             // 未反映の追加分があれば「差分あり」として現れ、再生成が要ることが分かる。
-            int merged = NataneShaderPropertyAdditions.Merge(catalog);
-            if (merged > 0) section.Lines.Add($"追加定義から {merged} プロパティを合流");
+            List<string> merged = NataneShaderPropertyAdditions.Merge(catalog);
+            if (merged.Count > 0) section.Lines.Add($"追加定義から {merged.Count} プロパティを合流");
 
             var results = entries
-                .Select(e => NataneShaderPropertyWriter.Apply(e, catalog, dryRun: true))
+                .Select(e => NataneShaderPropertyWriter.Apply(e, catalog, dryRun: true, merged))
                 .ToList();
 
             int changed = results.Count(r => r.Changed);

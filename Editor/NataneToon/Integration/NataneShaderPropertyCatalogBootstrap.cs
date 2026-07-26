@@ -90,6 +90,48 @@ namespace NataneToon.Editor
         [MenuItem("Tools/Natane/ビルド最適化 Build Optimization/Properties 生成 (全バリアント適用)", false, 65)]
         public static void GenerateAll() => RunGenerate(dryRun: false, onlyFileName: null);
 
+        /// <summary>
+        /// ダイアログを出さずに生成を実行する（自動検証ウォッチャー用）。
+        /// 整合チェックに落ちた場合は何も書かずに false を返す。
+        /// </summary>
+        internal static bool ApplyGenerationHeadless(out int written, out int problems, out string message)
+        {
+            written = 0;
+            problems = 0;
+            message = string.Empty;
+
+            if (!LoadFromDisk(out List<NataneToonVariantLocator.Entry> entries,
+                              out List<NataneShaderPropertySet> sets,
+                              out NataneShaderPropertyCatalog catalog,
+                              out _))
+            {
+                message = "対象シェーダーが見つかりませんでした。";
+                return false;
+            }
+
+            List<string> failures = Verify(catalog, sets);
+            if (failures.Count > 0)
+            {
+                message = $"整合チェック不合格 {failures.Count} 件のため生成を中止しました。";
+                return false;
+            }
+
+            List<string> merged = NataneShaderPropertyAdditions.Merge(catalog);
+
+            var results = entries
+                .Select(e => NataneShaderPropertyWriter.Apply(e, catalog, dryRun: false, merged))
+                .ToList();
+
+            written = results.Count(r => r.Written);
+            problems = results.Count(r => r.Problems.Count > 0);
+            message = $"追加合流 {merged.Count} / 書き込み {written} / 問題 {problems}";
+
+            WriteGenerateReport(results, dryRun: false);
+            if (written > 0) AssetDatabase.Refresh();
+
+            return problems == 0;
+        }
+
         private static void RunGenerate(bool dryRun, string onlyFileName)
         {
             if (!LoadFromDisk(out List<NataneToonVariantLocator.Entry> entries,
@@ -118,9 +160,9 @@ namespace NataneToon.Editor
 
             // 新規プロパティの定義表を合流させる。
             // 導出だけでは「1 箇所に足して全バリアントへ展開」ができないため。
-            int mergedCount = NataneShaderPropertyAdditions.Merge(catalog);
-            if (mergedCount > 0)
-                Debug.Log($"[NataneToonShader] 追加定義から {mergedCount} プロパティを合流させました。");
+            List<string> mergedNames = NataneShaderPropertyAdditions.Merge(catalog);
+            if (mergedNames.Count > 0)
+                Debug.Log($"[NataneToonShader] 追加定義から {mergedNames.Count} プロパティを合流させました。");
 
             var targets = entries.Where(e => onlyFileName == null || e.FileName == onlyFileName).ToList();
             if (targets.Count == 0)
@@ -143,7 +185,7 @@ namespace NataneToon.Editor
 
             var results = new List<NataneShaderPropertyWriter.ApplyResult>();
             foreach (NataneToonVariantLocator.Entry e in targets)
-                results.Add(NataneShaderPropertyWriter.Apply(e, catalog, dryRun));
+                results.Add(NataneShaderPropertyWriter.Apply(e, catalog, dryRun, mergedNames));
 
             int written = results.Count(r => r.Written);
             int changed = results.Count(r => r.Changed);

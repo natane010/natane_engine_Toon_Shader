@@ -49,6 +49,9 @@ namespace NataneToon.Editor
 
             // PBR ライティング一式。
             "_PBR",
+
+            // 影の玉ボケ。3x3 のセル走査を行うため相応の負荷がある。
+            "_SHADOW_BOKEH",
         };
 
         /// <summary>

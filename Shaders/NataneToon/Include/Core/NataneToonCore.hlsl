@@ -47,6 +47,7 @@
 // Expression effect modules (v1.6.0 batch 2). All #ifdef-guarded internally.
 #include "../Effects/NataneToonLenticular.hlsl"
 #include "../Effects/NataneToonCaustics.hlsl"
+#include "../Effects/NataneToonShadowBokeh.hlsl"
 #include "../Effects/NataneToonPixelArt.hlsl"
 #include "../Lighting/NataneToonLighting.hlsl"
 #include "../Lighting/NataneToonLightmap.hlsl"

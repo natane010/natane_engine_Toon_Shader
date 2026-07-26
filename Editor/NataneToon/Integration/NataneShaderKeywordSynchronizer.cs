@@ -254,6 +254,9 @@ namespace NataneToon.Editor
             ("_Lenticular", "_LENTICULAR"),
             ("_Caustics", "_CAUSTICS"),
             ("_PixelArt", "_PIXEL_ART"),
+
+            // Expression Effects (影の玉ボケ)
+            ("_ShadowBokeh", "_SHADOW_BOKEH"),
         };
 
         // SaveAssets による再インポート→再同期の無限ループを防止

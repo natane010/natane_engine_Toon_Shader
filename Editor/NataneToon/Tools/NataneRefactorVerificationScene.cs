@@ -62,7 +62,7 @@ namespace NataneToon.Editor
             var root = new GameObject(RootName);
             Undo.RegisterCreatedObjectUndo(root, "Create Natane Refactor Verification");
 
-            CreateGround(root.transform);
+            CreateGround(root.transform, shader);
             EnsureDirectionalLight(root.transform);
 
             float spacing = 2.5f;
@@ -171,6 +171,45 @@ namespace NataneToon.Editor
                     }
                 },
 
+                // 影の玉ボケ（木漏れ日）。影の中に光斑が出る本命の設定。
+                new Spec
+                {
+                    Label = "ShadowBokeh_Komorebi",
+                    MaterialName = "NataneVerify_ShadowBokeh_ShadowOnly",
+                    Configure = m =>
+                    {
+                        EnableShadowBokeh(m);
+                        SetFloatIfExists(m, "_ShadowBokehComposite", 0f);  // ShadowOnly
+                    }
+                },
+
+                // 光の中に葉影を落とす側。合成方法の反転が効いているかの確認。
+                new Spec
+                {
+                    Label = "ShadowBokeh_LeafShadow",
+                    MaterialName = "NataneVerify_ShadowBokeh_LitOnly",
+                    Configure = m =>
+                    {
+                        EnableShadowBokeh(m);
+                        SetFloatIfExists(m, "_ShadowBokehComposite", 1f);  // LitOnly
+                        SetColorIfExists(m, "_ShadowBokehColor", new Color(0.35f, 0.4f, 0.3f, 1f));
+                    }
+                },
+
+                // 絞り羽根を立てて多角形にする。形状分岐の確認。
+                new Spec
+                {
+                    Label = "ShadowBokeh_Hexagon",
+                    MaterialName = "NataneVerify_ShadowBokeh_Hexagon",
+                    Configure = m =>
+                    {
+                        EnableShadowBokeh(m);
+                        SetFloatIfExists(m, "_ShadowBokehComposite", 0f);
+                        SetFloatIfExists(m, "_ShadowBokehBlades", 6f);
+                        SetFloatIfExists(m, "_ShadowBokehRimGain", 0.5f);
+                    }
+                },
+
                 // 両方同時に有効。相互干渉で崩れないことの確認。
                 new Spec
                 {
@@ -190,6 +229,28 @@ namespace NataneToon.Editor
                     }
                 },
             };
+        }
+
+        /// <summary>
+        /// 影の玉ボケの共通設定。影が十分に落ちていないと光斑が見えないので、
+        /// このマテリアルを使うオブジェクトはライトに対して陰になる面を持つこと。
+        /// </summary>
+        private static void EnableShadowBokeh(Material m)
+        {
+            m.SetFloat("_ShadowBokeh", 1f);
+            m.EnableKeyword("_SHADOW_BOKEH");
+            SetFloatIfExists(m, "_ShadowBokehIntensity", 3f);
+            SetFloatIfExists(m, "_ShadowBokehScale", 4f);
+            SetFloatIfExists(m, "_ShadowBokehSize", 0.4f);
+            SetFloatIfExists(m, "_ShadowBokehSoftness", 0.5f);
+            SetFloatIfExists(m, "_ShadowBokehBlades", 0f);
+            SetFloatIfExists(m, "_ShadowBokehRimGain", 0.25f);
+            SetFloatIfExists(m, "_ShadowBokehSpeed", 0.05f);
+            SetFloatIfExists(m, "_ShadowBokehShadowMin", 0.3f);
+            SetFloatIfExists(m, "_ShadowBokehBlend", 1f);
+            SetColorIfExists(m, "_ShadowBokehColor", new Color(1f, 0.95f, 0.8f, 1f));
+            if (m.HasProperty("_ShadowBokehDirection"))
+                m.SetVector("_ShadowBokehDirection", new Vector4(1f, 0.3f, 0f, 0f));
         }
 
         private static void EnableCaustics(Material m)
@@ -233,13 +294,31 @@ namespace NataneToon.Editor
             return material;
         }
 
-        private static void CreateGround(Transform parent)
+        /// <summary>
+        /// 地面。影の玉ボケは広い面のほうが判別しやすいので、
+        /// 地面自体にも木漏れ日のマテリアルを当てておく。
+        /// </summary>
+        private static void CreateGround(Transform parent, Shader shader)
         {
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            ground.name = "Ground";
+            ground.name = "Ground (ShadowBokeh)";
             ground.transform.SetParent(parent, false);
             ground.transform.localPosition = Vector3.zero;
             ground.transform.localScale = new Vector3(3f, 1f, 3f);
+
+            var groundSpec = new Spec
+            {
+                Label = "Ground",
+                MaterialName = "NataneVerify_Ground_ShadowBokeh",
+                Configure = m =>
+                {
+                    EnableShadowBokeh(m);
+                    SetFloatIfExists(m, "_ShadowBokehComposite", 0f);
+                    SetFloatIfExists(m, "_ShadowBokehScale", 2f);
+                }
+            };
+            ground.GetComponent<Renderer>().sharedMaterial = CreateOrUpdateMaterial(shader, groundSpec);
+
             Undo.RegisterCreatedObjectUndo(ground, "Create Natane Refactor Verification");
         }
 

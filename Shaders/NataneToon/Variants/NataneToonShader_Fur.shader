@@ -956,6 +956,22 @@ Shader "Natane/Toon Shader (Fur)"
         _CausticsContrast ("Caustics Contrast", Range(0.1, 8)) = 2
         [NoScaleOffset] _CausticsMask ("Caustics Mask (R)", 2D) = "white" {}
 
+        // D. Shadow Bokeh (影の玉ボケ / 木漏れ日)
+        [Toggle(_SHADOW_BOKEH)] _ShadowBokeh ("Enable Shadow Bokeh (影の玉ボケ)", Float) = 0
+        [Enum(ShadowOnly,0,LitOnly,1,All,2)] _ShadowBokehComposite ("Shadow Bokeh Composite", Float) = 0
+        [HDR] _ShadowBokehColor ("Shadow Bokeh Color", Color) = (1, 0.95, 0.8, 1)
+        _ShadowBokehIntensity ("Shadow Bokeh Intensity", Range(0, 10)) = 2
+        _ShadowBokehScale ("Shadow Bokeh Scale", Range(0.1, 20)) = 3
+        _ShadowBokehSize ("Shadow Bokeh Size", Range(0.05, 1)) = 0.35
+        _ShadowBokehSoftness ("Shadow Bokeh Softness", Range(0, 1)) = 0.5
+        _ShadowBokehBlades ("Shadow Bokeh Aperture Blades", Range(0, 8)) = 0
+        _ShadowBokehRimGain ("Shadow Bokeh Rim Gain", Range(0, 1)) = 0.25
+        _ShadowBokehSpeed ("Shadow Bokeh Drift Speed", Float) = 0.05
+        _ShadowBokehDirection ("Shadow Bokeh Drift Direction (XY)", Vector) = (1, 0.3, 0, 0)
+        _ShadowBokehShadowMin ("Shadow Bokeh Shadow Threshold", Range(0, 1)) = 0.35
+        _ShadowBokehBlend ("Shadow Bokeh Blend", Range(0, 1)) = 1
+        [NoScaleOffset] _ShadowBokehMask ("Shadow Bokeh Mask (R)", 2D) = "white" {}
+
         // C. Pixel Art (ピクセルアート化)
         [Toggle(_PIXEL_ART)] _PixelArt ("Enable Pixel Art (ピクセルアート)", Float) = 0
         _PixelArtSize ("Pixel Art Resolution", Range(4, 512)) = 64
@@ -1194,6 +1210,7 @@ CGPROGRAM
             #pragma shader_feature_local _FX_MODULATOR
             #pragma shader_feature_local _LENTICULAR
             #pragma shader_feature_local _CAUSTICS
+            #pragma shader_feature_local _SHADOW_BOKEH
             #pragma shader_feature_local _PIXEL_ART
             #pragma shader_feature_local _MIRROR_TEXTURE
             #pragma shader_feature_local _DEPTH_COLOR_FADE
@@ -1230,6 +1247,7 @@ CGPROGRAM
             #pragma shader_feature_local _FX_MODULATOR
             #pragma shader_feature_local _LENTICULAR
             #pragma shader_feature_local _CAUSTICS
+            #pragma shader_feature_local _SHADOW_BOKEH
             #pragma shader_feature_local _PIXEL_ART
             #pragma shader_feature_local _MIRROR_TEXTURE
             #pragma shader_feature_local _QUEST_LITE

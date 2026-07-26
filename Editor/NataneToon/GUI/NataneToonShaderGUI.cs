@@ -522,6 +522,7 @@ public class NataneToonShaderGUI : ShaderGUI
             { "FXModulator", "ShowFXModulator" },
             { "PixelArt", "ShowPixelArt" },
             { "Caustics", "ShowCaustics" },
+            { "ShadowBokeh", "ShowShadowBokeh" },
             { "Lenticular", "ShowLenticular" },
             { "XRay", "ShowXRay" },
     };
@@ -8101,6 +8102,63 @@ public class NataneToonShaderGUI : ShaderGUI
         EndBoxedSection(GetFoldout("Caustics"));
     }
 
+    private void DrawShadowBokehSection()
+    {
+        SetFoldout("ShadowBokeh", DrawBoxedSection(L("影の玉ボケ（木漏れ日）", "Shadow Bokeh (Dappled Light)"), GetFoldout("ShadowBokeh"), SectionCategory.Effects, "_SHADOW_BOKEH", sectionKey: "ShadowBokeh"));
+        if (GetFoldout("ShadowBokeh"))
+        {
+            bool enable = DrawToggle("_SHADOW_BOKEH", "_ShadowBokeh", L("影の玉ボケを有効化", "Enable Shadow Bokeh"));
+            if (enable)
+            {
+                EditorGUI.indentLevel++;
+
+                DrawProperty("_ShadowBokehComposite", L("合成方法", "Composite"));
+                int composite = Mathf.RoundToInt(GetPropFloat("_ShadowBokehComposite"));
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("色と量", "Color & Amount"), EditorStyles.boldLabel);
+
+                // LitOnly は「光の中に落とす葉影」なので、色の意味が反転する。
+                DrawColorProperty("_ShadowBokehColor",
+                    composite == 1 ? L("葉影の色", "Leaf Shadow Color") : L("光斑の色 (HDR)", "Light Spot Color (HDR)"),
+                    composite != 1);
+                DrawProperty("_ShadowBokehIntensity", L("強さ", "Intensity"));
+                DrawProperty("_ShadowBokehBlend", L("ブレンド", "Blend"));
+
+                if (composite == 0)
+                {
+                    DrawProperty("_ShadowBokehShadowMin", L("出はじめる影の深さ", "Shadow Threshold"),
+                        "低いと半影にも薄く出ます。輪郭が濁るときは上げてください。",
+                        "Lower values bleed into the penumbra. Raise it if the edges look muddy.");
+                }
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("玉の形", "Bokeh Shape"), EditorStyles.boldLabel);
+                DrawProperty("_ShadowBokehScale", L("スケール", "Scale"));
+                DrawProperty("_ShadowBokehSize", L("玉の大きさ", "Size"));
+                DrawProperty("_ShadowBokehSoftness", L("縁のぼけ", "Softness"));
+                DrawProperty("_ShadowBokehBlades", L("絞り羽根の枚数", "Aperture Blades"),
+                    "0〜2 で円。3 以上で多角形になります。", "0 to 2 gives circles. 3 or more makes polygons.");
+                DrawProperty("_ShadowBokehRimGain", L("縁の明るさ", "Rim Gain"));
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("動き", "Motion"), EditorStyles.boldLabel);
+                DrawProperty("_ShadowBokehSpeed", L("流れる速さ", "Drift Speed"));
+                DrawProperty("_ShadowBokehDirection", L("流れる方向 (XY)", "Drift Direction (XY)"));
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                DrawProperty("_ShadowBokehMask", L("マスク (R)", "Mask (R)"));
+
+                DrawHelpToggle("ShadowBokeh",
+                    L("🌳 影の玉ボケ（木漏れ日）:\n影の中に、木漏れ日のような柔らかい円形の光斑を落とします。\n\n• 合成方法: 影のみ（木漏れ日）/ 明部のみ（葉影）/ 全体\n• 光源方向に垂直な平面へ投影するため、カメラを動かしても光斑は面に貼り付いたままです\n• ライトを回すと光斑の向きが追従します\n• 絞り羽根の枚数で円と多角形を切り替えられます\n\n💡 木立の下や窓際の演出に。強さを上げて発光合成にすると Bloom が乗ります。\n⚠ 3x3 のセル走査を行うため相応の負荷があります。Quest では自動的に軽量版に切り替わります。",
+                      "🌳 Shadow Bokeh (Dappled Light):\nDrops soft circles of light into shadowed areas, like sunlight through leaves.\n\n• Composite: shadow only (dappled light) / lit only (leaf shadows) / all\n• Projected onto a plane perpendicular to the light, so the spots stay stuck to surfaces as the camera moves\n• Rotating the light rotates the projection with it\n• Aperture blades switch between circles and polygons\n\n💡 Great under trees or by a window. Raise the intensity with additive compositing to drive bloom.\n⚠ Uses a 3x3 cell scan, so it is not free. Quest automatically falls back to a lighter path."),
+                    MessageType.Info);
+                EditorGUI.indentLevel--;
+            }
+        }
+        EndBoxedSection(GetFoldout("ShadowBokeh"));
+    }
+
     private void DrawLenticularSection()
     {
         SetFoldout("Lenticular", DrawBoxedSection(L("レンチキュラー", "Lenticular"), GetFoldout("Lenticular"), SectionCategory.Effects, "_LENTICULAR", sectionKey: "Lenticular"));
@@ -9527,6 +9585,7 @@ public class NataneToonShaderGUI : ShaderGUI
             case "FXModulator": return DrawFXModulatorSection;
             case "PixelArt": return DrawPixelArtSection;
             case "Caustics": return DrawCausticsSection;
+            case "ShadowBokeh": return DrawShadowBokehSection;
             case "Lenticular": return DrawLenticularSection;
             case "XRay": return DrawXRaySection;
             default: return null;

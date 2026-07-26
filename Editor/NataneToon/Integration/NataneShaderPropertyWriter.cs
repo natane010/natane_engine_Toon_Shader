@@ -126,11 +126,22 @@ namespace NataneToon.Editor
         /// 生成結果を再解析して宣言集合とコメント数が保たれているかを必ず検査し、
         /// 崩れていれば書き込まない。
         /// </summary>
+        /// <param name="allowedNewProperties">
+        /// 意図して増やすプロパティ名（追加定義から合流させたもの）。
+        /// これを渡さないと、新機能の追加が「生成器が勝手に宣言を増やした」と
+        /// 判定されて書き込みが拒否される。安全検査は
+        /// 「生成器の暴走」と「運用者の宣言」を区別できる必要がある。
+        /// </param>
         internal static ApplyResult Apply(
             NataneToonVariantLocator.Entry entry,
             NataneShaderPropertyCatalog catalog,
-            bool dryRun)
+            bool dryRun,
+            IReadOnlyCollection<string> allowedNewProperties = null)
         {
+            var allowed = allowedNewProperties == null
+                ? new HashSet<string>(StringComparer.Ordinal)
+                : new HashSet<string>(allowedNewProperties, StringComparer.Ordinal);
+
             var result = new ApplyResult { FileName = entry.FileName };
 
             string source = entry.Source;
@@ -164,10 +175,18 @@ namespace NataneToon.Editor
             var beforeKeys = new HashSet<string>(before.Select(d => d.SignatureKey), StringComparer.Ordinal);
             var afterKeys = new HashSet<string>(after.Select(d => d.SignatureKey), StringComparer.Ordinal);
 
+            // 消失はいかなる場合も許さない。
             foreach (string lost in beforeKeys.Except(afterKeys, StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal))
                 result.Problems.Add("生成で消えた宣言: " + lost);
-            foreach (string added in afterKeys.Except(beforeKeys, StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal))
-                result.Problems.Add("生成で増えた宣言: " + added);
+
+            // 増加は「追加定義で宣言したもの」だけ許す。
+            foreach (NatanePropertyDeclaration d in after
+                         .Where(d => !beforeKeys.Contains(d.SignatureKey))
+                         .OrderBy(d => d.Name, StringComparer.Ordinal))
+            {
+                if (allowed.Contains(d.Name)) continue;
+                result.Problems.Add("生成で増えた宣言: " + d.SignatureKey);
+            }
 
             if (afterUnparsed.Count > 0)
                 result.Problems.Add($"生成結果に解釈できない行が {afterUnparsed.Count} 件（{afterUnparsed[0]}）");
