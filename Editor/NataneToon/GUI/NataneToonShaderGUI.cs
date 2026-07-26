@@ -2172,6 +2172,34 @@ public class NataneToonShaderGUI : ShaderGUI
 
             EditorGUILayout.Space(10);
             DrawSubGroupHeader(L("シャドウ設定", "Shadow Settings"));
+
+            // 「影のフェード感」を決める操作子は 9 個に散らばっていて、
+            // どれを触れば自然な影になるのか分からない状態だった。
+            // ここを単一の入口として先頭に置き、個別調整は下に残す。
+            DrawProperty("_ShadowNaturalness", L("影の自然さ", "Shadow Naturalness"),
+                "上げるほど PBR のような自然な減衰になります。0 で従来どおり。",
+                "Higher values give a natural, PBR-like falloff. 0 keeps the previous behavior.");
+            DrawHelpToggle("ShadowNaturalness",
+                L("🌗 影の自然さ:\n" +
+                  "トゥーンの陰影を保ったまま、影の境界を自然な減衰に近づけます。\n\n" +
+                  "内部では以下をまとめて引き上げます。\n" +
+                  "• 光の回り込み（Wrapped Diffuse）\n" +
+                  "• 段階のなじませ（Shadow Smoothing）\n" +
+                  "• 段階境界の幅（Step Border Smooth）\n\n" +
+                  "💡 個別のパラメータを上書きせず「下限を引き上げる」だけなので、\n" +
+                  "下の詳細設定で手動調整した値はそのまま活きます。\n" +
+                  "0.3〜0.5 で自然な陰影、0.7 以上でほぼ連続階調になります。",
+                  "🌗 Shadow Naturalness:\n" +
+                  "Softens the shadow terminator toward a natural falloff while keeping the toon look.\n\n" +
+                  "It raises these together:\n" +
+                  "• Wrapped diffuse (light wrapping around the terminator)\n" +
+                  "• Shadow smoothing (toon steps toward continuous)\n" +
+                  "• Step border smoothing\n\n" +
+                  "💡 It only raises the floor for those values, so anything you set manually below still applies.\n" +
+                  "0.3 to 0.5 reads as natural shading; above 0.7 becomes nearly continuous."),
+                MessageType.Info);
+
+            EditorGUILayout.Space(SECTION_SPACING);
             DrawProperty("_ShadowReceive", L("影の受け取り", "Shadow Receive"));
             DrawHelpToggle("ShadowReceive", L("他のオブジェクトからの影がこのマテリアルに与える影響を制御します。1 = 完全な影、0 = 影なし。", "Controls how shadows from other objects affect this material. 1 = Full shadow, 0 = No shadow."), MessageType.Info);
 
@@ -7474,6 +7502,29 @@ public class NataneToonShaderGUI : ShaderGUI
             if (enableHalftone)
             {
                 EditorGUI.indentLevel++;
+                DrawSubGroupHeader(L("網点の種類", "Tone Pattern"));
+                DrawProperty("_HalftoneShadowPattern", L("パターン", "Pattern"),
+                    "ドット＝一般的な網点、万線＝平行線、クロスハッチ＝カケアミ。",
+                    "Dot is the classic screentone, Line is parallel hatching, CrossHatch layers both.");
+                DrawProperty("_HalftoneShadowAngle", L("角度", "Angle"),
+                    "漫画の網点は 45° が基本です。", "45 degrees is the classic manga angle.");
+                DrawProperty("_HalftoneShadowLevels", L("トーンの号数（段階数）", "Tone Levels"),
+                    "影の濃さをこの段数に量子化します。1 で連続（従来動作）。",
+                    "Quantizes shadow depth into this many tone steps. 1 keeps it continuous (previous behavior).");
+                DrawProperty("_HalftoneShadowSpace", L("座標空間", "Space"),
+                    "スクリーンはカメラを動かすと模様が滑ります。面に貼り付けたいならワールドかUV。",
+                    "Screen space swims as the camera moves. Use World or UV to stick the pattern to surfaces.");
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                DrawSubGroupHeader(L("粒の大きさ", "Dot Size"));
+                DrawProperty("_HalftoneShadowDotMin", L("最小（薄い影）", "Min (light shadow)"));
+                DrawProperty("_HalftoneShadowDotMax", L("最大（濃い影）", "Max (deep shadow)"));
+                DrawProperty("_HalftoneShadowAA", L("アンチエイリアス", "Anti-Alias"),
+                    "0 で硬いエッジ。拡大時のジャギが気になるなら上げてください。",
+                    "0 gives hard edges. Raise it if the dots look jagged up close.");
+
+                EditorGUILayout.Space(SECTION_SPACING);
+                DrawSubGroupHeader(L("色と範囲", "Color & Range"));
                 DrawColorProperty("_HalftoneShadowColor", L("ハーフトーンカラー", "Halftone Color"));
                 DrawProperty("_HalftoneShadowScale", L("パターンスケール", "Pattern Scale"),
                     "50〜150。大きいほど網点が細かくなります。", "50 to 150. Higher makes finer dots.");

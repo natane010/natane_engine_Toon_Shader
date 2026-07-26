@@ -76,6 +76,40 @@ namespace NataneToon.Editor
                     "[NoScaleOffset] _ShadowBokehMask (\"Shadow Bokeh Mask (R)\", 2D) = \"white\" {}",
                 },
             },
+
+            // 漫画網点の拡張。既存の _HalftoneShadow* 群の直後に続ける。
+            new Addition
+            {
+                GroupId = "CORE",
+                AfterProperty = "_HalftoneShadowBlend",
+                LeadingLines = new[]
+                {
+                    string.Empty,
+                    "// Halftone Shadow - 漫画表現の拡張",
+                },
+                Declarations = new[]
+                {
+                    "[Enum(Dot,0,Line,1,CrossHatch,2)] _HalftoneShadowPattern (\"Halftone Pattern\", Float) = 0",
+                    "_HalftoneShadowAngle (\"Halftone Angle\", Range(0, 180)) = 45",
+                    "_HalftoneShadowLevels (\"Halftone Tone Levels\", Range(1, 8)) = 4",
+                    "[Enum(Screen,0,World,1,UV,2)] _HalftoneShadowSpace (\"Halftone Space\", Float) = 0",
+                    "_HalftoneShadowDotMin (\"Halftone Dot Min\", Range(0, 1)) = 0.05",
+                    "_HalftoneShadowDotMax (\"Halftone Dot Max\", Range(0, 1)) = 0.9",
+                    "_HalftoneShadowAA (\"Halftone Anti-Alias\", Range(0, 3)) = 1",
+                },
+            },
+
+            // 影の自然さ（単一入口）。シェーディングの階調まわりに置く。
+            new Addition
+            {
+                GroupId = "CORE",
+                AfterProperty = "_ShadowSmoothing",
+                LeadingLines = new[] { string.Empty },
+                Declarations = new[]
+                {
+                    "_ShadowNaturalness (\"Shadow Naturalness (自然な影)\", Range(0, 1)) = 0",
+                },
+            },
         };
 
         /// <summary>

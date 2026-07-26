@@ -730,9 +730,11 @@ half4 frag(v2f i) : SV_Target
 
     // ===== Wrapped Diffuse =====
     // (NdotL + wrap) / (1 + wrap) — 0=Lambert, 0.5=Half-Lambert, 1=Uniform
-    if (_WrapAmount > 0.001)
+    // 実効値は _ShadowNaturalness で下限が押し上げられる（単一入口）。
+    half effectiveWrap = NataneShadowNaturalWrap();
+    if (effectiveWrap > 0.001)
     {
-        ndotl = (ndotl + _WrapAmount) / (1.0 + _WrapAmount);
+        ndotl = (ndotl + effectiveWrap) / (1.0 + effectiveWrap);
     }
 
     // ===== Backlight Calculation =====
@@ -846,10 +848,11 @@ half4 frag(v2f i) : SV_Target
         // ===== Shadow Step Smoothing =====
         // 多段階トゥーンシェーディングの階調をなじませる
         // 量子化されたステップを連続的なライティングに向けてブレンド
-        if (_ShadowSmoothing > 0.001)
+        half effectiveSmoothing = NataneShadowNaturalSmoothing();
+        if (effectiveSmoothing > 0.001)
         {
             half continuousShading = saturate(lightTerm + clamp(_ShadowOffset, -1.0, 1.0));
-            toonValue = lerp(toonValue, continuousShading, _ShadowSmoothing);
+            toonValue = lerp(toonValue, continuousShading, effectiveSmoothing);
         }
 
         half gradientValue = GradientShading(lightTerm, _ShadingGradientWidth);
@@ -1323,19 +1326,34 @@ half4 frag(v2f i) : SV_Target
     #if defined(_HALFTONE_SHADOW) && defined(UNITY_PASS_FORWARDBASE)
     if (_HalftoneShadow >= 0.5)
     {
-        // shadowFactor: 0=lit, 1=shadow
+        // shadowArea: 0=lit, 1=shadow
         float shadowArea = smoothstep(_HalftoneShadowThreshold + _HalftoneShadowSoftness,
                                        _HalftoneShadowThreshold - _HalftoneShadowSoftness,
                                        shadingValue);
-        // Circle halftone pattern from screen position
-        float2 htPos = i.pos.xy / _HalftoneShadowScale;
-        float2 htCenter = floor(htPos) + 0.5;
-        float htDist = length(htPos - htCenter);
-        // Dot size proportional to shadow intensity
-        float htDot = step(htDist, shadowArea * 0.5);
-        // Apply halftone
+
+        // 影の濃さを「トーンの号数」に量子化する。連続的に太らせるより漫画らしい。
+        float htTone = NataneHalftoneQuantizeTone(shadowArea, _HalftoneShadowLevels);
+
+        // 網点グリッドの座標。スクリーン空間だとカメラを動かしたとき模様が滑るため、
+        // 面に貼り付けたい場合のためにワールド/UV も選べるようにしてある。
+        float2 htPos;
+        int htSpace = (int)(_HalftoneShadowSpace + 0.5);
+        if (htSpace == 1)      htPos = i.worldPos.xz * 10.0;
+        else if (htSpace == 2) htPos = uv * 100.0;
+        else                   htPos = i.pos.xy;
+
+        // _HalftoneShadowScale はセルの大きさ（px 相当）。大きいほど網点が粗くなる。
+        htPos = NataneHalftoneRotate(htPos, _HalftoneShadowAngle) / max(_HalftoneShadowScale, 1e-3);
+
+        float htInk = NataneHalftonePattern(
+            htPos, htTone, _HalftoneShadowPattern,
+            _HalftoneShadowDotMin, _HalftoneShadowDotMax, _HalftoneShadowAA);
+
+        // tone が 0 の領域には一切載せない（量子化の最下段でも点が残らないように）。
+        htInk *= step(0.001, shadowArea);
+
         col.rgb = lerp(col.rgb, _HalftoneShadowColor.rgb * col.rgb,
-                       htDot * _HalftoneShadowIntensity * _HalftoneShadowBlend);
+                       htInk * _HalftoneShadowIntensity * _HalftoneShadowBlend);
     }
     #endif
 

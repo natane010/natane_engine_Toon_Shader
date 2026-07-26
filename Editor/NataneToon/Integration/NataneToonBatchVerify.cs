@@ -203,6 +203,10 @@ namespace NataneToon.Editor
             new[] { "_SHADOW_BOKEH", "_QUEST_LITE" },   // Lite 経路
             new[] { "_SHADOW_BOKEH", "_EMISSION" },     // HDR オーバーシュート経路
             new[] { "_SHADOW_BOKEH", "_DISTANCE_FADE" },
+
+            // 漫画網点。パターン分岐は uniform 分岐なので 1 変種で全経路がコンパイルされる。
+            new[] { "_HALFTONE_SHADOW" },
+            new[] { "_HALFTONE_SHADOW", "_SHADOW_BOKEH" },
         };
 
         /// <summary>

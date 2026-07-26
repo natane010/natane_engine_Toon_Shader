@@ -48,6 +48,7 @@
 #include "../Effects/NataneToonLenticular.hlsl"
 #include "../Effects/NataneToonCaustics.hlsl"
 #include "../Effects/NataneToonShadowBokeh.hlsl"
+#include "../Effects/NataneToonHalftone.hlsl"
 #include "../Effects/NataneToonPixelArt.hlsl"
 #include "../Lighting/NataneToonLighting.hlsl"
 #include "../Lighting/NataneToonLightmap.hlsl"

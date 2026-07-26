@@ -90,6 +90,14 @@ CBUFFER_START(UnityPerMaterial)
     float _HalftoneShadowSoftness;
     float _HalftoneShadowIntensity;
     float _HalftoneShadowBlend;
+    // 漫画表現向けの拡張
+    float _HalftoneShadowPattern;
+    float _HalftoneShadowAngle;
+    float _HalftoneShadowLevels;
+    float _HalftoneShadowSpace;
+    float _HalftoneShadowDotMin;
+    float _HalftoneShadowDotMax;
+    float _HalftoneShadowAA;
     #endif
 
     // Shadow Bokeh（影の玉ボケ / 木漏れ日）
@@ -213,6 +221,9 @@ CBUFFER_START(UnityPerMaterial)
     float _LightColorInfluence;
     float _ShadowReceive;
     float _ShadowSmoothing;
+    // 影の自然さ（単一入口）。回り込み・段階のなじませ・境界幅をまとめて押し上げる。
+    // 個別パラメータを上書きせず「下限を引き上げる」だけなので、手動調整と喧嘩しない。
+    float _ShadowNaturalness;
     float _ShadowMaxDarkness;
     float _SmoothNormalShadingBlend;
     float _SmoothNormalMode;

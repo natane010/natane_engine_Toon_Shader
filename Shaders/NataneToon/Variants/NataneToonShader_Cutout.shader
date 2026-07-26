@@ -100,6 +100,15 @@ Shader "Natane/Toon Shader (Cutout)"
         _HalftoneShadowIntensity ("Intensity", Range(0, 1)) = 0.5
         _HalftoneShadowBlend ("Blend", Range(0, 1)) = 1
 
+        // Halftone Shadow - 漫画表現の拡張
+        [Enum(Dot,0,Line,1,CrossHatch,2)] _HalftoneShadowPattern ("Halftone Pattern", Float) = 0
+        _HalftoneShadowAngle ("Halftone Angle", Range(0, 180)) = 45
+        _HalftoneShadowLevels ("Halftone Tone Levels", Range(1, 8)) = 4
+        [Enum(Screen,0,World,1,UV,2)] _HalftoneShadowSpace ("Halftone Space", Float) = 0
+        _HalftoneShadowDotMin ("Halftone Dot Min", Range(0, 1)) = 0.05
+        _HalftoneShadowDotMax ("Halftone Dot Max", Range(0, 1)) = 0.9
+        _HalftoneShadowAA ("Halftone Anti-Alias", Range(0, 3)) = 1
+
         // ===== Gradient Base Color (グラデーションベースカラー) =====
         [Header(Gradient Base Color)]
         [Toggle(_GRADIENT_BASE_COLOR)] _GradientBaseColor ("Enable Gradient Base Color", Float) = 0
@@ -209,6 +218,8 @@ Shader "Natane/Toon Shader (Cutout)"
         _LightColorInfluence ("Light Color Influence", Range(0, 1)) = 1
         _ShadowReceive ("Shadow Receive", Range(0, 1)) = 1
         _ShadowSmoothing ("Shadow Map Smoothing", Range(0, 1)) = 0
+
+        _ShadowNaturalness ("Shadow Naturalness (自然な影)", Range(0, 1)) = 0
         [Space(5)]
         [Toggle(_PCSS)] _UsePCSS ("Enable PCSS Soft Shadow", Float) = 0
         _PCSSLightSize ("PCSS Light Size", Range(0.01, 5.0)) = 1.0

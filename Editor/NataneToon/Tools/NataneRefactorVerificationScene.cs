@@ -210,6 +210,42 @@ namespace NataneToon.Editor
                     }
                 },
 
+                // 漫画網点（ドット）。影の濃さを 4 段階に量子化する。
+                new Spec
+                {
+                    Label = "Halftone_Manga_Dot",
+                    MaterialName = "NataneVerify_Halftone_Dot",
+                    Configure = m =>
+                    {
+                        EnableHalftone(m);
+                        SetFloatIfExists(m, "_HalftoneShadowPattern", 0f);  // Dot
+                    }
+                },
+
+                // カケアミ。薄いうちは一方向、濃くなると直交方向が重なる。
+                new Spec
+                {
+                    Label = "Halftone_CrossHatch",
+                    MaterialName = "NataneVerify_Halftone_CrossHatch",
+                    Configure = m =>
+                    {
+                        EnableHalftone(m);
+                        SetFloatIfExists(m, "_HalftoneShadowPattern", 2f);  // CrossHatch
+                        SetFloatIfExists(m, "_HalftoneShadowScale", 24f);
+                    }
+                },
+
+                // 影の自然さ。0（従来）との比較用に高めの値を入れる。
+                new Spec
+                {
+                    Label = "ShadowNaturalness_High",
+                    MaterialName = "NataneVerify_ShadowNaturalness",
+                    Configure = m =>
+                    {
+                        SetFloatIfExists(m, "_ShadowNaturalness", 0.7f);
+                    }
+                },
+
                 // 両方同時に有効。相互干渉で崩れないことの確認。
                 new Spec
                 {
@@ -251,6 +287,27 @@ namespace NataneToon.Editor
             SetColorIfExists(m, "_ShadowBokehColor", new Color(1f, 0.95f, 0.8f, 1f));
             if (m.HasProperty("_ShadowBokehDirection"))
                 m.SetVector("_ShadowBokehDirection", new Vector4(1f, 0.3f, 0f, 0f));
+        }
+
+        /// <summary>
+        /// 漫画網点の共通設定。トーンの号数を 4 段にして、粒度が段階的に変わることを見る。
+        /// </summary>
+        private static void EnableHalftone(Material m)
+        {
+            m.SetFloat("_HalftoneShadow", 1f);
+            m.EnableKeyword("_HALFTONE_SHADOW");
+            SetFloatIfExists(m, "_HalftoneShadowScale", 16f);
+            SetFloatIfExists(m, "_HalftoneShadowThreshold", 0.5f);
+            SetFloatIfExists(m, "_HalftoneShadowSoftness", 0.25f);
+            SetFloatIfExists(m, "_HalftoneShadowIntensity", 1f);
+            SetFloatIfExists(m, "_HalftoneShadowBlend", 1f);
+            SetFloatIfExists(m, "_HalftoneShadowAngle", 45f);
+            SetFloatIfExists(m, "_HalftoneShadowLevels", 4f);
+            SetFloatIfExists(m, "_HalftoneShadowSpace", 0f);   // Screen
+            SetFloatIfExists(m, "_HalftoneShadowDotMin", 0.05f);
+            SetFloatIfExists(m, "_HalftoneShadowDotMax", 0.9f);
+            SetFloatIfExists(m, "_HalftoneShadowAA", 1f);
+            SetColorIfExists(m, "_HalftoneShadowColor", new Color(0.15f, 0.15f, 0.2f, 1f));
         }
 
         private static void EnableCaustics(Material m)

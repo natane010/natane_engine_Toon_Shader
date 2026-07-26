@@ -5,6 +5,37 @@
 
 // Lighting Calculation Functions
 
+// ===== 影の自然さ（単一入口） =====
+//
+// 「影のフェード感」を決める操作子はこれまで 9 個に散らばっており
+// (_WrapAmount / _LitSoftness / _ShadowSmoothing / _ShadowBlend /
+//  _StepBorderSmooth / _ShadingGradientWidth / _SoftLightingIntensity /
+//  _ShadingMode / _ShadowSharpness)、どれを触れば「PBR のような自然な影」に
+// なるのか分からない状態だった。_ShadowNaturalness はそれらの代表値を
+// まとめて押し上げる入口。
+//
+// いずれも max() で「下限を引き上げる」だけにしてあるのが要点。上書きにすると
+// 個別調整した値が無視されて、詳細設定が効かなくなる。
+//
+// 係数は「1.0 で PBR 寄りの自然な減衰、既定 0 で従来と完全に同一」になるよう定めた。
+
+float NataneShadowNaturalWrap()
+{
+    // 0.35 はハーフランバート(0.5)よりやや控えめ。トゥーンの陰影は残る。
+    return max(_WrapAmount, _ShadowNaturalness * 0.35);
+}
+
+float NataneShadowNaturalSmoothing()
+{
+    // 段階を連続へ寄せる量。1.0 まで上げるとトゥーンの段が完全に消えるので 0.6 止まり。
+    return max(_ShadowSmoothing, _ShadowNaturalness * 0.6);
+}
+
+float NataneShadowNaturalStepBorder()
+{
+    return max(_StepBorderSmooth, _ShadowNaturalness * 0.35);
+}
+
 // Toon Shading with adjustable steps and sharpness
 // Creates cel-shaded stepped lighting effect
 float ToonShading(float ndotl, float steps, float sharpness)
@@ -36,7 +67,7 @@ float ToonShading(float ndotl, float steps, float sharpness)
     // Apply anti-aliasing to prevent harsh pixelation while maintaining sharpness
     // Use smaller smoothstep range for cleaner anime look
     // _StepBorderSmooth を追加して段階境界のなじませ幅を拡張
-    float smoothRange = saturate(sharpness + _StepBorderSmooth) * 0.5;
+    float smoothRange = saturate(sharpness + NataneShadowNaturalStepBorder()) * 0.5;
     // Floor the band by the screen-space derivative so the cel boundary stays
     // ~1px anti-aliased at any distance/angle (prevents shimmering, esp. in VR).
     smoothRange = min(max(smoothRange, fwidth(ndotl * steps) * 0.5), 0.5);
