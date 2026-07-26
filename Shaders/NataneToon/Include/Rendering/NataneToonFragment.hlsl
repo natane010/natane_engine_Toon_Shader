@@ -1335,15 +1335,14 @@ half4 frag(v2f i) : SV_Target
         float htTone = NataneHalftoneQuantizeTone(shadowArea, _HalftoneShadowLevels);
 
         // 網点グリッドの座標。スクリーン空間だとカメラを動かしたとき模様が滑るため、
-        // 面に貼り付けたい場合のためにワールド/UV も選べるようにしてある。
-        float2 htPos;
-        int htSpace = (int)(_HalftoneShadowSpace + 0.5);
-        if (htSpace == 1)      htPos = i.worldPos.xz * 10.0;
-        else if (htSpace == 2) htPos = uv * 100.0;
-        else                   htPos = i.pos.xy;
+        // 面に貼り付けたい場合のためにワールド/UV/オブジェクトも選べる。
+        // ワールドは Triplanar-lite なので垂直面でも潰れない。
+        float3 htObjPos = mul(unity_WorldToObject, float4(i.worldPos, 1.0)).xyz;
+        float2 htPos = NataneHalftoneCoord(
+            _HalftoneShadowSpace, _HalftoneShadowScale, _HalftoneShadowSurfaceDensity,
+            uv, htObjPos, i.worldPos, worldNormal, i.pos.xy);
 
-        // _HalftoneShadowScale はセルの大きさ（px 相当）。大きいほど網点が粗くなる。
-        htPos = NataneHalftoneRotate(htPos, _HalftoneShadowAngle) / max(_HalftoneShadowScale, 1e-3);
+        htPos = NataneHalftoneRotate(htPos, _HalftoneShadowAngle);
 
         float htInk = NataneHalftonePattern(
             htPos, htTone, _HalftoneShadowPattern,

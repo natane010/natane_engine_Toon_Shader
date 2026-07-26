@@ -95,6 +95,7 @@ CBUFFER_START(UnityPerMaterial)
     float _HalftoneShadowAngle;
     float _HalftoneShadowLevels;
     float _HalftoneShadowSpace;
+    float _HalftoneShadowSurfaceDensity;
     float _HalftoneShadowDotMin;
     float _HalftoneShadowDotMax;
     float _HalftoneShadowAA;

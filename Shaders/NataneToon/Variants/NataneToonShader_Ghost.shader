@@ -101,6 +101,9 @@ Shader "Natane/Toon Shader (Ghost)"
         _HalftoneShadowBlend ("Blend", Range(0, 1)) = 1
 
         // Halftone Shadow - 漫画表現の拡張
+        _HalftoneShadowSurfaceDensity ("Halftone Surface Density", Range(0.1, 40)) = 8
+
+        // Halftone Shadow - 漫画表現の拡張
         [Enum(Dot,0,Line,1,CrossHatch,2)] _HalftoneShadowPattern ("Halftone Pattern", Float) = 0
         _HalftoneShadowAngle ("Halftone Angle", Range(0, 180)) = 45
         _HalftoneShadowLevels ("Halftone Tone Levels", Range(1, 8)) = 4

@@ -7512,8 +7512,17 @@ public class NataneToonShaderGUI : ShaderGUI
                     "影の濃さをこの段数に量子化します。1 で連続（従来動作）。",
                     "Quantizes shadow depth into this many tone steps. 1 keeps it continuous (previous behavior).");
                 DrawProperty("_HalftoneShadowSpace", L("座標空間", "Space"),
-                    "スクリーンはカメラを動かすと模様が滑ります。面に貼り付けたいならワールドかUV。",
-                    "Screen space swims as the camera moves. Use World or UV to stick the pattern to surfaces.");
+                    "スクリーンはカメラを動かすと模様が滑ります。面に貼り付けたいならワールド／UV／オブジェクト。",
+                    "Screen space swims as the camera moves. Use World / UV / Object to stick the pattern to surfaces.");
+
+                // 空間によってスケールの意味が変わるので、効くスライダーだけ出す。
+                // 両方出すと「どちらを動かしても変わらない」状態になり分かりにくい。
+                if (Mathf.RoundToInt(GetPropFloat("_HalftoneShadowSpace")) != 0)
+                {
+                    DrawProperty("_HalftoneShadowSurfaceDensity", L("面あたりの密度", "Surface Density"),
+                        "1メートル（またはUV1つ）あたりの網点の数です。",
+                        "Number of tone cells per world unit (or per UV unit).");
+                }
 
                 EditorGUILayout.Space(SECTION_SPACING);
                 DrawSubGroupHeader(L("粒の大きさ", "Dot Size"));
