@@ -731,10 +731,10 @@ Shader "Natane/Toon Shader (Fur)"
         _HologramBlend ("Hologram Blend", Range(0, 1)) = 1
         _HologramBlur ("Hologram Blur", Range(0, 1)) = 0
         [Toggle(_GLITCH)] _Glitch ("Enable Glitch", Float) = 0
-        _GlitchIntensity ("Glitch Intensity", Range(0, 1)) = 0.5
+        _GlitchIntensity ("Glitch Intensity", Range(0, 3)) = 0.5
         _GlitchSpeed ("Glitch Speed", Float) = 1
         _GlitchBlockSize ("Glitch Block Size", Range(0.01, 1)) = 0.1
-        _GlitchRGBSplitIntensity ("RGB Split Intensity", Range(0, 1)) = 0.5
+        _GlitchRGBSplitIntensity ("RGB Split Intensity", Range(0, 3)) = 0.5
         _GlitchFrequency ("Glitch Frequency", Range(0, 1)) = 0.3
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _GlitchBlendMode ("Glitch Blend Mode", Float) = 0
         _GlitchBlend ("Glitch Blend", Range(0, 1)) = 1
