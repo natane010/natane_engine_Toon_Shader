@@ -5,6 +5,7 @@
 
 - ブランチ: `feature/develop/npr2026`（ベース: `develop` @ `6323794` / v1.6.5）
 - 対象スコープ: **Stage A（P2 + P5）／ P1 Shadow Shape Rig ／ P3 撮影模倣ScreenFX**
+  + 追補として Stage A'（P6 / P7 / P8）とワークフロー整備（W1〜W10）
 - 対象外: P4 Toon Standard相互運用（今回は見送り）、ニューラルシェーディング系（後述）
 
 ## 個別仕様書
@@ -17,6 +18,7 @@
 | P2 顔SDF影マップベイク | [NPR2026_P2_FACE_SDF_BAKE.md](NPR2026_P2_FACE_SDF_BAKE.md) | A |
 | P3 撮影模倣 ScreenFX | [NPR2026_P3_SCREENFX_CINEMATIC.md](NPR2026_P3_SCREENFX_CINEMATIC.md) | C |
 | P5 ハッチングTAM生成 | [NPR2026_P5_HATCHING_TAM_GENERATOR.md](NPR2026_P5_HATCHING_TAM_GENERATOR.md) | A |
+| P8 ディゾルブのオーサリング（+ F2〜F4 修正） | [NPR2026_P8_DISSOLVE_AUTHORING.md](NPR2026_P8_DISSOLVE_AUTHORING.md) | A' |
 | 追補: VRChatコミュニティ発の表現（P6 / P7 / F1） | [NPR2026_ADDENDUM_VRC_COMMUNITY.md](NPR2026_ADDENDUM_VRC_COMMUNITY.md) | A' |
 | 追補: ワークフロー・自動化の未整備箇所（W1〜W10） | [NPR2026_ADDENDUM_WORKFLOW_AUTOMATION.md](NPR2026_ADDENDUM_WORKFLOW_AUTOMATION.md) | 先行 |
 
@@ -198,6 +200,50 @@ Vignette / Grain / Scanline / Posterize / ChromaticAberration / Edge / Tint / Co
 
 ---
 
+### P8. ディゾルブ表現とアニメーションのオーサリング（Stage A'）
+
+詳細: [NPR2026_P8_DISSOLVE_AUTHORING.md](NPR2026_P8_DISSOLVE_AUTHORING.md)
+
+**動機**
+`_DISSOLVE` はシェーダー側が18プロパティを持ち、UV/World/Local 座標モードやエッジ発光まで揃っている。
+素材生成も `DissolvePatternGenerator`（Perlin / Voronoi / Cellular / Random / Gradient）がある。
+足りないのは **「時間変化を作る」部分がまるごと空白**である点。
+
+- `AnimationClip` を生成するツールが**存在しない**（`AnimationUtility` の使用箇所は
+  `NataneMigrationService` の binding 追従と `NataneBuildUsageSnapshot` の走査のみ）
+- Animator レイヤー / VRC Expression Menu の生成も無い
+  （`VRChatIntegrationWindow` のタブは Light Volumes / パッケージ設定 / 自動検出の3つ）
+- `_FX_MODULATOR` の Target enum に **Dissolve が無い**（§F2）
+
+結果として「ディゾルブで消えるアニメーション」の実作業がほぼ全部手作業になっている。
+
+**仕様** — `Editor/NataneToon/Tools/DissolveStudioWindow.cs`（新規）
+
+| タブ | 内容 |
+|---|---|
+| プリセット | 焼失 / 転送 / データ化 / 風化 / 霧散 / 出現。必要なノイズは自動生成 |
+| プレビュー | 0→1 のスクラブ再生。閉じたら必ず元の値へ戻す |
+| アニメーション | `AnimationClip` 生成。方向・長さ・イージング・コマ打ち・エッジ発光の同時カーブ・複数Renderer一括 |
+| VRChat | Animator レイヤー + Expression Parameters / Menu。**Modular Avatar があれば MA で非破壊** |
+| 自走モード | F2 前提。FX Modulator で Animator 不使用（Quest 向け） |
+
+クリップ先頭で `_Dissolve` を 1、末尾で 0 に戻すことで常時コストを避ける。
+マテリアルスロットが複数ある Renderer では `material[N]._DissolveAmount` バインディングへ自動で切り替える。
+
+**あわせて修正する3件**
+
+| # | 内容 |
+|---|---|
+| **F2** | `_FXModTarget0` の enum に `DissolveAmount,13` を追加。最も近い `AlphaFade` はエッジ発光を伴わず代替にならない |
+| **F3** | `_UseDissolveMask` が**完全に死んでいる**。本体+Variants 計12ファイルの Properties に `[Toggle(_DISSOLVE_MASK)]` として宣言されているが、HLSL・GUI・レジストリのどこからも参照されず `#pragma` も無い。`NataneToonFragment.hlsl:2597-2600` はトグルを無視してマスクを常時サンプルしている |
+| **F4** | `_AudioLinkDissolve` も宣言のみで未参照（実装は `_AudioLinkDissolveIntensity` を直接見ている） |
+
+F3 / F4 のような「`Properties` の `[Toggle(KEYWORD)]` が立てるキーワードを、どのパスもコンパイルしていない」
+状態は既存の `NataneShaderUpdateAudit` では検出できない（逆方向を見ていない）。
+[ワークフロー追補](NPR2026_ADDENDUM_WORKFLOW_AUTOMATION.md) の **W3 パリティ検査に逆方向の検出を追加**する。
+
+---
+
 ## 3. 段階分けと実行順
 
 | Stage | 内容 | シェーダー変更 | 競合リスク |
@@ -205,6 +251,7 @@ Vignette / Grain / Scanline / Posterize / ChromaticAberration / Edge / Tint / Co
 | **A** | P2（顔SDFベイク）→ P5（ハッチングTAM生成） | P2の閾値式1行のみ | 低 |
 | **B** | P1（Shadow Shape Rig） | 13ファイル同期 + GUI登録 | 中（GUI / Fragment.hlsl は競合しやすい） |
 | **C** | P3（撮影模倣ScreenFX） | ScreenFXのみ | 低 |
+| **A'** | P6 / P7（[VRChat追補](NPR2026_ADDENDUM_VRC_COMMUNITY.md)）→ P8（ディゾルブ） | P8のF2〜F4のみ（新キーワードなし） | 低 |
 
 Stage A から着手する。新キーワード追加やバリアント同期を伴わず、既存の不整合修正も含むため単体でマージ可能。
 
