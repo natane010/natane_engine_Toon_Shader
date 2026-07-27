@@ -18,10 +18,14 @@
 | P3 撮影模倣 ScreenFX | [NPR2026_P3_SCREENFX_CINEMATIC.md](NPR2026_P3_SCREENFX_CINEMATIC.md) | C |
 | P5 ハッチングTAM生成 | [NPR2026_P5_HATCHING_TAM_GENERATOR.md](NPR2026_P5_HATCHING_TAM_GENERATOR.md) | A |
 | 追補: VRChatコミュニティ発の表現（P6 / P7 / F1） | [NPR2026_ADDENDUM_VRC_COMMUNITY.md](NPR2026_ADDENDUM_VRC_COMMUNITY.md) | A' |
+| 追補: ワークフロー・自動化の未整備箇所（W1〜W10） | [NPR2026_ADDENDUM_WORKFLOW_AUTOMATION.md](NPR2026_ADDENDUM_WORKFLOW_AUTOMATION.md) | 先行 |
 
-追補は学会・カンファレンス由来ではなく、2026年にVRChatコミュニティで実際に話題になった表現の調査結果。
+VRChatコミュニティ追補は、学会・カンファレンス由来ではなく2026年に実際に話題になった表現の調査結果。
 Fake Shadow（前髪の落ち影）と See Through Hair 相当のステンシル運用が未対応であることが判明したため、
 既存シェーダーへの新キーワード追加を伴わない Stage A' として分離している。
+
+ワークフロー追補は表現機能とは独立で、**P1 のような13ファイル同期を伴う作業より前に
+入れておくほうが安全なもの**（変種間パリティ検査など）を含む。
 
 ---
 
