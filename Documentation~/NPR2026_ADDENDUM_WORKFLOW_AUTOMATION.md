@@ -108,6 +108,11 @@ Tests/CI/
    という状態は検出できない（`_SDF_MAP` は両パスに必要）
 2. **変種横断の意図的な差分と事故の区別** — 「Lite には入れない」は正しい設計だが、
    「入れるつもりで忘れた」と区別する宣言がレジストリ側に無い
+3. **逆方向 — `Properties` の `[Toggle(KEYWORD)]` が立てるキーワードを、どのパスもコンパイルしていない**
+   状態。監査は「`#pragma` にあるがレジストリ未登録」の方向しか見ていない。
+   [P8](NPR2026_P8_DISSOLVE_AUTHORING.md) の調査で `_DISSOLVE_MASK`（`_UseDissolveMask`）と
+   `_AUDIOLINK_DISSOLVE`（`_AudioLinkDissolve`）の2件が**実際にこの状態で見つかっている**。
+   死んだキーワードがマテリアルに書き込まれ、インスペクタのトグルが何も変えない状態になる
 
 ### 提案
 
@@ -115,6 +120,7 @@ Pure C# のテストとして `Tests/Editor/NataneShaderVariantParityTests.cs` �
 
 - 全 `.shader`（本体 + Variants = 13ファイル）× パス × キーワードの**行列**を構築
 - 期待値を `NataneShaderFeatureRegistry` の scope 宣言から導出
+- `Properties` の `[Toggle(KEYWORD)]` を抽出し、**そのキーワードを compile するパスが1つも無い**ものを検出
 - 差分があれば「どのファイルのどのパスに何が無いか」を列挙して失敗させる
 - **意図的な除外はレジストリに明示的に書く**（`ExcludedShaders` のような宣言）ことを強制し、
   暗黙の欠落を許さない
@@ -343,3 +349,4 @@ CIの `static` ジョブでも同じスクリプトを実行し、フック未�
 | git hooks | サンプル以外未導入 |
 | Shader Update Audit の検出項目 | `unknownKeywords` / `missingTargetShaders` / `missingProperties` / `unparseableItems` |
 | 監査のパス単位検査 | 未対応（`PassNames` は抽出するがキーワードはシェーダー単位で集約） |
+| `[Toggle(KEYWORD)]` が未コンパイルの実例 | `_DISSOLVE_MASK` / `_AUDIOLINK_DISSOLVE` の2件（[P8](NPR2026_P8_DISSOLVE_AUTHORING.md) 参照） |
