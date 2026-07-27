@@ -7,6 +7,17 @@
 - 対象スコープ: **Stage A（P2 + P5）／ P1 Shadow Shape Rig ／ P3 撮影模倣ScreenFX**
 - 対象外: P4 Toon Standard相互運用（今回は見送り）、ニューラルシェーディング系（後述）
 
+## 個別仕様書
+
+実装レベルの詳細は以下に分割して記載している。
+
+| 項目 | 仕様書 | Stage |
+|---|---|---|
+| P1 Shadow Shape Rig | [NPR2026_P1_SHADOW_SHAPE_RIG.md](NPR2026_P1_SHADOW_SHAPE_RIG.md) | B |
+| P2 顔SDF影マップベイク | [NPR2026_P2_FACE_SDF_BAKE.md](NPR2026_P2_FACE_SDF_BAKE.md) | A |
+| P3 撮影模倣 ScreenFX | [NPR2026_P3_SCREENFX_CINEMATIC.md](NPR2026_P3_SCREENFX_CINEMATIC.md) | C |
+| P5 ハッチングTAM生成 | [NPR2026_P5_HATCHING_TAM_GENERATOR.md](NPR2026_P5_HATCHING_TAM_GENERATOR.md) | A |
+
 ---
 
 ## 1. 調査結果サマリ
@@ -38,6 +49,8 @@ VRChatアバターは runtime script / compute が使えず、Quest系にテン�
 
 ### P1. Shadow Shape Rig（影の形のアートディレクション）
 
+詳細: [NPR2026_P1_SHADOW_SHAPE_RIG.md](NPR2026_P1_SHADOW_SHAPE_RIG.md)
+
 **動機**
 Shading Rig (ACM TOG) や CEDEC系の「影の形を作画としてディレクションする」潮流に対し、
 本パッケージは `_SHAPED_HIGHLIGHT`（ハイライト側）しか持たず、**影側の形状制御が存在しない**。
@@ -48,7 +61,7 @@ Shading Rig (ACM TOG) や CEDEC系の「影の形を作画としてディレク�
 - 楕円プリミティブ（rig）を4スロット。各スロットが `ndotl - border` を局所的にバイアスし、
   影境界を「膨らませる／へこませる」
 - 座標系: UV。`_FACE_ORTHO` 有効時は正射投影空間を優先（顔での安定性確保）
-- ライト方向追従: `_ShadowRigLightFollow` で rig 中心を移動・回転（Shading Rig の動的追従に相当）
+- ライト方向追従: スロットごとの Light Follow と `_ShadowRigFollowScale` で rig 中心を移動（Shading Rig の動的追従に相当）
 - **テクスチャ不要・Uniform分岐のみ** → Core収録可、Quest可
 
 **1スロットのパラメータ**
@@ -88,6 +101,8 @@ rigスロット（Center / Size / Rotation）へ自動フィットする「マ�
 
 ### P2. 顔SDF影マップの本格ベイク（Stage A・自動生成）
 
+詳細: [NPR2026_P2_FACE_SDF_BAKE.md](NPR2026_P2_FACE_SDF_BAKE.md)
+
 **動機 — 既存実装の意味的な不整合**
 `Editor/NataneToon/GUI/NataneToonSdfAutoGenerator.cs` は
 `BuildMask()` → `BuildSignedDistanceField()` の順で、**マスクの符号付き距離場**を生成している。
@@ -103,7 +118,7 @@ float threshold = FdotL * 0.5 + 0.5 + _SDFOffset;   // NataneToonLighting.hlsl:5
 **仕様**
 1. 顔メッシュを正面正射投影で UV ベイク（既存 `MapGen_UVBake.compute` を流用）
 2. 水平ライト角を 0°→180° まで N ステップ（既定64、最大180）スイープ
-3. 各画素が影に入る**最小角**を記録 → `angle / 180` で正規化して R チャンネルへ
+3. 各画素が影に入る**最小角** θt を記録 → `s = (1 - cos θt) / 2` として R チャンネルへ
 4. 左右対称前提で 0.5 を境にミラー（`_FACE_SDF_ROTATION` の左右反転UVと整合させる）
 5. 境界整形に既存 `MapGen_Dilation.compute` / `MapGen_GaussianBlur.compute` を流用
 6. `_SDFMap` へ割当 → `_FACE_SDF_ROTATION` を自動ON → `_SDFOffset` / `_SDFSoftness` に推奨値
@@ -118,11 +133,15 @@ float threshold = FdotL * 0.5 + 0.5 + _SDFOffset;   // NataneToonLighting.hlsl:5
 **注意**: `Editor/MapGenerator/` は独立asmdef（`MapGenerator.Editor`）で `NataneToon.Editor` を参照しない。
 共有ヘルパー（`NataneEditorCompat` 等）は使えないため、バージョン分岐はインライン `#if UNITY_2022_2_OR_NEWER` で書く。
 
-**シェーダー変更ゼロ** → リスク最小。既存の不整合修正も兼ねるため単体で価値がある。
+**シェーダー変更は閾値式1行のみ**（`NataneToonLighting.hlsl:564` の `FdotL` の符号）。
+仕様書で導出しているとおり、現行式では正面ライトでほぼ全面が影になる符号反転がある。
+新キーワードもバリアント同期も不要なためリスクは小さい。破壊的変更として CHANGELOG に記録する。
 
 ---
 
 ### P3. アニメ撮影模倣ポストプリセット（ScreenFX拡張）
+
+詳細: [NPR2026_P3_SCREENFX_CINEMATIC.md](NPR2026_P3_SCREENFX_CINEMATIC.md)
 
 **動機**
 『マギアエクセドラ』CEDEC2025（Bloom / Gradation / DoF / **色収差を画面周囲のみ** / モノクロ＋放射ブラー）、
@@ -148,24 +167,25 @@ Vignette / Grain / Scanline / Posterize / ChromaticAberration / Edge / Tint / Co
 
 ---
 
-### P5. トーン／ハッチング素材のプロシージャル生成（Stage A・自動生成）
+### P5. ハッチングTAM／水彩素材のプロシージャル生成（Stage A・自動生成）
+
+詳細: [NPR2026_P5_HATCHING_TAM_GENERATOR.md](NPR2026_P5_HATCHING_TAM_GENERATOR.md)
 
 **動機**
-`_SCREEN_TONE` / `_HALFTONE_SHADOW` / `_HATCHING` / `_WATERCOLOR` は実装済みだが、
-**対応する素材生成ツールが存在しない**（現状の生成器は `DissolvePatternGenerator` のみ）。
-ユーザーは素材を自前で用意する必要があり、機能が使われにくい。
+`_HATCHING` は `_HatchTex0`（RGBA=L1-4）/ `_HatchTex1`（RG=L5-6）の**6段Tonal Art Map**を要求するが、
+どちらも既定値が `"white"` のため、素材を自前で用意しない限り機能をONにしても**何も起きない**。
+`_WATERCOLOR` の `_WCGranulationTex` / `_WCPaperTex` も同様。
+リポジトリ内の生成器は `DissolvePatternGenerator`（ノイズのみ）だけ。
 
 **仕様** — `Editor/NataneToon/Tools/HatchingToneGenerator.cs`（新規）
 
-| 生成物 | パラメータ |
+| 生成物 | 内容 |
 |---|---|
-| 網点（スクリーントーン） | 線数(LPI) / 角度 / ドット形状（円・楕円・線・クロス） / 濃度 |
-| ハッチングTAM | 4段階の Tonal Art Map。mip間で線密度の一貫性を保ち、縮小時に潰れない生成 |
-| 紙目 / 水彩グレイン | 粒子スケール / コントラスト / 繊維方向 |
+| ハッチング6段TAM | 明るい段の線を暗い段が必ず含む**累積生成**（段境界でのちらつき防止）。ミップ一貫性を明示的に扱う |
+| 水彩の粒状感 / 紙目 | 粒子スケール / コントラスト / 繊維方向・異方性。平均0.5へ正規化（ON時に明度が変わらないように） |
 
-- `NataneTextureStudioWindow.cs` の「生成ツール」タブへ登録（既存4ツールと同じ作法）
-- 生成後に対応プロパティ（`_ScreenToneTex` / `_HatchingTex` / `_WatercolorTex` 等）へ自動割当＋キーワードON
-- TAM は NPR の定番課題であるミップ一貫性を明示的に扱う（単純縮小では階調が破綻する）
+**網点（`_SCREEN_TONE` / `_HALFTONE_SHADOW`）はプロシージャル実装で
+パターンテクスチャを取らないため対象外**。取るのは適用範囲マスクのみで、それは Mask Painter の担当。
 
 ---
 
@@ -173,11 +193,11 @@ Vignette / Grain / Scanline / Posterize / ChromaticAberration / Edge / Tint / Co
 
 | Stage | 内容 | シェーダー変更 | 競合リスク |
 |---|---|---|---|
-| **A** | P2（顔SDFベイク）→ P5（トーン/ハッチング生成） | なし | 低 |
+| **A** | P2（顔SDFベイク）→ P5（ハッチングTAM生成） | P2の閾値式1行のみ | 低 |
 | **B** | P1（Shadow Shape Rig） | 13ファイル同期 + GUI登録 | 中（GUI / Fragment.hlsl は競合しやすい） |
 | **C** | P3（撮影模倣ScreenFX） | ScreenFXのみ | 低 |
 
-Stage A から着手する。シェーダー無改変で完結し、既存の不整合修正も含むため単体でマージ可能。
+Stage A から着手する。新キーワード追加やバリアント同期を伴わず、既存の不整合修正も含むため単体でマージ可能。
 
 ---
 
