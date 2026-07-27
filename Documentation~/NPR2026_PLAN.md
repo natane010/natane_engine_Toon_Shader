@@ -5,7 +5,7 @@
 
 - ブランチ: `feature/develop/npr2026`（ベース: `develop` @ `6323794` / v1.6.5）
 - 対象スコープ: **Stage A（P2 + P5）／ P1 Shadow Shape Rig ／ P3 撮影模倣ScreenFX**
-  + 追補として Stage A'（P6 / P7 / P8）とワークフロー整備（W1〜W10）
+  + 追補として Stage A'（P6 / P7 / P8）、背景表現 Stage B'（P9〜P12）、ワークフロー整備（W1〜W10）
 - 対象外: P4 Toon Standard相互運用（今回は見送り）、ニューラルシェーディング系（後述）
 
 ## 個別仕様書
@@ -20,13 +20,17 @@
 | P5 ハッチングTAM生成 | [NPR2026_P5_HATCHING_TAM_GENERATOR.md](NPR2026_P5_HATCHING_TAM_GENERATOR.md) | A |
 | P8 ディゾルブのオーサリング（+ F2〜F4 修正） | [NPR2026_P8_DISSOLVE_AUTHORING.md](NPR2026_P8_DISSOLVE_AUTHORING.md) | A' |
 | 追補: VRChatコミュニティ発の表現（P6 / P7 / F1） | [NPR2026_ADDENDUM_VRC_COMMUNITY.md](NPR2026_ADDENDUM_VRC_COMMUNITY.md) | A' |
+| 追補: 背景・ワールド表現（P9〜P12） | [NPR2026_ADDENDUM_BACKGROUND.md](NPR2026_ADDENDUM_BACKGROUND.md) | B' |
 | 追補: ワークフロー・自動化の未整備箇所（W1〜W10） | [NPR2026_ADDENDUM_WORKFLOW_AUTOMATION.md](NPR2026_ADDENDUM_WORKFLOW_AUTOMATION.md) | 先行 |
 
 VRChatコミュニティ追補は、学会・カンファレンス由来ではなく2026年に実際に話題になった表現の調査結果。
 Fake Shadow（前髪の落ち影）と See Through Hair 相当のステンシル運用が未対応であることが判明したため、
 既存シェーダーへの新キーワード追加を伴わない Stage A' として分離している。
 
-ワークフロー追補は表現機能とは独立で、**P1 のような13ファイル同期を伴う作業より前に
+背景追補は背景・ワールド側の調査結果。**実装済みの絵画調機能（水彩・クワハラ・色数削減など）が
+Background バリアントにだけ載っていない**という構造的な欠けが中心で、新規実装が要らないものが多い。
+
+ワークフロー追補は表現機能とは独立で、**P1 / P9 / P10 のようにシェーダーファイル構成を触る作業より前に
 入れておくほうが安全なもの**（変種間パリティ検査など）を含む。
 
 ---
@@ -252,6 +256,7 @@ F3 / F4 のような「`Properties` の `[Toggle(KEYWORD)]` が立てるキー�
 | **B** | P1（Shadow Shape Rig） | 13ファイル同期 + GUI登録 | 中（GUI / Fragment.hlsl は競合しやすい） |
 | **C** | P3（撮影模倣ScreenFX） | ScreenFXのみ | 低 |
 | **A'** | P6 / P7（[VRChat追補](NPR2026_ADDENDUM_VRC_COMMUNITY.md)）→ P8（ディゾルブ） | P8のF2〜F4のみ（新キーワードなし） | 低 |
+| **B'** | P9 / P10（[背景追補](NPR2026_ADDENDUM_BACKGROUND.md)）→ P11 / P12 | Background への機能展開とバリアント2本追加 | 中（W3 を先に入れる前提） |
 
 Stage A から着手する。新キーワード追加やバリアント同期を伴わず、既存の不整合修正も含むため単体でマージ可能。
 
