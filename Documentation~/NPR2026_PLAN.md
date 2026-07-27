@@ -17,6 +17,11 @@
 | P2 顔SDF影マップベイク | [NPR2026_P2_FACE_SDF_BAKE.md](NPR2026_P2_FACE_SDF_BAKE.md) | A |
 | P3 撮影模倣 ScreenFX | [NPR2026_P3_SCREENFX_CINEMATIC.md](NPR2026_P3_SCREENFX_CINEMATIC.md) | C |
 | P5 ハッチングTAM生成 | [NPR2026_P5_HATCHING_TAM_GENERATOR.md](NPR2026_P5_HATCHING_TAM_GENERATOR.md) | A |
+| 追補: VRChatコミュニティ発の表現（P6 / P7 / F1） | [NPR2026_ADDENDUM_VRC_COMMUNITY.md](NPR2026_ADDENDUM_VRC_COMMUNITY.md) | A' |
+
+追補は学会・カンファレンス由来ではなく、2026年にVRChatコミュニティで実際に話題になった表現の調査結果。
+Fake Shadow（前髪の落ち影）と See Through Hair 相当のステンシル運用が未対応であることが判明したため、
+既存シェーダーへの新キーワード追加を伴わない Stage A' として分離している。
 
 ---
 
