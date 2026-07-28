@@ -3696,11 +3696,76 @@ public class NataneToonShaderGUI : ShaderGUI
                     MessageType.Warning);
 
                 EditorGUILayout.Space(SECTION_SPACING);
+                EditorGUILayout.LabelField(L("生成方式", "Method"), EditorStyles.boldLabel);
+                DrawProperty("_FurMethod", L("ファーの方式", "Fur Method"));
+
+                // 方式ごとに要点が違うので、選んだものだけ説明する。
+                // 両立てにすると「どちらを見ればよいか」が分からなくなる。
+                int furMethod = targetMaterial.HasProperty("_FurMethod")
+                    ? Mathf.RoundToInt(targetMaterial.GetFloat("_FurMethod"))
+                    : 0;
+
+                if (furMethod == 0)
+                {
+                    EditorGUILayout.HelpBox(
+                        L("シェル法: 法線方向にずらした殻を16枚重ねます。\n" +
+                          "面を正面から見たときの毛並みは得意ですが、\n" +
+                          "輪郭（真横から見た毛）は殻を横から見ることになり薄くなります。",
+                          "Shell: 16 offset copies of the surface. Good looking straight at a\n" +
+                          "surface, thin at the silhouette where you look along the shells."),
+                        MessageType.None);
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox(
+                        L("フィン法はジオメトリシェーダーを使うため PC 専用です。\n" +
+                          "Quest（および対応していない環境）ではフィンのパスが丸ごと省かれ、\n" +
+                          "シェル法だけの見た目になります。\n" +
+                          "また「フィンのみ」にしてもシェル16パスの描画コール自体は残ります\n" +
+                          "（ビルトインRPではマテリアル値でパスを止められないため、\n" +
+                          "　ピクセルは出ませんが描画コールは消えません）。",
+                          "Fin uses a geometry shader and is PC only. On Quest (and any platform\n" +
+                          "without geometry shader support) the fin pass is skipped entirely and\n" +
+                          "you get the shell look. Choosing Fin only still issues the 16 shell\n" +
+                          "draw calls — Built-in RP cannot switch a pass off from a material\n" +
+                          "value — but they produce no pixels."),
+                        MessageType.Warning);
+
+                    EditorGUILayout.Space(SECTION_SPACING);
+                    EditorGUILayout.LabelField(L("フィン設定", "Fin Settings"), EditorStyles.boldLabel);
+                    DrawProperty("_FurFinViewThreshold", L("生成する視線角度のしきい値", "View Threshold"));
+                    DrawProperty("_FurFinJoints", L("関節数（毛のしなり）", "Joints (bend)"));
+                    DrawProperty("_FurFinNormalBlend", L("フィン法線の混合比", "Fin Normal Blend"));
+                    DrawProperty("_FurFinRandomDir", L("生える向きのランダム性", "Direction Randomness"));
+                    EditorGUILayout.HelpBox(
+                        L("フィンはポリゴンの辺 1 本につき 1 枚立ちます。\n" +
+                          "毛が足りない場合はメッシュのポリゴン数を増やしてください。\n" +
+                          "しきい値を下げるほど輪郭付近だけに絞られ、負荷が下がります。",
+                          "One fin per triangle edge, so fin count follows mesh density —\n" +
+                          "subdivide the mesh if the coat looks sparse. Lowering the threshold\n" +
+                          "restricts fins to the silhouette and costs less."),
+                        MessageType.None);
+                }
+
+                EditorGUILayout.Space(SECTION_SPACING);
                 EditorGUILayout.LabelField(L("基本設定", "Basic Settings"), EditorStyles.boldLabel);
                 DrawProperty("_FurLength", L("ファーの長さ", "Fur Length"));
                 DrawProperty("_FurDensity", L("ファー密度", "Fur Density"));
-                DrawProperty("_FurAlphaCutoff", L("アルファカットオフ", "Alpha Cutoff"));
-                DrawProperty("_FurNoiseTex", L("ノイズテクスチャ", "Noise Texture"));
+                DrawProperty("_FurAlphaCutoff", L("毛の細さ（アルファカットオフ）", "Strand Thinness (Alpha Cutoff)"));
+                DrawProperty("_FurFluff", L("モフモフ感（毛の散らばり）", "Fluffiness (strand spread)"));
+                DrawProperty("_FurRootOffset", L("根元の詰まり", "Root Offset"));
+                DrawProperty("_FurUseNoiseTex", L("ノイズテクスチャを使う", "Use Noise Texture"));
+                DrawProperty("_FurNoiseTex", L("ノイズテクスチャ（毛の長さ）", "Noise Texture (strand length)"));
+                EditorGUILayout.HelpBox(
+                    L("毛の形は「毛の長さの場」を層の高さで切り出して作ります。\n" +
+                      "ノイズテクスチャを割り当てて上のトグルを ON にすると、その明るさが\n" +
+                      "そのまま毛の長さになります（明るいほど長い。lilToon の Noise と同じ考え方）。\n" +
+                      "OFF のときは同等の模様をシェーダー内で生成します。",
+                      "The coat is a height field of strand lengths, sliced by the layer height.\n" +
+                      "Assign a noise texture and turn the toggle on to drive the lengths from it —\n" +
+                      "brighter is longer, the same idea as lilToon's Noise. With the toggle off an\n" +
+                      "equivalent pattern is generated in the shader."),
+                    MessageType.None);
                 DrawProperty("_FurMask", L("ファーマスク", "Fur Mask"));
 
                 EditorGUILayout.Space(SECTION_SPACING);
@@ -3729,14 +3794,22 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_FurLODMinLayers", L("最小レイヤー数", "Minimum Layers"));
 
                 DrawHelpToggle("Fur",
-                    L("ファー（シェルベース毛皮）:\n\n" +
-                    "メッシュを法線方向に複数レイヤーで押し出し、\n" +
-                    "ノイズテクスチャでアルファカットオフすることで\n" +
-                    "毛皮の外見を再現します。\n\n" +
+                    L("ファー（毛皮）:\n\n" +
+                    "【生成方式】\n" +
+                    "・シェル法: 法線方向にずらした殻を16枚重ねる。\n" +
+                    "　面を正面から見るときに強く、輪郭では薄くなる。\n" +
+                    "・フィン法: ポリゴンの辺に毛の板を立てる。\n" +
+                    "　輪郭に強く、面を真上から見ると板が見える。\n" +
+                    "　ジオメトリシェーダーを使うため PC 専用。\n" +
+                    "・シェル＋フィン: 互いの弱点を補う。負荷は最大。\n" +
+                    "どちらの方式も同じ毛の分布を参照するため、\n" +
+                    "併用しても毛並みがずれません。\n\n" +
                     "【基本設定】\n" +
                     "・ファーの長さ: 毛の長さ（0.01〜0.05推奨）\n" +
-                    "・ファー密度: ノイズテクスチャのタイリング\n" +
-                    "・アルファカットオフ: 低い値=密な毛、高い値=まばらな毛\n" +
+                    "・ファー密度: 毛の本数。細かくしたいほど上げる\n" +
+                    "・アルファカットオフ: 低い値=太い毛、高い値=細い毛\n" +
+                    "・モフモフ感: 毛が上へ向かって散らばる量。\n" +
+                    "　0 だと毛が真っ直ぐ立ち、ビロードや刷毛のように見える\n" +
                     "・ノイズテクスチャ: 毛の分布パターン\n" +
                     "・ファーマスク: 白=毛あり、黒=毛なし\n\n" +
                     "【カラー】\n" +
@@ -3755,14 +3828,22 @@ public class NataneToonShaderGUI : ShaderGUI
                     "※ 描画タイプを「ファー」に設定してください。\n" +
                     "※ ファーは16シェルパスを使用し、GPUに高負荷です。\n" +
                     "※ VRChat Questでは使用しないでください。",
-                    "Fur (Shell-Based Fur):\n\n" +
-                    "Extrudes mesh in normal direction across multiple layers,\n" +
-                    "using noise texture alpha cutoff to reproduce\n" +
-                    "the appearance of fur.\n\n" +
+                    "Fur:\n\n" +
+                    "[Method]\n" +
+                    "- Shell: 16 offset copies of the surface. Strong head-on,\n" +
+                    "  thin at the silhouette.\n" +
+                    "- Fin: cards standing on triangle edges. Strong at the\n" +
+                    "  silhouette, visible as sheets head-on. PC only\n" +
+                    "  (geometry shader).\n" +
+                    "- Shell and Fin: covers both cases, costs the most.\n" +
+                    "Both methods read the same strand field, so the coat\n" +
+                    "matches when they are combined.\n\n" +
                     "[Basic Settings]\n" +
                     "- Fur Length: Hair length (0.01-0.05 recommended)\n" +
-                    "- Fur Density: Noise texture tiling\n" +
-                    "- Alpha Cutoff: Low=dense fur, High=sparse fur\n" +
+                    "- Fur Density: Strand count; raise it for finer fur\n" +
+                    "- Alpha Cutoff: Low=thick strands, High=thin strands\n" +
+                    "- Fluffiness: How far strands drift apart going up.\n" +
+                    "  At 0 they stand straight and read as velvet\n" +
                     "- Noise Texture: Fur distribution pattern\n" +
                     "- Fur Mask: White=fur, Black=no fur\n\n" +
                     "[Color]\n" +
@@ -4231,7 +4312,19 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_HatchingTiling", L("タイリング", "Tiling"));
                 DrawProperty("_HatchingColor", L("ハッチング色", "Hatching Color"));
                 DrawProperty("_HatchingBlend", L("ブレンド", "Blend"));
+                DrawProperty("_HatchingComposite", L("合成方法", "Composite"));
                 DrawProperty("_HatchingMask", L("マスク", "Mask"));
+                EditorGUILayout.HelpBox(
+                    L("TAM は本来「面の全部を線で描く」手法なので、既定（全体）では\n" +
+                      "明暗にかかわらず階調どおりに線が乗ります。\n" +
+                      "アニメ寄りの絵で影の中だけに線を落としたい場合は「影のみ」を選んでください。\n" +
+                      "階調はライティング（影＝濃い / 明部＝薄い）で決まります。\n" +
+                      "テクスチャの色の暗さでは濃くなりません。",
+                      "A TAM draws the whole surface in strokes, so the default (All) puts strokes\n" +
+                      "everywhere at the density the tone calls for. Pick ShadowOnly for the anime\n" +
+                      "look where hatching only appears inside shadow.\n" +
+                      "The tone comes from the lighting, not from how dark the texture is."),
+                    MessageType.None);
                 DrawHelpToggle("Hatching",
                     L("✏️ ハッチング (Tonal Art Maps):\n" +
                       "明暗に応じて斜線パターンを適用し、鉛筆画・エッチング風のシェーディングを表現します。\n" +
@@ -5118,8 +5211,15 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_DissolveEdgeIntensity", L("エッジの強さ", "Edge Intensity"));
 
                 EditorGUILayout.Space();
-                DrawProperty("_DissolveMask", L("ディゾルブマスク", "Dissolve Mask"));
-                DrawHelpToggle("DissolveMask", L("白 = ディゾルブあり、黒 = ディゾルブなし", "White = Dissolve on, Black = Dissolve off"), MessageType.Info);
+                // マスクは Uniform 分岐（キーワードではない）。OFF のときはサンプル自体を行わない。
+                DrawProperty("_UseDissolveMask", L("ディゾルブマスクを使う", "Use Dissolve Mask"));
+                if (FindProperty("_UseDissolveMask", properties).floatValue >= 0.5f)
+                {
+                    EditorGUI.indentLevel++;
+                    DrawProperty("_DissolveMask", L("ディゾルブマスク", "Dissolve Mask"));
+                    DrawHelpToggle("DissolveMask", L("白 = ディゾルブあり、黒 = ディゾルブなし", "White = Dissolve on, Black = Dissolve off"), MessageType.Info);
+                    EditorGUI.indentLevel--;
+                }
 
                 DrawHelpToggle("DissolveInfo", L("ディゾルブはVRChatアバターの出現アニメーションに最適な消滅・分解エフェクトを作成します。ディゾルブ量パラメータをアニメーションさせることで、オブジェクトを出現または消滅させることができます。", "Dissolve creates vanishing/disintegrating effects ideal for VRChat avatar appearance animations. Animate the dissolve amount parameter to make objects appear or disappear."), MessageType.Info);
 
@@ -6280,8 +6380,22 @@ public class NataneToonShaderGUI : ShaderGUI
 
                 EditorGUILayout.Space(3);
                 EditorGUILayout.LabelField(L("ディゾルブ連動", "Dissolve Linked"), EditorStyles.boldLabel);
-                DrawProperty("_AudioLinkDissolveBand", L("周波数帯域", "Frequency Band"));
-                DrawProperty("_AudioLinkDissolveIntensity", L("ディゾルブ強度", "Dissolve Intensity"));
+                // トグルは Uniform 分岐で実際に効く（従来は宣言のみで何も変わらなかった）。
+                DrawProperty("_AudioLinkDissolve", L("ディゾルブ連動を有効化", "Enable Dissolve Link"));
+                if (FindProperty("_AudioLinkDissolve", properties).floatValue >= 0.5f)
+                {
+                    EditorGUI.indentLevel++;
+                    DrawProperty("_AudioLinkDissolveBand", L("周波数帯域", "Frequency Band"));
+                    DrawProperty("_AudioLinkDissolveIntensity", L("ディゾルブ強度", "Dissolve Intensity"));
+                    EditorGUI.indentLevel--;
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox(
+                        L("ディゾルブ本体（_DISSOLVE）も有効にする必要があります。",
+                          "The Dissolve feature (_DISSOLVE) must also be enabled."),
+                        MessageType.None);
+                }
 
                 EditorGUILayout.Space(3);
                 EditorGUILayout.LabelField(L("アウトライン連動", "Outline Linked"), EditorStyles.boldLabel);
@@ -7511,17 +7625,129 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_HalftoneShadowLevels", L("トーンの号数（段階数）", "Tone Levels"),
                     "影の濃さをこの段数に量子化します。1 で連続（従来動作）。",
                     "Quantizes shadow depth into this many tone steps. 1 keeps it continuous (previous behavior).");
+                DrawProperty("_HalftoneShadowDensitySource", L("濃度の基準", "Density Source"),
+                    "連続＝トゥーンの階調を通す前の滑らかな陰影を基準にします（既定・推奨）。" +
+                    "トゥーン量子化後＝セルの階調そのものを基準にします。",
+                    "Continuous uses the smooth shading from before toon quantization (default, recommended). " +
+                    "Toon Quantized follows the cel steps themselves.");
+                if (Mathf.RoundToInt(GetPropFloat("_HalftoneShadowDensitySource")) != 0)
+                {
+                    DrawProperty("_HalftoneShadowCastShadow", L("落ち影を網点にする量", "Cast Shadow Influence"),
+                        "1 で落ち影の中も濃いトーンになります。0 にすると落ち影を無視し、" +
+                        "陰影（N·L）だけで濃度が決まります。",
+                        "At 1 the cast shadow area also gets a darker tone. At 0 cast shadows are ignored and " +
+                        "only the N-dot-L shading drives the density.");
+                }
+
+                DrawHelpToggle("HalftoneDensitySource",
+                    L("漫画のトーンは面の丸みに沿って号数を選ぶものなので、基準は滑らかな陰影であるべきです。\n" +
+                      "「トゥーン量子化後」にすると濃度が階調数ぶんしか取れません。" +
+                      "階調数 2 の既定では網点も 2 段階しか出ず、白と黒が切り替わるだけになります。\n" +
+                      "PBR モードを使っていなくても連続値は常に計算されています。",
+                      "Manga tone grades follow the roundness of the form, so the source should be the smooth shading.\n" +
+                      "Toon Quantized limits the density to the number of cel steps — with the default 2 steps the " +
+                      "halftone only has 2 states and simply flips between white and black.\n" +
+                      "The continuous value is always computed, even when PBR mode is off."),
+                    MessageType.Info);
                 DrawProperty("_HalftoneShadowSpace", L("座標空間", "Space"),
                     "スクリーンはカメラを動かすと模様が滑ります。面に貼り付けたいならワールド／UV／オブジェクト。",
                     "Screen space swims as the camera moves. Use World / UV / Object to stick the pattern to surfaces.");
 
-                // 空間によってスケールの意味が変わるので、効くスライダーだけ出す。
+                // 空間によって大きさの決め方が違うので、効くスライダーだけ出す。
                 // 両方出すと「どちらを動かしても変わらない」状態になり分かりにくい。
-                if (Mathf.RoundToInt(GetPropFloat("_HalftoneShadowSpace")) != 0)
+                bool htScreenSpace = Mathf.RoundToInt(GetPropFloat("_HalftoneShadowSpace")) == 0;
+
+                if (htScreenSpace)
                 {
-                    DrawProperty("_HalftoneShadowSurfaceDensity", L("面あたりの密度", "Surface Density"),
-                        "1メートル（またはUV1つ）あたりの網点の数です。",
-                        "Number of tone cells per world unit (or per UV unit).");
+                    DrawProperty("_HalftoneShadowScreenAnchor", L("オブジェクトに貼り付ける", "Anchor To Object"));
+                    bool htAnchored = GetPropFloat("_HalftoneShadowScreenAnchor") >= 0.5f;
+
+                    if (htAnchored)
+                    {
+                        EditorGUI.indentLevel++;
+                        DrawProperty("_HalftoneShadowSurfaceDensity", L("ワールド1mあたりのセル数", "Cells Per World Unit"),
+                            "大きいほど網点が細かくなります。近づくと点が大きく、離れると小さくなります。",
+                            "Larger means finer dots. Dots grow as you approach and shrink as you move away.");
+                        EditorGUI.indentLevel--;
+
+                        DrawHelpToggle("HalftoneScreenAnchor",
+                            L("グリッドの原点をオブジェクトのスクリーン座標に置き、" +
+                              "セルの大きさを距離に反比例させます。\n" +
+                              "透視投影では画面上のオフセットも距離に反比例して伸びるので、" +
+                              "両者が打ち消し合い、模様は面に貼り付いたまま動きません。" +
+                              "それでいて近づけば点は大きくなります。\n" +
+                              "UV も三平面投影も使わないため、UV の継ぎ目で模様が破綻しません。",
+                              "Places the grid origin at the object's screen position and scales the cell size " +
+                              "inversely with distance.\n" +
+                              "Under perspective the on-screen offset also scales inversely with distance, so " +
+                              "the two cancel: the pattern stays stuck to the surface while the dots still grow " +
+                              "as you approach.\n" +
+                              "It uses neither UVs nor triplanar projection, so UV seams cannot break it."),
+                            MessageType.Info);
+                    }
+                    else
+                    {
+                        EditorGUI.indentLevel++;
+                        DrawProperty("_HalftoneShadowScale", L("セルの大きさ（画面px）", "Cell Size (screen px)"),
+                            "網点1つぶんの画面上のピクセル数です。小さいほど細かくなります。",
+                            "Screen pixels per tone cell. Smaller means finer.");
+                        EditorGUI.indentLevel--;
+
+                        DrawHelpToggle("HalftoneScreenSwim",
+                            L("紙に貼ったトーンと同じで、画面に対して固定されます。" +
+                              "奥行きに関係なく大きさは一定ですが、カメラを動かすと" +
+                              "模様の上をオブジェクトが滑ります（泳ぎ）。\n" +
+                              "泳ぎを止めたい場合は「オブジェクトに貼り付ける」を有効にしてください。",
+                              "Fixed to the screen, like a tone sheet on paper. The size is constant regardless " +
+                              "of depth, but the object slides under the pattern as the camera moves " +
+                              "(swimming).\n" +
+                              "Enable \"Anchor To Object\" to stop the swimming."),
+                            MessageType.Info);
+                    }
+                }
+                else
+                {
+                    DrawProperty("_HalftoneShadowScreenLock", L("画面上の大きさを保つ", "Keep Screen Size"));
+                    bool htScreenLock = GetPropFloat("_HalftoneShadowScreenLock") >= 0.5f;
+
+                    if (htScreenLock)
+                    {
+                        EditorGUI.indentLevel++;
+                        DrawProperty("_HalftoneShadowScale", L("セルの大きさ（画面px）", "Cell Size (screen px)"),
+                            "網点1つぶんの画面上のピクセル数です。小さいほど細かくなります。",
+                            "Screen pixels per tone cell. Smaller means finer.");
+                        EditorGUI.indentLevel--;
+
+                        DrawHelpToggle("HalftoneScreenLock",
+                            L("面に貼り付けたまま、画面上の大きさを一定に保ちます。" +
+                              "カメラを動かしても模様は面から動かず、近づいても点が大きくなりません。\n" +
+                              "距離に応じて密度を 2 のべき乗で切り替えることで実現しています。" +
+                              "段が切り替わる距離で点の細かさが一段変わりますが、段の間は完全に固定です。\n" +
+                              "距離はオブジェクト原点で測るため、1 つのメッシュの中で密度が割れることはありません。",
+                              "Keeps the pattern stuck to the surface while holding a constant on-screen size. " +
+                              "The pattern does not slide as the camera moves, and dots do not grow as you " +
+                              "approach.\n" +
+                              "It works by switching the density in powers of two with distance. The dot " +
+                              "fineness changes one step at those distances, but stays perfectly fixed between " +
+                              "them.\n" +
+                              "Distance is measured from the object origin, so the density never splits within " +
+                              "a single mesh."),
+                            MessageType.Info);
+                    }
+                    else
+                    {
+                        DrawProperty("_HalftoneShadowSurfaceDensity", L("ワールド1mあたりのセル数", "Cells Per World Unit"),
+                            "大きいほど網点が細かくなります。ワールド／UV／オブジェクトで共通の基準なので、" +
+                            "空間を切り替えても点の大きさは変わりません。",
+                            "Larger means finer dots. World / UV / Object all use this same number, so switching " +
+                            "space does not change the dot size.");
+                        DrawHelpToggle("HalftoneUvDensity",
+                            L("UV 空間は「UV 1つ = 1メートル」として扱います。" +
+                              "実際の UV 密度はモデル依存なので、UV の張り方によっては点の大きさがずれます。",
+                              "UV space treats one UV unit as one meter. Actual UV density is model dependent, " +
+                              "so an unusual layout will shift the apparent dot size."),
+                            MessageType.None);
+                    }
                 }
 
                 EditorGUILayout.Space(SECTION_SPACING);
@@ -7991,6 +8217,9 @@ public class NataneToonShaderGUI : ShaderGUI
                 DrawProperty("_TopoEmission", L("発光強度", "Emission Strength"));
                 DrawProperty("_TopoNoiseScale", L("ノイズスケール", "Noise Scale"));
                 DrawProperty("_TopoNoiseStrength", L("ノイズ強度", "Noise Strength"));
+                DrawProperty("_TopoComposite", L("合成方法", "Composite"),
+                    "影のみ＝影の中にだけ等高線を出します。コースティクスや玉ボケと同じ選択肢です。",
+                    "ShadowOnly draws contours only inside shadowed areas. Same options as Caustics and Shadow Bokeh.");
                 DrawProperty("_TopoBlend", L("ブレンド", "Blend"));
                 DrawProperty("_TopoMask", L("マスク (R)", "Mask (R)"));
 
@@ -8195,6 +8424,9 @@ public class NataneToonShaderGUI : ShaderGUI
                 EditorGUILayout.Space(SECTION_SPACING);
                 EditorGUILayout.LabelField(L("玉の形", "Bokeh Shape"), EditorStyles.boldLabel);
                 DrawProperty("_ShadowBokehScale", L("スケール", "Scale"));
+                DrawProperty("_ShadowBokehDensity", L("玉の密度", "Density"),
+                    "低いほど粒がまばらになります。高くすると粒が重なって、まだら模様に見えます。",
+                    "Lower values scatter the spots. Raising it makes them overlap into a mottled haze.");
                 DrawProperty("_ShadowBokehSize", L("玉の大きさ", "Size"));
                 DrawProperty("_ShadowBokehSoftness", L("縁のぼけ", "Softness"));
                 DrawProperty("_ShadowBokehBlades", L("絞り羽根の枚数", "Aperture Blades"),

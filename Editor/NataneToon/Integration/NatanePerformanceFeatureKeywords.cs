@@ -40,6 +40,11 @@ namespace NataneToon.Editor
             "_FAKE_REFLECTION", "_MIRROR_TEXTURE", "_GRADIENT_BASE_COLOR", "_COLOR_QUANTIZE",
             "_CAST_SHADOW_COLOR", "_SHADOW_EDGE_NOISE",
 
+            // Shadow Shape Rig (NPR2026 P1)。マスク 1 枚と楕円 4 スロット分の
+            // 距離計算がフラグメントに乗る。未使用スロットは早期 return で軽いが、
+            // 有効化した時点で確実にコストは増える。
+            "_SHADOW_SHAPE_RIG",
+
             // 深度テクスチャを要求するため実コストが大きい。
             "_DEPTH_COLOR_FADE",
 

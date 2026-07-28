@@ -28,6 +28,11 @@ namespace NataneToon.Editor
         public const string ShadowAdjustmentWizard = "Tools/Natane/エフェクト Effects/シャドウ調整ウィザード Shadow Adjustment Wizard";
         public const string MatCapLayerComposer = "Tools/Natane/エフェクト Effects/MatCapレイヤーコンポーザー MatCap Layer Composer";
         public const string DissolvePatternGenerator = "Tools/Natane/エフェクト Effects/ディゾルブパターン生成 Dissolve Pattern Generator";
+        public const string HatchingToneGenerator = "Tools/Natane/エフェクト Effects/ハッチング・水彩素材生成 Hatching & Watercolor Generator";
+        public const string FakeShadowSetup = "Tools/Natane/エフェクト Effects/フェイクシャドウ設定 Fake Shadow Setup";
+        public const string StencilPresetTool = "Tools/Natane/エフェクト Effects/ステンシルプリセット Stencil Preset";
+        public const string DissolveStudio = "Tools/Natane/エフェクト Effects/ディゾルブスタジオ Dissolve Studio";
+        public const string ShadowRigFitter = "Tools/Natane/エフェクト Effects/影シェイプリグのフィット Shadow Rig Fitter";
         public const string RimLightDirectionVisualizer = "Tools/Natane/エフェクト Effects/リムライト方向ビジュアライザー Rim Light Direction Visualizer";
         public const string ScreenFXSetup = "Tools/Natane/エフェクト Effects/スクリーンエフェクト設定 Screen FX Setup";
 

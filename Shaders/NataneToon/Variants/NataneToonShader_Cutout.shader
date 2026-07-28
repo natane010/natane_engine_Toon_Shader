@@ -94,22 +94,35 @@ Shader "Natane/Toon Shader (Cutout)"
         [Header(Halftone Shadow)]
         [Toggle(_HALFTONE_SHADOW)] _HalftoneShadow ("Enable Halftone Shadow", Float) = 0
         _HalftoneShadowColor ("Halftone Color", Color) = (0, 0, 0, 1)
-        _HalftoneShadowScale ("Halftone Scale", Range(1, 200)) = 30
+        _HalftoneShadowScale ("Halftone Cell Size (screen px)", Range(1, 64)) = 6
         _HalftoneShadowThreshold ("Shadow Threshold", Range(0, 1)) = 0.5
         _HalftoneShadowSoftness ("Softness", Range(0, 0.5)) = 0.1
         _HalftoneShadowIntensity ("Intensity", Range(0, 1)) = 0.5
         _HalftoneShadowBlend ("Blend", Range(0, 1)) = 1
 
         // Halftone Shadow - 漫画表現の拡張
-        _HalftoneShadowSurfaceDensity ("Halftone Surface Density", Range(0.1, 40)) = 8
+        _HalftoneShadowSurfaceDensity ("Halftone Cells Per World Unit", Range(1, 200)) = 40
 
         // Halftone Shadow - 漫画表現の拡張
         [Enum(Dot,0,Line,1,CrossHatch,2)] _HalftoneShadowPattern ("Halftone Pattern", Float) = 0
         _HalftoneShadowAngle ("Halftone Angle", Range(0, 180)) = 45
         _HalftoneShadowLevels ("Halftone Tone Levels", Range(1, 8)) = 4
-        [Enum(Screen,0,World,1,UV,2)] _HalftoneShadowSpace ("Halftone Space", Float) = 0
+        // 濃度の基準。トゥーンで量子化した後の値を使うと、濃度が階調数ぶんしか取れない。
+        // 漫画のトーンは面の丸みに沿って号数を選ぶので、既定は量子化前の連続値。
+        [Enum(Toon Quantized,0,Continuous,1)] _HalftoneShadowDensitySource ("Halftone Density Source", Float) = 1
+        // 落ち影も網点にするか。0 で落ち影を無視し、N·L の陰影だけで濃度を決める。
+        _HalftoneShadowCastShadow ("Halftone Cast Shadow Influence", Range(0, 1)) = 1
+        [Enum(Screen,0,World,1,UV,2,Object,3)] _HalftoneShadowSpace ("Halftone Space", Float) = 0
+        // 面に貼り付けたまま、画面上のセルの大きさを一定に保つ。
+        // スクリーン空間の「大きさが一定」と、面貼り付けの「泳がない」を両立させる。
+        // 距離に応じて密度を 2 のべき乗で切り替えるため、Space が Screen 以外のときだけ効く。
+        [Toggle] _HalftoneShadowScreenLock ("Halftone Keep Screen Size", Float) = 0
+        // スクリーン空間のグリッドをオブジェクトへ貼り付ける。
+        // 泳がなくなり、かつ近づくと点が大きくなる（距離に反比例したセルサイズ）。
+        // UV も三平面投影も使わないので、UV シームで模様が破綻しない。
+        [Toggle] _HalftoneShadowScreenAnchor ("Halftone Anchor To Object", Float) = 1
         _HalftoneShadowDotMin ("Halftone Dot Min", Range(0, 1)) = 0.05
-        _HalftoneShadowDotMax ("Halftone Dot Max", Range(0, 1)) = 0.9
+        _HalftoneShadowDotMax ("Halftone Dot Max", Range(0, 1)) = 0.8
         _HalftoneShadowAA ("Halftone Anti-Alias", Range(0, 3)) = 1
 
         // ===== Gradient Base Color (グラデーションベースカラー) =====
@@ -171,6 +184,20 @@ Shader "Natane/Toon Shader (Cutout)"
         [Toggle(_FACE_SDF_ROTATION)] _FaceSDFRotation ("Face SDF Rotation", Float) = 0
         _FaceForwardDirection ("Face Forward Direction", Vector) = (0,0,1,0)
         _FaceRightDirection ("Face Right Direction", Vector) = (1,0,0,0)
+        [Space(10)]
+        // Shadow Shape Rig (影の形のアートディレクション)
+        [Toggle(_SHADOW_SHAPE_RIG)] _ShadowShapeRig ("Enable Shadow Shape Rig (影シェイプリグ)", Float) = 0
+        _ShadowRigParams0 ("Rig 0 Center XY / Radius XY", Vector) = (0.5,0.5,0,0)
+        _ShadowRigShape0 ("Rig 0 Rot / Strength / Falloff / LightFollow", Vector) = (0,0,0.5,0)
+        _ShadowRigParams1 ("Rig 1 Center XY / Radius XY", Vector) = (0.5,0.5,0,0)
+        _ShadowRigShape1 ("Rig 1 Rot / Strength / Falloff / LightFollow", Vector) = (0,0,0.5,0)
+        _ShadowRigParams2 ("Rig 2 Center XY / Radius XY", Vector) = (0.5,0.5,0,0)
+        _ShadowRigShape2 ("Rig 2 Rot / Strength / Falloff / LightFollow", Vector) = (0,0,0.5,0)
+        _ShadowRigParams3 ("Rig 3 Center XY / Radius XY", Vector) = (0.5,0.5,0,0)
+        _ShadowRigShape3 ("Rig 3 Rot / Strength / Falloff / LightFollow", Vector) = (0,0,0.5,0)
+        _ShadowRigFollowScale ("Rig Light Follow Scale", Range(0, 1)) = 0.25
+        [NoScaleOffset] _ShadowRigMask ("Rig Mask (R)", 2D) = "white" {}
+        _ShadowRigMaskStrength ("Rig Mask Strength", Range(0, 1)) = 1
         [Space(10)]
         [Toggle(_SHADING_GRADE_MAP)] _UseGradeMap ("Use Shading Grade Map", Float) = 0
         _ShadingGradeMap ("Shading Grade Map", 2D) = "white" {}
@@ -517,7 +544,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _DissolveEdgeWidth ("Dissolve Edge Width", Range(0, 0.5)) = 0.1
         [HDR] _DissolveEdgeColor ("Dissolve Edge Color", Color) = (1, 0.5, 0, 1)
         _DissolveEdgeIntensity ("Dissolve Edge Intensity", Range(0, 10)) = 2
-        [Toggle(_DISSOLVE_MASK)] _UseDissolveMask ("Use Dissolve Mask", Float) = 0
+        [Toggle] _UseDissolveMask ("Use Dissolve Mask", Float) = 0
         _DissolveMask ("Dissolve Mask", 2D) = "white" {}
         [Enum(Normal,0,Soft,1,Screen,2,Overlay,3)] _DissolveBlendMode ("Dissolve Blend Mode", Float) = 0
         _DissolveBlend ("Dissolve Blend", Range(0, 1)) = 1
@@ -638,7 +665,7 @@ Shader "Natane/Toon Shader (Cutout)"
         [Toggle(_AUDIOLINK_HUE_SHIFT)] _AudioLinkHueShift ("AudioLink Hue Shift", Float) = 0
         [Enum(Bass,0,Low Mid,1,High Mid,2,Treble,3)] _AudioLinkHueBand ("Hue Band", Float) = 0
         _AudioLinkHueShiftIntensity ("Hue Shift Intensity", Range(0, 1)) = 0.5
-        [Toggle(_AUDIOLINK_DISSOLVE)] _AudioLinkDissolve ("AudioLink Dissolve", Float) = 0
+        [Toggle] _AudioLinkDissolve ("AudioLink Dissolve", Float) = 0
         [Enum(Bass,0,Low Mid,1,High Mid,2,Treble,3)] _AudioLinkDissolveBand ("Dissolve Band", Float) = 0
         _AudioLinkDissolveIntensity ("Dissolve Intensity", Range(0, 1)) = 0.5
         [Toggle(_AUDIOLINK_OUTLINE)] _AudioLinkOutline ("AudioLink Outline", Float) = 0
@@ -805,6 +832,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _HatchingTiling ("Hatching Tiling", Float) = 8
         _HatchingColor ("Hatching Color", Color) = (0.1, 0.1, 0.1, 1)
         _HatchingBlend ("Hatching Blend", Range(0, 1)) = 1
+        [Enum(ShadowOnly,0,LitOnly,1,All,2)] _HatchingComposite ("Hatching Composite", Float) = 2
         _HatchingMask ("Hatching Mask", 2D) = "white" {}
 
         [Toggle(_WATERCOLOR)] _UseWatercolor ("Enable Watercolor", Float) = 0
@@ -1000,12 +1028,13 @@ Shader "Natane/Toon Shader (Cutout)"
         _TopoNoiseScale ("Topo Noise Scale", Range(0, 10)) = 1
         _TopoNoiseStrength ("Topo Noise Strength", Range(0, 1)) = 0.3
         _TopoBlend ("Topo Blend", Range(0, 1)) = 1
+        [Enum(EmissionAdd,0,BaseMultiply,1,LitOnly,2,ShadowOnly,3)] _TopoComposite ("Topo Composite", Float) = 0
         [NoScaleOffset] _TopoMask ("Topo Mask (R)", 2D) = "white" {}
 
         // D. FX Modulator (汎用FXモジュレーター)
         [Toggle(_FX_MODULATOR)] _FXModulator ("Enable FX Modulator (FXモジュレーター)", Float) = 0
         [Enum(Sine,0,Saw,1,Triangle,2,Pulse,3,RandomStep,4,AudioBass,5,AudioLowMid,6,AudioHighMid,7,AudioTreble,8,Chronotensity,9,CameraDistance,10,ViewAngle,11,Manual,12,StaticNoise,13,DynamicNoise,14,DynamicNoiseSteps,15)] _FXModSource0 ("FX Slot0 Source", Float) = 0
-        [Enum(None,0,EmissionIntensity,1,HueShift,2,RimIntensity,3,OutlineWidth,4,LineBoilStrength,5,TopographicOffset,6,ShapedHighlightIntensity,7,CausticsIntensity,8,LenticularBlend,9,SpecularIntensity,10,MatCapIntensity,11,AlphaFade,12)] _FXModTarget0 ("FX Slot0 Target", Float) = 0
+        [Enum(None,0,EmissionIntensity,1,HueShift,2,RimIntensity,3,OutlineWidth,4,LineBoilStrength,5,TopographicOffset,6,ShapedHighlightIntensity,7,CausticsIntensity,8,LenticularBlend,9,SpecularIntensity,10,MatCapIntensity,11,AlphaFade,12,DissolveAmount,13)] _FXModTarget0 ("FX Slot0 Target", Float) = 0
         _FXModAmount0 ("FX Slot0 Amount", Float) = 0
         _FXModOffset0 ("FX Slot0 Phase Offset", Float) = 0
         _FXModSpeed0 ("FX Slot0 Speed", Float) = 1
@@ -1019,7 +1048,7 @@ Shader "Natane/Toon Shader (Cutout)"
         _FXModNoiseScale0 ("FX Slot0 Noise Scale", Float) = 5
         [Enum(UV,0,Object,1,World,2)] _FXModNoiseSpace0 ("FX Slot0 Noise Space", Float) = 0
         [Enum(Sine,0,Saw,1,Triangle,2,Pulse,3,RandomStep,4,AudioBass,5,AudioLowMid,6,AudioHighMid,7,AudioTreble,8,Chronotensity,9,CameraDistance,10,ViewAngle,11,Manual,12,StaticNoise,13,DynamicNoise,14,DynamicNoiseSteps,15)] _FXModSource1 ("FX Slot1 Source", Float) = 0
-        [Enum(None,0,EmissionIntensity,1,HueShift,2,RimIntensity,3,OutlineWidth,4,LineBoilStrength,5,TopographicOffset,6,ShapedHighlightIntensity,7,CausticsIntensity,8,LenticularBlend,9,SpecularIntensity,10,MatCapIntensity,11,AlphaFade,12)] _FXModTarget1 ("FX Slot1 Target", Float) = 0
+        [Enum(None,0,EmissionIntensity,1,HueShift,2,RimIntensity,3,OutlineWidth,4,LineBoilStrength,5,TopographicOffset,6,ShapedHighlightIntensity,7,CausticsIntensity,8,LenticularBlend,9,SpecularIntensity,10,MatCapIntensity,11,AlphaFade,12,DissolveAmount,13)] _FXModTarget1 ("FX Slot1 Target", Float) = 0
         _FXModAmount1 ("FX Slot1 Amount", Float) = 0
         _FXModOffset1 ("FX Slot1 Phase Offset", Float) = 0
         _FXModSpeed1 ("FX Slot1 Speed", Float) = 1
@@ -1065,6 +1094,9 @@ Shader "Natane/Toon Shader (Cutout)"
         _CausticsDistortion ("Caustics Distortion", Range(0, 1)) = 0.2
         _CausticsContrast ("Caustics Contrast", Range(0.1, 8)) = 2
         [NoScaleOffset] _CausticsMask ("Caustics Mask (R)", 2D) = "white" {}
+
+        // D. Shadow Bokeh (影の玉ボケ / 木漏れ日)
+        _ShadowBokehDensity ("Shadow Bokeh Density", Range(0, 1)) = 0.35
 
         // D. Shadow Bokeh (影の玉ボケ / 木漏れ日)
         [Toggle(_SHADOW_BOKEH)] _ShadowBokeh ("Enable Shadow Bokeh (影の玉ボケ)", Float) = 0
@@ -1226,6 +1258,7 @@ CGPROGRAM
             #pragma shader_feature_local _USE_MULTI_SHADOW
             #pragma shader_feature_local _SHADOW_RECEIVE_MASK
             #pragma shader_feature_local _SDF_MAP
+            #pragma shader_feature_local _SHADOW_SHAPE_RIG
             #pragma shader_feature_local _FACE_SDF_ROTATION
             #pragma shader_feature_local _SHADING_GRADE_MAP
             #pragma shader_feature_local _USE_AO
@@ -1394,6 +1427,7 @@ CGPROGRAM
             #pragma shader_feature_local _DITHERING_ALPHA
             #pragma shader_feature_local _HASHED_ALPHA
             #pragma shader_feature_local _SDF_MAP
+            #pragma shader_feature_local _SHADOW_SHAPE_RIG
             #pragma shader_feature_local _SHADING_GRADE_MAP
             #pragma shader_feature_local _USE_AO
             #pragma shader_feature_local _PROCEDURAL_AO

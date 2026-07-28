@@ -132,6 +132,9 @@ namespace NataneToon.Editor
             new FeatureCost("_SSS", "SSS", "SSS", 0),
             new FeatureCost("_SSS_LUT", "SSS LUT", "SSS LUT", 0),
             new FeatureCost("_DISSOLVE", "Dissolve", "Dissolve", 0),
+            // Shadow Shape Rig: マスク 1 枚。NOSAMPLER で _MainTex のサンプラーを
+            // 共有するため、増えるのはテクスチャスロットだけでサンプラーは増えない。
+            new FeatureCost("_SHADOW_SHAPE_RIG", "影シェイプリグ", "Shadow Shape Rig", 0),
             new FeatureCost("_ALPHA_MASK", "Alpha Mask", "Alpha Mask", 0),
             new FeatureCost("_REFLECTION", "Reflection", "Reflection", 1),
             new FeatureCost("_IRIDESCENCE", "Iridescence", "Iridescence", 0),

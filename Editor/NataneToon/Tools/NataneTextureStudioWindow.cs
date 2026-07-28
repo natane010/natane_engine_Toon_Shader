@@ -166,6 +166,12 @@ namespace NataneToon.Editor
                     NataneToolMenuPaths.DissolvePatternGenerator);
 
                 DrawCard(
+                    L("ハッチング/水彩素材生成", "Hatching & Watercolor Generator"),
+                    L("ハッチング6段TAMと、水彩の粒状感/紙目テクスチャを生成します。",
+                      "Generate 6-level hatching TAMs and watercolor granulation / paper textures."),
+                    NataneToolMenuPaths.HatchingToneGenerator);
+
+                DrawCard(
                     L("GPUパーティクルメッシュ生成", "GPU Particle Mesh Generator"),
                     L("GPU パーティクル表現用のベイク済みメッシュを生成します。",
                       "Generate baked meshes for GPU particle effects."),

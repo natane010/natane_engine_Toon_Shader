@@ -99,6 +99,14 @@ CBUFFER_START(UnityPerMaterial)
     float _HalftoneShadowDotMin;
     float _HalftoneShadowDotMax;
     float _HalftoneShadowAA;
+    // 濃度の基準。0 = トゥーン量子化後 / 1 = 量子化前の連続値（既定）。
+    float _HalftoneShadowDensitySource;
+    // 落ち影を網点の濃度に効かせる量。0 = 落ち影を無視 / 1 = 効かせる（既定）。
+    float _HalftoneShadowCastShadow;
+    // 面に貼り付けたまま、画面上のセルの大きさを一定に保つ（World/UV/Object 用）。
+    float _HalftoneShadowScreenLock;
+    // スクリーン空間のグリッドをオブジェクトへ貼り付ける（Screen 用）。
+    float _HalftoneShadowScreenAnchor;
     #endif
 
     // Shadow Bokeh（影の玉ボケ / 木漏れ日）
@@ -110,6 +118,7 @@ CBUFFER_START(UnityPerMaterial)
     float _ShadowBokehSoftness;
     float _ShadowBokehBlades;
     float _ShadowBokehRimGain;
+    float _ShadowBokehDensity;
     float _ShadowBokehSpeed;
     float4 _ShadowBokehDirection;
     float _ShadowBokehComposite;
@@ -449,6 +458,9 @@ CBUFFER_START(UnityPerMaterial)
 
     // Virtual Expression - Dissolve
     #if defined(_DISSOLVE)
+    // マスク使用の可否。Uniform 分岐で読むためキーワードは増やさない
+    // （変種爆発を避けつつ、トグルを実際に効かせるための宣言）。
+    float _UseDissolveMask;
     float _DissolveAmount;
     float _DissolveEdgeWidth;
     half4 _DissolveEdgeColor;
@@ -578,6 +590,9 @@ CBUFFER_START(UnityPerMaterial)
     float _AudioLinkRimIntensity;
     float _AudioLinkHueBand;
     float _AudioLinkHueShiftIntensity;
+    // AudioLink ディゾルブの有効化。従来は宣言だけで誰も読んでいなかったため
+    // インスペクタのトグルが何も変えない状態だった（NPR2026 F4）。
+    float _AudioLinkDissolve;
     float _AudioLinkDissolveBand;
     float _AudioLinkDissolveIntensity;
     float _AudioLinkOutlineBand;
@@ -936,6 +951,7 @@ CBUFFER_START(UnityPerMaterial)
     float _HatchingTiling;
     float4 _HatchingColor;
     float _HatchingBlend;
+    float _HatchingComposite;
     #endif
     #ifdef _WATERCOLOR
     float _WCEdgeDarkening;
@@ -1064,6 +1080,24 @@ CBUFFER_START(UnityPerMaterial)
     float _ShapedHLSize2;
     float _ShapedHLSparkleSpeed;
     #endif
+
+    // Shadow Shape Rig (NPR2026 P1)
+    // Packed two float4 per slot so four slots cost 8 registers instead of 20 scalars.
+    //   Params = (centerX, centerY, radiusX, radiusY)
+    //   Shape  = (rotationDeg, strength, falloff, lightFollow)
+    #if defined(_SHADOW_SHAPE_RIG)
+    float4 _ShadowRigParams0;
+    float4 _ShadowRigParams1;
+    float4 _ShadowRigParams2;
+    float4 _ShadowRigParams3;
+    float4 _ShadowRigShape0;
+    float4 _ShadowRigShape1;
+    float4 _ShadowRigShape2;
+    float4 _ShadowRigShape3;
+    float _ShadowRigFollowScale;
+    float _ShadowRigMaskStrength;
+    #endif
+
     #if defined(_TOPOGRAPHIC)
     float _TopoSpace;
     float _TopoAxis;
@@ -1079,6 +1113,8 @@ CBUFFER_START(UnityPerMaterial)
     float _TopoNoiseScale;
     float _TopoNoiseStrength;
     float _TopoBlend;
+    // 合成方法。Caustics / 影の玉ボケと同じ列挙に揃えている。
+    float _TopoComposite;
     #endif
     #if defined(_FX_MODULATOR)
     float _FXModSource0;
@@ -1582,6 +1618,10 @@ UNITY_DECLARE_TEX2D_NOSAMPLER(_TopoMask);
 #endif
 #ifdef _FX_MODULATOR
 UNITY_DECLARE_TEX2D_NOSAMPLER(_FXModMaskTex);
+#endif
+// Shadow Shape Rig (NPR2026 P1) — one mask shared by all four slots.
+#ifdef _SHADOW_SHAPE_RIG
+UNITY_DECLARE_TEX2D_NOSAMPLER(_ShadowRigMask);
 #endif
 
 // Expression Effects (v1.6.0 batch 2) — atlas / pattern / palette / masks (NOSAMPLER)

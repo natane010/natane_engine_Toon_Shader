@@ -40,6 +40,9 @@ namespace NataneToon.Editor
             new ShaderPassConfig("Natane/Toon Shader (Particle)", false, false),
             new ShaderPassConfig("Natane/Toon Shader Wirelight", false, false),
             new ShaderPassConfig("Natane/Eye", false, false),
+            // FakeShadow は単一 Pass。ForwardAdd も ShadowCaster も持たない
+            // （落ち影そのものが影を落とすと二重に暗くなる）。
+            new ShaderPassConfig("Natane/Toon Shader FakeShadow", false, false),
             // new ShaderPassConfig("Natane/Screen FX Overlay", false, false),
         };
 
@@ -60,6 +63,7 @@ namespace NataneToon.Editor
             "Natane/Toon Shader (Particle)",
             "Natane/Toon Shader Wirelight",
             "Natane/Eye",
+            "Natane/Toon Shader FakeShadow",
             // "Natane/Screen FX Overlay"
         };
 

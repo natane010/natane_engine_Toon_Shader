@@ -45,7 +45,8 @@ float NataneShadowBokeh_ShapeDistance(float2 delta, float blades)
 // softness  : 縁のぼけ幅（0 で硬い円、1 でほぼグラデーション）
 // blades    : 絞り羽根の枚数。2 以下で円
 // rimGain   : 外周の持ち上げ量。レンズの玉ボケらしい縁の明るさを作る
-float NataneShadowBokehPattern(float2 coord, float size, float softness, float blades, float rimGain)
+float NataneShadowBokehPattern(float2 coord, float size, float softness, float blades,
+                               float rimGain, float density)
 {
     float2 cell = floor(coord);
     float2 f = coord - cell;
@@ -61,13 +62,23 @@ float NataneShadowBokehPattern(float2 coord, float size, float softness, float b
             float2 offset = float2(x, y);
             float2 id = cell + offset;
 
-            // セルごとに中心をずらす。端に寄せすぎると隣と重なって粒が潰れるので 0.2-0.8 に収める。
-            float2 jitter = 0.2 + 0.6 * NataneShadowBokeh_Hash2(id);
             float h = NataneShadowBokeh_Hash1(id);
 
+            // 密度で粒を間引く。これが無いと全セルが必ず何かを描き、
+            // 3x3 を max 合成した結果が「分離した玉」ではなく
+            // 「常に何かが乗っている霞んだまだら」になる。
+            // density=1 で全セル、0 でほぼ全て消える。
+            if (h > density) continue;
+
+            // セルごとに中心をずらす。端に寄せすぎると隣と重なって粒が潰れるので 0.2-0.8 に収める。
+            float2 jitter = 0.2 + 0.6 * NataneShadowBokeh_Hash2(id);
+
             // 半径と明るさを散らす。全部同じ大きさだと機械的な水玉に見える。
-            float radius = size * (0.55 + 0.45 * h);
-            float brightness = 0.45 + 0.55 * frac(h * 7.13);
+            // 明るさに下限を置かないのも重要で、下限があると薄い粒が消えずに
+            // 背景全体がうっすら曇る。
+            float variation = frac(h * 7.13);
+            float radius = size * (0.55 + 0.45 * variation);
+            float brightness = variation;
 
             float d = NataneShadowBokeh_ShapeDistance(offset + jitter - f, blades);
 
@@ -87,21 +98,24 @@ float NataneShadowBokehPattern(float2 coord, float size, float softness, float b
 
 // Quest 向けの軽量版。3x3 のセル走査をやめ、交差する sin 場で粒を近似する。
 // 粒の散らばりは劣るが、命令数は大幅に少ない。
-float NataneShadowBokehPatternLite(float2 coord, float size, float softness)
+float NataneShadowBokehPatternLite(float2 coord, float size, float softness, float density)
 {
     float2 cell = floor(coord);
     float2 f = coord - cell;
 
-    float2 jitter = 0.25 + 0.5 * NataneShadowBokeh_Hash2(cell);
     float h = NataneShadowBokeh_Hash1(cell);
+    if (h > density) return 0.0;
 
-    float radius = size * (0.6 + 0.4 * h);
+    float2 jitter = 0.25 + 0.5 * NataneShadowBokeh_Hash2(cell);
+
+    float variation = frac(h * 7.13);
+    float radius = size * (0.6 + 0.4 * variation);
     float d = length(jitter - f);
 
     float edge = max(radius * (1.0 - saturate(softness)), 1e-4);
     float disc = 1.0 - smoothstep(edge, radius, d);
 
-    return saturate(disc * (0.5 + 0.5 * h));
+    return saturate(disc * variation);
 }
 
 #endif // NATANE_TOON_SHADOW_BOKEH_INCLUDED

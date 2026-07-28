@@ -250,6 +250,11 @@ namespace NataneToon.Editor
             ("_Topographic", "_TOPOGRAPHIC"),
             ("_FXModulator", "_FX_MODULATOR"),
 
+            // Shadow Shape Rig (NPR2026 P1)
+            // ここが単一の真実。ビルド最適化・VariantStripper・
+            // NataneToonBuildSettings.hlsl の #undef ガードは全てこの行から派生する。
+            ("_ShadowShapeRig", "_SHADOW_SHAPE_RIG"),
+
             // Expression Effects (v1.6.0 batch 2)
             ("_Lenticular", "_LENTICULAR"),
             ("_Caustics", "_CAUSTICS"),

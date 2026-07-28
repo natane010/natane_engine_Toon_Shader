@@ -1585,7 +1585,10 @@ half3 QuantizeColorHSV(half3 color, float hueLevels, float satLevels, float valL
 // color:   input linear RGB (should be [0,1])
 // lutTex:  the LUT texture sampler
 // lutSize: number of cells per axis (typically 32)
-half3 ApplyLUT3D(half3 color, sampler2D lutTex, float lutSize)
+// lutTex は NOSAMPLER 宣言（Texture2D）なので、引数も NATANE_TEX2D_NS_ARG で受ける。
+// sampler2D で受けていたためコンパイルが通らず、_LUT_3D を実際に有効化した変種だけが
+// 落ちていた（既定 OFF なので長く気付かれなかった）。
+half3 ApplyLUT3D(half3 color, NATANE_TEX2D_NS_ARG(lutTex), float lutSize)
 {
     float blue = color.b * (lutSize - 1.0);
     float blueFloor = floor(blue);
@@ -1604,8 +1607,10 @@ half3 ApplyLUT3D(half3 color, sampler2D lutTex, float lutSize)
     uv2.x = (min(blueFloor + 1.0, lutSize - 1.0) * invSize + color.r * invSize * (1.0 - invSize)) + halfTexel * invSize;
     uv2.y = uv1.y;
 
-    half3 lut1 = tex2D(lutTex, uv1).rgb;
-    half3 lut2 = tex2D(lutTex, uv2).rgb;
+    // LUT は必ず Clamp で引く。Repeat だとストリップの端で色が巻き込み、
+    // 赤や青の最大値付近だけ反対側のスライスの色が混ざる。
+    half3 lut1 = NATANE_SAMPLE_CLAMP(lutTex, uv1).rgb;
+    half3 lut2 = NATANE_SAMPLE_CLAMP(lutTex, uv2).rgb;
 
     return lerp(lut1, lut2, blueFrac);
 }
@@ -1622,24 +1627,59 @@ half3 ApplyLUT3D(half3 color, sampler2D lutTex, float lutSize)
 // tiling:       UV tiling multiplier for hatching pattern
 // hatchColor:   tint colour for hatching strokes
 // blend:        overall blend strength
+/// <param name="shadingValue">
+/// Tone that selects the TAM level: 0 = shadow (densest strokes), 1 = lit (none).
+/// This has to be the SHADING value, not the luminance of the colour so far. Driving it
+/// from the colour hatches anything with a dark albedo — black clothing, dark hair — as
+/// if it were in shadow, no matter how much light is on it.
+/// </param>
+/// <param name="composite">0 = ShadowOnly, 1 = LitOnly, 2 = All. Same enum as
+/// _ShadowBokehComposite.</param>
 half3 ApplyHatching(half3 baseColor, float2 uv, half shadingValue, half maskValue,
-    NATANE_TEX2D_NS_ARG(hatchTex0), NATANE_TEX2D_NS_ARG(hatchTex1), float tiling, half4 hatchColor, float blend)
+    NATANE_TEX2D_NS_ARG(hatchTex0), NATANE_TEX2D_NS_ARG(hatchTex1), float tiling, half4 hatchColor,
+    float blend, int composite)
 {
     float2 hatchUV = uv * tiling;
     half4 h0 = NATANE_SAMPLE_REPEAT(hatchTex0, hatchUV); // RGBA = levels 1-4
     half2 h1 = NATANE_SAMPLE_REPEAT(hatchTex1, hatchUV).rg; // RG = levels 5-6
 
-    // Map shading value to 6 weight slots
+    // Map shading value to 6 weight slots.
+    //
+    // The weights are consecutive differences of saturate(lum - k), which makes them
+    // trapezoids that cross-fade one level into the next and sum to exactly 1.
+    //
+    //   w6 (darkest) = 1 - S(0)     w5 = S(0) - S(1)   w4 = S(1) - S(2)
+    //   w3 = S(2) - S(3)            w2 = S(3) - S(4)   w1 = S(4) - S(5)
+    //   (S(5) is the "no hatching" share, used by nothing.)
+    //
+    // w5 used to be written as 1 - S(1), which is w5 + w6. That over-weighted level 5
+    // by exactly the level-6 share, so across the darkest band the total weight climbed
+    // toward 2 and levels 5 and 6 were drawn on top of each other. Two different stroke
+    // sets showing at once is what made the level boundary read as a hard seam up close.
     half lum = shadingValue * 6.0;
-    half w0 = saturate(lum - 5.0);
-    half w1 = saturate(lum - 4.0) - w0;
-    half w2 = saturate(lum - 3.0) - w0 - w1;
-    half w3 = saturate(lum - 2.0) - w0 - w1 - w2;
-    half w4 = saturate(lum - 1.0) - w0 - w1 - w2 - w3;
-    half w5 = 1.0 - w0 - w1 - w2 - w3 - w4;
+    half s0 = saturate(lum);
+    half s1 = saturate(lum - 1.0);
+    half s2 = saturate(lum - 2.0);
+    half s3 = saturate(lum - 3.0);
+    half s4 = saturate(lum - 4.0);
+    half s5 = saturate(lum - 5.0);
+
+    half w1 = s4 - s5;   // level 1 (lightest, sparsest)
+    half w2 = s3 - s4;
+    half w3 = s2 - s3;
+    half w4 = s1 - s2;
+    half w5 = s0 - s1;
+    half w6 = 1.0 - s0;  // level 6 (darkest, densest)
 
     half hatchValue = w1 * h0.r + w2 * h0.g + w3 * h0.b + w4 * h0.a
-                    + w5 * h1.r + max(0, 1.0 - lum) * h1.g;
+                    + w5 * h1.r + w6 * h1.g;
+
+    // 合成方法。影の玉ボケ / 等高線と同じ列挙・同じ意味に揃えてある。
+    // TAM は本来「面の全部を線で描く」手法なので、既定 (All) では明暗にかかわらず
+    // 階調どおりに線が乗る。アニメ寄りの絵では影の中だけに落としたいことが多く、
+    // その切り替えがこれまで無かった。
+    if (composite == 0)      hatchValue *= 1.0 - shadingValue;   // ShadowOnly
+    else if (composite == 1) hatchValue *= shadingValue;         // LitOnly
 
     return lerp(baseColor, baseColor * hatchColor.rgb, hatchValue * maskValue * blend);
 }

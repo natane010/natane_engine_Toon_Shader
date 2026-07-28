@@ -87,6 +87,8 @@ namespace NataneToon.Editor
         {
             public string FileName;
             public string AssetPath;
+            /// <summary>コメント除去前の生ソース。パリティ検査へそのまま渡す。</summary>
+            public string Source;
             public HashSet<string> Properties;
             public HashSet<string> FeatureKeywords;
             /// <summary>Pass 名 → その Pass で宣言されている shader_feature キーワード。</summary>
@@ -149,6 +151,7 @@ namespace NataneToon.Editor
 
             AuditPropertyDrift(variants, findings);
             AuditPassKeywordDrift(variants, findings);
+            AuditToggleKeywordParity(variants, findings);
             AuditGuardCoverage(variants, findings);
             AuditPerformanceCoverage(variants, findings);
             AuditUnparseable(variants, findings);
@@ -178,6 +181,7 @@ namespace NataneToon.Editor
             {
                 FileName = fileName,
                 AssetPath = assetPath,
+                Source = source,
                 Properties = new HashSet<string>(parsed.PropertyNames, StringComparer.Ordinal),
                 FeatureKeywords = new HashSet<string>(parsed.ShaderFeatureKeywords, StringComparer.Ordinal),
                 KeywordsByPass = ParseKeywordsByPass(source),
@@ -454,6 +458,86 @@ namespace NataneToon.Editor
                         "実際 _RIM_LIGHT / _RIM_LIGHT_2 / _OFFSET_RIM_LIGHT / _ENV_RIM / _SSS は\n" +
                         "フラグメント側が完全に BASE 限定であり、宣言していない本体シェーダーの方が正しい。\n" +
                         string.Join(", ", baseOnly)
+                });
+            }
+        }
+
+        // ---- 検出2b: Properties の Toggle キーワードが未コンパイル（逆方向）----
+
+        /// <summary>
+        /// <c>Properties</c> の <c>[Toggle(KEYWORD)]</c> が立てるキーワードを、
+        /// どのパスもコンパイルしていない状態を検出する。
+        ///
+        /// 既存の検出はすべて「<c>#pragma</c> にあるものが他所にあるか」を見ており、
+        /// この逆方向は素通りしていた。トグルをONにしても何も変わらず、
+        /// マテリアルには誰も読まないキーワードだけが書き込まれる。
+        ///
+        /// 判定と宣言テーブルは <see cref="NataneShaderParityChecker"/> に集約している
+        /// （Unity 非依存の CI スクリプトと同じ判定にするため）。
+        /// </summary>
+        private static void AuditToggleKeywordParity(List<VariantInfo> variants, List<NataneConsistencyFinding> findings)
+        {
+            var inputs = variants
+                .Select(v => new NataneParityInput { FileName = v.FileName, Source = v.Source })
+                .ToList();
+
+            List<NataneParityFinding> parity = NataneShaderParityChecker.FindUncompiledToggleKeywords(inputs);
+            if (parity.Count == 0)
+            {
+                return;
+            }
+
+            // 未宣言＝新規に混入したもの。ここが本検査の主目的なので個別に出す。
+            foreach (NataneParityFinding f in parity.Where(f => !f.Declared))
+            {
+                findings.Add(new NataneConsistencyFinding
+                {
+                    Severity = NataneConsistencySeverity.Error,
+                    Category = "未コンパイルのToggleキーワード",
+                    Message = NataneShaderParityChecker.DescribeFinding(f),
+                    Detail =
+                        "インスペクタのトグルが何も変えず、誰も読まないキーワードだけがマテリアルへ書き込まれる。\n" +
+                        "対応は次のいずれか:\n" +
+                        "  (a) 該当パスへ #pragma shader_feature_local を足して実際に効かせる\n" +
+                        "  (b) Uniform 分岐で実装し [Toggle(KEYWORD)] を [Toggle] へ変更する\n" +
+                        "  (c) 意図的なら NataneShaderParityChecker の宣言テーブルへ理由付きで登録する"
+                });
+            }
+
+            // 宣言済みは既知の負債。件数だけまとめて残し、レポートから消えないようにする。
+            var declaredGlobal = parity
+                .Where(f => f.Declared && f.Kind == NataneParityKind.UncompiledEverywhere)
+                .Select(f => f.Keyword)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(k => k, StringComparer.Ordinal)
+                .ToList();
+
+            if (declaredGlobal.Count > 0)
+            {
+                findings.Add(new NataneConsistencyFinding
+                {
+                    Severity = NataneConsistencySeverity.Info,
+                    Category = "未コンパイルのToggleキーワード(受理済み)",
+                    Message = $"{declaredGlobal.Count} キーワードが全変種で未コンパイル（宣言テーブルで受理済み）",
+                    Detail =
+                        "HLSL 側がマスクを常時サンプルする実装のため絵は正しいが、トグル自体は効いていない。\n" +
+                        "Uniform 分岐へ移すと、既にマスクを設定しているマテリアルの見た目が変わるため個別判断が要る。\n" +
+                        string.Join(", ", declaredGlobal)
+                });
+            }
+
+            // 宣言テーブルの腐り（修正済みなのに残っている行）も報告する。
+            List<string> stale = NataneShaderParityChecker.FindStaleDeclarations(inputs);
+            if (stale.Count > 0)
+            {
+                findings.Add(new NataneConsistencyFinding
+                {
+                    Severity = NataneConsistencySeverity.Warning,
+                    Category = "パリティ宣言テーブルの腐り",
+                    Message = $"{stale.Count} 件が宣言テーブルにあるが実際には検出されない",
+                    Detail =
+                        "既に解消済みなので NataneShaderParityChecker から削除してよい。\n" +
+                        string.Join(", ", stale)
                 });
             }
         }

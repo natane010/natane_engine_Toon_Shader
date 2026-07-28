@@ -563,26 +563,41 @@ float3 CalculateRefraction(float3 worldNormal, float3 viewDir, float refractionI
 }
 #endif // _REFRACTION
 
+// Face-relative light basis, shared by ApplySDFShadow and ApplyShadowShapeRig.
+//
+// Both need "where is the light horizontally, relative to the face". Duplicating the
+// derivation would let the two drift apart, and a rig that follows a slightly different
+// notion of "front" than the SDF map does is very hard to debug from the visual alone.
+//
+// FdotL: +1 light in front of the face, -1 behind.
+// RdotL: +1 light to the face's right, -1 to its left.
+void NataneFaceLightBasis(float3 lightDir, out float FdotL, out float RdotL)
+{
+    // Transform face directions from object to world space.
+    // The tiny epsilon keeps normalize() from producing NaN when the author leaves an
+    // axis at exactly zero.
+    float3 faceForward = normalize(mul((float3x3)unity_ObjectToWorld, _FaceForwardDirection.xyz) + float3(0, 0, 0.0001));
+    float3 faceRight = normalize(mul((float3x3)unity_ObjectToWorld, _FaceRightDirection.xyz) + float3(0.0001, 0, 0));
+    float3 faceUp = cross(faceForward, faceRight);
+
+    // Project light direction onto the face plane (remove the vertical component).
+    // NaN guard: if lightDir is zero or parallel to faceUp, fall back to faceForward.
+    float3 rawLightDirFlat = lightDir - dot(lightDir, faceUp) * faceUp;
+    float flatLen = length(rawLightDirFlat);
+    float3 lightDirFlat = (flatLen > 0.001) ? (rawLightDirFlat / flatLen) : faceForward;
+
+    FdotL = dot(faceForward, lightDirFlat);
+    RdotL = dot(faceRight, lightDirFlat);
+}
+
 // SDF Shadow Map
 // Uses signed distance field to add directional-independent shadows (like face shadows)
 float ApplySDFShadow(float2 uv, float ndotl, float3 lightDir, float3 worldPos)
 {
     #ifdef _SDF_MAP
         #ifdef _FACE_SDF_ROTATION
-            // Transform face directions from object to world space
-            float3 faceForward = normalize(mul((float3x3)unity_ObjectToWorld, _FaceForwardDirection.xyz) + float3(0, 0, 0.0001));
-            float3 faceRight = normalize(mul((float3x3)unity_ObjectToWorld, _FaceRightDirection.xyz) + float3(0.0001, 0, 0));
-            float3 faceUp = cross(faceForward, faceRight);
-
-            // Project light direction onto face plane (remove vertical component)
-            // NaN guard: if lightDir is zero or parallel to faceUp, fallback to faceForward
-            float3 rawLightDirFlat = lightDir - dot(lightDir, faceUp) * faceUp;
-            float flatLen = length(rawLightDirFlat);
-            float3 lightDirFlat = (flatLen > 0.001) ? (rawLightDirFlat / flatLen) : faceForward;
-
-            // Calculate light direction relative to face
-            float FdotL = dot(faceForward, lightDirFlat);
-            float RdotL = dot(faceRight, lightDirFlat);
+            float FdotL, RdotL;
+            NataneFaceLightBasis(lightDir, FdotL, RdotL);
 
             // Mirror UV.x when light comes from the left
             float2 sdfUV = uv;
@@ -591,8 +606,24 @@ float ApplySDFShadow(float2 uv, float ndotl, float3 lightDir, float3 worldPos)
             // Sample SDF map
             float sdfValue = NATANE_SAMPLE_REPEAT(_SDFMap, sdfUV).r;
 
-            // Threshold based on forward dot light
-            float threshold = FdotL * 0.5 + 0.5 + _SDFOffset;
+            // Threshold based on forward dot light.
+            //
+            // lightDir points from the surface toward the light, so FdotL = +1 means the
+            // light is in front of the face and FdotL = -1 means it is behind.
+            //
+            // The baked map stores s(theta_t) where s(theta) = (1 - cos theta) / 2 is the
+            // monotonic [0,1] encoding of the horizontal light angle at which the texel
+            // flips into shadow. A texel is lit while s(theta) < s(theta_t), so the
+            // threshold must be s(theta) itself:
+            //
+            //     lit  <=>  theta < theta_t
+            //          <=>  cos theta > cos theta_t
+            //          <=>  (1 - cos theta) / 2 < (1 - cos theta_t) / 2
+            //
+            // The previous form (FdotL * 0.5 + 0.5) had the sign inverted, which made a
+            // front-facing light shadow almost the whole face. Fixed in v1.7 — see
+            // Documentation~/NPR2026_P2_FACE_SDF_BAKE.md for the derivation.
+            float threshold = (1.0 - FdotL) * 0.5 + _SDFOffset;
 
             // Apply softness
             float shadowEdge = _SDFSoftness * 0.5;
@@ -617,6 +648,53 @@ float ApplySDFShadow(float2 uv, float ndotl, float3 lightDir, float3 worldPos)
     #else
         return ndotl;
     #endif
+}
+
+// Shadow Shape Rig
+// Locally biases the shading boundary with up to four elliptical rigs, so the shape of the
+// shadow can be art-directed instead of falling out of the geometry alone.
+//
+//   ndotl' = saturate(ndotl + sum_i( w_i(uv) * strength_i ) * mask)
+//
+// strength > 0 pushes the boundary toward lit (the shadow shrinks),
+// strength < 0 pushes it toward shadow (the shadow grows).
+//
+// A slot whose radius is zero costs a single compare, so the four slots are effectively
+// free when unused — that is why they are unrolled rather than looped.
+float ApplyShadowShapeRig(float2 uv, float ndotl, float3 lightDir)
+{
+#ifdef _SHADOW_SHAPE_RIG
+    // Follow the light the way Shading Rig does: the rig drifts with the light direction
+    // instead of being pinned to the mesh. Projecting onto the face basis keeps the drift
+    // horizontal, which is what reads as "the shadow moved" rather than "the face turned".
+    float FdotL, RdotL;
+    NataneFaceLightBasis(lightDir, FdotL, RdotL);
+    float2 follow = float2(RdotL, FdotL) * _ShadowRigFollowScale;
+
+    // NOSAMPLER なので他のマスクと同じく _MainTex のサンプラーを共有する。
+    // 専用サンプラーを増やすと Quest のサンプラー上限に効いてくる。
+    half mask = lerp(1.0h, (half)NATANE_SAMPLE_SHARED_R(_ShadowRigMask, _MainTex, uv), (half)_ShadowRigMaskStrength);
+
+    half bias = 0.0h;
+
+    #define NATANE_RIG_SLOT(P, S) \
+        { \
+            float4 prm = P; \
+            prm.xy += follow * (S).w; \
+            bias += NataneRigWeight(uv, prm, radians((S).x), (half)(S).z) * (half)(S).y; \
+        }
+
+    NATANE_RIG_SLOT(_ShadowRigParams0, _ShadowRigShape0)
+    NATANE_RIG_SLOT(_ShadowRigParams1, _ShadowRigShape1)
+    NATANE_RIG_SLOT(_ShadowRigParams2, _ShadowRigShape2)
+    NATANE_RIG_SLOT(_ShadowRigParams3, _ShadowRigShape3)
+
+    #undef NATANE_RIG_SLOT
+
+    return saturate(ndotl + bias * mask);
+#else
+    return ndotl;
+#endif
 }
 
 // Shading Grade Map

@@ -718,6 +718,17 @@ half4 frag(v2f i) : SV_Target
     // Apply SDF shadow to ndotl before lighting calculations
     ndotl = ApplySDFShadow(uv, ndotl, lightDir, i.worldPos);
 
+    // ===== Shadow Shape Rig =====
+    // Art-directed local shaping of the shading boundary.
+    //
+    // Placed here deliberately:
+    //   - after the SDF so the rigs refine the face shadow the map already decided,
+    //   - before vertex-color shadow / wrapped diffuse so it does not double up with
+    //     those threshold adjustments,
+    //   - before tone quantization (_USE_MULTI_SHADOW / ramp) so the step boundaries
+    //     themselves move rather than the shading inside a band.
+    ndotl = ApplyShadowShapeRig(uv, ndotl, lightDir);
+
     // ===== Vertex Color Shadow Threshold =====
     #ifdef _VERTEX_COLOR_SHADOW
     if (_VertexColorShadow >= 0.5)
@@ -783,6 +794,18 @@ half4 frag(v2f i) : SV_Target
     half3 lighting;
     half shadingValue;
     half3 shadowColor;
+
+    // 量子化前の連続的な陰影。網点のように「面の丸みを濃度で見せる」表現は、
+    // トゥーンで段に落とした後の値を使うと濃度がその段数しか取れない
+    // （_ShadowSteps = 2 なら網点も 2 段階しか出ず、トーンを貼り分けたというより
+    // 白と黒が切り替わるだけになる）。PBR 相当の連続値を別に持っておき、
+    // そちらを濃度の基準に選べるようにする。PBR モードでなくても使える。
+    //
+    // 落ち影（atten）は<b>掛けない</b>。掛けてしまうと、落ち影の有無と
+    // N·L の陰影が 1 つの値に混ざり、「落ち影が無い場所にも落ち影ぶんのトーンが乗る」
+    // のを分離できなくなる。落ち影は使う側で別枠に足す。
+    half continuousShadingLit = 1.0;
+
     half aoForIndirect = 1.0;
 
     // ===== AO (pre-calculate before shading branch) =====
@@ -834,6 +857,9 @@ half4 frag(v2f i) : SV_Target
         #ifdef _USE_AO
             rampInput *= aoEffect;
         #endif
+        // 落ち影を掛ける前の連続値。Ramp モードでは rampInput 自体が連続なので
+        // そのまま濃度の基準に使える。
+        continuousShadingLit = saturate(rampInput + clamp(_ShadowOffset, -1.0, 1.0));
         // Shadow attenuation (separated from NdotL for clean toon boundaries)
         rampInput *= atten;
         // Use ramp texture for custom shadow gradients
@@ -863,8 +889,12 @@ half4 frag(v2f i) : SV_Target
         half stylizedShadingValue = lerp(toonValue, gradientValue, stylizedMode);
         shadingValue = lerp(stylizedShadingValue, pbrLikeValue, basePbrWeight);
 
+        // 量子化を通していない側。PBR モードかどうかに関係なく常に連続。
+        continuousShadingLit = pbrLikeValue;
+
         // Apply Shading Grade Map before final lighting
         shadingValue = ApplyShadingGradeMap(uv, shadingValue);
+        continuousShadingLit = ApplyShadingGradeMap(uv, continuousShadingLit);
 
         // ===== Shadow Edge Noise (hand-drawn shadow boundaries) =====
         #ifdef _SHADOW_EDGE_NOISE
@@ -892,9 +922,13 @@ half4 frag(v2f i) : SV_Target
             shadingValue *= aoEffect;
             // Apply AO blend (how much AO affects the shading)
             shadingValue = lerp(preShadingAO, shadingValue, _AOBlend);
+
+            half preContinuousAO = continuousShadingLit;
+            continuousShadingLit = lerp(preContinuousAO, continuousShadingLit * aoEffect, _AOBlend);
         #endif
 
         // ===== Shadow Attenuation (separated from NdotL for clean toon boundaries) =====
+        // continuousShadingLit には atten を掛けない（落ち影は使う側で別枠に足す）。
         shadingValue *= atten;
 
         // Vibrant shadow color mixing for anime look
@@ -1326,10 +1360,35 @@ half4 frag(v2f i) : SV_Target
     #if defined(_HALFTONE_SHADOW) && defined(UNITY_PASS_FORWARDBASE)
     if (_HalftoneShadow >= 0.5)
     {
+        // 濃度の基準。既定は量子化前の連続値。
+        //
+        // 量子化後の shadingValue を使うと、濃度が _ShadowSteps の段数しか取れない。
+        // 既定の 2 段だと網点も 2 段階しか出ず、「トーンを貼り分けた」ではなく
+        // 「白と黒が切り替わる」だけになる。漫画のトーンは面の丸みに沿って
+        // 号数を選ぶものなので、基準は滑らかな陰影であるべき。
+        // PBR モードを使っていなくても連続値は常に計算してある。
+        // 濃度の基準。落ち影を含まない側を使う。
+        half htSource = (_HalftoneShadowDensitySource > 0.5) ? continuousShadingLit : shadingValue;
+
         // shadowArea: 0=lit, 1=shadow
-        float shadowArea = smoothstep(_HalftoneShadowThreshold + _HalftoneShadowSoftness,
-                                       _HalftoneShadowThreshold - _HalftoneShadowSoftness,
-                                       shadingValue);
+        //
+        // 陰影（N·L）由来のトーンと、落ち影由来のトーンを別々に求めて max で合成する。
+        // 掛け算で 1 本にまとめると、落ち影が無い（atten = 1）場所でも
+        // 陰影の分だけトーンが出て、「影が落ちていないのに網点が乗る」状態になる。
+        // 落ち影は atten < 1 の領域にしか存在しないので、そこだけに効かせる。
+        float shadowAreaLit = smoothstep(_HalftoneShadowThreshold + _HalftoneShadowSoftness,
+                                          _HalftoneShadowThreshold - _HalftoneShadowSoftness,
+                                          htSource);
+
+        float shadowArea = shadowAreaLit;
+
+        // 量子化後を基準にしている場合は shadingValue に既に atten が畳み込まれているので、
+        // 二重に効かせない。連続基準のときだけ落ち影を別枠で足す。
+        if (_HalftoneShadowDensitySource > 0.5)
+        {
+            float castArea = saturate(1.0 - atten) * _HalftoneShadowCastShadow;
+            shadowArea = max(shadowArea, castArea);
+        }
 
         // 影の濃さを「トーンの号数」に量子化する。連続的に太らせるより漫画らしい。
         float htTone = NataneHalftoneQuantizeTone(shadowArea, _HalftoneShadowLevels);
@@ -1340,6 +1399,7 @@ half4 frag(v2f i) : SV_Target
         float3 htObjPos = mul(unity_WorldToObject, float4(i.worldPos, 1.0)).xyz;
         float2 htPos = NataneHalftoneCoord(
             _HalftoneShadowSpace, _HalftoneShadowScale, _HalftoneShadowSurfaceDensity,
+            _HalftoneShadowScreenLock, _HalftoneShadowScreenAnchor,
             uv, htObjPos, i.worldPos, worldNormal, i.pos.xy);
 
         htPos = NataneHalftoneRotate(htPos, _HalftoneShadowAngle);
@@ -1349,7 +1409,13 @@ half4 frag(v2f i) : SV_Target
             _HalftoneShadowDotMin, _HalftoneShadowDotMax, _HalftoneShadowAA);
 
         // tone が 0 の領域には一切載せない（量子化の最下段でも点が残らないように）。
-        htInk *= step(0.001, shadowArea);
+        //
+        // ここは step だった。量子化の最下段は tone = 0.5/levels なので、
+        // 影に入った瞬間その大きさの網点が一斉に出現し、明部との境が硬い線として見えていた。
+        // 網点自体が消える幅（1/levels の半分）で立ち上げると、
+        // 「トーンの縁」として自然に見える。levels=1（連続）のときも同じ式で成立する。
+        half htFadeIn = 0.5 / max(_HalftoneShadowLevels, 1.0);
+        htInk *= smoothstep(0.0, htFadeIn, shadowArea);
 
         col.rgb = lerp(col.rgb, _HalftoneShadowColor.rgb * col.rgb,
                        htInk * _HalftoneShadowIntensity * _HalftoneShadowBlend);
@@ -1397,10 +1463,12 @@ half4 frag(v2f i) : SV_Target
             hatchUV += nataneBoilUV;
         #endif
         half hMask = NATANE_SAMPLE_SHARED_R(_HatchingMask, _MainTex, hatchUV);
-        // Use luminance of current color as proxy for shading value
-        half hatchShading = dot(col.rgb, half3(0.299, 0.587, 0.114));
-        col.rgb = ApplyHatching(col.rgb, hatchUV, hatchShading, hMask,
-            _HatchTex0, _HatchTex1, _HatchingTiling, _HatchingColor, _HatchingBlend * nprWeight);
+        // 階調はライティング（shadingValue: 0=影 / 1=明部）で決める。
+        // 以前はここまでの色の輝度を使っていたため、暗いアルベド（黒い服・髪など）が
+        // 光の当たった場所でも「影」と判定され、常に最も濃い線が乗っていた。
+        col.rgb = ApplyHatching(col.rgb, hatchUV, shadingValue, hMask,
+            _HatchTex0, _HatchTex1, _HatchingTiling, _HatchingColor, _HatchingBlend * nprWeight,
+            (int)(_HatchingComposite + 0.5));
     }
     #endif
 
@@ -2215,13 +2283,40 @@ half4 frag(v2f i) : SV_Target
 
         half3 topoContrib = topoColor * _TopoEmission;
         half3 preTopo = col.rgb;
-        col.rgb = SafeAdditiveBlend(col.rgb, topoContrib, saturate(topoAlpha));
+
+        // 合成方法。Caustics / 影の玉ボケと同じ列挙・同じ意味に揃えてある。
+        // 以前は常に加算合成で陰影と無関係だったため、「影の中にだけ等高線を出す」
+        // といった使い方ができなかった。
+        int topoComp = (int)(_TopoComposite + 0.5);
+        half topoWeight = saturate(topoAlpha);
+
+        if (topoComp == 1)      // BaseColor multiply-brighten
+        {
+            col.rgb *= (half3(1, 1, 1) + topoContrib * topoWeight);
+        }
+        else if (topoComp == 2) // LitOnly
+        {
+            half w = topoWeight * shadingValue;
+            col.rgb = SafeAdditiveBlend(col.rgb, topoContrib * shadingValue, saturate(w));
+        }
+        else if (topoComp == 3) // ShadowOnly
+        {
+            half shadowAmount = 1.0 - shadingValue;
+            half w = topoWeight * shadowAmount;
+            col.rgb = SafeAdditiveBlend(col.rgb, topoContrib * shadowAmount, saturate(w));
+        }
+        else                    // Emission-add
+        {
+            col.rgb = SafeAdditiveBlend(col.rgb, topoContrib, topoWeight);
+        }
+
         #ifdef _DISTANCE_FADE
             col.rgb = lerp(preTopo, col.rgb, distanceFade);
         #endif
         // Preserve HDR overshoot so emission-strength contour lines drive bloom.
         #if defined(_EMISSION)
-            nataneHdrEmission += max(topoContrib - half3(1, 1, 1), half3(0, 0, 0)) * saturate(topoAlpha);
+            if (topoComp == 0)
+                nataneHdrEmission += max(topoContrib - half3(1, 1, 1), half3(0, 0, 0)) * topoWeight;
         #endif
     } // if (_Topographic >= 0.5)
     #endif
@@ -2296,11 +2391,11 @@ half4 frag(v2f i) : SV_Target
         float bokehPat;
         #ifdef _QUEST_LITE
             bokehPat = NataneShadowBokehPatternLite(
-                bokehCoord, _ShadowBokehSize, _ShadowBokehSoftness);
+                bokehCoord, _ShadowBokehSize, _ShadowBokehSoftness, _ShadowBokehDensity);
         #else
             bokehPat = NataneShadowBokehPattern(
                 bokehCoord, _ShadowBokehSize, _ShadowBokehSoftness,
-                _ShadowBokehBlades, _ShadowBokehRimGain);
+                _ShadowBokehBlades, _ShadowBokehRimGain, _ShadowBokehDensity);
         #endif
 
         half bokehMask = NATANE_SAMPLE_SHARED_R(_ShadowBokehMask, _MainTex, uv);
@@ -2399,8 +2494,10 @@ half4 frag(v2f i) : SV_Target
         }
 
         // AudioLink Dissolve - audio-reactive dissolve (requires Dissolve feature)
+        // The toggle is read here so the inspector checkbox actually gates the
+        // effect. Before this it was declared but referenced nowhere (NPR2026 F4).
         #if defined(_DISSOLVE)
-        if (_AudioLinkDissolveIntensity > 0.001)
+        if (_AudioLinkDissolve >= 0.5 && _AudioLinkDissolveIntensity > 0.001)
         {
             half alDissolve = SampleAudioLink(_AudioLinkDissolveBand);
             float2 alDissolveUV = AnimateUVIfNeeded(uv, _DissolveTexScrollSpeed.xy, _DissolveTexRotateSpeed);
@@ -2672,13 +2769,26 @@ half4 frag(v2f i) : SV_Target
     #ifdef _DISSOLVE
     if (_Dissolve >= 0.5)
     {
-        // Early exit if dissolve amount is 0 (no effect)
-        if (_DissolveAmount > 0.0)
-        {
-            half dissolveMaskValue = 1.0;
+        // FX Modulator can drive the dissolve amount, so an Animator layer is not
+        // required for a self-running dissolve. Evaluated before the early-out so
+        // that a material sitting at _DissolveAmount = 0 can still be modulated.
+        float dissolveAmountEffective = _DissolveAmount;
+        #if defined(_FX_MODULATOR)
+            dissolveAmountEffective = saturate(dissolveAmountEffective
+                + NataneFXModAdd(nataneFXState, NATANE_FXT_DISSOLVE));
+        #endif
 
-            // Apply mask texture
-            dissolveMaskValue = NATANE_SAMPLE_SHARED_R(_DissolveMask, _MainTex, uv);
+        // Early exit if dissolve amount is 0 (no effect)
+        if (dissolveAmountEffective > 0.0)
+        {
+            // Mask sampling is gated by the toggle so materials that do not use a
+            // mask do not pay the fetch. Default is 0 and an unset mask is "white",
+            // so existing materials render identically either way.
+            half dissolveMaskValue = 1.0;
+            if (_UseDissolveMask >= 0.5)
+            {
+                dissolveMaskValue = NATANE_SAMPLE_SHARED_R(_DissolveMask, _MainTex, uv);
+            }
 
             float dissolveEdgeBlurred = _DissolveEdgeWidth + _DissolveBlur * 0.15;
             float2 dissolveUV = AnimateUVIfNeeded(uv, _DissolveTexScrollSpeed.xy, _DissolveTexRotateSpeed);
@@ -2700,7 +2810,7 @@ half4 frag(v2f i) : SV_Target
             {
                 dissolveNoise = NATANE_SAMPLE_REPEAT(_DissolveTex, dissolveUV).r;
             }
-            float2 dissolveResult = CalculateDissolveFromNoise(dissolveNoise, _DissolveAmount, dissolveEdgeBlurred);
+            float2 dissolveResult = CalculateDissolveFromNoise(dissolveNoise, dissolveAmountEffective, dissolveEdgeBlurred);
             half dissolveAlpha = dissolveResult.x;
             half edgeGlow = dissolveResult.y;
 

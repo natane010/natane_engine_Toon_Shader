@@ -26,6 +26,10 @@
 #define NATANE_FXT_SPECULAR      10
 #define NATANE_FXT_MATCAP        11
 #define NATANE_FXT_ALPHA_FADE    12
+// DissolveAmount: AlphaFade(12) は単純なアルファ減衰でエッジ発光を伴わないため
+// ディゾルブの代替にならない。Animator を使わずに時間・音・距離で自走する
+// ディゾルブを作れるようにするための専用ターゲット。
+#define NATANE_FXT_DISSOLVE      13
 
 float NataneFXMod_Hash1(float x) { return frac(sin(x * 12.9898) * 43758.5453); }
 

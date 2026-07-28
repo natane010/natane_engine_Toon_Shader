@@ -69,6 +69,7 @@ namespace NataneToon.Editor
                     "_ShadowBokehSoftness (\"Shadow Bokeh Softness\", Range(0, 1)) = 0.5",
                     "_ShadowBokehBlades (\"Shadow Bokeh Aperture Blades\", Range(0, 8)) = 0",
                     "_ShadowBokehRimGain (\"Shadow Bokeh Rim Gain\", Range(0, 1)) = 0.25",
+                    "_ShadowBokehDensity (\"Shadow Bokeh Density\", Range(0, 1)) = 0.35",
                     "_ShadowBokehSpeed (\"Shadow Bokeh Drift Speed\", Float) = 0.05",
                     "_ShadowBokehDirection (\"Shadow Bokeh Drift Direction (XY)\", Vector) = (1, 0.3, 0, 0)",
                     "_ShadowBokehShadowMin (\"Shadow Bokeh Shadow Threshold\", Range(0, 1)) = 0.35",
@@ -97,6 +98,30 @@ namespace NataneToon.Editor
                     "_HalftoneShadowDotMin (\"Halftone Dot Min\", Range(0, 1)) = 0.05",
                     "_HalftoneShadowDotMax (\"Halftone Dot Max\", Range(0, 1)) = 0.9",
                     "_HalftoneShadowAA (\"Halftone Anti-Alias\", Range(0, 3)) = 1",
+                },
+            },
+
+            // 等高線の合成方法。Caustics / 影の玉ボケと同じ列挙に揃える。
+            // 以前は常に加算合成で、影の中にだけ出すといった使い分けができなかった。
+            new Addition
+            {
+                GroupId = "CORE",
+                AfterProperty = "_TopoBlend",
+                Declarations = new[]
+                {
+                    "[Enum(EmissionAdd,0,BaseMultiply,1,LitOnly,2,ShadowOnly,3)] _TopoComposite (\"Topo Composite\", Float) = 0",
+                },
+            },
+
+            // ハッチングの合成方法。等高線 / 影の玉ボケと同じ列挙に揃える。
+            // 以前は明暗にかかわらず全面に線が乗り、「影の中だけに落とす」ができなかった。
+            new Addition
+            {
+                GroupId = "CORE",
+                AfterProperty = "_HatchingBlend",
+                Declarations = new[]
+                {
+                    "[Enum(ShadowOnly,0,LitOnly,1,All,2)] _HatchingComposite (\"Hatching Composite\", Float) = 2",
                 },
             },
 

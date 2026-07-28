@@ -13,6 +13,9 @@ namespace NataneToon.Editor
     /// Eye / Wirelight / ScreenFXOverlay は構造が別系統なので含めない。
     /// Particle は Properties が 44 行しかなく Effects 系機能を持たない別系統のため
     /// 既定で除外する（除外した事実は呼び出し側へ返す）。
+    /// FakeShadow も同様に別系統。NataneToonCore.hlsl を include しない単一パスの極小
+    /// シェーダーで、本体の機能セットを一切持たない。相互比較の母集団に入れると
+    /// 「990 プロパティが欠落している」というノイズしか出ない。
     /// </summary>
     internal static class NataneToonVariantLocator
     {
@@ -20,6 +23,7 @@ namespace NataneToon.Editor
         private const string ToonShaderFilePrefix = "NataneToonShader";
 
         public const string ParticleFileName = "NataneToonShader_Particle.shader";
+        public const string FakeShadowFileName = "NataneToonShader_FakeShadow.shader";
         public const string MainFileName = "NataneToonShader.shader";
 
         internal sealed class Entry
@@ -52,6 +56,12 @@ namespace NataneToon.Editor
                 if (!fileName.EndsWith(".shader", StringComparison.OrdinalIgnoreCase)) continue;
 
                 if (!includeParticle && string.Equals(fileName, ParticleFileName, StringComparison.Ordinal))
+                {
+                    excluded.Add(fileName);
+                    continue;
+                }
+
+                if (string.Equals(fileName, FakeShadowFileName, StringComparison.Ordinal))
                 {
                     excluded.Add(fileName);
                     continue;
